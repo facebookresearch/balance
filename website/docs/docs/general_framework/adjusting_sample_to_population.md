@@ -7,12 +7,12 @@ keywords:
     - adjustment
 ---
 
-To produce the weights, use the ```Sample.adjust()``` function to adjust a sample to population:
+To produce the balancing weights, use the ```Sample.adjust()``` method to adjust a sample to population:
 
 ```
 adjusted = sample.adjust()
 ```
-The output of this function is an adjusted Sample object of the form:
+The output of this method is an adjusted `Sample` class object of the form:
 
 ```
     Adjusted balance Sample object with target set using ipw
@@ -29,7 +29,7 @@ The output of this function is an adjusted Sample object of the form:
 
         3 common variables: income,gender,age_group
 ```
-Note that the `adjust` function in balance is performing three main steps:
+Note that the `adjust` method in balance is performing three main steps:
 1. **Pre-processing** of the data - getting data ready for adjustment using best practices in the field:
     * Handling missing values - balance handles missing values automatically by adding a column '_is_na' to any variable that contains missing values. The advantage of this is that these are then considered as a separate category for the adjustment.
     * Feature engineering -  by default, balance applies feature engineering to be able to fit the full covariate distribution better, and not only the first order moment. Hence, each continues variable is bucketed into 10 quantiles buckets. In addition, rare categories in categorical variables are grouped together to avoid overfitting rare events.
@@ -58,4 +58,4 @@ Note that the `adjust` function in balance is performing three main steps:
 
 * **`formula`** (for `ipw` and `cbps` methods)**:** The formula according to which build the model matrix for the logistic regression. Default is a linear additive formula of all covariates.
 
-* **`penalty_factor`** (for`ipw`method): the penalty used in the regularized logistic regression.
+* **`penalty_factor`** (for `ipw` method): the penalty used in the regularized logistic regression.
