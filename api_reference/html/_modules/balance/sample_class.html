@@ -1,0 +1,1320 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>balance.sample_class &#8212; balance  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../balance.html" accesskey="U">balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.sample_class</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for balance.sample_class</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) Meta Platforms, Inc. and affiliates.</span>
+<span class="c1">#</span>
+<span class="c1"># This software may be used and distributed according to the terms of the</span>
+<span class="c1"># GNU General Public License version 2.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">balance</span> <span class="kn">import</span> <span class="n">adjustment</span> <span class="k">as</span> <span class="n">balance_adjustment</span><span class="p">,</span> <span class="n">util</span> <span class="k">as</span> <span class="n">balance_util</span>
+<span class="kn">from</span> <span class="nn">balance.stats_and_plots</span> <span class="kn">import</span> <span class="n">weights_stats</span>
+
+<span class="kn">from</span> <span class="nn">balance.stats_and_plots.weighted_comparisons_stats</span> <span class="kn">import</span> <span class="n">outcome_variance_ratio</span>
+<span class="kn">from</span> <span class="nn">balance.typing</span> <span class="kn">import</span> <span class="n">FilePathOrBuffer</span>
+
+<span class="kn">from</span> <span class="nn">IPython.lib.display</span> <span class="kn">import</span> <span class="n">FileLink</span>
+
+
+<span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Sample"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample">[docs]</a><span class="k">class</span> <span class="nc">Sample</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class used to represent a sample.</span>
+
+<span class="sd">    Sample is the main object of balance. It contains a dataframe of unit&#39;s observations,</span>
+<span class="sd">    associated with id and weight.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    id_column : pd.Series</span>
+<span class="sd">        a column representing the ids of the units in sample</span>
+<span class="sd">    weight_column : pd.Series</span>
+<span class="sd">        a column representing the weights of the units in sample</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># The following attributes are updated when initiating Sample using Sample.fram_frame</span>
+    <span class="n">_df</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">id_column</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_outcome_columns</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">weight_column</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_links</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_adjustment_model</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># The following checks if the call to Sample() was initiated inside the class itself using from_frame, or outside of it</span>
+        <span class="c1"># If the call was made internally, it will enable the creation of an instance of the class.</span>
+        <span class="c1"># This is used when from_frame calls `sample = Sample()`. Keeping the full stack allows this also to work by a child of Sample.</span>
+        <span class="c1"># If Sample() is called outside of the class structure, it will return the NotImplementedError error.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">calling_functions</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">function</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">stack</span><span class="p">()]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;cannot construct Sample class directly... yet (only by invoking Sample.from_fram(...)&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;from_frame&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">calling_functions</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;cannot construct Sample class directly... yet (only by invoking Sample.from_fram(...)&quot;</span>
+            <span class="p">)</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__module__</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__qualname__</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span> <span class="n">pkg_source</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">__package__</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">is_adjusted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">()</span> <span class="o">*</span> <span class="s2">&quot;Adjusted &quot;</span>
+        <span class="n">n_rows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">n_variables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_covar_columns</span><span class="p">()</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">has_target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_target</span><span class="p">()</span> <span class="o">*</span> <span class="s2">&quot; with target set&quot;</span>
+        <span class="n">adjustment_method</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot; using &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">()[</span><span class="s2">&quot;method&quot;</span><span class="p">]</span>  <span class="c1"># pyre-ignore[16]</span>
+            <span class="c1"># (None is eliminated by if statement)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="p">)</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_covar_columns_names</span><span class="p">())</span>
+        <span class="n">id_column_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_column</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_column</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;None&quot;</span>
+        <span class="n">weight_column_name</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;None&quot;</span>
+        <span class="p">)</span>
+        <span class="n">outcome_column_names</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_outcome_columns</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outcome_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="s2">&quot;None&quot;</span>
+        <span class="p">)</span>
+
+        <span class="n">desc</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        </span><span class="si">{</span><span class="n">is_adjusted</span><span class="si">}{</span><span class="n">pkg_source</span><span class="si">}</span><span class="s2"> Sample object</span><span class="si">{</span><span class="n">has_target</span><span class="si">}{</span><span class="n">adjustment_method</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">        </span><span class="si">{</span><span class="n">n_rows</span><span class="si">}</span><span class="s2"> observations x </span><span class="si">{</span><span class="n">n_variables</span><span class="si">}</span><span class="s2"> variables: </span><span class="si">{</span><span class="n">variables</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">        id_column: </span><span class="si">{</span><span class="n">id_column_name</span><span class="si">}</span><span class="s2">, weight_column: </span><span class="si">{</span><span class="n">weight_column_name</span><span class="si">}</span><span class="s2">,</span>
+<span class="s2">        outcome_columns: </span><span class="si">{</span><span class="n">outcome_column_names</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_target</span><span class="p">():</span>
+            <span class="n">common_variables</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">choose_variables</span><span class="p">(</span>
+                <span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">],</span> <span class="n">variables</span><span class="o">=</span><span class="kc">None</span>
+            <span class="p">)</span>
+            <span class="n">target_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n\t</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">n_common</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">common_variables</span><span class="p">)</span>
+            <span class="n">common_variables</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">common_variables</span><span class="p">)</span>
+            <span class="n">desc</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            target:</span>
+<span class="s2">                 </span><span class="si">{</span><span class="n">target_str</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">            </span><span class="si">{</span><span class="n">n_common</span><span class="si">}</span><span class="s2"> common variables: </span><span class="si">{</span><span class="n">common_variables</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">            &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">desc</span>
+
+    <span class="c1">################################################################################</span>
+    <span class="c1">#  Public API</span>
+    <span class="c1">################################################################################</span>
+
+<div class="viewcode-block" id="Sample.from_frame"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.from_frame">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_frame</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="s2">&quot;Sample&quot;</span><span class="p">],</span>
+        <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">id_column</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">outcome_columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">weight_column</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">check_id_uniqueness</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">standardize_types</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Sample&quot;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new Sample object.</span>
+
+<span class="sd">        NOTE that all integer columns will be converted by defaults into floats. This behavior can be turned off</span>
+<span class="sd">        by setting standardize_types argument to False.</span>
+<span class="sd">        The reason this is done by default is because of missing value handeling combined with balance current lack of support</span>
+<span class="sd">        for pandas Integer types:</span>
+<span class="sd">            1. Native numpy integers do not support missing values (NA), while pandas Intgers do,</span>
+<span class="sd">            as well numpy floats. Also,</span>
+<span class="sd">            2. various functions in balance do not support pandas Integers, while they do support numpy floats.</span>
+<span class="sd">            3. Hence, since some columns might have missing values, the safest solution is to just convert all integers into numpy floats.</span>
+
+<span class="sd">        The id_column is stored as a string, even if the input is an integer.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">        df (pd.DataFrame): containing the sample&#39;s data</span>
+<span class="sd">        id_column (Optional, Optional[str]): the column of the df which contains the respondent&#39;s id</span>
+<span class="sd">           (should be unique). Defaults to None.</span>
+<span class="sd">        outcome_columns (Optional, Optional[Union[list, tuple, str]]): names of columns to treat as outcome</span>
+<span class="sd">        weight_column (Optional, Optional[str]): name of column to treat as weight. If not specified, will</span>
+<span class="sd">            be guessed. If not found, will be filled with 1.0.</span>
+<span class="sd">        check_id_uniqueness (Optional, bool): Whether to check if ids are unique. Defaults to True.</span>
+<span class="sd">        standardize_types (Optional, bool): Whether to standardize types. Defaults to True.</span>
+<span class="sd">            Int64/int64 -&gt; float64</span>
+<span class="sd">            Int32/int32 -&gt; float64</span>
+<span class="sd">            string -&gt; object</span>
+<span class="sd">            pandas.NA -&gt; numpy.nan (within each cell)</span>
+<span class="sd">            This is slightly memory intensive (since it copies the data twice),</span>
+<span class="sd">            but helps keep various functions working for both Int64 and Int32 input columns.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Sample: a sample object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Inititate a Sample() class, inside a from_frame constructor</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
+
+        <span class="n">sample</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="n">df</span>
+
+        <span class="c1"># id column</span>
+        <span class="n">id_column</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">guess_id_column</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">id_column</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">id_column</span><span class="p">]</span><span class="o">.</span><span class="n">isnull</span><span class="p">()):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Null values are not allowed in the id_column&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">type</span><span class="p">,</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">id_column</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span> <span class="o">==</span> <span class="p">{</span>  <span class="c1"># pyre-fixme[6] ???</span>
+            <span class="nb">str</span>
+        <span class="p">}:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Casting id column to string&quot;</span><span class="p">)</span>
+            <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">id_column</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">id_column</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">check_id_uniqueness</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">id_column</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">id_column</span><span class="p">])</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Values in the id_column must be unique&quot;</span><span class="p">)</span>
+        <span class="n">sample</span><span class="o">.</span><span class="n">id_column</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">id_column</span><span class="p">]</span>
+
+        <span class="c1"># TODO: in the future, if we could have all functions work with the original data types, that would be better.</span>
+        <span class="k">if</span> <span class="n">standardize_types</span><span class="p">:</span>
+            <span class="c1"># Move from some pandas Integer types to numpy float types.</span>
+            <span class="c1"># NOTE: The rationale is that while pandas integers support missing values,</span>
+            <span class="c1">#       numpy float types do (storing it as np.nan).</span>
+            <span class="c1">#       Furthermore, other functions in the package don&#39;t handle pandas Integer objects well, so</span>
+            <span class="c1">#       they must be converted to numpy integers (if they have no missing values).</span>
+            <span class="c1">#       But since we can&#39;t be sure that none of the various objects with the same column will not have NAs,</span>
+            <span class="c1">#       we just convert them all to np.float (either 32 or 64).</span>
+            <span class="c1">#       For more details, see: https://stackoverflow.com/a/53853351</span>
+            <span class="c1"># This line is after the id_column is set, so to make sure that the conversion happens after it is stored as a string.</span>
+            <span class="c1"># Move from Int64Dtype() to dtype(&#39;int64&#39;):</span>
+
+            <span class="c1"># TODO: convert all numeric values (no matter what the original is) to &quot;float64&quot;?</span>
+            <span class="c1">#       (Instead of mentioning all different types)</span>
+            <span class="c1">#       using is_numeric_dtype: https://pandas.pydata.org/docs/reference/api/pandas.api.types.is_numeric_dtype.html?highlight=is_numeric_dtype#pandas.api.types.is_numeric_dtype</span>
+            <span class="c1">#       Also, consider using</span>
+            <span class="c1">#       https://pandas.pydata.org/docs/reference/api/pandas.api.types.is_string_dtype.html</span>
+            <span class="c1">#       or https://pandas.pydata.org/docs/reference/api/pandas.api.types.is_object_dtype.html</span>
+            <span class="c1">#       from non-numeric.</span>
+            <span class="c1">#       e.d.: balance/util.py?lines=512.</span>
+            <span class="c1">#           for x in df.columns:</span>
+            <span class="c1">#               if (is_numeric_dtype(df[x])) and (not is_bool_dtype(df[x])):</span>
+            <span class="c1">#                   df[x] = df[x].astype(&quot;float64&quot;)</span>
+            <span class="n">sample</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">_pd_convert_all_types</span><span class="p">(</span>
+                <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">,</span> <span class="s2">&quot;Int64&quot;</span><span class="p">,</span> <span class="s2">&quot;float64&quot;</span>
+            <span class="p">)</span>
+            <span class="c1"># Move from Int32Dtype() to dtype(&#39;int32&#39;):</span>
+            <span class="n">sample</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">_pd_convert_all_types</span><span class="p">(</span>
+                <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">,</span> <span class="s2">&quot;Int32&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span>
+            <span class="p">)</span>
+            <span class="n">sample</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">_pd_convert_all_types</span><span class="p">(</span>
+                <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">,</span> <span class="s2">&quot;float64&quot;</span>
+            <span class="p">)</span>
+            <span class="n">sample</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">_pd_convert_all_types</span><span class="p">(</span>
+                <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">,</span> <span class="s2">&quot;int32&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span>
+            <span class="p">)</span>
+            <span class="n">sample</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">_pd_convert_all_types</span><span class="p">(</span>
+                <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">,</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="s2">&quot;object&quot;</span>
+            <span class="p">)</span>
+            <span class="c1"># Replace any pandas.NA with numpy.nan:</span>
+            <span class="n">sample</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+
+        <span class="c1"># weight column</span>
+        <span class="k">if</span> <span class="n">weight_column</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;weight&quot;</span> <span class="ow">in</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Guessing weight column &#39;</span><span class="si">{</span><span class="s1">&#39;weight&#39;</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No weights passed, setting all weights to 1&quot;</span><span class="p">)</span>
+                <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">sample</span><span class="o">.</span><span class="n">weight_column</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sample</span><span class="o">.</span><span class="n">weight_column</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">weight_column</span><span class="p">]</span>
+
+        <span class="c1"># outcome columns</span>
+        <span class="k">if</span> <span class="n">outcome_columns</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sample</span><span class="o">.</span><span class="n">_outcome_columns</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">outcome_columns</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">outcome_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">outcome_columns</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">sample</span><span class="o">.</span><span class="n">_outcome_columns</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">outcome_columns</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">_all_columns</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;outcome columns </span><span class="si">{</span><span class="n">outcome_columns</span><span class="si">}</span><span class="s2"> not in df columns </span><span class="si">{</span><span class="n">_all_columns</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+        <span class="n">sample</span><span class="o">.</span><span class="n">_links</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sample</span></div>
+
+    <span class="c1">####################</span>
+    <span class="c1"># Class base methods</span>
+    <span class="c1">####################</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">df</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Produce a DataFrame (of the self) from a Sample object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (Sample): Sample object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame: with id_columns, and the df values of covars(), outcome() and weights() of the self in the Sample object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">id_column</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">df</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">()</span><span class="o">.</span><span class="n">df</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="Sample.outcomes"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.outcomes">[docs]</a>    <span class="k">def</span> <span class="nf">outcomes</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
+    <span class="p">):</span>  <span class="c1"># -&gt; &quot;Optional[Type[BalanceOutcomesDF]]&quot; (not imported due to circular dependency)</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Produce a BalanceOutcomeDF from a Sample object.</span>
+<span class="sd">        See :class:BalanceOutcomesDF.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (Sample): Sample object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            BalanceOutcomesDF or None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outcome_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># NOTE: must import here so to avoid circular dependency</span>
+            <span class="kn">from</span> <span class="nn">balance.balancedf_class</span> <span class="kn">import</span> <span class="n">BalanceOutcomesDF</span>
+
+            <span class="k">return</span> <span class="n">BalanceOutcomesDF</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="Sample.weights"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.weights">[docs]</a>    <span class="k">def</span> <span class="nf">weights</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
+    <span class="p">):</span>  <span class="c1"># -&gt; &quot;Optional[Type[BalanceWeightsDF]]&quot; (not imported due to circular dependency)</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Produce a BalanceWeightsDF from a Sample object.</span>
+<span class="sd">        See :class:BalanceWeightsDF.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (Sample): Sample object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            BalanceWeightsDF</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># NOTE: must import here so to avoid circular dependency</span>
+        <span class="kn">from</span> <span class="nn">balance.balancedf_class</span> <span class="kn">import</span> <span class="n">BalanceWeightsDF</span>
+
+        <span class="k">return</span> <span class="n">BalanceWeightsDF</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Sample.covars"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.covars">[docs]</a>    <span class="k">def</span> <span class="nf">covars</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
+    <span class="p">):</span>  <span class="c1"># -&gt; &quot;Optional[Type[BalanceCovarsDF]]&quot; (not imported due to circular dependency)</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Produce a BalanceCovarsDF from a Sample object.</span>
+<span class="sd">        See :class:BalanceCovarsDF.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (Sample): Sample object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            BalanceCovarsDF</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># NOTE: must import here so to avoid circular dependency</span>
+        <span class="kn">from</span> <span class="nn">balance.balancedf_class</span> <span class="kn">import</span> <span class="n">BalanceCovarsDF</span>
+
+        <span class="k">return</span> <span class="n">BalanceCovarsDF</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Sample.model"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.model">[docs]</a>    <span class="k">def</span> <span class="nf">model</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the name of the model used to adjust Sample if adjusted.</span>
+<span class="sd">        Otherwise returns None.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (Sample): Sample object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str or None: name of model used for adjusting Sample</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_adjustment_model&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adjustment_model</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="Sample.model_matrix"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.model_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">model_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the model matrix of sample using :func:`model_matrix`,</span>
+<span class="sd">        while adding na indicator for null values (see :func:`add_na_indicator`).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame: model matrix of sample</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">model_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">add_na</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="s2">&quot;sample&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">res</span>  <span class="c1"># pyre-ignore[7]: [&quot;sample&quot;] only chooses the DataFrame</span></div>
+
+    <span class="c1">############################################</span>
+    <span class="c1"># Adjusting and adapting weights of a sample</span>
+    <span class="c1">############################################</span>
+<div class="viewcode-block" id="Sample.adjust"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.adjust">[docs]</a>    <span class="k">def</span> <span class="nf">adjust</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
+        <span class="n">target</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;Sample&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">method</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;cbps&quot;</span><span class="p">,</span> <span class="s2">&quot;ipw&quot;</span><span class="p">,</span> <span class="s2">&quot;null&quot;</span><span class="p">,</span> <span class="s2">&quot;poststratify&quot;</span><span class="p">],</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;ipw&quot;</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Sample&quot;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform adjustment of one sample to match another.</span>
+<span class="sd">        This function returns a new sample.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">        target (Optional[&quot;Sample&quot;]): Second sample object which should be matched.</span>
+<span class="sd">            If None, the set traget of the object is used for matching.</span>
+<span class="sd">        method (str): method for adjustment: cbps, ipw, null, poststratify</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Sample: an adjusted Sample object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_no_target_error</span><span class="p">()</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span>
+
+        <span class="n">new_sample</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">method</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+            <span class="n">adjustment_function</span> <span class="o">=</span> <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">_find_adjustment_method</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">callable</span><span class="p">(</span><span class="n">method</span><span class="p">):</span>
+            <span class="n">adjustment_function</span> <span class="o">=</span> <span class="n">method</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Method should be one of existing weighting methods&quot;</span><span class="p">)</span>
+
+        <span class="n">adjusted</span> <span class="o">=</span> <span class="n">adjustment_function</span><span class="p">(</span>
+            <span class="n">sample_df</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="p">,</span>
+            <span class="n">sample_weights</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="p">,</span>
+            <span class="n">target_df</span><span class="o">=</span><span class="n">target</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="p">,</span>
+            <span class="n">target_weights</span><span class="o">=</span><span class="n">target</span><span class="o">.</span><span class="n">weight_column</span><span class="p">,</span>
+            <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">new_sample</span><span class="o">.</span><span class="n">set_weights</span><span class="p">(</span><span class="n">adjusted</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">])</span>
+        <span class="n">new_sample</span><span class="o">.</span><span class="n">_adjustment_model</span> <span class="o">=</span> <span class="n">adjusted</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span>
+        <span class="n">new_sample</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="n">new_sample</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">target</span>
+
+        <span class="k">return</span> <span class="n">new_sample</span></div>
+
+<div class="viewcode-block" id="Sample.set_weights"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.set_weights">[docs]</a>    <span class="k">def</span> <span class="nf">set_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="nb">float</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adjusteing the weights of a Sample object.</span>
+<span class="sd">        This will overwrite the weight_column of the Sample.</span>
+<span class="sd">        Note that the weights are assigned by index if weights is a pd.Series</span>
+<span class="sd">        (of Sample.df and weights series)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            weights (Optional[Union[pd.Series, float]]): Seiers of weights to add to sample.</span>
+<span class="sd">            If None or float values, the same weight (or None) will be assigned to all units.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None, but adapting the Sample weight column to weights</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">idx</span> <span class="ow">in</span> <span class="n">weights</span><span class="o">.</span><span class="n">index</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="sd">&quot;&quot;&quot;Note that not all Sample units will be assigned weights,</span>
+<span class="sd">                    since weights are missing some of the indices in Sample.df&quot;&quot;&quot;</span>
+                <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">weights</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">name</span><span class="p">]</span></div>
+
+    <span class="c1">####################################</span>
+    <span class="c1"># Handling links to other dataframes</span>
+    <span class="c1">####################################</span>
+<div class="viewcode-block" id="Sample.set_unadjusted"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.set_unadjusted">[docs]</a>    <span class="k">def</span> <span class="nf">set_unadjusted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">second_sample</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Sample&quot;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Used to set the unadjusted link to Sample.</span>
+<span class="sd">        This is useful in case one wants to compare two samples.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            second_sample (Sample): A second Sample to be set as unadjusted of Sample.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Sample: a new copy of Sample with unadjusted link attached to the self object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">second_sample</span><span class="p">,</span> <span class="n">Sample</span><span class="p">):</span>
+            <span class="n">newsample</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="n">newsample</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">second_sample</span>
+            <span class="k">return</span> <span class="n">newsample</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;set_unadjusted must be called with second_sample argument of type Sample&quot;</span>
+            <span class="p">)</span></div>
+
+<div class="viewcode-block" id="Sample.is_adjusted"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.is_adjusted">[docs]</a>    <span class="k">def</span> <span class="nf">is_adjusted</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Check if a Sample object is adjusted and has target attached</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: whetehr the Sample is adjusted or not.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s2">&quot;unadjusted&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="s2">&quot;target&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Sample.set_target"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.set_target">[docs]</a>    <span class="k">def</span> <span class="nf">set_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Sample&quot;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Used to set the tagret linked to Sample.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            target (Sample): A Sample pbject to be linked as target</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Sample: new copy of Sample with target link attached</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">Sample</span><span class="p">):</span>
+            <span class="n">newsample</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="n">newsample</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">target</span>
+            <span class="k">return</span> <span class="n">newsample</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;A target, a Sample object, must be specified&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Sample.has_target"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.has_target">[docs]</a>    <span class="k">def</span> <span class="nf">has_target</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a Sample object has target attached.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: whether the Sample has target attached</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;target&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span></div>
+
+    <span class="c1">##############################</span>
+    <span class="c1"># Metrics for adjusted samples</span>
+    <span class="c1">##############################</span>
+<div class="viewcode-block" id="Sample.covar_means"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.covar_means">[docs]</a>    <span class="k">def</span> <span class="nf">covar_means</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare the means of covariates (after using :func:`BalanceDF.model_matrix`) before and after adjustment as compared with target.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (Sample): A Sample object produces after running :func:`Sample.adjust`.</span>
+<span class="sd">            It should include 3 componants: &quot;unadjusted&quot;, &quot;adjusted&quot;, &quot;target&quot;.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame: A DataFrame with 3 columns (&quot;unadjusted&quot;, &quot;adjusted&quot;, &quot;target&quot;),</span>
+<span class="sd">            and a row for each feature of the covariates.</span>
+<span class="sd">            The cells show the mean value. For categorical features, they are first transformed into the one-hot encoding.</span>
+<span class="sd">            For these columns, since they are all either 0 or 1, their means should be interpreted as proportions.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            from balance import Sample</span>
+<span class="sd">            import pandas as pd</span>
+
+<span class="sd">            s = Sample.from_frame(</span>
+<span class="sd">                pd.DataFrame(</span>
+<span class="sd">                    {&quot;a&quot;: (0, 1, 2), &quot;c&quot;: (&quot;a&quot;, &quot;b&quot;, &quot;c&quot;), &quot;o&quot;: (1,3,5), &quot;id&quot;: (1, 2, 3)}</span>
+<span class="sd">                ),</span>
+<span class="sd">                outcome_columns=(&quot;o&quot;),</span>
+<span class="sd">            )</span>
+<span class="sd">            s_adjusted = s.set_target(s).adjust(method = &#39;null&#39;)</span>
+<span class="sd">            print(s_adjusted.covar_means())</span>
+
+<span class="sd">            # source  unadjusted  adjusted    target</span>
+<span class="sd">            # a         1.000000  1.000000  1.000000</span>
+<span class="sd">            # c[a]      0.333333  0.333333  0.333333</span>
+<span class="sd">            # c[b]      0.333333  0.333333  0.333333</span>
+<span class="sd">            # c[c]      0.333333  0.333333  0.333333</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_if_adjusted</span><span class="p">()</span>
+
+        <span class="n">means</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="n">means</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">means</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;self&quot;</span><span class="p">:</span> <span class="s2">&quot;adjusted&quot;</span><span class="p">})</span>
+            <span class="o">.</span><span class="n">reindex</span><span class="p">([</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">,</span> <span class="s2">&quot;adjusted&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">means</span></div>
+
+<div class="viewcode-block" id="Sample.design_effect"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.design_effect">[docs]</a>    <span class="k">def</span> <span class="nf">design_effect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the design effect of the weights of Sample. Uses :func:`weights_stats.design_effect`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (Sample): A Sample object</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            np.float64: Design effect</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">weights_stats</span><span class="o">.</span><span class="n">design_effect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Sample.design_effect_prop"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.design_effect_prop">[docs]</a>    <span class="k">def</span> <span class="nf">design_effect_prop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the relative difference in design effect of the weights of the unadjusted sample and the adjusted sample.</span>
+<span class="sd">        I.e. (Deff of adjusted - Deff of unadjusted) / Deff of unadjusted.</span>
+<span class="sd">        Uses :func:`weights_stats.design_effect`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (Sample): A Sample object produces after running :func:`Sample.adjust`.</span>
+<span class="sd">            It should include 3 componants: &quot;unadjusted&quot;, &quot;adjusted&quot;, &quot;target&quot;.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            np.float64: relative difference in design effect.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_if_adjusted</span><span class="p">()</span>
+        <span class="n">deff_unadjusted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">design_effect</span><span class="p">()</span>
+        <span class="n">deff_adjusted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">design_effect</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">deff_adjusted</span> <span class="o">-</span> <span class="n">deff_unadjusted</span><span class="p">)</span> <span class="o">/</span> <span class="n">deff_unadjusted</span></div>
+
+    <span class="c1"># TODO: add unittest for this function</span>
+<div class="viewcode-block" id="Sample.plot_weight_density"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.plot_weight_density">[docs]</a>    <span class="k">def</span> <span class="nf">plot_weight_density</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Plot the density of weights of Sample.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            import numpy as np</span>
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from balance.sample_class import Sample</span>
+
+
+<span class="sd">            np.random.seed(123)</span>
+<span class="sd">            df = pd.DataFrame(</span>
+<span class="sd">                {</span>
+<span class="sd">                    &quot;a&quot;: np.random.uniform(size=100),</span>
+<span class="sd">                    &quot;c&quot;: np.random.choice(</span>
+<span class="sd">                        [&quot;a&quot;, &quot;b&quot;, &quot;c&quot;, &quot;d&quot;],</span>
+<span class="sd">                        size=100,</span>
+<span class="sd">                        replace=True,</span>
+<span class="sd">                        p=[0.01, 0.04, 0.5, 0.45],</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    &quot;id&quot;: range(100),</span>
+<span class="sd">                    &quot;weight&quot;: np.random.uniform(size=100) + 0.5,</span>
+<span class="sd">                }</span>
+<span class="sd">            )</span>
+
+<span class="sd">            a = Sample.from_frame(df)</span>
+<span class="sd">            sample.weights().plot()</span>
+<span class="sd">            # The same as:</span>
+<span class="sd">            sample.plot_weight_density()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span></div>
+
+    <span class="c1">##########################################</span>
+    <span class="c1"># Metrics for outcomes of adjusted samples</span>
+    <span class="c1">##########################################</span>
+<div class="viewcode-block" id="Sample.outcome_sd_prop"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.outcome_sd_prop">[docs]</a>    <span class="k">def</span> <span class="nf">outcome_sd_prop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the difference in outcome weighted standard deviation (sd) of the unadjusted</span>
+<span class="sd">        sample and the adjusted sample, relative to the unadjusted weighted sd.</span>
+<span class="sd">        I.e. (weighted sd of adjusted - weighted sd of unadjusted) / weighted sd  of unadjusted.</span>
+<span class="sd">        Uses :func:`BalanceDF.weighted_stats.weighted_sd`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (Sample): A Sample object produces after running :func:`Sample.adjust`.</span>
+<span class="sd">            It should include 3 componants: &quot;unadjusted&quot;, &quot;adjusted&quot;, &quot;target&quot;.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.Series: (np.float64) relative difference in outcome weighted standard deviation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_if_adjusted</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_outcomes_exists</span><span class="p">()</span>
+
+        <span class="n">outcome_std</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
+        <span class="n">adjusted_outcome_sd</span> <span class="o">=</span> <span class="n">outcome_std</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">]</span>
+        <span class="n">unadjusted_outcome_sd</span> <span class="o">=</span> <span class="n">outcome_std</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">adjusted_outcome_sd</span> <span class="o">-</span> <span class="n">unadjusted_outcome_sd</span><span class="p">)</span> <span class="o">/</span> <span class="n">unadjusted_outcome_sd</span></div>
+
+<div class="viewcode-block" id="Sample.outcome_variance_ratio"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.outcome_variance_ratio">[docs]</a>    <span class="k">def</span> <span class="nf">outcome_variance_ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;The empirical ratio of variance of the outcomes before and after weighting.</span>
+
+<span class="sd">        See :func:`outcome_variance_ratio` for details.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (Sample): A Sample object produces after running :func:`Sample.adjust`.</span>
+<span class="sd">            It should include 3 componants: &quot;unadjusted&quot;, &quot;adjusted&quot;, &quot;target&quot;.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             pd.Series: (np.float64) A series of calculated ratio of variances for each outcome.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">outcome_variance_ratio</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">weights</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">],</span>
+        <span class="p">)</span></div>
+
+    <span class="c1"># TODO: Add a method that plots the distribution of the outcome (adjusted v.s. unadjusted</span>
+    <span class="c1">#       if adjusted, and only unadjusted otherwise)</span>
+
+    <span class="c1">##############################################</span>
+    <span class="c1"># Summary of metrics and diagnostics of Sample</span>
+    <span class="c1">##############################################</span>
+<div class="viewcode-block" id="Sample.summary"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.summary">[docs]</a>    <span class="k">def</span> <span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Provides a summary of covariate balance, design effect and model properties (if applicable)</span>
+<span class="sd">        of a sample.</span>
+
+<span class="sd">        For more detials see: :func:`BalanceDF.asmd`, :func:`BalanceDF.asmd_improvement`</span>
+<span class="sd">        and :func:`weights_stats.design_effect`</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: a summary description of properties of an adjusted sample.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># asmd</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">()</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_target</span><span class="p">():</span>
+            <span class="n">asmd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">asmd</span><span class="p">()</span>
+            <span class="n">n_asmd_covars</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span>
+                <span class="n">asmd</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">asmd</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span> <span class="o">!=</span> <span class="s2">&quot;mean(asmd)&quot;</span><span class="p">]</span>
+            <span class="p">)</span>
+
+        <span class="c1"># asmd improvement</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">():</span>
+            <span class="n">asmd_before</span> <span class="o">=</span> <span class="n">asmd</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">,</span> <span class="s2">&quot;mean(asmd)&quot;</span><span class="p">]</span>
+            <span class="n">asmd_improvement</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">asmd_improvement</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_target</span><span class="p">():</span>
+            <span class="n">asmd_now</span> <span class="o">=</span> <span class="n">asmd</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;mean(asmd)&quot;</span><span class="p">]</span>
+
+        <span class="c1"># design effect</span>
+        <span class="n">design_effect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">design_effect</span><span class="p">()</span>
+
+        <span class="c1"># model performance</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">()[</span><span class="s2">&quot;method&quot;</span><span class="p">]</span>  <span class="c1"># pyre-ignore[16]</span>
+                <span class="c1"># (None is eliminated by if statement)</span>
+                <span class="o">==</span> <span class="s2">&quot;ipw&quot;</span>
+            <span class="p">):</span>
+                <span class="n">model_summary</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="s2">&quot;Model proportion deviance explained: </span><span class="si">{dev_exp:.3f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">dev_exp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">()[</span><span class="s2">&quot;perf&quot;</span><span class="p">][</span><span class="s2">&quot;prop_dev_explained&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># TODO: add model performance for other types of models</span>
+                <span class="n">model_summary</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">model_summary</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">out</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Covar ASMD reduction: </span><span class="si">{</span><span class="n">asmd_improvement</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%, design effect: </span><span class="si">{</span><span class="n">design_effect</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">()</span>
+                <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+            <span class="p">)</span>
+            <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Covar ASMD (</span><span class="si">{</span><span class="n">n_asmd_covars</span><span class="si">}</span><span class="s2"> variables): &quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_target</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">asmd_before</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> -&gt; &quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">asmd_now</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_target</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="o">+</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Model performance: </span><span class="si">{</span><span class="n">model_summary</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">model_summary</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">out</span></div>
+
+<div class="viewcode-block" id="Sample.diagnostics"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.diagnostics">[docs]</a>    <span class="k">def</span> <span class="nf">diagnostics</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="c1"># TODO: mention the other diagnostics</span>
+        <span class="c1"># TODO: update/improve the wiki pages doc is linking to.</span>
+        <span class="c1"># TODO: move explanation on weights normalization to some external page</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Output a table of diagnostics about adjusted Sample object.</span>
+
+<span class="sd">        size</span>
+<span class="sd">        ======================</span>
+<span class="sd">        All values in the &quot;size&quot; metrics are AFTER any rows/columns were filtered.</span>
+<span class="sd">        So, for example, if we use respondents from previous days but filter them for diagnostics purposes, then</span>
+<span class="sd">        sample_obs and target_obs will NOT include them in the counting. The same is true for sample_covars and target_covars.</span>
+<span class="sd">        In the &quot;size&quot; metrics we have the following &#39;var&#39;s:</span>
+<span class="sd">        - sample_obs - number of respondents</span>
+<span class="sd">        - sample_covars -  number of covariates (main covars, before any transofrmation was used)</span>
+<span class="sd">        - target_obs - number of users used to represent the target pop</span>
+<span class="sd">        - target_covars - like sample_covars, but for target.</span>
+
+<span class="sd">        weights_diagnostics</span>
+<span class="sd">        ======================</span>
+<span class="sd">        In the &quot;weights_diagnostics&quot; metric we have the following &#39;var&#39;s:</span>
+<span class="sd">        - design effect (de), effective sample size (n/de), effective sample ratio (1/de). See also:</span>
+<span class="sd">            - https://en.wikipedia.org/wiki/Design_effect</span>
+<span class="sd">            - https://en.wikipedia.org/wiki/Effective_sample_size</span>
+<span class="sd">        - sum</span>
+<span class="sd">        - describe of the (normalized to sample size) weights (mean, median, std, etc.)</span>
+<span class="sd">        - prop of the (normalized to sample size) weights that are below or above some numbers (1/2, 1, 2, etc.)</span>
+<span class="sd">        - nonparametric_skew and weighted_median_breakdown_point</span>
+
+<span class="sd">        Why is the diagnostics focused on weights normalized to sample size</span>
+<span class="sd">        -------------------------------------------------------------------</span>
+<span class="sd">        There are 3 well known normalizations of weights:</span>
+<span class="sd">        1. to sum to 1</span>
+<span class="sd">        2. to sum to target population</span>
+<span class="sd">        3. to sum to n (sample size)</span>
+
+<span class="sd">        Each one has their own merits:</span>
+<span class="sd">        1. is good if wanting to easily calculate avg of some response var (then we just use sum(w*y) and no need for /sum(w))</span>
+<span class="sd">        2. is good for sum of stuff. For example, how many people in the US use android? For this we&#39;d like the weight of</span>
+<span class="sd">            each person to represent their share of the population and then we just sum the weights of the people who use android in the survey.</span>
+<span class="sd">        3. is good for understanding relative &quot;importance&quot; of a respondent as compared to the weights of others in the survey.</span>
+<span class="sd">            So if someone has a weight that is &gt;1 it means that this respondent (conditional on their covariates) was &#39;rare&#39; in the survey,</span>
+<span class="sd">            so the model we used decided to give them a larger weight to account for all the people like him/her that didn&#39;t answer.</span>
+
+<span class="sd">        For diagnostics purposes, option 3 is most useful for discussing the distribution of the weights</span>
+<span class="sd">        (e.g.: how many respondents got a weight &gt;2 or smaller &lt;0.5).</span>
+<span class="sd">        This is a method (standardized  across surveys) to helping us identify how many of the respondents are &quot;dominating&quot;</span>
+<span class="sd">        and have a large influence on the conclusion we draw from the survey.</span>
+
+<span class="sd">        model_glance</span>
+<span class="sd">        ======================</span>
+<span class="sd">        Properties of the model fitted, depends on the model used for weighting.</span>
+
+<span class="sd">        covariates ASMD</span>
+<span class="sd">        ======================</span>
+<span class="sd">        Includes covariates ASMD before and after adjustment (per level of covariate and aggregated) and the ASMD improvement.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (Sample): only after running an adjustment with Sample.adjust.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame: with 3 columns: (&quot;metric&quot;, &quot;val&quot;, &quot;var&quot;),</span>
+<span class="sd">            indicating various tracking metrics on the model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting computation of diagnostics of the fitting&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_if_adjusted</span><span class="p">()</span>
+        <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;metric&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">,</span> <span class="s2">&quot;var&quot;</span><span class="p">))</span>
+
+        <span class="c1"># ----------------------------------------------------</span>
+        <span class="c1"># Properties of the Sample object (dimensions of the data)</span>
+        <span class="c1"># ----------------------------------------------------</span>
+        <span class="n">n_sample_obs</span><span class="p">,</span> <span class="n">n_sample_covars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">n_target_obs</span><span class="p">,</span> <span class="n">n_target_covars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="n">diagnostics</span><span class="p">,</span>
+                <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;size&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="p">[</span>
+                            <span class="n">n_sample_obs</span><span class="p">,</span>
+                            <span class="n">n_sample_covars</span><span class="p">,</span>
+                            <span class="n">n_target_obs</span><span class="p">,</span>
+                            <span class="n">n_target_covars</span><span class="p">,</span>
+                        <span class="p">],</span>
+                        <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="p">[</span>
+                            <span class="s2">&quot;sample_obs&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;sample_covars&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;target_obs&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;target_covars&quot;</span><span class="p">,</span>
+                        <span class="p">],</span>
+                    <span class="p">}</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># ----------------------------------------------------</span>
+        <span class="c1"># Diagnostics on the weights</span>
+        <span class="c1"># ----------------------------------------------------</span>
+        <span class="n">the_weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span>
+            <span class="p">:,</span> <span class="mi">0</span>
+        <span class="p">]</span>  <span class="c1"># should be [&#39;weight&#39;], but this is more robust in case a user uses other names</span>
+        <span class="n">weights_diag_var</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">weights_diag_value</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># adding design_effect and variations</span>
+        <span class="n">the_weights_de</span> <span class="o">=</span> <span class="n">weights_stats</span><span class="o">.</span><span class="n">design_effect</span><span class="p">(</span><span class="n">the_weights</span><span class="p">)</span>
+        <span class="n">weights_diag_var</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+            <span class="p">[</span><span class="s2">&quot;design_effect&quot;</span><span class="p">,</span> <span class="s2">&quot;effective_sample_ratio&quot;</span><span class="p">,</span> <span class="s2">&quot;effective_sample_size&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">weights_diag_value</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">the_weights_de</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">the_weights_de</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">the_weights</span><span class="p">)</span> <span class="o">/</span> <span class="n">the_weights_de</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="c1"># adding sum of weights, and then normalizing them to n (sample size)</span>
+        <span class="n">weights_diag_var</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
+        <span class="n">weights_diag_value</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">the_weights</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+
+        <span class="n">the_weights</span> <span class="o">=</span> <span class="n">the_weights</span> <span class="o">/</span> <span class="n">the_weights</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>  <span class="c1"># normalize weights to sum to n.</span>
+
+        <span class="c1"># adding basic summary statistics from describe:</span>
+        <span class="n">tmp_describe</span> <span class="o">=</span> <span class="n">the_weights</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span>
+        <span class="n">weights_diag_var</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;describe_&quot;</span> <span class="o">+</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tmp_describe</span><span class="o">.</span><span class="n">index</span><span class="p">])</span>
+        <span class="n">weights_diag_value</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">tmp_describe</span><span class="o">.</span><span class="n">to_list</span><span class="p">())</span>
+        <span class="c1"># TODO: decide if we want more quantiles of the weights.</span>
+
+        <span class="c1"># adding prop_above_and_below</span>
+        <span class="n">tmp_props</span> <span class="o">=</span> <span class="n">weights_stats</span><span class="o">.</span><span class="n">prop_above_and_below</span><span class="p">(</span><span class="n">the_weights</span><span class="p">)</span>
+        <span class="n">weights_diag_var</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+            <span class="n">tmp_props</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>  <span class="c1"># pyre-ignore[16]: existing defaults make sure this output is pd.Series with relevant methods.</span>
+        <span class="p">)</span>
+        <span class="n">weights_diag_value</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+            <span class="n">tmp_props</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>  <span class="c1"># pyre-ignore[16]: existing defaults make sure this output is pd.Series with relevant methods.</span>
+        <span class="p">)</span>
+        <span class="c1"># TODO: decide if we want more numbers (e.g.: 2/3 and 3/2)</span>
+
+        <span class="c1"># adding nonparametric_skew and weighted_median_breakdown_point</span>
+        <span class="n">weights_diag_var</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;nonparametric_skew&quot;</span><span class="p">)</span>
+        <span class="n">weights_diag_value</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">weights_stats</span><span class="o">.</span><span class="n">nonparametric_skew</span><span class="p">(</span><span class="n">the_weights</span><span class="p">))</span>
+
+        <span class="n">weights_diag_var</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;weighted_median_breakdown_point&quot;</span><span class="p">)</span>
+        <span class="n">weights_diag_value</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">weights_stats</span><span class="o">.</span><span class="n">weighted_median_breakdown_point</span><span class="p">(</span><span class="n">the_weights</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Add all the weights_diagnostics to diagnostics</span>
+        <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="n">diagnostics</span><span class="p">,</span>
+                <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;weights_diagnostics&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="n">weights_diag_value</span><span class="p">,</span>
+                        <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">weights_diag_var</span><span class="p">,</span>
+                    <span class="p">}</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># ----------------------------------------------------</span>
+        <span class="c1"># Diagnostics on the model</span>
+        <span class="c1"># ----------------------------------------------------</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">()</span>
+        <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="n">diagnostics</span><span class="p">,</span>
+                <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;adjustment_method&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,),</span>
+                        <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">],</span>  <span class="c1"># pyre-ignore[16]</span>
+                        <span class="c1"># (None is eliminated by if statement)</span>
+                    <span class="p">}</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;ipw&quot;</span><span class="p">:</span>
+            <span class="c1">#  Scalar values from &#39;perf&#39; key of dictionary</span>
+            <span class="n">fit_single_values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;model_glance&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">,</span> <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">})</span>
+                    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;fit&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="n">v</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,))</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+            <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">diagnostics</span><span class="p">,</span> <span class="n">fit_single_values</span><span class="p">))</span>
+
+            <span class="c1">#  Extract glmnet output about this regularisation parameter</span>
+            <span class="n">lambda_</span> <span class="o">=</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;lambda&quot;</span><span class="p">]</span>
+            <span class="n">lambda_index</span> <span class="o">=</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;fit&quot;</span><span class="p">][</span><span class="s2">&quot;lambdau&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">lambda_</span>
+            <span class="n">fit_values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                        <span class="p">{</span><span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;model_glance&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">[</span><span class="n">lambda_index</span><span class="p">],</span> <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">}</span>
+                    <span class="p">)</span>
+                    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">()[</span><span class="s2">&quot;fit&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="n">v</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="n">lambda_index</span><span class="o">.</span><span class="n">shape</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+            <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">diagnostics</span><span class="p">,</span> <span class="n">fit_values</span><span class="p">))</span>
+
+            <span class="c1">#  Scalar values from &#39;perf&#39; key of dictionary</span>
+            <span class="n">perf_single_values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;model_glance&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">,</span> <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">})</span>
+                    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;perf&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="n">v</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,))</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+            <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">diagnostics</span><span class="p">,</span> <span class="n">perf_single_values</span><span class="p">))</span>
+
+            <span class="c1"># Model coefficients</span>
+            <span class="n">coefs</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">model</span><span class="p">[</span><span class="s2">&quot;perf&quot;</span><span class="p">][</span><span class="s2">&quot;coefs&quot;</span><span class="p">]</span>
+                <span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+                <span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="mi">0</span><span class="p">:</span> <span class="s2">&quot;val&quot;</span><span class="p">,</span> <span class="s2">&quot;index&quot;</span><span class="p">:</span> <span class="s2">&quot;var&quot;</span><span class="p">},</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">metric</span><span class="o">=</span><span class="s2">&quot;model_coef&quot;</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">diagnostics</span><span class="p">,</span> <span class="n">coefs</span><span class="p">))</span>
+
+        <span class="k">elif</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;cbps&quot;</span><span class="p">:</span>
+            <span class="n">beta_opt</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                <span class="p">{</span><span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;beta_optimal&quot;</span><span class="p">],</span> <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;X_matrix_columns&quot;</span><span class="p">]}</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">metric</span><span class="o">=</span><span class="s2">&quot;beta_optimal&quot;</span><span class="p">)</span>
+            <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">diagnostics</span><span class="p">,</span> <span class="n">beta_opt</span><span class="p">))</span>
+
+            <span class="n">metric</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="s2">&quot;rescale_initial_result&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;balance_optimize_result&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;gmm_optimize_result_glm_init&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;gmm_optimize_result_bal_init&quot;</span><span class="p">,</span>
+            <span class="p">]</span>
+            <span class="n">metric</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">metric</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">)]</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;success&quot;</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">4</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="p">[</span><span class="n">model</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">y</span><span class="p">]</span> <span class="k">for</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">var</span><span class="p">)]</span>
+
+            <span class="n">optimizations</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="n">metric</span><span class="p">,</span> <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">var</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="n">val</span><span class="p">})</span>
+            <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">diagnostics</span><span class="p">,</span> <span class="n">optimizations</span><span class="p">))</span>
+
+        <span class="c1"># TODO: add model diagnostics for other models</span>
+
+        <span class="c1"># ----------------------------------------------------</span>
+        <span class="c1"># Diagnostics on the covariates correction</span>
+        <span class="c1"># ----------------------------------------------------</span>
+        <span class="n">asmds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">asmd</span><span class="p">()</span>
+
+        <span class="c1">#  Per-covariate ASMDs</span>
+        <span class="n">covar_asmds</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">asmds</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+            <span class="o">.</span><span class="n">rename</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;self&quot;</span><span class="p">:</span> <span class="s2">&quot;covar_asmd_adjusted&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;unadjusted&quot;</span><span class="p">:</span> <span class="s2">&quot;covar_asmd_unadjusted&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;unadjusted - self&quot;</span><span class="p">:</span> <span class="s2">&quot;covar_asmd_improvement&quot;</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+            <span class="o">.</span><span class="n">melt</span><span class="p">(</span><span class="n">id_vars</span><span class="o">=</span><span class="s2">&quot;index&quot;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;metric&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;val&quot;</span><span class="p">,</span> <span class="s2">&quot;index&quot;</span><span class="p">:</span> <span class="s2">&quot;var&quot;</span><span class="p">},</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">diagnostics</span><span class="p">,</span> <span class="n">covar_asmds</span><span class="p">))</span>
+
+        <span class="c1">#  Per-main-covariate ASMDs</span>
+        <span class="n">asmds_main</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">asmd</span><span class="p">(</span><span class="n">aggregate_by_main_covar</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">covar_asmds_main</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">asmds_main</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+            <span class="o">.</span><span class="n">rename</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;self&quot;</span><span class="p">:</span> <span class="s2">&quot;covar_main_asmd_adjusted&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;unadjusted&quot;</span><span class="p">:</span> <span class="s2">&quot;covar_main_asmd_unadjusted&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;unadjusted - self&quot;</span><span class="p">:</span> <span class="s2">&quot;covar_main_asmd_improvement&quot;</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+            <span class="c1"># TODO:</span>
+            <span class="c1"># column index name is different here.</span>
+            <span class="c1"># think again if that&#39;s the best default or not for</span>
+            <span class="c1"># asmd(aggregate_by_main_covar = True)</span>
+            <span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="s2">&quot;main_covar_names&quot;</span><span class="p">:</span> <span class="s2">&quot;index&quot;</span><span class="p">},</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">melt</span><span class="p">(</span><span class="n">id_vars</span><span class="o">=</span><span class="s2">&quot;index&quot;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;metric&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;val&quot;</span><span class="p">,</span> <span class="s2">&quot;index&quot;</span><span class="p">:</span> <span class="s2">&quot;var&quot;</span><span class="p">},</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="c1"># sort covar_asmds_main to have mean(asmd) at the end of it (for when doing quick checks)</span>
+        <span class="n">covar_asmds_main</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">covar_asmds_main</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+                <span class="n">has_mean_asmd</span><span class="o">=</span><span class="p">(</span><span class="n">covar_asmds_main</span><span class="p">[</span><span class="s2">&quot;var&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;mean(asmd)&quot;</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;has_mean_asmd&quot;</span><span class="p">,</span> <span class="s2">&quot;var&quot;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="s2">&quot;has_mean_asmd&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">diagnostics</span><span class="p">,</span> <span class="n">covar_asmds_main</span><span class="p">))</span>
+
+        <span class="c1"># ----------------------------------------------------</span>
+        <span class="c1"># Diagnostics if there was an adjustment_failure</span>
+        <span class="c1"># ----------------------------------------------------</span>
+        <span class="c1"># This field is used in the cli and filled with an alternative value if needed.</span>
+        <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="n">diagnostics</span><span class="p">,</span>
+                <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;adjustment_failure&quot;</span><span class="p">,),</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,)}),</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">diagnostics</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done computing diagnostics&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">diagnostics</span></div>
+
+    <span class="c1">############################################</span>
+    <span class="c1"># Column and rows modifiers - use carefully!</span>
+    <span class="c1">############################################</span>
+<div class="viewcode-block" id="Sample.keep_only_some_rows_columns"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.keep_only_some_rows_columns">[docs]</a>    <span class="k">def</span> <span class="nf">keep_only_some_rows_columns</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
+        <span class="n">rows_to_keep</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">columns_to_keep</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Sample&quot;</span><span class="p">:</span>
+        <span class="c1"># TODO: split this into two functions (one for rows and one for columns)</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This function returns a **copy** of the sample object</span>
+<span class="sd">        after removing ALL columns from _df and _links objects</span>
+<span class="sd">        (which includes unadjusted and target objects).</span>
+
+<span class="sd">        This function is useful when wanting to calculate metrics, such as ASMD, but only on some of the features,</span>
+<span class="sd">        or part of the observations.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (Sample): a sample object (preferably after adjustment)</span>
+<span class="sd">            rows_to_keep (Optional[str], optional): A string with a condition to eval (on some of the columns).</span>
+<span class="sd">                This will run df.eval(rows_to_keep) which will return a pd.Series of bool by which</span>
+<span class="sd">                we will filter the Sample object.</span>
+<span class="sd">                This effects both the df of covars AND the weights column (weight_column)</span>
+<span class="sd">                AND the outcome column (_outcome_columns), AND the id_column column.</span>
+<span class="sd">                Input should be a boolean feature, or a condition such as: &#39;gender == &quot;Female&quot; &amp; age &gt;= 18&#39;.</span>
+<span class="sd">                Defaults to None.</span>
+<span class="sd">            columns_to_keep (Optional[List[str]], optional): the covariates of interest.</span>
+<span class="sd">                Defaults to None, which returns all columns.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Sample: A copy of the original object. If both rows and columns to keep are None,</span>
+<span class="sd">            returns the copied object unchanged.</span>
+<span class="sd">            If some are not None, will update - first the rows - then the columns.</span>
+<span class="sd">            This performs the transformation on both the sameple&#39;s df and its linkes dfs (unadjusted, target).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">rows_to_keep</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">columns_to_keep</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="c1"># Let&#39;s make sure to not ruin our old object:</span>
+        <span class="bp">self</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">rows_to_keep</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># let&#39;s filter the weights Series and then the df rows</span>
+            <span class="n">ss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">rows_to_keep</span><span class="p">)</span>  <span class="c1"># rows to keep after the subset # noqa</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;From self -&gt; (rows_filtered/total_rows) = (</span><span class="si">{</span><span class="n">ss</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">ss</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="p">)</span>
+            <span class="c1"># filter ids</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">id_column</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_column</span><span class="p">[</span><span class="n">ss</span><span class="p">]</span>
+            <span class="c1"># filter weights</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="p">[</span><span class="n">ss</span><span class="p">]</span>
+            <span class="c1"># filter _df</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">ss</span><span class="p">]</span>
+            <span class="c1"># filter outcomes</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outcome_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_outcome_columns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outcome_columns</span><span class="p">[</span><span class="n">ss</span><span class="p">]</span>
+            <span class="c1"># filter links</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">ss</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">rows_to_keep</span><span class="p">)</span>  <span class="c1"># rows to keep after the subset # noqa</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;From </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> -&gt; (rows_filtered/total_rows) = (</span><span class="si">{</span><span class="n">ss</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">ss</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span>
+                    <span class="p">)</span>
+                    <span class="n">v</span><span class="o">.</span><span class="n">id_column</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">id_column</span><span class="p">[</span><span class="n">ss</span><span class="p">]</span>
+                    <span class="n">v</span><span class="o">.</span><span class="n">weight_column</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">weight_column</span><span class="p">[</span><span class="n">ss</span><span class="p">]</span>
+                    <span class="n">v</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">ss</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">_outcome_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">v</span><span class="o">.</span><span class="n">_outcome_columns</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">_outcome_columns</span><span class="p">[</span><span class="n">ss</span><span class="p">]</span>
+                <span class="k">except</span> <span class="n">pd</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">computation</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">UndefinedVariableError</span><span class="p">:</span>
+                    <span class="c1"># This can happen, for example, if the row filtering condition depends somehow on a feature that is</span>
+                    <span class="c1"># in the sample but not in the _links. For example, if filtering over one of the</span>
+                    <span class="c1"># outcome variables, it would filter out these rows from sample, but it wouldn&#39;t have this column to</span>
+                    <span class="c1"># use in target. So this is meant to capture that when this happens the function won&#39;t fail but simply</span>
+                    <span class="c1"># report it to the user.</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;couldn&#39;t filter _links[&#39;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&#39;] using </span><span class="si">{</span><span class="n">rows_to_keep</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">columns_to_keep</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">columns_to_keep</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;Note that not all columns_to_keep are in Sample. Only those exists are removed&quot;</span>
+                <span class="p">)</span>
+            <span class="c1"># let&#39;s remove columns...</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">columns_to_keep</span><span class="p">)]</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="n">v</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">v</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">columns_to_keep</span><span class="p">)]</span>
+
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+    <span class="c1">################</span>
+    <span class="c1"># Saving results</span>
+    <span class="c1">################</span>
+<div class="viewcode-block" id="Sample.to_download"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.to_download">[docs]</a>    <span class="k">def</span> <span class="nf">to_download</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tempdir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FileLink</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Creates a downloadable link of the DataFrame of the Sample object.</span>
+
+<span class="sd">        File name starts with tmp_balance_out_, and some random file name (using :func:`uuid.uuid4`).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (Sample): Object.</span>
+<span class="sd">            tempdir (Optional[str], optional): Defaults to None (which then uses a temporary folder using :func:`tempfile.gettempdir`).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            FileLink: Embedding a local file link in an IPython session, based on path. Using :func:FileLink.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">_to_download</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="n">tempdir</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Sample.to_csv"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.to_csv">[docs]</a>    <span class="k">def</span> <span class="nf">to_csv</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">path_or_buf</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePathOrBuffer</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Write df with ids from BalanceDF to a comma-separated values (csv) file.</span>
+
+<span class="sd">        Uses :func:`pd.DataFrame.to_csv`.</span>
+
+<span class="sd">        If an &#39;index&#39; argument is not provided then it defaults to False.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self: Object.</span>
+<span class="sd">            path_or_buf (Optional[FilePathOrBuffer], optional): location where to save the csv.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Optional[str]: If path_or_buf is None, returns the resulting csv format as a string. Otherwise returns None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;index&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;index&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">path_or_buf</span><span class="o">=</span><span class="n">path_or_buf</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+    <span class="c1">################################################################################</span>
+    <span class="c1">#  Private API</span>
+    <span class="c1">################################################################################</span>
+
+    <span class="c1">##################</span>
+    <span class="c1"># Column accessors</span>
+    <span class="c1">##################</span>
+    <span class="k">def</span> <span class="nf">_special_columns_names</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns names of all special columns (id column,</span>
+<span class="sd">        wegiht column and outcome columns) in Sample.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]: names of special columns</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">i</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">id_column</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">]</span> <span class="o">+</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_outcome_columns</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outcome_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="p">[]</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_special_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns dataframe of all special columns (id column,</span>
+<span class="sd">        wegiht column and outcome columns) in Sample.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame: special columns</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_special_columns_names</span><span class="p">()]</span>
+
+    <span class="k">def</span> <span class="nf">_covar_columns_names</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns names of all covars in Sample.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]: names of covars</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_special_columns_names</span><span class="p">()</span>
+        <span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_covar_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns dataframe of all covars columns in Sample.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame: covars columns</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_covar_columns_names</span><span class="p">()]</span>
+
+    <span class="c1">################</span>
+    <span class="c1">#  Errors checks</span>
+    <span class="c1">################</span>
+    <span class="k">def</span> <span class="nf">_check_if_adjusted</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Raises a ValueError if sample is not adjusted</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;This is not an adjusted Sample. Use sample.adjust to adjust the sample to target&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_no_target_error</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Raises a ValueError if sample doesn&#39;t have target</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_target</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;This Sample does not have a target set. Use sample.set_target to add target&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_check_outcomes_exists</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Raises a ValueError if sample doesn&#39;t have outcome_columns specified.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;This Sample does not have outcome columns specified&quot;</span><span class="p">)</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../balance.html" >balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.sample_class</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

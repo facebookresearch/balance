@@ -1,0 +1,240 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>balance.adjustment &#8212; balance  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="balance.balancedf_class" href="balance.balancedf_class.html" />
+    <link rel="prev" title="balance" href="balance.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.balancedf_class.html" title="balance.balancedf_class"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="balance.html" title="balance"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" accesskey="U">balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.adjustment</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-balance.adjustment">
+<span id="balance-adjustment"></span><h1>balance.adjustment<a class="headerlink" href="#module-balance.adjustment" title="Permalink to this heading">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.adjustment.apply_transformations">
+<span class="sig-prename descclassname"><span class="pre">balance.adjustment.</span></span><span class="sig-name descname"><span class="pre">apply_transformations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dfs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/adjustment.html#apply_transformations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.adjustment.apply_transformations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply the transformations specified in transformations to all of the dfs</p>
+<ul class="simple">
+<li><p>if a column specified in <cite>transformations</cite> does not exist in the dataframes,
+it is added</p></li>
+<li><p>if a column is not specified in <cite>transformations</cite>, it is dropped,
+unless drop==False</p></li>
+<li><p>the dfs are concatenated together before transformations are applied,
+so functions like <cite>max</cite> are relative to the column in all dfs</p></li>
+<li><p>Cannot transform the same variable twice, or add a variable and then transform it
+(i.e. the definition of the added variable should include the transformation)</p></li>
+<li><p>if you get a cryptic error about mismatched data types, make sure your
+transformations are not being treated as additions because of missing
+columns (use <cite>_set_warnings(“DEBUG”)</cite> to check)</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dfs</strong> – tuple of pandas DataFrames. The DataFrames on which to operate</p></li>
+<li><p><strong>transformations</strong> – dict. Mapping from column name to function to apply.
+Transformations of existing columns should be specified as functions
+of those columns (e.g. <cite>lambda x: x*2</cite>), whereas additions of new
+columns should be specified as functions of the DataFrame
+(e.g. <cite>lambda x: x.column_a + x.column_b</cite>).</p></li>
+<li><p><strong>drop</strong> – bool (optional, default True). Whether to drop columns which are
+not specified in <cite>transformations</cite></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple of pd.DataFrames</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">balance.adjustment</span> <span class="kn">import</span> <span class="n">apply_transformations</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">apply_transformations</span><span class="p">(</span>
+    <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="s1">&#39;e&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]}),),</span>
+    <span class="p">{</span><span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">*</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;f&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">d</span><span class="o">+</span><span class="n">x</span><span class="o">.</span><span class="n">e</span><span class="p">}</span>
+<span class="p">)</span>
+
+    <span class="c1"># (   f  d</span>
+    <span class="c1">#  0  5  2</span>
+    <span class="c1">#  1  7  4</span>
+    <span class="c1">#  2  9  6,)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.adjustment.default_transformations">
+<span class="sig-prename descclassname"><span class="pre">balance.adjustment.</span></span><span class="sig-name descname"><span class="pre">default_transformations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dfs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">DataFrame</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/adjustment.html#default_transformations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.adjustment.default_transformations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply default transfomations to dfs, i.e.
+quantize to numeric columns and fct_lump to non-numeric and boolean</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataframes</strong> (<em>dfs --- A list</em><em> or </em><em>tuple of</em>) – </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dict of transformations</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.adjustment.trim_weights">
+<span class="sig-prename descclassname"><span class="pre">balance.adjustment.</span></span><span class="sig-name descname"><span class="pre">trim_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_trimming_mean_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_trimming_percentile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_sum_of_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/balance/adjustment.html#trim_weights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.adjustment.trim_weights" title="Permalink to this definition">¶</a></dt>
+<dd><p>Trim extreme weights.</p>
+<p>The user cannot supply both weight_trimming_mean_ratio and weight_trimming_percentile.
+If none are supplied, the original weights are returend.</p>
+<p>If weight_trimming_mean_ratio is not none, the weights are trimmed from above by
+mean(weights) * ratio. The weights are then normalized to have the original mean.
+Note that trimmed weights aren’t actually bounded by trimming.ratio because the
+reduced weight is redistributed to arrive at the original mean</p>
+<p>Note that weight_trimming_percentile clips both sides of the distribution, unlike
+trimming that only trimms the weights from above.
+For example, <cite>weight_trimming_percentile=0.1</cite> trims below the 10th percentile
+AND above the 90th. If you only want to trim the upper side, specify
+<cite>weight_trimming_percentile = (0, 0.9)</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>weights</strong> (<em>Union</em><em>[</em><em>pd.Series</em><em>, </em><em>np.ndarray</em><em>]</em>) – pd.Series of weights to trim. np.ndarray will be turned into pd.Series) of weights.</p></li>
+<li><p><strong>weight_trimming_mean_ratio</strong> (<em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>, </em><em>optional</em>) – indicating the ratio from above according to which
+the weights are trimmed by mean(weights) * ratio. Defaults to None.</p></li>
+<li><p><strong>weight_trimming_percentile</strong> (<em>Union</em><em>[</em><em>float</em><em>]</em><em>, </em><em>optional</em>) – if weight_trimming_percentile is not none,
+then we apply winsorization using <code class="xref py py-func docutils literal notranslate"><span class="pre">scipy.stats.mstats.winsorize()</span></code>.
+See also: [<a class="reference external" href="https://en.wikipedia.org/wiki/Winsorizing">https://en.wikipedia.org/wiki/Winsorizing</a>].
+Defaults to None.</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em><em>, </em><em>optional</em>) – whether to add to logger printout of trimming process.
+Defaults to False.</p></li>
+<li><p><strong>keep_sum_of_weights</strong> (<em>bool</em><em>, </em><em>optional</em>) – Set if the sum of weights after trimming
+should be the same as the sum of weights before trimming.
+Defaults to True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>TypeError</strong> – If weights is not np.array or pd.Series.</p></li>
+<li><p><strong>ValueError</strong> – If both weight_trimming_mean_ratio and weight_trimming_percentile are set.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Trimmed weights,</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.Series (of type float64)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">balance.adjustment</a><ul>
+<li><a class="reference internal" href="#balance.adjustment.apply_transformations"><code class="docutils literal notranslate"><span class="pre">apply_transformations()</span></code></a></li>
+<li><a class="reference internal" href="#balance.adjustment.default_transformations"><code class="docutils literal notranslate"><span class="pre">default_transformations()</span></code></a></li>
+<li><a class="reference internal" href="#balance.adjustment.trim_weights"><code class="docutils literal notranslate"><span class="pre">trim_weights()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="balance.html"
+                          title="previous chapter">balance</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="balance.balancedf_class.html"
+                          title="next chapter">balance.balancedf_class</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/balance.adjustment.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.balancedf_class.html" title="balance.balancedf_class"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="balance.html" title="balance"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" >balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.adjustment</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

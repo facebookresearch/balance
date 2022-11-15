@@ -1,0 +1,825 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>balance.util &#8212; balance  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="balance.weighting_methods" href="balance.weighting_methods.html" />
+    <link rel="prev" title="balance.typing" href="balance.typing.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.weighting_methods.html" title="balance.weighting_methods"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="balance.typing.html" title="balance.typing"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" accesskey="U">balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.util</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-balance.util">
+<span id="balance-util"></span><h1>balance.util<a class="headerlink" href="#module-balance.util" title="Permalink to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="balance.util.TruncationFormatter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">TruncationFormatter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/util.html#TruncationFormatter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.TruncationFormatter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logging formatter which truncates the logged message to 500 characters.</p>
+<p>This is useful in the cases where the logging message includes objects
+— like DataFrames — whose string representation is very long.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.util.TruncationFormatter.format">
+<span class="sig-name descname"><span class="pre">format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">LogRecord</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/util.html#TruncationFormatter.format"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.TruncationFormatter.format" title="Permalink to this definition">¶</a></dt>
+<dd><p>Format the specified record as text.</p>
+<p>The record’s attribute dictionary is used as the operand to a
+string formatting operation which yields the returned string.
+Before formatting the dictionary, a couple of preparatory steps
+are carried out. The message attribute of the record is computed
+using LogRecord.getMessage(). If the formatting string uses the
+time (as determined by a call to usesTime(), formatTime() is
+called to format the event time. If there is exception information,
+it is formatted using formatException() and appended to the message.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.util.add_na_indicator">
+<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">add_na_indicator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">replace_val_obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'_NA'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">replace_val_num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/balance/util.html#add_na_indicator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.add_na_indicator" title="Permalink to this definition">¶</a></dt>
+<dd><p>If a column in the DataFrame contains NAs, replace these with 0 for
+numerical columns or “_NA” for non-numerical columns,
+and add another column of an indicator variable for which rows were NA.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>DataFrame</strong> (<em>df --  The input</em>) – </p></li>
+<li><p><strong>columns</strong> (<em>replace_val_num -- The value to put insteasd</em><em> of </em><em>nulls for numeric</em>) – </p></li>
+<li><p><strong>columns</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>New dataframe with additional columns</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.util.auto_spread">
+<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">auto_spread</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'id'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/util.html#auto_spread"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.auto_spread" title="Permalink to this definition">¶</a></dt>
+<dd><p>Automatically transform a ‘long’ DataFrame into a ‘wide’ DataFrame
+by guessing which column should be used as a key, treating all
+other columns as values. At the moment, this will only find a single key column</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.util.build_model_matrix">
+<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">build_model_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">formula</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor_variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_sparse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/util.html#build_model_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.build_model_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build a model matrix from a formula (using patsy.dmatrix)</p>
+<p>Arguments:
+df — The data from which to create the model matrix (pandas dataframe)
+formula — a string representing the formula to use for building the model matrix.</p>
+<blockquote>
+<div><p>Default is additive formula with all variables in df</p>
+</div></blockquote>
+<dl class="simple">
+<dt>factor_variables — list of names of factor variables that we use</dt><dd><p>one_hot_encoding_greater_2 for.
+Default is None, in which case no special contrasts are applied
+(uses patsy defaults).
+one_hot_encoding_greater_2 creates one-hot-encoding for all
+categorical variables with more than 2 categories (i.e. the
+number of columns will be equal to the number of categories), and only 1
+column for variables with 2 levels (treatment contrast).</p>
+</dd>
+</dl>
+<p>return_sparse — whether to return a sprse matrix using scipy.sparse.csc_matrix (Default: False)</p>
+<p>Returns:
+A dictionary of 2 elements:
+1. model_matrix - this is a pd dataframe or a csc_matrix (depends on return_sparse), ordered by columns names
+2. model_matrix_columns - A list of the columns names of model_matrix</p>
+<blockquote>
+<div><p>(We include model_matrix_columns as a separate argument since if we return a sparse X_matrix,
+it doesn’t have a columns names argument and these need to be kept separately,
+see here:
+<a class="reference external" href="https://stackoverflow.com/questions/35086940/how-can-i-give-row-and-column-names-to-scipys-csr-matrix">https://stackoverflow.com/questions/35086940/how-can-i-give-row-and-column-names-to-scipys-csr-matrix</a>.)</p>
+</div></blockquote>
+<p>Examples:
+import pandas as pd
+d = {‘a’: [‘a1’,’a2’,’a1’,’a1’], ‘b’: [‘b1’,’b2’,’b3’,’b3’]}
+df = pd.DataFrame(data=d)</p>
+<p>print(build_model_matrix(df, ‘a’))
+# {‘model_matrix’:    a[a1]  a[a2]
+# 0    1.0    0.0
+# 1    0.0    1.0
+# 2    1.0    0.0
+# 3    1.0    0.0,
+# ‘model_matrix_columns’: [‘a[a1]’, ‘a[a2]’]}</p>
+<p>print(build_model_matrix(df, ‘.’))
+# {‘model_matrix’:    a[a1]  a[a2]  b[T.b2]  b[T.b3]
+# 0    1.0    0.0      0.0      0.0
+# 1    0.0    1.0      1.0      0.0
+# 2    1.0    0.0      0.0      1.0
+# 3    1.0    0.0      0.0      1.0,
+# ‘model_matrix_columns’: [‘a[a1]’, ‘a[a2]’, ‘b[T.b2]’, ‘b[T.b3]’]}</p>
+<p>print(build_model_matrix(df, ‘.’, factor_variables=[‘a’]))
+# {‘model_matrix’:    C(a, one_hot_encoding_greater_2)[a2]  b[T.b2]  b[T.b3]
+# 0                                0.0      0.0      0.0
+# 1                                1.0      1.0      0.0
+# 2                                0.0      0.0      1.0
+# 3                                0.0      0.0      1.0,
+# ‘model_matrix_columns’: [‘C(a, one_hot_encoding_greater_2)[a2]’, ‘b[T.b2]’, ‘b[T.b3]’]}</p>
+<p>print(build_model_matrix(df, ‘a’, return_sparse=True))
+# {‘model_matrix’: &lt;4x2 sparse matrix of type ‘&lt;class ‘numpy.float64’&gt;’
+# with 4 stored elements in Compressed Sparse Column format&gt;, ‘model_matrix_columns’: [‘a[a1]’, ‘a[a2]’]}
+print(build_model_matrix(df, ‘a’, return_sparse=True)[“model_matrix”].toarray())
+# [[1. 0.]
+# [0. 1.]
+# [1. 0.]
+# [1. 0.]]</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.util.choose_variables">
+<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">choose_variables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">dfs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/util.html#choose_variables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.choose_variables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return covars which are present in all dfs and also in <cite>variables</cite>
+if passed</p>
+<p>Arguments:
+dfs – balance.Samples or pd.DataFrames
+variables – which variables to choose. If None, chooses all joint variables in the dfs.</p>
+<blockquote>
+<div><p>Default is None.</p>
+</div></blockquote>
+<p>Returns:
+Tuple of joint variables</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.util.dot_expansion">
+<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">dot_expansion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">formula</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/util.html#dot_expansion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.dot_expansion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build a formula string by replacing “.” with “summing” all the variables,
+If no dot appears, returns the formula as is.</p>
+<p>This function is named for the ‘dot’ operators in R, where a formula given
+as ‘ ~ .’ means “use all variables in dataframe.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>expand.</strong> (<em>formula --- The formula to</em>) – </p></li>
+<li><p><strong>for.</strong> (<em>variables --- List</em><em> of </em><em>all variables in the dataframe we build the formula</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns:
+A string formula replacing the ‘.’’ with all variables in variables.
+If no ‘.’ is present, then the original formula is returned as is.</p>
+<p>Examples:</p>
+<p>dot_expansion(‘.’, [‘a’,’b’,’c’,’d’]) # (a+b+c+d)
+dot_expansion(‘b:(. - a)’, [‘a’,’b’,’c’,’d’]) # b:((a+b+c+d) - a)
+dot_expansion(‘a*b’, [‘a’,’b’,’c’,’d’]) # a*b
+dot_expansion(‘.’, None) # Raise error</p>
+<p>import pandas as pd
+d = {‘a’: [‘a1’,’a2’,’a1’,’a1’], ‘b’: [‘b1’,’b2’,’b3’,’b3’],</p>
+<blockquote>
+<div><p>‘c’: [‘c1’,’c1’,’c2’,’c1’], ‘d’:[‘d1’,’d1’,’d2’,’d3’]}</p>
+</div></blockquote>
+<p>df = pd.DataFrame(data=d)
+dot_expansion(‘.’, df) # Raise error
+dot_expansion(‘.’, list(df.columns)) # (a+b+c+d)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.util.drop_na_rows">
+<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">drop_na_rows</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'sample</span> <span class="pre">object'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/util.html#drop_na_rows"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.drop_na_rows" title="Permalink to this definition">¶</a></dt>
+<dd><p>Drop rows with missing values in sample_df and their corresponding weights, and the same in target_df.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>---</strong> (<em>sample_weights</em>) – </p></li>
+<li><p><strong>---</strong> – </p></li>
+<li><p><strong>checked</strong> (<em>name --- name</em><em> of </em><em>object</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>sample_df, sample_weights without NAs rows</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.util.fct_lump">
+<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">fct_lump</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/balance/util.html#fct_lump"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.fct_lump" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lumps infrequent levels into ‘_lumped_other’.
+Note that all values with proprtion less than prop output the same value ‘_lumped_other’.</p>
+<p>Arguments:
+s — pd.series to lump, with dtype of integer, numeric, object, or category (category will be converted to object)
+prop — the proportion of infrequent levels to lump</p>
+<p>Returns:
+pd.series (with category dtype converted to object, if applicable)</p>
+<p class="rubric">Example</p>
+<p>from balance.util import fct_lump
+import pandas as pd</p>
+<p>s = pd.Series([‘a’,’a’,’b’,’b’,’c’,’a’,’b’], dtype = ‘category’)
+fct_lump(s, 0.25)</p>
+<blockquote>
+<div><p># 0                a
+# 1                a
+# 2                b
+# 3                b
+# 4    _lumped_other
+# 5                a
+# 6                b
+# dtype: object</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.util.fct_lump_by">
+<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">fct_lump_by</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">by</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/balance/util.html#fct_lump_by"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.fct_lump_by" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lumps infrequent levels into ‘_lumped_other, only does so per
+value of the grouping variable <cite>by</cite>. Useful, for example, for keeping the
+most important interactions in a model.</p>
+<p>Arguments:
+s — pd.series to lump
+by — pd.series according to which group the data
+prop — the proportion of infrequent levels to lump</p>
+<p>Returns:
+pd.series, we keep the index of s as the index of the result.</p>
+<p>Example:
+s = pd.Series([1,1,1,2,3,1,2])
+by = pd.Series([‘a’,’a’,’a’,’a’,’a’,’b’,’b’])
+fct_lump_by(s, by, 0.5)
+# 0                1
+# 1                1
+# 2                1
+# 3    _lumped_other
+# 4    _lumped_other
+# 5                1
+# 6                2
+# dtype: object</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.util.formula_generator">
+<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">formula_generator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">formula_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'additive'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/balance/util.html#formula_generator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.formula_generator" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Create formula to build the model matrix
+Default is additive formula.</p>
+<p>Arguments:
+variables – list with names of variables (as strings) to combine into a formula
+formula_type – how to construct the formula. Currently only “additive” is supported.</p>
+<p>Returns:
+A string representing the fomula</p>
+</div></blockquote>
+<dl class="simple">
+<dt>`    Examples:</dt><dd><p>formula_generator([‘a’,’b’,’c’]) returns ‘c + b + a’</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.util.guess_id_column">
+<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">guess_id_column</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/util.html#guess_id_column"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.guess_id_column" title="Permalink to this definition">¶</a></dt>
+<dd><p>Guess the id column of a given dataset.
+Possible values for guess: ‘id’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset</strong> (<em>pd.DataFrame</em>) – dataset to guess id column</p></li>
+<li><p><strong>column_name</strong> (<em>str</em><em>, </em><em>optional</em>) – Given id column name. Defaults to None,
+which will guess the id column or raise exception.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>name of guessed id column</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.util.model_matrix">
+<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">model_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_na</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'two'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_var_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'dataframe'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">formula</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">penalty_factor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">one_hot_encoding</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">csc_matrix</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/util.html#model_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.model_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a model matrix from a sample (and target).
+The default is to use an additive formula for all variables (or the ones specified).
+Can also create a custom model matrix if a formula is provided.</p>
+<p>Arguments:
+sample, target — The Samples from which to create the model matrix
+variables — the names of the variables to include (default is ‘None’, i.e.</p>
+<blockquote>
+<div><p>all joint variables to target and sample are used)</p>
+</div></blockquote>
+<dl class="simple">
+<dt>add_na — whether to call add_na_indicator on the data before constructing</dt><dd><p>the matrix.If add_na = True, then the function add_na_indicator is applied,
+i.e. if a column in the DataFrame contains NAs, replace these with 0 or “_NA”, and
+add another column of an indicator variable for which rows were NA.
+If add_na is False, observations with any missing data will be
+omitted from the model (default: True)</p>
+</dd>
+<dt>return_type — whether to return a single matrix (‘one’), or a dict of</dt><dd><p>sample and target matrices</p>
+</dd>
+<dt>return_var_type — whether to return a “dataframe” (pd.dataframe) a “matrix” (np.ndarray)</dt><dd><p>(i.e. only values of the output dataframe), or a “sparse” matrix</p>
+</dd>
+<dt>formula — according to what formula to construct the matrix. If no formula is provided an</dt><dd><p>additive formula is applied. This may be a string or a list of strings
+representing different parts of the formula that will be concated together.
+Default is None, which will create an additive formula from the aviliable variables.</p>
+</dd>
+<dt>penalty_factor — the penalty used in the glment function in ipw. The penalty</dt><dd><p>should have the same length as the formula list. If not provided,
+assume the same panelty for all variables.</p>
+</dd>
+<dt>one_hot_encoding — whether to encode all factor variables in the model matrix with</dt><dd><p>one_hot_encoding_greater_2. This is recomended in case of using
+LASSO on the data (Default: False).
+one_hot_encoding_greater_2 creates one-hot-encoding for all
+categorical variables with more than 2 categories (i.e. the
+number of columns will be equal to the number of categories),
+and only 1 column for variables with 2 levels (treatment contrast).</p>
+</dd>
+</dl>
+<p>Returns:
+a dict of:
+1. “model_matrix_columns_names”: columns names of the model matrix
+2. “penalty_factor “: a penalty_factor for each column in the model matrix
+3. “model_matrix” (or: “sample” and “target”): the DataFrames for the sample and target</p>
+<blockquote>
+<div><dl class="simple">
+<dt>(one or two, according to return_type)</dt><dd><p>If return_sparse=”True” returns a sparse matrix (csc_matrix)</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>Examples:
+import pandas as pd
+d = {‘a’: [‘a1’,’a2’,’a1’,’a1’], ‘b’: [‘b1’,’b2’,’b3’,’b3’]}
+df = pd.DataFrame(data=d)</p>
+<p>model_matrix(df)
+# {‘model_matrix_columns_names’: [‘b[b1]’, ‘b[b2]’, ‘b[b3]’, ‘a[T.a2]’],
+#  ‘penalty_factor’: array([1, 1, 1, 1]),
+#  ‘sample’:    b[b1]  b[b2]  b[b3]  a[T.a2]
+#  0    1.0    0.0    0.0      0.0
+#  1    0.0    1.0    0.0      1.0
+#  2    0.0    0.0    1.0      0.0
+#  3    0.0    0.0    1.0      0.0,
+#  ‘target’: None}</p>
+<p>model_matrix(df, formula = ‘a*b’)
+# {‘model_matrix_columns_names’: [‘a[a1]’,
+#   ‘a[a2]’,
+#   ‘b[T.b2]’,
+#   ‘b[T.b3]’,
+#   ‘a[T.a2]:b[T.b2]’,
+#   ‘a[T.a2]:b[T.b3]’],
+#  ‘penalty_factor’: array([1, 1, 1, 1, 1, 1]),
+#  ‘sample’:    a[a1]  a[a2]  b[T.b2]  b[T.b3]  a[T.a2]:b[T.b2]  a[T.a2]:b[T.b3]
+#  0    1.0    0.0      0.0      0.0              0.0              0.0
+#  1    0.0    1.0      1.0      0.0              1.0              0.0
+#  2    1.0    0.0      0.0      1.0              0.0              0.0
+#  3    1.0    0.0      0.0      1.0              0.0              0.0,
+#  ‘target’: None}</p>
+<p>model_matrix(df, formula = [‘a’,’b’], penalty_factor=[1,2])
+# {‘model_matrix_columns_names’: [‘a[a1]’, ‘a[a2]’, ‘b[b1]’, ‘b[b2]’, ‘b[b3]’],
+#  ‘penalty_factor’: array([1, 1, 2, 2, 2]),
+#  ‘sample’:    a[a1]  a[a2]  b[b1]  b[b2]  b[b3]
+#  0    1.0    0.0    1.0    0.0    0.0
+#  1    0.0    1.0    0.0    1.0    0.0
+#  2    1.0    0.0    0.0    0.0    1.0
+#  3    1.0    0.0    0.0    0.0    1.0,
+#  ‘target’: None}</p>
+<p>model_matrix(df, formula = [‘a’,’b’], penalty_factor=[1,2], one_hot_encoding=True)
+# {‘model_matrix_columns_names’: [‘C(a, one_hot_encoding_greater_2)[a2]’,
+#   ‘C(b, one_hot_encoding_greater_2)[b1]’,
+#   ‘C(b, one_hot_encoding_greater_2)[b2]’,
+#   ‘C(b, one_hot_encoding_greater_2)[b3]’],
+#  ‘penalty_factor’: array([1, 2, 2, 2]),
+#  ‘sample’:    C(a, one_hot_encoding_greater_2)[a2]  …  C(b, one_hot_encoding_greater_2)[b3]
+#  0                                0.0  …                                0.0
+#  1                                1.0  …                                0.0
+#  2                                0.0  …                                1.0
+#  3                                0.0  …                                1.0
+# [4 rows x 4 columns],
+# ‘target’: None}</p>
+<p>model_matrix(df, formula = [‘a’,’b’], penalty_factor=[1,2], return_sparse = True)
+# {‘model_matrix_columns_names’: [‘a[a1]’, ‘a[a2]’, ‘b[b1]’, ‘b[b2]’, ‘b[b3]’],
+#  ‘penalty_factor’: array([1, 1, 2, 2, 2]),
+#  ‘sample’: &lt;4x5 sparse matrix of type ‘&lt;class ‘numpy.float64’&gt;’
+#   with 8 stored elements in Compressed Sparse Column format&gt;,
+#  ‘target’: None}</p>
+<p>model_matrix(df, target = df)
+# {‘model_matrix_columns_names’: [‘b[b1]’, ‘b[b2]’, ‘b[b3]’, ‘a[T.a2]’],
+#  ‘penalty_factor’: array([1, 1, 1, 1]),
+#  ‘sample’:    b[b1]  b[b2]  b[b3]  a[T.a2]
+#  0    1.0    0.0    0.0      0.0
+#  1    0.0    1.0    0.0      1.0
+#  2    0.0    0.0    1.0      0.0
+#  3    0.0    0.0    1.0      0.0,
+#  ‘target’:    b[b1]  b[b2]  b[b3]  a[T.a2]
+#  0    1.0    0.0    0.0      0.0
+#  1    0.0    1.0    0.0      1.0
+#  2    0.0    0.0    1.0      0.0
+#  3    0.0    0.0    1.0      0.0}</p>
+<p>model_matrix(df, target = df, return_type = “one”)
+# {‘model_matrix_columns_names’: [‘b[b1]’, ‘b[b2]’, ‘b[b3]’, ‘a[T.a2]’],
+#  ‘penalty_factor’: array([1, 1, 1, 1]),
+#  ‘model_matrix’:    b[b1]  b[b2]  b[b3]  a[T.a2]
+#  0    1.0    0.0    0.0      0.0
+#  1    0.0    1.0    0.0      1.0
+#  2    0.0    0.0    1.0      0.0
+#  3    0.0    0.0    1.0      0.0
+#  0    1.0    0.0    0.0      0.0
+#  1    0.0    1.0    0.0      1.0
+#  2    0.0    0.0    1.0      0.0
+#  3    0.0    0.0    1.0      0.0}</p>
+<p>model_matrix(df, target = df, formula=[‘a’,’b’],return_type = “one”)
+# {‘model_matrix_columns_names’: [‘a[a1]’, ‘a[a2]’, ‘b[b1]’, ‘b[b2]’, ‘b[b3]’],
+#  ‘penalty_factor’: array([1, 1, 1, 1, 1]),
+#  ‘model_matrix’:    a[a1]  a[a2]  b[b1]  b[b2]  b[b3]
+#  0    1.0    0.0    1.0    0.0    0.0
+#  1    0.0    1.0    0.0    1.0    0.0
+#  2    1.0    0.0    0.0    0.0    1.0
+#  3    1.0    0.0    0.0    0.0    1.0
+#  0    1.0    0.0    1.0    0.0    0.0
+#  1    0.0    1.0    0.0    1.0    0.0
+#  2    1.0    0.0    0.0    0.0    1.0
+#  3    1.0    0.0    0.0    0.0    1.0}</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="balance.util.one_hot_encoding_greater_2">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">one_hot_encoding_greater_2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reference</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/util.html#one_hot_encoding_greater_2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.one_hot_encoding_greater_2" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class creates a special encoding for factor variable to be used in a LASSO model.
+For variables with exactly two levels using this in dmatrix will only keep one level, i.e.
+will create one column with a 0 or 1 indicator for one of the levels. The level kept will
+be the second one, based on loxicographical order of the levels.
+For variables with more than 2 levels, using this in dmatrix will keep all levels
+as columns of the matrix.</p>
+<p>References:
+1. More about this encoding:
+# <a class="reference external" href="https://stats.stackexchange.com/questions/69804/group-categorical-variables-in-glmnet/107958#107958">https://stats.stackexchange.com/questions/69804/group-categorical-variables-in-glmnet/107958#107958</a>
+3. Source code: adaptation of
+# <a class="reference external" href="https://patsy.readthedocs.io/en/latest/categorical-coding.html">https://patsy.readthedocs.io/en/latest/categorical-coding.html</a></p>
+<p>Examples:
+import pandas as pd
+d = {‘a’: [‘a1’,’a2’,’a1’,’a1’], ‘b’: [‘b1’,’b2’,’b3’,’b3’],</p>
+<blockquote>
+<div><p>‘c’: [‘c1’,’c1’,’c2’,’c1’], ‘d’:[‘d1’,’d1’,’d2’,’d3’]}</p>
+</div></blockquote>
+<p>df = pd.DataFrame(data=d)</p>
+<p>print(dmatrix(‘C(a, one_hot_encoding_greater_2)’, df, return_type = ‘dataframe’))
+#   Intercept  C(a, one_hot_encoding_greater_2)[a2]
+#0        1.0                                   0.0
+#1        1.0                                   1.0
+#2        1.0                                   0.0
+#3        1.0                                   0.0
+print(dmatrix(‘C(a, one_hot_encoding_greater_2)-1’, df, return_type = ‘dataframe’))
+#   C(a, one_hot_encoding_greater_2)[a2]
+#0                                   0.0
+#1                                   1.0
+#2                                   0.0
+#3                                   0.0
+print(dmatrix(‘C(b, one_hot_encoding_greater_2)’, df, return_type = ‘dataframe’))
+#   Intercept  C(b, one_hot_encoding_greater_2)[b1]      #0        1.0                                   1.0
+#1        1.0                                   0.0
+#2        1.0                                   0.0
+#3        1.0                                   0.0
+#
+#   C(b, one_hot_encoding_greater_2)[b2]  C(b, one_hot_encoding_greater_2)[b3]
+#0                                   0.0                                   0.0
+#1                                   1.0                                   0.0
+#2                                   0.0                                   1.0
+#3                                   0.0                                   1.0
+print(dmatrix(‘C(b, one_hot_encoding_greater_2)-1’, df, return_type = ‘dataframe’))
+#   C(b, one_hot_encoding_greater_2)[b1]  C(b, one_hot_encoding_greater_2)[b2]      #0                                   1.0                                   0.0
+#1                                   0.0                                   1.0
+#2                                   0.0                                   0.0
+#3                                   0.0                                   0.0
+#
+#   C(b, one_hot_encoding_greater_2)[b3]
+#0                                   0.0
+#1                                   0.0
+#2                                   1.0</p>
+<p>d = {‘a’: [‘a1’,’a1’,’a1’,’a1’], ‘b’: [‘b1’,’b2’,’b3’,’b3’]}
+df = pd.DataFrame(data=d)</p>
+<p>print(dmatrix(‘C(a, one_hot_encoding_greater_2)-1’, df, return_type = ‘dataframe’))
+print(dmatrix(‘C(a, one_hot_encoding_greater_2):C(b, one_hot_encoding_greater_2)-1’, df, return_type = ‘dataframe’))   C(a, one_hot_encoding_greater_2)[a1]
+#0                                   1.0
+#1                                   1.0
+#2                                   1.0
+#3                                   1.0
+#   C(a, one_hot_encoding_greater_2)[a1]:C(b, one_hot_encoding_greater_2)[b1]      #0                                                1.0
+#1                                                0.0
+#2                                                0.0
+#3                                                0.0
+#
+#   C(a, one_hot_encoding_greater_2)[a1]:C(b, one_hot_encoding_greater_2)[b2]      #0                                                0.0
+#1                                                1.0
+#2                                                0.0
+#3                                                0.0</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.util.process_formula">
+<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">process_formula</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">formula</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor_variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/util.html#process_formula"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.process_formula" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process a formula string:
+1. Expand .  notation using dot_expansion function
+2. Remove intercept (if using ipw, it will be added automatically by cvglment)
+3. If factor_variables is not None, one_hot_encoding_greater_2 is applied</p>
+<blockquote>
+<div><p>to factor_variables</p>
+</div></blockquote>
+<p>Arguments:
+formula — A string representing the formula
+variables — list of all variables to include (usually all variables in data)
+factor_variables — list of names of factor variables that we use</p>
+<blockquote>
+<div><p>one_hot_encoding_greater_2 for. Note that these should be also
+part of variables.
+Default is None, in which case no special contrasts are
+applied (using patsy defaults). one_hot_encoding_greater_2
+creates one-hot-encoding for all categorical variables with
+more than 2 categories (i.e. the number of columns will
+be equal to the number of categories), and only 1
+column for variables with 2 levels (treatment contrast).</p>
+</div></blockquote>
+<p>Returns:
+a ModelDesc object to build a model matrix using patsy.dmatrix.</p>
+<p>Examples:
+f1 = process_formula(‘a:(b+aab)’, [‘a’,’b’,’aab’])
+print(f1)
+# ModelDesc(lhs_termlist=[],
+#       rhs_termlist=[Term([EvalFactor(‘a’), EvalFactor(‘b’)]),
+#                     Term([EvalFactor(‘a’), EvalFactor(‘aab’)])])
+f2 = process_formula(‘a:(b+aab)’, [‘a’,’b’,’aab’], [‘a’,’b’])
+print(f2)
+# ModelDesc(lhs_termlist=[],
+#       rhs_termlist=[Term([EvalFactor(‘C(a, one_hot_encoding_greater_2)’),
+#                           EvalFactor(‘C(b, one_hot_encoding_greater_2)’)]),
+#                     Term([EvalFactor(‘C(a, one_hot_encoding_greater_2)’),
+#                           EvalFactor(‘aab’)])])</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.util.qcut">
+<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">qcut</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duplicates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'drop'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/util.html#qcut"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.qcut" title="Permalink to this definition">¶</a></dt>
+<dd><p>Discretize variable into equal-sized buckets based quantiles.
+This is a wrapper to pandas qcut function.</p>
+<p>Arguments:
+s — 1d ndarray or Series.
+q — Number of quantiles (int or float).
+duplicates — whther to drop non unique bin edges or raise error (“raise” or “drop”).</p>
+<blockquote>
+<div><p>Default is “drop”.</p>
+</div></blockquote>
+<p>Returns:
+Seires of type object with intervals.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.util.quantize">
+<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">quantize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/util.html#quantize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.quantize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cut numeric variables of a DataFrame into quantile buckets</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>transform</strong> (<em>df -- DataFrame to</em>) – </p></li>
+<li><p><strong>(</strong><strong>optional</strong> (<em>q  ---</em>) – None) variables to transform.
+If None, all numeric variables are transformed.</p></li>
+<li><p><strong>default</strong> – None) variables to transform.
+If None, all numeric variables are transformed.</p></li>
+<li><p><strong>(</strong><strong>optional</strong> – <ol class="arabic simple" start="10">
+<li><p>Number of buckets to create for each variable</p></li>
+</ol>
+</p></li>
+<li><p><strong>default</strong> – <ol class="arabic simple" start="10">
+<li><p>Number of buckets to create for each variable</p></li>
+</ol>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>DataFrame after quantization</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.util.rm_mutual_nas">
+<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">rm_mutual_nas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span></span></span><a class="reference internal" href="_modules/balance/util.html#rm_mutual_nas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.rm_mutual_nas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove entries in a position which is na or infinite in any of the arguments</p>
+<p>Ignores args which are None</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>*args</strong> – can accept array-like or single arraylike argument. Including pandas and numpy arrays.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – If args are not array like (see: <code class="xref py py-func docutils literal notranslate"><span class="pre">_is_arraylike()</span></code>)</p></li>
+<li><p><strong>ValueError</strong> – If args include arrays of different lengths.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>A list with all the original vectors, after removing from them the</dt><dd><p>elements for which there was a missing value in the same position as
+any of the other arrays.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>import pandas as pd
+import numpy as np</p>
+<p>x1 = pd.array([1,2, None, np.nan, pd.NA, 3])
+x2 = pd.array([1.1,2,3, None, np.nan, pd.NA])
+x3 = pd.array([1.1,2,3, 4,5,6])
+x4 = pd.array([“1.1”,2,3, None, np.nan, pd.NA])
+x5 = pd.array([“1.1”,”2”,”3”, None, np.nan, pd.NA], dtype = “string”)
+x6 = np.array([1,2,3.3,4,5,6])
+x7 = np.array([1,2,3.3,4,”5”,”6”])
+x8 = [1,2,3.3,4,”5”,”6”]
+(x1,x2, x3, x4, x5, x6, x7, x8)</p>
+<blockquote>
+<div><p># (&lt;IntegerArray&gt;
+# [1, 2, &lt;NA&gt;, &lt;NA&gt;, &lt;NA&gt;, 3]
+# Length: 6, dtype: Int64,
+# &lt;PandasArray&gt;
+# [1.1, 2, 3, None, nan, &lt;NA&gt;]
+# Length: 6, dtype: object,
+# &lt;PandasArray&gt;
+# [1.1, 2.0, 3.0, 4.0, 5.0, 6.0]
+# Length: 6, dtype: float64,
+# &lt;PandasArray&gt;
+# [‘1.1’, 2, 3, None, nan, &lt;NA&gt;]
+# Length: 6, dtype: object,
+# &lt;StringArray&gt;
+# [‘1.1’, ‘2’, ‘3’, &lt;NA&gt;, &lt;NA&gt;, &lt;NA&gt;]
+# Length: 6, dtype: string,
+# array([1. , 2. , 3.3, 4. , 5. , 6. ]),
+# array([‘1’, ‘2’, ‘3.3’, ‘4’, ‘5’, ‘6’], dtype=’&lt;U32’),
+# [1, 2, 3.3, 4, ‘5’, ‘6’])</p>
+</div></blockquote>
+<p>from balance.util import rm_mutual_nas
+rm_mutual_nas(x1,x2, x3, x4, x5,x6,x7,x8)</p>
+<blockquote>
+<div><p># [&lt;IntegerArray&gt;
+#  [1, 2]
+#  Length: 2, dtype: Int64,
+#  &lt;PandasArray&gt;
+#  [1.1, 2]
+#  Length: 2, dtype: object,
+#  &lt;PandasArray&gt;
+#  [1.1, 2.0]
+#  Length: 2, dtype: float64,
+#  &lt;PandasArray&gt;
+#  [‘1.1’, 2]
+#  Length: 2, dtype: object,
+#  &lt;StringArray&gt;
+#  [‘1.1’, ‘2’]
+#  Length: 2, dtype: string,
+#  array([1., 2.]),
+#  array([‘1’, ‘2’], dtype=’&lt;U32’),
+#  [1, 2]]</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.util.row_pairwise_diffs">
+<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">row_pairwise_diffs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/balance/util.html#row_pairwise_diffs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.row_pairwise_diffs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce the differences between every pair of rows of df
+:param df – pandas DataFrame:</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas DataFrame with differences between all combinations of rows</p>
+</dd>
+</dl>
+<p>Example:
+d = pd.DataFrame({“a”: (1, 2, 3), “b”: (-42, 8, 2)})
+row_pairwise_diffs(d)
+#        a   b
+# 0      1 -42
+# 1      2   8
+# 2      3   2
+# 1 - 0  1  50
+# 2 - 0  2  44
+# 2 - 1  1  -6</p>
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">balance.util</a><ul>
+<li><a class="reference internal" href="#balance.util.TruncationFormatter"><code class="docutils literal notranslate"><span class="pre">TruncationFormatter</span></code></a><ul>
+<li><a class="reference internal" href="#balance.util.TruncationFormatter.format"><code class="docutils literal notranslate"><span class="pre">TruncationFormatter.format()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#balance.util.add_na_indicator"><code class="docutils literal notranslate"><span class="pre">add_na_indicator()</span></code></a></li>
+<li><a class="reference internal" href="#balance.util.auto_spread"><code class="docutils literal notranslate"><span class="pre">auto_spread()</span></code></a></li>
+<li><a class="reference internal" href="#balance.util.build_model_matrix"><code class="docutils literal notranslate"><span class="pre">build_model_matrix()</span></code></a></li>
+<li><a class="reference internal" href="#balance.util.choose_variables"><code class="docutils literal notranslate"><span class="pre">choose_variables()</span></code></a></li>
+<li><a class="reference internal" href="#balance.util.dot_expansion"><code class="docutils literal notranslate"><span class="pre">dot_expansion()</span></code></a></li>
+<li><a class="reference internal" href="#balance.util.drop_na_rows"><code class="docutils literal notranslate"><span class="pre">drop_na_rows()</span></code></a></li>
+<li><a class="reference internal" href="#balance.util.fct_lump"><code class="docutils literal notranslate"><span class="pre">fct_lump()</span></code></a></li>
+<li><a class="reference internal" href="#balance.util.fct_lump_by"><code class="docutils literal notranslate"><span class="pre">fct_lump_by()</span></code></a></li>
+<li><a class="reference internal" href="#balance.util.formula_generator"><code class="docutils literal notranslate"><span class="pre">formula_generator()</span></code></a></li>
+<li><a class="reference internal" href="#balance.util.guess_id_column"><code class="docutils literal notranslate"><span class="pre">guess_id_column()</span></code></a></li>
+<li><a class="reference internal" href="#balance.util.model_matrix"><code class="docutils literal notranslate"><span class="pre">model_matrix()</span></code></a></li>
+<li><a class="reference internal" href="#balance.util.one_hot_encoding_greater_2"><code class="docutils literal notranslate"><span class="pre">one_hot_encoding_greater_2</span></code></a></li>
+<li><a class="reference internal" href="#balance.util.process_formula"><code class="docutils literal notranslate"><span class="pre">process_formula()</span></code></a></li>
+<li><a class="reference internal" href="#balance.util.qcut"><code class="docutils literal notranslate"><span class="pre">qcut()</span></code></a></li>
+<li><a class="reference internal" href="#balance.util.quantize"><code class="docutils literal notranslate"><span class="pre">quantize()</span></code></a></li>
+<li><a class="reference internal" href="#balance.util.rm_mutual_nas"><code class="docutils literal notranslate"><span class="pre">rm_mutual_nas()</span></code></a></li>
+<li><a class="reference internal" href="#balance.util.row_pairwise_diffs"><code class="docutils literal notranslate"><span class="pre">row_pairwise_diffs()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="balance.typing.html"
+                          title="previous chapter">balance.typing</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="balance.weighting_methods.html"
+                          title="next chapter">balance.weighting_methods</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/balance.util.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.weighting_methods.html" title="balance.weighting_methods"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="balance.typing.html" title="balance.typing"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" >balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.util</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

@@ -1,0 +1,264 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>balance.weighting_methods.ipw &#8212; balance  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="balance.weighting_methods.poststratify" href="balance.weighting_methods.poststratify.html" />
+    <link rel="prev" title="balance.weighting_methods.cbps" href="balance.weighting_methods.cbps.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.weighting_methods.poststratify.html" title="balance.weighting_methods.poststratify"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="balance.weighting_methods.cbps.html" title="balance.weighting_methods.cbps"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" >balance</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="balance.weighting_methods.html" accesskey="U">balance.weighting_methods</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.weighting_methods.ipw</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-balance.weighting_methods.ipw">
+<span id="balance-weighting-methods-ipw"></span><h1>balance.weighting_methods.ipw<a class="headerlink" href="#module-balance.weighting_methods.ipw" title="Permalink to this heading">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.weighting_methods.ipw.choose_regularization">
+<span class="sig-prename descclassname"><span class="pre">balance.weighting_methods.ipw.</span></span><span class="sig-name descname"><span class="pre">choose_regularization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_matrix_sample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">balance_classes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_de</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trim_options</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(20,</span> <span class="pre">10,</span> <span class="pre">5,</span> <span class="pre">2.5,</span> <span class="pre">1.25,</span> <span class="pre">0.5,</span> <span class="pre">0.25,</span> <span class="pre">0.125,</span> <span class="pre">0.05,</span> <span class="pre">0.01)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_asmd_candidates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/weighting_methods/ipw.html#choose_regularization"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.weighting_methods.ipw.choose_regularization" title="Permalink to this definition">¶</a></dt>
+<dd><p>Searches through the regularisation parameters of the model and weight
+trimming levels to find the combination with the highest covariate
+ASMD reduction (in sample_df and target_df, NOT in the model matrix used for modeling
+the response) subject to the design effect being lower than max_de (deafults to 1.5).
+The function preforms a grid search over the n_asmd_candidates (deafults to 10) models
+with highest DE lower than max_de (assuming higher DE means more bias reduction).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cvglmnet</strong> (<em>fit --- output of</em>) – </p></li>
+<li><p><strong>---</strong> (<em>max_de</em>) – </p></li>
+<li><p><strong>---</strong> – </p></li>
+<li><p><strong>---</strong> – </p></li>
+<li><p><strong>---</strong> – </p></li>
+<li><p><strong>model</strong> (<em>X_matrix_sample --- the matrix that was used to consturct the</em>) – </p></li>
+<li><p><strong>False</strong> (<em>balance_classes --- True of</em>) – </p></li>
+<li><p><strong>glmnet</strong> (<em>whether balance_classes used in</em>) – </p></li>
+<li><p><strong>---</strong> – Used for choosing the model regularization and trimming.
+Default is 1.5. If set to None, then it uses ‘lambda_1se’</p></li>
+<li><p><strong>weight_trimming_mean_ratio.</strong> (<em>trim_options --- options for</em>) – Default to (20, 10, 5, 2.5, 1.25, 0.5, 0.25, 0.125, 0.05, 0.01),</p></li>
+<li><p><strong>search.</strong> (<em>n_asmd_candidates --- number</em><em> of </em><em>candidates for grid</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict — The value of the chosen lambda, the value of trimming, model description.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.weighting_methods.ipw.cv_glmnet_performance">
+<span class="sig-prename descclassname"><span class="pre">balance.weighting_methods.ipw.</span></span><span class="sig-name descname"><span class="pre">cv_glmnet_performance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'lambda_1se'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/weighting_methods/ipw.html#cv_glmnet_performance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.weighting_methods.ipw.cv_glmnet_performance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract elements from cvglmnet to describe the fitness quality.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fit</strong> – output of cvglmnet</p></li>
+<li><p><strong>feature_names</strong> (<em>list</em><em>, </em><em>optional</em>) – The coeficieents of which features should be included.
+Defaults to None = all features are included..</p></li>
+<li><p><strong>s</strong> (<em>str</em><em> or </em><em>numeric</em><em>, </em><em>optional</em>) – lambda avlue for cvglmnet. Defaults to “lambda_1se”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>3 elements: prop_dev_explained, mean_cv_error and coefs</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.weighting_methods.ipw.ipw">
+<span class="sig-prename descclassname"><span class="pre">balance.weighting_methods.ipw.</span></span><span class="sig-name descname"><span class="pre">ipw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'glmnet'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_trimming_mean_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_trimming_percentile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">balance_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">na_action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'add_indicator'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_de</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">formula</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">penalty_factor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">one_hot_encoding</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2020</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/weighting_methods/ipw.html#ipw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.weighting_methods.ipw.ipw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit an ipw (inverse propensity score weighting) for the sample using the target.</p>
+<p>Arguments:
+sample_df — (pandas dataframe) a dataframe representing the sample
+sample_weights — (pandas series) design weights for sample
+target_df —  (pandas dataframe) a dataframe representing the target
+target_weights — (pandas series) design weights for target
+variable —  (list of strings) list of variables to include in the model.</p>
+<blockquote>
+<div><p>If None all joint variables of sample_df and target_df are used</p>
+</div></blockquote>
+<dl class="simple">
+<dt>model — (string) the model used for modeling the propensity scores.</dt><dd><p>Default is glmnet (logistic model)</p>
+</dd>
+<dt>weight_trimming_mean_ratio —  (float or int) indicating the ratio from above according to which</dt><dd><p>the weights are trimmed by mean(weights) * ratio.
+Default is 20.</p>
+</dd>
+<dt>weight_trimming_percentile — (float) if weight_trimming_percentile is not none, winsorization is applied.</dt><dd><p>Default is None, i.e. trimming is applied.</p>
+</dd>
+<dt>balance_classes=False — (boolean) whether to balance the sample and target size for running the model.</dt><dd><p>Default is True (preferable for imbalanced cases).
+It is done to make the computation of the glmnet more efficient.
+It shouldn’t have an effect on the final weights as this is factored
+into the computation of the weights. TODO: add ref.</p>
+</dd>
+<dt>transformations — (dict) what transformations to apply to data before fitting the model.</dt><dd><p>Default is “default” (see apply_transformations function)</p>
+</dd>
+<dt>na_action — (string) what to do with NAs. Default is “add_indicator”</dt><dd><p>(see add_na_indicator function)</p>
+</dd>
+<dt>max_de — (float) upper bound for the design effect of the computed weights.</dt><dd><p>Used for choosing the model regularization and trimming.
+Default is 1.5. If set to None, then it uses ‘lambda_1se’</p>
+</dd>
+<dt>formula — (string or list of strings) The formula according to which build the model.</dt><dd><p>In case of list of formula, the model matrix will be built in steps and
+concatenated together.</p>
+</dd>
+<dt>penalty_factor — the penalty used in the glment function in ipw. The penalty</dt><dd><p>should have the same length as the formula list. If not provided,
+assume the same panelty for all variables.</p>
+</dd>
+<dt>one_hot_encoding — whether to encode all factor variables in the model matrix with</dt><dd><p>almost_one_hot_encoding. This is recomended in case of using
+LASSO on the data (Default: False).
+one_hot_encoding_greater_3 creates one-hot-encoding for all
+categorical variables with more than 2 categories (i.e. the
+number of columns will be equal to the number of categories),
+and only 1 column for variables with 2 levels (treatment contrast).</p>
+</dd>
+</dl>
+<p>Returns:
+A dictionary includes:
+“weights” — The weights for the sample.
+“model” — parameters of the model:fit, performance, X_matrix_columns, lambda,</p>
+<blockquote>
+<div><p>weight_trimming_mean_ratio</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.weighting_methods.ipw.weights_from_link">
+<span class="sig-prename descclassname"><span class="pre">balance.weighting_methods.ipw.</span></span><span class="sig-name descname"><span class="pre">weights_from_link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">link</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">balance_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_trimming_mean_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_trimming_percentile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_sum_of_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/balance/weighting_methods/ipw.html#weights_from_link"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.weighting_methods.ipw.weights_from_link" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform output of cvglmnetPredict(…, type=’link’) into weights, by
+exponentiating them, and optionally balancing the classes and trimming
+the weights, then normalize the weights to have sum equal to the sum of the target weights.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cvglmnetPredict</strong> (<em>link --- output of</em>) – </p></li>
+<li><p><strong>False</strong> (<em>balance_classes --- True of</em>) – </p></li>
+<li><p><strong>glmnet</strong> (<em>whether balance_classes used in</em>) – </p></li>
+<li><p><strong>sample_weights</strong> – </p></li>
+<li><p><strong>weights</strong> (<em>target_weights --- vecotr</em><em> of </em><em>sample and target</em>) – </p></li>
+<li><p><strong>trim_weights</strong> (<em>keep_sum_of_weights --- to be used in</em>) – </p></li>
+<li><p><strong>trim_weights</strong> – </p></li>
+<li><p><strong>trim_weights</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A vecotr of normalized weights (for sum of target weights)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">balance.weighting_methods.ipw</a><ul>
+<li><a class="reference internal" href="#balance.weighting_methods.ipw.choose_regularization"><code class="docutils literal notranslate"><span class="pre">choose_regularization()</span></code></a></li>
+<li><a class="reference internal" href="#balance.weighting_methods.ipw.cv_glmnet_performance"><code class="docutils literal notranslate"><span class="pre">cv_glmnet_performance()</span></code></a></li>
+<li><a class="reference internal" href="#balance.weighting_methods.ipw.ipw"><code class="docutils literal notranslate"><span class="pre">ipw()</span></code></a></li>
+<li><a class="reference internal" href="#balance.weighting_methods.ipw.weights_from_link"><code class="docutils literal notranslate"><span class="pre">weights_from_link()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="balance.weighting_methods.cbps.html"
+                          title="previous chapter">balance.weighting_methods.cbps</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="balance.weighting_methods.poststratify.html"
+                          title="next chapter">balance.weighting_methods.poststratify</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/balance.weighting_methods.ipw.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.weighting_methods.poststratify.html" title="balance.weighting_methods.poststratify"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="balance.weighting_methods.cbps.html" title="balance.weighting_methods.cbps"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" >balance</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="balance.weighting_methods.html" >balance.weighting_methods</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.weighting_methods.ipw</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

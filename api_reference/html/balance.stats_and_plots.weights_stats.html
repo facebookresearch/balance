@@ -1,0 +1,295 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>balance.stats_and_plots.weights_stats &#8212; balance  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="balance.testutil" href="balance.testutil.html" />
+    <link rel="prev" title="balance.stats_and_plots.weighted_stats" href="balance.stats_and_plots.weighted_stats.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.testutil.html" title="balance.testutil"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.weighted_stats.html" title="balance.stats_and_plots.weighted_stats"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" >balance</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="balance.stats_and_plots.html" accesskey="U">balance.stats_and_plots</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.weights_stats</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-balance.stats_and_plots.weights_stats">
+<span id="balance-stats-and-plots-weights-stats"></span><h1>balance.stats_and_plots.weights_stats<a class="headerlink" href="#module-balance.stats_and_plots.weights_stats" title="Permalink to this heading">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weights_stats.design_effect">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weights_stats.</span></span><span class="sig-name descname"><span class="pre">design_effect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float64</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weights_stats.html#design_effect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weights_stats.design_effect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Kish’s design effect measure.</p>
+<p>For details, see:
+- <a class="reference external" href="https://en.wikipedia.org/wiki/Design_effect">https://en.wikipedia.org/wiki/Design_effect</a>
+- <a class="reference external" href="https://en.wikipedia.org/wiki/Effective_sample_size">https://en.wikipedia.org/wiki/Effective_sample_size</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>w</strong> (<em>pd.Series</em>) – A pandas series of weights (non negative, float/int) values.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An estimator saying by how much the variance of the mean is expected to increase, compared to a random sample mean,
+due to application of the weights.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.float64</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<p>from balance.stats_and_plots.weights_stats import design_effect
+import pandas as pd</p>
+<p>design_effect(pd.Series((0, 1, 2, 3)))
+# output:
+# 1.5555555555555556
+design_effect(pd.Series((1, 1, 1000)))
+# 2.9880418803112336
+# As expected. With a single dominating weight - the Deff is almost equal to the sample size.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weights_stats.nonparametric_skew">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weights_stats.</span></span><span class="sig-name descname"><span class="pre">nonparametric_skew</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float64</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weights_stats.html#nonparametric_skew"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weights_stats.nonparametric_skew" title="Permalink to this definition">¶</a></dt>
+<dd><p>The nonparametric skew is the difference between the mean and the median, divided by the standard deviation.
+See:
+- <a class="reference external" href="https://en.wikipedia.org/wiki/Nonparametric_skew">https://en.wikipedia.org/wiki/Nonparametric_skew</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>w</strong> (<em>pd.Series</em>) – A pandas series of weights (non negative, float/int) values.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A value of skew, between -1 to 1, but for weights it’s often positive (i.e.: right tailed distribution).
+The value returned will be 0 if the standard deviation is 0 (i.e.: all values are identical), or if the input is of length 1.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.float64</p>
+</dd>
+</dl>
+<p>Examples:
+from balance.stats_and_plots.weights_stats import nonparametric_skew</p>
+<p>nonparametric_skew(pd.Series((1, 1, 1, 1)))  # 0
+nonparametric_skew(pd.Series((1)))           # 0
+nonparametric_skew(pd.Series((1, 2, 3, 4)))  # 0
+nonparametric_skew(pd.Series((1, 1, 1, 2)))  # 0.5
+nonparametric_skew(pd.Series((-1,1,1, 1)))   #-0.5</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weights_stats.prop_above_and_below">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weights_stats.</span></span><span class="sig-name descname"><span class="pre">prop_above_and_below</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">below</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(0.1,</span> <span class="pre">0.2,</span> <span class="pre">0.3333333333333333,</span> <span class="pre">0.5,</span> <span class="pre">1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">above</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(1,</span> <span class="pre">2,</span> <span class="pre">3,</span> <span class="pre">5,</span> <span class="pre">10)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_as_series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weights_stats.html#prop_above_and_below"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weights_stats.prop_above_and_below" title="Permalink to this definition">¶</a></dt>
+<dd><p>The proportion of weights, normalized to sample size, that are above and below some numbers (E.g. 1,2,3,5,10 and their inverse: 1, 1/2, 1/3, etc.).
+This is similar to returning percentiles of the (normalized) weighted distribution. But instead of focusing on the 25th percentile, the median, etc,
+We focus instead on more easily interpretable weights values.</p>
+<p>For example, saying that some proportion of users had a weight of above 1 gives us an indication of how many users
+we got that we don’t “loose” their value after using the weights. Saying which proportion of users had a weight below 1/10 tells us how many users
+had basically almost no contribution to the final analysis (after applying the weights).</p>
+<p>Note that below and above can overlap, be unordered, etc. The user is responsible for the order.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>w</strong> (<em>pd.Series</em>) – A pandas series of weights (float, non negative) values.</p></li>
+<li><p><strong>below</strong> (<em>Union</em><em>[</em><em>Tuple</em><em>[</em><em>float</em><em>, </em><em>...</em><em>]</em><em>, </em><em>List</em><em>[</em><em>float</em><em>]</em><em>, </em><em>None</em><em>]</em><em>, </em><em>optional</em>) – values to check which proportion of normalized weights are <em>below</em> them.
+Using None returns None.
+Defaults to (1/10, 1/5, 1/3, 1/2, 1).</p></li>
+<li><p><strong>above</strong> (<em>Union</em><em>[</em><em>Tuple</em><em>[</em><em>float</em><em>, </em><em>...</em><em>]</em><em>, </em><em>List</em><em>[</em><em>float</em><em>]</em><em>, </em><em>None</em><em>]</em><em>, </em><em>optional</em>) – values to check which proportion of normalized weights are <em>above</em> (or equal) to them.
+Using None returns None.
+Defaults to (1, 2, 3, 5, 10).</p></li>
+<li><p><strong>return_as_series</strong> (<em>bool</em><em>, </em><em>optional</em>) – If true returns one pd.Series of values.
+If False will return a dict with two pd.Series (one for below and one for above).
+Defaults to True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>If return_as_series is True we get pd.Series with proportions of (normalized weights)
+that are below/above some numbers, the index indicates which threshold was checked
+(the values in the index are rounded up to 3 points for printing purposes).
+If return_as_series is False we get a dict with ‘below’ and ‘above’ with the relevant pd.Series (or None).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[pd.Series, Dict]</p>
+</dd>
+</dl>
+<p>Examples:
+from balance.stats_and_plots.weights_stats import prop_above_and_below
+import pandas as pd</p>
+<p># normalized weights:
+print(pd.Series((1, 2, 3, 4)) / pd.Series((1, 2, 3, 4)).mean())
+# 0    0.4
+# 1    0.8
+# 2    1.2
+# 3    1.6</p>
+<p># checking the function:
+prop_above_and_below(pd.Series((1, 2, 3, 4)))
+# dtype: float64
+# prop(w &lt; 0.1)      0.00
+# prop(w &lt; 0.2)      0.00
+# prop(w &lt; 0.333)    0.00
+# prop(w &lt; 0.5)      0.25
+# prop(w &lt; 1.0)      0.50
+# prop(w &gt;= 1)       0.50
+# prop(w &gt;= 2)       0.00
+# prop(w &gt;= 3)       0.00
+# prop(w &gt;= 5)       0.00
+# prop(w &gt;= 10)      0.00
+# dtype: float64</p>
+<p>prop_above_and_below(pd.Series((1, 2, 3, 4)), below = (0.1, 0.5), above = (2,3))
+# prop(w &lt; 0.1)    0.00
+# prop(w &lt; 0.5)    0.25
+# prop(w &gt;= 2)     0.00
+# prop(w &gt;= 3)     0.00
+# dtype: float64</p>
+<p>prop_above_and_below(pd.Series((1, 2, 3, 4)), return_as_series = False)
+# {‘below’: prop(w &lt; 0.1)      0.00
+# prop(w &lt; 0.2)      0.00
+# prop(w &lt; 0.333)    0.00
+# prop(w &lt; 0.5)      0.25
+# prop(w &lt; 1)        0.50
+# dtype: float64, ‘above’: prop(w &gt;= 1)     0.5
+# prop(w &gt;= 2)     0.0
+# prop(w &gt;= 3)     0.0
+# prop(w &gt;= 5)     0.0
+# prop(w &gt;= 10)    0.0
+# dtype: float64}</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weights_stats.weighted_median_breakdown_point">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weights_stats.</span></span><span class="sig-name descname"><span class="pre">weighted_median_breakdown_point</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float64</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weights_stats.html#weighted_median_breakdown_point"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weights_stats.weighted_median_breakdown_point" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the minimal percent of users that have at least 50% of the weights.
+This gives us the breakdown point of calculating the weighted median.
+This can be thought of as reflecting a similar metric to the design effect.
+See also:
+- <a class="reference external" href="https://en.wikipedia.org/wiki/Weighted_median">https://en.wikipedia.org/wiki/Weighted_median</a>
+- <a class="reference external" href="https://en.wikipedia.org/wiki/Robust_statistics#Breakdown_point">https://en.wikipedia.org/wiki/Robust_statistics#Breakdown_point</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>w</strong> (<em>pd.Series</em>) – A pandas series of weights (float, non negative values).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A minimal percent of users that contain at least 50% of the weights.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.float64</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<p>w = pd.Series([1,1,1,1])
+print(weighted_median_breakdown_point(w)) # 0.5</p>
+<p>w = pd.Series([2,2,2,2])
+print(weighted_median_breakdown_point(w)) # 0.5</p>
+<p>w = pd.Series([1,1,1, 10])
+print(weighted_median_breakdown_point(w)) # 0.25</p>
+<p>w = pd.Series([1,1,1,1, 10])
+print(weighted_median_breakdown_point(w)) # 0.2</p>
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">balance.stats_and_plots.weights_stats</a><ul>
+<li><a class="reference internal" href="#balance.stats_and_plots.weights_stats.design_effect"><code class="docutils literal notranslate"><span class="pre">design_effect()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weights_stats.nonparametric_skew"><code class="docutils literal notranslate"><span class="pre">nonparametric_skew()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weights_stats.prop_above_and_below"><code class="docutils literal notranslate"><span class="pre">prop_above_and_below()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weights_stats.weighted_median_breakdown_point"><code class="docutils literal notranslate"><span class="pre">weighted_median_breakdown_point()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="balance.stats_and_plots.weighted_stats.html"
+                          title="previous chapter">balance.stats_and_plots.weighted_stats</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="balance.testutil.html"
+                          title="next chapter">balance.testutil</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/balance.stats_and_plots.weights_stats.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.testutil.html" title="balance.testutil"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.weighted_stats.html" title="balance.stats_and_plots.weighted_stats"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" >balance</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="balance.stats_and_plots.html" >balance.stats_and_plots</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.weights_stats</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

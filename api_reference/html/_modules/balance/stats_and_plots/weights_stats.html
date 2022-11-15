@@ -1,0 +1,392 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>balance.stats_and_plots.weights_stats &#8212; balance  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../../balance.html" accesskey="U">balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.weights_stats</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for balance.stats_and_plots.weights_stats</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) Meta Platforms, Inc. and affiliates.</span>
+<span class="c1">#</span>
+<span class="c1"># This software may be used and distributed according to the terms of the</span>
+<span class="c1"># GNU General Public License version 2.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
+
+
+<span class="c1">##########################################</span>
+<span class="c1"># Weights diagnostics - functions for analyzing weights</span>
+<span class="c1">##########################################</span>
+
+
+<span class="k">def</span> <span class="nf">_check_weights_are_valid</span><span class="p">(</span>
+    <span class="n">w</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
+        <span class="n">List</span><span class="p">,</span>
+        <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+    <span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Check weights.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        w (Union[ List, pd.Series, np.ndarray, pd.DataFrame, None, ]): input weights.</span>
+<span class="sd">            If w is pd.DataFrame then only the first column will be checked (assuming it is a column of weights).</span>
+<span class="sd">            If input is None, then the function returns None with no errors (since None is a valid weights input for various functions).</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: if weights are not numeric.</span>
+<span class="sd">        ValueError: if weights include a negative value.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        _type_: None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">w</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>  <span class="c1"># if DataFrame, we check only the first column.</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+        <span class="c1"># TODO: (p2) consider having a check for each type of w, instead of</span>
+        <span class="c1">#            turning w into pd.Series (since this solution might not be very efficient)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;weights (w) must be a number but instead they are of type: </span><span class="si">{</span><span class="n">w</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">w</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weights (w) must all be non-negative values.&quot;</span><span class="p">)</span>
+    <span class="c1"># TODO: do we also want to verify that at least one weight is larger than 0?!</span>
+
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="c1"># TODO: if the input is pd.DataFrame than the output will be pd.Series.</span>
+<span class="c1">#       we could make the support of this more official in the future.</span>
+<div class="viewcode-block" id="design_effect"><a class="viewcode-back" href="../../../balance.stats_and_plots.weights_stats.html#balance.stats_and_plots.weights_stats.design_effect">[docs]</a><span class="k">def</span> <span class="nf">design_effect</span><span class="p">(</span><span class="n">w</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Kish&#39;s design effect measure.</span>
+
+<span class="sd">    For details, see:</span>
+<span class="sd">    - https://en.wikipedia.org/wiki/Design_effect</span>
+<span class="sd">    - https://en.wikipedia.org/wiki/Effective_sample_size</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        w (pd.Series): A pandas series of weights (non negative, float/int) values.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.float64: An estimator saying by how much the variance of the mean is expected to increase, compared to a random sample mean,</span>
+<span class="sd">        due to application of the weights.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        from balance.stats_and_plots.weights_stats import design_effect</span>
+<span class="sd">        import pandas as pd</span>
+
+<span class="sd">        design_effect(pd.Series((0, 1, 2, 3)))</span>
+<span class="sd">        # output:</span>
+<span class="sd">        # 1.5555555555555556</span>
+<span class="sd">        design_effect(pd.Series((1, 1, 1000)))</span>
+<span class="sd">        # 2.9880418803112336</span>
+<span class="sd">        # As expected. With a single dominating weight - the Deff is almost equal to the sample size.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_check_weights_are_valid</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">w</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">/</span> <span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="nonparametric_skew"><a class="viewcode-back" href="../../../balance.stats_and_plots.weights_stats.html#balance.stats_and_plots.weights_stats.nonparametric_skew">[docs]</a><span class="k">def</span> <span class="nf">nonparametric_skew</span><span class="p">(</span><span class="n">w</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+    <span class="c1"># TODO (p2): consider adding other skew measures (https://en.wikipedia.org/wiki/Skewness)</span>
+    <span class="c1">#            look more in the literature (are there references for using this vs another, or none at all?)</span>
+    <span class="c1">#            update the doc with insights, once done:</span>
+    <span class="c1">#            what is more accepted in the literature in the field and what are the advantages of each.</span>
+    <span class="c1">#            Any reference to literature where this is used to analyze weights of survey?</span>
+    <span class="c1">#            Add reference to some interpretation of these values?</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The nonparametric skew is the difference between the mean and the median, divided by the standard deviation.</span>
+<span class="sd">    See:</span>
+<span class="sd">    - https://en.wikipedia.org/wiki/Nonparametric_skew</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        w (pd.Series): A pandas series of weights (non negative, float/int) values.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.float64: A value of skew, between -1 to 1, but for weights it&#39;s often positive (i.e.: right tailed distribution).</span>
+<span class="sd">        The value returned will be 0 if the standard deviation is 0 (i.e.: all values are identical), or if the input is of length 1.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">    from balance.stats_and_plots.weights_stats import nonparametric_skew</span>
+
+<span class="sd">    nonparametric_skew(pd.Series((1, 1, 1, 1)))  # 0</span>
+<span class="sd">    nonparametric_skew(pd.Series((1)))           # 0</span>
+<span class="sd">    nonparametric_skew(pd.Series((1, 2, 3, 4)))  # 0</span>
+<span class="sd">    nonparametric_skew(pd.Series((1, 1, 1, 2)))  # 0.5</span>
+<span class="sd">    nonparametric_skew(pd.Series((-1,1,1, 1)))   #-0.5</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_check_weights_are_valid</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">std</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">-</span> <span class="n">w</span><span class="o">.</span><span class="n">median</span><span class="p">())</span> <span class="o">/</span> <span class="n">w</span><span class="o">.</span><span class="n">std</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="prop_above_and_below"><a class="viewcode-back" href="../../../balance.stats_and_plots.weights_stats.html#balance.stats_and_plots.weights_stats.prop_above_and_below">[docs]</a><span class="k">def</span> <span class="nf">prop_above_and_below</span><span class="p">(</span>
+    <span class="n">w</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">below</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="mi">1</span> <span class="o">/</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="mi">1</span> <span class="o">/</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="mi">1</span> <span class="o">/</span> <span class="mi">3</span><span class="p">,</span>
+        <span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="mi">1</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="n">above</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+    <span class="n">return_as_series</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
+    <span class="c1"># TODO (p2): look more in the literature (are there references for using this vs another, or none at all?)</span>
+    <span class="c1">#            update the doc with insights, once done.</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The proportion of weights, normalized to sample size, that are above and below some numbers (E.g. 1,2,3,5,10 and their inverse: 1, 1/2, 1/3, etc.).</span>
+<span class="sd">    This is similar to returning percentiles of the (normalized) weighted distribution. But instead of focusing on the 25th percentile, the median, etc,</span>
+<span class="sd">    We focus instead on more easily interpretable weights values.</span>
+
+<span class="sd">    For example, saying that some proportion of users had a weight of above 1 gives us an indication of how many users</span>
+<span class="sd">    we got that we don&#39;t &quot;loose&quot; their value after using the weights. Saying which proportion of users had a weight below 1/10 tells us how many users</span>
+<span class="sd">    had basically almost no contribution to the final analysis (after applying the weights).</span>
+
+<span class="sd">    Note that below and above can overlap, be unordered, etc. The user is responsible for the order.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        w (pd.Series): A pandas series of weights (float, non negative) values.</span>
+<span class="sd">        below (Union[Tuple[float, ...], List[float], None], optional):</span>
+<span class="sd">            values to check which proportion of normalized weights are *below* them.</span>
+<span class="sd">            Using None returns None.</span>
+<span class="sd">            Defaults to (1/10, 1/5, 1/3, 1/2, 1).</span>
+<span class="sd">        above (Union[Tuple[float, ...], List[float], None], optional):</span>
+<span class="sd">            values to check which proportion of normalized weights are *above* (or equal) to them.</span>
+<span class="sd">            Using None returns None.</span>
+<span class="sd">            Defaults to (1, 2, 3, 5, 10).</span>
+<span class="sd">        return_as_series (bool, optional): If true returns one pd.Series of values.</span>
+<span class="sd">            If False will return a dict with two pd.Series (one for below and one for above).</span>
+<span class="sd">            Defaults to True.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Union[pd.Series, Dict]:</span>
+<span class="sd">        If return_as_series is True we get pd.Series with proportions of (normalized weights)</span>
+<span class="sd">        that are below/above some numbers, the index indicates which threshold was checked</span>
+<span class="sd">        (the values in the index are rounded up to 3 points for printing purposes).</span>
+<span class="sd">        If return_as_series is False we get a dict with &#39;below&#39; and &#39;above&#39; with the relevant pd.Series (or None).</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">    from balance.stats_and_plots.weights_stats import prop_above_and_below</span>
+<span class="sd">    import pandas as pd</span>
+
+<span class="sd">    # normalized weights:</span>
+<span class="sd">    print(pd.Series((1, 2, 3, 4)) / pd.Series((1, 2, 3, 4)).mean())</span>
+<span class="sd">    # 0    0.4</span>
+<span class="sd">    # 1    0.8</span>
+<span class="sd">    # 2    1.2</span>
+<span class="sd">    # 3    1.6</span>
+
+<span class="sd">    # checking the function:</span>
+<span class="sd">    prop_above_and_below(pd.Series((1, 2, 3, 4)))</span>
+<span class="sd">    # dtype: float64</span>
+<span class="sd">    # prop(w &lt; 0.1)      0.00</span>
+<span class="sd">    # prop(w &lt; 0.2)      0.00</span>
+<span class="sd">    # prop(w &lt; 0.333)    0.00</span>
+<span class="sd">    # prop(w &lt; 0.5)      0.25</span>
+<span class="sd">    # prop(w &lt; 1.0)      0.50</span>
+<span class="sd">    # prop(w &gt;= 1)       0.50</span>
+<span class="sd">    # prop(w &gt;= 2)       0.00</span>
+<span class="sd">    # prop(w &gt;= 3)       0.00</span>
+<span class="sd">    # prop(w &gt;= 5)       0.00</span>
+<span class="sd">    # prop(w &gt;= 10)      0.00</span>
+<span class="sd">    # dtype: float64</span>
+
+<span class="sd">    prop_above_and_below(pd.Series((1, 2, 3, 4)), below = (0.1, 0.5), above = (2,3))</span>
+<span class="sd">    # prop(w &lt; 0.1)    0.00</span>
+<span class="sd">    # prop(w &lt; 0.5)    0.25</span>
+<span class="sd">    # prop(w &gt;= 2)     0.00</span>
+<span class="sd">    # prop(w &gt;= 3)     0.00</span>
+<span class="sd">    # dtype: float64</span>
+
+<span class="sd">    prop_above_and_below(pd.Series((1, 2, 3, 4)), return_as_series = False)</span>
+<span class="sd">    # {&#39;below&#39;: prop(w &lt; 0.1)      0.00</span>
+<span class="sd">    # prop(w &lt; 0.2)      0.00</span>
+<span class="sd">    # prop(w &lt; 0.333)    0.00</span>
+<span class="sd">    # prop(w &lt; 0.5)      0.25</span>
+<span class="sd">    # prop(w &lt; 1)        0.50</span>
+<span class="sd">    # dtype: float64, &#39;above&#39;: prop(w &gt;= 1)     0.5</span>
+<span class="sd">    # prop(w &gt;= 2)     0.0</span>
+<span class="sd">    # prop(w &gt;= 3)     0.0</span>
+<span class="sd">    # prop(w &gt;= 5)     0.0</span>
+<span class="sd">    # prop(w &gt;= 10)    0.0</span>
+<span class="sd">    # dtype: float64}</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_check_weights_are_valid</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+
+    <span class="c1"># normalize weight to sample size:</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">w</span> <span class="o">/</span> <span class="n">w</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">below</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">above</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># calculate props from below:</span>
+    <span class="k">if</span> <span class="n">below</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">prop_below</span> <span class="o">=</span> <span class="p">[(</span><span class="n">w</span> <span class="o">&lt;</span> <span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">below</span><span class="p">]</span>
+        <span class="n">prop_below_index</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;prop(w &lt; &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">below</span><span class="p">]</span>
+        <span class="n">prop_below_series</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">prop_below</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">prop_below_index</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">prop_below_series</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># calculate props from above:</span>
+    <span class="k">if</span> <span class="n">above</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">prop_above</span> <span class="o">=</span> <span class="p">[(</span><span class="n">w</span> <span class="o">&gt;=</span> <span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">above</span><span class="p">]</span>
+        <span class="n">prop_above_index</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;prop(w &gt;= &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">above</span><span class="p">]</span>
+        <span class="n">prop_above_series</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">prop_above</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">prop_above_index</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">prop_above_series</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># decide if to return one series or a dict</span>
+    <span class="k">if</span> <span class="n">return_as_series</span><span class="p">:</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+            <span class="p">[</span>  <span class="c1"># pyre-ignore[6]: pd.concat supports Series.</span>
+                <span class="n">prop_below_series</span><span class="p">,</span>
+                <span class="n">prop_above_series</span><span class="p">,</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;below&quot;</span><span class="p">:</span> <span class="n">prop_below_series</span><span class="p">,</span> <span class="s2">&quot;above&quot;</span><span class="p">:</span> <span class="n">prop_above_series</span><span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">out</span>  <span class="c1"># pyre-ignore[7]:  TODO: see if we can fix this pyre</span></div>
+
+
+<div class="viewcode-block" id="weighted_median_breakdown_point"><a class="viewcode-back" href="../../../balance.stats_and_plots.weights_stats.html#balance.stats_and_plots.weights_stats.weighted_median_breakdown_point">[docs]</a><span class="k">def</span> <span class="nf">weighted_median_breakdown_point</span><span class="p">(</span><span class="n">w</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+    <span class="c1"># TODO (p2): do we want to have weighted_quantile_breakdown_point</span>
+    <span class="c1"># so to check for quantiles other than 50%?</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates the minimal percent of users that have at least 50% of the weights.</span>
+<span class="sd">    This gives us the breakdown point of calculating the weighted median.</span>
+<span class="sd">    This can be thought of as reflecting a similar metric to the design effect.</span>
+<span class="sd">    See also:</span>
+<span class="sd">    - https://en.wikipedia.org/wiki/Weighted_median</span>
+<span class="sd">    - https://en.wikipedia.org/wiki/Robust_statistics#Breakdown_point</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        w (pd.Series): A pandas series of weights (float, non negative values).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.float64: A minimal percent of users that contain at least 50% of the weights.</span>
+
+<span class="sd">    Examples:</span>
+
+<span class="sd">    w = pd.Series([1,1,1,1])</span>
+<span class="sd">    print(weighted_median_breakdown_point(w)) # 0.5</span>
+
+<span class="sd">    w = pd.Series([2,2,2,2])</span>
+<span class="sd">    print(weighted_median_breakdown_point(w)) # 0.5</span>
+
+<span class="sd">    w = pd.Series([1,1,1, 10])</span>
+<span class="sd">    print(weighted_median_breakdown_point(w)) # 0.25</span>
+
+<span class="sd">    w = pd.Series([1,1,1,1, 10])</span>
+<span class="sd">    print(weighted_median_breakdown_point(w)) # 0.2</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_check_weights_are_valid</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+
+    <span class="c1"># normalize weight to sample size:</span>
+
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>  <span class="c1"># n users</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">w</span> <span class="o">/</span> <span class="n">w</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>  <span class="c1"># normalize to 1</span>
+    <span class="c1"># get a cumsum of sorted weights to find the median:</span>
+    <span class="n">w_freq_cumsum</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span>  <span class="c1"># pyre-ignore[16]: it does have a cumsum method.</span>
+        <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">cumsum</span><span class="p">()</span>
+    <span class="n">numerator</span> <span class="o">=</span> <span class="p">(</span><span class="n">w_freq_cumsum</span> <span class="o">&lt;=</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">numerator</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">numerator</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="mi">1</span>  <span class="c1"># this happens if one observation has more than 50% of the weights</span>
+        <span class="p">)</span>
+    <span class="c1"># find minimal proportion of samples needed to reach 50%</span>
+    <span class="c1"># the +1 trick is to deal with cases that 1 user has a weight that is larget then 50%.</span>
+    <span class="k">return</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">n</span>  <span class="c1"># breakdown_point</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../../balance.html" >balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.weights_stats</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

@@ -1,0 +1,723 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>balance.stats_and_plots.weighted_comparisons_plots &#8212; balance  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="balance.stats_and_plots.weighted_comparisons_stats" href="balance.stats_and_plots.weighted_comparisons_stats.html" />
+    <link rel="prev" title="balance.stats_and_plots.general_stats" href="balance.stats_and_plots.general_stats.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.weighted_comparisons_stats.html" title="balance.stats_and_plots.weighted_comparisons_stats"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.general_stats.html" title="balance.stats_and_plots.general_stats"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" >balance</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="balance.stats_and_plots.html" accesskey="U">balance.stats_and_plots</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.weighted_comparisons_plots</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-balance.stats_and_plots.weighted_comparisons_plots">
+<span id="balance-stats-and-plots-weighted-comparisons-plots"></span><h1>balance.stats_and_plots.weighted_comparisons_plots<a class="headerlink" href="#module-balance.stats_and_plots.weighted_comparisons_plots" title="Permalink to this heading">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_comparisons_plots.naming_legend">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_comparisons_plots.</span></span><span class="sig-name descname"><span class="pre">naming_legend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">object_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names_of_dfs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_comparisons_plots.html#naming_legend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_comparisons_plots.naming_legend" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function returns a name for a legend of a plot given the other dfs.
+If one of the dfs we would like to plot is “unadjusted”, it means
+that the Sample object contains the adjusted object as self.
+If not, then the self object is sample.</p>
+<p>Args:
+object_name - the name of the object to plot (string)
+names_of_dfs - the names of the other dfs to plot (list of strings)</p>
+<p>returns:
+a string with the desired name</p>
+<p>Examples:
+naming_legend(‘self’, [‘self’, ‘target’, ‘unadjusted’]) #’adjusted’
+naming_legend(‘unadjusted’, [‘self’, ‘target’, ‘unadjusted’]) #’sample’
+naming_legend(‘self’, [‘self’, ‘target’]) #’sample’
+naming_legend(‘other_name’, [‘self’, ‘target’]) #’other_name’</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_comparisons_plots.plot_bar">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_comparisons_plots.</span></span><span class="sig-name descname"><span class="pre">plot_bar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dfs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Axes</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighted</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_comparisons_plots.html#plot_bar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_comparisons_plots.plot_bar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows a (weighted) <code class="xref py py-func docutils literal notranslate"><span class="pre">sns.barplot()</span></code> using a relative frequncy table of several DataFrames.</p>
+<p>If weighted is True, then mutual NA values are removed using <code class="xref py py-func docutils literal notranslate"><span class="pre">rm_mutual_nas()</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dfs</strong> (<em>List</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Union</em><em>[</em><em>pd.DataFrame</em><em>, </em><em>pd.Series</em><em>]</em><em>]</em><em>]</em>) – <p>a list (of length 1 or more) of dictionaries which describe the DataFrames and weights
+The structure is as follows:
+[</p>
+<blockquote>
+<div><p>{‘df’: pd.DataFrame(…), ‘weights’: pd.Series(…)},
+…</p>
+</div></blockquote>
+<p>]
+The ‘df’ is a DataFrame which includes the column name that was supplied through ‘column’.
+The ‘weights’ is a pd.Series of weights that are used when aggregating the variable using <code class="xref py py-func docutils literal notranslate"><span class="pre">relative_frequency_table()</span></code>.</p>
+</p></li>
+<li><p><strong>names</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – a list of the names of the DataFrames that are plotted. E.g.: [‘adjusted’, ‘unadjusted’, ‘target’]</p></li>
+<li><p><strong>column</strong> (<em>str</em>) – The column to be used to aggregate using <code class="xref py py-func docutils literal notranslate"><span class="pre">relative_frequency_table()</span></code>.</p></li>
+<li><p><strong>axis</strong> (<em>Optional</em><em>[</em><em>plt.Axes</em><em>]</em><em>, </em><em>optional</em>) – matplotlib Axes object to draw the plot onto, otherwise uses the current Axes. Defaults to None.</p></li>
+<li><p><strong>weighted</strong> (<em>bool</em><em>, </em><em>optional</em>) – If to pass the weights from the dicts inside dfs. Defaults to True.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>from balance.stats_and_plots.weighted_comparisons_plots import plot_bar
+import pandas as pd
+import numpy as np</p>
+<dl class="simple">
+<dt>df = pd.DataFrame({</dt><dd><p>‘group’: (‘a’, ‘b’, ‘c’, ‘c’),
+‘v1’: (1, 2, 3, 4),</p>
+</dd>
+</dl>
+<p>})</p>
+<dl class="simple">
+<dt>plot_bar(</dt><dd><p>[{“df”: df, “weights”: pd.Series((1, 1, 1, 1))}, {“df”: df, “weights”: pd.Series((2, 1, 1, 1))}],
+names = [“self”, “target”],
+column = “group”,
+axis = None,
+weighted = True)</p>
+</dd>
+</dl>
+<p># Also deals with np.nan weights
+a = plot_bar(</p>
+<blockquote>
+<div><p>[{“df”: df, “weights”: pd.Series((1, 1, 1, np.nan))}, {“df”: df, “weights”: pd.Series((2, 1, 1, np.nan))}],
+names = [“self”, “target”],
+column = “group”,
+axis = None,
+weighted = True)</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_comparisons_plots.plot_dist">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_comparisons_plots.</span></span><span class="sig-name descname"><span class="pre">plot_dist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dfs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numeric_n_values_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">15</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighted</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'qq'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'hist'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'kde'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'ecdf'</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">library</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'plotly'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'seaborn'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'plotly'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Figure</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_comparisons_plots.html#plot_dist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_comparisons_plots.plot_dist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the variables of a DataFrame by using either seaborn or plotly.</p>
+<p>If using plotly then using qq plots for numeric variables and bar plots for categorical variables. Uses <a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_dist" title="balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_dist"><code class="xref py py-func docutils literal notranslate"><span class="pre">plotly_plot_dist()</span></code></a>.
+If using seaborn then various types of plots are possible for the variables (see dist_type for details). Uses <a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_plots.seaborn_plot_dist" title="balance.stats_and_plots.weighted_comparisons_plots.seaborn_plot_dist"><code class="xref py py-func docutils literal notranslate"><span class="pre">seaborn_plot_dist()</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dfs</strong> (<em>List</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Union</em><em>[</em><em>pd.DataFrame</em><em>, </em><em>pd.Series</em><em>]</em><em>]</em><em>]</em>) – <p>a list (of length 1 or more) of dictionaries which describe the DataFrames and weights
+The structure is as follows:
+[</p>
+<blockquote>
+<div><p>{‘df’: pd.DataFrame(…), ‘weights’: pd.Series(…)},
+…</p>
+</div></blockquote>
+<p>]
+The ‘df’ is a DataFrame which includes the column name that was supplied through ‘column’.
+The ‘weights’ is a pd.Series of weights that are used when aggregating the variable using <code class="xref py py-func docutils literal notranslate"><span class="pre">relative_frequency_table()</span></code>.</p>
+</p></li>
+<li><p><strong>names</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – a list of the names of the DataFrames that are plotted. E.g.: [‘adjusted’, ‘unadjusted’, ‘target’]
+If None, then all DataFrames will be plotted, but only if library == “seaborn”. (TODO: to remove this restriction)</p></li>
+<li><p><strong>variables</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – a list of variables to use for plotting. Default (i.e.: if None) is to use the list of all variables.</p></li>
+<li><p><strong>numeric_n_values_threshold</strong> (<em>int</em><em>, </em><em>optional</em>) – How many numbers should be in a column so that it is considered to be a “category”? Defaults to 15.</p></li>
+<li><p><strong>weighted</strong> (<em>bool</em><em>, </em><em>optional</em>) – If to use the weights with the plots. Defaults to True.</p></li>
+<li><p><strong>dist_type</strong> (<em>Literal</em><em>[</em><em>&quot;qq&quot;</em><em>, </em><em>&quot;hist&quot;</em><em>, </em><em>&quot;kde&quot;</em><em>, </em><em>&quot;ecdf&quot;</em><em>]</em><em>, </em><em>optional</em>) – The type of plot to draw. Relevant only if using library=”seaborn”. Defaults to “hist”.</p></li>
+<li><p><strong>library</strong> (<em>Literal</em><em>[</em><em>&quot;plotly&quot;</em><em>, </em><em>&quot;seaborn&quot;</em><em>]</em><em>, </em><em>optional</em>) – Whichever library to use for the plot. Defaults to “plotly”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – if library is not in (“plotly”, “seaborn”).</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If library=”plotly” then returns a dictionary containing plots if return_dict_of_figures is True. None otherwise.
+If library=”seaborn” then returns either a list or an np.array of matplotlib axis.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Union[Union[List, np.ndarray], Dict[str, go.Figure]]</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>import numpy as np
+import pandas as pd
+from numpy import random
+from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_bar</p>
+<p>random.seed(96483)</p>
+<dl class="simple">
+<dt>df = pd.DataFrame({</dt><dd><p>‘v1’: random.random_integers(11111, 11114, size=100).astype(str),
+‘v2’: random.normal(size = 100),
+‘v3’: random.uniform(size = 100),</p>
+</dd>
+</dl>
+<p>}).sort_values(by=[‘v2’])</p>
+<dl class="simple">
+<dt>dfs1 = [</dt><dd><p>{“df”: df, “weights”: pd.Series(random.random(size = 100) + 0.5)},
+{“df”: df, “weights”: pd.Series(np.ones(99).tolist() + [1000])},
+{“df”: df, “weights”: pd.Series(np.ones(100))},</p>
+</dd>
+</dl>
+<p>]</p>
+<p>from balance.stats_and_plots.weighted_comparisons_plots import plot_dist</p>
+<p># defaults to plotly with bar and qq plots. Returns None.
+plot_dist(dfs1, names=[“self”, “unadjusted”, “target”])</p>
+<p># Using seaborn, deafults to qq plots
+plot_dist(dfs1, names=[“self”, “unadjusted”, “target”], library=”seaborn”) # like using dist_type = “qq”
+plot_dist(dfs1, names=[“self”, “unadjusted”, “target”], library=”seaborn”, dist_type = “hist”)
+plot_dist(dfs1, names=[“self”, “unadjusted”, “target”], library=”seaborn”, dist_type = “kde”)
+plot_dist(dfs1, names=[“self”, “unadjusted”, “target”], library=”seaborn”, dist_type = “ecdf”)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_comparisons_plots.plot_hist_kde">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_comparisons_plots.</span></span><span class="sig-name descname"><span class="pre">plot_hist_kde</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dfs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Axes</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighted</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'hist'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'kde'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'ecdf'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'hist'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_comparisons_plots.html#plot_hist_kde"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_comparisons_plots.plot_hist_kde" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows a (weighted) distribution plot ():func:<cite>sns.displot</cite>) of data from several DataFrame objects.</p>
+<p>Options include histogram (hist), kernel density estimate (kde), and empirical cumulative density function (ecdf).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dfs</strong> (<em>List</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Union</em><em>[</em><em>pd.DataFrame</em><em>, </em><em>pd.Series</em><em>]</em><em>]</em><em>]</em>) – <p>a list (of length 1 or more) of dictionaries which describe the DataFrames and weights
+The structure is as follows:
+[</p>
+<blockquote>
+<div><p>{‘df’: pd.DataFrame(…), ‘weights’: pd.Series(…)},
+…</p>
+</div></blockquote>
+<p>]
+The ‘df’ is a DataFrame which includes the column name that was supplied through ‘column’.
+The ‘weights’ is a pd.Series of weights that are used when aggregating the variable using <code class="xref py py-func docutils literal notranslate"><span class="pre">relative_frequency_table()</span></code>.</p>
+</p></li>
+<li><p><strong>names</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – a list of the names of the DataFrames that are plotted. E.g.: [‘adjusted’, ‘unadjusted’, ‘target’]</p></li>
+<li><p><strong>column</strong> (<em>str</em>) – The column to be used to aggregate using <code class="xref py py-func docutils literal notranslate"><span class="pre">relative_frequency_table()</span></code>.</p></li>
+<li><p><strong>axis</strong> (<em>Optional</em><em>[</em><em>plt.Axes</em><em>]</em><em>, </em><em>optional</em>) – matplotlib Axes object to draw the plot onto, otherwise uses the current Axes. Defaults to None.</p></li>
+<li><p><strong>weighted</strong> (<em>bool</em><em>, </em><em>optional</em>) – If to pass the weights from the dicts inside dfs. Defaults to True.</p></li>
+<li><p><strong>dist_type</strong> (<em>Literal</em><em>[</em><em>&quot;hist&quot;</em><em>, </em><em>&quot;kde&quot;</em><em>, </em><em>&quot;ecdf&quot;</em><em>]</em><em>, </em><em>optional</em>) – The type of plot to draw. Defaults to “hist”.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>from balance.stats_and_plots.weighted_comparisons_plots import plot_hist_kde
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt</p>
+<dl class="simple">
+<dt>df = pd.DataFrame({</dt><dd><p>‘group’: (‘a’, ‘b’, ‘c’, ‘c’),
+‘v1’: (1, 2, 3, 4),</p>
+</dd>
+</dl>
+<p>})</p>
+<p>dfs1 = [{“df”: pd.DataFrame(pd.Series([1,2,2,2,3,4,5,5,7,8,9,9,9,9,5,2,5,4,4,4], name = “v1”)), “weights”: None}, {“df”: df, “weights”: pd.Series((200, 1, 0, 20))}]</p>
+<p>plt.figure(1)</p>
+<p># kde: no weights
+plot_hist_kde(</p>
+<blockquote>
+<div><p>dfs1,
+names = [“self”, “target”],
+column = “v1”,
+axis = None,
+weighted = False, dist_type = “kde”)</p>
+</div></blockquote>
+<p>plt.figure(2)</p>
+<p># kde: with weights
+plot_hist_kde(</p>
+<blockquote>
+<div><p>dfs1,
+names = [“self”, “target”],
+column = “v1”,
+axis = None,
+weighted = True, dist_type = “kde”)</p>
+</div></blockquote>
+<p>plt.figure(3)</p>
+<p># hist
+plot_hist_kde(</p>
+<blockquote>
+<div><p>dfs1,
+names = [“self”, “target”],
+column = “v1”,
+axis = None,
+weighted = True, dist_type = “hist”)</p>
+</div></blockquote>
+<p>plt.figure(4)</p>
+<p># ecdf
+plot_hist_kde(</p>
+<blockquote>
+<div><p>dfs1,
+names = [“self”, “target”],
+column = “v1”,
+axis = None,
+weighted = True, dist_type = “ecdf”)</p>
+</div></blockquote>
+<p># can work nicely with plt.subplots:
+f, axes = plt.subplots(1, 2, figsize=(7, 7 * 1))
+plot_hist_kde(</p>
+<blockquote>
+<div><p>dfs1,
+names = [“self”, “target”],
+column = “v1”,
+axis = axes[0],
+weighted = False, dist_type = “kde”)</p>
+</div></blockquote>
+<dl class="simple">
+<dt>plot_hist_kde(</dt><dd><p>dfs1,
+names = [“self”, “target”],
+column = “v1”,
+axis = axes[1],
+weighted = False, dist_type = “kde”)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_comparisons_plots.plot_qq">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_comparisons_plots.</span></span><span class="sig-name descname"><span class="pre">plot_qq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dfs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Axes</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighted</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_comparisons_plots.html#plot_qq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_comparisons_plots.plot_qq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots a qq plot of the weighted data from a DataFrame object against some target.</p>
+<p>See: <a class="reference external" href="https://en.wikipedia.org/wiki/Q-Q_plot">https://en.wikipedia.org/wiki/Q-Q_plot</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dfs</strong> (<em>List</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Union</em><em>[</em><em>pd.DataFrame</em><em>, </em><em>pd.Series</em><em>]</em><em>]</em><em>]</em>) – <p>a list (of length 1 or more) of dictionaries which describe the DataFrames and weights
+The structure is as follows:
+[</p>
+<blockquote>
+<div><p>{‘df’: pd.DataFrame(…), ‘weights’: pd.Series(…)},
+…</p>
+</div></blockquote>
+<p>]
+The ‘df’ is a DataFrame which includes the column name that was supplied through ‘column’.
+The ‘weights’ is a pd.Series of weights that are used when aggregating the variable using <code class="xref py py-func docutils literal notranslate"><span class="pre">weighted_quantile()</span></code>.
+Uses the last df item in the list as the target.</p>
+</p></li>
+<li><p><strong>names</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – a list of the names of the DataFrames that are plotted. E.g.: [‘adjusted’, ‘unadjusted’, ‘target’]</p></li>
+<li><p><strong>column</strong> (<em>str</em>) – The column to be used to aggregate using <code class="xref py py-func docutils literal notranslate"><span class="pre">weighted_quantile()</span></code>.</p></li>
+<li><p><strong>axis</strong> (<em>Optional</em><em>[</em><em>plt.Axes</em><em>]</em><em>, </em><em>optional</em>) – matplotlib Axes object to draw the plot onto, otherwise uses the current Axes. Defaults to None.</p></li>
+<li><p><strong>weighted</strong> (<em>bool</em><em>, </em><em>optional</em>) – If to pass the weights from the dicts inside dfs. Defaults to True.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>import numpy as np
+import pandas as pd
+from balance.stats_and_plots.weighted_comparisons_plots import plot_qq
+from numpy import random</p>
+<dl class="simple">
+<dt>df = pd.DataFrame({</dt><dd><p>‘v1’: random.uniform(size=100),</p>
+</dd>
+</dl>
+<p>}).sort_values(by=[‘v1’])</p>
+<dl class="simple">
+<dt>dfs1 = [</dt><dd><p>{“df”: df, “weights”: pd.Series(np.ones(100))},
+{“df”: df, “weights”: pd.Series(range(100))},
+{“df”: df, “weights”: pd.Series(np.ones(100))},</p>
+</dd>
+</dl>
+<p>]</p>
+<p># plot_qq(dfs1, names=[“self”, “unadjusted”, “target”], column=”v1”, axis=None, weighted=False)
+plot_qq(dfs1, names=[“self”, “unadjusted”, “target”], column=”v1”, axis=None, weighted=True)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_comparisons_plots.plot_qq_categorical">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_comparisons_plots.</span></span><span class="sig-name descname"><span class="pre">plot_qq_categorical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dfs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Axes</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighted</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_comparisons_plots.html#plot_qq_categorical"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_comparisons_plots.plot_qq_categorical" title="Permalink to this definition">¶</a></dt>
+<dd><p>A scatter plot of weighted relative frequencies of categories from each df.</p>
+<p>Notice that this is not a “real” qq-plot, but rather a scatter plot of (estimated, weighted) probabilities for each category.</p>
+<p>X-axis is the sample (adjusted, unadjusted) and Y-axis is the target.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dfs</strong> (<em>List</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Union</em><em>[</em><em>pd.DataFrame</em><em>, </em><em>pd.Series</em><em>]</em><em>]</em><em>]</em>) – <p>a list (of length 1 or more) of dictionaries which describe the DataFrames and weights
+The structure is as follows:
+[</p>
+<blockquote>
+<div><p>{‘df’: pd.DataFrame(…), ‘weights’: pd.Series(…)},
+…</p>
+</div></blockquote>
+<p>]
+The ‘df’ is a DataFrame which includes the column name that was supplied through ‘column’.
+The ‘weights’ is a pd.Series of weights that are used when aggregating the variable using <code class="xref py py-func docutils literal notranslate"><span class="pre">weighted_quantile()</span></code>.
+Uses the last df item in the list as the target.</p>
+</p></li>
+<li><p><strong>names</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – a list of the names of the DataFrames that are plotted. E.g.: [‘adjusted’, ‘unadjusted’, ‘target’]</p></li>
+<li><p><strong>column</strong> (<em>str</em>) – The column to be used to aggregate using <code class="xref py py-func docutils literal notranslate"><span class="pre">relative_frequency_table()</span></code>.</p></li>
+<li><p><strong>axis</strong> (<em>Optional</em><em>[</em><em>plt.Axes</em><em>]</em><em>, </em><em>optional</em>) – matplotlib Axes object to draw the plot onto, otherwise uses the current Axes. Defaults to None.</p></li>
+<li><p><strong>weighted</strong> (<em>bool</em><em>, </em><em>optional</em>) – If to pass the weights from the dicts inside dfs. Defaults to True.</p></li>
+<li><p><strong>label_threshold</strong> (<em>int</em><em>, </em><em>optional</em>) – All labels that are larger from the threshold will be omitted from the scatter plot (so to reduce clutter). Defaults to 30.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>import numpy as np
+import pandas as pd
+from balance.stats_and_plots.weighted_comparisons_plots import plot_qq_categorical
+from numpy import random</p>
+<dl class="simple">
+<dt>df = pd.DataFrame({</dt><dd><p>‘v1’: random.random_integers(11111, 11114, size=100),</p>
+</dd>
+</dl>
+<p>}).sort_values(by=[‘v1’])</p>
+<dl class="simple">
+<dt>dfs1 = [</dt><dd><p>{“df”: df, “weights”: pd.Series(np.ones(100))},
+{“df”: df, “weights”: pd.Series(np.ones(99).tolist() + [1000])},
+{“df”: df, “weights”: pd.Series(np.ones(100))},</p>
+</dd>
+</dl>
+<p>]</p>
+<p>import matplotlib.pyplot as plt</p>
+<p>plt.rcParams[“figure.figsize”] = (20, 6) # (w, h)</p>
+<p>fig, axs = plt.subplots(1,3)</p>
+<p># Without using weights
+plot_qq_categorical(dfs1, names=[“self”, “unadjusted”, “target”], column=”v1”, axis=axs[0], weighted=False)
+# With weights
+plot_qq_categorical(dfs1, names=[“self”, “unadjusted”, “target”], column=”v1”, axis=axs[1], weighted=True)
+# With label trimming if the text is longer than 3.
+plot_qq_categorical(dfs1, names=[“self”, “unadjusted”, “target”], column=”v1”, axis=axs[2], weighted=True, label_threshold=3)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_bar">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_comparisons_plots.</span></span><span class="sig-name descname"><span class="pre">plotly_plot_bar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dict_of_dfs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_it</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_dict_of_figures</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Figure</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_comparisons_plots.html#plotly_plot_bar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_bar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots interactive bar plot of the given variables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dict_of_dfs</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>pd.DataFrame</em><em>]</em>) – The key is the name of the DataFrame (E.g.: self, unadjusted, target),
+and the value is the DataFrame that contains the variables that we want to plot.</p></li>
+<li><p><strong>variables</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – a list of variables to use for plotting.</p></li>
+<li><p><strong>plot_it</strong> (<em>bool</em><em>, </em><em>optional</em>) – If to plot the plots interactively instead of returning a dictionary. Defaults to True.</p></li>
+<li><p><strong>return_dict_of_figures</strong> (<em>bool</em><em>, </em><em>optional</em>) – If to return the dictionary containing the plots rather than just returning None. Defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary containing plots if return_dict_of_figures is True. None otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[Dict[str, go.Figure]]</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>import numpy as np
+import pandas as pd
+from numpy import random
+from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_bar</p>
+<p>random.seed(96483)</p>
+<dl class="simple">
+<dt>df = pd.DataFrame({</dt><dd><p>‘v1’: random.random_integers(11111, 11114, size=100).astype(str),
+‘v2’: random.normal(size = 100),
+‘v3’: random.uniform(size = 100),</p>
+</dd>
+</dl>
+<p>}).sort_values(by=[‘v2’])</p>
+<dl class="simple">
+<dt>dict_of_dfs = {</dt><dd><p>“self”: pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = “weight”)], axis = 1),
+“unadjusted”: pd.concat([df, pd.Series(np.ones(99).tolist() + [1000], name = “weight”)], axis = 1),
+“target”: pd.concat([df, pd.Series(np.ones(100), name = “weight”)], axis = 1),</p>
+</dd>
+</dl>
+<p>}</p>
+<p># It can work with “v2” and “v3”, but it would be very sparse
+plotly_plot_bar(dict_of_dfs, variables= [“v1”])</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_dist">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_comparisons_plots.</span></span><span class="sig-name descname"><span class="pre">plotly_plot_dist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dict_of_dfs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numeric_n_values_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">15</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighted</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_it</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_dict_of_figures</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Figure</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_comparisons_plots.html#plotly_plot_dist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_dist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots interactive distribution plots (qq and bar plots) of the given variables.</p>
+<p>The plots compare the weighted distributions of an arbitrary number
+of variables from an arbitrary number of DataFrames.
+Numeric variables are plotted as qq’s using <a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_qq" title="balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_qq"><code class="xref py py-func docutils literal notranslate"><span class="pre">plotly_plot_qq()</span></code></a>,
+categorical variables as barplots using <a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_bar" title="balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_bar"><code class="xref py py-func docutils literal notranslate"><span class="pre">plotly_plot_bar()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dict_of_dfs</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>pd.DataFrame</em><em>]</em>) – The key is the name of the DataFrame (E.g.: self, unadjusted, target),
+and the value is the DataFrame that contains the variables that we want to plot.</p></li>
+<li><p><strong>variables</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – a list of variables to use for plotting. Defaults (i.e.: if None) is to use the list of all variables.</p></li>
+<li><p><strong>numeric_n_values_threshold</strong> (<em>int</em><em>, </em><em>optional</em>) – How many numbers should be in a column so that it is considered to be a “category”? Defaults to 15.</p></li>
+<li><p><strong>weighted</strong> (<em>bool</em><em>, </em><em>optional</em>) – If to use the weights with the plots. Defaults to True.</p></li>
+<li><p><strong>plot_it</strong> (<em>bool</em><em>, </em><em>optional</em>) – If to plot the plots interactively instead of returning a dictionary. Defaults to True.</p></li>
+<li><p><strong>return_dict_of_figures</strong> (<em>bool</em><em>, </em><em>optional</em>) – <p>If to return the dictionary containing the plots rather than just returning None. Defaults to False.
+If returned - the dictionary is of plots.
+Keys in this dictionary are the variable names for each plot.
+Values are plotly plot objects plotted like:</p>
+<blockquote>
+<div><p>offline.iplot(dict_of_all_plots[‘age’])</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Or simply:</dt><dd><p>dict_of_all_plots[‘age’]</p>
+</dd>
+</dl>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary containing plots if return_dict_of_figures is True. None otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[Dict[str, go.Figure]]</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>import numpy as np
+import pandas as pd
+from numpy import random
+from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_dist</p>
+<p>random.seed(96483)</p>
+<dl class="simple">
+<dt>df = pd.DataFrame({</dt><dd><p>‘v1’: random.random_integers(11111, 11114, size=100).astype(str),
+‘v2’: random.normal(size = 100),
+‘v3’: random.uniform(size = 100),</p>
+</dd>
+</dl>
+<p>}).sort_values(by=[‘v2’])</p>
+<dl class="simple">
+<dt>dict_of_dfs = {</dt><dd><p>“self”: pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = “weight”)], axis = 1),
+“unadjusted”: pd.concat([df, pd.Series(np.ones(99).tolist() + [1000], name = “weight”)], axis = 1),
+“target”: pd.concat([df, pd.Series(np.ones(100), name = “weight”)], axis = 1),</p>
+</dd>
+</dl>
+<p>}</p>
+<p>plotly_plot_dist(dict_of_dfs)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_qq">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_comparisons_plots.</span></span><span class="sig-name descname"><span class="pre">plotly_plot_qq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dict_of_dfs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_it</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_dict_of_figures</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Figure</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_comparisons_plots.html#plotly_plot_qq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_qq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots interactive QQ plot of the given variables.</p>
+<p>Creates a plotly qq plot of the given variables from multiple DataFrames.
+This ASSUMES there is a df with key ‘target’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dict_of_dfs</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>pd.DataFrame</em><em>]</em>) – The key is the name of the DataFrame (E.g.: self, unadjusted, target),
+and the value is the DataFrame that contains the variables that we want to plot.</p></li>
+<li><p><strong>variables</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – a list of variables to use for plotting.</p></li>
+<li><p><strong>plot_it</strong> (<em>bool</em><em>, </em><em>optional</em>) – If to plot the plots interactively instead of returning a dictionary. Defaults to True.</p></li>
+<li><p><strong>return_dict_of_figures</strong> (<em>bool</em><em>, </em><em>optional</em>) – If to return the dictionary containing the plots rather than just returning None. Defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary containing plots if return_dict_of_figures is True. None otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[Dict[str, go.Figure]]</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>import numpy as np
+import pandas as pd
+from numpy import random
+from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_qq</p>
+<p>random.seed(96483)</p>
+<dl class="simple">
+<dt>df = pd.DataFrame({</dt><dd><p>‘v1’: random.random_integers(11111, 11114, size=100).astype(str),
+‘v2’: random.normal(size = 100),
+‘v3’: random.uniform(size = 100),</p>
+</dd>
+</dl>
+<p>}).sort_values(by=[‘v2’])</p>
+<dl class="simple">
+<dt>dict_of_dfs = {</dt><dd><p>“self”: pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = “weight”)], axis = 1),
+“unadjusted”: pd.concat([df, pd.Series(np.ones(99).tolist() + [1000], name = “weight”)], axis = 1),
+“target”: pd.concat([df, pd.Series(np.ones(100), name = “weight”)], axis = 1),</p>
+</dd>
+</dl>
+<p>}</p>
+<p># It won’t work with “v1” since it is not numeric.
+plotly_plot_qq(dict_of_dfs, variables= [“v2”, “v3”])</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_comparisons_plots.seaborn_plot_dist">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_comparisons_plots.</span></span><span class="sig-name descname"><span class="pre">seaborn_plot_dist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dfs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numeric_n_values_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">15</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighted</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'qq'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'hist'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'kde'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'ecdf'</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Axes</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_comparisons_plots.html#seaborn_plot_dist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_comparisons_plots.seaborn_plot_dist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots to compare the weighted distributions of an arbitrary number of variables from
+an arbitrary number of DataFrames.</p>
+<p>Uses: <a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_plots.plot_qq_categorical" title="balance.stats_and_plots.weighted_comparisons_plots.plot_qq_categorical"><code class="xref py py-func docutils literal notranslate"><span class="pre">plot_qq_categorical()</span></code></a>, <a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_plots.plot_qq" title="balance.stats_and_plots.weighted_comparisons_plots.plot_qq"><code class="xref py py-func docutils literal notranslate"><span class="pre">plot_qq()</span></code></a>, <a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_plots.plot_hist_kde" title="balance.stats_and_plots.weighted_comparisons_plots.plot_hist_kde"><code class="xref py py-func docutils literal notranslate"><span class="pre">plot_hist_kde()</span></code></a>, <a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_plots.plot_bar" title="balance.stats_and_plots.weighted_comparisons_plots.plot_bar"><code class="xref py py-func docutils literal notranslate"><span class="pre">plot_bar()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dfs</strong> (<em>List</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Union</em><em>[</em><em>pd.DataFrame</em><em>, </em><em>pd.Series</em><em>]</em><em>]</em><em>]</em>) – <p>a list (of length 1 or more) of dictionaries which describe the DataFrames and weights
+The structure is as follows:
+[</p>
+<blockquote>
+<div><p>{‘df’: pd.DataFrame(…), ‘weights’: pd.Series(…)},
+…</p>
+</div></blockquote>
+<p>]
+The ‘df’ is a DataFrame which includes the column name that was supplied through ‘column’.
+The ‘weights’ is a pd.Series of weights that are used when aggregating by the column variable.</p>
+</p></li>
+<li><p><strong>names</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – a list of the names of the DataFrames that are plotted. E.g.: [‘adjusted’, ‘unadjusted’, ‘target’]</p></li>
+<li><p><strong>variables</strong> (<em>Optional</em><em>[</em><em>List</em><em>]</em><em>, </em><em>optional</em>) – The list of variables to use, by default (None) will plot all of them.</p></li>
+<li><p><strong>numeric_n_values_threshold</strong> (<em>int</em><em>, </em><em>optional</em>) – How many unique values (or less) should be in a column so that it is considered to be a “category”? Defaults to 15.
+This is compared against the maximum number of distinct values (for each of the variables) across all DataFrames.
+Setting this value to 0 will disable this check.</p></li>
+<li><p><strong>weighted</strong> (<em>bool</em><em>, </em><em>optional</em>) – If to pass the weights from the dicts inside dfs. Defaults to True.</p></li>
+<li><p><strong>dist_type</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – can be “hist”, “kde”, or “qq”. Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>Either a list or an np.array of matplotlib AxesSubplot (plt.Subplot).
+NOTE: There is no AxesSubplot class until one is invoked and created on the fly.</p>
+<blockquote>
+<div><p>See details here: <a class="reference external" href="https://stackoverflow.com/a/11690800/256662">https://stackoverflow.com/a/11690800/256662</a></p>
+</div></blockquote>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[List[plt.Axes], np.ndarray]</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>import numpy as np
+import pandas as pd
+from balance.stats_and_plots.weighted_comparisons_plots import seaborn_plot_dist
+from numpy import random</p>
+<dl class="simple">
+<dt>df = pd.DataFrame({</dt><dd><p>‘v1’: random.random_integers(11111, 11114, size=100).astype(str),
+‘v2’: random.normal(size = 100),
+‘v3’: random.uniform(size = 100),</p>
+</dd>
+</dl>
+<p>}).sort_values(by=[‘v2’])</p>
+<dl class="simple">
+<dt>dfs1 = [</dt><dd><p>{“df”: df, “weights”: pd.Series(np.ones(100))},
+{“df”: df, “weights”: pd.Series(np.ones(99).tolist() + [1000])},
+{“df”: df, “weights”: pd.Series(np.random.uniform(size=100))},</p>
+</dd>
+</dl>
+<p>]</p>
+<p>seaborn_plot_dist(dfs1, names=[“self”, “unadjusted”, “target”], dist_type = “qq”)  # default
+seaborn_plot_dist(dfs1, names=[“self”, “unadjusted”, “target”], dist_type = “hist”)
+seaborn_plot_dist(dfs1, names=[“self”, “unadjusted”, “target”], dist_type = “kde”)
+seaborn_plot_dist(dfs1, names=[“self”, “unadjusted”, “target”], dist_type = “ecdf”)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_comparisons_plots.set_xy_axes_to_use_the_same_lim">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_comparisons_plots.</span></span><span class="sig-name descname"><span class="pre">set_xy_axes_to_use_the_same_lim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Axes</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_comparisons_plots.html#set_xy_axes_to_use_the_same_lim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_comparisons_plots.set_xy_axes_to_use_the_same_lim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the x and y axes limits to be the same.</p>
+<p>Done by taking the min and max from xlim and ylim and using these global min/max on both x and y axes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ax</strong> (<em>plt.Axes</em>) – matplotlib Axes object to draw the plot onto.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>import matplotlib.pyplot as plt
+plt.figure(1)
+plt.scatter(x= [1,2,3], y = [3,4,5])</p>
+<p>plt.figure(2)
+fig, ax = plt.subplots(1, 1, figsize=(7.2, 7.2))
+plt.scatter(x= [1,2,3], y = [3,4,5])
+set_xy_axes_to_use_the_same_lim(ax)</p>
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">balance.stats_and_plots.weighted_comparisons_plots</a><ul>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_plots.naming_legend"><code class="docutils literal notranslate"><span class="pre">naming_legend()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_plots.plot_bar"><code class="docutils literal notranslate"><span class="pre">plot_bar()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_plots.plot_dist"><code class="docutils literal notranslate"><span class="pre">plot_dist()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_plots.plot_hist_kde"><code class="docutils literal notranslate"><span class="pre">plot_hist_kde()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_plots.plot_qq"><code class="docutils literal notranslate"><span class="pre">plot_qq()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_plots.plot_qq_categorical"><code class="docutils literal notranslate"><span class="pre">plot_qq_categorical()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_bar"><code class="docutils literal notranslate"><span class="pre">plotly_plot_bar()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_dist"><code class="docutils literal notranslate"><span class="pre">plotly_plot_dist()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_qq"><code class="docutils literal notranslate"><span class="pre">plotly_plot_qq()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_plots.seaborn_plot_dist"><code class="docutils literal notranslate"><span class="pre">seaborn_plot_dist()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_plots.set_xy_axes_to_use_the_same_lim"><code class="docutils literal notranslate"><span class="pre">set_xy_axes_to_use_the_same_lim()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="balance.stats_and_plots.general_stats.html"
+                          title="previous chapter">balance.stats_and_plots.general_stats</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="balance.stats_and_plots.weighted_comparisons_stats.html"
+                          title="next chapter">balance.stats_and_plots.weighted_comparisons_stats</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/balance.stats_and_plots.weighted_comparisons_plots.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.weighted_comparisons_stats.html" title="balance.stats_and_plots.weighted_comparisons_stats"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.general_stats.html" title="balance.stats_and_plots.general_stats"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" >balance</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="balance.stats_and_plots.html" >balance.stats_and_plots</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.weighted_comparisons_plots</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

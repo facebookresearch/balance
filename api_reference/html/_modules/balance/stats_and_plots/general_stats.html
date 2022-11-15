@@ -1,0 +1,185 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>balance.stats_and_plots.general_stats &#8212; balance  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../../balance.html" accesskey="U">balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.general_stats</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for balance.stats_and_plots.general_stats</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) Meta Platforms, Inc. and affiliates.</span>
+<span class="c1">#</span>
+<span class="c1"># This software may be used and distributed according to the terms of the</span>
+<span class="c1"># GNU General Public License version 2.</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+
+<div class="viewcode-block" id="relative_response_rates"><a class="viewcode-back" href="../../../balance.stats_and_plots.general_stats.html#balance.stats_and_plots.general_stats.relative_response_rates">[docs]</a><span class="k">def</span> <span class="nf">relative_response_rates</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">df_target</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">per_column</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Produces a summary table of number of responses and proportion of completed responses.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df (pd.DataFrame): A DataFrame to calculate aggregated response rates for.</span>
+<span class="sd">        df_target (Optional[pd.DataFrame], optional): Defaults to None.</span>
+<span class="sd">            Determines what is the denominator from which notnull are a fraction of.</span>
+<span class="sd">            If None - it&#39;s the number of rows in df.</span>
+<span class="sd">            If some df is provided - then it is assumed that df is a subset of df_target, and the</span>
+<span class="sd">            response rate is calculated as the fraction of notnull values in df from (divided by)</span>
+<span class="sd">            the number of notnull values in df_target.</span>
+<span class="sd">        per_column (bool, optional): Default is True.</span>
+<span class="sd">            The per_column argument is relevant only if df_target is other than None (i.e.: trying to compare df to some df_target).</span>
+<span class="sd">            If per_column is True (default) - it indicates that the relative response rates of columns in df will be</span>
+<span class="sd">                by comparing each column in df to the same column in target.</span>
+<span class="sd">                If this is True, the columns in df and df_target must be identical.</span>
+<span class="sd">            If per_column is False then df is compared to the overall number of nonnull rows in the target df.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.DataFrame: A column per column in the original df, and two rows:</span>
+<span class="sd">            One row with number of non-null observations, and</span>
+<span class="sd">            A second row with the proportion of non-null observations.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        import numpy as np</span>
+<span class="sd">        import pandas as pd</span>
+<span class="sd">        from balance.stats_and_plots.general_stats import relative_response_rates</span>
+
+<span class="sd">        df = pd.DataFrame({&quot;o1&quot;: (7, 8, 9, 10), &quot;o2&quot;: (7, 8, 9, np.nan), &quot;id&quot;: (1, 2, 3, 4)})</span>
+
+<span class="sd">        relative_response_rates(df).to_dict()</span>
+
+<span class="sd">        # {&#39;o1&#39;: {&#39;n&#39;: 4.0, &#39;%&#39;: 100.0},</span>
+<span class="sd">        # &#39;o2&#39;: {&#39;n&#39;: 3.0, &#39;%&#39;: 75.0},</span>
+<span class="sd">        # &#39;id&#39;: {&#39;n&#39;: 4.0, &#39;%&#39;: 100.0}}</span>
+
+<span class="sd">        df_target = pd.concat([df, df])</span>
+<span class="sd">        relative_response_rates(df, df_target).to_dict()</span>
+
+<span class="sd">        # {&#39;o1&#39;: {&#39;n&#39;: 4.0, &#39;%&#39;: 50.0},</span>
+<span class="sd">        #  &#39;o2&#39;: {&#39;n&#39;: 3.0, &#39;%&#39;: 50.0},</span>
+<span class="sd">        #  &#39;id&#39;: {&#39;n&#39;: 4.0, &#39;%&#39;: 50.0}}</span>
+
+
+<span class="sd">        # Dividing by number of total notnull rows in df_rarget</span>
+<span class="sd">        df_target.notnull().all(axis=1).sum()  # == 6</span>
+<span class="sd">        relative_response_rates(df, df_target, False).to_dict()</span>
+
+<span class="sd">        # {&#39;o1&#39;: {&#39;n&#39;: 4.0, &#39;%&#39;: 66.66666666666666},</span>
+<span class="sd">        # &#39;o2&#39;: {&#39;n&#39;: 3.0, &#39;%&#39;: 50.0},</span>
+<span class="sd">        # &#39;id&#39;: {&#39;n&#39;: 4.0, &#39;%&#39;: 66.66666666666666}}</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">df_n_notnull_rows</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">notnull</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">df_target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">target_n_notnull_rows</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">per_column</span><span class="p">:</span>  <span class="c1"># number of notnull rows, *per column*, in df_target</span>
+
+        <span class="c1"># verify that the columns of df and df_target are identical:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df_target</span><span class="o">.</span><span class="n">columns</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">!=</span> <span class="n">df_target</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                df and df_target must have the exact same columns.</span>
+<span class="s2">                Instead, thes column names are, (df, df_target) = (</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">df_target</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">)</span>
+<span class="s2">                &quot;&quot;&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># If they are, we can proceed forward:</span>
+        <span class="n">target_n_notnull_rows</span> <span class="o">=</span> <span class="n">df_target</span><span class="o">.</span><span class="n">notnull</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># number of notnull *rows* (i.e.: complete rows) in df_target</span>
+        <span class="n">target_n_notnull_rows</span> <span class="o">=</span> <span class="n">df_target</span><span class="o">.</span><span class="n">notnull</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">df_n_notnull_rows</span> <span class="o">&gt;</span> <span class="n">target_n_notnull_rows</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            The number of (notnull) rows in df MUST be smaller or equal to the number of rows in df_target.</span>
+<span class="s2">            These were, (df_n_notnull_rows, target_n_notnull_rows) = (</span><span class="si">{</span><span class="n">df_n_notnull_rows</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">target_n_notnull_rows</span><span class="si">}</span><span class="s2">)</span>
+<span class="s2">            &quot;&quot;&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;n&quot;</span><span class="p">:</span> <span class="n">df_n_notnull_rows</span><span class="p">,</span>
+            <span class="s2">&quot;%&quot;</span><span class="p">:</span> <span class="mi">100</span> <span class="o">*</span> <span class="p">(</span><span class="n">df_n_notnull_rows</span> <span class="o">/</span> <span class="n">target_n_notnull_rows</span><span class="p">),</span>
+        <span class="p">}</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../../balance.html" >balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.general_stats</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

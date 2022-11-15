@@ -1,0 +1,765 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>balance.sample_class &#8212; balance  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="balance.stats_and_plots" href="balance.stats_and_plots.html" />
+    <link rel="prev" title="balance.cli" href="balance.cli.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.html" title="balance.stats_and_plots"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="balance.cli.html" title="balance.cli"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" accesskey="U">balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.sample_class</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-balance.sample_class">
+<span id="balance-sample-class"></span><h1>balance.sample_class<a class="headerlink" href="#module-balance.sample_class" title="Permalink to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="balance.sample_class.Sample">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">balance.sample_class.</span></span><span class="sig-name descname"><span class="pre">Sample</span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class used to represent a sample.</p>
+<p>Sample is the main object of balance. It contains a dataframe of unit’s observations,
+associated with id and weight.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.id_column">
+<span class="sig-name descname"><span class="pre">id_column</span></span><a class="headerlink" href="#balance.sample_class.Sample.id_column" title="Permalink to this definition">¶</a></dt>
+<dd><p>a column representing the ids of the units in sample</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.Series</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.weight_column">
+<span class="sig-name descname"><span class="pre">weight_column</span></span><a class="headerlink" href="#balance.sample_class.Sample.weight_column" title="Permalink to this definition">¶</a></dt>
+<dd><p>a column representing the weights of the units in sample</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.Series</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.adjust">
+<span class="sig-name descname"><span class="pre">adjust</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><span class="pre">Sample</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'cbps'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'ipw'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'null'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'poststratify'</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'ipw'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><span class="pre">Sample</span></a></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.adjust"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.adjust" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform adjustment of one sample to match another.
+This function returns a new sample.</p>
+<p>Args:
+target (Optional[“Sample”]): Second sample object which should be matched.</p>
+<blockquote>
+<div><p>If None, the set traget of the object is used for matching.</p>
+</div></blockquote>
+<p>method (str): method for adjustment: cbps, ipw, null, poststratify</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>an adjusted Sample object</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample">Sample</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.covar_means">
+<span class="sig-name descname"><span class="pre">covar_means</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.covar_means"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.covar_means" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compare the means of covariates (after using <code class="xref py py-func docutils literal notranslate"><span class="pre">BalanceDF.model_matrix()</span></code>) before and after adjustment as compared with target.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> (<a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><em>Sample</em></a>) – A Sample object produces after running <a class="reference internal" href="#balance.sample_class.Sample.adjust" title="balance.sample_class.Sample.adjust"><code class="xref py py-func docutils literal notranslate"><span class="pre">Sample.adjust()</span></code></a>.</p></li>
+<li><p><strong>componants</strong> (<em>It should include 3</em>) – “unadjusted”, “adjusted”, “target”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A DataFrame with 3 columns (“unadjusted”, “adjusted”, “target”),
+and a row for each feature of the covariates.
+The cells show the mean value. For categorical features, they are first transformed into the one-hot encoding.
+For these columns, since they are all either 0 or 1, their means should be interpreted as proportions.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<p>from balance import Sample
+import pandas as pd</p>
+<dl>
+<dt>s = Sample.from_frame(</dt><dd><dl class="simple">
+<dt>pd.DataFrame(</dt><dd><p>{“a”: (0, 1, 2), “c”: (“a”, “b”, “c”), “o”: (1,3,5), “id”: (1, 2, 3)}</p>
+</dd>
+</dl>
+<p>),
+outcome_columns=(“o”),</p>
+</dd>
+</dl>
+<p>)
+s_adjusted = s.set_target(s).adjust(method = ‘null’)
+print(s_adjusted.covar_means())</p>
+<p># source  unadjusted  adjusted    target
+# a         1.000000  1.000000  1.000000
+# c[a]      0.333333  0.333333  0.333333
+# c[b]      0.333333  0.333333  0.333333
+# c[c]      0.333333  0.333333  0.333333</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.covars">
+<span class="sig-name descname"><span class="pre">covars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.covars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.covars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce a BalanceCovarsDF from a Sample object.
+See :class:BalanceCovarsDF.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>self</strong> (<a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><em>Sample</em></a>) – Sample object.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>BalanceCovarsDF</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.design_effect">
+<span class="sig-name descname"><span class="pre">design_effect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float64</span></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.design_effect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.design_effect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the design effect of the weights of Sample. Uses <code class="xref py py-func docutils literal notranslate"><span class="pre">weights_stats.design_effect()</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>self</strong> (<a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><em>Sample</em></a>) – A Sample object</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Design effect</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.float64</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.design_effect_prop">
+<span class="sig-name descname"><span class="pre">design_effect_prop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float64</span></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.design_effect_prop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.design_effect_prop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the relative difference in design effect of the weights of the unadjusted sample and the adjusted sample.
+I.e. (Deff of adjusted - Deff of unadjusted) / Deff of unadjusted.
+Uses <code class="xref py py-func docutils literal notranslate"><span class="pre">weights_stats.design_effect()</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> (<a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><em>Sample</em></a>) – A Sample object produces after running <a class="reference internal" href="#balance.sample_class.Sample.adjust" title="balance.sample_class.Sample.adjust"><code class="xref py py-func docutils literal notranslate"><span class="pre">Sample.adjust()</span></code></a>.</p></li>
+<li><p><strong>componants</strong> (<em>It should include 3</em>) – “unadjusted”, “adjusted”, “target”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>relative difference in design effect.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.float64</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.df">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">df</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span></em><a class="headerlink" href="#balance.sample_class.Sample.df" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce a DataFrame (of the self) from a Sample object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>self</strong> (<a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><em>Sample</em></a>) – Sample object.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>with id_columns, and the df values of covars(), outcome() and weights() of the self in the Sample object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.diagnostics">
+<span class="sig-name descname"><span class="pre">diagnostics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.diagnostics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.diagnostics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Output a table of diagnostics about adjusted Sample object.</p>
+<section id="size">
+<h2>size<a class="headerlink" href="#size" title="Permalink to this heading">¶</a></h2>
+<p>All values in the “size” metrics are AFTER any rows/columns were filtered.
+So, for example, if we use respondents from previous days but filter them for diagnostics purposes, then
+sample_obs and target_obs will NOT include them in the counting. The same is true for sample_covars and target_covars.
+In the “size” metrics we have the following ‘var’s:
+- sample_obs - number of respondents
+- sample_covars -  number of covariates (main covars, before any transofrmation was used)
+- target_obs - number of users used to represent the target pop
+- target_covars - like sample_covars, but for target.</p>
+</section>
+<section id="weights-diagnostics">
+<h2>weights_diagnostics<a class="headerlink" href="#weights-diagnostics" title="Permalink to this heading">¶</a></h2>
+<p>In the “weights_diagnostics” metric we have the following ‘var’s:
+- design effect (de), effective sample size (n/de), effective sample ratio (1/de). See also:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><a class="reference external" href="https://en.wikipedia.org/wiki/Design_effect">https://en.wikipedia.org/wiki/Design_effect</a></p></li>
+<li><p><a class="reference external" href="https://en.wikipedia.org/wiki/Effective_sample_size">https://en.wikipedia.org/wiki/Effective_sample_size</a></p></li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li><p>sum</p></li>
+<li><p>describe of the (normalized to sample size) weights (mean, median, std, etc.)</p></li>
+<li><p>prop of the (normalized to sample size) weights that are below or above some numbers (1/2, 1, 2, etc.)</p></li>
+<li><p>nonparametric_skew and weighted_median_breakdown_point</p></li>
+</ul>
+<section id="why-is-the-diagnostics-focused-on-weights-normalized-to-sample-size">
+<h3>Why is the diagnostics focused on weights normalized to sample size<a class="headerlink" href="#why-is-the-diagnostics-focused-on-weights-normalized-to-sample-size" title="Permalink to this heading">¶</a></h3>
+<p>There are 3 well known normalizations of weights:
+1. to sum to 1
+2. to sum to target population
+3. to sum to n (sample size)</p>
+<p>Each one has their own merits:
+1. is good if wanting to easily calculate avg of some response var (then we just use sum(w*y) and no need for /sum(w))
+2. is good for sum of stuff. For example, how many people in the US use android? For this we’d like the weight of</p>
+<blockquote>
+<div><p>each person to represent their share of the population and then we just sum the weights of the people who use android in the survey.</p>
+</div></blockquote>
+<ol class="arabic simple" start="3">
+<li><dl class="simple">
+<dt>is good for understanding relative “importance” of a respondent as compared to the weights of others in the survey.</dt><dd><p>So if someone has a weight that is &gt;1 it means that this respondent (conditional on their covariates) was ‘rare’ in the survey,
+so the model we used decided to give them a larger weight to account for all the people like him/her that didn’t answer.</p>
+</dd>
+</dl>
+</li>
+</ol>
+<p>For diagnostics purposes, option 3 is most useful for discussing the distribution of the weights
+(e.g.: how many respondents got a weight &gt;2 or smaller &lt;0.5).
+This is a method (standardized  across surveys) to helping us identify how many of the respondents are “dominating”
+and have a large influence on the conclusion we draw from the survey.</p>
+</section>
+</section>
+<section id="model-glance">
+<h2>model_glance<a class="headerlink" href="#model-glance" title="Permalink to this heading">¶</a></h2>
+<p>Properties of the model fitted, depends on the model used for weighting.</p>
+</section>
+<section id="covariates-asmd">
+<h2>covariates ASMD<a class="headerlink" href="#covariates-asmd" title="Permalink to this heading">¶</a></h2>
+<p>Includes covariates ASMD before and after adjustment (per level of covariate and aggregated) and the ASMD improvement.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param self<span class="colon">:</span></dt>
+<dd class="field-odd"><p>only after running an adjustment with Sample.adjust.</p>
+</dd>
+<dt class="field-even">type self<span class="colon">:</span></dt>
+<dd class="field-even"><p>Sample</p>
+</dd>
+<dt class="field-odd">returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>with 3 columns: (“metric”, “val”, “var”),
+indicating various tracking metrics on the model.</p>
+</dd>
+<dt class="field-even">rtype<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.from_frame">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_frame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pd.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outcome_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_id_uniqueness</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">standardize_types</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><span class="pre">Sample</span></a></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.from_frame"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.from_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new Sample object.</p>
+<p>NOTE that all integer columns will be converted by defaults into floats. This behavior can be turned off
+by setting standardize_types argument to False.
+The reason this is done by default is because of missing value handeling combined with balance current lack of support
+for pandas Integer types:</p>
+<blockquote>
+<div><p>1. Native numpy integers do not support missing values (NA), while pandas Intgers do,
+as well numpy floats. Also,
+2. various functions in balance do not support pandas Integers, while they do support numpy floats.
+3. Hence, since some columns might have missing values, the safest solution is to just convert all integers into numpy floats.</p>
+</div></blockquote>
+<p>The id_column is stored as a string, even if the input is an integer.</p>
+<p>Args:
+df (pd.DataFrame): containing the sample’s data
+id_column (Optional, Optional[str]): the column of the df which contains the respondent’s id</p>
+<blockquote>
+<div><p>(should be unique). Defaults to None.</p>
+</div></blockquote>
+<p>outcome_columns (Optional, Optional[Union[list, tuple, str]]): names of columns to treat as outcome
+weight_column (Optional, Optional[str]): name of column to treat as weight. If not specified, will</p>
+<blockquote>
+<div><p>be guessed. If not found, will be filled with 1.0.</p>
+</div></blockquote>
+<p>check_id_uniqueness (Optional, bool): Whether to check if ids are unique. Defaults to True.
+standardize_types (Optional, bool): Whether to standardize types. Defaults to True.</p>
+<blockquote>
+<div><p>Int64/int64 -&gt; float64
+Int32/int32 -&gt; float64
+string -&gt; object
+pandas.NA -&gt; numpy.nan (within each cell)
+This is slightly memory intensive (since it copies the data twice),
+but helps keep various functions working for both Int64 and Int32 input columns.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>a sample object</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample">Sample</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.has_target">
+<span class="sig-name descname"><span class="pre">has_target</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.has_target"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.has_target" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if a Sample object has target attached.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>whether the Sample has target attached</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.is_adjusted">
+<span class="sig-name descname"><span class="pre">is_adjusted</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.is_adjusted"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.is_adjusted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if a Sample object is adjusted and has target attached</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>whetehr the Sample is adjusted or not.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.keep_only_some_rows_columns">
+<span class="sig-name descname"><span class="pre">keep_only_some_rows_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rows_to_keep</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns_to_keep</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><span class="pre">Sample</span></a></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.keep_only_some_rows_columns"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.keep_only_some_rows_columns" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function returns a <strong>copy</strong> of the sample object
+after removing ALL columns from _df and _links objects
+(which includes unadjusted and target objects).</p>
+<p>This function is useful when wanting to calculate metrics, such as ASMD, but only on some of the features,
+or part of the observations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> (<a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><em>Sample</em></a>) – a sample object (preferably after adjustment)</p></li>
+<li><p><strong>rows_to_keep</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – A string with a condition to eval (on some of the columns).
+This will run df.eval(rows_to_keep) which will return a pd.Series of bool by which
+we will filter the Sample object.
+This effects both the df of covars AND the weights column (weight_column)
+AND the outcome column (_outcome_columns), AND the id_column column.
+Input should be a boolean feature, or a condition such as: ‘gender == “Female” &amp; age &gt;= 18’.
+Defaults to None.</p></li>
+<li><p><strong>columns_to_keep</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – the covariates of interest.
+Defaults to None, which returns all columns.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A copy of the original object. If both rows and columns to keep are None,
+returns the copied object unchanged.
+If some are not None, will update - first the rows - then the columns.
+This performs the transformation on both the sameple’s df and its linkes dfs (unadjusted, target).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample">Sample</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.model">
+<span class="sig-name descname"><span class="pre">model</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the name of the model used to adjust Sample if adjusted.
+Otherwise returns None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>self</strong> (<a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><em>Sample</em></a>) – Sample object.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>name of model used for adjusting Sample</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.model_matrix">
+<span class="sig-name descname"><span class="pre">model_matrix</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.model_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.model_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the model matrix of sample using <a class="reference internal" href="#balance.sample_class.Sample.model_matrix" title="balance.sample_class.Sample.model_matrix"><code class="xref py py-func docutils literal notranslate"><span class="pre">model_matrix()</span></code></a>,
+while adding na indicator for null values (see <code class="xref py py-func docutils literal notranslate"><span class="pre">add_na_indicator()</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>model matrix of sample</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.outcome_sd_prop">
+<span class="sig-name descname"><span class="pre">outcome_sd_prop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.outcome_sd_prop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.outcome_sd_prop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the difference in outcome weighted standard deviation (sd) of the unadjusted
+sample and the adjusted sample, relative to the unadjusted weighted sd.
+I.e. (weighted sd of adjusted - weighted sd of unadjusted) / weighted sd  of unadjusted.
+Uses <code class="xref py py-func docutils literal notranslate"><span class="pre">BalanceDF.weighted_stats.weighted_sd()</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> (<a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><em>Sample</em></a>) – A Sample object produces after running <a class="reference internal" href="#balance.sample_class.Sample.adjust" title="balance.sample_class.Sample.adjust"><code class="xref py py-func docutils literal notranslate"><span class="pre">Sample.adjust()</span></code></a>.</p></li>
+<li><p><strong>componants</strong> (<em>It should include 3</em>) – “unadjusted”, “adjusted”, “target”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(np.float64) relative difference in outcome weighted standard deviation.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.Series</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.outcome_variance_ratio">
+<span class="sig-name descname"><span class="pre">outcome_variance_ratio</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.outcome_variance_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.outcome_variance_ratio" title="Permalink to this definition">¶</a></dt>
+<dd><p>The empirical ratio of variance of the outcomes before and after weighting.</p>
+<p>See <a class="reference internal" href="#balance.sample_class.Sample.outcome_variance_ratio" title="balance.sample_class.Sample.outcome_variance_ratio"><code class="xref py py-func docutils literal notranslate"><span class="pre">outcome_variance_ratio()</span></code></a> for details.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> (<a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><em>Sample</em></a>) – A Sample object produces after running <a class="reference internal" href="#balance.sample_class.Sample.adjust" title="balance.sample_class.Sample.adjust"><code class="xref py py-func docutils literal notranslate"><span class="pre">Sample.adjust()</span></code></a>.</p></li>
+<li><p><strong>componants</strong> (<em>It should include 3</em>) – “unadjusted”, “adjusted”, “target”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(np.float64) A series of calculated ratio of variances for each outcome.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.Series</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.outcomes">
+<span class="sig-name descname"><span class="pre">outcomes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.outcomes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.outcomes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce a BalanceOutcomeDF from a Sample object.
+See :class:BalanceOutcomesDF.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>self</strong> (<a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><em>Sample</em></a>) – Sample object.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>BalanceOutcomesDF or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.plot_weight_density">
+<span class="sig-name descname"><span class="pre">plot_weight_density</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.plot_weight_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.plot_weight_density" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the density of weights of Sample.</p>
+<p class="rubric">Examples</p>
+<p>import numpy as np
+import pandas as pd
+from balance.sample_class import Sample</p>
+<p>np.random.seed(123)
+df = pd.DataFrame(</p>
+<blockquote>
+<div><dl>
+<dt>{</dt><dd><p>“a”: np.random.uniform(size=100),
+“c”: np.random.choice(</p>
+<blockquote>
+<div><p>[“a”, “b”, “c”, “d”],
+size=100,
+replace=True,
+p=[0.01, 0.04, 0.5, 0.45],</p>
+</div></blockquote>
+<p>),
+“id”: range(100),
+“weight”: np.random.uniform(size=100) + 0.5,</p>
+</dd>
+</dl>
+<p>}</p>
+</div></blockquote>
+<p>)</p>
+<p>a = Sample.from_frame(df)
+sample.weights().plot()
+# The same as:
+sample.plot_weight_density()</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.set_target">
+<span class="sig-name descname"><span class="pre">set_target</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><span class="pre">Sample</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><span class="pre">Sample</span></a></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.set_target"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.set_target" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to set the tagret linked to Sample.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target</strong> (<a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><em>Sample</em></a>) – A Sample pbject to be linked as target</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>new copy of Sample with target link attached</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample">Sample</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.set_unadjusted">
+<span class="sig-name descname"><span class="pre">set_unadjusted</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">second_sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><span class="pre">Sample</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><span class="pre">Sample</span></a></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.set_unadjusted"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.set_unadjusted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to set the unadjusted link to Sample.
+This is useful in case one wants to compare two samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>second_sample</strong> (<a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><em>Sample</em></a>) – A second Sample to be set as unadjusted of Sample.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a new copy of Sample with unadjusted link attached to the self object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample">Sample</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.set_weights">
+<span class="sig-name descname"><span class="pre">set_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.set_weights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.set_weights" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adjusteing the weights of a Sample object.
+This will overwrite the weight_column of the Sample.
+Note that the weights are assigned by index if weights is a pd.Series
+(of Sample.df and weights series)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>weights</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>pd.Series</em><em>, </em><em>float</em><em>]</em><em>]</em>) – Seiers of weights to add to sample.</p></li>
+<li><p><strong>values</strong> (<em>If None</em><em> or </em><em>float</em>) – </p></li>
+<li><p><strong>weight</strong> (<em>the same</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None, but adapting the Sample weight column to weights</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.summary">
+<span class="sig-name descname"><span class="pre">summary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provides a summary of covariate balance, design effect and model properties (if applicable)
+of a sample.</p>
+<p>For more detials see: <code class="xref py py-func docutils literal notranslate"><span class="pre">BalanceDF.asmd()</span></code>, <code class="xref py py-func docutils literal notranslate"><span class="pre">BalanceDF.asmd_improvement()</span></code>
+and <code class="xref py py-func docutils literal notranslate"><span class="pre">weights_stats.design_effect()</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>a summary description of properties of an adjusted sample.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.to_csv">
+<span class="sig-name descname"><span class="pre">to_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_or_buf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Path</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">IO</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.to_csv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.to_csv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write df with ids from BalanceDF to a comma-separated values (csv) file.</p>
+<p>Uses <code class="xref py py-func docutils literal notranslate"><span class="pre">pd.DataFrame.to_csv()</span></code>.</p>
+<p>If an ‘index’ argument is not provided then it defaults to False.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – Object.</p></li>
+<li><p><strong>path_or_buf</strong> (<em>Optional</em><em>[</em><em>FilePathOrBuffer</em><em>]</em><em>, </em><em>optional</em>) – location where to save the csv.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>If path_or_buf is None, returns the resulting csv format as a string. Otherwise returns None.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.to_download">
+<span class="sig-name descname"><span class="pre">to_download</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tempdir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">FileLink</span></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.to_download"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.to_download" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a downloadable link of the DataFrame of the Sample object.</p>
+<p>File name starts with <a href="#id1"><span class="problematic" id="id2">tmp_balance_out_</span></a>, and some random file name (using <code class="xref py py-func docutils literal notranslate"><span class="pre">uuid.uuid4()</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> (<a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><em>Sample</em></a>) – Object.</p></li>
+<li><p><strong>tempdir</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – Defaults to None (which then uses a temporary folder using <code class="xref py py-func docutils literal notranslate"><span class="pre">tempfile.gettempdir()</span></code>).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Embedding a local file link in an IPython session, based on path. Using :func:FileLink.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>FileLink</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.weights">
+<span class="sig-name descname"><span class="pre">weights</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.weights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.weights" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce a BalanceWeightsDF from a Sample object.
+See :class:BalanceWeightsDF.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>self</strong> (<a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><em>Sample</em></a>) – Sample object.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>BalanceWeightsDF</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">balance.sample_class</a><ul>
+<li><a class="reference internal" href="#balance.sample_class.Sample"><code class="docutils literal notranslate"><span class="pre">Sample</span></code></a><ul>
+<li><a class="reference internal" href="#balance.sample_class.Sample.id_column"><code class="docutils literal notranslate"><span class="pre">Sample.id_column</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.weight_column"><code class="docutils literal notranslate"><span class="pre">Sample.weight_column</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.adjust"><code class="docutils literal notranslate"><span class="pre">Sample.adjust()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.covar_means"><code class="docutils literal notranslate"><span class="pre">Sample.covar_means()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.covars"><code class="docutils literal notranslate"><span class="pre">Sample.covars()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.design_effect"><code class="docutils literal notranslate"><span class="pre">Sample.design_effect()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.design_effect_prop"><code class="docutils literal notranslate"><span class="pre">Sample.design_effect_prop()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.df"><code class="docutils literal notranslate"><span class="pre">Sample.df</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.diagnostics"><code class="docutils literal notranslate"><span class="pre">Sample.diagnostics()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.from_frame"><code class="docutils literal notranslate"><span class="pre">Sample.from_frame()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.has_target"><code class="docutils literal notranslate"><span class="pre">Sample.has_target()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.is_adjusted"><code class="docutils literal notranslate"><span class="pre">Sample.is_adjusted()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.keep_only_some_rows_columns"><code class="docutils literal notranslate"><span class="pre">Sample.keep_only_some_rows_columns()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.model"><code class="docutils literal notranslate"><span class="pre">Sample.model()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.model_matrix"><code class="docutils literal notranslate"><span class="pre">Sample.model_matrix()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.outcome_sd_prop"><code class="docutils literal notranslate"><span class="pre">Sample.outcome_sd_prop()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.outcome_variance_ratio"><code class="docutils literal notranslate"><span class="pre">Sample.outcome_variance_ratio()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.outcomes"><code class="docutils literal notranslate"><span class="pre">Sample.outcomes()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.plot_weight_density"><code class="docutils literal notranslate"><span class="pre">Sample.plot_weight_density()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.set_target"><code class="docutils literal notranslate"><span class="pre">Sample.set_target()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.set_unadjusted"><code class="docutils literal notranslate"><span class="pre">Sample.set_unadjusted()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.set_weights"><code class="docutils literal notranslate"><span class="pre">Sample.set_weights()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.summary"><code class="docutils literal notranslate"><span class="pre">Sample.summary()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.to_csv"><code class="docutils literal notranslate"><span class="pre">Sample.to_csv()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.to_download"><code class="docutils literal notranslate"><span class="pre">Sample.to_download()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.weights"><code class="docutils literal notranslate"><span class="pre">Sample.weights()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="balance.cli.html"
+                          title="previous chapter">balance.cli</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="balance.stats_and_plots.html"
+                          title="next chapter">balance.stats_and_plots</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/balance.sample_class.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.html" title="balance.stats_and_plots"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="balance.cli.html" title="balance.cli"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" >balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.sample_class</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

@@ -1,0 +1,523 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>balance.stats_and_plots.weighted_comparisons_stats &#8212; balance  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../../balance.html" accesskey="U">balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.weighted_comparisons_stats</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for balance.stats_and_plots.weighted_comparisons_stats</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) Meta Platforms, Inc. and affiliates.</span>
+<span class="c1">#</span>
+<span class="c1"># This software may be used and distributed according to the terms of the</span>
+<span class="c1"># GNU General Public License version 2.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
+
+<span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">balance.stats_and_plots.weighted_stats</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">descriptive_stats</span><span class="p">,</span>
+    <span class="n">weighted_mean</span><span class="p">,</span>
+    <span class="n">weighted_var</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">balance.stats_and_plots.weights_stats</span> <span class="kn">import</span> <span class="n">_check_weights_are_valid</span>
+
+<span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
+
+<span class="c1"># TODO: add?</span>
+<span class="c1"># from scipy.stats import wasserstein_distance</span>
+
+<span class="c1">##########################################</span>
+<span class="c1"># Weighted comparisons - functions to compare one or two data sources with one or two sources of weights</span>
+<span class="c1">##########################################</span>
+
+
+<span class="c1"># TODO: fix the r_indicator function. The current implementation is broken since it</span>
+<span class="c1">#       seems to wrongly estimate N.</span>
+<span class="c1">#       This seems to attempt to reproduce equation 2.2.2, in page 5 in</span>
+<span class="c1">#       &quot;Indicators for the representativeness of survey response&quot;</span>
+<span class="c1">#       by Jelke Bethlehem, Fannie Cobben, and Barry Schouten</span>
+<span class="c1">#       See pdf: https://www150.statcan.gc.ca/n1/en/pub/11-522-x/2008000/article/10976-eng.pdf?st=Zi4d4zld</span>
+<span class="c1">#       From: https://www150.statcan.gc.ca/n1/pub/11-522-x/2008000/article/10976-eng.pdf</span>
+<span class="c1"># def r_indicator(sample_p: np.float64, target_p: np.float64) -&gt; np.float64:</span>
+<span class="c1">#     p = np.concatenate((sample_p, target_p))</span>
+<span class="c1">#     N = len(sample_p) + len(target_p)</span>
+<span class="c1">#     return 1 - 2 * np.sqrt(1 / (N - 1) * np.sum((p - np.mean(p)) ** 2))</span>
+
+
+<span class="k">def</span> <span class="nf">_weights_per_covars_names</span><span class="p">(</span><span class="n">covar_names</span><span class="p">:</span> <span class="n">List</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="c1"># TODO (p2): consider if to give weights that are proportional to the proportion of this covar in the population</span>
+    <span class="c1">#           E.g.: if merging varios platforms, maybe if something like windows has very few users, it&#39;s impact on the ASMD</span>
+    <span class="c1">#           should be smaller (similar to how kld works).</span>
+    <span class="c1">#           The current function structure won&#39;t support it, and this would require some extra input (i.e.: baseline target pop proportion)</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Figure out how much weight to give to each column name for ASMD averaging.</span>
+<span class="sd">    This is meant for post-processing df produced from model_matrix that include</span>
+<span class="sd">    one-hot categorical variables. This function helps to resolve the needed weight to add</span>
+<span class="sd">    to columns after they are broken down by the one-hot encoding used in model_matrix.</span>
+<span class="sd">    Each of these will count for 1/num_levels.</span>
+<span class="sd">    It&#39;s OK to assume that variables with &#39;[]&#39; in the name are one-hot</span>
+<span class="sd">    categoricals because model_matrix enforces it.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        covar_names (List): A list with names of covariate.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.DataFrame: with two columns, one for weights and another for main_covar_names,</span>
+<span class="sd">        with rows for each of the columns from &#39;covar_names&#39;</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">    asmd_df = pd.DataFrame(</span>
+<span class="sd">    {</span>
+<span class="sd">        &#39;age&#39;: 0.5,</span>
+<span class="sd">        &#39;education[T.high_school]&#39;: 1,</span>
+<span class="sd">        &#39;education[T.bachelor]&#39;: 1,</span>
+<span class="sd">        &#39;education[T.masters]&#39;: 1,</span>
+<span class="sd">        &#39;education[T.phd]&#39;: 1,</span>
+<span class="sd">    }, index = (&#39;self&#39;, ))</span>
+
+<span class="sd">    input = asmd_df.columns.values.tolist()</span>
+<span class="sd">    # input</span>
+<span class="sd">    # [&#39;age&#39;,</span>
+<span class="sd">    #  &#39;education[T.high_school]&#39;,</span>
+<span class="sd">    #  &#39;education[T. bachelor]&#39;,</span>
+<span class="sd">    #  &#39;education[T. masters]&#39;,</span>
+<span class="sd">    #  &#39;education[T. phd]&#39;]</span>
+
+<span class="sd">    _weights_per_covars_names(input).to_dict()</span>
+<span class="sd">    # Output:</span>
+<span class="sd">    # {&#39;weight&#39;: {&#39;age&#39;: 1.0,</span>
+<span class="sd">    #   &#39;education[T.high_school]&#39;: 0.25,</span>
+<span class="sd">    #   &#39;education[T.bachelor]&#39;: 0.25,</span>
+<span class="sd">    #   &#39;education[T.masters]&#39;: 0.25,</span>
+<span class="sd">    #   &#39;education[T.phd]&#39;: 0.25},</span>
+<span class="sd">    #  &#39;main_covar_names&#39;: {&#39;age&#39;: &#39;age&#39;,</span>
+<span class="sd">    #   &#39;education[T.high_school]&#39;: &#39;education&#39;,</span>
+<span class="sd">    #   &#39;education[T.bachelor]&#39;: &#39;education&#39;,</span>
+<span class="sd">    #   &#39;education[T.masters]&#39;: &#39;education&#39;,</span>
+<span class="sd">    #   &#39;education[T.phd]&#39;: &#39;education&#39;}}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">columns_to_original_variable</span> <span class="o">=</span> <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\[.*\]$&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">covar_names</span><span class="p">}</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">Counter</span><span class="p">(</span><span class="n">columns_to_original_variable</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">counts</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">columns_to_original_variable</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
+        <span class="n">index</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;weight&quot;</span><span class="p">,),</span>
+    <span class="p">)</span>
+    <span class="n">_check_weights_are_valid</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>  <span class="c1"># verify nothing odd has occured.</span>
+    <span class="n">main_covar_names</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span>
+        <span class="n">columns_to_original_variable</span><span class="p">,</span>
+        <span class="n">orient</span><span class="o">=</span><span class="s2">&quot;index&quot;</span><span class="p">,</span>
+        <span class="n">columns</span><span class="o">=</span><span class="p">[</span>
+            <span class="s2">&quot;main_covar_names&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">weights</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span> <span class="n">main_covar_names</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="c1"># TODO: add memoization</span>
+<div class="viewcode-block" id="asmd"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_stats.html#balance.stats_and_plots.weighted_comparisons_stats.asmd">[docs]</a><span class="k">def</span> <span class="nf">asmd</span><span class="p">(</span>
+    <span class="n">sample_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">target_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">sample_weights</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
+        <span class="n">List</span><span class="p">,</span>
+        <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">target_weights</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
+        <span class="n">List</span><span class="p">,</span>
+        <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">std_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="s2">&quot;sample&quot;</span><span class="p">,</span> <span class="s2">&quot;pooled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;target&quot;</span><span class="p">,</span>
+    <span class="n">aggregate_by_main_covar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the Absolute Standardized Mean Deviation (ASMD, a.k.a</span>
+<span class="sd">    absolute standardized mean difference) between the columns of two DataFrames</span>
+<span class="sd">    (or BalanceDFs).</span>
+<span class="sd">    It uses weighted average and std for the calculations.</span>
+<span class="sd">    This is the same as taking the absolute value of Cohen&#39;s d statistic,</span>
+<span class="sd">    with a specific choice of the standard deviation (std).</span>
+
+<span class="sd">    https://en.wikipedia.org/wiki/Effect_size#Cohen&#39;s_d</span>
+
+<span class="sd">    As opposed to Cohen&#39;s d, the current asmd implementation has several options of std calculation,</span>
+<span class="sd">    see the arguments section for details.</span>
+
+<span class="sd">    Unlike in R package {cobalt}, in the current implementation of asmd:</span>
+<span class="sd">    - the absolute value is taken</span>
+<span class="sd">    - un-represented levels of categorical variables are treated as missing,</span>
+<span class="sd">      not as 0.</span>
+<span class="sd">    - differences for categorical variables are also weighted by default</span>
+
+<span class="sd">    The function omits columns that starts with the name &quot;_is_na_&quot;</span>
+
+<span class="sd">    If column names of sample_df and target_df are different, it will only calculate asmd for</span>
+<span class="sd">    the overlapping columns. The rest will be np.nan.</span>
+<span class="sd">    The mean(asmd) will be calculated while treating the nan values as 0s.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sample_df (pd.DataFrame): source group of the asmd comparison</span>
+<span class="sd">        target_df (pd.DataFrame): target group of the asmd comparison.</span>
+<span class="sd">            The column names should be the same as the ones from sample_df.</span>
+<span class="sd">        sample_weights (Union[ List, pd.Series, np.ndarray, ], optional): weights to use.</span>
+<span class="sd">            The default is None.</span>
+<span class="sd">            If no weights are passed (None), it will use an array of 1s.</span>
+<span class="sd">        target_weights (Union[ List, pd.Series, np.ndarray, ], optional): weights to use.</span>
+<span class="sd">            The default is None.</span>
+<span class="sd">            If no weights are passed (None), it will use an array of 1s.</span>
+<span class="sd">        std_type (Literal[&quot;target&quot;, &quot;sample&quot;, &quot;pooled&quot;], optional):</span>
+<span class="sd">            How the standard deviation should be calculated.</span>
+<span class="sd">            The options are: &quot;target&quot;, &quot;sample&quot; and &quot;pooled&quot;. Defaults to &quot;target&quot;.</span>
+<span class="sd">            &quot;target&quot; means we use the std from the target population.</span>
+<span class="sd">            &quot;sample&quot; means we use the std from the sample population.</span>
+<span class="sd">            &quot;pooled&quot; means we use the simple arithmetic average of</span>
+<span class="sd">                the variance from the sample and target population.</span>
+<span class="sd">                We then take the square root of that value to get the pooled std.</span>
+<span class="sd">                Notice that this is done while giving the same weight to both sources.</span>
+<span class="sd">                I.e.: there is NO over/under weighting sample or target based on their</span>
+<span class="sd">                respective sample sizes (in contrast to how pooled sd is calculated in</span>
+<span class="sd">                Cohen&#39;s d statistic).</span>
+<span class="sd">        aggregate_by_main_covar (bool):</span>
+<span class="sd">            If to use :func:`_aggregate_asmd_by_main_covar` to aggregate (average) the asmd based on variable name.</span>
+<span class="sd">            Default is False.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.Series: a Series indexed on the names of the columns in the input DataFrames.</span>
+<span class="sd">        The values (of type np.float64) are of the ASMD calculation.</span>
+<span class="sd">        The last element is &#39;mean(asmd)&#39;, which is the average of the calculated ASMD values.</span>
+
+<span class="sd">    Example:</span>
+
+<span class="sd">        import numpy as np</span>
+<span class="sd">        import pandas as pd</span>
+<span class="sd">        from balance.stats_and_plots import weighted_comparisons_stats</span>
+
+<span class="sd">        a1 = pd.Series((1, 2))</span>
+<span class="sd">        b1 = pd.Series((-1, 1))</span>
+<span class="sd">        a2 = pd.Series((3, 4))</span>
+<span class="sd">        b2 = pd.Series((-2, 2))</span>
+<span class="sd">        w1 = pd.Series((1, 1))</span>
+<span class="sd">        w2 = w1</span>
+
+<span class="sd">        r = weighted_comparisons_stats.asmd(</span>
+<span class="sd">                    pd.DataFrame({&quot;a&quot;: a1, &quot;b&quot;: b1}),</span>
+<span class="sd">                    pd.DataFrame({&quot;a&quot;: a2, &quot;b&quot;: b2}),</span>
+<span class="sd">                    w1,</span>
+<span class="sd">                    w2,</span>
+<span class="sd">                )</span>
+
+<span class="sd">        exp_a = np.abs(a1.mean() - a2.mean()) / a2.std()</span>
+<span class="sd">        exp_b = np.abs(b1.mean() - b2.mean()) / b2.std()</span>
+<span class="sd">        print(r)</span>
+<span class="sd">        print(exp_a)</span>
+<span class="sd">        print(exp_b)</span>
+
+<span class="sd">        # output:</span>
+<span class="sd">        # {&#39;a&#39;: 2.82842712474619, &#39;b&#39;: 0.0, &#39;mean(asmd)&#39;: 1.414213562373095}</span>
+<span class="sd">        # 2.82842712474619</span>
+<span class="sd">        # 0.0</span>
+
+
+
+<span class="sd">        a1 = pd.Series((1, 2))</span>
+<span class="sd">        b1_A = pd.Series((1, 3))</span>
+<span class="sd">        b1_B = pd.Series((-1, -3))</span>
+<span class="sd">        a2 = pd.Series((3, 4))</span>
+<span class="sd">        b2_A = pd.Series((2, 3))</span>
+<span class="sd">        b2_B = pd.Series((-2, -3))</span>
+<span class="sd">        w1 = pd.Series((1, 1))</span>
+<span class="sd">        w2 = w1</span>
+
+<span class="sd">        r = weighted_comparisons_stats.asmd(</span>
+<span class="sd">            pd.DataFrame({&quot;a&quot;: a1, &quot;b[A]&quot;: b1_A, &quot;b[B]&quot;: b1_B}),</span>
+<span class="sd">            pd.DataFrame({&quot;a&quot;: a2, &quot;b[A]&quot;: b2_A, &quot;b[B]&quot;: b2_B}),</span>
+<span class="sd">            w1,</span>
+<span class="sd">            w2,</span>
+<span class="sd">        ).to_dict()</span>
+
+<span class="sd">        print(r)</span>
+<span class="sd">        # {&#39;a&#39;: 2.82842712474619, &#39;b[A]&#39;: 0.7071067811865475, &#39;b[B]&#39;: 0.7071067811865475, &#39;mean(asmd)&#39;: 1.7677669529663689}</span>
+
+<span class="sd">        # Check that using aggregate_by_main_covar works</span>
+<span class="sd">        r = weighted_comparisons_stats.asmd(</span>
+<span class="sd">            pd.DataFrame({&quot;a&quot;: a1, &quot;b[A]&quot;: b1_A, &quot;b[B]&quot;: b1_B}),</span>
+<span class="sd">            pd.DataFrame({&quot;a&quot;: a2, &quot;b[A]&quot;: b2_A, &quot;b[B]&quot;: b2_B}),</span>
+<span class="sd">            w1,</span>
+<span class="sd">            w2,</span>
+<span class="sd">            &quot;target&quot;,</span>
+<span class="sd">            True,</span>
+<span class="sd">        ).to_dict()</span>
+
+<span class="sd">        print(r)</span>
+<span class="sd">        # {&#39;a&#39;: 2.82842712474619, &#39;b&#39;: 0.7071067811865475, &#39;mean(asmd)&#39;: 1.7677669529663689}</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sample_df must be pd.DataFrame, is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">sample_df</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;target_df must be pd.DataFrame, is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">target_df</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">possible_std_type</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;sample&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="s2">&quot;pooled&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">std_type</span> <span class="ow">in</span> <span class="n">possible_std_type</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;std_type must be in </span><span class="si">{</span><span class="n">possible_std_type</span><span class="si">}</span><span class="s2">, is </span><span class="si">{</span><span class="n">std_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">!=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">():</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            sample_df and target_df must have the same column names.</span>
+<span class="s2">            sample_df column names: </span><span class="si">{</span><span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">            target_df column names: </span><span class="si">{</span><span class="n">target_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;&quot;&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">sample_mean</span> <span class="o">=</span> <span class="n">descriptive_stats</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">&quot;mean&quot;</span><span class="p">)</span>
+    <span class="n">target_mean</span> <span class="o">=</span> <span class="n">descriptive_stats</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">&quot;mean&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">std_type</span> <span class="o">==</span> <span class="s2">&quot;sample&quot;</span><span class="p">:</span>
+        <span class="n">std</span> <span class="o">=</span> <span class="n">descriptive_stats</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">std_type</span> <span class="o">==</span> <span class="s2">&quot;target&quot;</span><span class="p">:</span>
+        <span class="n">std</span> <span class="o">=</span> <span class="n">descriptive_stats</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">std_type</span> <span class="o">==</span> <span class="s2">&quot;pooled&quot;</span><span class="p">:</span>
+        <span class="n">target_std</span> <span class="o">=</span> <span class="n">descriptive_stats</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">)</span>
+        <span class="n">sample_std</span> <span class="o">=</span> <span class="n">descriptive_stats</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">)</span>
+        <span class="n">std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(((</span><span class="n">sample_std</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">target_std</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="n">out</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">sample_mean</span> <span class="o">-</span> <span class="n">target_mean</span><span class="p">)</span> <span class="o">/</span> <span class="n">std</span>  <span class="c1"># pyre-ignore[61]: std is always defined</span>
+
+    <span class="c1">#  Remove na indicator columns; it&#39;s OK to assume that these columns are</span>
+    <span class="c1">#  indicators because add_na_indicator enforces it</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">(</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">out</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">c</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_is_na_&quot;</span><span class="p">))]</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">replace</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+
+    <span class="c1"># TODO (p2): verify that df column names are unique (otherwise throw an exception).</span>
+    <span class="c1">#            it should probably be upstream during in the Sample creation process.</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">_weights_per_covars_names</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())[</span>
+        <span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
+    <span class="p">]</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">out</span><span class="p">,</span> <span class="n">weights</span><span class="p">))</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="n">weighted_mean</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">out</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">])</span>
+    <span class="n">out</span><span class="p">[</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean</span>
+
+    <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">aggregate_by_main_covar</span><span class="p">:</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">_aggregate_asmd_by_main_covar</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+<span class="k">def</span> <span class="nf">_aggregate_asmd_by_main_covar</span><span class="p">(</span><span class="n">asmd_series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function helps to aggregate the ASMD, which is broken down per level for a category variable, into one value per covariate.</span>
+<span class="sd">    This is useful since it allows us to get high level view of features such as country, locale, etc.</span>
+<span class="sd">    It also allows us to filter out variables (such as is_today) before the overall averaging of the ASMD.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        asmd_series (pd.Series): a value for each covariate. Covariate name are in the index, the values are the asmd values.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.Series: If asmd_series had several items broken by one-hot encoding,</span>
+<span class="sd">            then they would be averaged (with equal weight to each).</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        from balance.stats_and_plots.weighted_comparisons_stats import _aggregate_asmd_by_main_covar</span>
+
+<span class="sd">        asmd_series = pd.Series(</span>
+<span class="sd">        {</span>
+<span class="sd">            &#39;age&#39;: 0.5,</span>
+<span class="sd">            &#39;education[T.high_school]&#39;: 1,</span>
+<span class="sd">            &#39;education[T.bachelor]&#39;: 2,</span>
+<span class="sd">            &#39;education[T.masters]&#39;: 3,</span>
+<span class="sd">            &#39;education[T.phd]&#39;: 4,</span>
+<span class="sd">        })</span>
+
+<span class="sd">        _aggregate_asmd_by_main_covar(asmd_series).to_dict()</span>
+
+<span class="sd">        # output:</span>
+<span class="sd">        # {&#39;age&#39;: 0.5, &#39;education&#39;: 2.5}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">_weights_per_covars_names</span><span class="p">(</span><span class="n">asmd_series</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+
+    <span class="c1"># turn things into DataFrame to make it easy to aggregate.</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">asmd_series</span><span class="p">,</span> <span class="n">weights</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_weighted_mean_for_our_df</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
+        <span class="n">weighted_mean</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+            <span class="p">((</span><span class="n">values</span> <span class="o">*</span> <span class="n">weights</span><span class="p">)</span> <span class="o">/</span> <span class="n">weights</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">weighted_mean</span>
+
+    <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;main_covar_names&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">_weighted_mean_for_our_df</span><span class="p">)</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">return</span> <span class="n">out</span>
+
+
+<span class="c1"># TODO: (p2) sample_before and sample_after are redundant, the moment weights of</span>
+<span class="c1">#           before and after are supplied directly.</span>
+<span class="c1">#           In the future, we can either omit sample_after, or change the names to</span>
+<span class="c1">#           reflect a support a comparison of two panels to some target populations.</span>
+<div class="viewcode-block" id="asmd_improvement"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_stats.html#balance.stats_and_plots.weighted_comparisons_stats.asmd_improvement">[docs]</a><span class="k">def</span> <span class="nf">asmd_improvement</span><span class="p">(</span>
+    <span class="n">sample_before</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">sample_after</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">target</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">sample_before_weights</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
+        <span class="n">List</span><span class="p">,</span>
+        <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">sample_after_weights</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
+        <span class="n">List</span><span class="p">,</span>
+        <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">target_weights</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
+        <span class="n">List</span><span class="p">,</span>
+        <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Calculates the improvement in mean(asmd) from before to after applying some weight adjustment.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sample_before (pd.DataFrame): DataFrame of the sample before adjustments.</span>
+<span class="sd">        sample_after (pd.DataFrame): DataFrame of the sample after adjustments</span>
+<span class="sd">            (should be identical to sample_before. But could be used to compare two populations).</span>
+<span class="sd">        target (pd.DataFrame): DataFrame of the target population.</span>
+<span class="sd">        sample_before_weights (Union[ List, pd.Series, np.ndarray, ], optional): Weights before adjustments (i.e.: design weights). Defaults to None.</span>
+<span class="sd">        sample_after_weights (Union[ List, pd.Series, np.ndarray, ], optional): Weights after some adjustment. Defaults to None.</span>
+<span class="sd">        target_weights (Union[ List, pd.Series, np.ndarray, ], optional): Design weights of the target population. Defaults to None.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.float64: The improvement is taking the (before_mean_asmd-after_mean_asmd)/before_mean_asmd.</span>
+<span class="sd">        The asmd is calculated using :func:`asmd`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">asmd_mean_before</span> <span class="o">=</span> <span class="n">asmd</span><span class="p">(</span>
+        <span class="n">sample_before</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">sample_before_weights</span><span class="p">,</span> <span class="n">target_weights</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">]</span>
+    <span class="n">asmd_mean_after</span> <span class="o">=</span> <span class="n">asmd</span><span class="p">(</span>
+        <span class="n">sample_after</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">sample_after_weights</span><span class="p">,</span> <span class="n">target_weights</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">asmd_mean_before</span> <span class="o">-</span> <span class="n">asmd_mean_after</span><span class="p">)</span> <span class="o">/</span> <span class="n">asmd_mean_before</span></div>
+
+
+<div class="viewcode-block" id="outcome_variance_ratio"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_stats.html#balance.stats_and_plots.weighted_comparisons_stats.outcome_variance_ratio">[docs]</a><span class="k">def</span> <span class="nf">outcome_variance_ratio</span><span class="p">(</span>
+    <span class="n">df_numerator</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">df_denominator</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">w_numerator</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
+        <span class="n">List</span><span class="p">,</span>
+        <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">w_denominator</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
+        <span class="n">List</span><span class="p">,</span>
+        <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Calculate ratio of weighted variances of two DataFrames</span>
+
+<span class="sd">    Directly calculating the empirical ratio of variance of the outcomes before and after weighting.</span>
+<span class="sd">    Notice that this is different than design effect.</span>
+<span class="sd">    The Deff estimates the ratio of variances of the weighted means, while this function calculates the ratio</span>
+<span class="sd">    of empirical weighted variance of the data.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df_numerator (pd.DataFrame): df_numerator</span>
+<span class="sd">        df_denominator (pd.DataFrame): df_denominator</span>
+<span class="sd">        w_numerator (Union[ List, pd.Series, np.ndarray, None, ], optional): w_numerator. Defaults to None.</span>
+<span class="sd">        w_denominator (Union[ List, pd.Series, np.ndarray, None, ], optional): w_denominator. Defaults to None.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.Series: (np.float64) A series of calculated ratio of variances for each outcome.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">numerator_w_var</span> <span class="o">=</span> <span class="n">weighted_var</span><span class="p">(</span><span class="n">df_numerator</span><span class="p">,</span> <span class="n">w_numerator</span><span class="p">)</span>
+    <span class="n">denominator_w_var</span> <span class="o">=</span> <span class="n">weighted_var</span><span class="p">(</span><span class="n">df_denominator</span><span class="p">,</span> <span class="n">w_denominator</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">numerator_w_var</span> <span class="o">/</span> <span class="n">denominator_w_var</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../../balance.html" >balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.weighted_comparisons_stats</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

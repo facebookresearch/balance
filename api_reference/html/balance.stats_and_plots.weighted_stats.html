@@ -1,0 +1,391 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>balance.stats_and_plots.weighted_stats &#8212; balance  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="balance.stats_and_plots.weights_stats" href="balance.stats_and_plots.weights_stats.html" />
+    <link rel="prev" title="balance.stats_and_plots.weighted_comparisons_stats" href="balance.stats_and_plots.weighted_comparisons_stats.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.weights_stats.html" title="balance.stats_and_plots.weights_stats"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.weighted_comparisons_stats.html" title="balance.stats_and_plots.weighted_comparisons_stats"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" >balance</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="balance.stats_and_plots.html" accesskey="U">balance.stats_and_plots</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.weighted_stats</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-balance.stats_and_plots.weighted_stats">
+<span id="balance-stats-and-plots-weighted-stats"></span><h1>balance.stats_and_plots.weighted_stats<a class="headerlink" href="#module-balance.stats_and_plots.weighted_stats" title="Permalink to this heading">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_stats.descriptive_stats">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_stats.</span></span><span class="sig-name descname"><span class="pre">descriptive_stats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stat</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'mean'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'std'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'...'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mean'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighted</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numeric_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_na</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_stats.html#descriptive_stats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_stats.descriptive_stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes weighted statistics (e.g.: mean, std) on a DataFrame</p>
+<p>This function gets a DataFrame + weights and apply some weighted aggregation function (mean, std, or DescrStatsW).
+The main benefit of the function is that if the DataFrame includes non-numeric columns, then descriptive_stats will first
+run <code class="xref py py-func docutils literal notranslate"><span class="pre">model_matrix()</span></code> to create some numeric dummary variable that will then be processed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pd.DataFrame</em>) – Some DataFrame to get stats (mean, std, etc.) for.</p></li>
+<li><p><strong>weights</strong> (<em>Union</em><em>[ </em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>np.ndarray</em><em>, </em><em>]</em><em>, </em><em>optional</em>) – Weights to apply for the computation. Defaults to None.</p></li>
+<li><p><strong>stat</strong> (<em>Literal</em><em>[</em><em>&quot;mean&quot;</em><em>, </em><em>&quot;std&quot;</em><em>, </em><em>...</em><em>]</em><em>, </em><em>optional</em>) – <p>Which statistic to calculate on the data.
+If mean - uses <a class="reference internal" href="#balance.stats_and_plots.weighted_stats.weighted_mean" title="balance.stats_and_plots.weighted_stats.weighted_mean"><code class="xref py py-func docutils literal notranslate"><span class="pre">weighted_mean()</span></code></a> (with inf_rm=True)
+If std - uses <a class="reference internal" href="#balance.stats_and_plots.weighted_stats.weighted_sd" title="balance.stats_and_plots.weighted_stats.weighted_sd"><code class="xref py py-func docutils literal notranslate"><span class="pre">weighted_sd()</span></code></a> (with inf_rm=True)
+If something else - tries to use <code class="xref py py-func docutils literal notranslate"><span class="pre">statsmodels.stats.weightstats.DescrStatsW()</span></code>.</p>
+<blockquote>
+<div><p>This supports stat such as: std_mean, sum_weights, nobs, etc. See function documentation to see more.
+(while removing mutual nan using <code class="xref py py-func docutils literal notranslate"><span class="pre">rm_mutual_nas()</span></code>)</p>
+</div></blockquote>
+<p>Defaults to “mean”.</p>
+</p></li>
+<li><p><strong>weighted</strong> (<em>bool</em><em>, </em><em>optional</em>) – If stat is not “mean” or “std”, if to use the weights with the DescrStatsW function.
+Defaults to True.</p></li>
+<li><p><strong>numeric_only</strong> (<em>bool</em><em>, </em><em>optional</em>) – Should the statistics be computed only on numeric columns?
+If True - then non-numeric columns will be omitted.
+If False - then <code class="xref py py-func docutils literal notranslate"><span class="pre">model_matrix()</span></code> (with no formula argument) will be used to transfer non-numeric columns to dummy variables.
+Defaults to False.</p></li>
+<li><p><strong>add_na</strong> (<em>bool</em><em>, </em><em>optional</em>) – Passed to <code class="xref py py-func docutils literal notranslate"><span class="pre">model_matrix()</span></code>.
+Relevant only if numeric_only == False and df has non-numeric columns.
+Defaults to True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Returns pd.DataFrame of the output (based on stat argument), for each of the columns in df.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>import numpy as np
+import pandas as pd
+from balance.stats_and_plots.weighted_stats import descriptive_stats, weighted_mean, weighted_sd</p>
+<p># Without weights
+x = [1, 2, 3, 4]
+print(descriptive_stats(pd.DataFrame(x), stat=”mean”))
+print(np.mean(x))
+print(weighted_mean(x))
+#     0
+# 0  2.5
+# 2.5
+# 0    2.5
+# dtype: float64</p>
+<p>print(descriptive_stats(pd.DataFrame(x), stat=”std”))
+print(weighted_sd(x))
+x2 = pd.Series(x)
+print(np.sqrt( np.sum((x2 - x2.mean())**2) / (len(x)-1) ))
+#         0
+# 0  1.290994
+# 0    1.290994
+# dtype: float64
+# 1.2909944487358056
+# Notice that it is different from
+# print(np.std(x))
+# which gives: 1.118033988749895
+# Which is the MLE (i.e.: biased, dividing by n and not n-1) estimator for std:
+# (np.sqrt( np.sum((x2 - x2.mean())**2) / (len(x)) ))</p>
+<p>x2 = pd.Series(x)
+tmp_sd = np.sqrt(np.sum((x2 - x2.mean()) ** 2) / (len(x) - 1))
+tmp_se = tmp_sd / np.sqrt(len(x))
+print(descriptive_stats(pd.DataFrame(x), stat=”std_mean”).iloc[0, 0])
+print(tmp_se)
+# 0.6454972243679029
+# 0.6454972243679028</p>
+<p># Weighted results
+x, w = [1, 2, 3, 4], [1, 2, 3, 4]
+print(descriptive_stats(pd.DataFrame(x), w, stat=”mean”))
+print(descriptive_stats(pd.DataFrame(x), w, stat=”std”))
+print(descriptive_stats(pd.DataFrame(x), w, stat=”std_mean”))
+#      0
+# 0  3.0
+#           0
+# 0  1.195229
+#           0
+# 0  0.333333</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_stats.relative_frequency_table">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_stats.</span></span><span class="sig-name descname"><span class="pre">relative_frequency_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Series</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_stats.html#relative_frequency_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_stats.relative_frequency_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a relative frequency table by aggregating over a categorical column (<cite>column</cite>) - optionally weighted by <cite>w</cite>.
+I.e.: produce the proportion (or weighted proportion) of rows that appear in each category, relative to the total number of rows (or sum of weights).
+See: <a class="reference external" href="https://en.wikipedia.org/wiki/Frequency_(statistics">https://en.wikipedia.org/wiki/Frequency_(statistics</a>)#Types.</p>
+<p>Used in plotting functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pd.DataFrame</em>) – A DataFrame with categorical columns, or a pd.Series of the grouping column.</p></li>
+<li><p><strong>column</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the column to be aggregated.
+If None (default), then it takes the first column of df (if pd.DataFrame), or just uses as is (if pd.Series)</p></li>
+<li><p><strong>w</strong> (<em>Optional</em><em>[</em><em>pd.Series</em><em>]</em><em>, </em><em>optional</em>) – Optional weights to use when aggregating the relative proportions.
+If None than assumes weights is 1 for all rows. The defaults is None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>a pd.DataFrame with columns:</dt><dd><ul class="simple">
+<li><p><cite>column</cite>, the aggregation variable, and,</p></li>
+<li><p>’prop’, the aggregated (weighted) proportion of rows from each group in ‘column’.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>from balance.stats_and_plots.weighted_stats import relative_frequency_table
+import pandas as pd</p>
+<dl class="simple">
+<dt>df = pd.DataFrame({</dt><dd><p>‘group’: (‘a’, ‘b’, ‘c’, ‘c’),
+‘v1’: (1, 2, 3, 4),</p>
+</dd>
+</dl>
+<p>})
+print(relative_frequency_table(df, ‘group’))</p>
+<blockquote>
+<div><p>#     group  prop
+#   0     a  0.25
+#   1     b  0.25
+#   2     c  0.50</p>
+</div></blockquote>
+<dl class="simple">
+<dt>print(relative_frequency_table(df, ‘group’, pd.Series((2, 1, 1, 1),)))</dt><dd><p>#     group  prop
+#   0     a   0.4
+#   1     b   0.2
+#   2     c   0.4</p>
+</dd>
+</dl>
+<p># Using a pd.Series:
+a_series = df[‘group’]
+print(relative_frequency_table(a_series))
+#   group  prop
+# 0     a  0.25
+# 1     b  0.25
+# 2     c  0.50</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_stats.weighted_mean">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_stats.</span></span><span class="sig-name descname"><span class="pre">weighted_mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">matrix</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inf_rm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_stats.html#weighted_mean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_stats.weighted_mean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the weighted average of a pandas Series or DataFrame.</p>
+<p>If no weights are supplied, it just computes the simple arithmetic mean.</p>
+<p>See:
+<a class="reference external" href="https://en.wikipedia.org/wiki/Weighted_arithmetic_mean">https://en.wikipedia.org/wiki/Weighted_arithmetic_mean</a></p>
+<p>Uses <code class="xref py py-func docutils literal notranslate"><span class="pre">_prepare_weighted_stat_args()</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>v</strong> (<em>Union</em><em>[ </em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>pd.DataFrame</em><em>, </em><em>np.matrix</em><em>, </em><em>]</em>) – values to average. None (or np.nan) values are treated like 0.
+If v is a DataFrame than the average of the values from each column will be returned, all using the same set of weights from w.</p></li>
+<li><p><strong>w</strong> (<em>Union</em><em>[ </em><em>List</em><em>, </em><em>pd.Series</em><em>]</em><em>, </em><em>optional</em>) – weights. Defaults to None.
+If there is None value in the weights, that value will be ignored from the calculation.</p></li>
+<li><p><strong>inf_rm</strong> (<em>bool</em><em>, </em><em>optional</em>) – whether to remove infinite (from weights or values) from the computation. Defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>The weighted mean.
+If v is a DataFrame with several columns than the pd.Series will have a value for the weighted mean of each of the columns.
+If inf_rm=False then:</p>
+<blockquote>
+<div><p>If v has Inf then the output will be Inf.
+If w has Inf then the output will be np.nan.</p>
+</div></blockquote>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.Series(dtype=np.float64)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_stats.weighted_quantile">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_stats.</span></span><span class="sig-name descname"><span class="pre">weighted_quantile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">matrix</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantiles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inf_rm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_stats.html#weighted_quantile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_stats.weighted_quantile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the weighted quantiles (q) of values (v) based on weights (w).</p>
+<p>See <code class="xref py py-func docutils literal notranslate"><span class="pre">_prepare_weighted_stat_args()</span></code> for the pre-processing done to v and w.</p>
+<p>Based on <code class="xref py py-func docutils literal notranslate"><span class="pre">statsmodels.stats.weightstats.DescrStatsW()</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>v</strong> (<em>Union</em><em>[ </em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>pd.DataFrame</em><em>, </em><em>np.array</em><em>, </em><em>np.matrix</em><em>, </em><em>]</em>) – values to get the weighted quantiles for.</p></li>
+<li><p><strong>quantiles</strong> (<em>Union</em><em>[ </em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>]</em>) – the quantiles to calculate.</p></li>
+<li><p><strong>w</strong> (<em>Union</em><em>[ </em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>np.array</em><em>, </em><em>] </em><em>optional</em>) – weights. Defaults to None.</p></li>
+<li><p><strong>inf_rm</strong> (<em>bool</em><em>, </em><em>optional</em>) – whether to remove infinite (from weights or values) from the computation. Defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The index (names p) has the values from quantiles. The columns are based on v:
+If it’s a pd.Series it’s one column, if it’s a pd.DataFrame with several columns, than each column
+in the output corrosponds to the column in v.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_stats.weighted_sd">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_stats.</span></span><span class="sig-name descname"><span class="pre">weighted_sd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">matrix</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inf_rm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_stats.html#weighted_sd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_stats.weighted_sd" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference internal" href="#balance.stats_and_plots.weighted_stats.weighted_var" title="balance.stats_and_plots.weighted_stats.weighted_var"><code class="xref py py-func docutils literal notranslate"><span class="pre">weighted_var()</span></code></a> for details.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.sqrt of <a class="reference internal" href="#balance.stats_and_plots.weighted_stats.weighted_var" title="balance.stats_and_plots.weighted_stats.weighted_var"><code class="xref py py-func docutils literal notranslate"><span class="pre">weighted_var()</span></code></a></p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.Series[np.float64]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_stats.weighted_var">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_stats.</span></span><span class="sig-name descname"><span class="pre">weighted_var</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">matrix</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inf_rm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_stats.html#weighted_var"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_stats.weighted_var" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the sample weighted variance (a.k.a ‘reliability weights’).
+This is described here:
+<a class="reference external" href="https://en.wikipedia.org/wiki/Weighted_arithmetic_mean#Reliability_weights_2">https://en.wikipedia.org/wiki/Weighted_arithmetic_mean#Reliability_weights_2</a>
+And also used in SDMTools, see:
+<a class="reference external" href="https://www.gnu.org/software/gsl/doc/html/statistics.html#weighted-samples">https://www.gnu.org/software/gsl/doc/html/statistics.html#weighted-samples</a></p>
+<p>Uses <a class="reference internal" href="#balance.stats_and_plots.weighted_stats.weighted_mean" title="balance.stats_and_plots.weighted_stats.weighted_mean"><code class="xref py py-func docutils literal notranslate"><span class="pre">weighted_mean()</span></code></a> and <code class="xref py py-func docutils literal notranslate"><span class="pre">_prepare_weighted_stat_args()</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>v</strong> (<em>Union</em><em>[ </em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>pd.DataFrame</em><em>, </em><em>np.matrix</em><em>, </em><em>]</em>) – values to get the weighted variance for. None values are treated like 0.
+If v is a DataFrame than the average of the values from each column will be returned, all using the same set of weights from w.</p></li>
+<li><p><strong>w</strong> (<em>Union</em><em>[ </em><em>List</em><em>, </em><em>pd.Series</em><em>]</em><em>, </em><em>optional</em>) – weights. Defaults to None.
+If there is None value in the weights, that value will be ignored from the calculation.</p></li>
+<li><p><strong>inf_rm</strong> (<em>bool</em><em>, </em><em>optional</em>) – whether to remove infinite (from weights or values) from the computation. Defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>The weighted variance.
+If v is a DataFrame with several columns than the pd.Series will have a value for the weighted mean of each of the columns.
+If inf_rm=False then:</p>
+<blockquote>
+<div><p>If v has Inf then the output will be Inf.
+If w has Inf then the output will be np.nan.</p>
+</div></blockquote>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.Series[np.float64]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">balance.stats_and_plots.weighted_stats</a><ul>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_stats.descriptive_stats"><code class="docutils literal notranslate"><span class="pre">descriptive_stats()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_stats.relative_frequency_table"><code class="docutils literal notranslate"><span class="pre">relative_frequency_table()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_stats.weighted_mean"><code class="docutils literal notranslate"><span class="pre">weighted_mean()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_stats.weighted_quantile"><code class="docutils literal notranslate"><span class="pre">weighted_quantile()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_stats.weighted_sd"><code class="docutils literal notranslate"><span class="pre">weighted_sd()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_stats.weighted_var"><code class="docutils literal notranslate"><span class="pre">weighted_var()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="balance.stats_and_plots.weighted_comparisons_stats.html"
+                          title="previous chapter">balance.stats_and_plots.weighted_comparisons_stats</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="balance.stats_and_plots.weights_stats.html"
+                          title="next chapter">balance.stats_and_plots.weights_stats</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/balance.stats_and_plots.weighted_stats.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.weights_stats.html" title="balance.stats_and_plots.weights_stats"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.weighted_comparisons_stats.html" title="balance.stats_and_plots.weighted_comparisons_stats"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" >balance</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="balance.stats_and_plots.html" >balance.stats_and_plots</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.weighted_stats</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

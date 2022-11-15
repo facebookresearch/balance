@@ -1,0 +1,1184 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>balance.stats_and_plots.weighted_comparisons_plots &#8212; balance  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../../balance.html" accesskey="U">balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.weighted_comparisons_plots</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for balance.stats_and_plots.weighted_comparisons_plots</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) Meta Platforms, Inc. and affiliates.</span>
+<span class="c1">#</span>
+<span class="c1"># This software may be used and distributed according to the terms of the</span>
+<span class="c1"># GNU General Public License version 2.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">import</span> <span class="nn">random</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">plotly.graph_objs</span> <span class="k">as</span> <span class="nn">go</span>
+<span class="kn">import</span> <span class="nn">plotly.offline</span> <span class="k">as</span> <span class="nn">offline</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+
+<span class="kn">from</span> <span class="nn">balance.stats_and_plots.weighted_stats</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">relative_frequency_table</span><span class="p">,</span>
+    <span class="n">weighted_quantile</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">balance.util</span> <span class="kn">import</span> <span class="n">choose_variables</span><span class="p">,</span> <span class="n">rm_mutual_nas</span>
+<span class="kn">from</span> <span class="nn">matplotlib.colors</span> <span class="kn">import</span> <span class="n">rgb2hex</span>
+
+<span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
+
+
+<span class="c1">################################################################################</span>
+<span class="c1">#  seaborn plots below</span>
+<span class="c1">################################################################################</span>
+
+
+<span class="k">def</span> <span class="nf">_return_sample_palette</span><span class="p">(</span>
+    <span class="n">names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Returns sample palette for seaborn plots.</span>
+
+<span class="sd">    Named colors for matplotlib: https://stackoverflow.com/a/37232760</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        names (List[str]): e.g. [&#39;self&#39;, &#39;target&#39;]</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Union[Dict[str, str], str]: e.g. {&#39;self&#39;: &#39;tomato&#39;, &#39;target&#39;: &#39;dodgerblue&#39;}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># colors to match the plotly colors</span>
+    <span class="n">col_unadjusted</span> <span class="o">=</span> <span class="n">rgb2hex</span><span class="p">((</span><span class="mi">222</span> <span class="o">/</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">45</span> <span class="o">/</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">38</span> <span class="o">/</span> <span class="mi">255</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">),</span> <span class="n">keep_alpha</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">col_adjusted</span> <span class="o">=</span> <span class="n">rgb2hex</span><span class="p">((</span><span class="mi">52</span> <span class="o">/</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">165</span> <span class="o">/</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">48</span> <span class="o">/</span> <span class="mi">255</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span> <span class="n">keep_alpha</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">col_target</span> <span class="o">=</span> <span class="n">rgb2hex</span><span class="p">((</span><span class="mi">158</span> <span class="o">/</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">202</span> <span class="o">/</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">225</span> <span class="o">/</span> <span class="mi">255</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">),</span> <span class="n">keep_alpha</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">}:</span>
+        <span class="n">sample_palette</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;self&quot;</span><span class="p">:</span> <span class="n">col_unadjusted</span><span class="p">,</span>
+            <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">col_target</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;unadjusted&quot;</span><span class="p">}:</span>
+        <span class="n">sample_palette</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;self&quot;</span><span class="p">:</span> <span class="n">col_adjusted</span><span class="p">,</span>
+            <span class="s2">&quot;unadjusted&quot;</span><span class="p">:</span> <span class="n">col_unadjusted</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="k">elif</span> <span class="nb">set</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;unadjusted&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">}:</span>
+        <span class="n">sample_palette</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;self&quot;</span><span class="p">:</span> <span class="n">col_adjusted</span><span class="p">,</span>
+            <span class="s2">&quot;unadjusted&quot;</span><span class="p">:</span> <span class="n">col_unadjusted</span><span class="p">,</span>
+            <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">col_target</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="k">elif</span> <span class="nb">set</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;adjusted&quot;</span><span class="p">,</span> <span class="s2">&quot;unadjusted&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">}:</span>
+        <span class="n">sample_palette</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;adjusted&quot;</span><span class="p">:</span> <span class="n">col_adjusted</span><span class="p">,</span>
+            <span class="s2">&quot;unadjusted&quot;</span><span class="p">:</span> <span class="n">col_unadjusted</span><span class="p">,</span>
+            <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">col_target</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">sample_palette</span> <span class="o">=</span> <span class="s2">&quot;muted&quot;</span>
+    <span class="k">return</span> <span class="n">sample_palette</span>
+
+
+<div class="viewcode-block" id="plot_bar"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.plot_bar">[docs]</a><span class="k">def</span> <span class="nf">plot_bar</span><span class="p">(</span>
+    <span class="n">dfs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]]],</span>
+    <span class="n">names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">axis</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Shows a (weighted) :func:`sns.barplot` using a relative frequncy table of several DataFrames.</span>
+
+<span class="sd">    If weighted is True, then mutual NA values are removed using :func:`rm_mutual_nas`.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dfs (List[Dict[str, Union[pd.DataFrame, pd.Series]]]): a list (of length 1 or more) of dictionaries which describe the DataFrames and weights</span>
+<span class="sd">            The structure is as follows:</span>
+<span class="sd">            [</span>
+<span class="sd">                {&#39;df&#39;: pd.DataFrame(...), &#39;weights&#39;: pd.Series(...)},</span>
+<span class="sd">                ...</span>
+<span class="sd">            ]</span>
+<span class="sd">            The &#39;df&#39; is a DataFrame which includes the column name that was supplied through &#39;column&#39;.</span>
+<span class="sd">            The &#39;weights&#39; is a pd.Series of weights that are used when aggregating the variable using :func:`relative_frequency_table`.</span>
+<span class="sd">        names (List[str]): a list of the names of the DataFrames that are plotted. E.g.: [&#39;adjusted&#39;, &#39;unadjusted&#39;, &#39;target&#39;]</span>
+<span class="sd">        column (str): The column to be used to aggregate using :func:`relative_frequency_table`.</span>
+<span class="sd">        axis (Optional[plt.Axes], optional): matplotlib Axes object to draw the plot onto, otherwise uses the current Axes. Defaults to None.</span>
+<span class="sd">        weighted (bool, optional): If to pass the weights from the dicts inside dfs. Defaults to True.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        from balance.stats_and_plots.weighted_comparisons_plots import plot_bar</span>
+<span class="sd">        import pandas as pd</span>
+<span class="sd">        import numpy as np</span>
+
+<span class="sd">        df = pd.DataFrame({</span>
+<span class="sd">            &#39;group&#39;: (&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;c&#39;),</span>
+<span class="sd">            &#39;v1&#39;: (1, 2, 3, 4),</span>
+<span class="sd">        })</span>
+
+<span class="sd">        plot_bar(</span>
+<span class="sd">            [{&quot;df&quot;: df, &quot;weights&quot;: pd.Series((1, 1, 1, 1))}, {&quot;df&quot;: df, &quot;weights&quot;: pd.Series((2, 1, 1, 1))}],</span>
+<span class="sd">            names = [&quot;self&quot;, &quot;target&quot;],</span>
+<span class="sd">            column = &quot;group&quot;,</span>
+<span class="sd">            axis = None,</span>
+<span class="sd">            weighted = True)</span>
+
+<span class="sd">        # Also deals with np.nan weights</span>
+<span class="sd">        a = plot_bar(</span>
+<span class="sd">            [{&quot;df&quot;: df, &quot;weights&quot;: pd.Series((1, 1, 1, np.nan))}, {&quot;df&quot;: df, &quot;weights&quot;: pd.Series((2, 1, 1, np.nan))}],</span>
+<span class="sd">            names = [&quot;self&quot;, &quot;target&quot;],</span>
+<span class="sd">            column = &quot;group&quot;,</span>
+<span class="sd">            axis = None,</span>
+<span class="sd">            weighted = True)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">plot_data</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">ii</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dfs</span><span class="p">):</span>
+        <span class="n">a_series</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="s2">&quot;df&quot;</span><span class="p">][</span><span class="n">column</span><span class="p">]</span>
+        <span class="n">_w</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">weighted</span><span class="p">:</span>
+            <span class="n">a_series</span><span class="p">,</span> <span class="n">_w</span> <span class="o">=</span> <span class="n">rm_mutual_nas</span><span class="p">(</span><span class="n">a_series</span><span class="p">,</span> <span class="n">_w</span><span class="p">)</span>
+            <span class="n">a_series</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">column</span>  <span class="c1"># rm_mutual_nas removes name, so we set it back</span>
+
+        <span class="n">df_plot_data</span> <span class="o">=</span> <span class="n">relative_frequency_table</span><span class="p">(</span><span class="n">a_series</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="n">_w</span> <span class="k">if</span> <span class="n">weighted</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">df_plot_data</span><span class="p">[</span><span class="s2">&quot;dataset&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">names</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>  <span class="c1"># a recycled column for barplot&#39;s hue.</span>
+
+        <span class="n">plot_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df_plot_data</span><span class="p">)</span>
+
+    <span class="n">sample_palette</span> <span class="o">=</span> <span class="n">_return_sample_palette</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+
+    <span class="n">sns</span><span class="o">.</span><span class="n">barplot</span><span class="p">(</span>
+        <span class="n">x</span><span class="o">=</span><span class="n">column</span><span class="p">,</span>
+        <span class="n">y</span><span class="o">=</span><span class="s2">&quot;prop&quot;</span><span class="p">,</span>
+        <span class="n">hue</span><span class="o">=</span><span class="s2">&quot;dataset&quot;</span><span class="p">,</span>
+        <span class="n">data</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">plot_data</span><span class="p">),</span>
+        <span class="n">ax</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span>
+        <span class="n">palette</span><span class="o">=</span><span class="n">sample_palette</span><span class="p">,</span>
+        <span class="n">saturation</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;barplot of covar &#39;</span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="plot_hist_kde"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.plot_hist_kde">[docs]</a><span class="k">def</span> <span class="nf">plot_hist_kde</span><span class="p">(</span>
+    <span class="n">dfs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]]],</span>
+    <span class="n">names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">axis</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">dist_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;hist&quot;</span><span class="p">,</span> <span class="s2">&quot;kde&quot;</span><span class="p">,</span> <span class="s2">&quot;ecdf&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;hist&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Shows a (weighted) distribution plot ():func:`sns.displot`) of data from several DataFrame objects.</span>
+
+<span class="sd">    Options include histogram (hist), kernel density estimate (kde), and empirical cumulative density function (ecdf).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dfs (List[Dict[str, Union[pd.DataFrame, pd.Series]]]): a list (of length 1 or more) of dictionaries which describe the DataFrames and weights</span>
+<span class="sd">            The structure is as follows:</span>
+<span class="sd">            [</span>
+<span class="sd">                {&#39;df&#39;: pd.DataFrame(...), &#39;weights&#39;: pd.Series(...)},</span>
+<span class="sd">                ...</span>
+<span class="sd">            ]</span>
+<span class="sd">            The &#39;df&#39; is a DataFrame which includes the column name that was supplied through &#39;column&#39;.</span>
+<span class="sd">            The &#39;weights&#39; is a pd.Series of weights that are used when aggregating the variable using :func:`relative_frequency_table`.</span>
+<span class="sd">        names (List[str]): a list of the names of the DataFrames that are plotted. E.g.: [&#39;adjusted&#39;, &#39;unadjusted&#39;, &#39;target&#39;]</span>
+<span class="sd">        column (str): The column to be used to aggregate using :func:`relative_frequency_table`.</span>
+<span class="sd">        axis (Optional[plt.Axes], optional): matplotlib Axes object to draw the plot onto, otherwise uses the current Axes. Defaults to None.</span>
+<span class="sd">        weighted (bool, optional): If to pass the weights from the dicts inside dfs. Defaults to True.</span>
+<span class="sd">        dist_type (Literal[&quot;hist&quot;, &quot;kde&quot;, &quot;ecdf&quot;], optional): The type of plot to draw. Defaults to &quot;hist&quot;.</span>
+
+<span class="sd">    Examples:</span>
+
+<span class="sd">        from balance.stats_and_plots.weighted_comparisons_plots import plot_hist_kde</span>
+<span class="sd">        import pandas as pd</span>
+<span class="sd">        import numpy as np</span>
+<span class="sd">        import matplotlib.pyplot as plt</span>
+
+<span class="sd">        df = pd.DataFrame({</span>
+<span class="sd">            &#39;group&#39;: (&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;c&#39;),</span>
+<span class="sd">            &#39;v1&#39;: (1, 2, 3, 4),</span>
+<span class="sd">        })</span>
+
+<span class="sd">        dfs1 = [{&quot;df&quot;: pd.DataFrame(pd.Series([1,2,2,2,3,4,5,5,7,8,9,9,9,9,5,2,5,4,4,4], name = &quot;v1&quot;)), &quot;weights&quot;: None}, {&quot;df&quot;: df, &quot;weights&quot;: pd.Series((200, 1, 0, 20))}]</span>
+
+<span class="sd">        plt.figure(1)</span>
+
+<span class="sd">        # kde: no weights</span>
+<span class="sd">        plot_hist_kde(</span>
+<span class="sd">            dfs1,</span>
+<span class="sd">            names = [&quot;self&quot;, &quot;target&quot;],</span>
+<span class="sd">            column = &quot;v1&quot;,</span>
+<span class="sd">            axis = None,</span>
+<span class="sd">            weighted = False, dist_type = &quot;kde&quot;)</span>
+
+<span class="sd">        plt.figure(2)</span>
+
+<span class="sd">        # kde: with weights</span>
+<span class="sd">        plot_hist_kde(</span>
+<span class="sd">            dfs1,</span>
+<span class="sd">            names = [&quot;self&quot;, &quot;target&quot;],</span>
+<span class="sd">            column = &quot;v1&quot;,</span>
+<span class="sd">            axis = None,</span>
+<span class="sd">            weighted = True, dist_type = &quot;kde&quot;)</span>
+
+<span class="sd">        plt.figure(3)</span>
+
+<span class="sd">        # hist</span>
+<span class="sd">        plot_hist_kde(</span>
+<span class="sd">            dfs1,</span>
+<span class="sd">            names = [&quot;self&quot;, &quot;target&quot;],</span>
+<span class="sd">            column = &quot;v1&quot;,</span>
+<span class="sd">            axis = None,</span>
+<span class="sd">            weighted = True, dist_type = &quot;hist&quot;)</span>
+
+<span class="sd">        plt.figure(4)</span>
+
+<span class="sd">        # ecdf</span>
+<span class="sd">        plot_hist_kde(</span>
+<span class="sd">            dfs1,</span>
+<span class="sd">            names = [&quot;self&quot;, &quot;target&quot;],</span>
+<span class="sd">            column = &quot;v1&quot;,</span>
+<span class="sd">            axis = None,</span>
+<span class="sd">            weighted = True, dist_type = &quot;ecdf&quot;)</span>
+
+
+<span class="sd">        # can work nicely with plt.subplots:</span>
+<span class="sd">        f, axes = plt.subplots(1, 2, figsize=(7, 7 * 1))</span>
+<span class="sd">        plot_hist_kde(</span>
+<span class="sd">            dfs1,</span>
+<span class="sd">            names = [&quot;self&quot;, &quot;target&quot;],</span>
+<span class="sd">            column = &quot;v1&quot;,</span>
+<span class="sd">            axis = axes[0],</span>
+<span class="sd">            weighted = False, dist_type = &quot;kde&quot;)</span>
+<span class="sd">        plot_hist_kde(</span>
+<span class="sd">            dfs1,</span>
+<span class="sd">            names = [&quot;self&quot;, &quot;target&quot;],</span>
+<span class="sd">            column = &quot;v1&quot;,</span>
+<span class="sd">            axis = axes[1],</span>
+<span class="sd">            weighted = False, dist_type = &quot;kde&quot;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">possible_dist_function</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;hist&quot;</span><span class="p">:</span> <span class="n">sns</span><span class="o">.</span><span class="n">histplot</span><span class="p">,</span>
+        <span class="s2">&quot;kde&quot;</span><span class="p">:</span> <span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">,</span>
+        <span class="s2">&quot;ecdf&quot;</span><span class="p">:</span> <span class="n">sns</span><span class="o">.</span><span class="n">ecdfplot</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">dist_function</span> <span class="o">=</span> <span class="n">possible_dist_function</span><span class="p">[</span><span class="n">dist_type</span><span class="p">]</span>
+    <span class="c1"># NOTE: the reason we don&#39;t use sns.displot directly is that it doesn&#39;t accept an ax= kwarg.</span>
+    <span class="c1"># see also here: https://stackoverflow.com/a/63895570/256662</span>
+
+    <span class="n">plot_data</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">ii</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dfs</span><span class="p">):</span>
+        <span class="n">a_series</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="s2">&quot;df&quot;</span><span class="p">][</span><span class="n">column</span><span class="p">]</span>
+        <span class="n">_w</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">_w</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_w</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a_series</span><span class="p">)),</span> <span class="n">index</span><span class="o">=</span><span class="n">a_series</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">weighted</span><span class="p">:</span>
+            <span class="n">a_series</span><span class="p">,</span> <span class="n">_w</span> <span class="o">=</span> <span class="n">rm_mutual_nas</span><span class="p">(</span><span class="n">a_series</span><span class="p">,</span> <span class="n">_w</span><span class="p">)</span>
+            <span class="n">a_series</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">column</span>  <span class="c1"># rm_mutual_nas removes name, so we set it back</span>
+
+        <span class="n">df_plot_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="n">column</span><span class="p">:</span> <span class="n">a_series</span><span class="p">,</span> <span class="s2">&quot;_w&quot;</span><span class="p">:</span> <span class="n">_w</span><span class="p">})</span>
+        <span class="n">df_plot_data</span><span class="p">[</span><span class="s2">&quot;dataset&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">names</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>  <span class="c1"># a recycled column for barplot&#39;s hue.</span>
+
+        <span class="n">plot_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df_plot_data</span><span class="p">)</span>
+
+    <span class="n">plot_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">plot_data</span><span class="p">)</span>
+    <span class="n">_w</span> <span class="o">=</span> <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;_w&quot;</span><span class="p">]</span>
+
+    <span class="n">sample_palette</span> <span class="o">=</span> <span class="n">_return_sample_palette</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">dist_function</span><span class="p">(</span>
+        <span class="n">data</span><span class="o">=</span><span class="n">plot_data</span><span class="p">,</span>
+        <span class="n">x</span><span class="o">=</span><span class="n">column</span><span class="p">,</span>
+        <span class="n">hue</span><span class="o">=</span><span class="s2">&quot;dataset&quot;</span><span class="p">,</span>
+        <span class="n">ax</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span>
+        <span class="n">weights</span><span class="o">=</span><span class="n">_w</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">_w</span><span class="p">)</span> <span class="k">if</span> <span class="n">weighted</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">common_norm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">palette</span><span class="o">=</span><span class="n">sample_palette</span><span class="p">,</span>
+        <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;distribution plot of covar &#39;</span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="plot_qq"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.plot_qq">[docs]</a><span class="k">def</span> <span class="nf">plot_qq</span><span class="p">(</span>
+    <span class="n">dfs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]]],</span>
+    <span class="n">names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">axis</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Plots a qq plot of the weighted data from a DataFrame object against some target.</span>
+
+<span class="sd">    See: https://en.wikipedia.org/wiki/Q-Q_plot</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dfs (List[Dict[str, Union[pd.DataFrame, pd.Series]]]): a list (of length 1 or more) of dictionaries which describe the DataFrames and weights</span>
+<span class="sd">            The structure is as follows:</span>
+<span class="sd">            [</span>
+<span class="sd">                {&#39;df&#39;: pd.DataFrame(...), &#39;weights&#39;: pd.Series(...)},</span>
+<span class="sd">                ...</span>
+<span class="sd">            ]</span>
+<span class="sd">            The &#39;df&#39; is a DataFrame which includes the column name that was supplied through &#39;column&#39;.</span>
+<span class="sd">            The &#39;weights&#39; is a pd.Series of weights that are used when aggregating the variable using :func:`weighted_quantile`.</span>
+<span class="sd">            Uses the last df item in the list as the target.</span>
+<span class="sd">        names (List[str]): a list of the names of the DataFrames that are plotted. E.g.: [&#39;adjusted&#39;, &#39;unadjusted&#39;, &#39;target&#39;]</span>
+<span class="sd">        column (str): The column to be used to aggregate using :func:`weighted_quantile`.</span>
+<span class="sd">        axis (Optional[plt.Axes], optional): matplotlib Axes object to draw the plot onto, otherwise uses the current Axes. Defaults to None.</span>
+<span class="sd">        weighted (bool, optional): If to pass the weights from the dicts inside dfs. Defaults to True.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        import numpy as np</span>
+<span class="sd">        import pandas as pd</span>
+<span class="sd">        from balance.stats_and_plots.weighted_comparisons_plots import plot_qq</span>
+<span class="sd">        from numpy import random</span>
+
+<span class="sd">        df = pd.DataFrame({</span>
+<span class="sd">            &#39;v1&#39;: random.uniform(size=100),</span>
+<span class="sd">        }).sort_values(by=[&#39;v1&#39;])</span>
+
+<span class="sd">        dfs1 = [</span>
+<span class="sd">            {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(100))},</span>
+<span class="sd">            {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(range(100))},</span>
+<span class="sd">            {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(100))},</span>
+<span class="sd">        ]</span>
+
+<span class="sd">        # plot_qq(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], column=&quot;v1&quot;, axis=None, weighted=False)</span>
+<span class="sd">        plot_qq(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], column=&quot;v1&quot;, axis=None, weighted=True)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">target</span> <span class="o">=</span> <span class="n">dfs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># assumes the last item is target</span>
+    <span class="n">dfs</span> <span class="o">=</span> <span class="n">dfs</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># assumes the non-last item are dfs to be compared to target</span>
+
+    <span class="k">for</span> <span class="n">ii</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dfs</span><span class="p">):</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="s2">&quot;df&quot;</span><span class="p">]</span>
+        <span class="n">_w</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span>
+
+        <span class="n">target_q</span> <span class="o">=</span> <span class="n">weighted_quantile</span><span class="p">(</span>
+            <span class="n">target</span><span class="p">[</span><span class="s2">&quot;df&quot;</span><span class="p">][</span><span class="n">column</span><span class="p">],</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">),</span>
+            <span class="c1"># pyre-fixme[6]: TODO:</span>
+            <span class="c1"># This is because of using:</span>
+            <span class="c1"># dfs: List[Dict[str, Union[pd.DataFrame, pd.Series]]],</span>
+            <span class="c1"># When in fact we want to be clear that the first element is called</span>
+            <span class="c1"># &quot;df&quot; and the second &quot;weights&quot;, and that the first is a pd.DataFrame and</span>
+            <span class="c1"># the second pd.Series. Until this is not clear - the following line will raise an error.</span>
+            <span class="n">target</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">weighted</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">sample_q</span> <span class="o">=</span> <span class="n">weighted_quantile</span><span class="p">(</span>
+            <span class="n">d</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">column</span><span class="p">],</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">),</span>
+            <span class="c1"># pyre-fixme[6]</span>
+            <span class="n">_w</span> <span class="k">if</span> <span class="n">weighted</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">axis</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">scatterplot</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">target_q</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">sample_q</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="n">names</span><span class="p">[</span><span class="n">ii</span><span class="p">],</span>
+            <span class="n">ax</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="n">set_xy_axes_to_use_the_same_lim</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span>
+
+    <span class="n">axis</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">axis</span><span class="o">.</span><span class="n">get_xlim</span><span class="p">(),</span> <span class="n">axis</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">(),</span> <span class="s2">&quot;--&quot;</span><span class="p">)</span>
+    <span class="n">axis</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;quantile-quantile plot of covar &#39;</span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s2">&#39; in target vs sample&quot;</span><span class="p">)</span>
+    <span class="n">axis</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="plot_qq_categorical"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.plot_qq_categorical">[docs]</a><span class="k">def</span> <span class="nf">plot_qq_categorical</span><span class="p">(</span>
+    <span class="n">dfs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]]],</span>
+    <span class="n">names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">axis</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">label_threshold</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A scatter plot of weighted relative frequencies of categories from each df.</span>
+
+<span class="sd">    Notice that this is not a &quot;real&quot; qq-plot, but rather a scatter plot of (estimated, weighted) probabilities for each category.</span>
+
+<span class="sd">    X-axis is the sample (adjusted, unadjusted) and Y-axis is the target.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dfs (List[Dict[str, Union[pd.DataFrame, pd.Series]]]): a list (of length 1 or more) of dictionaries which describe the DataFrames and weights</span>
+<span class="sd">            The structure is as follows:</span>
+<span class="sd">            [</span>
+<span class="sd">                {&#39;df&#39;: pd.DataFrame(...), &#39;weights&#39;: pd.Series(...)},</span>
+<span class="sd">                ...</span>
+<span class="sd">            ]</span>
+<span class="sd">            The &#39;df&#39; is a DataFrame which includes the column name that was supplied through &#39;column&#39;.</span>
+<span class="sd">            The &#39;weights&#39; is a pd.Series of weights that are used when aggregating the variable using :func:`weighted_quantile`.</span>
+<span class="sd">            Uses the last df item in the list as the target.</span>
+<span class="sd">        names (List[str]): a list of the names of the DataFrames that are plotted. E.g.: [&#39;adjusted&#39;, &#39;unadjusted&#39;, &#39;target&#39;]</span>
+<span class="sd">        column (str): The column to be used to aggregate using :func:`relative_frequency_table`.</span>
+<span class="sd">        axis (Optional[plt.Axes], optional): matplotlib Axes object to draw the plot onto, otherwise uses the current Axes. Defaults to None.</span>
+<span class="sd">        weighted (bool, optional): If to pass the weights from the dicts inside dfs. Defaults to True.</span>
+<span class="sd">        label_threshold (int, optional): All labels that are larger from the threshold will be omitted from the scatter plot (so to reduce clutter). Defaults to 30.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        import numpy as np</span>
+<span class="sd">        import pandas as pd</span>
+<span class="sd">        from balance.stats_and_plots.weighted_comparisons_plots import plot_qq_categorical</span>
+<span class="sd">        from numpy import random</span>
+
+<span class="sd">        df = pd.DataFrame({</span>
+<span class="sd">            &#39;v1&#39;: random.random_integers(11111, 11114, size=100),</span>
+<span class="sd">        }).sort_values(by=[&#39;v1&#39;])</span>
+
+<span class="sd">        dfs1 = [</span>
+<span class="sd">            {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(100))},</span>
+<span class="sd">            {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(99).tolist() + [1000])},</span>
+<span class="sd">            {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(100))},</span>
+<span class="sd">        ]</span>
+
+<span class="sd">        import matplotlib.pyplot as plt</span>
+
+<span class="sd">        plt.rcParams[&quot;figure.figsize&quot;] = (20, 6) # (w, h)</span>
+
+<span class="sd">        fig, axs = plt.subplots(1,3)</span>
+
+<span class="sd">        # Without using weights</span>
+<span class="sd">        plot_qq_categorical(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], column=&quot;v1&quot;, axis=axs[0], weighted=False)</span>
+<span class="sd">        # With weights</span>
+<span class="sd">        plot_qq_categorical(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], column=&quot;v1&quot;, axis=axs[1], weighted=True)</span>
+<span class="sd">        # With label trimming if the text is longer than 3.</span>
+<span class="sd">        plot_qq_categorical(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], column=&quot;v1&quot;, axis=axs[2], weighted=True, label_threshold=3)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">target</span> <span class="o">=</span> <span class="n">dfs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;df&quot;</span><span class="p">]</span>
+    <span class="n">target_weights</span> <span class="o">=</span> <span class="n">dfs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span>
+    <span class="n">dfs</span> <span class="o">=</span> <span class="n">dfs</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># pyre-fixme[6]</span>
+    <span class="n">target_plot_data</span> <span class="o">=</span> <span class="n">relative_frequency_table</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">column</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">ii</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dfs</span><span class="p">):</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="s2">&quot;df&quot;</span><span class="p">]</span>
+        <span class="n">_w</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">weighted</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="c1"># pyre-fixme[6]</span>
+        <span class="n">sample_plot_data</span> <span class="o">=</span> <span class="n">relative_frequency_table</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">column</span><span class="p">,</span> <span class="n">_w</span><span class="p">)</span>
+        <span class="n">plot_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+            <span class="n">sample_plot_data</span><span class="p">,</span>
+            <span class="n">target_plot_data</span><span class="p">,</span>
+            <span class="n">on</span><span class="o">=</span><span class="n">column</span><span class="p">,</span>
+            <span class="n">how</span><span class="o">=</span><span class="s2">&quot;outer&quot;</span><span class="p">,</span>
+            <span class="n">suffixes</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;_sample&quot;</span><span class="p">,</span> <span class="s2">&quot;_target&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+
+        <span class="n">axis</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">scatterplot</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">plot_data</span><span class="o">.</span><span class="n">prop_sample</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">plot_data</span><span class="o">.</span><span class="n">prop_target</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">names</span><span class="p">[</span><span class="n">ii</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axis</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">plot_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">label_threshold</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">plot_data</span><span class="o">.</span><span class="n">itertuples</span><span class="p">():</span>
+                <span class="c1"># pyre-fixme[16]: `tuple` has no attribute `prop_sample`.</span>
+                <span class="n">axis</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">prop_sample</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">prop_target</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">axis</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">)</span>
+    <span class="n">axis</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">)</span>
+    <span class="n">axis</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">axis</span><span class="o">.</span><span class="n">get_xlim</span><span class="p">(),</span> <span class="n">axis</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">(),</span> <span class="s2">&quot;--&quot;</span><span class="p">)</span>
+    <span class="n">axis</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;proportion-proportion plot of covar &#39;</span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s2">&#39; in target vs sample&quot;</span>
+    <span class="p">)</span>
+    <span class="n">axis</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span></div>
+
+
+<span class="c1"># TODO: add control (or just change) the default theme</span>
+<span class="c1"># TODO: add a separate dist_type control parameter for categorical and numeric variables.</span>
+<div class="viewcode-block" id="seaborn_plot_dist"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.seaborn_plot_dist">[docs]</a><span class="k">def</span> <span class="nf">seaborn_plot_dist</span><span class="p">(</span>
+    <span class="n">dfs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]]],</span>
+    <span class="n">names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">variables</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">numeric_n_values_threshold</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span>
+    <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">dist_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;qq&quot;</span><span class="p">,</span> <span class="s2">&quot;hist&quot;</span><span class="p">,</span> <span class="s2">&quot;kde&quot;</span><span class="p">,</span> <span class="s2">&quot;ecdf&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Plots to compare the weighted distributions of an arbitrary number of variables from</span>
+<span class="sd">    an arbitrary number of DataFrames.</span>
+
+<span class="sd">    Uses: :func:`plot_qq_categorical`, :func:`plot_qq`, :func:`plot_hist_kde`, :func:`plot_bar`.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dfs (List[Dict[str, Union[pd.DataFrame, pd.Series]]]): a list (of length 1 or more) of dictionaries which describe the DataFrames and weights</span>
+<span class="sd">            The structure is as follows:</span>
+<span class="sd">            [</span>
+<span class="sd">                {&#39;df&#39;: pd.DataFrame(...), &#39;weights&#39;: pd.Series(...)},</span>
+<span class="sd">                ...</span>
+<span class="sd">            ]</span>
+<span class="sd">            The &#39;df&#39; is a DataFrame which includes the column name that was supplied through &#39;column&#39;.</span>
+<span class="sd">            The &#39;weights&#39; is a pd.Series of weights that are used when aggregating by the column variable.</span>
+<span class="sd">        names (List[str]): a list of the names of the DataFrames that are plotted. E.g.: [&#39;adjusted&#39;, &#39;unadjusted&#39;, &#39;target&#39;]</span>
+<span class="sd">        variables (Optional[List], optional): The list of variables to use, by default (None) will plot all of them.</span>
+<span class="sd">        numeric_n_values_threshold (int, optional): How many unique values (or less) should be in a column so that it is considered to be a &quot;category&quot;? Defaults to 15.</span>
+<span class="sd">            This is compared against the maximum number of distinct values (for each of the variables) across all DataFrames.</span>
+<span class="sd">            Setting this value to 0 will disable this check.</span>
+<span class="sd">        weighted (bool, optional): If to pass the weights from the dicts inside dfs. Defaults to True.</span>
+<span class="sd">        dist_type (Optional[str], optional): can be &quot;hist&quot;, &quot;kde&quot;, or &quot;qq&quot;. Defaults to None.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Union[List[plt.Axes], np.ndarray]: Either a list or an np.array of matplotlib AxesSubplot (plt.Subplot).</span>
+<span class="sd">        NOTE: There is no AxesSubplot class until one is invoked and created on the fly.</span>
+<span class="sd">            See details here: https://stackoverflow.com/a/11690800/256662</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        import numpy as np</span>
+<span class="sd">        import pandas as pd</span>
+<span class="sd">        from balance.stats_and_plots.weighted_comparisons_plots import seaborn_plot_dist</span>
+<span class="sd">        from numpy import random</span>
+
+<span class="sd">        df = pd.DataFrame({</span>
+<span class="sd">            &#39;v1&#39;: random.random_integers(11111, 11114, size=100).astype(str),</span>
+<span class="sd">            &#39;v2&#39;: random.normal(size = 100),</span>
+<span class="sd">            &#39;v3&#39;: random.uniform(size = 100),</span>
+<span class="sd">        }).sort_values(by=[&#39;v2&#39;])</span>
+
+<span class="sd">        dfs1 = [</span>
+<span class="sd">            {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(100))},</span>
+<span class="sd">            {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(99).tolist() + [1000])},</span>
+<span class="sd">            {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.random.uniform(size=100))},</span>
+<span class="sd">        ]</span>
+
+<span class="sd">        seaborn_plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], dist_type = &quot;qq&quot;)  # default</span>
+<span class="sd">        seaborn_plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], dist_type = &quot;hist&quot;)</span>
+<span class="sd">        seaborn_plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], dist_type = &quot;kde&quot;)</span>
+<span class="sd">        seaborn_plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], dist_type = &quot;ecdf&quot;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">dist_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dfs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">dist_type</span> <span class="o">=</span> <span class="s2">&quot;hist&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dist_type</span> <span class="o">=</span> <span class="s2">&quot;qq&quot;</span>
+
+    <span class="c1">#  Choose set of variables to plot</span>
+    <span class="n">variables</span> <span class="o">=</span> <span class="n">choose_variables</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;df&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dfs</span><span class="p">),</span> <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;plotting variables </span><span class="si">{</span><span class="n">variables</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1">#  Set up subplots</span>
+    <span class="n">f</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="p">)))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>  <span class="c1"># If only one subplot</span>
+        <span class="n">axes</span> <span class="o">=</span> <span class="p">[</span><span class="n">axes</span><span class="p">]</span>
+
+    <span class="c1"># TODO: patch choose_variables to return outcome_types from multiple_objects</span>
+    <span class="n">numeric_variables</span> <span class="o">=</span> <span class="n">dfs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;df&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;object&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span>
+
+    <span class="k">for</span> <span class="n">io</span><span class="p">,</span> <span class="n">o</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">variables</span><span class="p">):</span>
+        <span class="c1">#  Find the maximum number of non-missing values of this variable accross</span>
+        <span class="c1">#  all the dataframes</span>
+        <span class="n">n_values</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">rm_mutual_nas</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;df&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">o</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)))</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dfs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">n_values</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No nonmissing values for variable &#39;</span><span class="si">{</span><span class="n">o</span><span class="si">}</span><span class="s2">&#39;, skipping&quot;</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="c1">#  Plot categorical variables as histogram</span>
+        <span class="n">categorical</span> <span class="o">=</span> <span class="p">(</span><span class="n">o</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">numeric_variables</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
+            <span class="n">n_values</span> <span class="o">&lt;</span> <span class="n">numeric_n_values_threshold</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">categorical</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">dist_type</span> <span class="o">==</span> <span class="s2">&quot;qq&quot;</span><span class="p">:</span>
+                <span class="c1"># pyre-fixme[6]</span>
+                <span class="n">plot_qq_categorical</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">o</span><span class="p">,</span> <span class="n">axes</span><span class="p">[</span><span class="n">io</span><span class="p">],</span> <span class="n">weighted</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># pyre-fixme[6]</span>
+                <span class="n">plot_bar</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">o</span><span class="p">,</span> <span class="n">axes</span><span class="p">[</span><span class="n">io</span><span class="p">],</span> <span class="n">weighted</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">dist_type</span> <span class="o">==</span> <span class="s2">&quot;qq&quot;</span><span class="p">:</span>
+                <span class="c1"># pyre-fixme[6]</span>
+                <span class="n">plot_qq</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">o</span><span class="p">,</span> <span class="n">axes</span><span class="p">[</span><span class="n">io</span><span class="p">],</span> <span class="n">weighted</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># pyre-fixme[6]</span>
+                <span class="n">plot_hist_kde</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">o</span><span class="p">,</span> <span class="n">axes</span><span class="p">[</span><span class="n">io</span><span class="p">],</span> <span class="n">weighted</span><span class="p">,</span> <span class="n">dist_type</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">axes</span></div>
+
+
+<div class="viewcode-block" id="set_xy_axes_to_use_the_same_lim"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.set_xy_axes_to_use_the_same_lim">[docs]</a><span class="k">def</span> <span class="nf">set_xy_axes_to_use_the_same_lim</span><span class="p">(</span><span class="n">ax</span><span class="p">:</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Set the x and y axes limits to be the same.</span>
+
+<span class="sd">    Done by taking the min and max from xlim and ylim and using these global min/max on both x and y axes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        ax (plt.Axes): matplotlib Axes object to draw the plot onto.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        import matplotlib.pyplot as plt</span>
+<span class="sd">        plt.figure(1)</span>
+<span class="sd">        plt.scatter(x= [1,2,3], y = [3,4,5])</span>
+
+<span class="sd">        plt.figure(2)</span>
+<span class="sd">        fig, ax = plt.subplots(1, 1, figsize=(7.2, 7.2))</span>
+<span class="sd">        plt.scatter(x= [1,2,3], y = [3,4,5])</span>
+<span class="sd">        set_xy_axes_to_use_the_same_lim(ax)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">xlim</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_xlim</span><span class="p">()</span>
+    <span class="n">ylim</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">xlim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ylim</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">max</span><span class="p">(</span><span class="n">xlim</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ylim</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">xlim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ylim</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">max</span><span class="p">(</span><span class="n">xlim</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ylim</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span></div>
+
+
+<span class="c1">################################################################################</span>
+<span class="c1">#  plotly plots below</span>
+<span class="c1">################################################################################</span>
+
+
+<div class="viewcode-block" id="plotly_plot_qq"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_qq">[docs]</a><span class="k">def</span> <span class="nf">plotly_plot_qq</span><span class="p">(</span>
+    <span class="n">dict_of_dfs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
+    <span class="n">variables</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">plot_it</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">return_dict_of_figures</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">]]:</span>
+    <span class="sd">&quot;&quot;&quot;Plots interactive QQ plot of the given variables.</span>
+
+<span class="sd">    Creates a plotly qq plot of the given variables from multiple DataFrames.</span>
+<span class="sd">    This ASSUMES there is a df with key &#39;target&#39;.</span>
+
+
+<span class="sd">    Args:</span>
+<span class="sd">        dict_of_dfs (Dict[str, pd.DataFrame]): The key is the name of the DataFrame (E.g.: self, unadjusted, target),</span>
+<span class="sd">            and the value is the DataFrame that contains the variables that we want to plot.</span>
+<span class="sd">        variables (List[str]): a list of variables to use for plotting.</span>
+<span class="sd">        plot_it (bool, optional): If to plot the plots interactively instead of returning a dictionary. Defaults to True.</span>
+<span class="sd">        return_dict_of_figures (bool, optional): If to return the dictionary containing the plots rather than just returning None. Defaults to False.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Optional[Dict[str, go.Figure]]: Dictionary containing plots if return_dict_of_figures is True. None otherwise.</span>
+
+<span class="sd">    Examples:</span>
+
+<span class="sd">        import numpy as np</span>
+<span class="sd">        import pandas as pd</span>
+<span class="sd">        from numpy import random</span>
+<span class="sd">        from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_qq</span>
+
+<span class="sd">        random.seed(96483)</span>
+
+<span class="sd">        df = pd.DataFrame({</span>
+<span class="sd">            &#39;v1&#39;: random.random_integers(11111, 11114, size=100).astype(str),</span>
+<span class="sd">            &#39;v2&#39;: random.normal(size = 100),</span>
+<span class="sd">            &#39;v3&#39;: random.uniform(size = 100),</span>
+<span class="sd">        }).sort_values(by=[&#39;v2&#39;])</span>
+
+<span class="sd">        dict_of_dfs = {</span>
+<span class="sd">            &quot;self&quot;: pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = &quot;weight&quot;)], axis = 1),</span>
+<span class="sd">            &quot;unadjusted&quot;: pd.concat([df, pd.Series(np.ones(99).tolist() + [1000], name = &quot;weight&quot;)], axis = 1),</span>
+<span class="sd">            &quot;target&quot;: pd.concat([df, pd.Series(np.ones(100), name = &quot;weight&quot;)], axis = 1),</span>
+<span class="sd">        }</span>
+
+<span class="sd">        # It won&#39;t work with &quot;v1&quot; since it is not numeric.</span>
+<span class="sd">        plotly_plot_qq(dict_of_dfs, variables= [&quot;v2&quot;, &quot;v3&quot;])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dict_of_qqs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">variable</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
+        <span class="n">variable_specific_dict_of_plots</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">assert</span> <span class="s2">&quot;target&quot;</span> <span class="ow">in</span> <span class="n">dict_of_dfs</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="s2">&quot;Must pass target&quot;</span>
+
+        <span class="c1"># Extract &#39;col1&#39; because weighted_quantile will return a DataFrame</span>
+        <span class="c1"># https://www.statsmodels.org/dev/_modules/statsmodels/stats/weightstats.html#DescrStatsW.quantile</span>
+
+        <span class="n">line_data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+            <span class="n">weighted_quantile</span><span class="p">(</span>
+                <span class="n">dict_of_dfs</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">][</span><span class="n">variable</span><span class="p">],</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">),</span>
+                <span class="n">dict_of_dfs</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">][</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="s2">&quot;weight&quot;</span> <span class="ow">in</span> <span class="n">dict_of_dfs</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span>
+                <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="p">)[</span><span class="s2">&quot;col1&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">dict_of_dfs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;target&quot;</span><span class="p">:</span>
+                <span class="n">variable_specific_dict_of_plots</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+                    <span class="n">x</span><span class="o">=</span><span class="n">line_data</span><span class="p">,</span>
+                    <span class="n">y</span><span class="o">=</span><span class="n">line_data</span><span class="p">,</span>
+                    <span class="n">showlegend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">line</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;blue&quot;</span><span class="p">),</span> <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;dash&quot;</span><span class="p">:</span> <span class="s2">&quot;dash&quot;</span><span class="p">},</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">variable_specific_dict_of_plots</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+                    <span class="n">x</span><span class="o">=</span><span class="n">line_data</span><span class="p">,</span>
+                    <span class="n">y</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span>
+                        <span class="n">weighted_quantile</span><span class="p">(</span>
+                            <span class="n">dict_of_dfs</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">variable</span><span class="p">],</span>
+                            <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">),</span>
+                            <span class="n">dict_of_dfs</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
+                            <span class="k">if</span> <span class="s2">&quot;weight&quot;</span> <span class="ow">in</span> <span class="n">dict_of_dfs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span>
+                            <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                        <span class="p">)[</span><span class="s2">&quot;col1&quot;</span><span class="p">]</span>
+                    <span class="p">),</span>
+                    <span class="n">marker</span><span class="o">=</span><span class="p">{</span>
+                        <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;rgba(222,45,38,0.8)&quot;</span>
+                        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;sample&quot;</span><span class="p">,</span> <span class="s2">&quot;unadjusted&quot;</span><span class="p">]</span>
+                        <span class="k">else</span> <span class="s2">&quot;rgba(52,165,48,0.5)&quot;</span>
+                        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;adjusted&quot;</span><span class="p">]</span>
+                        <span class="k">else</span> <span class="s2">&quot;rgb(158,202,225,.8)&quot;</span>
+                    <span class="p">},</span>
+                    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;markers&quot;</span><span class="p">,</span>
+                    <span class="n">name</span><span class="o">=</span><span class="n">naming_legend</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">dict_of_dfs</span><span class="o">.</span><span class="n">keys</span><span class="p">())),</span>
+                    <span class="n">opacity</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span>
+                <span class="p">)</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">variable_specific_dict_of_plots</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">dict_of_dfs</span><span class="p">]</span>
+        <span class="n">layout</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;QQ Plots of </span><span class="si">{</span><span class="n">variable</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;paper_bgcolor&quot;</span><span class="p">:</span> <span class="s2">&quot;rgb(255, 255, 255)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;plot_bgcolor&quot;</span><span class="p">:</span> <span class="s2">&quot;rgb(255, 255, 255)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;xaxis&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;zeroline&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;linewidth&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s2">&quot;mirror&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">variable</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;yaxis&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;zeroline&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;linewidth&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;mirror&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+        <span class="p">}</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">layout</span><span class="o">=</span><span class="n">layout</span><span class="p">)</span>
+        <span class="n">dict_of_qqs</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span> <span class="o">=</span> <span class="n">fig</span>
+        <span class="k">if</span> <span class="n">plot_it</span><span class="p">:</span>
+            <span class="n">offline</span><span class="o">.</span><span class="n">iplot</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">return_dict_of_figures</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">dict_of_qqs</span></div>
+
+
+<div class="viewcode-block" id="plotly_plot_bar"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_bar">[docs]</a><span class="k">def</span> <span class="nf">plotly_plot_bar</span><span class="p">(</span>
+    <span class="n">dict_of_dfs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
+    <span class="n">variables</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">plot_it</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">return_dict_of_figures</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">]]:</span>
+    <span class="sd">&quot;&quot;&quot;Plots interactive bar plot of the given variables.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dict_of_dfs (Dict[str, pd.DataFrame]): The key is the name of the DataFrame (E.g.: self, unadjusted, target),</span>
+<span class="sd">            and the value is the DataFrame that contains the variables that we want to plot.</span>
+<span class="sd">        variables (List[str]): a list of variables to use for plotting.</span>
+<span class="sd">        plot_it (bool, optional): If to plot the plots interactively instead of returning a dictionary. Defaults to True.</span>
+<span class="sd">        return_dict_of_figures (bool, optional): If to return the dictionary containing the plots rather than just returning None. Defaults to False.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Optional[Dict[str, go.Figure]]: Dictionary containing plots if return_dict_of_figures is True. None otherwise.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        import numpy as np</span>
+<span class="sd">        import pandas as pd</span>
+<span class="sd">        from numpy import random</span>
+<span class="sd">        from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_bar</span>
+
+<span class="sd">        random.seed(96483)</span>
+
+<span class="sd">        df = pd.DataFrame({</span>
+<span class="sd">            &#39;v1&#39;: random.random_integers(11111, 11114, size=100).astype(str),</span>
+<span class="sd">            &#39;v2&#39;: random.normal(size = 100),</span>
+<span class="sd">            &#39;v3&#39;: random.uniform(size = 100),</span>
+<span class="sd">        }).sort_values(by=[&#39;v2&#39;])</span>
+
+<span class="sd">        dict_of_dfs = {</span>
+<span class="sd">            &quot;self&quot;: pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = &quot;weight&quot;)], axis = 1),</span>
+<span class="sd">            &quot;unadjusted&quot;: pd.concat([df, pd.Series(np.ones(99).tolist() + [1000], name = &quot;weight&quot;)], axis = 1),</span>
+<span class="sd">            &quot;target&quot;: pd.concat([df, pd.Series(np.ones(100), name = &quot;weight&quot;)], axis = 1),</span>
+<span class="sd">        }</span>
+
+<span class="sd">        # It can work with &quot;v2&quot; and &quot;v3&quot;, but it would be very sparse</span>
+<span class="sd">        plotly_plot_bar(dict_of_dfs, variables= [&quot;v1&quot;])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dict_of_bars</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">variable</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
+        <span class="c1"># for each variable</span>
+        <span class="n">variable_specific_dict_of_plots</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># create plot for each df using that variable</span>
+
+        <span class="c1"># filter dict_of_dfs</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">dict_of_dfs</span><span class="p">:</span>
+            <span class="n">df_plot_data</span> <span class="o">=</span> <span class="n">relative_frequency_table</span><span class="p">(</span>
+                <span class="n">dict_of_dfs</span><span class="p">[</span><span class="n">name</span><span class="p">],</span>
+                <span class="n">variable</span><span class="p">,</span>
+                <span class="n">dict_of_dfs</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="s2">&quot;weight&quot;</span> <span class="ow">in</span> <span class="n">dict_of_dfs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span>
+                <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="n">variable_specific_dict_of_plots</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Bar</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">df_plot_data</span><span class="p">[</span><span class="n">variable</span><span class="p">]),</span>
+                <span class="n">y</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">df_plot_data</span><span class="p">[</span><span class="s2">&quot;prop&quot;</span><span class="p">]),</span>
+                <span class="n">marker</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;rgba(222,45,38,0.8)&quot;</span>
+                    <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;sample&quot;</span><span class="p">,</span> <span class="s2">&quot;unadjusted&quot;</span><span class="p">]</span>
+                    <span class="k">else</span> <span class="s2">&quot;rgba(52,165,48,0.5)&quot;</span>
+                    <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;adjusted&quot;</span><span class="p">]</span>
+                    <span class="k">else</span> <span class="s2">&quot;rgb(158,202,225,.8)&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;line&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;rgba(222,45,38,1)&quot;</span>
+                        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;sample&quot;</span><span class="p">,</span> <span class="s2">&quot;unadjusted&quot;</span><span class="p">]</span>
+                        <span class="k">else</span> <span class="s2">&quot;rgba(52,165,48,1)&quot;</span>
+                        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;adjusted&quot;</span><span class="p">]</span>
+                        <span class="k">else</span> <span class="s2">&quot;rgb(158,202,225,1)&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span>
+                    <span class="p">},</span>
+                <span class="p">},</span>
+                <span class="n">opacity</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">naming_legend</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">dict_of_dfs</span><span class="o">.</span><span class="n">keys</span><span class="p">())),</span>
+                <span class="n">visible</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">variable_specific_dict_of_plots</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">dict_of_dfs</span><span class="p">]</span>
+
+        <span class="n">layout</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span>
+            <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Sample Vs Target </span><span class="si">{</span><span class="n">variable</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">paper_bgcolor</span><span class="o">=</span><span class="s2">&quot;rgb(255, 255, 255)&quot;</span><span class="p">,</span>
+            <span class="n">plot_bgcolor</span><span class="o">=</span><span class="s2">&quot;rgb(255, 255, 255)&quot;</span><span class="p">,</span>
+            <span class="n">xaxis</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">variable</span><span class="p">},</span>
+            <span class="n">yaxis</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Proportion of Total&quot;</span><span class="p">},</span>
+        <span class="p">)</span>
+
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">layout</span><span class="o">=</span><span class="n">layout</span><span class="p">)</span>
+        <span class="n">dict_of_bars</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span> <span class="o">=</span> <span class="n">fig</span>
+        <span class="k">if</span> <span class="n">plot_it</span><span class="p">:</span>
+            <span class="n">offline</span><span class="o">.</span><span class="n">iplot</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">return_dict_of_figures</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">dict_of_bars</span></div>
+
+
+<span class="c1"># TODO: add more plots other than qq for numeric (e.g.: density/kde, hist, ecdf,)</span>
+<span class="c1"># see https://plotly.com/python/distplot/</span>
+<div class="viewcode-block" id="plotly_plot_dist"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_dist">[docs]</a><span class="k">def</span> <span class="nf">plotly_plot_dist</span><span class="p">(</span>
+    <span class="n">dict_of_dfs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
+    <span class="n">variables</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">numeric_n_values_threshold</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span>
+    <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">plot_it</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">return_dict_of_figures</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">]]:</span>
+    <span class="sd">&quot;&quot;&quot;Plots interactive distribution plots (qq and bar plots) of the given variables.</span>
+
+<span class="sd">    The plots compare the weighted distributions of an arbitrary number</span>
+<span class="sd">    of variables from an arbitrary number of DataFrames.</span>
+<span class="sd">    Numeric variables are plotted as qq&#39;s using :func:`plotly_plot_qq`,</span>
+<span class="sd">    categorical variables as barplots using :func:`plotly_plot_bar`.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dict_of_dfs (Dict[str, pd.DataFrame]): The key is the name of the DataFrame (E.g.: self, unadjusted, target),</span>
+<span class="sd">            and the value is the DataFrame that contains the variables that we want to plot.</span>
+<span class="sd">        variables (Optional[List[str]], optional): a list of variables to use for plotting. Defaults (i.e.: if None) is to use the list of all variables.</span>
+<span class="sd">        numeric_n_values_threshold (int, optional): How many numbers should be in a column so that it is considered to be a &quot;category&quot;? Defaults to 15.</span>
+<span class="sd">        weighted (bool, optional): If to use the weights with the plots. Defaults to True.</span>
+<span class="sd">        plot_it (bool, optional): If to plot the plots interactively instead of returning a dictionary. Defaults to True.</span>
+<span class="sd">        return_dict_of_figures (bool, optional): If to return the dictionary containing the plots rather than just returning None. Defaults to False.</span>
+<span class="sd">            If returned - the dictionary is of plots.</span>
+<span class="sd">            Keys in this dictionary are the variable names for each plot.</span>
+<span class="sd">            Values are plotly plot objects plotted like:</span>
+<span class="sd">                offline.iplot(dict_of_all_plots[&#39;age&#39;])</span>
+<span class="sd">            Or simply:</span>
+<span class="sd">                dict_of_all_plots[&#39;age&#39;]</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Optional[Dict[str, go.Figure]]: Dictionary containing plots if return_dict_of_figures is True. None otherwise.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        import numpy as np</span>
+<span class="sd">        import pandas as pd</span>
+<span class="sd">        from numpy import random</span>
+<span class="sd">        from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_dist</span>
+
+<span class="sd">        random.seed(96483)</span>
+
+<span class="sd">        df = pd.DataFrame({</span>
+<span class="sd">            &#39;v1&#39;: random.random_integers(11111, 11114, size=100).astype(str),</span>
+<span class="sd">            &#39;v2&#39;: random.normal(size = 100),</span>
+<span class="sd">            &#39;v3&#39;: random.uniform(size = 100),</span>
+<span class="sd">        }).sort_values(by=[&#39;v2&#39;])</span>
+
+<span class="sd">        dict_of_dfs = {</span>
+<span class="sd">            &quot;self&quot;: pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = &quot;weight&quot;)], axis = 1),</span>
+<span class="sd">            &quot;unadjusted&quot;: pd.concat([df, pd.Series(np.ones(99).tolist() + [1000], name = &quot;weight&quot;)], axis = 1),</span>
+<span class="sd">            &quot;target&quot;: pd.concat([df, pd.Series(np.ones(100), name = &quot;weight&quot;)], axis = 1),</span>
+<span class="sd">        }</span>
+
+<span class="sd">        plotly_plot_dist(dict_of_dfs)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dict_of_all_plots</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1">#  Choose set of variables to plot</span>
+    <span class="n">variables</span> <span class="o">=</span> <span class="n">choose_variables</span><span class="p">(</span>
+        <span class="o">*</span><span class="p">(</span><span class="n">dict_of_dfs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">dict_of_dfs</span><span class="p">),</span> <span class="n">variables</span><span class="o">=</span><span class="n">variables</span>
+    <span class="p">)</span>
+
+    <span class="n">variables</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">variables</span> <span class="k">if</span> <span class="n">v</span> <span class="o">!=</span> <span class="s2">&quot;weight&quot;</span><span class="p">]</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;plotting variables </span><span class="si">{</span><span class="n">variables</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># TODO: patch choose_variables to return outcome_types from multiple_objects</span>
+    <span class="c1"># find numeric values, using &#39;sample&#39; df. If for some reason sample is</span>
+    <span class="c1"># not an option, use a random df.</span>
+    <span class="k">if</span> <span class="s2">&quot;sample&quot;</span> <span class="ow">in</span> <span class="n">dict_of_dfs</span><span class="p">:</span>
+        <span class="n">numeric_variables</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">dict_of_dfs</span><span class="p">[</span><span class="s2">&quot;sample&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;object&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">numeric_variables</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">dict_of_dfs</span><span class="p">[</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">dict_of_dfs</span><span class="o">.</span><span class="n">keys</span><span class="p">()))]</span>
+            <span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;object&quot;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span>
+        <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">o</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">variables</span><span class="p">):</span>
+        <span class="c1">#  Find the maximum number of non-missing values of this variable accross</span>
+        <span class="c1">#  all the dataframes</span>
+
+        <span class="c1"># Look at the first element in the dict: (name, type and values)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">dict_of_dfs</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">dict_of_dfs</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">dict_of_dfs</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">o</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">dict_of_dfs</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">dict_of_dfs</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">o</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+
+        <span class="n">n_values</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span>
+            <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">rm_mutual_nas</span><span class="p">(</span><span class="n">dict_of_dfs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">o</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)))</span>
+            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">dict_of_dfs</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">n_values</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No nonmissing values for variable &#39;</span><span class="si">{</span><span class="n">o</span><span class="si">}</span><span class="s2">&#39;, skipping&quot;</span><span class="p">)</span>
+
+            <span class="k">continue</span>
+
+        <span class="c1">#  Plot categorical variables as histogram</span>
+        <span class="n">categorical</span> <span class="o">=</span> <span class="p">(</span><span class="n">o</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">numeric_variables</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
+            <span class="n">n_values</span> <span class="o">&lt;</span> <span class="n">numeric_n_values_threshold</span>
+        <span class="p">)</span>
+        <span class="c1"># the below functions will create plotly plots</span>
+        <span class="k">if</span> <span class="n">categorical</span><span class="p">:</span>
+            <span class="n">dict_of_plot</span> <span class="o">=</span> <span class="n">plotly_plot_bar</span><span class="p">(</span>
+                <span class="n">dict_of_dfs</span><span class="p">,</span> <span class="p">[</span><span class="n">o</span><span class="p">],</span> <span class="n">plot_it</span><span class="p">,</span> <span class="n">return_dict_of_figures</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dict_of_plot</span> <span class="o">=</span> <span class="n">plotly_plot_qq</span><span class="p">(</span>
+                <span class="n">dict_of_dfs</span><span class="p">,</span> <span class="p">[</span><span class="n">o</span><span class="p">],</span> <span class="n">plot_it</span><span class="p">,</span> <span class="n">return_dict_of_figures</span>
+            <span class="p">)</span>
+        <span class="c1"># the below functions will add the plotly dict outputs</span>
+        <span class="c1"># to the dictionary &#39;dict_of_all_plots&#39; (if return_dict_of_figures is True).</span>
+        <span class="k">if</span> <span class="n">dict_of_plot</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">return_dict_of_figures</span><span class="p">:</span>
+            <span class="n">dict_of_all_plots</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dict_of_plot</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">return_dict_of_figures</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">dict_of_all_plots</span></div>
+
+
+<div class="viewcode-block" id="naming_legend"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.naming_legend">[docs]</a><span class="k">def</span> <span class="nf">naming_legend</span><span class="p">(</span><span class="n">object_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">names_of_dfs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function returns a name for a legend of a plot given the other dfs.</span>
+<span class="sd">    If one of the dfs we would like to plot is &quot;unadjusted&quot;, it means</span>
+<span class="sd">    that the Sample object contains the adjusted object as self.</span>
+<span class="sd">    If not, then the self object is sample.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">    object_name - the name of the object to plot (string)</span>
+<span class="sd">    names_of_dfs - the names of the other dfs to plot (list of strings)</span>
+
+<span class="sd">    returns:</span>
+<span class="sd">    a string with the desired name</span>
+
+
+<span class="sd">    Examples:</span>
+<span class="sd">    naming_legend(&#39;self&#39;, [&#39;self&#39;, &#39;target&#39;, &#39;unadjusted&#39;]) #&#39;adjusted&#39;</span>
+<span class="sd">    naming_legend(&#39;unadjusted&#39;, [&#39;self&#39;, &#39;target&#39;, &#39;unadjusted&#39;]) #&#39;sample&#39;</span>
+<span class="sd">    naming_legend(&#39;self&#39;, [&#39;self&#39;, &#39;target&#39;]) #&#39;sample&#39;</span>
+<span class="sd">    naming_legend(&#39;other_name&#39;, [&#39;self&#39;, &#39;target&#39;]) #&#39;other_name&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">object_name</span> <span class="ow">in</span> <span class="n">names_of_dfs</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;unadjusted&quot;</span><span class="p">:</span> <span class="s2">&quot;sample&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;self&quot;</span><span class="p">:</span> <span class="s2">&quot;adjusted&quot;</span> <span class="k">if</span> <span class="s2">&quot;unadjusted&quot;</span> <span class="ow">in</span> <span class="n">names_of_dfs</span> <span class="k">else</span> <span class="s2">&quot;sample&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="s2">&quot;population&quot;</span><span class="p">,</span>
+        <span class="p">}[</span><span class="n">object_name</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">object_name</span></div>
+
+
+<span class="c1"># TODO: set colors of the lines and dots in plots to be fixed by the object name</span>
+<span class="c1"># (sample, target and adjusted sample).</span>
+<span class="c1"># See the examples in Balance wiki Diagnostic_Plots page for the current plots</span>
+<span class="c1"># (the original sample is green when we don&#39;t plot the adjusted and red when we are)</span>
+
+
+<span class="c1">################################################################################</span>
+<span class="c1">#  A master plotting function to navigate between seaborn and plotly plots</span>
+<span class="c1">################################################################################</span>
+
+
+<div class="viewcode-block" id="plot_dist"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.plot_dist">[docs]</a><span class="k">def</span> <span class="nf">plot_dist</span><span class="p">(</span>
+    <span class="n">dfs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]]],</span>
+    <span class="n">names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">variables</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">numeric_n_values_threshold</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span>
+    <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">dist_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;qq&quot;</span><span class="p">,</span> <span class="s2">&quot;hist&quot;</span><span class="p">,</span> <span class="s2">&quot;kde&quot;</span><span class="p">,</span> <span class="s2">&quot;ecdf&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">library</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;plotly&quot;</span><span class="p">,</span> <span class="s2">&quot;seaborn&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;plotly&quot;</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">]]:</span>
+    <span class="sd">&quot;&quot;&quot;Plots the variables of a DataFrame by using either seaborn or plotly.</span>
+
+<span class="sd">    If using plotly then using qq plots for numeric variables and bar plots for categorical variables. Uses :func:`plotly_plot_dist`.</span>
+<span class="sd">    If using seaborn then various types of plots are possible for the variables (see dist_type for details). Uses :func:`seaborn_plot_dist`</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dfs (List[Dict[str, Union[pd.DataFrame, pd.Series]]]): a list (of length 1 or more) of dictionaries which describe the DataFrames and weights</span>
+<span class="sd">            The structure is as follows:</span>
+<span class="sd">            [</span>
+<span class="sd">                {&#39;df&#39;: pd.DataFrame(...), &#39;weights&#39;: pd.Series(...)},</span>
+<span class="sd">                ...</span>
+<span class="sd">            ]</span>
+<span class="sd">            The &#39;df&#39; is a DataFrame which includes the column name that was supplied through &#39;column&#39;.</span>
+<span class="sd">            The &#39;weights&#39; is a pd.Series of weights that are used when aggregating the variable using :func:`relative_frequency_table`.</span>
+<span class="sd">        names (List[str]): a list of the names of the DataFrames that are plotted. E.g.: [&#39;adjusted&#39;, &#39;unadjusted&#39;, &#39;target&#39;]</span>
+<span class="sd">            If None, then all DataFrames will be plotted, but only if library == &quot;seaborn&quot;. (TODO: to remove this restriction)</span>
+<span class="sd">        variables (Optional[List[str]], optional): a list of variables to use for plotting. Default (i.e.: if None) is to use the list of all variables.</span>
+<span class="sd">        numeric_n_values_threshold (int, optional): How many numbers should be in a column so that it is considered to be a &quot;category&quot;? Defaults to 15.</span>
+<span class="sd">        weighted (bool, optional): If to use the weights with the plots. Defaults to True.</span>
+<span class="sd">        dist_type (Literal[&quot;qq&quot;, &quot;hist&quot;, &quot;kde&quot;, &quot;ecdf&quot;], optional): The type of plot to draw. Relevant only if using library=&quot;seaborn&quot;. Defaults to &quot;hist&quot;.</span>
+<span class="sd">        library (Literal[&quot;plotly&quot;, &quot;seaborn&quot;], optional): Whichever library to use for the plot. Defaults to &quot;plotly&quot;.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: if library is not in (&quot;plotly&quot;, &quot;seaborn&quot;).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Union[Union[List, np.ndarray], Dict[str, go.Figure]]:</span>
+<span class="sd">            If library=&quot;plotly&quot; then returns a dictionary containing plots if return_dict_of_figures is True. None otherwise.</span>
+<span class="sd">            If library=&quot;seaborn&quot; then returns either a list or an np.array of matplotlib axis.</span>
+
+<span class="sd">    Examples:</span>
+
+<span class="sd">        import numpy as np</span>
+<span class="sd">        import pandas as pd</span>
+<span class="sd">        from numpy import random</span>
+<span class="sd">        from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_bar</span>
+
+<span class="sd">        random.seed(96483)</span>
+
+<span class="sd">        df = pd.DataFrame({</span>
+<span class="sd">            &#39;v1&#39;: random.random_integers(11111, 11114, size=100).astype(str),</span>
+<span class="sd">            &#39;v2&#39;: random.normal(size = 100),</span>
+<span class="sd">            &#39;v3&#39;: random.uniform(size = 100),</span>
+<span class="sd">        }).sort_values(by=[&#39;v2&#39;])</span>
+
+<span class="sd">        dfs1 = [</span>
+<span class="sd">            {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(random.random(size = 100) + 0.5)},</span>
+<span class="sd">            {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(99).tolist() + [1000])},</span>
+<span class="sd">            {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(100))},</span>
+<span class="sd">        ]</span>
+
+
+<span class="sd">        from balance.stats_and_plots.weighted_comparisons_plots import plot_dist</span>
+
+<span class="sd">        # defaults to plotly with bar and qq plots. Returns None.</span>
+<span class="sd">        plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;])</span>
+
+<span class="sd">        # Using seaborn, deafults to qq plots</span>
+<span class="sd">        plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], library=&quot;seaborn&quot;) # like using dist_type = &quot;qq&quot;</span>
+<span class="sd">        plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], library=&quot;seaborn&quot;, dist_type = &quot;hist&quot;)</span>
+<span class="sd">        plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], library=&quot;seaborn&quot;, dist_type = &quot;kde&quot;)</span>
+<span class="sd">        plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], library=&quot;seaborn&quot;, dist_type = &quot;ecdf&quot;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">library</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;plotly&quot;</span><span class="p">,</span> <span class="s2">&quot;seaborn&quot;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;library must be either &#39;plotly&#39; or &#39;seaborn&#39;, is </span><span class="si">{</span><span class="n">library</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1">#  Set default names for samples</span>
+    <span class="c1"># TODO: this will work only with seaborn. Will need to change to something that also works for plotly.</span>
+    <span class="k">if</span> <span class="n">names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;sample </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">dfs</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+
+    <span class="k">if</span> <span class="n">library</span> <span class="o">==</span> <span class="s2">&quot;seaborn&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">seaborn_plot_dist</span><span class="p">(</span>
+            <span class="n">dfs</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">numeric_n_values_threshold</span><span class="p">,</span> <span class="n">weighted</span><span class="p">,</span> <span class="n">dist_type</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">library</span> <span class="o">==</span> <span class="s2">&quot;plotly&quot;</span><span class="p">:</span>
+        <span class="n">dict_of_dfs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="nb">zip</span><span class="p">(</span>
+                <span class="n">names</span><span class="p">,</span>
+                <span class="p">(</span>
+                    <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;df&quot;</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;weight&quot;</span><span class="p">)),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dfs</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">dist_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;plotly plots ignore dist_type. Consider library=&#39;seaborn&#39;&quot;</span><span class="p">)</span>
+
+        <span class="c1"># pyre-ignore[7]: Incompatible return type [7]: Expected `Union[Dict[str, typing.Any], List[typing.Any], ndarray]` but got implicit return value of `None`.</span>
+        <span class="k">return</span> <span class="n">plotly_plot_dist</span><span class="p">(</span>
+            <span class="n">dict_of_dfs</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">numeric_n_values_threshold</span><span class="p">,</span> <span class="n">weighted</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span></div>
+
+
+<span class="c1"># TODO: add plots to compare ASMD</span>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../../balance.html" >balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.weighted_comparisons_plots</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

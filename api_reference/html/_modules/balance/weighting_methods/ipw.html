@@ -1,0 +1,671 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>balance.weighting_methods.ipw &#8212; balance  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../../balance.html" accesskey="U">balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.weighting_methods.ipw</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for balance.weighting_methods.ipw</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) Meta Platforms, Inc. and affiliates.</span>
+<span class="c1">#</span>
+<span class="c1"># This software may be used and distributed according to the terms of the</span>
+<span class="c1"># GNU General Public License version 2.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">glmnet_python</span>  <span class="c1"># noqa  # Required so that cvglmnet import works</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">balance</span> <span class="kn">import</span> <span class="n">adjustment</span> <span class="k">as</span> <span class="n">balance_adjustment</span><span class="p">,</span> <span class="n">util</span> <span class="k">as</span> <span class="n">balance_util</span>
+<span class="kn">from</span> <span class="nn">balance.stats_and_plots.weighted_comparisons_stats</span> <span class="kn">import</span> <span class="n">asmd</span>
+<span class="kn">from</span> <span class="nn">balance.stats_and_plots.weights_stats</span> <span class="kn">import</span> <span class="n">design_effect</span>
+
+<span class="kn">from</span> <span class="nn">cvglmnet</span> <span class="kn">import</span> <span class="n">cvglmnet</span>  <span class="c1"># pyre-ignore[21]: this module exists</span>
+<span class="kn">from</span> <span class="nn">cvglmnetPredict</span> <span class="kn">import</span> <span class="n">cvglmnetPredict</span>  <span class="c1"># pyre-ignore[21]: this module exists</span>
+<span class="kn">from</span> <span class="nn">scipy.sparse.csc</span> <span class="kn">import</span> <span class="n">csc_matrix</span>
+
+<span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
+
+
+<span class="c1"># Allows us to control exactly where monkey patching is applied (e.g.: for better code readability and exceptions tracking).</span>
+<span class="nd">@contextmanager</span>
+<span class="k">def</span> <span class="nf">_patch_nan_in_amin_amax</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;This allows us to use nanmin and nanmax instead of amin and amax (thus removing nan from their computation)</span>
+
+<span class="sd">    This is needed in cases that the cvglmnet yields some nan values for the cross validation folds.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Generator: replaces amin and amax, and once done, turns them back to their original version.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">scipy</span>
+
+    <span class="c1"># swap amin and amax with nanmin and nanmax</span>
+    <span class="c1"># so that they won&#39;t return nan when their input has some nan values</span>
+    <span class="n">tmp_amin</span><span class="p">,</span> <span class="n">tmp_amax</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">amin</span><span class="p">,</span> <span class="n">scipy</span><span class="o">.</span><span class="n">amax</span>  <span class="c1"># pyre-ignore[16]</span>
+
+    <span class="c1"># Wrapping amin and amax with logger calls so to alert the user in case nan were present.</span>
+    <span class="c1"># This comes with the strong assumption that this will occur within the cross validation step!</span>
+    <span class="k">def</span> <span class="nf">new_amin</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
+        <span class="n">nan_count</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">scipy</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>  <span class="c1"># pyre-ignore[16]</span>
+        <span class="k">if</span> <span class="n">nan_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;The scipy.amin function was replaced with scipy.nanmin.&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;While running, it removed </span><span class="si">{</span><span class="n">nan_count</span><span class="si">}</span><span class="s2"> `nan` values from an array of size </span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(~</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="n">nan_count</span> <span class="o">/</span> <span class="n">a</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2">% of the values).&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">scipy</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span>  <span class="c1"># pyre-ignore[16]</span>
+
+    <span class="k">def</span> <span class="nf">new_amax</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
+        <span class="n">nan_count</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">scipy</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>  <span class="c1"># pyre-ignore[16]</span>
+        <span class="k">if</span> <span class="n">nan_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;The scipy.amax function was replaced with scipy.nanmax. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;While running, it removed </span><span class="si">{</span><span class="n">nan_count</span><span class="si">}</span><span class="s2"> `nan` values from an array of size </span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(~</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="n">nan_count</span> <span class="o">/</span> <span class="n">a</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2">% of the values).&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">scipy</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span>  <span class="c1"># pyre-ignore[16]</span>
+
+    <span class="n">scipy</span><span class="o">.</span><span class="n">amin</span> <span class="o">=</span> <span class="n">new_amin</span>  <span class="c1"># scipy.nanmin</span>
+    <span class="n">scipy</span><span class="o">.</span><span class="n">amax</span> <span class="o">=</span> <span class="n">new_amax</span>  <span class="c1"># scipy.nanmax</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">yield</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="c1"># undo the function swap</span>
+        <span class="n">scipy</span><span class="o">.</span><span class="n">amin</span><span class="p">,</span> <span class="n">scipy</span><span class="o">.</span><span class="n">amax</span> <span class="o">=</span> <span class="n">tmp_amin</span><span class="p">,</span> <span class="n">tmp_amax</span>
+
+
+<div class="viewcode-block" id="cv_glmnet_performance"><a class="viewcode-back" href="../../../balance.weighting_methods.ipw.html#balance.weighting_methods.ipw.cv_glmnet_performance">[docs]</a><span class="k">def</span> <span class="nf">cv_glmnet_performance</span><span class="p">(</span>
+    <span class="n">fit</span><span class="p">,</span> <span class="n">feature_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;lambda_1se&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract elements from cvglmnet to describe the fitness quality.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        fit:output of cvglmnet</span>
+<span class="sd">        feature_names (list, optional): The coeficieents of which features should be included.</span>
+<span class="sd">            Defaults to None = all features are included..</span>
+<span class="sd">        s (str or numeric, optional): lambda avlue for cvglmnet. Defaults to &quot;lambda_1se&quot;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: 3 elements: prop_dev_explained, mean_cv_error and coefs</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">optimal_lambda</span> <span class="o">=</span> <span class="n">fit</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">optimal_lambda</span> <span class="o">=</span> <span class="n">s</span>
+    <span class="n">optimal_lambda_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">fit</span><span class="p">[</span><span class="s2">&quot;lambdau&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">optimal_lambda</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">optimal_lambda_index</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;No lambda found for s=</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">. You must specify a &quot;</span>
+            <span class="s1">&#39;numeric value which exists in the model or &quot;lambda_min&quot;, or &#39;</span>
+            <span class="s1">&#39;&quot;lambda_1se&quot;&#39;</span>
+        <span class="p">)</span>
+    <span class="n">coefs</span> <span class="o">=</span> <span class="n">cvglmnetPredict</span><span class="p">(</span>
+        <span class="n">fit</span><span class="p">,</span>
+        <span class="n">newx</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">([</span><span class="mi">0</span><span class="p">]),</span>
+        <span class="n">ptype</span><span class="o">=</span><span class="s2">&quot;coefficients&quot;</span><span class="p">,</span>
+        <span class="n">s</span><span class="o">=</span><span class="n">optimal_lambda</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">coefs</span> <span class="o">=</span> <span class="n">coefs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">coefs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">feature_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">coefs</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">coefs</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;intercept&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">feature_names</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">coefs</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">coefs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;prop_dev_explained&quot;</span><span class="p">:</span> <span class="n">fit</span><span class="p">[</span><span class="s2">&quot;glmnet_fit&quot;</span><span class="p">][</span><span class="s2">&quot;dev&quot;</span><span class="p">][</span><span class="n">optimal_lambda_index</span><span class="p">],</span>
+        <span class="s2">&quot;mean_cv_error&quot;</span><span class="p">:</span> <span class="n">fit</span><span class="p">[</span><span class="s2">&quot;cvm&quot;</span><span class="p">][</span><span class="n">optimal_lambda_index</span><span class="p">],</span>
+        <span class="s2">&quot;coefs&quot;</span><span class="p">:</span> <span class="n">coefs</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+
+<span class="c1"># TODO: consider add option to normalize weights to sample size</span>
+<div class="viewcode-block" id="weights_from_link"><a class="viewcode-back" href="../../../balance.weighting_methods.ipw.html#balance.weighting_methods.ipw.weights_from_link">[docs]</a><span class="k">def</span> <span class="nf">weights_from_link</span><span class="p">(</span>
+    <span class="n">link</span><span class="p">,</span>
+    <span class="n">balance_classes</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">sample_weights</span><span class="p">,</span>
+    <span class="n">target_weights</span><span class="p">,</span>
+    <span class="n">weight_trimming_mean_ratio</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">weight_trimming_percentile</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">keep_sum_of_weights</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Transform output of cvglmnetPredict(..., type=&#39;link&#39;) into weights, by</span>
+<span class="sd">    exponentiating them, and optionally balancing the classes and trimming</span>
+<span class="sd">    the weights, then normalize the weights to have sum equal to the sum of the target weights.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        link --- output of cvglmnetPredict(..., type=&#39;link&#39;)</span>
+<span class="sd">        balance_classes --- True of False, whether balance_classes used in glmnet</span>
+<span class="sd">        sample_weights, target_weights --- vecotr of sample and target weights</span>
+<span class="sd">        weight_trimming_mean_ratio --- to be used in trim_weights (Default None)</span>
+<span class="sd">        weight_trimming_percentile --- to be used in trim_weights (Default None)</span>
+<span class="sd">        keep_sum_of_weights --- to be used in trim_weights (Default True)</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        A vecotr of normalized weights (for sum of target weights)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">link</span> <span class="o">=</span> <span class="n">link</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">link</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],))</span>
+    <span class="k">if</span> <span class="n">balance_classes</span><span class="p">:</span>
+        <span class="n">odds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">sample_weights</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">target_weights</span><span class="p">)</span>
+        <span class="n">link</span> <span class="o">=</span> <span class="n">link</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">odds</span><span class="p">)</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">sample_weights</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">link</span><span class="p">)</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">trim_weights</span><span class="p">(</span>
+        <span class="n">weights</span><span class="p">,</span>
+        <span class="n">weight_trimming_mean_ratio</span><span class="p">,</span>
+        <span class="n">weight_trimming_percentile</span><span class="p">,</span>
+        <span class="n">keep_sum_of_weights</span><span class="o">=</span><span class="n">keep_sum_of_weights</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="c1"># Normalize weights such that the sum will be the sum of the weights of target</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">target_weights</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">weights</span></div>
+
+
+<div class="viewcode-block" id="choose_regularization"><a class="viewcode-back" href="../../../balance.weighting_methods.ipw.html#balance.weighting_methods.ipw.choose_regularization">[docs]</a><span class="k">def</span> <span class="nf">choose_regularization</span><span class="p">(</span>
+    <span class="n">fit</span><span class="p">,</span>
+    <span class="n">sample_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">target_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">sample_weights</span><span class="p">,</span>
+    <span class="n">target_weights</span><span class="p">,</span>
+    <span class="n">X_matrix_sample</span><span class="p">,</span>
+    <span class="n">balance_classes</span><span class="p">,</span>
+    <span class="n">max_de</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.5</span><span class="p">,</span>
+    <span class="n">trim_options</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span>
+        <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">,</span> <span class="mf">1.25</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.125</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">),</span>
+    <span class="n">n_asmd_candidates</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Searches through the regularisation parameters of the model and weight</span>
+<span class="sd">    trimming levels to find the combination with the highest covariate</span>
+<span class="sd">    ASMD reduction (in sample_df and target_df, NOT in the model matrix used for modeling</span>
+<span class="sd">    the response) subject to the design effect being lower than max_de (deafults to 1.5).</span>
+<span class="sd">    The function preforms a grid search over the n_asmd_candidates (deafults to 10) models</span>
+<span class="sd">    with highest DE lower than max_de (assuming higher DE means more bias reduction).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        fit --- output of cvglmnet</span>
+<span class="sd">        sample_df --- (pandas dataframe) a dataframe representing the sample</span>
+<span class="sd">        target_df ---  (pandas dataframe) a dataframe representing the target</span>
+<span class="sd">        sample_weights --- (pandas series) design weights for sample</span>
+<span class="sd">        target_weights --- (pandas series) design weights for target</span>
+<span class="sd">        X_matrix_sample --- the matrix that was used to consturct the model</span>
+<span class="sd">        balance_classes --- True of False, whether balance_classes used in glmnet</span>
+<span class="sd">        max_de --- (float) upper bound for the design effect of the computed weights.</span>
+<span class="sd">            Used for choosing the model regularization and trimming.</span>
+<span class="sd">            Default is 1.5. If set to None, then it uses &#39;lambda_1se&#39;</span>
+<span class="sd">        trim_options --- options for weight_trimming_mean_ratio.</span>
+<span class="sd">            Default to (20, 10, 5, 2.5, 1.25, 0.5, 0.25, 0.125, 0.05, 0.01),</span>
+<span class="sd">        n_asmd_candidates --- number of candidates for grid search.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict --- The value of the chosen lambda, the value of trimming, model description.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting choosing regularisation parameters&quot;</span><span class="p">)</span>
+    <span class="c1"># get all links</span>
+    <span class="n">links</span> <span class="o">=</span> <span class="n">cvglmnetPredict</span><span class="p">(</span><span class="n">fit</span><span class="p">,</span> <span class="n">X_matrix_sample</span><span class="p">,</span> <span class="n">ptype</span><span class="o">=</span><span class="s2">&quot;link&quot;</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">fit</span><span class="p">[</span><span class="s2">&quot;lambdau&quot;</span><span class="p">])</span>
+
+    <span class="n">asmd_before</span> <span class="o">=</span> <span class="n">asmd</span><span class="p">(</span>
+        <span class="n">sample_df</span><span class="o">=</span><span class="n">sample_df</span><span class="p">,</span>
+        <span class="n">target_df</span><span class="o">=</span><span class="n">target_df</span><span class="p">,</span>
+        <span class="n">sample_weights</span><span class="o">=</span><span class="n">sample_weights</span><span class="p">,</span>
+        <span class="n">target_weights</span><span class="o">=</span><span class="n">target_weights</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="c1"># Grid search over regularisation parameter and weight trimming</span>
+    <span class="c1"># First calculates design effects for all combinations, because this is cheap</span>
+    <span class="n">all_perf</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">wr</span> <span class="ow">in</span> <span class="n">trim_options</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">links</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+
+            <span class="n">s</span> <span class="o">=</span> <span class="n">fit</span><span class="p">[</span><span class="s2">&quot;lambdau&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">link</span> <span class="o">=</span> <span class="n">links</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">weights_from_link</span><span class="p">(</span>
+                <span class="n">link</span><span class="p">,</span>
+                <span class="n">balance_classes</span><span class="p">,</span>
+                <span class="n">sample_weights</span><span class="p">,</span>
+                <span class="n">target_weights</span><span class="p">,</span>
+                <span class="n">weight_trimming_mean_ratio</span><span class="o">=</span><span class="n">wr</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="n">deff</span> <span class="o">=</span> <span class="n">design_effect</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+            <span class="n">all_perf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;s&quot;</span><span class="p">:</span> <span class="n">s</span><span class="p">,</span>
+                    <span class="s2">&quot;s_index&quot;</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span>
+                    <span class="s2">&quot;trim&quot;</span><span class="p">:</span> <span class="n">wr</span><span class="p">,</span>
+                    <span class="s2">&quot;design_effect&quot;</span><span class="p">:</span> <span class="n">deff</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+    <span class="n">all_perf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">all_perf</span><span class="p">)</span>
+    <span class="n">best</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="c1"># pyre-fixme[16]: `Optional` has no attribute `tail`.</span>
+        <span class="n">all_perf</span><span class="p">[</span><span class="n">all_perf</span><span class="o">.</span><span class="n">design_effect</span> <span class="o">&lt;</span> <span class="n">max_de</span><span class="p">]</span>
+        <span class="c1"># pyre-fixme[6]: For 1st param expected `Union[typing_extensions.Literal[0],</span>
+        <span class="c1">#  typing_extensions.Literal[&#39;index&#39;]]` but got</span>
+        <span class="c1">#  `typing_extensions.Literal[&#39;design_effect&#39;]`.</span>
+        <span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">&quot;design_effect&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">tail</span><span class="p">(</span><span class="n">n_asmd_candidates</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Regularisation with design effect below </span><span class="si">{</span><span class="n">max_de</span><span class="si">}</span><span class="s2">: </span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">best</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Calculate ASMDS for best 10 candidates (assuming that higher DE means</span>
+    <span class="c1">#  more bias reduction)</span>
+    <span class="n">all_perf</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">best</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="n">wr</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">trim</span>
+        <span class="n">s_index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">s_index</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">fit</span><span class="p">[</span><span class="s2">&quot;lambdau&quot;</span><span class="p">][</span><span class="n">s_index</span><span class="p">]</span>
+        <span class="n">link</span> <span class="o">=</span> <span class="n">links</span><span class="p">[:,</span> <span class="n">s_index</span><span class="p">]</span>
+
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">weights_from_link</span><span class="p">(</span>
+            <span class="n">link</span><span class="p">,</span>
+            <span class="n">balance_classes</span><span class="p">,</span>
+            <span class="n">sample_weights</span><span class="p">,</span>
+            <span class="n">target_weights</span><span class="p">,</span>
+            <span class="n">weight_trimming_mean_ratio</span><span class="o">=</span><span class="n">wr</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">adjusted_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="p">[</span><span class="n">sample_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">index</span><span class="p">)]</span>
+
+        <span class="n">asmd_after</span> <span class="o">=</span> <span class="n">asmd</span><span class="p">(</span>
+            <span class="c1"># pyre-fixme[6]: For 1st param expected `DataFrame` but got `Series`.</span>
+            <span class="n">sample_df</span><span class="o">=</span><span class="n">adjusted_df</span><span class="p">,</span>
+            <span class="n">target_df</span><span class="o">=</span><span class="n">target_df</span><span class="p">,</span>
+            <span class="n">sample_weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
+            <span class="n">target_weights</span><span class="o">=</span><span class="n">target_weights</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="c1"># TODO: use asmd_improvement function for that</span>
+        <span class="n">asmd_improvement</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">asmd_before</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">asmd_after</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">]</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="n">asmd_before</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">]</span>
+        <span class="n">deff</span> <span class="o">=</span> <span class="n">design_effect</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+        <span class="n">all_perf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;s&quot;</span><span class="p">:</span> <span class="n">s</span><span class="p">,</span>
+                <span class="c1"># pyre-fixme[61]: `i` is undefined, or not always defined.</span>
+                <span class="s2">&quot;s_index&quot;</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span>
+                <span class="s2">&quot;trim&quot;</span><span class="p">:</span> <span class="n">wr</span><span class="p">,</span>
+                <span class="s2">&quot;design_effect&quot;</span><span class="p">:</span> <span class="n">deff</span><span class="p">,</span>
+                <span class="s2">&quot;asmd_improvement&quot;</span><span class="p">:</span> <span class="n">asmd_improvement</span><span class="p">,</span>
+                <span class="s2">&quot;asmd&quot;</span><span class="p">:</span> <span class="n">asmd_after</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">],</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+
+    <span class="n">all_perf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">all_perf</span><span class="p">)</span>
+    <span class="n">best</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">all_perf</span><span class="p">[</span><span class="n">all_perf</span><span class="o">.</span><span class="n">design_effect</span> <span class="o">&lt;</span> <span class="n">max_de</span><span class="p">]</span>
+        <span class="c1"># pyre-fixme[6]: For 1st param expected `Union[typing_extensions.Literal[0],</span>
+        <span class="c1">#  typing_extensions.Literal[&#39;index&#39;]]` but got</span>
+        <span class="c1">#  `typing_extensions.Literal[&#39;asmd_improvement&#39;]`.</span>
+        <span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">&quot;asmd_improvement&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">tail</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Best regularisation: </span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">best</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">solution</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;best&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;s&quot;</span><span class="p">:</span> <span class="n">best</span><span class="o">.</span><span class="n">s</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="s2">&quot;trim&quot;</span><span class="p">:</span> <span class="n">best</span><span class="o">.</span><span class="n">trim</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]},</span>
+        <span class="s2">&quot;perf&quot;</span><span class="p">:</span> <span class="n">all_perf</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">solution</span></div>
+
+
+<span class="c1"># TODO: add memoaization (maybe in the adjust stage?!)</span>
+<div class="viewcode-block" id="ipw"><a class="viewcode-back" href="../../../balance.weighting_methods.ipw.html#balance.weighting_methods.ipw.ipw">[docs]</a><span class="k">def</span> <span class="nf">ipw</span><span class="p">(</span>
+    <span class="n">sample_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">sample_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">target_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">target_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;glmnet&quot;</span><span class="p">,</span>
+    <span class="n">weight_trimming_mean_ratio</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
+    <span class="n">weight_trimming_percentile</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">balance_classes</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">transformations</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+    <span class="n">na_action</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">,</span>
+    <span class="c1"># TODO: set max_de to None as default</span>
+    <span class="n">max_de</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.5</span><span class="p">,</span>
+    <span class="n">formula</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">penalty_factor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">one_hot_encoding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="c1"># TODO: This is set to be false in order to keep reproducibility of works that uses balance.</span>
+    <span class="c1"># The best practice is for this to be true.</span>
+    <span class="n">random_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2020</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fit an ipw (inverse propensity score weighting) for the sample using the target.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">    sample_df --- (pandas dataframe) a dataframe representing the sample</span>
+<span class="sd">    sample_weights --- (pandas series) design weights for sample</span>
+<span class="sd">    target_df ---  (pandas dataframe) a dataframe representing the target</span>
+<span class="sd">    target_weights --- (pandas series) design weights for target</span>
+<span class="sd">    variable ---  (list of strings) list of variables to include in the model.</span>
+<span class="sd">                  If None all joint variables of sample_df and target_df are used</span>
+<span class="sd">    model --- (string) the model used for modeling the propensity scores.</span>
+<span class="sd">              Default is glmnet (logistic model)</span>
+<span class="sd">    weight_trimming_mean_ratio ---  (float or int) indicating the ratio from above according to which</span>
+<span class="sd">                                    the weights are trimmed by mean(weights) * ratio.</span>
+<span class="sd">                                    Default is 20.</span>
+<span class="sd">    weight_trimming_percentile --- (float) if weight_trimming_percentile is not none, winsorization is applied.</span>
+<span class="sd">                                    Default is None, i.e. trimming is applied.</span>
+<span class="sd">    balance_classes=False --- (boolean) whether to balance the sample and target size for running the model.</span>
+<span class="sd">                              Default is True (preferable for imbalanced cases).</span>
+<span class="sd">                              It is done to make the computation of the glmnet more efficient.</span>
+<span class="sd">                              It shouldn&#39;t have an effect on the final weights as this is factored</span>
+<span class="sd">                              into the computation of the weights. TODO: add ref.</span>
+<span class="sd">    transformations --- (dict) what transformations to apply to data before fitting the model.</span>
+<span class="sd">                                Default is &quot;default&quot; (see apply_transformations function)</span>
+<span class="sd">    na_action --- (string) what to do with NAs. Default is &quot;add_indicator&quot;</span>
+<span class="sd">                  (see add_na_indicator function)</span>
+<span class="sd">    max_de --- (float) upper bound for the design effect of the computed weights.</span>
+<span class="sd">                Used for choosing the model regularization and trimming.</span>
+<span class="sd">                Default is 1.5. If set to None, then it uses &#39;lambda_1se&#39;</span>
+<span class="sd">    formula --- (string or list of strings) The formula according to which build the model.</span>
+<span class="sd">                In case of list of formula, the model matrix will be built in steps and</span>
+<span class="sd">                concatenated together.</span>
+<span class="sd">    penalty_factor --- the penalty used in the glment function in ipw. The penalty</span>
+<span class="sd">                       should have the same length as the formula list. If not provided,</span>
+<span class="sd">                       assume the same panelty for all variables.</span>
+<span class="sd">    one_hot_encoding --- whether to encode all factor variables in the model matrix with</span>
+<span class="sd">                         almost_one_hot_encoding. This is recomended in case of using</span>
+<span class="sd">                         LASSO on the data (Default: False).</span>
+<span class="sd">                         one_hot_encoding_greater_3 creates one-hot-encoding for all</span>
+<span class="sd">                         categorical variables with more than 2 categories (i.e. the</span>
+<span class="sd">                         number of columns will be equal to the number of categories),</span>
+<span class="sd">                         and only 1 column for variables with 2 levels (treatment contrast).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    A dictionary includes:</span>
+<span class="sd">    &quot;weights&quot; --- The weights for the sample.</span>
+<span class="sd">    &quot;model&quot; --- parameters of the model:fit, performance, X_matrix_columns, lambda,</span>
+<span class="sd">                weight_trimming_mean_ratio</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting ipw function&quot;</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span>
+        <span class="n">random_seed</span>
+    <span class="p">)</span>  <span class="c1"># setting random seed for cases of variations in cvglmnet</span>
+
+    <span class="n">balance_util</span><span class="o">.</span><span class="n">_check_weighting_methods_input</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">&quot;sample&quot;</span><span class="p">)</span>
+    <span class="n">balance_util</span><span class="o">.</span><span class="n">_check_weighting_methods_input</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">)</span>
+
+    <span class="n">variables</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">choose_variables</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Join variables for sample and target: </span><span class="si">{</span><span class="n">variables</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
+    <span class="n">target_df</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;drop&quot;</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">)</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">drop_na_rows</span><span class="p">(</span>
+            <span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">&quot;sample&quot;</span>
+        <span class="p">)</span>
+        <span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">)</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">drop_na_rows</span><span class="p">(</span>
+            <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span>
+        <span class="p">)</span>
+    <span class="n">sample_n</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">target_n</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Applying transformations</span>
+    <span class="c1"># Important! Variables that don&#39;t need transformations</span>
+    <span class="c1"># should be transformed with the *identity function*,</span>
+    <span class="c1"># otherwise will be dropped from the model</span>
+    <span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span> <span class="o">=</span> <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">apply_transformations</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">),</span> <span class="n">transformations</span><span class="o">=</span><span class="n">transformations</span>
+    <span class="p">)</span>
+    <span class="n">variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Final variables in the model: </span><span class="si">{</span><span class="n">variables</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Building model matrix&quot;</span><span class="p">)</span>
+    <span class="n">model_matrix_output</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">model_matrix</span><span class="p">(</span>
+        <span class="n">sample_df</span><span class="p">,</span>
+        <span class="n">target_df</span><span class="p">,</span>
+        <span class="n">variables</span><span class="p">,</span>
+        <span class="n">add_na</span><span class="o">=</span><span class="p">(</span><span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">),</span>
+        <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;one&quot;</span><span class="p">,</span>
+        <span class="n">return_var_type</span><span class="o">=</span><span class="s2">&quot;sparse&quot;</span><span class="p">,</span>
+        <span class="n">formula</span><span class="o">=</span><span class="n">formula</span><span class="p">,</span>
+        <span class="n">penalty_factor</span><span class="o">=</span><span class="n">penalty_factor</span><span class="p">,</span>
+        <span class="n">one_hot_encoding</span><span class="o">=</span><span class="n">one_hot_encoding</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+        <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">csc_matrix</span><span class="p">],</span>
+        <span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">&quot;model_matrix&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="n">X_matrix_columns_names</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+        <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">&quot;model_matrix_columns_names&quot;</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">penalty_factor</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span> <span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">&quot;penalty_factor&quot;</span><span class="p">])</span>
+    <span class="c1"># in cvglmnet: &quot;penalty factors are internally rescaled to sum to nvars.&quot;</span>
+    <span class="c1"># (https://glmnet-python.readthedocs.io/en/latest/glmnet_vignette.html)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;The formula used to build the model matrix: </span><span class="si">{</span><span class="n">model_matrix_output</span><span class="p">[</span><span class="s1">&#39;formula&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The number of columns in the model matrix: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The number of rows in the model matrix: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">in_sample</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">sample_n</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">target_n</span><span class="p">)))</span>
+    <span class="n">_n_unique</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">in_sample</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">in_sample</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">_n_unique</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Sample indicator only has value </span><span class="si">{</span><span class="n">_n_unique</span><span class="si">}</span><span class="s2">. This can happen when your &quot;</span>
+            <span class="s2">&quot;sample or target are empty from unknown reason&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">balance_classes</span><span class="p">:</span>
+        <span class="n">odds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">sample_weights</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">target_weights</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">odds</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;odds for balancing classes: </span><span class="si">{</span><span class="n">odds</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">y0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">sample_n</span><span class="p">),</span> <span class="n">target_weights</span> <span class="o">*</span> <span class="n">odds</span><span class="p">))</span>
+    <span class="n">y1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sample_weights</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">target_n</span><span class="p">)))</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">y0</span><span class="p">,</span> <span class="n">y1</span><span class="p">))</span>
+    <span class="c1"># From glmnet documentation: https://glmnet-python.readthedocs.io/en/latest/glmnet_vignette.html</span>
+    <span class="c1"># &quot;For binomial logistic regression, the response variable y should be either</span>
+    <span class="c1"># a factor with two levels, or a two-column matrix of counts or proportions.&quot;</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;X_matrix shape: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;y input shape: </span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;penalty_factor frequency table </span><span class="si">{</span><span class="n">pd</span><span class="o">.</span><span class="n">crosstab</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">penalty_factor</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;Note that these are normalized by cvglmnet&quot;</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;glmnet&quot;</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Fitting logistic model&quot;</span><span class="p">)</span>
+        <span class="n">foldid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span>
+            <span class="n">foldid</span>
+        <span class="p">)</span>  <span class="c1"># shuffels the values of foldid - note that we set the seed in the beginning of the function, so this order is fixed</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;foldid frequency table </span><span class="si">{</span><span class="n">pd</span><span class="o">.</span><span class="n">crosstab</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">foldid</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;first 10 elements of foldid: </span><span class="si">{</span><span class="n">foldid</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">9</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">_patch_nan_in_amin_amax</span><span class="p">():</span>
+            <span class="c1"># we use _patch_nan_in_amin_amax here since sometimes</span>
+            <span class="c1"># cvglmnet could have one of the cross validated samples that</span>
+            <span class="c1"># produce nan. In which case, the lambda search returns nan</span>
+            <span class="c1"># instead of a value from the cross-validated options that successfully computed a lambda</span>
+            <span class="c1"># The current monkey-patch solves this problem and makes the function fail less.</span>
+
+            <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span>
+                <span class="n">divide</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span>
+            <span class="p">):</span>  <span class="c1"># ignoring np warning &quot;divide by zero encountered in log&quot;</span>
+                <span class="n">fit</span> <span class="o">=</span> <span class="n">cvglmnet</span><span class="p">(</span>
+                    <span class="n">x</span><span class="o">=</span><span class="n">X_matrix</span><span class="p">,</span>
+                    <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
+                    <span class="n">family</span><span class="o">=</span><span class="s2">&quot;binomial&quot;</span><span class="p">,</span>
+                    <span class="n">ptype</span><span class="o">=</span><span class="s2">&quot;deviance&quot;</span><span class="p">,</span>
+                    <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="n">penalty_factor</span><span class="o">=</span><span class="n">penalty_factor</span><span class="p">,</span>
+                    <span class="n">nlambda</span><span class="o">=</span><span class="mi">250</span><span class="p">,</span>
+                    <span class="n">lambda_min</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1e-6</span><span class="p">]),</span>
+                    <span class="n">nfolds</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                    <span class="n">foldid</span><span class="o">=</span><span class="n">foldid</span><span class="p">,</span>
+                    <span class="n">maxit</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span>
+                    <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+                <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Done with cvglmnet&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;fit[&#39;lambda_1se&#39;]: </span><span class="si">{</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;lambda_1se&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">X_matrix_sample</span> <span class="o">=</span> <span class="n">X_matrix</span><span class="p">[</span>
+        <span class="p">:</span><span class="n">sample_n</span><span class="p">,</span>
+    <span class="p">]</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">max_de</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">regularisation_perf</span> <span class="o">=</span> <span class="n">choose_regularization</span><span class="p">(</span>
+            <span class="n">fit</span><span class="p">,</span>
+            <span class="n">sample_df</span><span class="p">,</span>
+            <span class="n">target_df</span><span class="p">,</span>
+            <span class="n">sample_weights</span><span class="p">,</span>
+            <span class="n">target_weights</span><span class="p">,</span>
+            <span class="n">X_matrix_sample</span><span class="p">,</span>
+            <span class="n">balance_classes</span><span class="p">,</span>
+            <span class="n">max_de</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">best_s</span> <span class="o">=</span> <span class="n">regularisation_perf</span><span class="p">[</span><span class="s2">&quot;best&quot;</span><span class="p">][</span><span class="s2">&quot;s&quot;</span><span class="p">]</span>
+        <span class="n">weight_trimming_mean_ratio</span> <span class="o">=</span> <span class="n">regularisation_perf</span><span class="p">[</span><span class="s2">&quot;best&quot;</span><span class="p">][</span><span class="s2">&quot;trim&quot;</span><span class="p">]</span>
+        <span class="n">weight_trimming_percentile</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">best_s</span> <span class="o">=</span> <span class="n">fit</span><span class="p">[</span><span class="s2">&quot;lambda_1se&quot;</span><span class="p">]</span>
+        <span class="n">regularisation_perf</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">link</span> <span class="o">=</span> <span class="n">cvglmnetPredict</span><span class="p">(</span><span class="n">fit</span><span class="p">,</span> <span class="n">X_matrix_sample</span><span class="p">,</span> <span class="n">ptype</span><span class="o">=</span><span class="s2">&quot;link&quot;</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">best_s</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Predicting&quot;</span><span class="p">)</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">weights_from_link</span><span class="p">(</span>
+        <span class="n">link</span><span class="p">,</span>
+        <span class="n">balance_classes</span><span class="p">,</span>
+        <span class="n">sample_weights</span><span class="p">,</span>
+        <span class="n">target_weights</span><span class="p">,</span>
+        <span class="n">weight_trimming_mean_ratio</span><span class="p">,</span>
+        <span class="n">weight_trimming_percentile</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Chosen lambda for cv: </span><span class="si">{</span><span class="n">best_s</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">performance</span> <span class="o">=</span> <span class="n">cv_glmnet_performance</span><span class="p">(</span>
+        <span class="n">fit</span><span class="p">,</span>
+        <span class="n">feature_names</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">X_matrix_columns_names</span><span class="p">),</span>
+        <span class="n">s</span><span class="o">=</span><span class="n">best_s</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">dev</span> <span class="o">=</span> <span class="n">performance</span><span class="p">[</span><span class="s2">&quot;prop_dev_explained&quot;</span><span class="p">]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Proportion null deviance explained </span><span class="si">{</span><span class="n">dev</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># All weights are the same</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;All weights are identical. The estimates will not be adjusted&quot;</span><span class="p">)</span>
+
+    <span class="n">coefs</span> <span class="o">=</span> <span class="n">performance</span><span class="p">[</span><span class="s2">&quot;coefs&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span>  <span class="c1"># exclude intercept</span>
+    <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">coefs</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-14</span><span class="p">):</span>
+        <span class="c1"># The value was determined by the unit-test test_adjustment/test_ipw_bad_adjustment_warnings</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="s2">&quot;All propensity model coefficients are zero, your covariates do &quot;</span>
+                <span class="s2">&quot;not predict inclusion in the sample. The estimates will not be &quot;</span>
+                <span class="s2">&quot;adjusted&quot;</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">dev</span> <span class="o">&lt;</span> <span class="mf">0.10</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;The propensity model has low fraction null deviance explained &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">dev</span><span class="si">}</span><span class="s2">). Results may not be accurate&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">out</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="n">weights</span><span class="p">,</span>
+        <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;ipw&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;X_matrix_columns&quot;</span><span class="p">:</span> <span class="n">X_matrix_columns_names</span><span class="p">,</span>
+            <span class="s2">&quot;fit&quot;</span><span class="p">:</span> <span class="n">fit</span><span class="p">,</span>
+            <span class="s2">&quot;perf&quot;</span><span class="p">:</span> <span class="n">performance</span><span class="p">,</span>
+            <span class="s2">&quot;lambda&quot;</span><span class="p">:</span> <span class="n">best_s</span><span class="p">,</span>
+            <span class="s2">&quot;weight_trimming_mean_ratio&quot;</span><span class="p">:</span> <span class="n">weight_trimming_mean_ratio</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">max_de</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">out</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">][</span><span class="s2">&quot;regularisation_perf&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">regularisation_perf</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Done ipw function&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">out</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../../balance.html" >balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.weighting_methods.ipw</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

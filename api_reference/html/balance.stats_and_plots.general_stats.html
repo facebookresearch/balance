@@ -1,0 +1,185 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>balance.stats_and_plots.general_stats &#8212; balance  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="balance.stats_and_plots.weighted_comparisons_plots" href="balance.stats_and_plots.weighted_comparisons_plots.html" />
+    <link rel="prev" title="balance.stats_and_plots" href="balance.stats_and_plots.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.weighted_comparisons_plots.html" title="balance.stats_and_plots.weighted_comparisons_plots"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.html" title="balance.stats_and_plots"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" >balance</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="balance.stats_and_plots.html" accesskey="U">balance.stats_and_plots</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.general_stats</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-balance.stats_and_plots.general_stats">
+<span id="balance-stats-and-plots-general-stats"></span><h1>balance.stats_and_plots.general_stats<a class="headerlink" href="#module-balance.stats_and_plots.general_stats" title="Permalink to this heading">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.general_stats.relative_response_rates">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.general_stats.</span></span><span class="sig-name descname"><span class="pre">relative_response_rates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">DataFrame</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">per_column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/general_stats.html#relative_response_rates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.general_stats.relative_response_rates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produces a summary table of number of responses and proportion of completed responses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pd.DataFrame</em>) – A DataFrame to calculate aggregated response rates for.</p></li>
+<li><p><strong>df_target</strong> (<em>Optional</em><em>[</em><em>pd.DataFrame</em><em>]</em><em>, </em><em>optional</em>) – Defaults to None.
+Determines what is the denominator from which notnull are a fraction of.
+If None - it’s the number of rows in df.
+If some df is provided - then it is assumed that df is a subset of df_target, and the
+response rate is calculated as the fraction of notnull values in df from (divided by)
+the number of notnull values in df_target.</p></li>
+<li><p><strong>per_column</strong> (<em>bool</em><em>, </em><em>optional</em>) – <p>Default is True.
+The per_column argument is relevant only if df_target is other than None (i.e.: trying to compare df to some df_target).
+If per_column is True (default) - it indicates that the relative response rates of columns in df will be</p>
+<blockquote>
+<div><p>by comparing each column in df to the same column in target.
+If this is True, the columns in df and df_target must be identical.</p>
+</div></blockquote>
+<p>If per_column is False then df is compared to the overall number of nonnull rows in the target df.</p>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A column per column in the original df, and two rows:</dt><dd><p>One row with number of non-null observations, and
+A second row with the proportion of non-null observations.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>import numpy as np
+import pandas as pd
+from balance.stats_and_plots.general_stats import relative_response_rates</p>
+<p>df = pd.DataFrame({“o1”: (7, 8, 9, 10), “o2”: (7, 8, 9, np.nan), “id”: (1, 2, 3, 4)})</p>
+<p>relative_response_rates(df).to_dict()</p>
+<p># {‘o1’: {‘n’: 4.0, ‘%’: 100.0},
+# ‘o2’: {‘n’: 3.0, ‘%’: 75.0},
+# ‘id’: {‘n’: 4.0, ‘%’: 100.0}}</p>
+<p>df_target = pd.concat([df, df])
+relative_response_rates(df, df_target).to_dict()</p>
+<p># {‘o1’: {‘n’: 4.0, ‘%’: 50.0},
+#  ‘o2’: {‘n’: 3.0, ‘%’: 50.0},
+#  ‘id’: {‘n’: 4.0, ‘%’: 50.0}}</p>
+<p># Dividing by number of total notnull rows in df_rarget
+df_target.notnull().all(axis=1).sum()  # == 6
+relative_response_rates(df, df_target, False).to_dict()</p>
+<p># {‘o1’: {‘n’: 4.0, ‘%’: 66.66666666666666},
+# ‘o2’: {‘n’: 3.0, ‘%’: 50.0},
+# ‘id’: {‘n’: 4.0, ‘%’: 66.66666666666666}}</p>
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">balance.stats_and_plots.general_stats</a><ul>
+<li><a class="reference internal" href="#balance.stats_and_plots.general_stats.relative_response_rates"><code class="docutils literal notranslate"><span class="pre">relative_response_rates()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="balance.stats_and_plots.html"
+                          title="previous chapter">balance.stats_and_plots</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="balance.stats_and_plots.weighted_comparisons_plots.html"
+                          title="next chapter">balance.stats_and_plots.weighted_comparisons_plots</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/balance.stats_and_plots.general_stats.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.weighted_comparisons_plots.html" title="balance.stats_and_plots.weighted_comparisons_plots"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.html" title="balance.stats_and_plots"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" >balance</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="balance.stats_and_plots.html" >balance.stats_and_plots</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.general_stats</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

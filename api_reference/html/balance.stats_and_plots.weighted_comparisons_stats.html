@@ -1,0 +1,306 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>balance.stats_and_plots.weighted_comparisons_stats &#8212; balance  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="balance.stats_and_plots.weighted_stats" href="balance.stats_and_plots.weighted_stats.html" />
+    <link rel="prev" title="balance.stats_and_plots.weighted_comparisons_plots" href="balance.stats_and_plots.weighted_comparisons_plots.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.weighted_stats.html" title="balance.stats_and_plots.weighted_stats"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.weighted_comparisons_plots.html" title="balance.stats_and_plots.weighted_comparisons_plots"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" >balance</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="balance.stats_and_plots.html" accesskey="U">balance.stats_and_plots</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.weighted_comparisons_stats</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-balance.stats_and_plots.weighted_comparisons_stats">
+<span id="balance-stats-and-plots-weighted-comparisons-stats"></span><h1>balance.stats_and_plots.weighted_comparisons_stats<a class="headerlink" href="#module-balance.stats_and_plots.weighted_comparisons_stats" title="Permalink to this heading">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_comparisons_stats.asmd">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_comparisons_stats.</span></span><span class="sig-name descname"><span class="pre">asmd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'target'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'sample'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'pooled'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'target'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggregate_by_main_covar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_comparisons_stats.html#asmd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_comparisons_stats.asmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the Absolute Standardized Mean Deviation (ASMD, a.k.a
+absolute standardized mean difference) between the columns of two DataFrames
+(or BalanceDFs).
+It uses weighted average and std for the calculations.
+This is the same as taking the absolute value of Cohen’s d statistic,
+with a specific choice of the standard deviation (std).</p>
+<p><a class="reference external" href="https://en.wikipedia.org/wiki/Effect_size#Cohen's_d">https://en.wikipedia.org/wiki/Effect_size#Cohen’s_d</a></p>
+<p>As opposed to Cohen’s d, the current asmd implementation has several options of std calculation,
+see the arguments section for details.</p>
+<p>Unlike in R package {cobalt}, in the current implementation of asmd:
+- the absolute value is taken
+- un-represented levels of categorical variables are treated as missing,</p>
+<blockquote>
+<div><p>not as 0.</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>differences for categorical variables are also weighted by default</p></li>
+</ul>
+<p>The function omits columns that starts with the name “_is_na_”</p>
+<p>If column names of sample_df and target_df are different, it will only calculate asmd for
+the overlapping columns. The rest will be np.nan.
+The mean(asmd) will be calculated while treating the nan values as 0s.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sample_df</strong> (<em>pd.DataFrame</em>) – source group of the asmd comparison</p></li>
+<li><p><strong>target_df</strong> (<em>pd.DataFrame</em>) – target group of the asmd comparison.
+The column names should be the same as the ones from sample_df.</p></li>
+<li><p><strong>sample_weights</strong> (<em>Union</em><em>[ </em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>np.ndarray</em><em>, </em><em>]</em><em>, </em><em>optional</em>) – weights to use.
+The default is None.
+If no weights are passed (None), it will use an array of 1s.</p></li>
+<li><p><strong>target_weights</strong> (<em>Union</em><em>[ </em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>np.ndarray</em><em>, </em><em>]</em><em>, </em><em>optional</em>) – weights to use.
+The default is None.
+If no weights are passed (None), it will use an array of 1s.</p></li>
+<li><p><strong>std_type</strong> (<em>Literal</em><em>[</em><em>&quot;target&quot;</em><em>, </em><em>&quot;sample&quot;</em><em>, </em><em>&quot;pooled&quot;</em><em>]</em><em>, </em><em>optional</em>) – <p>How the standard deviation should be calculated.
+The options are: “target”, “sample” and “pooled”. Defaults to “target”.
+“target” means we use the std from the target population.
+“sample” means we use the std from the sample population.
+“pooled” means we use the simple arithmetic average of</p>
+<blockquote>
+<div><p>the variance from the sample and target population.
+We then take the square root of that value to get the pooled std.
+Notice that this is done while giving the same weight to both sources.
+I.e.: there is NO over/under weighting sample or target based on their
+respective sample sizes (in contrast to how pooled sd is calculated in
+Cohen’s d statistic).</p>
+</div></blockquote>
+</p></li>
+<li><p><strong>aggregate_by_main_covar</strong> (<em>bool</em>) – If to use <code class="xref py py-func docutils literal notranslate"><span class="pre">_aggregate_asmd_by_main_covar()</span></code> to aggregate (average) the asmd based on variable name.
+Default is False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a Series indexed on the names of the columns in the input DataFrames.
+The values (of type np.float64) are of the ASMD calculation.
+The last element is ‘mean(asmd)’, which is the average of the calculated ASMD values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.Series</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<p>import numpy as np
+import pandas as pd
+from balance.stats_and_plots import weighted_comparisons_stats</p>
+<p>a1 = pd.Series((1, 2))
+b1 = pd.Series((-1, 1))
+a2 = pd.Series((3, 4))
+b2 = pd.Series((-2, 2))
+w1 = pd.Series((1, 1))
+w2 = w1</p>
+<dl>
+<dt>r = weighted_comparisons_stats.asmd(</dt><dd><blockquote>
+<div><p>pd.DataFrame({“a”: a1, “b”: b1}),
+pd.DataFrame({“a”: a2, “b”: b2}),
+w1,
+w2,</p>
+</div></blockquote>
+<p>)</p>
+</dd>
+</dl>
+<p>exp_a = np.abs(a1.mean() - a2.mean()) / a2.std()
+exp_b = np.abs(b1.mean() - b2.mean()) / b2.std()
+print(r)
+print(exp_a)
+print(exp_b)</p>
+<p># output:
+# {‘a’: 2.82842712474619, ‘b’: 0.0, ‘mean(asmd)’: 1.414213562373095}
+# 2.82842712474619
+# 0.0</p>
+<p>a1 = pd.Series((1, 2))
+b1_A = pd.Series((1, 3))
+b1_B = pd.Series((-1, -3))
+a2 = pd.Series((3, 4))
+b2_A = pd.Series((2, 3))
+b2_B = pd.Series((-2, -3))
+w1 = pd.Series((1, 1))
+w2 = w1</p>
+<dl class="simple">
+<dt>r = weighted_comparisons_stats.asmd(</dt><dd><p>pd.DataFrame({“a”: a1, “b[A]”: b1_A, “b[B]”: b1_B}),
+pd.DataFrame({“a”: a2, “b[A]”: b2_A, “b[B]”: b2_B}),
+w1,
+w2,</p>
+</dd>
+</dl>
+<p>).to_dict()</p>
+<p>print(r)
+# {‘a’: 2.82842712474619, ‘b[A]’: 0.7071067811865475, ‘b[B]’: 0.7071067811865475, ‘mean(asmd)’: 1.7677669529663689}</p>
+<p># Check that using aggregate_by_main_covar works
+r = weighted_comparisons_stats.asmd(</p>
+<blockquote>
+<div><p>pd.DataFrame({“a”: a1, “b[A]”: b1_A, “b[B]”: b1_B}),
+pd.DataFrame({“a”: a2, “b[A]”: b2_A, “b[B]”: b2_B}),
+w1,
+w2,
+“target”,
+True,</p>
+</div></blockquote>
+<p>).to_dict()</p>
+<p>print(r)
+# {‘a’: 2.82842712474619, ‘b’: 0.7071067811865475, ‘mean(asmd)’: 1.7677669529663689}</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_comparisons_stats.asmd_improvement">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_comparisons_stats.</span></span><span class="sig-name descname"><span class="pre">asmd_improvement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_before</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_after</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_before_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_after_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float64</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_comparisons_stats.html#asmd_improvement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_comparisons_stats.asmd_improvement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the improvement in mean(asmd) from before to after applying some weight adjustment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sample_before</strong> (<em>pd.DataFrame</em>) – DataFrame of the sample before adjustments.</p></li>
+<li><p><strong>sample_after</strong> (<em>pd.DataFrame</em>) – DataFrame of the sample after adjustments
+(should be identical to sample_before. But could be used to compare two populations).</p></li>
+<li><p><strong>target</strong> (<em>pd.DataFrame</em>) – DataFrame of the target population.</p></li>
+<li><p><strong>sample_before_weights</strong> (<em>Union</em><em>[ </em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>np.ndarray</em><em>, </em><em>]</em><em>, </em><em>optional</em>) – Weights before adjustments (i.e.: design weights). Defaults to None.</p></li>
+<li><p><strong>sample_after_weights</strong> (<em>Union</em><em>[ </em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>np.ndarray</em><em>, </em><em>]</em><em>, </em><em>optional</em>) – Weights after some adjustment. Defaults to None.</p></li>
+<li><p><strong>target_weights</strong> (<em>Union</em><em>[ </em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>np.ndarray</em><em>, </em><em>]</em><em>, </em><em>optional</em>) – Design weights of the target population. Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The improvement is taking the (before_mean_asmd-after_mean_asmd)/before_mean_asmd.
+The asmd is calculated using <a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_stats.asmd" title="balance.stats_and_plots.weighted_comparisons_stats.asmd"><code class="xref py py-func docutils literal notranslate"><span class="pre">asmd()</span></code></a>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.float64</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_comparisons_stats.outcome_variance_ratio">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_comparisons_stats.</span></span><span class="sig-name descname"><span class="pre">outcome_variance_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df_numerator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_denominator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_numerator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_denominator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_comparisons_stats.html#outcome_variance_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_comparisons_stats.outcome_variance_ratio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate ratio of weighted variances of two DataFrames</p>
+<p>Directly calculating the empirical ratio of variance of the outcomes before and after weighting.
+Notice that this is different than design effect.
+The Deff estimates the ratio of variances of the weighted means, while this function calculates the ratio
+of empirical weighted variance of the data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df_numerator</strong> (<em>pd.DataFrame</em>) – df_numerator</p></li>
+<li><p><strong>df_denominator</strong> (<em>pd.DataFrame</em>) – df_denominator</p></li>
+<li><p><strong>w_numerator</strong> (<em>Union</em><em>[ </em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>np.ndarray</em><em>, </em><em>None</em><em>, </em><em>]</em><em>, </em><em>optional</em>) – w_numerator. Defaults to None.</p></li>
+<li><p><strong>w_denominator</strong> (<em>Union</em><em>[ </em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>np.ndarray</em><em>, </em><em>None</em><em>, </em><em>]</em><em>, </em><em>optional</em>) – w_denominator. Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(np.float64) A series of calculated ratio of variances for each outcome.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.Series</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">balance.stats_and_plots.weighted_comparisons_stats</a><ul>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_stats.asmd"><code class="docutils literal notranslate"><span class="pre">asmd()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_stats.asmd_improvement"><code class="docutils literal notranslate"><span class="pre">asmd_improvement()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_stats.outcome_variance_ratio"><code class="docutils literal notranslate"><span class="pre">outcome_variance_ratio()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="balance.stats_and_plots.weighted_comparisons_plots.html"
+                          title="previous chapter">balance.stats_and_plots.weighted_comparisons_plots</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="balance.stats_and_plots.weighted_stats.html"
+                          title="next chapter">balance.stats_and_plots.weighted_stats</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/balance.stats_and_plots.weighted_comparisons_stats.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.weighted_stats.html" title="balance.stats_and_plots.weighted_stats"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.weighted_comparisons_plots.html" title="balance.stats_and_plots.weighted_comparisons_plots"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" >balance</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="balance.stats_and_plots.html" >balance.stats_and_plots</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.weighted_comparisons_stats</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>
