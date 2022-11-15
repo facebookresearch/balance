@@ -52,6 +52,23 @@ jobs:
       run: |
         flake8
 
+  pyre:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - name: Install dependencies
+      run: |
+        sudo apt-get install watchman
+        pip install pyre-check
+    - name: Pyre
+      run: |
+        pyre --source-directory "." --noninteractive check
+
   test-deploy-website:
     name: Test website build
     runs-on: ubuntu-latest
