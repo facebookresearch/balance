@@ -80,7 +80,7 @@ income              0.517721
 mean(asmd)          0.334860
 ```
 
-For categorical variables the ASMD can calculated as the average of the ASMD applied to each of the [one-hot encoding](https://en.wikipedia.org/wiki/One-hot) of the categories of the variable by using the `aggregate_by_main_covar` argument:
+For categorical variables the ASMD can be calculated as the average of the ASMD applied to each of the [one-hot encoding](https://en.wikipedia.org/wiki/One-hot) of the categories of the variable by using the `aggregate_by_main_covar` argument:
 
 ```python
 sample_with_target.covars().asmd(aggregate_by_main_covar = True).T
@@ -108,9 +108,9 @@ For example, the plot below is a Q-Q plot for the income covariate for the sampl
 
 ![](../img/fig_01_qqplot_income_before.png)
 
-The closer the line is to the 45 degree line the better.
+The closer the line is to the 45-degree-line the better (i.e.: the less bias is observed in the sample as compared to the target population).
 
-To make a QQ-plot for a specific variable, simply use the following function (the default uses QQ plot with the plotly engine):
+To make a QQ-plot for a specific variable, simply use the following method (the default uses QQ plot with the plotly engine):
 
 ```python
 sample_with_target.covars().plot(variables = ['income',])
@@ -118,7 +118,7 @@ sample_with_target.covars().plot(variables = ['income',])
 
 ### Barplots
 
-Barplots provide as a way to visually compare the sample and target for categorical covariates.
+[Barplots](https://en.wikipedia.org/wiki/Bar_chart) provides a way to visually compare the sample and target for categorical covariates.
 
 Here is an example of the plot for age_group and gender before adjustment:
 
@@ -135,7 +135,7 @@ sample_with_target.covars().plot(variables = ['age_group', 'gender', ])
 
 ### Plotting all varibales
 
-If you don't specify a variables list in the plot function, all covariates of you sample object will be plotted:
+If you do not specify a variables list in the plot method, all covariates of you sample object will be plotted:
 
 ```python
 sample_with_target.covars().plot()
