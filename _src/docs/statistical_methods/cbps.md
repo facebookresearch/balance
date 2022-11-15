@@ -65,7 +65,7 @@ $$
 \frac{1}{n}\sum_{i=1}^n \left[ \frac{I_i\pi^\prime_\beta(X_i)}{\pi_\beta(X_i)} +\frac{(1-I_i)\pi^\prime_\beta(X_i)}{1-\pi_\beta(X_i)}\right]=0
 $$
 where the derivative of $\pi$ is by $\beta^T$.
-This condition can be viewed as a condition that balances a certain function of the covariates, in this case the derivative of the propensity score $\pi^\prime_\beta(X_i)}$.
+This condition can be viewed as a condition that balances a certain function of the covariates, in this case the derivative of the propensity score $\pi^\prime_\beta(X_i)$.
 
 ### CBPS
 
