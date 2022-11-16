@@ -81,18 +81,19 @@ associated with id and weight.</p>
 <span class="sig-name descname"><span class="pre">adjust</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><span class="pre">Sample</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'cbps'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'ipw'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'null'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'poststratify'</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'ipw'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><span class="pre">Sample</span></a></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.adjust"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.adjust" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perform adjustment of one sample to match another.
 This function returns a new sample.</p>
-<p>Args:
-target (Optional[“Sample”]): Second sample object which should be matched.</p>
-<blockquote>
-<div><p>If None, the set traget of the object is used for matching.</p>
-</div></blockquote>
-<p>method (str): method for adjustment: cbps, ipw, null, poststratify</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>an adjusted Sample object</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>target</strong> (<em>Optional</em><em>[</em><em>&quot;Sample&quot;</em><em>]</em>) – Second sample object which should be matched.
+If None, the set traget of the object is used for matching.</p></li>
+<li><p><strong>method</strong> (<em>str</em>) – method for adjustment: cbps, ipw, null, poststratify</p></li>
+</ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample">Sample</a></p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>an adjusted Sample object</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample">Sample</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -103,10 +104,8 @@ target (Optional[“Sample”]): Second sample object which should be matched.</
 <dd><p>Compare the means of covariates (after using <code class="xref py py-func docutils literal notranslate"><span class="pre">BalanceDF.model_matrix()</span></code>) before and after adjustment as compared with target.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>self</strong> (<a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><em>Sample</em></a>) – A Sample object produces after running <a class="reference internal" href="#balance.sample_class.Sample.adjust" title="balance.sample_class.Sample.adjust"><code class="xref py py-func docutils literal notranslate"><span class="pre">Sample.adjust()</span></code></a>.</p></li>
-<li><p><strong>componants</strong> (<em>It should include 3</em>) – “unadjusted”, “adjusted”, “target”.</p></li>
-</ul>
+<dd class="field-odd"><p><strong>self</strong> (<a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><em>Sample</em></a>) – A Sample object produces after running <a class="reference internal" href="#balance.sample_class.Sample.adjust" title="balance.sample_class.Sample.adjust"><code class="xref py py-func docutils literal notranslate"><span class="pre">Sample.adjust()</span></code></a>.
+It should include 3 componants: “unadjusted”, “adjusted”, “target”.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A DataFrame with 3 columns (“unadjusted”, “adjusted”, “target”),
@@ -180,10 +179,8 @@ I.e. (Deff of adjusted - Deff of unadjusted) / Deff of unadjusted.
 Uses <code class="xref py py-func docutils literal notranslate"><span class="pre">weights_stats.design_effect()</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>self</strong> (<a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><em>Sample</em></a>) – A Sample object produces after running <a class="reference internal" href="#balance.sample_class.Sample.adjust" title="balance.sample_class.Sample.adjust"><code class="xref py py-func docutils literal notranslate"><span class="pre">Sample.adjust()</span></code></a>.</p></li>
-<li><p><strong>componants</strong> (<em>It should include 3</em>) – “unadjusted”, “adjusted”, “target”.</p></li>
-</ul>
+<dd class="field-odd"><p><strong>self</strong> (<a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><em>Sample</em></a>) – A Sample object produces after running <a class="reference internal" href="#balance.sample_class.Sample.adjust" title="balance.sample_class.Sample.adjust"><code class="xref py py-func docutils literal notranslate"><span class="pre">Sample.adjust()</span></code></a>.
+It should include 3 componants: “unadjusted”, “adjusted”, “target”.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>relative difference in design effect.</p>
@@ -283,8 +280,10 @@ and have a large influence on the conclusion we draw from the survey.</p>
 <dd class="field-even"><p>Sample</p>
 </dd>
 <dt class="field-odd">returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>with 3 columns: (“metric”, “val”, “var”),
-indicating various tracking metrics on the model.</p>
+<dd class="field-odd"><dl class="simple">
+<dt>with 3 columns: (“metric”, “val”, “var”),</dt><dd><p>indicating various tracking metrics on the model.</p>
+</dd>
+</dl>
 </dd>
 <dt class="field-even">rtype<span class="colon">:</span></dt>
 <dd class="field-even"><p>pd.DataFrame</p>
@@ -308,33 +307,30 @@ as well numpy floats. Also,
 3. Hence, since some columns might have missing values, the safest solution is to just convert all integers into numpy floats.</p>
 </div></blockquote>
 <p>The id_column is stored as a string, even if the input is an integer.</p>
-<p>Args:
-df (pd.DataFrame): containing the sample’s data
-id_column (Optional, Optional[str]): the column of the df which contains the respondent’s id</p>
-<blockquote>
-<div><p>(should be unique). Defaults to None.</p>
-</div></blockquote>
-<p>outcome_columns (Optional, Optional[Union[list, tuple, str]]): names of columns to treat as outcome
-weight_column (Optional, Optional[str]): name of column to treat as weight. If not specified, will</p>
-<blockquote>
-<div><p>be guessed. If not found, will be filled with 1.0.</p>
-</div></blockquote>
-<p>check_id_uniqueness (Optional, bool): Whether to check if ids are unique. Defaults to True.
-standardize_types (Optional, bool): Whether to standardize types. Defaults to True.</p>
-<blockquote>
-<div><p>Int64/int64 -&gt; float64
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pd.DataFrame</em>) – containing the sample’s data</p></li>
+<li><p><strong>id_column</strong> (<em>Optional</em><em>, </em><em>Optional</em><em>[</em><em>str</em><em>]</em>) – the column of the df which contains the respondent’s id</p></li>
+<li><p><strong>None.</strong> (<em>(</em><em>should be unique</em><em>)</em><em>. Defaults to</em>) – </p></li>
+<li><p><strong>outcome_columns</strong> (<em>Optional</em><em>, </em><em>Optional</em><em>[</em><em>Union</em><em>[</em><em>list</em><em>, </em><em>tuple</em><em>, </em><em>str</em><em>]</em><em>]</em>) – names of columns to treat as outcome</p></li>
+<li><p><strong>weight_column</strong> (<em>Optional</em><em>, </em><em>Optional</em><em>[</em><em>str</em><em>]</em>) – name of column to treat as weight. If not specified, will
+be guessed. If not found, will be filled with 1.0.</p></li>
+<li><p><strong>check_id_uniqueness</strong> (<em>Optional</em><em>, </em><em>bool</em>) – Whether to check if ids are unique. Defaults to True.</p></li>
+<li><p><strong>standardize_types</strong> (<em>Optional</em><em>, </em><em>bool</em>) – Whether to standardize types. Defaults to True.
+Int64/int64 -&gt; float64
 Int32/int32 -&gt; float64
 string -&gt; object
 pandas.NA -&gt; numpy.nan (within each cell)
 This is slightly memory intensive (since it copies the data twice),
-but helps keep various functions working for both Int64 and Int32 input columns.</p>
-</div></blockquote>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>a sample object</p>
+but helps keep various functions working for both Int64 and Int32 input columns.</p></li>
+</ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample">Sample</a></p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a sample object</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample">Sample</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -391,10 +387,13 @@ Defaults to None, which returns all columns.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A copy of the original object. If both rows and columns to keep are None,
-returns the copied object unchanged.
+<dd class="field-even"><p><dl class="simple">
+<dt>A copy of the original object. If both rows and columns to keep are None,</dt><dd><p>returns the copied object unchanged.
 If some are not None, will update - first the rows - then the columns.
 This performs the transformation on both the sameple’s df and its linkes dfs (unadjusted, target).</p>
+</dd>
+</dl>
+</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample">Sample</a></p>
@@ -444,10 +443,8 @@ I.e. (weighted sd of adjusted - weighted sd of unadjusted) / weighted sd  of una
 Uses <code class="xref py py-func docutils literal notranslate"><span class="pre">BalanceDF.weighted_stats.weighted_sd()</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>self</strong> (<a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><em>Sample</em></a>) – A Sample object produces after running <a class="reference internal" href="#balance.sample_class.Sample.adjust" title="balance.sample_class.Sample.adjust"><code class="xref py py-func docutils literal notranslate"><span class="pre">Sample.adjust()</span></code></a>.</p></li>
-<li><p><strong>componants</strong> (<em>It should include 3</em>) – “unadjusted”, “adjusted”, “target”.</p></li>
-</ul>
+<dd class="field-odd"><p><strong>self</strong> (<a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><em>Sample</em></a>) – A Sample object produces after running <a class="reference internal" href="#balance.sample_class.Sample.adjust" title="balance.sample_class.Sample.adjust"><code class="xref py py-func docutils literal notranslate"><span class="pre">Sample.adjust()</span></code></a>.
+It should include 3 componants: “unadjusted”, “adjusted”, “target”.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>(np.float64) relative difference in outcome weighted standard deviation.</p>
@@ -465,10 +462,8 @@ Uses <code class="xref py py-func docutils literal notranslate"><span class="pre
 <p>See <a class="reference internal" href="#balance.sample_class.Sample.outcome_variance_ratio" title="balance.sample_class.Sample.outcome_variance_ratio"><code class="xref py py-func docutils literal notranslate"><span class="pre">outcome_variance_ratio()</span></code></a> for details.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>self</strong> (<a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><em>Sample</em></a>) – A Sample object produces after running <a class="reference internal" href="#balance.sample_class.Sample.adjust" title="balance.sample_class.Sample.adjust"><code class="xref py py-func docutils literal notranslate"><span class="pre">Sample.adjust()</span></code></a>.</p></li>
-<li><p><strong>componants</strong> (<em>It should include 3</em>) – “unadjusted”, “adjusted”, “target”.</p></li>
-</ul>
+<dd class="field-odd"><p><strong>self</strong> (<a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><em>Sample</em></a>) – A Sample object produces after running <a class="reference internal" href="#balance.sample_class.Sample.adjust" title="balance.sample_class.Sample.adjust"><code class="xref py py-func docutils literal notranslate"><span class="pre">Sample.adjust()</span></code></a>.
+It should include 3 componants: “unadjusted”, “adjusted”, “target”.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>(np.float64) A series of calculated ratio of variances for each outcome.</p>
@@ -572,11 +567,8 @@ Note that the weights are assigned by index if weights is a pd.Series
 (of Sample.df and weights series)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>weights</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>pd.Series</em><em>, </em><em>float</em><em>]</em><em>]</em>) – Seiers of weights to add to sample.</p></li>
-<li><p><strong>values</strong> (<em>If None</em><em> or </em><em>float</em>) – </p></li>
-<li><p><strong>weight</strong> (<em>the same</em>) – </p></li>
-</ul>
+<dd class="field-odd"><p><strong>weights</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>pd.Series</em><em>, </em><em>float</em><em>]</em><em>]</em>) – Seiers of weights to add to sample.
+If None or float values, the same weight (or None) will be assigned to all units.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>None, but adapting the Sample weight column to weights</p>

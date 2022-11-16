@@ -204,8 +204,11 @@ print(s3_null_madeup_weights.covars().asmd())</p>
 </ul>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The improvement is taking the (before_mean_asmd-after_mean_asmd)/before_mean_asmd.
-The asmd is calculated using <a class="reference internal" href="#balance.balancedf_class.BalanceDF.asmd" title="balance.balancedf_class.BalanceDF.asmd"><code class="xref py py-func docutils literal notranslate"><span class="pre">asmd()</span></code></a>.</p>
+<dd class="field-odd"><p><dl class="simple">
+<dt>The improvement is taking the (before_mean_asmd-after_mean_asmd)/before_mean_asmd.</dt><dd><p>The asmd is calculated using <a class="reference internal" href="#balance.balancedf_class.BalanceDF.asmd" title="balance.balancedf_class.BalanceDF.asmd"><code class="xref py py-func docutils literal notranslate"><span class="pre">asmd()</span></code></a>.</p>
+</dd>
+</dl>
+</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>np.float64</p>
@@ -767,7 +770,7 @@ A second row with the proportion of non-null observations.</p>
 </p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pd.DataFrame</p>
+<dd class="field-odd"><p>Optional[pd.DataFrame]</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
@@ -1064,9 +1067,6 @@ s3_null.weights().plot()</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>None. This function updates the <code class="xref py py-func docutils literal notranslate"><span class="pre">_sample()</span></code> using <code class="xref py py-func docutils literal notranslate"><span class="pre">set_weights()</span></code></p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>NoneType</p>
 </dd>
 </dl>
 </dd></dl>

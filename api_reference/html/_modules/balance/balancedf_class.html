@@ -176,13 +176,13 @@
 
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Dict: dict mapping the link relationship to the result.</span>
+<span class="sd">            Dict[str, Union[&quot;BalanceCovarsDF&quot;, &quot;BalanceWeightsDF&quot;, Union[&quot;BalanceOutcomesDF&quot;, None]],]:</span>
+<span class="sd">            A dict mapping the link relationship to the result.</span>
 <span class="sd">                First item is self, and it just returns it without using method on it.</span>
 <span class="sd">                The other items are based on the objects in _links. E.g.: it can be &#39;target&#39;</span>
 <span class="sd">                and &#39;unadjusted&#39;, and it will return them after running the same BalanceDF child creation method on them.</span>
 
 <span class="sd">        Examples:</span>
-
 <span class="sd">            from balance.sample_class import Sample</span>
 <span class="sd">            import pandas as pd</span>
 
@@ -821,7 +821,7 @@
 <span class="sd">            self (BalanceDF): Object</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Union[pd.DataFrame, Optional[np.ndarray]]:</span>
+<span class="sd">            Tuple[pd.DataFrame, Optional[np.ndarray]]:</span>
 <span class="sd">                A pd.DataFrame output from running :func:`model_metrix`, and</span>
 <span class="sd">                A np.ndarray of weights from :func:`_weights`, or just None (if there are no weights).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1037,7 +1037,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            np.float64: The improvement is taking the (before_mean_asmd-after_mean_asmd)/before_mean_asmd.</span>
-<span class="sd">            The asmd is calculated using :func:`asmd`.</span>
+<span class="sd">                The asmd is calculated using :func:`asmd`.</span>
 
 <span class="sd">        Examples:</span>
 <span class="sd">            import pandas as pd</span>
@@ -1187,7 +1187,7 @@
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceOutcomesDF&quot;</span><span class="p">,</span>
         <span class="n">target</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">per_column</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Produces a summary table of number of responses and proportion of completed responses.</span>
 
 <span class="sd">        See :func:`general_stats.relative_response_rates`.</span>
@@ -1205,7 +1205,7 @@
 <span class="sd">            per_column (bool, optional): Default is False. See :func:`general_stats.relative_response_rates`.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            pd.DataFrame: A column per outcome, and two rows.</span>
+<span class="sd">            Optional[pd.DataFrame]: A column per outcome, and two rows.</span>
 <span class="sd">                One row with number of non-null observations, and</span>
 <span class="sd">                A second row with the proportion of non-null observations.</span>
 
@@ -1672,7 +1672,7 @@
 <span class="sd">            keep_sum_of_weights (bool, optional): Maps to weight_trimming_percentile. Defaults to True.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            NoneType: None. This function updates the :func:`_sample` using :func:`set_weights`</span>
+<span class="sd">            None. This function updates the :func:`_sample` using :func:`set_weights`</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># TODO: verify which object exactly gets updated - and explain it here.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="o">.</span><span class="n">set_weights</span><span class="p">(</span>

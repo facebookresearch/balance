@@ -79,58 +79,93 @@ and add another column of an indicator variable for which rows were NA.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>DataFrame</strong> (<em>df --  The input</em>) – </p></li>
-<li><p><strong>columns</strong> (<em>replace_val_num -- The value to put insteasd</em><em> of </em><em>nulls for numeric</em>) – </p></li>
-<li><p><strong>columns</strong> – </p></li>
+<li><p><strong>df</strong> (<em>pd.DataFrame</em>) – The input DataFrame</p></li>
+<li><p><strong>replace_val_obj</strong> (<em>str</em><em>, </em><em>optional</em>) – The value to put insteasd of nulls for object columns. Defaults to “_NA”.</p></li>
+<li><p><strong>replace_val_num</strong> (<em>int</em><em>, </em><em>optional</em>) – The value to put insteasd of nulls for numeric columns. Defaults to 0.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>New dataframe with additional columns</p>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>Exception</strong> – Can’t add NA indicator to DataFrame which contains columns which start with ‘_is_na_’</p></li>
+<li><p><strong>Exception</strong> – Can’t add NA indicator to columns containing NAs and the value ‘{replace_val_obj}’,</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>New dataframe with additional columns</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.DataFrame</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="balance.util.auto_spread">
-<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">auto_spread</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'id'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/util.html#auto_spread"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.auto_spread" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">auto_spread</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">features</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'id'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/balance/util.html#auto_spread"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.auto_spread" title="Permalink to this definition">¶</a></dt>
 <dd><p>Automatically transform a ‘long’ DataFrame into a ‘wide’ DataFrame
 by guessing which column should be used as a key, treating all
 other columns as values. At the moment, this will only find a single key column</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>pd.DataFrame</em>) – </p></li>
+<li><p><strong>features</strong> (<em>Optional</em><em>[</em><em>list</em><em>]</em><em>, </em><em>optional</em>) – Defaults to None.</p></li>
+<li><p><strong>id</strong> (<em>str</em><em>, </em><em>optional</em>) – Defaults to “id”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.DataFrame</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="balance.util.build_model_matrix">
-<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">build_model_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">formula</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor_variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_sparse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/util.html#build_model_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.build_model_matrix" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">build_model_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">formula</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor_variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_sparse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/util.html#build_model_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.build_model_matrix" title="Permalink to this definition">¶</a></dt>
 <dd><p>Build a model matrix from a formula (using patsy.dmatrix)</p>
-<p>Arguments:
-df — The data from which to create the model matrix (pandas dataframe)
-formula — a string representing the formula to use for building the model matrix.</p>
-<blockquote>
-<div><p>Default is additive formula with all variables in df</p>
-</div></blockquote>
-<dl class="simple">
-<dt>factor_variables — list of names of factor variables that we use</dt><dd><p>one_hot_encoding_greater_2 for.
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pd.DataFrame</em>) – The data from which to create the model matrix (pandas dataframe)</p></li>
+<li><p><strong>formula</strong> (<em>str</em><em>, </em><em>optional</em>) – a string representing the formula to use for building the model matrix.
+Default is additive formula with all variables in df. Defaults to “.”.</p></li>
+<li><p><strong>factor_variables</strong> (<em>LisOptional</em><em>[</em><em>List</em><em>]</em><em>t</em><em>, </em><em>optional</em>) – list of names of factor variables that we use
+one_hot_encoding_greater_2 for.
 Default is None, in which case no special contrasts are applied
 (uses patsy defaults).
 one_hot_encoding_greater_2 creates one-hot-encoding for all
 categorical variables with more than 2 categories (i.e. the
 number of columns will be equal to the number of categories), and only 1
-column for variables with 2 levels (treatment contrast).</p>
+column for variables with 2 levels (treatment contrast).</p></li>
+<li><p><strong>return_sparse</strong> (<em>bool</em><em>, </em><em>optional</em>) – whether to return a sprse matrix using scipy.sparse.csc_matrix. Defaults to False.</p></li>
+</ul>
 </dd>
-</dl>
-<p>return_sparse — whether to return a sprse matrix using scipy.sparse.csc_matrix (Default: False)</p>
-<p>Returns:
-A dictionary of 2 elements:
-1. model_matrix - this is a pd dataframe or a csc_matrix (depends on return_sparse), ordered by columns names
-2. model_matrix_columns - A list of the columns names of model_matrix</p>
-<blockquote>
-<div><p>(We include model_matrix_columns as a separate argument since if we return a sparse X_matrix,
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>Exception</strong> – “Variable names cannot contain characters ‘[’ or ‘]’”</p></li>
+<li><p><strong>Exception</strong> – “Not all factor variables are contained in df”</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl>
+<dt>A dictionary of 2 elements:</dt><dd><ol class="arabic simple">
+<li><p>model_matrix - this is a pd dataframe or a csc_matrix (depends on return_sparse), ordered by columns names</p></li>
+</ol>
+<p>2. model_matrix_columns - A list of the columns names of model_matrix
+(We include model_matrix_columns as a separate argument since if we return a sparse X_matrix,
 it doesn’t have a columns names argument and these need to be kept separately,
 see here:
 <a class="reference external" href="https://stackoverflow.com/questions/35086940/how-can-i-give-row-and-column-names-to-scipys-csr-matrix">https://stackoverflow.com/questions/35086940/how-can-i-give-row-and-column-names-to-scipys-csr-matrix</a>.)</p>
-</div></blockquote>
-<p>Examples:
-import pandas as pd
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dict[str, Any]</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>import pandas as pd
 d = {‘a’: [‘a1’,’a2’,’a1’,’a1’], ‘b’: [‘b1’,’b2’,’b3’,’b3’]}
 df = pd.DataFrame(data=d)</p>
 <p>print(build_model_matrix(df, ‘a’))
@@ -166,22 +201,31 @@ print(build_model_matrix(df, ‘a’, return_sparse=True)[“model_matrix”].to
 
 <dl class="py function">
 <dt class="sig sig-object py" id="balance.util.choose_variables">
-<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">choose_variables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">dfs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/util.html#choose_variables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.choose_variables" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">choose_variables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">dfs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/util.html#choose_variables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.choose_variables" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return covars which are present in all dfs and also in <cite>variables</cite>
 if passed</p>
-<p>Arguments:
-dfs – balance.Samples or pd.DataFrames
-variables – which variables to choose. If None, chooses all joint variables in the dfs.</p>
-<blockquote>
-<div><p>Default is None.</p>
-</div></blockquote>
-<p>Returns:
-Tuple of joint variables</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*dfs</strong> – balance.Samples or pd.DataFrames</p></li>
+<li><p><strong>variables</strong> (<em>Optional</em><em>[</em><em>List</em><em>]</em><em>, </em><em>optional</em>) – which variables to choose. If None, chooses all joint variables in the dfs.. Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Exception</strong> – _description_</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple of joint variables</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tuple</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="balance.util.dot_expansion">
-<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">dot_expansion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">formula</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/util.html#dot_expansion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.dot_expansion" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">dot_expansion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">formula</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/util.html#dot_expansion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.dot_expansion" title="Permalink to this definition">¶</a></dt>
 <dd><p>Build a formula string by replacing “.” with “summing” all the variables,
 If no dot appears, returns the formula as is.</p>
 <p>This function is named for the ‘dot’ operators in R, where a formula given
@@ -189,15 +233,22 @@ as ‘ ~ .’ means “use all variables in dataframe.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>expand.</strong> (<em>formula --- The formula to</em>) – </p></li>
-<li><p><strong>for.</strong> (<em>variables --- List</em><em> of </em><em>all variables in the dataframe we build the formula</em>) – </p></li>
+<li><p><strong>formula</strong> – The formula to expand.</p></li>
+<li><p><strong>variables</strong> (<em>List</em>) – List of all variables in the dataframe we build the formula for.</p></li>
 </ul>
 </dd>
-</dl>
-<p>Returns:
-A string formula replacing the ‘.’’ with all variables in variables.
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>Exception</strong> – “Variables should not be empty. Please provide a list of strings.”</p></li>
+<li><p><strong>Exception</strong> – “Variables should be a list of strings and have to be included.”</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A string formula replacing the ‘.’’ with all variables in variables.
 If no ‘.’ is present, then the original formula is returned as is.</p>
-<p>Examples:</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
 <p>dot_expansion(‘.’, [‘a’,’b’,’c’,’d’]) # (a+b+c+d)
 dot_expansion(‘b:(. - a)’, [‘a’,’b’,’c’,’d’]) # b:((a+b+c+d) - a)
 dot_expansion(‘a*b’, [‘a’,’b’,’c’,’d’]) # a*b
@@ -219,13 +270,19 @@ dot_expansion(‘.’, list(df.columns)) # (a+b+c+d)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>---</strong> (<em>sample_weights</em>) – </p></li>
-<li><p><strong>---</strong> – </p></li>
-<li><p><strong>checked</strong> (<em>name --- name</em><em> of </em><em>object</em>) – </p></li>
+<li><p><strong>sample_df</strong> (<em>pd.DataFrame</em>) – a dataframe representing the sample or target</p></li>
+<li><p><strong>sample_weights</strong> (<em>pd.Series</em>) – design weights for sample or target</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – name of object checked (used for warnings prints). Defaults to “sample object”.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>sample_df, sample_weights without NAs rows</p>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – Dropping rows led to empty {name}. Maybe try na_action=’add_indicator’?</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>sample_df, sample_weights without NAs rows</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tuple[pd.DataFrame, pd.Series]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -235,11 +292,20 @@ dot_expansion(‘.’, list(df.columns)) # (a+b+c+d)</p>
 <span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">fct_lump</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/balance/util.html#fct_lump"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.fct_lump" title="Permalink to this definition">¶</a></dt>
 <dd><p>Lumps infrequent levels into ‘_lumped_other’.
 Note that all values with proprtion less than prop output the same value ‘_lumped_other’.</p>
-<p>Arguments:
-s — pd.series to lump, with dtype of integer, numeric, object, or category (category will be converted to object)
-prop — the proportion of infrequent levels to lump</p>
-<p>Returns:
-pd.series (with category dtype converted to object, if applicable)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>s</strong> (<em>pd.Series</em>) – pd.series to lump, with dtype of integer, numeric, object, or category (category will be converted to object)</p></li>
+<li><p><strong>prop</strong> (<em>float</em><em>, </em><em>optional</em>) – the proportion of infrequent levels to lump. Defaults to 0.05.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.series (with category dtype converted to object, if applicable)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.Series</p>
+</dd>
+</dl>
 <p class="rubric">Example</p>
 <p>from balance.util import fct_lump
 import pandas as pd</p>
@@ -263,14 +329,23 @@ fct_lump(s, 0.25)</p>
 <dd><p>Lumps infrequent levels into ‘_lumped_other, only does so per
 value of the grouping variable <cite>by</cite>. Useful, for example, for keeping the
 most important interactions in a model.</p>
-<p>Arguments:
-s — pd.series to lump
-by — pd.series according to which group the data
-prop — the proportion of infrequent levels to lump</p>
-<p>Returns:
-pd.series, we keep the index of s as the index of the result.</p>
-<p>Example:
-s = pd.Series([1,1,1,2,3,1,2])
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>s</strong> (<em>pd.Series</em>) – pd.series to lump</p></li>
+<li><p><strong>by</strong> (<em>pd.Series</em>) – pd.series according to which group the data</p></li>
+<li><p><strong>prop</strong> (<em>float</em><em>, </em><em>optional</em>) – the proportion of infrequent levels to lump. Defaults to 0.05.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.series, we keep the index of s as the index of the result.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.Series</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<p>s = pd.Series([1,1,1,2,3,1,2])
 by = pd.Series([‘a’,’a’,’a’,’a’,’a’,’b’,’b’])
 fct_lump_by(s, by, 0.5)
 # 0                1
@@ -286,19 +361,30 @@ fct_lump_by(s, by, 0.5)
 <dl class="py function">
 <dt class="sig sig-object py" id="balance.util.formula_generator">
 <span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">formula_generator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">formula_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'additive'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/balance/util.html#formula_generator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.formula_generator" title="Permalink to this definition">¶</a></dt>
-<dd><blockquote>
-<div><p>Create formula to build the model matrix
-Default is additive formula.</p>
-<p>Arguments:
-variables – list with names of variables (as strings) to combine into a formula
-formula_type – how to construct the formula. Currently only “additive” is supported.</p>
-<p>Returns:
-A string representing the fomula</p>
-</div></blockquote>
-<dl class="simple">
-<dt>`    Examples:</dt><dd><p>formula_generator([‘a’,’b’,’c’]) returns ‘c + b + a’</p>
+<dd><dl class="simple">
+<dt>Create formula to build the model matrix</dt><dd><p>Default is additive formula.</p>
 </dd>
 </dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>variables</strong> – list with names of variables (as strings) to combine into a formula</p></li>
+<li><p><strong>formula_type</strong> (<em>str</em><em>, </em><em>optional</em>) – how to construct the formula. Currently only “additive” is supported.. Defaults to “additive”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Exception</strong> – “This formula type is not supported.’” “Please provide a string formula”<a href="#id1"><span class="problematic" id="id2">tion_</span></a></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A string representing the fomula</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>formula_generator([‘a’,’b’,’c’])
+# returns ‘c + b + a’</p>
 </dd></dl>
 
 <dl class="py function">
@@ -329,51 +415,60 @@ which will guess the id column or raise exception.</p></li>
 <dd><p>Create a model matrix from a sample (and target).
 The default is to use an additive formula for all variables (or the ones specified).
 Can also create a custom model matrix if a formula is provided.</p>
-<p>Arguments:
-sample, target — The Samples from which to create the model matrix
-variables — the names of the variables to include (default is ‘None’, i.e.</p>
-<blockquote>
-<div><p>all joint variables to target and sample are used)</p>
-</div></blockquote>
-<dl class="simple">
-<dt>add_na — whether to call add_na_indicator on the data before constructing</dt><dd><p>the matrix.If add_na = True, then the function add_na_indicator is applied,
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sample</strong> (<a class="reference internal" href="balance.sample_class.html#balance.sample_class.Sample" title="balance.sample_class.Sample"><em>Sample</em></a>) – The Samples from which to create the model matrix</p></li>
+<li><p><strong>target</strong> (<a class="reference internal" href="balance.sample_class.html#balance.sample_class.Sample" title="balance.sample_class.Sample"><em>Sample</em></a><em>, </em><em>optional</em>) – See sample. Defaults to None.</p></li>
+<li><p><strong>variables</strong> (<em>_type_</em><em>, </em><em>optional</em>) – the names of the variables to include (when ‘None’ then
+all joint variables to target and sample are used). Defaults to None.</p></li>
+<li><p><strong>add_na</strong> (<em>bool</em><em>, </em><em>optional</em>) – whether to call add_na_indicator on the data before constructing
+the matrix.If add_na = True, then the function add_na_indicator is applied,
 i.e. if a column in the DataFrame contains NAs, replace these with 0 or “_NA”, and
 add another column of an indicator variable for which rows were NA.
 If add_na is False, observations with any missing data will be
-omitted from the model (default: True)</p>
-</dd>
-<dt>return_type — whether to return a single matrix (‘one’), or a dict of</dt><dd><p>sample and target matrices</p>
-</dd>
-<dt>return_var_type — whether to return a “dataframe” (pd.dataframe) a “matrix” (np.ndarray)</dt><dd><p>(i.e. only values of the output dataframe), or a “sparse” matrix</p>
-</dd>
-<dt>formula — according to what formula to construct the matrix. If no formula is provided an</dt><dd><p>additive formula is applied. This may be a string or a list of strings
+omitted from the model. Defaults to True.</p></li>
+<li><p><strong>return_type</strong> (<em>str</em><em>, </em><em>optional</em>) – whether to return a single matrix (‘one’), or a dict of
+sample and target matrices. Defaults to “two”.</p></li>
+<li><p><strong>return_var_type</strong> (<em>str</em><em>, </em><em>optional</em>) – whether to return a “dataframe” (pd.dataframe) a “matrix” (np.ndarray)
+(i.e. only values of the output dataframe), or a “sparse” matrix. Defaults to “dataframe”.</p></li>
+<li><p><strong>formula</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – according to what formula to construct the matrix. If no formula is provided an
+additive formula is applied. This may be a string or a list of strings
 representing different parts of the formula that will be concated together.
-Default is None, which will create an additive formula from the aviliable variables.</p>
-</dd>
-<dt>penalty_factor — the penalty used in the glment function in ipw. The penalty</dt><dd><p>should have the same length as the formula list. If not provided,
-assume the same panelty for all variables.</p>
-</dd>
-<dt>one_hot_encoding — whether to encode all factor variables in the model matrix with</dt><dd><p>one_hot_encoding_greater_2. This is recomended in case of using
+Default is None, which will create an additive formula from the aviliable variables. Defaults to None.</p></li>
+<li><p><strong>penalty_factor</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>float</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – the penalty used in the glment function in ipw. The penalty
+should have the same length as the formula list. If not provided,
+assume the same panelty for all variables. Defaults to None.</p></li>
+<li><p><strong>one_hot_encoding</strong> (<em>bool</em><em>, </em><em>optional</em>) – whether to encode all factor variables in the model matrix with
+one_hot_encoding_greater_2. This is recomended in case of using
 LASSO on the data (Default: False).
 one_hot_encoding_greater_2 creates one-hot-encoding for all
 categorical variables with more than 2 categories (i.e. the
 number of columns will be equal to the number of categories),
-and only 1 column for variables with 2 levels (treatment contrast).</p>
+and only 1 column for variables with 2 levels (treatment contrast). Defaults to False.</p></li>
+</ul>
 </dd>
-</dl>
-<p>Returns:
-a dict of:
-1. “model_matrix_columns_names”: columns names of the model matrix
-2. “penalty_factor “: a penalty_factor for each column in the model matrix
-3. “model_matrix” (or: “sample” and “target”): the DataFrames for the sample and target</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl>
+<dt>a dict of:</dt><dd><ol class="arabic simple">
+<li><p>”model_matrix_columns_names”: columns names of the model matrix</p></li>
+<li><p>”penalty_factor “: a penalty_factor for each column in the model matrix</p></li>
+</ol>
+<p>3. “model_matrix” (or: “sample” and “target”): the DataFrames for the sample and target
+(one or two, according to return_type)</p>
 <blockquote>
-<div><dl class="simple">
-<dt>(one or two, according to return_type)</dt><dd><p>If return_sparse=”True” returns a sparse matrix (csc_matrix)</p>
+<div><p>If return_sparse=”True” returns a sparse matrix (csc_matrix)</p>
+</div></blockquote>
 </dd>
 </dl>
-</div></blockquote>
-<p>Examples:
-import pandas as pd
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[ str, Union[List[str], np.ndarray, Union[pd.DataFrame, np.ndarray, csc_matrix], None] ]</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>import pandas as pd
 d = {‘a’: [‘a1’,’a2’,’a1’,’a1’], ‘b’: [‘b1’,’b2’,’b3’,’b3’]}
 df = pd.DataFrame(data=d)</p>
 <p>model_matrix(df)
@@ -425,7 +520,7 @@ df = pd.DataFrame(data=d)</p>
 # {‘model_matrix_columns_names’: [‘a[a1]’, ‘a[a2]’, ‘b[b1]’, ‘b[b2]’, ‘b[b3]’],
 #  ‘penalty_factor’: array([1, 1, 2, 2, 2]),
 #  ‘sample’: &lt;4x5 sparse matrix of type ‘&lt;class ‘numpy.float64’&gt;’
-#   with 8 stored elements in Compressed Sparse Column format&gt;,
+#       with 8 stored elements in Compressed Sparse Column format&gt;,
 #  ‘target’: None}</p>
 <p>model_matrix(df, target = df)
 # {‘model_matrix_columns_names’: [‘b[b1]’, ‘b[b2]’, ‘b[b3]’, ‘a[T.a2]’],
@@ -541,32 +636,41 @@ print(dmatrix(‘C(a, one_hot_encoding_greater_2):C(b, one_hot_encoding_greater_
 
 <dl class="py function">
 <dt class="sig sig-object py" id="balance.util.process_formula">
-<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">process_formula</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">formula</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor_variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/util.html#process_formula"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.process_formula" title="Permalink to this definition">¶</a></dt>
-<dd><p>Process a formula string:
-1. Expand .  notation using dot_expansion function
-2. Remove intercept (if using ipw, it will be added automatically by cvglment)
-3. If factor_variables is not None, one_hot_encoding_greater_2 is applied</p>
-<blockquote>
-<div><p>to factor_variables</p>
-</div></blockquote>
-<p>Arguments:
-formula — A string representing the formula
-variables — list of all variables to include (usually all variables in data)
-factor_variables — list of names of factor variables that we use</p>
-<blockquote>
-<div><p>one_hot_encoding_greater_2 for. Note that these should be also
+<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">process_formula</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">formula</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor_variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/util.html#process_formula"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.process_formula" title="Permalink to this definition">¶</a></dt>
+<dd><dl>
+<dt>Process a formula string:</dt><dd><ol class="arabic simple">
+<li><p>Expand .  notation using dot_expansion function</p></li>
+<li><p>Remove intercept (if using ipw, it will be added automatically by cvglment)</p></li>
+</ol>
+<p>3. If factor_variables is not None, one_hot_encoding_greater_2 is applied
+to factor_variables</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>formula</strong> – A string representing the formula</p></li>
+<li><p><strong>variables</strong> (<em>List</em>) – list of all variables to include (usually all variables in data)</p></li>
+<li><p><strong>factor_variables</strong> – list of names of factor variables that we use
+one_hot_encoding_greater_2 for. Note that these should be also
 part of variables.
 Default is None, in which case no special contrasts are
 applied (using patsy defaults). one_hot_encoding_greater_2
 creates one-hot-encoding for all categorical variables with
 more than 2 categories (i.e. the number of columns will
 be equal to the number of categories), and only 1
-column for variables with 2 levels (treatment contrast).</p>
-</div></blockquote>
-<p>Returns:
-a ModelDesc object to build a model matrix using patsy.dmatrix.</p>
-<p>Examples:
-f1 = process_formula(‘a:(b+aab)’, [‘a’,’b’,’aab’])
+column for variables with 2 levels (treatment contrast).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Exception</strong> – “Not all factor variables are contained in variables”</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>a ModelDesc object to build a model matrix using patsy.dmatrix.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>f1 = process_formula(‘a:(b+aab)’, [‘a’,’b’,’aab’])
 print(f1)
 # ModelDesc(lhs_termlist=[],
 #       rhs_termlist=[Term([EvalFactor(‘a’), EvalFactor(‘b’)]),
@@ -585,41 +689,39 @@ print(f2)
 <span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">qcut</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duplicates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'drop'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/util.html#qcut"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.qcut" title="Permalink to this definition">¶</a></dt>
 <dd><p>Discretize variable into equal-sized buckets based quantiles.
 This is a wrapper to pandas qcut function.</p>
-<p>Arguments:
-s — 1d ndarray or Series.
-q — Number of quantiles (int or float).
-duplicates — whther to drop non unique bin edges or raise error (“raise” or “drop”).</p>
-<blockquote>
-<div><p>Default is “drop”.</p>
-</div></blockquote>
-<p>Returns:
-Seires of type object with intervals.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>s</strong> (<em>_type_</em>) – 1d ndarray or Series.</p></li>
+<li><p><strong>q</strong> (<em>_type_</em>) – Number of quantiles (int or float).</p></li>
+<li><p><strong>duplicates</strong> (<em>str</em><em>, </em><em>optional</em>) – whther to drop non unique bin edges or raise error (“raise” or “drop”).
+Defaults to “drop”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Series of type object with intervals.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="balance.util.quantize">
-<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">quantize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/util.html#quantize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.quantize" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">quantize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/balance/util.html#quantize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.quantize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Cut numeric variables of a DataFrame into quantile buckets</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>transform</strong> (<em>df -- DataFrame to</em>) – </p></li>
-<li><p><strong>(</strong><strong>optional</strong> (<em>q  ---</em>) – None) variables to transform.
-If None, all numeric variables are transformed.</p></li>
-<li><p><strong>default</strong> – None) variables to transform.
-If None, all numeric variables are transformed.</p></li>
-<li><p><strong>(</strong><strong>optional</strong> – <ol class="arabic simple" start="10">
-<li><p>Number of buckets to create for each variable</p></li>
-</ol>
-</p></li>
-<li><p><strong>default</strong> – <ol class="arabic simple" start="10">
-<li><p>Number of buckets to create for each variable</p></li>
-</ol>
-</p></li>
+<li><p><strong>df</strong> (<em>Union</em><em>[</em><em>pd.DataFrame</em><em>, </em><em>pd.Series</em><em>]</em>) – ataFrame to transform</p></li>
+<li><p><strong>q</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of buckets to create for each variable. Defaults to 10.</p></li>
+<li><p><strong>variables</strong> (<em>optional</em>) – variables to transform.
+If None, all numeric variables are transformed. Defaults to None.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>DataFrame after quantization</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>_type_</p>
 </dd>
 </dl>
 </dd></dl>
@@ -629,26 +731,24 @@ If None, all numeric variables are transformed.</p></li>
 <span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">rm_mutual_nas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span></span></span><a class="reference internal" href="_modules/balance/util.html#rm_mutual_nas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.rm_mutual_nas" title="Permalink to this definition">¶</a></dt>
 <dd><p>Remove entries in a position which is na or infinite in any of the arguments</p>
 <p>Ignores args which are None</p>
+<p>can accept array-like or single arraylike argument. Including pandas and numpy arrays.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>*args</strong> – can accept array-like or single arraylike argument. Including pandas and numpy arrays.</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
 <li><p><strong>ValueError</strong> – If args are not array like (see: <code class="xref py py-func docutils literal notranslate"><span class="pre">_is_arraylike()</span></code>)</p></li>
 <li><p><strong>ValueError</strong> – If args include arrays of different lengths.</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><dl class="simple">
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
 <dt>A list with all the original vectors, after removing from them the</dt><dd><p>elements for which there was a missing value in the same position as
 any of the other arrays.</p>
 </dd>
 </dl>
 </p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>List</p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
@@ -709,16 +809,21 @@ rm_mutual_nas(x1,x2, x3, x4, x5,x6,x7,x8)</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="balance.util.row_pairwise_diffs">
-<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">row_pairwise_diffs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/balance/util.html#row_pairwise_diffs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.row_pairwise_diffs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Produce the differences between every pair of rows of df
-:param df – pandas DataFrame:</p>
+<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">row_pairwise_diffs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/balance/util.html#row_pairwise_diffs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.row_pairwise_diffs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce the differences between every pair of rows of df</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pandas DataFrame with differences between all combinations of rows</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>df</strong> (<em>pd.DataFrame</em>) – DataFrame</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>DataFrame with differences between all combinations of rows</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
 </dd>
 </dl>
-<p>Example:
-d = pd.DataFrame({“a”: (1, 2, 3), “b”: (-42, 8, 2)})
+<p class="rubric">Example</p>
+<p>d = pd.DataFrame({“a”: (1, 2, 3), “b”: (-42, 8, 2)})
 row_pairwise_diffs(d)
 #        a   b
 # 0      1 -42

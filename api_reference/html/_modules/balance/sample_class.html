@@ -171,8 +171,7 @@
         <span class="n">check_id_uniqueness</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">standardize_types</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Sample&quot;</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Create a new Sample object.</span>
+        <span class="sd">&quot;&quot;&quot;Create a new Sample object.</span>
 
 <span class="sd">        NOTE that all integer columns will be converted by defaults into floats. This behavior can be turned off</span>
 <span class="sd">        by setting standardize_types argument to False.</span>
@@ -186,20 +185,20 @@
 <span class="sd">        The id_column is stored as a string, even if the input is an integer.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">        df (pd.DataFrame): containing the sample&#39;s data</span>
-<span class="sd">        id_column (Optional, Optional[str]): the column of the df which contains the respondent&#39;s id</span>
-<span class="sd">           (should be unique). Defaults to None.</span>
-<span class="sd">        outcome_columns (Optional, Optional[Union[list, tuple, str]]): names of columns to treat as outcome</span>
-<span class="sd">        weight_column (Optional, Optional[str]): name of column to treat as weight. If not specified, will</span>
-<span class="sd">            be guessed. If not found, will be filled with 1.0.</span>
-<span class="sd">        check_id_uniqueness (Optional, bool): Whether to check if ids are unique. Defaults to True.</span>
-<span class="sd">        standardize_types (Optional, bool): Whether to standardize types. Defaults to True.</span>
-<span class="sd">            Int64/int64 -&gt; float64</span>
-<span class="sd">            Int32/int32 -&gt; float64</span>
-<span class="sd">            string -&gt; object</span>
-<span class="sd">            pandas.NA -&gt; numpy.nan (within each cell)</span>
-<span class="sd">            This is slightly memory intensive (since it copies the data twice),</span>
-<span class="sd">            but helps keep various functions working for both Int64 and Int32 input columns.</span>
+<span class="sd">            df (pd.DataFrame): containing the sample&#39;s data</span>
+<span class="sd">            id_column (Optional, Optional[str]): the column of the df which contains the respondent&#39;s id</span>
+<span class="sd">            (should be unique). Defaults to None.</span>
+<span class="sd">            outcome_columns (Optional, Optional[Union[list, tuple, str]]): names of columns to treat as outcome</span>
+<span class="sd">            weight_column (Optional, Optional[str]): name of column to treat as weight. If not specified, will</span>
+<span class="sd">                be guessed. If not found, will be filled with 1.0.</span>
+<span class="sd">            check_id_uniqueness (Optional, bool): Whether to check if ids are unique. Defaults to True.</span>
+<span class="sd">            standardize_types (Optional, bool): Whether to standardize types. Defaults to True.</span>
+<span class="sd">                Int64/int64 -&gt; float64</span>
+<span class="sd">                Int32/int32 -&gt; float64</span>
+<span class="sd">                string -&gt; object</span>
+<span class="sd">                pandas.NA -&gt; numpy.nan (within each cell)</span>
+<span class="sd">                This is slightly memory intensive (since it copies the data twice),</span>
+<span class="sd">                but helps keep various functions working for both Int64 and Int32 input columns.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Sample: a sample object</span>
@@ -420,9 +419,9 @@
 <span class="sd">        This function returns a new sample.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">        target (Optional[&quot;Sample&quot;]): Second sample object which should be matched.</span>
-<span class="sd">            If None, the set traget of the object is used for matching.</span>
-<span class="sd">        method (str): method for adjustment: cbps, ipw, null, poststratify</span>
+<span class="sd">            target (Optional[&quot;Sample&quot;]): Second sample object which should be matched.</span>
+<span class="sd">                If None, the set traget of the object is used for matching.</span>
+<span class="sd">            method (str): method for adjustment: cbps, ipw, null, poststratify</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Sample: an adjusted Sample object</span>
@@ -463,7 +462,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            weights (Optional[Union[pd.Series, float]]): Seiers of weights to add to sample.</span>
-<span class="sd">            If None or float values, the same weight (or None) will be assigned to all units.</span>
+<span class="sd">                If None or float values, the same weight (or None) will be assigned to all units.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            None, but adapting the Sample weight column to weights</span>
@@ -543,7 +542,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (Sample): A Sample object produces after running :func:`Sample.adjust`.</span>
-<span class="sd">            It should include 3 componants: &quot;unadjusted&quot;, &quot;adjusted&quot;, &quot;target&quot;.</span>
+<span class="sd">                It should include 3 componants: &quot;unadjusted&quot;, &quot;adjusted&quot;, &quot;target&quot;.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            pd.DataFrame: A DataFrame with 3 columns (&quot;unadjusted&quot;, &quot;adjusted&quot;, &quot;target&quot;),</span>
@@ -601,7 +600,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (Sample): A Sample object produces after running :func:`Sample.adjust`.</span>
-<span class="sd">            It should include 3 componants: &quot;unadjusted&quot;, &quot;adjusted&quot;, &quot;target&quot;.</span>
+<span class="sd">                It should include 3 componants: &quot;unadjusted&quot;, &quot;adjusted&quot;, &quot;target&quot;.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            np.float64: relative difference in design effect.</span>
@@ -656,7 +655,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (Sample): A Sample object produces after running :func:`Sample.adjust`.</span>
-<span class="sd">            It should include 3 componants: &quot;unadjusted&quot;, &quot;adjusted&quot;, &quot;target&quot;.</span>
+<span class="sd">                It should include 3 componants: &quot;unadjusted&quot;, &quot;adjusted&quot;, &quot;target&quot;.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            pd.Series: (np.float64) relative difference in outcome weighted standard deviation.</span>
@@ -677,7 +676,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (Sample): A Sample object produces after running :func:`Sample.adjust`.</span>
-<span class="sd">            It should include 3 componants: &quot;unadjusted&quot;, &quot;adjusted&quot;, &quot;target&quot;.</span>
+<span class="sd">                It should include 3 componants: &quot;unadjusted&quot;, &quot;adjusted&quot;, &quot;target&quot;.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">             pd.Series: (np.float64) A series of calculated ratio of variances for each outcome.</span>
@@ -821,7 +820,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            pd.DataFrame: with 3 columns: (&quot;metric&quot;, &quot;val&quot;, &quot;var&quot;),</span>
-<span class="sd">            indicating various tracking metrics on the model.</span>
+<span class="sd">                indicating various tracking metrics on the model.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting computation of diagnostics of the fitting&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_if_adjusted</span><span class="p">()</span>
@@ -1101,9 +1100,9 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Sample: A copy of the original object. If both rows and columns to keep are None,</span>
-<span class="sd">            returns the copied object unchanged.</span>
-<span class="sd">            If some are not None, will update - first the rows - then the columns.</span>
-<span class="sd">            This performs the transformation on both the sameple&#39;s df and its linkes dfs (unadjusted, target).</span>
+<span class="sd">                returns the copied object unchanged.</span>
+<span class="sd">                If some are not None, will update - first the rows - then the columns.</span>
+<span class="sd">                This performs the transformation on both the sameple&#39;s df and its linkes dfs (unadjusted, target).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">rows_to_keep</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">columns_to_keep</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span>
