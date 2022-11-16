@@ -487,6 +487,7 @@
         <span class="p">)</span>
 
         <span class="n">XtXinv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">pinv</span><span class="p">(</span>
+            <span class="c1"># pyre-fixme[16] Undefined attribute [16]: `float` has no attribute `__getitem__`.</span>
             <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">((</span><span class="n">U</span> <span class="o">*</span> <span class="n">design_weights</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">])</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">U</span> <span class="o">*</span> <span class="n">design_weights</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">])</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>

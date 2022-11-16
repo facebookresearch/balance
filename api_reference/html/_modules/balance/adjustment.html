@@ -165,7 +165,6 @@
     <span class="k">return</span> <span class="n">weights</span></div>
 
 
-<span class="c1"># TODO: update docs with type hinting info, and an example</span>
 <div class="viewcode-block" id="default_transformations"><a class="viewcode-back" href="../../balance.adjustment.html#balance.adjustment.default_transformations">[docs]</a><span class="k">def</span> <span class="nf">default_transformations</span><span class="p">(</span>
     <span class="n">dfs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]:</span>
@@ -173,11 +172,11 @@
 <span class="sd">    Apply default transfomations to dfs, i.e.</span>
 <span class="sd">    quantize to numeric columns and fct_lump to non-numeric and boolean</span>
 
-<span class="sd">    Arguments:</span>
-<span class="sd">        dfs --- A list or tuple of dataframes</span>
+<span class="sd">    Args:</span>
+<span class="sd">        dfs (Union[Tuple[pd.DataFrame, ...], List[pd.DataFrame]]): A list or tuple of dataframes</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Dict of transformations</span>
+<span class="sd">        Dict[str, Callable]: Dict of transformations</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">dtypes</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dfs</span><span class="p">:</span>
@@ -195,41 +194,39 @@
     <span class="k">return</span> <span class="n">transformations</span></div>
 
 
-<span class="c1"># TODO: update docs to reflect updated type hinting (e.g.: that transformations can be str or None)</span>
 <div class="viewcode-block" id="apply_transformations"><a class="viewcode-back" href="../../balance.adjustment.html#balance.adjustment.apply_transformations">[docs]</a><span class="k">def</span> <span class="nf">apply_transformations</span><span class="p">(</span>
     <span class="n">dfs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
     <span class="n">transformations</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span>
     <span class="n">drop</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-<span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Apply the transformations specified in transformations to all of the dfs</span>
-
-<span class="sd">    - if a column specified in `transformations` does not exist in the dataframes,</span>
-<span class="sd">      it is added</span>
-<span class="sd">    - if a column is not specified in `transformations`, it is dropped,</span>
-<span class="sd">      unless drop==False</span>
-<span class="sd">    - the dfs are concatenated together before transformations are applied,</span>
-<span class="sd">      so functions like `max` are relative to the column in all dfs</span>
-<span class="sd">    - Cannot transform the same variable twice, or add a variable and then transform it</span>
-<span class="sd">      (i.e. the definition of the added variable should include the transformation)</span>
-<span class="sd">    - if you get a cryptic error about mismatched data types, make sure your</span>
-<span class="sd">      transformations are not being treated as additions because of missing</span>
-<span class="sd">      columns (use `_set_warnings(&quot;DEBUG&quot;)` to check)</span>
-
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Apply the transformations specified in transformations to all of the dfs</span>
+<span class="sd">        - if a column specified in `transformations` does not exist in the dataframes,</span>
+<span class="sd">        it is added</span>
+<span class="sd">        - if a column is not specified in `transformations`, it is dropped,</span>
+<span class="sd">        unless drop==False</span>
+<span class="sd">        - the dfs are concatenated together before transformations are applied,</span>
+<span class="sd">        so functions like `max` are relative to the column in all dfs</span>
+<span class="sd">        - Cannot transform the same variable twice, or add a variable and then transform it</span>
+<span class="sd">        (i.e. the definition of the added variable should include the transformation)</span>
+<span class="sd">        - if you get a cryptic error about mismatched data types, make sure your</span>
+<span class="sd">        transformations are not being treated as additions because of missing</span>
+<span class="sd">        columns (use `_set_warnings(&quot;DEBUG&quot;)` to check)</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        dfs: tuple of pandas DataFrames. The DataFrames on which to operate</span>
-<span class="sd">        transformations: dict. Mapping from column name to function to apply.</span>
+<span class="sd">        dfs (Tuple[pd.DataFrame, ...]): The DataFrames on which to operate</span>
+<span class="sd">        transformations (Union[Dict[str, Callable], str, None]): Mapping from column name to function to apply.</span>
 <span class="sd">            Transformations of existing columns should be specified as functions</span>
 <span class="sd">            of those columns (e.g. `lambda x: x*2`), whereas additions of new</span>
 <span class="sd">            columns should be specified as functions of the DataFrame</span>
 <span class="sd">            (e.g. `lambda x: x.column_a + x.column_b`).</span>
-<span class="sd">        drop: bool (optional, default True). Whether to drop columns which are</span>
-<span class="sd">              not specified in `transformations`</span>
+<span class="sd">        drop (bool, optional): Whether to drop columns which are</span>
+<span class="sd">              not specified in `transformations`. Defaults to True.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        NotImplementedError: When passing an unknown &quot;transformations&quot; argument.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        tuple of pd.DataFrames</span>
-
+<span class="sd">        Tuple[pd.DataFrame, ...]: tuple of pd.DataFrames</span>
 
 <span class="sd">    Examples:</span>
 <span class="sd">        ::</span>
@@ -247,7 +244,9 @@
 <span class="sd">                #  0  5  2</span>
 <span class="sd">                #  1  7  4</span>
 <span class="sd">                #  2  9  6,)</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TODO: change assert to raise</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">),</span> <span class="s2">&quot;&#39;dfs&#39; argument must be a tuple of DataFrames&quot;</span>
     <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span>
         <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">dfs</span>

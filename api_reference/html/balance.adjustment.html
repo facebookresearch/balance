@@ -50,36 +50,44 @@
 <span id="balance-adjustment"></span><h1>balance.adjustment<a class="headerlink" href="#module-balance.adjustment" title="Permalink to this heading">¶</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="balance.adjustment.apply_transformations">
-<span class="sig-prename descclassname"><span class="pre">balance.adjustment.</span></span><span class="sig-name descname"><span class="pre">apply_transformations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dfs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/adjustment.html#apply_transformations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.adjustment.apply_transformations" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply the transformations specified in transformations to all of the dfs</p>
-<ul class="simple">
-<li><p>if a column specified in <cite>transformations</cite> does not exist in the dataframes,
-it is added</p></li>
-<li><p>if a column is not specified in <cite>transformations</cite>, it is dropped,
-unless drop==False</p></li>
-<li><p>the dfs are concatenated together before transformations are applied,
-so functions like <cite>max</cite> are relative to the column in all dfs</p></li>
-<li><p>Cannot transform the same variable twice, or add a variable and then transform it
-(i.e. the definition of the added variable should include the transformation)</p></li>
-<li><p>if you get a cryptic error about mismatched data types, make sure your
-transformations are not being treated as additions because of missing
-columns (use <cite>_set_warnings(“DEBUG”)</cite> to check)</p></li>
+<span class="sig-prename descclassname"><span class="pre">balance.adjustment.</span></span><span class="sig-name descname"><span class="pre">apply_transformations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dfs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/adjustment.html#apply_transformations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.adjustment.apply_transformations" title="Permalink to this definition">¶</a></dt>
+<dd><dl>
+<dt>Apply the transformations specified in transformations to all of the dfs</dt><dd><ul class="simple">
+<li><p>if a column specified in <cite>transformations</cite> does not exist in the dataframes,</p></li>
 </ul>
+<p>it is added
+- if a column is not specified in <cite>transformations</cite>, it is dropped,
+unless drop==False
+- the dfs are concatenated together before transformations are applied,
+so functions like <cite>max</cite> are relative to the column in all dfs
+- Cannot transform the same variable twice, or add a variable and then transform it
+(i.e. the definition of the added variable should include the transformation)
+- if you get a cryptic error about mismatched data types, make sure your
+transformations are not being treated as additions because of missing
+columns (use <cite>_set_warnings(“DEBUG”)</cite> to check)</p>
+</dd>
+</dl>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>dfs</strong> – tuple of pandas DataFrames. The DataFrames on which to operate</p></li>
-<li><p><strong>transformations</strong> – dict. Mapping from column name to function to apply.
+<li><p><strong>dfs</strong> (<em>Tuple</em><em>[</em><em>pd.DataFrame</em><em>, </em><em>...</em><em>]</em>) – The DataFrames on which to operate</p></li>
+<li><p><strong>transformations</strong> (<em>Union</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Callable</em><em>]</em><em>, </em><em>str</em><em>, </em><em>None</em><em>]</em>) – Mapping from column name to function to apply.
 Transformations of existing columns should be specified as functions
 of those columns (e.g. <cite>lambda x: x*2</cite>), whereas additions of new
 columns should be specified as functions of the DataFrame
 (e.g. <cite>lambda x: x.column_a + x.column_b</cite>).</p></li>
-<li><p><strong>drop</strong> – bool (optional, default True). Whether to drop columns which are
-not specified in <cite>transformations</cite></p></li>
+<li><p><strong>drop</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to drop columns which are
+not specified in <cite>transformations</cite>. Defaults to True.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>tuple of pd.DataFrames</p>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>NotImplementedError</strong> – When passing an unknown “transformations” argument.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple of pd.DataFrames</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tuple[pd.DataFrame, …]</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
@@ -107,10 +115,13 @@ not specified in <cite>transformations</cite></p></li>
 quantize to numeric columns and fct_lump to non-numeric and boolean</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>dataframes</strong> (<em>dfs --- A list</em><em> or </em><em>tuple of</em>) – </p>
+<dd class="field-odd"><p><strong>dfs</strong> (<em>Union</em><em>[</em><em>Tuple</em><em>[</em><em>pd.DataFrame</em><em>, </em><em>...</em><em>]</em><em>, </em><em>List</em><em>[</em><em>pd.DataFrame</em><em>]</em><em>]</em>) – A list or tuple of dataframes</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Dict of transformations</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, Callable]</p>
 </dd>
 </dl>
 </dd></dl>
