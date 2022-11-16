@@ -18,16 +18,18 @@ import pandas as pd
 def _assert_frame_equal_lazy(
     x: pd.DataFrame, y: pd.DataFrame, lazy: bool = True
 ) -> None:
-    """
-    Wrapper around pd.testing.assert_frame_equal, which transforms the
+    """Wrapper around pd.testing.assert_frame_equal, which transforms the
     dataframes to ignore some errors.
 
-    Ignores:
-        - order of columns
+    Ignores order of columns
 
     Args:
-        x, y (pd.DataFrame): DataFrames to compare
-        lazy (bool): Should Ignores be applied. Defaults to True.
+        x (pd.DataFrame): DataFrame to compare
+        y (pd.DataFrame): DataFrame to compare
+        lazy (bool, optional): Should Ignores be applied. Defaults to True.
+
+    Returns:
+        None.
     """
     if lazy:
         x = x.sort_index(axis=0).sort_index(axis=1)
@@ -45,8 +47,9 @@ def _assert_index_equal_lazy(x: pd.Index, y: pd.Index, lazy: bool = True) -> Non
         - order of entries
 
     Args:
-        x, y (pd.DataFrame): DataFrames to compare
-        lazy (bool): Should Ignores be applied. Defaults to True.
+        x (pd.Index): Index to compare
+        y (pd.Index): Index to compare
+        lazy (bool, optional): Should Ignores be applied. Defaults to True.
     """
     if lazy:
         x = x.sort_values()
