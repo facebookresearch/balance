@@ -37,6 +37,17 @@ def _check_weighting_methods_input(
     """
     This is a helper function fo weighting methods functions.
     It checks the inputs are of the correct type and shapes.
+
+    Args:
+        df (pd.DataFrame):
+        weights (pd.Series):
+        object_name (str):
+
+    Raises:
+        TypeError: if df is not a DataFrame
+        TypeError: if weights is not a pd.Series
+        ValueError: {object_name}_weights must be the same length as {object_name}_df
+        ValueError: {object_name}_df index must be the same as {object_name}_weights index
     """
     if type(df) != pd.DataFrame:
         raise TypeError(f"{object_name}_df must be a pandas DataFrame, is {type(df)}")
@@ -104,22 +115,25 @@ def guess_id_column(dataset: pd.DataFrame, column_name: Optional[str] = None):
 def add_na_indicator(
     df: pd.DataFrame, replace_val_obj: str = "_NA", replace_val_num: int = 0
 ) -> pd.DataFrame:
-    """
-    If a column in the DataFrame contains NAs, replace these with 0 for
+    """If a column in the DataFrame contains NAs, replace these with 0 for
     numerical columns or "_NA" for non-numerical columns,
     and add another column of an indicator variable for which rows were NA.
 
-    Arguments:
-        df --  The input DataFrame
-        replace_val_obj -- The value to put insteasd of nulls for object columns (default "_NA")
-        replace_val_num -- The value to put insteasd of nulls for numeric columns (default 0)
+    Args:
+        df (pd.DataFrame): The input DataFrame
+        replace_val_obj (str, optional): The value to put insteasd of nulls for object columns. Defaults to "_NA".
+        replace_val_num (int, optional): The value to put insteasd of nulls for numeric columns. Defaults to 0.
+
+    Raises:
+        Exception: Can't add NA indicator to DataFrame which contains columns which start with '_is_na_'
+        Exception: Can't add NA indicator to columns containing NAs and the value '{replace_val_obj}',
 
     Returns:
-        New dataframe with additional columns
+        pd.DataFrame: New dataframe with additional columns
     """
-
     already_na_cols = [c for c in df.columns if c.startswith("_is_na_")]
     if len(already_na_cols) > 0:
+        # TODO: change to ValueError?!
         raise Exception(
             "Can't add NA indicator to DataFrame which contains"
             f"columns which start with '_is_na_': {already_na_cols}"
@@ -137,6 +151,7 @@ def add_na_indicator(
 
     for c in list(na_cols):
         if replace_val_obj in set(df[c]):
+            # TODO: change to ValueError?!
             raise Exception(
                 f"Can't add NA indicator to columns containing NAs and the value '{replace_val_obj}', "
                 f"i.e. column: {c}"
@@ -157,13 +172,16 @@ def drop_na_rows(
     """
     Drop rows with missing values in sample_df and their corresponding weights, and the same in target_df.
 
-    Arguments:
-        sample_df --- (pandas dataframe) a dataframe representing the sample or target
-        sample_weights --- (pandas series) design weights for sample or target
-        name --- name of object checked (used for warnings prints)
+    Args:
+        sample_df (pd.DataFrame): a dataframe representing the sample or target
+        sample_weights (pd.Series): design weights for sample or target
+        name (str, optional): name of object checked (used for warnings prints). Defaults to "sample object".
+
+    Raises:
+        ValueError: Dropping rows led to empty {name}. Maybe try na_action='add_indicator'?
 
     Returns:
-        sample_df, sample_weights without NAs rows
+        Tuple[pd.DataFrame, pd.Series]: sample_df, sample_weights without NAs rows
     """
     sample_n = sample_df.shape[0]
     sample_df = sample_df.dropna()
@@ -180,24 +198,26 @@ def drop_na_rows(
 
 
 def formula_generator(variables, formula_type: str = "additive") -> str:
-    """
-        Create formula to build the model matrix
+    """Create formula to build the model matrix
         Default is additive formula.
+    Args:
+        variables: list with names of variables (as strings) to combine into a formula
+        formula_type (str, optional): how to construct the formula. Currently only "additive" is supported.. Defaults to "additive".
 
-        Arguments:
-        variables -- list with names of variables (as strings) to combine into a formula
-        formula_type -- how to construct the formula. Currently only "additive" is supported.
+    Raises:
+        Exception: "This formula type is not supported.'" "Please provide a string formula"tion_
 
-        Returns:
-        A string representing the fomula
+    Returns:
+        str: A string representing the fomula
 
-    `    Examples:
-        formula_generator(['a','b','c']) returns 'c + b + a'
+    Examples:
+        formula_generator(['a','b','c'])
+        # returns 'c + b + a'
     """
-
     if formula_type == "additive":
         rhs_formula = " + ".join(sorted(variables, reverse=True))
     else:
+        # TODO ValueError?!
         raise Exception(
             "This formula type is not supported.'" "Please provide a string formula"
         )
@@ -206,48 +226,51 @@ def formula_generator(variables, formula_type: str = "additive") -> str:
     return rhs_formula
 
 
-def dot_expansion(formula, variables):
-    """
-    Build a formula string by replacing "." with "summing" all the variables,
+def dot_expansion(formula, variables: List):
+    """Build a formula string by replacing "." with "summing" all the variables,
     If no dot appears, returns the formula as is.
 
     This function is named for the 'dot' operators in R, where a formula given
     as ' ~ .' means "use all variables in dataframe.
 
-    Arguments:
-        formula --- The formula to expand.
-        variables --- List of all variables in the dataframe we build the formula for.
+    Args:
+        formula: The formula to expand.
+        variables (List): List of all variables in the dataframe we build the formula for.
+
+    Raises:
+        Exception: "Variables should not be empty. Please provide a list of strings."
+        Exception:  "Variables should be a list of strings and have to be included."
 
     Returns:
-    A string formula replacing the '.'' with all variables in variables.
-    If no '.' is present, then the original formula is returned as is.
+        A string formula replacing the '.'' with all variables in variables.
+        If no '.' is present, then the original formula is returned as is.
 
     Examples:
+        dot_expansion('.', ['a','b','c','d']) # (a+b+c+d)
+        dot_expansion('b:(. - a)', ['a','b','c','d']) # b:((a+b+c+d) - a)
+        dot_expansion('a*b', ['a','b','c','d']) # a*b
+        dot_expansion('.', None) # Raise error
 
-    dot_expansion('.', ['a','b','c','d']) # (a+b+c+d)
-    dot_expansion('b:(. - a)', ['a','b','c','d']) # b:((a+b+c+d) - a)
-    dot_expansion('a*b', ['a','b','c','d']) # a*b
-    dot_expansion('.', None) # Raise error
-
-    import pandas as pd
-    d = {'a': ['a1','a2','a1','a1'], 'b': ['b1','b2','b3','b3'],
-                'c': ['c1','c1','c2','c1'], 'd':['d1','d1','d2','d3']}
-    df = pd.DataFrame(data=d)
-    dot_expansion('.', df) # Raise error
-    dot_expansion('.', list(df.columns)) # (a+b+c+d)
+        import pandas as pd
+        d = {'a': ['a1','a2','a1','a1'], 'b': ['b1','b2','b3','b3'],
+                    'c': ['c1','c1','c2','c1'], 'd':['d1','d1','d2','d3']}
+        df = pd.DataFrame(data=d)
+        dot_expansion('.', df) # Raise error
+        dot_expansion('.', list(df.columns)) # (a+b+c+d)
     """
     if variables is None:
+        # TODO: TypeError?
         raise Exception(
             "Variables should not be empty. Please provide a list of strings."
         )
 
     if not isinstance(variables, list):
+        # TODO: TypeError?
         raise Exception(
             "Variables should be a list of strings and have to be included."
             "Please provide a list of your variables. If you would like to use all variables in"
             "a dataframe, insert variables = list(df.columns)"
         )
-
     if formula.find(".") == -1:
         rhs = formula
     else:
@@ -364,47 +387,50 @@ class one_hot_encoding_greater_2:
         return self.code_with_intercept(levels)
 
 
-def process_formula(formula, variables, factor_variables=None):
-    """
-    Process a formula string:
-    1. Expand .  notation using dot_expansion function
-    2. Remove intercept (if using ipw, it will be added automatically by cvglment)
-    3. If factor_variables is not None, one_hot_encoding_greater_2 is applied
-       to factor_variables
+def process_formula(formula, variables: List, factor_variables=None):
+    """Process a formula string:
+        1. Expand .  notation using dot_expansion function
+        2. Remove intercept (if using ipw, it will be added automatically by cvglment)
+        3. If factor_variables is not None, one_hot_encoding_greater_2 is applied
+        to factor_variables
 
-    Arguments:
-    formula --- A string representing the formula
-    variables --- list of all variables to include (usually all variables in data)
-    factor_variables --- list of names of factor variables that we use
-                         one_hot_encoding_greater_2 for. Note that these should be also
-                         part of variables.
-                         Default is None, in which case no special contrasts are
-                         applied (using patsy defaults). one_hot_encoding_greater_2
-                         creates one-hot-encoding for all categorical variables with
-                         more than 2 categories (i.e. the number of columns will
-                         be equal to the number of categories), and only 1
-                         column for variables with 2 levels (treatment contrast).
+
+    Args:
+        formula: A string representing the formula
+        variables (List): list of all variables to include (usually all variables in data)
+        factor_variables: list of names of factor variables that we use
+            one_hot_encoding_greater_2 for. Note that these should be also
+            part of variables.
+            Default is None, in which case no special contrasts are
+            applied (using patsy defaults). one_hot_encoding_greater_2
+            creates one-hot-encoding for all categorical variables with
+            more than 2 categories (i.e. the number of columns will
+            be equal to the number of categories), and only 1
+            column for variables with 2 levels (treatment contrast).
+
+    Raises:
+        Exception: "Not all factor variables are contained in variables"
 
     Returns:
-    a ModelDesc object to build a model matrix using patsy.dmatrix.
+        a ModelDesc object to build a model matrix using patsy.dmatrix.
 
     Examples:
-    f1 = process_formula('a:(b+aab)', ['a','b','aab'])
-    print(f1)
-    # ModelDesc(lhs_termlist=[],
-    #       rhs_termlist=[Term([EvalFactor('a'), EvalFactor('b')]),
-    #                     Term([EvalFactor('a'), EvalFactor('aab')])])
-    f2 = process_formula('a:(b+aab)', ['a','b','aab'], ['a','b'])
-    print(f2)
-    # ModelDesc(lhs_termlist=[],
-    #       rhs_termlist=[Term([EvalFactor('C(a, one_hot_encoding_greater_2)'),
-    #                           EvalFactor('C(b, one_hot_encoding_greater_2)')]),
-    #                     Term([EvalFactor('C(a, one_hot_encoding_greater_2)'),
-    #                           EvalFactor('aab')])])
+        f1 = process_formula('a:(b+aab)', ['a','b','aab'])
+        print(f1)
+        # ModelDesc(lhs_termlist=[],
+        #       rhs_termlist=[Term([EvalFactor('a'), EvalFactor('b')]),
+        #                     Term([EvalFactor('a'), EvalFactor('aab')])])
+        f2 = process_formula('a:(b+aab)', ['a','b','aab'], ['a','b'])
+        print(f2)
+        # ModelDesc(lhs_termlist=[],
+        #       rhs_termlist=[Term([EvalFactor('C(a, one_hot_encoding_greater_2)'),
+        #                           EvalFactor('C(b, one_hot_encoding_greater_2)')]),
+        #                     Term([EvalFactor('C(a, one_hot_encoding_greater_2)'),
+        #                           EvalFactor('aab')])])
     """
-
     # Check all factor variables are in variables:
     if (factor_variables is not None) and (not set(factor_variables) <= set(variables)):
+        # TODO: ValueError?!
         raise Exception("Not all factor variables are contained in variables")
 
     formula = dot_expansion(formula, variables)
@@ -427,16 +453,18 @@ def process_formula(formula, variables, factor_variables=None):
 
 
 def build_model_matrix(
-    df, formula: str = ".", factor_variables=None, return_sparse: bool = False
+    df: pd.DataFrame,
+    formula: str = ".",
+    factor_variables: Optional[List] = None,
+    return_sparse: bool = False,
 ) -> Dict[str, Any]:
-    """
-    Build a model matrix from a formula (using patsy.dmatrix)
+    """Build a model matrix from a formula (using patsy.dmatrix)
 
-    Arguments:
-    df --- The data from which to create the model matrix (pandas dataframe)
-    formula --- a string representing the formula to use for building the model matrix.
-                Default is additive formula with all variables in df
-    factor_variables --- list of names of factor variables that we use
+    Args:
+        df (pd.DataFrame): The data from which to create the model matrix (pandas dataframe)
+        formula (str, optional): a string representing the formula to use for building the model matrix.
+                Default is additive formula with all variables in df. Defaults to ".".
+        factor_variables (LisOptional[List]t, optional): list of names of factor variables that we use
                          one_hot_encoding_greater_2 for.
                          Default is None, in which case no special contrasts are applied
                          (uses patsy defaults).
@@ -444,62 +472,67 @@ def build_model_matrix(
                          categorical variables with more than 2 categories (i.e. the
                          number of columns will be equal to the number of categories), and only 1
                          column for variables with 2 levels (treatment contrast).
-    return_sparse --- whether to return a sprse matrix using scipy.sparse.csc_matrix (Default: False)
+        return_sparse (bool, optional): whether to return a sprse matrix using scipy.sparse.csc_matrix. Defaults to False.
+
+    Raises:
+        Exception: "Variable names cannot contain characters '[' or ']'"
+        Exception: "Not all factor variables are contained in df"
 
     Returns:
-    A dictionary of 2 elements:
-    1. model_matrix - this is a pd dataframe or a csc_matrix (depends on return_sparse), ordered by columns names
-    2. model_matrix_columns - A list of the columns names of model_matrix
-       (We include model_matrix_columns as a separate argument since if we return a sparse X_matrix,
-       it doesn't have a columns names argument and these need to be kept separately,
-       see here:
-       https://stackoverflow.com/questions/35086940/how-can-i-give-row-and-column-names-to-scipys-csr-matrix.)
+        Dict[str, Any]:     A dictionary of 2 elements:
+            1. model_matrix - this is a pd dataframe or a csc_matrix (depends on return_sparse), ordered by columns names
+            2. model_matrix_columns - A list of the columns names of model_matrix
+            (We include model_matrix_columns as a separate argument since if we return a sparse X_matrix,
+            it doesn't have a columns names argument and these need to be kept separately,
+            see here:
+            https://stackoverflow.com/questions/35086940/how-can-i-give-row-and-column-names-to-scipys-csr-matrix.)
 
     Examples:
-    import pandas as pd
-    d = {'a': ['a1','a2','a1','a1'], 'b': ['b1','b2','b3','b3']}
-    df = pd.DataFrame(data=d)
+        import pandas as pd
+        d = {'a': ['a1','a2','a1','a1'], 'b': ['b1','b2','b3','b3']}
+        df = pd.DataFrame(data=d)
 
-    print(build_model_matrix(df, 'a'))
-    # {'model_matrix':    a[a1]  a[a2]
-    # 0    1.0    0.0
-    # 1    0.0    1.0
-    # 2    1.0    0.0
-    # 3    1.0    0.0,
-    # 'model_matrix_columns': ['a[a1]', 'a[a2]']}
-
-
-    print(build_model_matrix(df, '.'))
-    # {'model_matrix':    a[a1]  a[a2]  b[T.b2]  b[T.b3]
-    # 0    1.0    0.0      0.0      0.0
-    # 1    0.0    1.0      1.0      0.0
-    # 2    1.0    0.0      0.0      1.0
-    # 3    1.0    0.0      0.0      1.0,
-    # 'model_matrix_columns': ['a[a1]', 'a[a2]', 'b[T.b2]', 'b[T.b3]']}
+        print(build_model_matrix(df, 'a'))
+        # {'model_matrix':    a[a1]  a[a2]
+        # 0    1.0    0.0
+        # 1    0.0    1.0
+        # 2    1.0    0.0
+        # 3    1.0    0.0,
+        # 'model_matrix_columns': ['a[a1]', 'a[a2]']}
 
 
-    print(build_model_matrix(df, '.', factor_variables=['a']))
-    # {'model_matrix':    C(a, one_hot_encoding_greater_2)[a2]  b[T.b2]  b[T.b3]
-    # 0                                0.0      0.0      0.0
-    # 1                                1.0      1.0      0.0
-    # 2                                0.0      0.0      1.0
-    # 3                                0.0      0.0      1.0,
-    # 'model_matrix_columns': ['C(a, one_hot_encoding_greater_2)[a2]', 'b[T.b2]', 'b[T.b3]']}
+        print(build_model_matrix(df, '.'))
+        # {'model_matrix':    a[a1]  a[a2]  b[T.b2]  b[T.b3]
+        # 0    1.0    0.0      0.0      0.0
+        # 1    0.0    1.0      1.0      0.0
+        # 2    1.0    0.0      0.0      1.0
+        # 3    1.0    0.0      0.0      1.0,
+        # 'model_matrix_columns': ['a[a1]', 'a[a2]', 'b[T.b2]', 'b[T.b3]']}
 
 
-    print(build_model_matrix(df, 'a', return_sparse=True))
-    # {'model_matrix': <4x2 sparse matrix of type '<class 'numpy.float64'>'
-    # with 4 stored elements in Compressed Sparse Column format>, 'model_matrix_columns': ['a[a1]', 'a[a2]']}
-    print(build_model_matrix(df, 'a', return_sparse=True)["model_matrix"].toarray())
-    # [[1. 0.]
-    # [0. 1.]
-    # [1. 0.]
-    # [1. 0.]]
+        print(build_model_matrix(df, '.', factor_variables=['a']))
+        # {'model_matrix':    C(a, one_hot_encoding_greater_2)[a2]  b[T.b2]  b[T.b3]
+        # 0                                0.0      0.0      0.0
+        # 1                                1.0      1.0      0.0
+        # 2                                0.0      0.0      1.0
+        # 3                                0.0      0.0      1.0,
+        # 'model_matrix_columns': ['C(a, one_hot_encoding_greater_2)[a2]', 'b[T.b2]', 'b[T.b3]']}
+
+
+        print(build_model_matrix(df, 'a', return_sparse=True))
+        # {'model_matrix': <4x2 sparse matrix of type '<class 'numpy.float64'>'
+        # with 4 stored elements in Compressed Sparse Column format>, 'model_matrix_columns': ['a[a1]', 'a[a2]']}
+        print(build_model_matrix(df, 'a', return_sparse=True)["model_matrix"].toarray())
+        # [[1. 0.]
+        # [0. 1.]
+        # [1. 0.]
+        # [1. 0.]]
     """
     variables = list(df.columns)
 
     bracket_variables = [v for v in variables if ("[" in v) or ("]" in v)]
     if len(bracket_variables) > 0:
+        # TODO: ValueError?
         raise Exception(
             "Variable names cannot contain characters '[' or ']'"
             f"because patsy uses them to denote one-hot encoded categoricals: ({bracket_variables})"
@@ -508,6 +541,7 @@ def build_model_matrix(
     # Check all factor variables are in variables:
     if factor_variables is not None:
         if not (set(factor_variables) <= set(variables)):
+            # TODO: ValueError?
             raise Exception("Not all factor variables are contained in df")
 
     model_desc = process_formula(formula, variables, factor_variables)
@@ -533,12 +567,23 @@ def _prepare_input_model_matrix(
     variables=None,
     add_na: bool = True,
 ) -> Dict[str, Any]:
-    """
-    Helper function to model_matrix. Prepare and check input of sample and target:
+    """Helper function to model_matrix. Prepare and check input of sample and target:
         - Choose joint variables to sample and target (or by given vairables)
         - Extract sample and target dataframes
         - Concat dataframes together
         - Add na indicator if required.
+
+    Args:
+        sample (_type_): TODO
+        target (_type_, optional): TODO. Defaults to None.
+        variables (_type_, optional): TODO. Defaults to None.
+        add_na (bool, optional): TODO. Defaults to True.
+
+    Raises:
+        Exception: "Variable names cannot contain characters '[' or ']'"
+
+    Returns:
+        Dict[str, Any]: TODO
     """
     variables = choose_variables(sample, target, variables=variables)
 
@@ -587,148 +632,149 @@ def model_matrix(
 ) -> Dict[
     str, Union[List[str], np.ndarray, Union[pd.DataFrame, np.ndarray, csc_matrix], None]
 ]:
-    """
-    Create a model matrix from a sample (and target).
+    """Create a model matrix from a sample (and target).
     The default is to use an additive formula for all variables (or the ones specified).
     Can also create a custom model matrix if a formula is provided.
 
-    Arguments:
-    sample, target --- The Samples from which to create the model matrix
-    variables --- the names of the variables to include (default is 'None', i.e.
-                  all joint variables to target and sample are used)
-    add_na --- whether to call add_na_indicator on the data before constructing
-               the matrix.If add_na = True, then the function add_na_indicator is applied,
-               i.e. if a column in the DataFrame contains NAs, replace these with 0 or "_NA", and
-               add another column of an indicator variable for which rows were NA.
-               If add_na is False, observations with any missing data will be
-               omitted from the model (default: True)
-    return_type --- whether to return a single matrix ('one'), or a dict of
-                    sample and target matrices
-    return_var_type --- whether to return a "dataframe" (pd.dataframe) a "matrix" (np.ndarray)
-                        (i.e. only values of the output dataframe), or a "sparse" matrix
-    formula --- according to what formula to construct the matrix. If no formula is provided an
-                additive formula is applied. This may be a string or a list of strings
-                representing different parts of the formula that will be concated together.
-                Default is None, which will create an additive formula from the aviliable variables.
-    penalty_factor --- the penalty used in the glment function in ipw. The penalty
-                       should have the same length as the formula list. If not provided,
-                       assume the same panelty for all variables.
-    one_hot_encoding --- whether to encode all factor variables in the model matrix with
-                         one_hot_encoding_greater_2. This is recomended in case of using
-                         LASSO on the data (Default: False).
-                         one_hot_encoding_greater_2 creates one-hot-encoding for all
-                         categorical variables with more than 2 categories (i.e. the
-                         number of columns will be equal to the number of categories),
-                         and only 1 column for variables with 2 levels (treatment contrast).
+    Args:
+        sample (Sample): The Samples from which to create the model matrix
+        target (Sample, optional): See sample. Defaults to None.
+        variables (_type_, optional): the names of the variables to include (when 'None' then
+            all joint variables to target and sample are used). Defaults to None.
+        add_na (bool, optional): whether to call add_na_indicator on the data before constructing
+            the matrix.If add_na = True, then the function add_na_indicator is applied,
+            i.e. if a column in the DataFrame contains NAs, replace these with 0 or "_NA", and
+            add another column of an indicator variable for which rows were NA.
+            If add_na is False, observations with any missing data will be
+            omitted from the model. Defaults to True.
+        return_type (str, optional): whether to return a single matrix ('one'), or a dict of
+            sample and target matrices. Defaults to "two".
+        return_var_type (str, optional): whether to return a "dataframe" (pd.dataframe) a "matrix" (np.ndarray)
+            (i.e. only values of the output dataframe), or a "sparse" matrix. Defaults to "dataframe".
+        formula (Optional[List[str]], optional): according to what formula to construct the matrix. If no formula is provided an
+            additive formula is applied. This may be a string or a list of strings
+            representing different parts of the formula that will be concated together.
+            Default is None, which will create an additive formula from the aviliable variables. Defaults to None.
+        penalty_factor (Optional[List[float]], optional): the penalty used in the glment function in ipw. The penalty
+            should have the same length as the formula list. If not provided,
+            assume the same panelty for all variables. Defaults to None.
+        one_hot_encoding (bool, optional): whether to encode all factor variables in the model matrix with
+            one_hot_encoding_greater_2. This is recomended in case of using
+            LASSO on the data (Default: False).
+            one_hot_encoding_greater_2 creates one-hot-encoding for all
+            categorical variables with more than 2 categories (i.e. the
+            number of columns will be equal to the number of categories),
+            and only 1 column for variables with 2 levels (treatment contrast). Defaults to False.
 
     Returns:
-    a dict of:
-    1. "model_matrix_columns_names": columns names of the model matrix
-    2. "penalty_factor ": a penalty_factor for each column in the model matrix
-    3. "model_matrix" (or: "sample" and "target"): the DataFrames for the sample and target
-       (one or two, according to return_type)
-        If return_sparse="True" returns a sparse matrix (csc_matrix)
+        Dict[ str, Union[List[str], np.ndarray, Union[pd.DataFrame, np.ndarray, csc_matrix], None] ]:
+            a dict of:
+                1. "model_matrix_columns_names": columns names of the model matrix
+                2. "penalty_factor ": a penalty_factor for each column in the model matrix
+                3. "model_matrix" (or: "sample" and "target"): the DataFrames for the sample and target
+                (one or two, according to return_type)
+                    If return_sparse="True" returns a sparse matrix (csc_matrix)
 
     Examples:
-    import pandas as pd
-    d = {'a': ['a1','a2','a1','a1'], 'b': ['b1','b2','b3','b3']}
-    df = pd.DataFrame(data=d)
+        import pandas as pd
+        d = {'a': ['a1','a2','a1','a1'], 'b': ['b1','b2','b3','b3']}
+        df = pd.DataFrame(data=d)
 
-    model_matrix(df)
-    # {'model_matrix_columns_names': ['b[b1]', 'b[b2]', 'b[b3]', 'a[T.a2]'],
-    #  'penalty_factor': array([1, 1, 1, 1]),
-    #  'sample':    b[b1]  b[b2]  b[b3]  a[T.a2]
-    #  0    1.0    0.0    0.0      0.0
-    #  1    0.0    1.0    0.0      1.0
-    #  2    0.0    0.0    1.0      0.0
-    #  3    0.0    0.0    1.0      0.0,
-    #  'target': None}
+        model_matrix(df)
+        # {'model_matrix_columns_names': ['b[b1]', 'b[b2]', 'b[b3]', 'a[T.a2]'],
+        #  'penalty_factor': array([1, 1, 1, 1]),
+        #  'sample':    b[b1]  b[b2]  b[b3]  a[T.a2]
+        #  0    1.0    0.0    0.0      0.0
+        #  1    0.0    1.0    0.0      1.0
+        #  2    0.0    0.0    1.0      0.0
+        #  3    0.0    0.0    1.0      0.0,
+        #  'target': None}
 
-    model_matrix(df, formula = 'a*b')
-    # {'model_matrix_columns_names': ['a[a1]',
-    #   'a[a2]',
-    #   'b[T.b2]',
-    #   'b[T.b3]',
-    #   'a[T.a2]:b[T.b2]',
-    #   'a[T.a2]:b[T.b3]'],
-    #  'penalty_factor': array([1, 1, 1, 1, 1, 1]),
-    #  'sample':    a[a1]  a[a2]  b[T.b2]  b[T.b3]  a[T.a2]:b[T.b2]  a[T.a2]:b[T.b3]
-    #  0    1.0    0.0      0.0      0.0              0.0              0.0
-    #  1    0.0    1.0      1.0      0.0              1.0              0.0
-    #  2    1.0    0.0      0.0      1.0              0.0              0.0
-    #  3    1.0    0.0      0.0      1.0              0.0              0.0,
-    #  'target': None}
+        model_matrix(df, formula = 'a*b')
+        # {'model_matrix_columns_names': ['a[a1]',
+        #   'a[a2]',
+        #   'b[T.b2]',
+        #   'b[T.b3]',
+        #   'a[T.a2]:b[T.b2]',
+        #   'a[T.a2]:b[T.b3]'],
+        #  'penalty_factor': array([1, 1, 1, 1, 1, 1]),
+        #  'sample':    a[a1]  a[a2]  b[T.b2]  b[T.b3]  a[T.a2]:b[T.b2]  a[T.a2]:b[T.b3]
+        #  0    1.0    0.0      0.0      0.0              0.0              0.0
+        #  1    0.0    1.0      1.0      0.0              1.0              0.0
+        #  2    1.0    0.0      0.0      1.0              0.0              0.0
+        #  3    1.0    0.0      0.0      1.0              0.0              0.0,
+        #  'target': None}
 
-    model_matrix(df, formula = ['a','b'], penalty_factor=[1,2])
-    # {'model_matrix_columns_names': ['a[a1]', 'a[a2]', 'b[b1]', 'b[b2]', 'b[b3]'],
-    #  'penalty_factor': array([1, 1, 2, 2, 2]),
-    #  'sample':    a[a1]  a[a2]  b[b1]  b[b2]  b[b3]
-    #  0    1.0    0.0    1.0    0.0    0.0
-    #  1    0.0    1.0    0.0    1.0    0.0
-    #  2    1.0    0.0    0.0    0.0    1.0
-    #  3    1.0    0.0    0.0    0.0    1.0,
-    #  'target': None}
+        model_matrix(df, formula = ['a','b'], penalty_factor=[1,2])
+        # {'model_matrix_columns_names': ['a[a1]', 'a[a2]', 'b[b1]', 'b[b2]', 'b[b3]'],
+        #  'penalty_factor': array([1, 1, 2, 2, 2]),
+        #  'sample':    a[a1]  a[a2]  b[b1]  b[b2]  b[b3]
+        #  0    1.0    0.0    1.0    0.0    0.0
+        #  1    0.0    1.0    0.0    1.0    0.0
+        #  2    1.0    0.0    0.0    0.0    1.0
+        #  3    1.0    0.0    0.0    0.0    1.0,
+        #  'target': None}
 
-    model_matrix(df, formula = ['a','b'], penalty_factor=[1,2], one_hot_encoding=True)
-    # {'model_matrix_columns_names': ['C(a, one_hot_encoding_greater_2)[a2]',
-    #   'C(b, one_hot_encoding_greater_2)[b1]',
-    #   'C(b, one_hot_encoding_greater_2)[b2]',
-    #   'C(b, one_hot_encoding_greater_2)[b3]'],
-    #  'penalty_factor': array([1, 2, 2, 2]),
-    #  'sample':    C(a, one_hot_encoding_greater_2)[a2]  ...  C(b, one_hot_encoding_greater_2)[b3]
-    #  0                                0.0  ...                                0.0
-    #  1                                1.0  ...                                0.0
-    #  2                                0.0  ...                                1.0
-    #  3                                0.0  ...                                1.0
-    # [4 rows x 4 columns],
-    # 'target': None}
+        model_matrix(df, formula = ['a','b'], penalty_factor=[1,2], one_hot_encoding=True)
+        # {'model_matrix_columns_names': ['C(a, one_hot_encoding_greater_2)[a2]',
+        #   'C(b, one_hot_encoding_greater_2)[b1]',
+        #   'C(b, one_hot_encoding_greater_2)[b2]',
+        #   'C(b, one_hot_encoding_greater_2)[b3]'],
+        #  'penalty_factor': array([1, 2, 2, 2]),
+        #  'sample':    C(a, one_hot_encoding_greater_2)[a2]  ...  C(b, one_hot_encoding_greater_2)[b3]
+        #  0                                0.0  ...                                0.0
+        #  1                                1.0  ...                                0.0
+        #  2                                0.0  ...                                1.0
+        #  3                                0.0  ...                                1.0
+        # [4 rows x 4 columns],
+        # 'target': None}
 
-    model_matrix(df, formula = ['a','b'], penalty_factor=[1,2], return_sparse = True)
-    # {'model_matrix_columns_names': ['a[a1]', 'a[a2]', 'b[b1]', 'b[b2]', 'b[b3]'],
-    #  'penalty_factor': array([1, 1, 2, 2, 2]),
-    #  'sample': <4x5 sparse matrix of type '<class 'numpy.float64'>'
-    #  	with 8 stored elements in Compressed Sparse Column format>,
-    #  'target': None}
+        model_matrix(df, formula = ['a','b'], penalty_factor=[1,2], return_sparse = True)
+        # {'model_matrix_columns_names': ['a[a1]', 'a[a2]', 'b[b1]', 'b[b2]', 'b[b3]'],
+        #  'penalty_factor': array([1, 1, 2, 2, 2]),
+        #  'sample': <4x5 sparse matrix of type '<class 'numpy.float64'>'
+        #  	with 8 stored elements in Compressed Sparse Column format>,
+        #  'target': None}
 
-    model_matrix(df, target = df)
-    # {'model_matrix_columns_names': ['b[b1]', 'b[b2]', 'b[b3]', 'a[T.a2]'],
-    #  'penalty_factor': array([1, 1, 1, 1]),
-    #  'sample':    b[b1]  b[b2]  b[b3]  a[T.a2]
-    #  0    1.0    0.0    0.0      0.0
-    #  1    0.0    1.0    0.0      1.0
-    #  2    0.0    0.0    1.0      0.0
-    #  3    0.0    0.0    1.0      0.0,
-    #  'target':    b[b1]  b[b2]  b[b3]  a[T.a2]
-    #  0    1.0    0.0    0.0      0.0
-    #  1    0.0    1.0    0.0      1.0
-    #  2    0.0    0.0    1.0      0.0
-    #  3    0.0    0.0    1.0      0.0}
+        model_matrix(df, target = df)
+        # {'model_matrix_columns_names': ['b[b1]', 'b[b2]', 'b[b3]', 'a[T.a2]'],
+        #  'penalty_factor': array([1, 1, 1, 1]),
+        #  'sample':    b[b1]  b[b2]  b[b3]  a[T.a2]
+        #  0    1.0    0.0    0.0      0.0
+        #  1    0.0    1.0    0.0      1.0
+        #  2    0.0    0.0    1.0      0.0
+        #  3    0.0    0.0    1.0      0.0,
+        #  'target':    b[b1]  b[b2]  b[b3]  a[T.a2]
+        #  0    1.0    0.0    0.0      0.0
+        #  1    0.0    1.0    0.0      1.0
+        #  2    0.0    0.0    1.0      0.0
+        #  3    0.0    0.0    1.0      0.0}
 
-    model_matrix(df, target = df, return_type = "one")
-    # {'model_matrix_columns_names': ['b[b1]', 'b[b2]', 'b[b3]', 'a[T.a2]'],
-    #  'penalty_factor': array([1, 1, 1, 1]),
-    #  'model_matrix':    b[b1]  b[b2]  b[b3]  a[T.a2]
-    #  0    1.0    0.0    0.0      0.0
-    #  1    0.0    1.0    0.0      1.0
-    #  2    0.0    0.0    1.0      0.0
-    #  3    0.0    0.0    1.0      0.0
-    #  0    1.0    0.0    0.0      0.0
-    #  1    0.0    1.0    0.0      1.0
-    #  2    0.0    0.0    1.0      0.0
-    #  3    0.0    0.0    1.0      0.0}
+        model_matrix(df, target = df, return_type = "one")
+        # {'model_matrix_columns_names': ['b[b1]', 'b[b2]', 'b[b3]', 'a[T.a2]'],
+        #  'penalty_factor': array([1, 1, 1, 1]),
+        #  'model_matrix':    b[b1]  b[b2]  b[b3]  a[T.a2]
+        #  0    1.0    0.0    0.0      0.0
+        #  1    0.0    1.0    0.0      1.0
+        #  2    0.0    0.0    1.0      0.0
+        #  3    0.0    0.0    1.0      0.0
+        #  0    1.0    0.0    0.0      0.0
+        #  1    0.0    1.0    0.0      1.0
+        #  2    0.0    0.0    1.0      0.0
+        #  3    0.0    0.0    1.0      0.0}
 
-    model_matrix(df, target = df, formula=['a','b'],return_type = "one")
-    # {'model_matrix_columns_names': ['a[a1]', 'a[a2]', 'b[b1]', 'b[b2]', 'b[b3]'],
-    #  'penalty_factor': array([1, 1, 1, 1, 1]),
-    #  'model_matrix':    a[a1]  a[a2]  b[b1]  b[b2]  b[b3]
-    #  0    1.0    0.0    1.0    0.0    0.0
-    #  1    0.0    1.0    0.0    1.0    0.0
-    #  2    1.0    0.0    0.0    0.0    1.0
-    #  3    1.0    0.0    0.0    0.0    1.0
-    #  0    1.0    0.0    1.0    0.0    0.0
-    #  1    0.0    1.0    0.0    1.0    0.0
-    #  2    1.0    0.0    0.0    0.0    1.0
-    #  3    1.0    0.0    0.0    0.0    1.0}
+        model_matrix(df, target = df, formula=['a','b'],return_type = "one")
+        # {'model_matrix_columns_names': ['a[a1]', 'a[a2]', 'b[b1]', 'b[b2]', 'b[b3]'],
+        #  'penalty_factor': array([1, 1, 1, 1, 1]),
+        #  'model_matrix':    a[a1]  a[a2]  b[b1]  b[b2]  b[b3]
+        #  0    1.0    0.0    1.0    0.0    0.0
+        #  1    0.0    1.0    0.0    1.0    0.0
+        #  2    1.0    0.0    0.0    0.0    1.0
+        #  3    1.0    0.0    0.0    0.0    1.0
+        #  0    1.0    0.0    1.0    0.0    0.0
+        #  1    0.0    1.0    0.0    1.0    0.0
+        #  2    1.0    0.0    0.0    0.0    1.0
+        #  3    1.0    0.0    0.0    0.0    1.0}
     """
     logger.debug("Starting building the model matrix")
     input_data = _prepare_input_model_matrix(sample, target, variables, add_na)
@@ -815,19 +861,19 @@ def model_matrix(
     return result
 
 
+# TODO: add type hinting
 def qcut(s, q, duplicates: str = "drop", **kwargs):
-    """
-    Discretize variable into equal-sized buckets based quantiles.
+    """Discretize variable into equal-sized buckets based quantiles.
     This is a wrapper to pandas qcut function.
 
-    Arguments:
-    s --- 1d ndarray or Series.
-    q --- Number of quantiles (int or float).
-    duplicates --- whther to drop non unique bin edges or raise error ("raise" or "drop").
-                   Default is "drop".
+    Args:
+        s (_type_): 1d ndarray or Series.
+        q (_type_): Number of quantiles (int or float).
+        duplicates (str, optional): whther to drop non unique bin edges or raise error ("raise" or "drop").
+            Defaults to "drop".
 
     Returns:
-    Seires of type object with intervals.
+        Series of type object with intervals.
     """
     if s.shape[0] < q:
         logger.warning("Not quantizing, too few values")
@@ -836,20 +882,20 @@ def qcut(s, q, duplicates: str = "drop", **kwargs):
         return pd.qcut(s, q, duplicates=duplicates, **kwargs).astype("O")
 
 
-def quantize(df: Union[pd.DataFrame, pd.Series], q: int = 10, variables=None):
-    """
-    Cut numeric variables of a DataFrame into quantile buckets
+def quantize(
+    df: Union[pd.DataFrame, pd.Series], q: int = 10, variables=None
+) -> pd.DataFrame:
+    """Cut numeric variables of a DataFrame into quantile buckets
 
-    Arguments:
-        df -- DataFrame to transform
-        variables -- (optional, default: None) variables to transform.
-                    If None, all numeric variables are transformed.
-        q  --- (optional, default: 10) Number of buckets to create for each variable
+    Args:
+        df (Union[pd.DataFrame, pd.Series]): ataFrame to transform
+        q (int, optional): Number of buckets to create for each variable. Defaults to 10.
+        variables (optional): variables to transform.
+                    If None, all numeric variables are transformed. Defaults to None.
 
     Returns:
-        DataFrame after quantization
+        _type_: DataFrame after quantization
     """
-
     if not (isinstance(df, pd.Series) or isinstance(df, pd.DataFrame)):
         # Necessary because pandas calls the function on the first item on its own
         #  https://stackoverflow.com/questions/21635915/
@@ -877,25 +923,25 @@ def quantize(df: Union[pd.DataFrame, pd.Series], q: int = 10, variables=None):
     return transformed_data
 
 
-def row_pairwise_diffs(df) -> pd.DataFrame:
-    """
-    Produce the differences between every pair of rows of df
-    Arguments:
-        df -- pandas DataFrame
+def row_pairwise_diffs(df: pd.DataFrame) -> pd.DataFrame:
+    """Produce the differences between every pair of rows of df
+
+    Args:
+        df (pd.DataFrame): DataFrame
 
     Returns:
-        pandas DataFrame with differences between all combinations of rows
+        pd.DataFrame: DataFrame with differences between all combinations of rows
 
     Example:
-    d = pd.DataFrame({"a": (1, 2, 3), "b": (-42, 8, 2)})
-    row_pairwise_diffs(d)
-    #        a   b
-    # 0      1 -42
-    # 1      2   8
-    # 2      3   2
-    # 1 - 0  1  50
-    # 2 - 0  2  44
-    # 2 - 1  1  -6
+        d = pd.DataFrame({"a": (1, 2, 3), "b": (-42, 8, 2)})
+        row_pairwise_diffs(d)
+        #        a   b
+        # 0      1 -42
+        # 1      2   8
+        # 2      3   2
+        # 1 - 0  1  50
+        # 2 - 0  2  44
+        # 2 - 1  1  -6
     """
     c = combinations(sorted(df.index), 2)
     diffs = []
@@ -907,10 +953,15 @@ def row_pairwise_diffs(df) -> pd.DataFrame:
 
 
 def _is_arraylike(o) -> bool:
-    """
-    Test (returns True) if an object is an array-ish type (a numpy array, or
+    """Test (returns True) if an object is an array-ish type (a numpy array, or
     a sequence, but not a string). Not the same as numpy's arraylike,
     which also applies to scalars which can be turned into arrays.
+
+    Args:
+        o: Object to test.
+
+    Returns:
+        bool: returns True if an object is an array-ish type.
     """
     return (
         isinstance(o, np.ndarray)
@@ -925,13 +976,11 @@ def _is_arraylike(o) -> bool:
 
 
 def rm_mutual_nas(*args) -> List:
-    """
-    Remove entries in a position which is na or infinite in any of the arguments
+    """Remove entries in a position which is na or infinite in any of the arguments
 
     Ignores args which are None
 
-    Arguments:
-        *args: can accept array-like or single arraylike argument. Including pandas and numpy arrays.
+    can accept array-like or single arraylike argument. Including pandas and numpy arrays.
 
     Raises:
         ValueError: If args are not array like (see: :func:`_is_arraylike`)
@@ -1036,18 +1085,20 @@ def rm_mutual_nas(*args) -> List:
 
 
 # TODO: make sure the function returns the variables names in a pre-decided order (alphabetical or by sample order)
-def choose_variables(*dfs, variables=None):
-    """
-    Return covars which are present in all dfs and also in `variables`
+# TODO: what is this returning?  -> Optional[Tuple] ?!
+def choose_variables(*dfs, variables: Optional[List] = None):
+    """Return covars which are present in all dfs and also in `variables`
     if passed
 
-    Arguments:
-    dfs -- balance.Samples or pd.DataFrames
-    variables -- which variables to choose. If None, chooses all joint variables in the dfs.
-                 Default is None.
+    Args:
+        *dfs: balance.Samples or pd.DataFrames
+        variables (Optional[List], optional): which variables to choose. If None, chooses all joint variables in the dfs.. Defaults to None.
+
+    Raises:
+        Exception: _description_
 
     Returns:
-    Tuple of joint variables
+        Tuple: Tuple of joint variables
     """
 
     if (variables is not None) and (len(variables) == 0):
@@ -1081,6 +1132,7 @@ def choose_variables(*dfs, variables=None):
                 f"{len(variables_not_in_df)} requested variables are not in all Samples: "
                 f"{variables_not_in_df}"
             )
+        # pyre-fixme[9] Incompatible variable type [9]: variables is declared to have type `Optional[List[typing.Any]]` but is used as type `Set[typing.Any]`.
         variables = intersection_variables.intersection(set(variables))
     else:
         variables = intersection_variables
@@ -1093,11 +1145,20 @@ def choose_variables(*dfs, variables=None):
     return tuple(variables)
 
 
-def auto_spread(data, features=None, id_: str = "id"):
-    """
-    Automatically transform a 'long' DataFrame into a 'wide' DataFrame
+def auto_spread(
+    data: pd.DataFrame, features: Optional[list] = None, id_: str = "id"
+) -> pd.DataFrame:
+    """Automatically transform a 'long' DataFrame into a 'wide' DataFrame
     by guessing which column should be used as a key, treating all
     other columns as values. At the moment, this will only find a single key column
+
+    Args:
+        data (pd.DataFrame):
+        features (Optional[list], optional): Defaults to None.
+        id_ (str, optional): Defaults to "id".
+
+    Returns:
+        pd.DataFrame
     """
     if features is None:
         features = [c for c in data.columns.values if c != id_]
@@ -1179,16 +1240,15 @@ def auto_aggregate(
 
 
 def fct_lump(s: pd.Series, prop: float = 0.05) -> pd.Series:
-    """
-    Lumps infrequent levels into '_lumped_other'.
+    """Lumps infrequent levels into '_lumped_other'.
     Note that all values with proprtion less than prop output the same value '_lumped_other'.
 
-    Arguments:
-    s --- pd.series to lump, with dtype of integer, numeric, object, or category (category will be converted to object)
-    prop --- the proportion of infrequent levels to lump
+    Args:
+        s (pd.Series): pd.series to lump, with dtype of integer, numeric, object, or category (category will be converted to object)
+        prop (float, optional): the proportion of infrequent levels to lump. Defaults to 0.05.
 
     Returns:
-    pd.series (with category dtype converted to object, if applicable)
+        pd.Series: pd.series (with category dtype converted to object, if applicable)
 
     Example:
         from balance.util import fct_lump
@@ -1205,7 +1265,6 @@ def fct_lump(s: pd.Series, prop: float = 0.05) -> pd.Series:
             # 6                b
             # dtype: object
     """
-
     props = s.value_counts() / s.shape[0]
 
     small_categories = props[props < prop].index.tolist()
@@ -1223,31 +1282,30 @@ def fct_lump(s: pd.Series, prop: float = 0.05) -> pd.Series:
 
 
 def fct_lump_by(s: pd.Series, by: pd.Series, prop: float = 0.05) -> pd.Series:
-    """
-    Lumps infrequent levels into '_lumped_other, only does so per
+    """Lumps infrequent levels into '_lumped_other, only does so per
     value of the grouping variable `by`. Useful, for example, for keeping the
     most important interactions in a model.
 
-    Arguments:
-    s --- pd.series to lump
-    by --- pd.series according to which group the data
-    prop --- the proportion of infrequent levels to lump
+    Args:
+        s (pd.Series): pd.series to lump
+        by (pd.Series): pd.series according to which group the data
+        prop (float, optional): the proportion of infrequent levels to lump. Defaults to 0.05.
 
     Returns:
-    pd.series, we keep the index of s as the index of the result.
+        pd.Series: pd.series, we keep the index of s as the index of the result.
 
     Example:
-    s = pd.Series([1,1,1,2,3,1,2])
-    by = pd.Series(['a','a','a','a','a','b','b'])
-    fct_lump_by(s, by, 0.5)
-    # 0                1
-    # 1                1
-    # 2                1
-    # 3    _lumped_other
-    # 4    _lumped_other
-    # 5                1
-    # 6                2
-    # dtype: object
+        s = pd.Series([1,1,1,2,3,1,2])
+        by = pd.Series(['a','a','a','a','a','b','b'])
+        fct_lump_by(s, by, 0.5)
+        # 0                1
+        # 1                1
+        # 2                1
+        # 3    _lumped_other
+        # 4    _lumped_other
+        # 5                1
+        # 6                2
+        # dtype: object
     """
     # The reindexing is required in order to overcome bug before pandas 1.2
     # https://github.com/pandas-dev/pandas/issues/16646
@@ -1312,11 +1370,20 @@ def _pd_convert_all_types(
 ################################################################################
 #  logging
 ################################################################################
-def _truncate_text(s: str, length):
-    """
-    Truncate string s to be of length 'length'. If the length of s is larger than 'length', then the
+
+
+def _truncate_text(s: str, length: int) -> str:
+    """Truncate string s to be of length 'length'. If the length of s is larger than 'length', then the
     function will add '...' at the end of the truncated text.
+
+    Args:
+        s (str):
+        length (int):
+
+    Returns:
+        str:
     """
+
     return s[:length] + "..." * (len(s) > length)
 
 
