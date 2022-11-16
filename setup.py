@@ -37,6 +37,8 @@ DEV_REQUIRES = [
     "wheel",
     "pytest",
     "sphinx",
+    "notebook",
+    "nbconvert",
 ]
 
 DESCRIPTION = """
