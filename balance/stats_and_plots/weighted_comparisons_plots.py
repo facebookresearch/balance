@@ -952,26 +952,23 @@ def plotly_plot_dist(
 
 
 def naming_legend(object_name: str, names_of_dfs: List[str]) -> str:
-    """
-    This function returns a name for a legend of a plot given the other dfs.
+    """Returns a name for a legend of a plot given the other dfs.
     If one of the dfs we would like to plot is "unadjusted", it means
     that the Sample object contains the adjusted object as self.
     If not, then the self object is sample.
 
     Args:
-    object_name - the name of the object to plot (string)
-    names_of_dfs - the names of the other dfs to plot (list of strings)
+        object_name (str): the name of the object to plot.
+        names_of_dfs (List[str]): the names of the other dfs to plot.
 
-    returns:
-    a string with the desired name
-
+    Returns:
+        str: a string with the desired name
 
     Examples:
-    naming_legend('self', ['self', 'target', 'unadjusted']) #'adjusted'
-    naming_legend('unadjusted', ['self', 'target', 'unadjusted']) #'sample'
-    naming_legend('self', ['self', 'target']) #'sample'
-    naming_legend('other_name', ['self', 'target']) #'other_name'
-
+        naming_legend('self', ['self', 'target', 'unadjusted']) #'adjusted'
+        naming_legend('unadjusted', ['self', 'target', 'unadjusted']) #'sample'
+        naming_legend('self', ['self', 'target']) #'sample'
+        naming_legend('other_name', ['self', 'target']) #'other_name'
     """
     if object_name in names_of_dfs:
         return {
