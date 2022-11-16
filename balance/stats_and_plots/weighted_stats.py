@@ -209,11 +209,17 @@ def weighted_sd(
     ] = None,
     inf_rm: bool = False,
 ) -> pd.Series:
-    """
+    """Calculate the sample weighted standard deviation
+
     See :func:`weighted_var` for details.
 
+    Args:
+        v (Union[ List, pd.Series, pd.DataFrame, np.matrix, ]): Values.
+        w (Union[ List, pd.Series, np.ndarray, None, ], optional): Weights. Defaults to None.
+        inf_rm (bool, optional): Remove inf. Defaults to False.
+
     Returns:
-        pd.Series[np.float64]: np.sqrt of :func:`weighted_var`
+        pd.Series: np.sqrt of :func:`weighted_var` (np.float64)
     """
     return np.sqrt(weighted_var(v, w, inf_rm))
 
@@ -254,8 +260,8 @@ def weighted_quantile(
 
     Returns:
         pd.DataFrame: The index (names p) has the values from quantiles. The columns are based on v:
-        If it's a pd.Series it's one column, if it's a pd.DataFrame with several columns, than each column
-        in the output corrosponds to the column in v.
+            If it's a pd.Series it's one column, if it's a pd.DataFrame with several columns, than each column
+            in the output corrosponds to the column in v.
     """
 
     v, w = _prepare_weighted_stat_args(v, w, inf_rm)
