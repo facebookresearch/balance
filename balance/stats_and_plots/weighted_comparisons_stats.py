@@ -64,35 +64,35 @@ def _weights_per_covars_names(covar_names: List) -> pd.DataFrame:
         with rows for each of the columns from 'covar_names'
 
     Example:
-    asmd_df = pd.DataFrame(
-    {
-        'age': 0.5,
-        'education[T.high_school]': 1,
-        'education[T.bachelor]': 1,
-        'education[T.masters]': 1,
-        'education[T.phd]': 1,
-    }, index = ('self', ))
+        asmd_df = pd.DataFrame(
+        {
+            'age': 0.5,
+            'education[T.high_school]': 1,
+            'education[T.bachelor]': 1,
+            'education[T.masters]': 1,
+            'education[T.phd]': 1,
+        }, index = ('self', ))
 
-    input = asmd_df.columns.values.tolist()
-    # input
-    # ['age',
-    #  'education[T.high_school]',
-    #  'education[T. bachelor]',
-    #  'education[T. masters]',
-    #  'education[T. phd]']
+        input = asmd_df.columns.values.tolist()
+        # input
+        # ['age',
+        #  'education[T.high_school]',
+        #  'education[T. bachelor]',
+        #  'education[T. masters]',
+        #  'education[T. phd]']
 
-    _weights_per_covars_names(input).to_dict()
-    # Output:
-    # {'weight': {'age': 1.0,
-    #   'education[T.high_school]': 0.25,
-    #   'education[T.bachelor]': 0.25,
-    #   'education[T.masters]': 0.25,
-    #   'education[T.phd]': 0.25},
-    #  'main_covar_names': {'age': 'age',
-    #   'education[T.high_school]': 'education',
-    #   'education[T.bachelor]': 'education',
-    #   'education[T.masters]': 'education',
-    #   'education[T.phd]': 'education'}}
+        _weights_per_covars_names(input).to_dict()
+        # Output:
+        # {'weight': {'age': 1.0,
+        #   'education[T.high_school]': 0.25,
+        #   'education[T.bachelor]': 0.25,
+        #   'education[T.masters]': 0.25,
+        #   'education[T.phd]': 0.25},
+        #  'main_covar_names': {'age': 'age',
+        #   'education[T.high_school]': 'education',
+        #   'education[T.bachelor]': 'education',
+        #   'education[T.masters]': 'education',
+        #   'education[T.phd]': 'education'}}
     """
     columns_to_original_variable = {v: re.sub(r"\[.*\]$", "", v) for v in covar_names}
     counts = collections.Counter(columns_to_original_variable.values())
