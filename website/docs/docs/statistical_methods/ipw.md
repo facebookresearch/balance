@@ -42,7 +42,7 @@ The estimated propensity scores are then used to estimate the weights of the sam
 
 
 
-## References:
+## References
 [1] Lee, S., & Valliant, R. (2009). Estimation for volunteer panel web surveys using propensity score adjustment and calibration adjustment. Sociological Methods & Research, 37(3), 319-343.
 
  - More about [Inverse Probability Weighting](https://en.wikipedia.org/wiki/Inverse_probability_weighting) in Wikipedia.
