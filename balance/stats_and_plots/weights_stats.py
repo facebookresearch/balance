@@ -83,11 +83,11 @@ def design_effect(w: pd.Series) -> np.float64:
         import pandas as pd
 
         design_effect(pd.Series((0, 1, 2, 3)))
-        # output:
-        # 1.5555555555555556
+            # output:
+            # 1.5555555555555556
         design_effect(pd.Series((1, 1, 1000)))
-        # 2.9880418803112336
-        # As expected. With a single dominating weight - the Deff is almost equal to the sample size.
+            # 2.9880418803112336
+            # As expected. With a single dominating weight - the Deff is almost equal to the sample size.
     """
     _check_weights_are_valid(w)
     return (w**2).mean() / (w.mean() ** 2)
@@ -113,13 +113,13 @@ def nonparametric_skew(w: pd.Series) -> np.float64:
         The value returned will be 0 if the standard deviation is 0 (i.e.: all values are identical), or if the input is of length 1.
 
     Examples:
-    from balance.stats_and_plots.weights_stats import nonparametric_skew
+        from balance.stats_and_plots.weights_stats import nonparametric_skew
 
-    nonparametric_skew(pd.Series((1, 1, 1, 1)))  # 0
-    nonparametric_skew(pd.Series((1)))           # 0
-    nonparametric_skew(pd.Series((1, 2, 3, 4)))  # 0
-    nonparametric_skew(pd.Series((1, 1, 1, 2)))  # 0.5
-    nonparametric_skew(pd.Series((-1,1,1, 1)))   #-0.5
+        nonparametric_skew(pd.Series((1, 1, 1, 1)))  # 0
+        nonparametric_skew(pd.Series((1)))           # 0
+        nonparametric_skew(pd.Series((1, 2, 3, 4)))  # 0
+        nonparametric_skew(pd.Series((1, 1, 1, 2)))  # 0.5
+        nonparametric_skew(pd.Series((-1,1,1, 1)))   #-0.5
 
     """
     _check_weights_are_valid(w)
@@ -175,50 +175,50 @@ def prop_above_and_below(
         If return_as_series is False we get a dict with 'below' and 'above' with the relevant pd.Series (or None).
 
     Examples:
-    from balance.stats_and_plots.weights_stats import prop_above_and_below
-    import pandas as pd
+        from balance.stats_and_plots.weights_stats import prop_above_and_below
+        import pandas as pd
 
-    # normalized weights:
-    print(pd.Series((1, 2, 3, 4)) / pd.Series((1, 2, 3, 4)).mean())
-    # 0    0.4
-    # 1    0.8
-    # 2    1.2
-    # 3    1.6
+        # normalized weights:
+        print(pd.Series((1, 2, 3, 4)) / pd.Series((1, 2, 3, 4)).mean())
+            # 0    0.4
+            # 1    0.8
+            # 2    1.2
+            # 3    1.6
 
-    # checking the function:
-    prop_above_and_below(pd.Series((1, 2, 3, 4)))
-    # dtype: float64
-    # prop(w < 0.1)      0.00
-    # prop(w < 0.2)      0.00
-    # prop(w < 0.333)    0.00
-    # prop(w < 0.5)      0.25
-    # prop(w < 1.0)      0.50
-    # prop(w >= 1)       0.50
-    # prop(w >= 2)       0.00
-    # prop(w >= 3)       0.00
-    # prop(w >= 5)       0.00
-    # prop(w >= 10)      0.00
-    # dtype: float64
+        # checking the function:
+        prop_above_and_below(pd.Series((1, 2, 3, 4)))
+            # dtype: float64
+            # prop(w < 0.1)      0.00
+            # prop(w < 0.2)      0.00
+            # prop(w < 0.333)    0.00
+            # prop(w < 0.5)      0.25
+            # prop(w < 1.0)      0.50
+            # prop(w >= 1)       0.50
+            # prop(w >= 2)       0.00
+            # prop(w >= 3)       0.00
+            # prop(w >= 5)       0.00
+            # prop(w >= 10)      0.00
+            # dtype: float64
 
-    prop_above_and_below(pd.Series((1, 2, 3, 4)), below = (0.1, 0.5), above = (2,3))
-    # prop(w < 0.1)    0.00
-    # prop(w < 0.5)    0.25
-    # prop(w >= 2)     0.00
-    # prop(w >= 3)     0.00
-    # dtype: float64
+        prop_above_and_below(pd.Series((1, 2, 3, 4)), below = (0.1, 0.5), above = (2,3))
+            # prop(w < 0.1)    0.00
+            # prop(w < 0.5)    0.25
+            # prop(w >= 2)     0.00
+            # prop(w >= 3)     0.00
+            # dtype: float64
 
-    prop_above_and_below(pd.Series((1, 2, 3, 4)), return_as_series = False)
-    # {'below': prop(w < 0.1)      0.00
-    # prop(w < 0.2)      0.00
-    # prop(w < 0.333)    0.00
-    # prop(w < 0.5)      0.25
-    # prop(w < 1)        0.50
-    # dtype: float64, 'above': prop(w >= 1)     0.5
-    # prop(w >= 2)     0.0
-    # prop(w >= 3)     0.0
-    # prop(w >= 5)     0.0
-    # prop(w >= 10)    0.0
-    # dtype: float64}
+        prop_above_and_below(pd.Series((1, 2, 3, 4)), return_as_series = False)
+            # {'below': prop(w < 0.1)      0.00
+            # prop(w < 0.2)      0.00
+            # prop(w < 0.333)    0.00
+            # prop(w < 0.5)      0.25
+            # prop(w < 1)        0.50
+            # dtype: float64, 'above': prop(w >= 1)     0.5
+            # prop(w >= 2)     0.0
+            # prop(w >= 3)     0.0
+            # prop(w >= 5)     0.0
+            # prop(w >= 10)    0.0
+            # dtype: float64}
 
     """
     _check_weights_are_valid(w)
@@ -278,17 +278,17 @@ def weighted_median_breakdown_point(w: pd.Series) -> np.float64:
 
     Examples:
 
-    w = pd.Series([1,1,1,1])
-    print(weighted_median_breakdown_point(w)) # 0.5
+        w = pd.Series([1,1,1,1])
+        print(weighted_median_breakdown_point(w)) # 0.5
 
-    w = pd.Series([2,2,2,2])
-    print(weighted_median_breakdown_point(w)) # 0.5
+        w = pd.Series([2,2,2,2])
+        print(weighted_median_breakdown_point(w)) # 0.5
 
-    w = pd.Series([1,1,1, 10])
-    print(weighted_median_breakdown_point(w)) # 0.25
+        w = pd.Series([1,1,1, 10])
+        print(weighted_median_breakdown_point(w)) # 0.25
 
-    w = pd.Series([1,1,1,1, 10])
-    print(weighted_median_breakdown_point(w)) # 0.2
+        w = pd.Series([1,1,1,1, 10])
+        print(weighted_median_breakdown_point(w)) # 0.2
     """
     _check_weights_are_valid(w)
 
