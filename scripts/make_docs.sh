@@ -33,19 +33,23 @@ cd sphinx || exit
 make html
 cd .. || exit
 
+echo "--------------------------------------------"
+echo "Moving Sphinx artifacts to Docusaurus"
+echo "--------------------------------------------"
+mkdir -p "website/static/api_reference/"
+cp -r sphinx/_build/* website/static/api_reference/ || exit
+
+echo "-----------------------------------"
+echo "Building tutorial HTML"
+echo "-----------------------------------"
+jupyter nbconvert tutorials/balance_quickstart.ipynb --execute --to html \
+    --output-dir website/static/html/tutorials
+
 echo "-----------------------------------"
 echo "Getting Docusaurus deps"
 echo "-----------------------------------"
 cd website || exit
 yarn
-
-echo "--------------------------------------------"
-echo "Moving Sphinx artifacts to Docusaurus"
-echo "--------------------------------------------"
-cd ..
-mkdir -p "website/static/api_reference/"
-cp -r sphinx/_build/* website/static/api_reference/ || exit
-cd website || exit
 
 echo "-----------------------------------"
 echo "Building static Docusaurus site"
