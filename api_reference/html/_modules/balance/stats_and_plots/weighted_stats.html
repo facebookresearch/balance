@@ -250,11 +250,17 @@
     <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">inf_rm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Calculate the sample weighted standard deviation</span>
+
 <span class="sd">    See :func:`weighted_var` for details.</span>
 
+<span class="sd">    Args:</span>
+<span class="sd">        v (Union[ List, pd.Series, pd.DataFrame, np.matrix, ]): Values.</span>
+<span class="sd">        w (Union[ List, pd.Series, np.ndarray, None, ], optional): Weights. Defaults to None.</span>
+<span class="sd">        inf_rm (bool, optional): Remove inf. Defaults to False.</span>
+
 <span class="sd">    Returns:</span>
-<span class="sd">        pd.Series[np.float64]: np.sqrt of :func:`weighted_var`</span>
+<span class="sd">        pd.Series: np.sqrt of :func:`weighted_var` (np.float64)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">weighted_var</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">inf_rm</span><span class="p">))</span></div>
 
@@ -295,8 +301,8 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        pd.DataFrame: The index (names p) has the values from quantiles. The columns are based on v:</span>
-<span class="sd">        If it&#39;s a pd.Series it&#39;s one column, if it&#39;s a pd.DataFrame with several columns, than each column</span>
-<span class="sd">        in the output corrosponds to the column in v.</span>
+<span class="sd">            If it&#39;s a pd.Series it&#39;s one column, if it&#39;s a pd.DataFrame with several columns, than each column</span>
+<span class="sd">            in the output corrosponds to the column in v.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">v</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">_prepare_weighted_stat_args</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">inf_rm</span><span class="p">)</span>

@@ -993,26 +993,23 @@
 
 
 <div class="viewcode-block" id="naming_legend"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.naming_legend">[docs]</a><span class="k">def</span> <span class="nf">naming_legend</span><span class="p">(</span><span class="n">object_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">names_of_dfs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This function returns a name for a legend of a plot given the other dfs.</span>
+    <span class="sd">&quot;&quot;&quot;Returns a name for a legend of a plot given the other dfs.</span>
 <span class="sd">    If one of the dfs we would like to plot is &quot;unadjusted&quot;, it means</span>
 <span class="sd">    that the Sample object contains the adjusted object as self.</span>
 <span class="sd">    If not, then the self object is sample.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">    object_name - the name of the object to plot (string)</span>
-<span class="sd">    names_of_dfs - the names of the other dfs to plot (list of strings)</span>
+<span class="sd">        object_name (str): the name of the object to plot.</span>
+<span class="sd">        names_of_dfs (List[str]): the names of the other dfs to plot.</span>
 
-<span class="sd">    returns:</span>
-<span class="sd">    a string with the desired name</span>
-
+<span class="sd">    Returns:</span>
+<span class="sd">        str: a string with the desired name</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">    naming_legend(&#39;self&#39;, [&#39;self&#39;, &#39;target&#39;, &#39;unadjusted&#39;]) #&#39;adjusted&#39;</span>
-<span class="sd">    naming_legend(&#39;unadjusted&#39;, [&#39;self&#39;, &#39;target&#39;, &#39;unadjusted&#39;]) #&#39;sample&#39;</span>
-<span class="sd">    naming_legend(&#39;self&#39;, [&#39;self&#39;, &#39;target&#39;]) #&#39;sample&#39;</span>
-<span class="sd">    naming_legend(&#39;other_name&#39;, [&#39;self&#39;, &#39;target&#39;]) #&#39;other_name&#39;</span>
-
+<span class="sd">        naming_legend(&#39;self&#39;, [&#39;self&#39;, &#39;target&#39;, &#39;unadjusted&#39;]) #&#39;adjusted&#39;</span>
+<span class="sd">        naming_legend(&#39;unadjusted&#39;, [&#39;self&#39;, &#39;target&#39;, &#39;unadjusted&#39;]) #&#39;sample&#39;</span>
+<span class="sd">        naming_legend(&#39;self&#39;, [&#39;self&#39;, &#39;target&#39;]) #&#39;sample&#39;</span>
+<span class="sd">        naming_legend(&#39;other_name&#39;, [&#39;self&#39;, &#39;target&#39;]) #&#39;other_name&#39;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">object_name</span> <span class="ow">in</span> <span class="n">names_of_dfs</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span>

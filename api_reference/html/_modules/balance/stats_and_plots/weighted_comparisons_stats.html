@@ -105,35 +105,35 @@
 <span class="sd">        with rows for each of the columns from &#39;covar_names&#39;</span>
 
 <span class="sd">    Example:</span>
-<span class="sd">    asmd_df = pd.DataFrame(</span>
-<span class="sd">    {</span>
-<span class="sd">        &#39;age&#39;: 0.5,</span>
-<span class="sd">        &#39;education[T.high_school]&#39;: 1,</span>
-<span class="sd">        &#39;education[T.bachelor]&#39;: 1,</span>
-<span class="sd">        &#39;education[T.masters]&#39;: 1,</span>
-<span class="sd">        &#39;education[T.phd]&#39;: 1,</span>
-<span class="sd">    }, index = (&#39;self&#39;, ))</span>
+<span class="sd">        asmd_df = pd.DataFrame(</span>
+<span class="sd">        {</span>
+<span class="sd">            &#39;age&#39;: 0.5,</span>
+<span class="sd">            &#39;education[T.high_school]&#39;: 1,</span>
+<span class="sd">            &#39;education[T.bachelor]&#39;: 1,</span>
+<span class="sd">            &#39;education[T.masters]&#39;: 1,</span>
+<span class="sd">            &#39;education[T.phd]&#39;: 1,</span>
+<span class="sd">        }, index = (&#39;self&#39;, ))</span>
 
-<span class="sd">    input = asmd_df.columns.values.tolist()</span>
-<span class="sd">    # input</span>
-<span class="sd">    # [&#39;age&#39;,</span>
-<span class="sd">    #  &#39;education[T.high_school]&#39;,</span>
-<span class="sd">    #  &#39;education[T. bachelor]&#39;,</span>
-<span class="sd">    #  &#39;education[T. masters]&#39;,</span>
-<span class="sd">    #  &#39;education[T. phd]&#39;]</span>
+<span class="sd">        input = asmd_df.columns.values.tolist()</span>
+<span class="sd">        # input</span>
+<span class="sd">        # [&#39;age&#39;,</span>
+<span class="sd">        #  &#39;education[T.high_school]&#39;,</span>
+<span class="sd">        #  &#39;education[T. bachelor]&#39;,</span>
+<span class="sd">        #  &#39;education[T. masters]&#39;,</span>
+<span class="sd">        #  &#39;education[T. phd]&#39;]</span>
 
-<span class="sd">    _weights_per_covars_names(input).to_dict()</span>
-<span class="sd">    # Output:</span>
-<span class="sd">    # {&#39;weight&#39;: {&#39;age&#39;: 1.0,</span>
-<span class="sd">    #   &#39;education[T.high_school]&#39;: 0.25,</span>
-<span class="sd">    #   &#39;education[T.bachelor]&#39;: 0.25,</span>
-<span class="sd">    #   &#39;education[T.masters]&#39;: 0.25,</span>
-<span class="sd">    #   &#39;education[T.phd]&#39;: 0.25},</span>
-<span class="sd">    #  &#39;main_covar_names&#39;: {&#39;age&#39;: &#39;age&#39;,</span>
-<span class="sd">    #   &#39;education[T.high_school]&#39;: &#39;education&#39;,</span>
-<span class="sd">    #   &#39;education[T.bachelor]&#39;: &#39;education&#39;,</span>
-<span class="sd">    #   &#39;education[T.masters]&#39;: &#39;education&#39;,</span>
-<span class="sd">    #   &#39;education[T.phd]&#39;: &#39;education&#39;}}</span>
+<span class="sd">        _weights_per_covars_names(input).to_dict()</span>
+<span class="sd">        # Output:</span>
+<span class="sd">        # {&#39;weight&#39;: {&#39;age&#39;: 1.0,</span>
+<span class="sd">        #   &#39;education[T.high_school]&#39;: 0.25,</span>
+<span class="sd">        #   &#39;education[T.bachelor]&#39;: 0.25,</span>
+<span class="sd">        #   &#39;education[T.masters]&#39;: 0.25,</span>
+<span class="sd">        #   &#39;education[T.phd]&#39;: 0.25},</span>
+<span class="sd">        #  &#39;main_covar_names&#39;: {&#39;age&#39;: &#39;age&#39;,</span>
+<span class="sd">        #   &#39;education[T.high_school]&#39;: &#39;education&#39;,</span>
+<span class="sd">        #   &#39;education[T.bachelor]&#39;: &#39;education&#39;,</span>
+<span class="sd">        #   &#39;education[T.masters]&#39;: &#39;education&#39;,</span>
+<span class="sd">        #   &#39;education[T.phd]&#39;: &#39;education&#39;}}</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">columns_to_original_variable</span> <span class="o">=</span> <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\[.*\]$&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">covar_names</span><span class="p">}</span>
     <span class="n">counts</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">Counter</span><span class="p">(</span><span class="n">columns_to_original_variable</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>

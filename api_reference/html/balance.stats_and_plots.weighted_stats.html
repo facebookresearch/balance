@@ -250,9 +250,12 @@ If w has Inf then the output will be np.nan.</p>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The index (names p) has the values from quantiles. The columns are based on v:
-If it’s a pd.Series it’s one column, if it’s a pd.DataFrame with several columns, than each column
+<dd class="field-even"><p><dl class="simple">
+<dt>The index (names p) has the values from quantiles. The columns are based on v:</dt><dd><p>If it’s a pd.Series it’s one column, if it’s a pd.DataFrame with several columns, than each column
 in the output corrosponds to the column in v.</p>
+</dd>
+</dl>
+</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>pd.DataFrame</p>
@@ -263,13 +266,21 @@ in the output corrosponds to the column in v.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="balance.stats_and_plots.weighted_stats.weighted_sd">
 <span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_stats.</span></span><span class="sig-name descname"><span class="pre">weighted_sd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">matrix</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inf_rm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_stats.html#weighted_sd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_stats.weighted_sd" title="Permalink to this definition">¶</a></dt>
-<dd><p>See <a class="reference internal" href="#balance.stats_and_plots.weighted_stats.weighted_var" title="balance.stats_and_plots.weighted_stats.weighted_var"><code class="xref py py-func docutils literal notranslate"><span class="pre">weighted_var()</span></code></a> for details.</p>
+<dd><p>Calculate the sample weighted standard deviation</p>
+<p>See <a class="reference internal" href="#balance.stats_and_plots.weighted_stats.weighted_var" title="balance.stats_and_plots.weighted_stats.weighted_var"><code class="xref py py-func docutils literal notranslate"><span class="pre">weighted_var()</span></code></a> for details.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>np.sqrt of <a class="reference internal" href="#balance.stats_and_plots.weighted_stats.weighted_var" title="balance.stats_and_plots.weighted_stats.weighted_var"><code class="xref py py-func docutils literal notranslate"><span class="pre">weighted_var()</span></code></a></p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>v</strong> (<em>Union</em><em>[ </em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>pd.DataFrame</em><em>, </em><em>np.matrix</em><em>, </em><em>]</em>) – Values.</p></li>
+<li><p><strong>w</strong> (<em>Union</em><em>[ </em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>np.ndarray</em><em>, </em><em>None</em><em>, </em><em>]</em><em>, </em><em>optional</em>) – Weights. Defaults to None.</p></li>
+<li><p><strong>inf_rm</strong> (<em>bool</em><em>, </em><em>optional</em>) – Remove inf. Defaults to False.</p></li>
+</ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>pd.Series[np.float64]</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.sqrt of <a class="reference internal" href="#balance.stats_and_plots.weighted_stats.weighted_var" title="balance.stats_and_plots.weighted_stats.weighted_var"><code class="xref py py-func docutils literal notranslate"><span class="pre">weighted_var()</span></code></a> (np.float64)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.Series</p>
 </dd>
 </dl>
 </dd></dl>

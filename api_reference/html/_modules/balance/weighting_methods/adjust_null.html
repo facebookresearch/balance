@@ -47,28 +47,35 @@
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
 
 <span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="adjust_null"><a class="viewcode-back" href="../../../balance.weighting_methods.adjust_null.html#balance.weighting_methods.adjust_null.adjust_null">[docs]</a><span class="k">def</span> <span class="nf">adjust_null</span><span class="p">(</span>
-    <span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Doesn&#39;t apply any adjustment to the data. Returns the design weights as they are.</span>
+    <span class="n">sample_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">sample_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">target_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">target_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]]:</span>
+    <span class="sd">&quot;&quot;&quot;Doesn&#39;t apply any adjustment to the data. Returns the design weights as they are.</span>
 <span class="sd">    This may be useful when one needs the output of Sample.adjust() (i.e.: an adjusted object),</span>
 <span class="sd">    but wishes to not run any model for it.</span>
 
-<span class="sd">    Arguments:</span>
-<span class="sd">        sample_df --- (pandas dataframe) a dataframe representing the sample</span>
-<span class="sd">        sample_weights --- (pandas series) design weights for sample</span>
-<span class="sd">        target_df ---  (pandas dataframe) a dataframe representing the target</span>
-<span class="sd">        target_weights --- (pandas series) design weights for target</span>
+<span class="sd">    Args:</span>
+<span class="sd">        sample_df (pd.DataFrame): a dataframe representing the sample</span>
+<span class="sd">        sample_weights (pd.Series): design weights for sample</span>
+<span class="sd">        target_df (pd.DataFrame): a dataframe representing the target</span>
+<span class="sd">        target_weights (pd.Series): design weights for target</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Dict of weights (original sample weights) and model (with method = null_adjustment)</span>
+<span class="sd">        Dict[str, Union[Dict[str, str], pd.Series]]: Dict of weights (original sample weights) and model (with method = null_adjustment)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">return</span> <span class="p">{</span>
         <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="n">sample_weights</span><span class="p">,</span>
         <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="p">{</span>

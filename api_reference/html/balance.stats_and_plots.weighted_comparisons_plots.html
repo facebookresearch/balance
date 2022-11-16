@@ -52,17 +52,26 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="balance.stats_and_plots.weighted_comparisons_plots.naming_legend">
 <span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_comparisons_plots.</span></span><span class="sig-name descname"><span class="pre">naming_legend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">object_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names_of_dfs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_comparisons_plots.html#naming_legend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_comparisons_plots.naming_legend" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function returns a name for a legend of a plot given the other dfs.
+<dd><p>Returns a name for a legend of a plot given the other dfs.
 If one of the dfs we would like to plot is “unadjusted”, it means
 that the Sample object contains the adjusted object as self.
 If not, then the self object is sample.</p>
-<p>Args:
-object_name - the name of the object to plot (string)
-names_of_dfs - the names of the other dfs to plot (list of strings)</p>
-<p>returns:
-a string with the desired name</p>
-<p>Examples:
-naming_legend(‘self’, [‘self’, ‘target’, ‘unadjusted’]) #’adjusted’
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>object_name</strong> (<em>str</em>) – the name of the object to plot.</p></li>
+<li><p><strong>names_of_dfs</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – the names of the other dfs to plot.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a string with the desired name</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>naming_legend(‘self’, [‘self’, ‘target’, ‘unadjusted’]) #’adjusted’
 naming_legend(‘unadjusted’, [‘self’, ‘target’, ‘unadjusted’]) #’sample’
 naming_legend(‘self’, [‘self’, ‘target’]) #’sample’
 naming_legend(‘other_name’, [‘self’, ‘target’]) #’other_name’</p>

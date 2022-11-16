@@ -71,12 +71,14 @@ due to application of the weights.</p>
 <p class="rubric">Example</p>
 <p>from balance.stats_and_plots.weights_stats import design_effect
 import pandas as pd</p>
-<p>design_effect(pd.Series((0, 1, 2, 3)))
-# output:
-# 1.5555555555555556
-design_effect(pd.Series((1, 1, 1000)))
-# 2.9880418803112336
+<dl class="simple">
+<dt>design_effect(pd.Series((0, 1, 2, 3)))</dt><dd><p># output:
+# 1.5555555555555556</p>
+</dd>
+<dt>design_effect(pd.Series((1, 1, 1000)))</dt><dd><p># 2.9880418803112336
 # As expected. With a single dominating weight - the Deff is almost equal to the sample size.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -97,8 +99,8 @@ The value returned will be 0 if the standard deviation is 0 (i.e.: all values ar
 <dd class="field-odd"><p>np.float64</p>
 </dd>
 </dl>
-<p>Examples:
-from balance.stats_and_plots.weights_stats import nonparametric_skew</p>
+<p class="rubric">Examples</p>
+<p>from balance.stats_and_plots.weights_stats import nonparametric_skew</p>
 <p>nonparametric_skew(pd.Series((1, 1, 1, 1)))  # 0
 nonparametric_skew(pd.Series((1)))           # 0
 nonparametric_skew(pd.Series((1, 2, 3, 4)))  # 0
@@ -141,18 +143,21 @@ If return_as_series is False we get a dict with ‘below’ and ‘above’ with
 <dd class="field-odd"><p>Union[pd.Series, Dict]</p>
 </dd>
 </dl>
-<p>Examples:
-from balance.stats_and_plots.weights_stats import prop_above_and_below
+<p class="rubric">Examples</p>
+<p>from balance.stats_and_plots.weights_stats import prop_above_and_below
 import pandas as pd</p>
 <p># normalized weights:
-print(pd.Series((1, 2, 3, 4)) / pd.Series((1, 2, 3, 4)).mean())
-# 0    0.4
+print(pd.Series((1, 2, 3, 4)) / pd.Series((1, 2, 3, 4)).mean())</p>
+<blockquote>
+<div><p># 0    0.4
 # 1    0.8
 # 2    1.2
 # 3    1.6</p>
+</div></blockquote>
 <p># checking the function:
-prop_above_and_below(pd.Series((1, 2, 3, 4)))
-# dtype: float64
+prop_above_and_below(pd.Series((1, 2, 3, 4)))</p>
+<blockquote>
+<div><p># dtype: float64
 # prop(w &lt; 0.1)      0.00
 # prop(w &lt; 0.2)      0.00
 # prop(w &lt; 0.333)    0.00
@@ -164,14 +169,15 @@ prop_above_and_below(pd.Series((1, 2, 3, 4)))
 # prop(w &gt;= 5)       0.00
 # prop(w &gt;= 10)      0.00
 # dtype: float64</p>
-<p>prop_above_and_below(pd.Series((1, 2, 3, 4)), below = (0.1, 0.5), above = (2,3))
-# prop(w &lt; 0.1)    0.00
+</div></blockquote>
+<dl class="simple">
+<dt>prop_above_and_below(pd.Series((1, 2, 3, 4)), below = (0.1, 0.5), above = (2,3))</dt><dd><p># prop(w &lt; 0.1)    0.00
 # prop(w &lt; 0.5)    0.25
 # prop(w &gt;= 2)     0.00
 # prop(w &gt;= 3)     0.00
 # dtype: float64</p>
-<p>prop_above_and_below(pd.Series((1, 2, 3, 4)), return_as_series = False)
-# {‘below’: prop(w &lt; 0.1)      0.00
+</dd>
+<dt>prop_above_and_below(pd.Series((1, 2, 3, 4)), return_as_series = False)</dt><dd><p># {‘below’: prop(w &lt; 0.1)      0.00
 # prop(w &lt; 0.2)      0.00
 # prop(w &lt; 0.333)    0.00
 # prop(w &lt; 0.5)      0.25
@@ -182,6 +188,8 @@ prop_above_and_below(pd.Series((1, 2, 3, 4)))
 # prop(w &gt;= 5)     0.0
 # prop(w &gt;= 10)    0.0
 # dtype: float64}</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -204,7 +212,7 @@ See also:
 <dd class="field-odd"><p>np.float64</p>
 </dd>
 </dl>
-<p>Examples:</p>
+<p class="rubric">Examples</p>
 <p>w = pd.Series([1,1,1,1])
 print(weighted_median_breakdown_point(w)) # 0.5</p>
 <p>w = pd.Series([2,2,2,2])
