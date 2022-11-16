@@ -110,10 +110,11 @@ $$
 
 To optimize this, we use the two-step GMM, using gradient-based optimization, starting with $\beta^{MLE}$ (from the original logistic regression):
 
+1. $\beta_0=\hat{\beta}_{MLE}$
+2. $\hat{W}_0=\Sigma_{\beta_0}^{-1}$
+3. $\hat{\beta}=\arg\min_\beta \bar{g}^T\hat{W}_{\hat{\beta}_0}\bar{g}$ - use gradient based optimization
+
 ## References
 [1] Imai, K., & Ratkovic, M. (2014). Covariate balancing propensity score. *Journal of the Royal Statistical Society: Series B: Statistical Methodology*, 243-263.
 
 [2] PAUL R. ROSENBAUM, DONALD B. RUBIN, The central role of the propensity score in observational studies for causal effects, Biometrika, Volume 70, Issue 1, April 1983, Pages 41–55, https://doi.org/10.1093/biomet/70.1.41
-1. $\beta_0=\hat{\beta}_{MLE}$
-2. $\hat{W}_0=\Sigma_{\beta_0}^{-1}$
-3. $\hat{\beta}=\arg\min_\beta \bar{g}^T\hat{W}_{\hat{\beta}_0}\bar{g}$ - use gradient based optimization
