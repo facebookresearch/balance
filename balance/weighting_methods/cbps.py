@@ -446,6 +446,7 @@ def cbps(  # noqa
         )
 
         XtXinv = np.linalg.pinv(
+            # pyre-fixme[16] Undefined attribute [16]: `float` has no attribute `__getitem__`.
             np.matmul((U * design_weights[:, None]).T, U * design_weights[:, None])
         )
     else:

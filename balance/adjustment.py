@@ -124,7 +124,6 @@ def trim_weights(
     return weights
 
 
-# TODO: update docs with type hinting info, and an example
 def default_transformations(
     dfs: Union[Tuple[pd.DataFrame, ...], List[pd.DataFrame]]
 ) -> Dict[str, Callable]:
@@ -132,11 +131,11 @@ def default_transformations(
     Apply default transfomations to dfs, i.e.
     quantize to numeric columns and fct_lump to non-numeric and boolean
 
-    Arguments:
-        dfs --- A list or tuple of dataframes
+    Args:
+        dfs (Union[Tuple[pd.DataFrame, ...], List[pd.DataFrame]]): A list or tuple of dataframes
 
     Returns:
-        Dict of transformations
+        Dict[str, Callable]: Dict of transformations
     """
     dtypes = {}
     for d in dfs:
@@ -154,41 +153,39 @@ def default_transformations(
     return transformations
 
 
-# TODO: update docs to reflect updated type hinting (e.g.: that transformations can be str or None)
 def apply_transformations(
     dfs: Tuple[pd.DataFrame, ...],
     transformations: Union[Dict[str, Callable], str, None],
     drop: bool = True,
-):
-    """
-    Apply the transformations specified in transformations to all of the dfs
-
-    - if a column specified in `transformations` does not exist in the dataframes,
-      it is added
-    - if a column is not specified in `transformations`, it is dropped,
-      unless drop==False
-    - the dfs are concatenated together before transformations are applied,
-      so functions like `max` are relative to the column in all dfs
-    - Cannot transform the same variable twice, or add a variable and then transform it
-      (i.e. the definition of the added variable should include the transformation)
-    - if you get a cryptic error about mismatched data types, make sure your
-      transformations are not being treated as additions because of missing
-      columns (use `_set_warnings("DEBUG")` to check)
-
+) -> Tuple[pd.DataFrame, ...]:
+    """Apply the transformations specified in transformations to all of the dfs
+        - if a column specified in `transformations` does not exist in the dataframes,
+        it is added
+        - if a column is not specified in `transformations`, it is dropped,
+        unless drop==False
+        - the dfs are concatenated together before transformations are applied,
+        so functions like `max` are relative to the column in all dfs
+        - Cannot transform the same variable twice, or add a variable and then transform it
+        (i.e. the definition of the added variable should include the transformation)
+        - if you get a cryptic error about mismatched data types, make sure your
+        transformations are not being treated as additions because of missing
+        columns (use `_set_warnings("DEBUG")` to check)
 
     Args:
-        dfs: tuple of pandas DataFrames. The DataFrames on which to operate
-        transformations: dict. Mapping from column name to function to apply.
+        dfs (Tuple[pd.DataFrame, ...]): The DataFrames on which to operate
+        transformations (Union[Dict[str, Callable], str, None]): Mapping from column name to function to apply.
             Transformations of existing columns should be specified as functions
             of those columns (e.g. `lambda x: x*2`), whereas additions of new
             columns should be specified as functions of the DataFrame
             (e.g. `lambda x: x.column_a + x.column_b`).
-        drop: bool (optional, default True). Whether to drop columns which are
-              not specified in `transformations`
+        drop (bool, optional): Whether to drop columns which are
+              not specified in `transformations`. Defaults to True.
+
+    Raises:
+        NotImplementedError: When passing an unknown "transformations" argument.
 
     Returns:
-        tuple of pd.DataFrames
-
+        Tuple[pd.DataFrame, ...]: tuple of pd.DataFrames
 
     Examples:
         ::
@@ -206,7 +203,9 @@ def apply_transformations(
                 #  0  5  2
                 #  1  7  4
                 #  2  9  6,)
+
     """
+    # TODO: change assert to raise
     assert isinstance(dfs, tuple), "'dfs' argument must be a tuple of DataFrames"
     assert all(
         isinstance(x, pd.DataFrame) for x in dfs
