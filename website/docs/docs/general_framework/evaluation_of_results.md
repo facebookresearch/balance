@@ -9,13 +9,13 @@ keywords:
     - results
 ---
 
-After weights are fitted to balance the sample, the results should be evaluated to understand the quality of the weighting.
+After weights are fitted in order to balance the sample, the results should be evaluated so to understand the quality of the weighting.
 
 ## Summary statistics
 
 ### Summary
 
-Printing the adjusted object gives a high level of the input in the object:
+Printing the adjusted object gives a high level overview of the content of the object:
 
 ```python
 print(adjusted)
@@ -40,7 +40,7 @@ outcome_columns: happiness
 ```
 
 
-To generate a summary of the data, use the summary function:
+To generate a summary of the data, use the summary method:
 
 ```python
 print(adjusted.summary())
@@ -120,7 +120,7 @@ For a summary of the diagnostics measures, use:
 adjusted.diagnostics()
 ```
 
-Note that when `adjust` is run with `model="ipw"`, then the rows with `metric == "model_coef"` represent the coefficients of the variables in the model. These can be used to understand the model that was fitted (after transformations and regularization).
+This will give a long table that can be filterred to focus on various diagnostics metrics. For example, when the `.adjust()` method is run with `model="ipw"` (the default method), then the rows from the diagnostics output with `metric == "model_coef"` represent the coefficients of the variables in the model. These can be used to understand the model that was fitted (after transformations and regularization).
 
 ## Visualization post adjustments
 
@@ -130,7 +130,7 @@ We can create all (interactive) plots using:
 adjusted.covars().plot()
 ```
 
-And we get:
+And get:
 
 ![](../img/fig_04_qqplot_income_after.png)
 
@@ -144,14 +144,14 @@ We can also use different plots, using the seaborn library, for example with the
 adjusted.covars().plot(library = "seaborn", dist_type = "kde")
 ```
 
-We get:
+And get:
 
 ![](../img/fig_07_seaborn_after.png)
 
 
 ## Distribution of Weights
 
-We can look at the distribution of weights using the following call:
+We can look at the distribution of weights using the following method call:
 
 
 ```python
@@ -162,7 +162,7 @@ And get:
 
 ![](../img/fig_08_weights_kde.png)
 
-Or get the design effect using:
+Or calculate the design effect using:
 
 ```python
 adjusted.weights().design_effect()
@@ -177,7 +177,7 @@ The `.summary()` method gives us the response rates (if we have missing values i
 print(adjust.outcomes().summary())
 ```
 
-And we get:
+To get:
 ```
 
 1 outcomes: ['happiness']
@@ -193,7 +193,7 @@ n     1000.0
 %      100.0
 ```
 
-The estimated mean happiness according to our sample is 48 without any adjustment and 54 with adjustment.  The following show the distribution of happinnes:
+For example, we see that the estimated mean happiness according to our sample is 48 without any adjustment and 54 with adjustment.  The following shows the distribution of happinnes before and after applying the weights:
 
 ```python
 adjusted.outcomes().plot()
