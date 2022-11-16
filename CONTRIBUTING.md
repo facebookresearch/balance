@@ -44,8 +44,32 @@ We strongly recommend adding unit testing when introducing new code. To run all 
 ### Documentation
 * We require docstrings on all public functions and classes (those not prepended with `_`).
 * We use the [Google docstring style](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html) & use Sphinx to compile API reference documentation.
-* Our [website](https://import-balance.org) leverages Docusaurus 2.0 + Sphinx for generating our documentation content.
-* To rule out parsing errors, we suggesting [installing sphinx](https://www.sphinx-doc.org/en/master/usage/installation.html) and running `make html` from the balance/sphinx folder. Alternatively, you may also try running `./script/make_docs` from the root of the balance repo folder.
+* Our [website](https://import-balance.org) leverages Docusaurus 2.0 + Sphinx + Jupyter notebook for generating our documentation content.
+* To rule out parsing errors, we suggesting [installing sphinx](https://www.sphinx-doc.org/en/master/usage/installation.html) and running `make html` from the balance/sphinx folder.
+
+## Website Development
+
+### Overview
+balance's website is also open source and part of this repository. balance leverages several open source frameworks for website development.
+* [Docusaurus 2](https://docusaurus.io/): The main site is generated using Docusaurus, with the code living under the [website](https://github.com/facebookresearch/balance/tree/main/website) folder). This includes the website template (navbar, footer, sidebars), landing page, and main sections (Blog, Docs, Tutorials, API Reference).
+  * Markdown is used for the content of several sections, particularly the "Docs" section. Files are under the [docs/](https://github.com/facebookresearch/balance/tree/main/website/docs/docs) folder
+* The content for the "Tutorials" section is based on our ipynb tutorials in our [tutorials]() folder.
+
+[Sphinx](https://www.sphinx-doc.org/en/master/index.html), and [Jupyter notebook](https://fburl.com/55p6vvxo). The main code can be found in the [website](https://github.com/facebookresearch/balance/tree/main/website) folder). Sphinx assets can be found in the [sphinx](https://github.com/facebookresearch/balance/tree/main/sphinx) folder.
+
+
+### Setup
+
+To install the necessary dependencies for website development, run the following from the repo root:
+```
+python -m pip install git+https://github.com/bbalasub1/glmnet_python.git@1.0
+python -m pip install .[dev]
+```
+
+### Testing
+
+### Deployment
+We rely on Github Actions to run . The workflow can be found [here]().
 
 ## License
 By contributing to balance, you agree that your contributions will be licensed
