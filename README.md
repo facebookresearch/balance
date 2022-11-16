@@ -4,8 +4,6 @@
 
 *balance is currently in beta and under active development!*
 
-**TODO**: Add TOC.
-
 ## What is *balance*?
 
 ***balance* is a Python package** offering a simple workflow and methods for **dealing with biased data samples** when looking to infer from them to some population of interest.
@@ -42,7 +40,7 @@ REQUIRES = [
 
 Note that glmnet_python must be installed from the [Github source](https://github.com/bbalasub1/glmnet_python.git@1.0)
 
-See [setup.py](setup.py) for more details. **TODO**: add details on setup.py.
+See [setup.py](https://github.com/facebookresearch/balance/blob/main/setup.py) for more details. **TODO**: add details on using setup.py.
 
 ## Installing balance
 As a prerequisite, you must install glmnet_python from source:
@@ -75,25 +73,24 @@ python -m pip install .
 ```
 
 
-**TODO**: add link to the setup.py file, and instructions on how to use it.
-
-
 # Getting started
 
 ## balance’s workflow in high-level
 
-The core workflow in balance deals with fitting and evaluating weights to a sample. For each unit in the sample (such as a respondent to a survey), balance fits a weight that can be (loosely) interpreted as the number of people from the target population that this respondent represents.
+The core workflow in balance deals with fitting and evaluating weights to a sample. For each unit in the sample (such as a respondent to a survey), balance fits a weight that can be (loosely) interpreted as the number of people from the target population that this respondent represents. This aims to help mitigate the coverage and non-response biases, as illustrated in the following figure.
+
+![total_survey_error_img](https://raw.githubusercontent.com/facebookresearch/balance/main/website/docs/docs/img/total_survey_error_image.png?token=GHSAT0AAAAAAB25KSTWSBZGTWAJ7LJ3U3G6Y3VG4XA)
+
 
 The weighting of survey data through balance is done in the following main steps:
 
-1. Loading/Reading data of
-    1. the respondents of the survey.
-    2. the target population we would like to correct for.
-2. Diagnostics of potential bias in the sample - evaluate whether weighting is needed based on metrics comparing how far is the covariate distribution of the sample from that of the target population, i.e. how biased the sample covariates are.
-3. Adjusting the sample to the target.
-4. Evaluation of the results.
-5. Using the weights to compute the population estimation
-6. Saving the output weights for followup analyses.
+1. Loading data of the respondents of the survey.
+2. Loading data about the target population we would like to correct for.
+3. Diagnostics of the sample covariates so to evaluate whether weighting is needed.
+4. Adjusting the sample to the target.
+5. Evaluation of the results.
+6. Use the weights for producing population level estimations.
+7. Saving the output weights.
 
 **TODO**: add a simple chart that describes the flow
 
@@ -101,7 +98,7 @@ The weighting of survey data through balance is done in the following main steps
 
 ## Code example of using balance
 
-You may run the following code to implement balance's basic workflow:
+You may run the following code to play with balance's basic workflow:
 
 ```python
 from balance import load_data, Sample
@@ -167,22 +164,15 @@ To see the full output of the code above, please go over to **TODO**: add link.
 
 ## Implemented methods for adjustments
 
-balance currently implements various methods
+balance currently implements various adjustment methods.
 
 For weight adjustment, it uses [inverse probability/propensity weighting](https://en.wikipedia.org/wiki/Inverse_probability_weighting) (IPW) with:
 
 **TODO**: link to the website links instead of the ones we have below.
 **TODO:** Update descriptions according the adjustment page
-1. Logistic regression using L1 (LASSO) penalization (TODO: reference the package used)(TODO: add more details about the model and the advantage of lasso in this context).
-2. Covariate Balancing Propensity Score (CBPS) - The CBPS algorithm estimates the propensity score in a way that maximizes the covariate balance as well as the prediction of sample inclusion. Its main advantage is in cases when the researcher wants better balance on the covariates than traditional propensity score methods - because one believes the assignment model might be misspecified and would like to avoid an iterative procedure of balancing the covariates.
-    Reference: Imai, K., & Ratkovic, M. (2014). Covariate balancing propensity score. *Journal of the Royal Statistical Society: Series B: Statistical Methodology*, 243-263. ([link](https://imai.fas.harvard.edu/research/files/CBPS.pdf))
-
-3. Post-stratification - TODO: add details
-
-**TODO**: Take from adjustment page
-It also offers some pre and post processing for the data, such as:
-1. Automatic transformations (**TODO**: add details on what and why)
-2. Weight trimming (via [winsorization](https://en.wikipedia.org/wiki/Winsorizing))
+1. Logistic regression using L1 (LASSO) penalization.
+2. Covariate Balancing Propensity Score (CBPS).
+3. Post-stratification.
 
 ## Implemented methods for diagnostics/evaluation
 
@@ -208,21 +198,18 @@ You are welcome to:
 
 * Ask for help in: https://stats.stackexchange.com/questions/tagged/balance
 * Submit bug-reports and features' suggestions at: https://github.com/facebookresearch/balance/issues
-* Send a pull request on: https://github.com/facebookresearch/balance. See the [CONTRIBUTING](CONTRIBUTING.md) file for how to help out. And our [CODE OF CONDUCT](CODE_OF_CONDUCT.md) for our expectations from contributors.
+* Send a pull request on: https://github.com/facebookresearch/balance. See the [CONTRIBUTING](https://github.com/facebookresearch/balance/blob/main/CONTRIBUTING.md) file for how to help out. And our [CODE OF CONDUCT](https://github.com/facebookresearch/balance/blob/main/LICENSE-DOCUMENTATION) for our expectations from contributors.
 
 ## Citing *balance*
 
 **TODO**: Update.
 
-
 ## License
-The *balance* package is licensed under the [GPLv2 license](LICENSE), and all the documentation on the site is under [CC-BY](LICENSE-DOCUMENTATION).
-
+The *balance* package is licensed under the [GPLv2 license](https://github.com/facebookresearch/balance/blob/main/LICENSE), and all the documentation on the site is under [CC-BY](https://github.com/facebookresearch/balance/blob/main/LICENSE-DOCUMENTATION).
 
 # News
 
 **TODO**: Link to the NEWS.md file
-
 
 ## Acknowledgements / People
 
