@@ -130,8 +130,7 @@ class Sample:
         check_id_uniqueness: bool = True,
         standardize_types: bool = True,
     ) -> "Sample":
-        """
-        Create a new Sample object.
+        """Create a new Sample object.
 
         NOTE that all integer columns will be converted by defaults into floats. This behavior can be turned off
         by setting standardize_types argument to False.
@@ -145,20 +144,20 @@ class Sample:
         The id_column is stored as a string, even if the input is an integer.
 
         Args:
-        df (pd.DataFrame): containing the sample's data
-        id_column (Optional, Optional[str]): the column of the df which contains the respondent's id
-           (should be unique). Defaults to None.
-        outcome_columns (Optional, Optional[Union[list, tuple, str]]): names of columns to treat as outcome
-        weight_column (Optional, Optional[str]): name of column to treat as weight. If not specified, will
-            be guessed. If not found, will be filled with 1.0.
-        check_id_uniqueness (Optional, bool): Whether to check if ids are unique. Defaults to True.
-        standardize_types (Optional, bool): Whether to standardize types. Defaults to True.
-            Int64/int64 -> float64
-            Int32/int32 -> float64
-            string -> object
-            pandas.NA -> numpy.nan (within each cell)
-            This is slightly memory intensive (since it copies the data twice),
-            but helps keep various functions working for both Int64 and Int32 input columns.
+            df (pd.DataFrame): containing the sample's data
+            id_column (Optional, Optional[str]): the column of the df which contains the respondent's id
+            (should be unique). Defaults to None.
+            outcome_columns (Optional, Optional[Union[list, tuple, str]]): names of columns to treat as outcome
+            weight_column (Optional, Optional[str]): name of column to treat as weight. If not specified, will
+                be guessed. If not found, will be filled with 1.0.
+            check_id_uniqueness (Optional, bool): Whether to check if ids are unique. Defaults to True.
+            standardize_types (Optional, bool): Whether to standardize types. Defaults to True.
+                Int64/int64 -> float64
+                Int32/int32 -> float64
+                string -> object
+                pandas.NA -> numpy.nan (within each cell)
+                This is slightly memory intensive (since it copies the data twice),
+                but helps keep various functions working for both Int64 and Int32 input columns.
 
         Returns:
             Sample: a sample object
@@ -379,9 +378,9 @@ class Sample:
         This function returns a new sample.
 
         Args:
-        target (Optional["Sample"]): Second sample object which should be matched.
-            If None, the set traget of the object is used for matching.
-        method (str): method for adjustment: cbps, ipw, null, poststratify
+            target (Optional["Sample"]): Second sample object which should be matched.
+                If None, the set traget of the object is used for matching.
+            method (str): method for adjustment: cbps, ipw, null, poststratify
 
         Returns:
             Sample: an adjusted Sample object
@@ -422,7 +421,7 @@ class Sample:
 
         Args:
             weights (Optional[Union[pd.Series, float]]): Seiers of weights to add to sample.
-            If None or float values, the same weight (or None) will be assigned to all units.
+                If None or float values, the same weight (or None) will be assigned to all units.
 
         Returns:
             None, but adapting the Sample weight column to weights
@@ -502,7 +501,7 @@ class Sample:
 
         Args:
             self (Sample): A Sample object produces after running :func:`Sample.adjust`.
-            It should include 3 componants: "unadjusted", "adjusted", "target".
+                It should include 3 componants: "unadjusted", "adjusted", "target".
 
         Returns:
             pd.DataFrame: A DataFrame with 3 columns ("unadjusted", "adjusted", "target"),
@@ -560,7 +559,7 @@ class Sample:
 
         Args:
             self (Sample): A Sample object produces after running :func:`Sample.adjust`.
-            It should include 3 componants: "unadjusted", "adjusted", "target".
+                It should include 3 componants: "unadjusted", "adjusted", "target".
 
         Returns:
             np.float64: relative difference in design effect.
@@ -615,7 +614,7 @@ class Sample:
 
         Args:
             self (Sample): A Sample object produces after running :func:`Sample.adjust`.
-            It should include 3 componants: "unadjusted", "adjusted", "target".
+                It should include 3 componants: "unadjusted", "adjusted", "target".
 
         Returns:
             pd.Series: (np.float64) relative difference in outcome weighted standard deviation.
@@ -636,7 +635,7 @@ class Sample:
 
         Args:
             self (Sample): A Sample object produces after running :func:`Sample.adjust`.
-            It should include 3 componants: "unadjusted", "adjusted", "target".
+                It should include 3 componants: "unadjusted", "adjusted", "target".
 
         Returns:
              pd.Series: (np.float64) A series of calculated ratio of variances for each outcome.
@@ -780,7 +779,7 @@ class Sample:
 
         Returns:
             pd.DataFrame: with 3 columns: ("metric", "val", "var"),
-            indicating various tracking metrics on the model.
+                indicating various tracking metrics on the model.
         """
         logger.info("Starting computation of diagnostics of the fitting")
         self._check_if_adjusted()
@@ -1060,9 +1059,9 @@ class Sample:
 
         Returns:
             Sample: A copy of the original object. If both rows and columns to keep are None,
-            returns the copied object unchanged.
-            If some are not None, will update - first the rows - then the columns.
-            This performs the transformation on both the sameple's df and its linkes dfs (unadjusted, target).
+                returns the copied object unchanged.
+                If some are not None, will update - first the rows - then the columns.
+                This performs the transformation on both the sameple's df and its linkes dfs (unadjusted, target).
         """
         if (rows_to_keep is None) and (columns_to_keep is None):
             return self
