@@ -18,7 +18,7 @@ const katex = require('rehype-katex');
   tagline: 'A python package for balancing biased data samples',
   // TODO[scubasteve]: Migrate to final URL once set up
   url: 'https://internalfb.com',
-  baseUrl: '/',
+  baseUrl: fbContent({internal: '/', external: '/balance/'}),
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'throw',
   trailingSlash: true,
