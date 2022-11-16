@@ -135,13 +135,13 @@ class BalanceDF:
 
 
         Returns:
-            Dict: dict mapping the link relationship to the result.
+            Dict[str, Union["BalanceCovarsDF", "BalanceWeightsDF", Union["BalanceOutcomesDF", None]],]:
+            A dict mapping the link relationship to the result.
                 First item is self, and it just returns it without using method on it.
                 The other items are based on the objects in _links. E.g.: it can be 'target'
                 and 'unadjusted', and it will return them after running the same BalanceDF child creation method on them.
 
         Examples:
-
             from balance.sample_class import Sample
             import pandas as pd
 
@@ -780,7 +780,7 @@ class BalanceDF:
             self (BalanceDF): Object
 
         Returns:
-            Union[pd.DataFrame, Optional[np.ndarray]]:
+            Tuple[pd.DataFrame, Optional[np.ndarray]]:
                 A pd.DataFrame output from running :func:`model_metrix`, and
                 A np.ndarray of weights from :func:`_weights`, or just None (if there are no weights).
         """
@@ -996,7 +996,7 @@ class BalanceDF:
 
         Returns:
             np.float64: The improvement is taking the (before_mean_asmd-after_mean_asmd)/before_mean_asmd.
-            The asmd is calculated using :func:`asmd`.
+                The asmd is calculated using :func:`asmd`.
 
         Examples:
             import pandas as pd
@@ -1146,7 +1146,7 @@ class BalanceOutcomesDF(BalanceDF):
         self: "BalanceOutcomesDF",
         target: Union[bool, pd.DataFrame] = False,
         per_column: bool = False,
-    ) -> Union[pd.DataFrame, None]:
+    ) -> Optional[pd.DataFrame]:
         """Produces a summary table of number of responses and proportion of completed responses.
 
         See :func:`general_stats.relative_response_rates`.
@@ -1164,7 +1164,7 @@ class BalanceOutcomesDF(BalanceDF):
             per_column (bool, optional): Default is False. See :func:`general_stats.relative_response_rates`.
 
         Returns:
-            pd.DataFrame: A column per outcome, and two rows.
+            Optional[pd.DataFrame]: A column per outcome, and two rows.
                 One row with number of non-null observations, and
                 A second row with the proportion of non-null observations.
 
@@ -1631,7 +1631,7 @@ class BalanceWeightsDF(BalanceDF):
             keep_sum_of_weights (bool, optional): Maps to weight_trimming_percentile. Defaults to True.
 
         Returns:
-            NoneType: None. This function updates the :func:`_sample` using :func:`set_weights`
+            None. This function updates the :func:`_sample` using :func:`set_weights`
         """
         # TODO: verify which object exactly gets updated - and explain it here.
         self._sample.set_weights(
