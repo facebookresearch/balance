@@ -6,7 +6,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import logging
-from typing import Any, Dict
+from typing import Dict, List, Optional, Union
 
 import pandas as pd
 
@@ -22,14 +22,13 @@ def poststratify(
     sample_weights: pd.Series,
     target_df: pd.DataFrame,
     target_weights: pd.Series,
-    variables=None,
+    variables: Optional[List[str]] = None,
     transformations: str = "default",
     transformations_drop: bool = True,
     *args,
     **kwargs,
-) -> Dict[str, Any]:
-    """
-    Perform cell-based post-stratification. The output weights take into account
+) -> Dict[str, Union[pd.Series, Dict[str, str]]]:
+    """Perform cell-based post-stratification. The output weights take into account
     the design weights and the post-stratification weights.
     Reference: https://docs.wfp.org/api/documents/WFP-0000121326/download/
 
@@ -38,17 +37,26 @@ def poststratify(
         sample_weights (pd.Series): design weights for sample
         target_df (pd.DataFrame): a dataframe representing the target
         target_weights (pd.Series): design weights for target
-        variables (list of strings or None): list of variables to include in the model.
+        variables (Optional[List[str]], optional): list of variables to include in the model.
             If None all joint variables of sample_df and target_df are used
-        transformations (dict): what transformations to apply to data before fitting the model.
+        transformations (str, optional): what transformations to apply to data before fitting the model.
             Default is "default" (see apply_transformations function)
-        transformations_drop (bool): whether the function should drop non-transformed variables.
+        transformations_drop (bool, optional): whether the function should drop non-transformed variables.
             Default is True.
+    Raises:
+        ValueError: _description_
+        ValueError: _description_
 
     Returns:
-        Dict:
+        Dict[str, Union[pd.Series, Dict[str, str]]]:
             weights (pd.Series): final weights (sum up to target's sum of weights)
             model (dict): method of adjustment
+
+            Dict shape:
+            {
+                "weights": w,
+                "model": {"method": "poststratify"},
+            }
     """
     balance_util._check_weighting_methods_input(sample_df, sample_weights, "sample")
     balance_util._check_weighting_methods_input(target_df, target_weights, "target")
