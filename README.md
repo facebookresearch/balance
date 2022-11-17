@@ -1,4 +1,5 @@
-**TODO**: add balance logo, and a link to import-balance.org
+[![balance_logo_horizontal](https://raw.githubusercontent.com/facebookresearch/balance/main/website/static/img/balance_logo/PNG/Horizontal/balance_Logo_Horizontal_FullColor_RGB.png)](https://import-balance.org/)
+
 
 # *balance*: a python package for balancing biased data samples
 
