@@ -54,4 +54,4 @@ yarn
 echo "-----------------------------------"
 echo "Building static Docusaurus site"
 echo "-----------------------------------"
-yarn build
+NODE_OPTIONS=--openssl-legacy-provider yarn build
