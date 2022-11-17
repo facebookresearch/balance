@@ -71,10 +71,12 @@ If not, then the self object is sample.</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>naming_legend(‘self’, [‘self’, ‘target’, ‘unadjusted’]) #’adjusted’
-naming_legend(‘unadjusted’, [‘self’, ‘target’, ‘unadjusted’]) #’sample’
-naming_legend(‘self’, [‘self’, ‘target’]) #’sample’
-naming_legend(‘other_name’, [‘self’, ‘target’]) #’other_name’</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">naming_legend</span><span class="p">(</span><span class="s1">&#39;self&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;self&#39;</span><span class="p">,</span> <span class="s1">&#39;target&#39;</span><span class="p">,</span> <span class="s1">&#39;unadjusted&#39;</span><span class="p">])</span> <span class="c1">#&#39;adjusted&#39;</span>
+<span class="n">naming_legend</span><span class="p">(</span><span class="s1">&#39;unadjusted&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;self&#39;</span><span class="p">,</span> <span class="s1">&#39;target&#39;</span><span class="p">,</span> <span class="s1">&#39;unadjusted&#39;</span><span class="p">])</span> <span class="c1">#&#39;sample&#39;</span>
+<span class="n">naming_legend</span><span class="p">(</span><span class="s1">&#39;self&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;self&#39;</span><span class="p">,</span> <span class="s1">&#39;target&#39;</span><span class="p">])</span> <span class="c1">#&#39;sample&#39;</span>
+<span class="n">naming_legend</span><span class="p">(</span><span class="s1">&#39;other_name&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;self&#39;</span><span class="p">,</span> <span class="s1">&#39;target&#39;</span><span class="p">])</span> <span class="c1">#&#39;other_name&#39;</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -104,32 +106,31 @@ The ‘weights’ is a pd.Series of weights that are used when aggregating the v
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>from balance.stats_and_plots.weighted_comparisons_plots import plot_bar
-import pandas as pd
-import numpy as np</p>
-<dl class="simple">
-<dt>df = pd.DataFrame({</dt><dd><p>‘group’: (‘a’, ‘b’, ‘c’, ‘c’),
-‘v1’: (1, 2, 3, 4),</p>
-</dd>
-</dl>
-<p>})</p>
-<dl class="simple">
-<dt>plot_bar(</dt><dd><p>[{“df”: df, “weights”: pd.Series((1, 1, 1, 1))}, {“df”: df, “weights”: pd.Series((2, 1, 1, 1))}],
-names = [“self”, “target”],
-column = “group”,
-axis = None,
-weighted = True)</p>
-</dd>
-</dl>
-<p># Also deals with np.nan weights
-a = plot_bar(</p>
-<blockquote>
-<div><p>[{“df”: df, “weights”: pd.Series((1, 1, 1, np.nan))}, {“df”: df, “weights”: pd.Series((2, 1, 1, np.nan))}],
-names = [“self”, “target”],
-column = “group”,
-axis = None,
-weighted = True)</p>
-</div></blockquote>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">balance.stats_and_plots.weighted_comparisons_plots</span> <span class="kn">import</span> <span class="n">plot_bar</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s1">&#39;group&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;v1&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+<span class="p">})</span>
+
+<span class="n">plot_bar</span><span class="p">(</span>
+    <span class="p">[{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">df</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))},</span> <span class="p">{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">df</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))}],</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">],</span>
+    <span class="n">column</span> <span class="o">=</span> <span class="s2">&quot;group&quot;</span><span class="p">,</span>
+    <span class="n">axis</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">weighted</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Also deals with np.nan weights</span>
+<span class="n">a</span> <span class="o">=</span> <span class="n">plot_bar</span><span class="p">(</span>
+    <span class="p">[{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">df</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">))},</span> <span class="p">{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">df</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">))}],</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">],</span>
+    <span class="n">column</span> <span class="o">=</span> <span class="s2">&quot;group&quot;</span><span class="p">,</span>
+    <span class="n">axis</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">weighted</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -173,33 +174,38 @@ If library=”seaborn” then returns either a list or an np.array of matplotlib
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>import numpy as np
-import pandas as pd
-from numpy import random
-from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_bar</p>
-<p>random.seed(96483)</p>
-<dl class="simple">
-<dt>df = pd.DataFrame({</dt><dd><p>‘v1’: random.random_integers(11111, 11114, size=100).astype(str),
-‘v2’: random.normal(size = 100),
-‘v3’: random.uniform(size = 100),</p>
-</dd>
-</dl>
-<p>}).sort_values(by=[‘v2’])</p>
-<dl class="simple">
-<dt>dfs1 = [</dt><dd><p>{“df”: df, “weights”: pd.Series(random.random(size = 100) + 0.5)},
-{“df”: df, “weights”: pd.Series(np.ones(99).tolist() + [1000])},
-{“df”: df, “weights”: pd.Series(np.ones(100))},</p>
-</dd>
-</dl>
-<p>]</p>
-<p>from balance.stats_and_plots.weighted_comparisons_plots import plot_dist</p>
-<p># defaults to plotly with bar and qq plots. Returns None.
-plot_dist(dfs1, names=[“self”, “unadjusted”, “target”])</p>
-<p># Using seaborn, deafults to qq plots
-plot_dist(dfs1, names=[“self”, “unadjusted”, “target”], library=”seaborn”) # like using dist_type = “qq”
-plot_dist(dfs1, names=[“self”, “unadjusted”, “target”], library=”seaborn”, dist_type = “hist”)
-plot_dist(dfs1, names=[“self”, “unadjusted”, “target”], library=”seaborn”, dist_type = “kde”)
-plot_dist(dfs1, names=[“self”, “unadjusted”, “target”], library=”seaborn”, dist_type = “ecdf”)</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">random</span>
+<span class="kn">from</span> <span class="nn">balance.stats_and_plots.weighted_comparisons_plots</span> <span class="kn">import</span> <span class="n">plotly_plot_bar</span>
+
+<span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">96483</span><span class="p">)</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s1">&#39;v1&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">random_integers</span><span class="p">(</span><span class="mi">11111</span><span class="p">,</span> <span class="mi">11114</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">),</span>
+    <span class="s1">&#39;v2&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="mi">100</span><span class="p">),</span>
+    <span class="s1">&#39;v3&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="mi">100</span><span class="p">),</span>
+<span class="p">})</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;v2&#39;</span><span class="p">])</span>
+
+<span class="n">dfs1</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">df</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="mi">100</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)},</span>
+    <span class="p">{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">df</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">99</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1000</span><span class="p">])},</span>
+    <span class="p">{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">df</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">100</span><span class="p">))},</span>
+<span class="p">]</span>
+
+
+<span class="kn">from</span> <span class="nn">balance.stats_and_plots.weighted_comparisons_plots</span> <span class="kn">import</span> <span class="n">plot_dist</span>
+
+<span class="c1"># defaults to plotly with bar and qq plots. Returns None.</span>
+<span class="n">plot_dist</span><span class="p">(</span><span class="n">dfs1</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;unadjusted&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">])</span>
+
+<span class="c1"># Using seaborn, deafults to qq plots</span>
+<span class="n">plot_dist</span><span class="p">(</span><span class="n">dfs1</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;unadjusted&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">],</span> <span class="n">library</span><span class="o">=</span><span class="s2">&quot;seaborn&quot;</span><span class="p">)</span> <span class="c1"># like using dist_type = &quot;qq&quot;</span>
+<span class="n">plot_dist</span><span class="p">(</span><span class="n">dfs1</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;unadjusted&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">],</span> <span class="n">library</span><span class="o">=</span><span class="s2">&quot;seaborn&quot;</span><span class="p">,</span> <span class="n">dist_type</span> <span class="o">=</span> <span class="s2">&quot;hist&quot;</span><span class="p">)</span>
+<span class="n">plot_dist</span><span class="p">(</span><span class="n">dfs1</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;unadjusted&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">],</span> <span class="n">library</span><span class="o">=</span><span class="s2">&quot;seaborn&quot;</span><span class="p">,</span> <span class="n">dist_type</span> <span class="o">=</span> <span class="s2">&quot;kde&quot;</span><span class="p">)</span>
+<span class="n">plot_dist</span><span class="p">(</span><span class="n">dfs1</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;unadjusted&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">],</span> <span class="n">library</span><span class="o">=</span><span class="s2">&quot;seaborn&quot;</span><span class="p">,</span> <span class="n">dist_type</span> <span class="o">=</span> <span class="s2">&quot;ecdf&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -230,75 +236,75 @@ The ‘weights’ is a pd.Series of weights that are used when aggregating the v
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>from balance.stats_and_plots.weighted_comparisons_plots import plot_hist_kde
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt</p>
-<dl class="simple">
-<dt>df = pd.DataFrame({</dt><dd><p>‘group’: (‘a’, ‘b’, ‘c’, ‘c’),
-‘v1’: (1, 2, 3, 4),</p>
-</dd>
-</dl>
-<p>})</p>
-<p>dfs1 = [{“df”: pd.DataFrame(pd.Series([1,2,2,2,3,4,5,5,7,8,9,9,9,9,5,2,5,4,4,4], name = “v1”)), “weights”: None}, {“df”: df, “weights”: pd.Series((200, 1, 0, 20))}]</p>
-<p>plt.figure(1)</p>
-<p># kde: no weights
-plot_hist_kde(</p>
-<blockquote>
-<div><p>dfs1,
-names = [“self”, “target”],
-column = “v1”,
-axis = None,
-weighted = False, dist_type = “kde”)</p>
-</div></blockquote>
-<p>plt.figure(2)</p>
-<p># kde: with weights
-plot_hist_kde(</p>
-<blockquote>
-<div><p>dfs1,
-names = [“self”, “target”],
-column = “v1”,
-axis = None,
-weighted = True, dist_type = “kde”)</p>
-</div></blockquote>
-<p>plt.figure(3)</p>
-<p># hist
-plot_hist_kde(</p>
-<blockquote>
-<div><p>dfs1,
-names = [“self”, “target”],
-column = “v1”,
-axis = None,
-weighted = True, dist_type = “hist”)</p>
-</div></blockquote>
-<p>plt.figure(4)</p>
-<p># ecdf
-plot_hist_kde(</p>
-<blockquote>
-<div><p>dfs1,
-names = [“self”, “target”],
-column = “v1”,
-axis = None,
-weighted = True, dist_type = “ecdf”)</p>
-</div></blockquote>
-<p># can work nicely with plt.subplots:
-f, axes = plt.subplots(1, 2, figsize=(7, 7 * 1))
-plot_hist_kde(</p>
-<blockquote>
-<div><p>dfs1,
-names = [“self”, “target”],
-column = “v1”,
-axis = axes[0],
-weighted = False, dist_type = “kde”)</p>
-</div></blockquote>
-<dl class="simple">
-<dt>plot_hist_kde(</dt><dd><p>dfs1,
-names = [“self”, “target”],
-column = “v1”,
-axis = axes[1],
-weighted = False, dist_type = “kde”)</p>
-</dd>
-</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">balance.stats_and_plots.weighted_comparisons_plots</span> <span class="kn">import</span> <span class="n">plot_hist_kde</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s1">&#39;group&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;v1&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+<span class="p">})</span>
+
+<span class="n">dfs1</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">9</span><span class="p">,</span><span class="mi">9</span><span class="p">,</span><span class="mi">9</span><span class="p">,</span><span class="mi">9</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span> <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;v1&quot;</span><span class="p">)),</span> <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">},</span> <span class="p">{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">df</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">200</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">))}]</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># kde: no weights</span>
+<span class="n">plot_hist_kde</span><span class="p">(</span>
+    <span class="n">dfs1</span><span class="p">,</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">],</span>
+    <span class="n">column</span> <span class="o">=</span> <span class="s2">&quot;v1&quot;</span><span class="p">,</span>
+    <span class="n">axis</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">weighted</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">dist_type</span> <span class="o">=</span> <span class="s2">&quot;kde&quot;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="c1"># kde: with weights</span>
+<span class="n">plot_hist_kde</span><span class="p">(</span>
+    <span class="n">dfs1</span><span class="p">,</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">],</span>
+    <span class="n">column</span> <span class="o">=</span> <span class="s2">&quot;v1&quot;</span><span class="p">,</span>
+    <span class="n">axis</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">weighted</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">dist_type</span> <span class="o">=</span> <span class="s2">&quot;kde&quot;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+
+<span class="c1"># hist</span>
+<span class="n">plot_hist_kde</span><span class="p">(</span>
+    <span class="n">dfs1</span><span class="p">,</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">],</span>
+    <span class="n">column</span> <span class="o">=</span> <span class="s2">&quot;v1&quot;</span><span class="p">,</span>
+    <span class="n">axis</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">weighted</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">dist_type</span> <span class="o">=</span> <span class="s2">&quot;hist&quot;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+
+<span class="c1"># ecdf</span>
+<span class="n">plot_hist_kde</span><span class="p">(</span>
+    <span class="n">dfs1</span><span class="p">,</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">],</span>
+    <span class="n">column</span> <span class="o">=</span> <span class="s2">&quot;v1&quot;</span><span class="p">,</span>
+    <span class="n">axis</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">weighted</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">dist_type</span> <span class="o">=</span> <span class="s2">&quot;ecdf&quot;</span><span class="p">)</span>
+
+
+<span class="c1"># can work nicely with plt.subplots:</span>
+<span class="n">f</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span> <span class="o">*</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">plot_hist_kde</span><span class="p">(</span>
+    <span class="n">dfs1</span><span class="p">,</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">],</span>
+    <span class="n">column</span> <span class="o">=</span> <span class="s2">&quot;v1&quot;</span><span class="p">,</span>
+    <span class="n">axis</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+    <span class="n">weighted</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">dist_type</span> <span class="o">=</span> <span class="s2">&quot;kde&quot;</span><span class="p">)</span>
+<span class="n">plot_hist_kde</span><span class="p">(</span>
+    <span class="n">dfs1</span><span class="p">,</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">],</span>
+    <span class="n">column</span> <span class="o">=</span> <span class="s2">&quot;v1&quot;</span><span class="p">,</span>
+    <span class="n">axis</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+    <span class="n">weighted</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">dist_type</span> <span class="o">=</span> <span class="s2">&quot;kde&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -329,24 +335,25 @@ Uses the last df item in the list as the target.</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>import numpy as np
-import pandas as pd
-from balance.stats_and_plots.weighted_comparisons_plots import plot_qq
-from numpy import random</p>
-<dl class="simple">
-<dt>df = pd.DataFrame({</dt><dd><p>‘v1’: random.uniform(size=100),</p>
-</dd>
-</dl>
-<p>}).sort_values(by=[‘v1’])</p>
-<dl class="simple">
-<dt>dfs1 = [</dt><dd><p>{“df”: df, “weights”: pd.Series(np.ones(100))},
-{“df”: df, “weights”: pd.Series(range(100))},
-{“df”: df, “weights”: pd.Series(np.ones(100))},</p>
-</dd>
-</dl>
-<p>]</p>
-<p># plot_qq(dfs1, names=[“self”, “unadjusted”, “target”], column=”v1”, axis=None, weighted=False)
-plot_qq(dfs1, names=[“self”, “unadjusted”, “target”], column=”v1”, axis=None, weighted=True)</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">balance.stats_and_plots.weighted_comparisons_plots</span> <span class="kn">import</span> <span class="n">plot_qq</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">random</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s1">&#39;v1&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">100</span><span class="p">),</span>
+<span class="p">})</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;v1&#39;</span><span class="p">])</span>
+
+<span class="n">dfs1</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">df</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">100</span><span class="p">))},</span>
+    <span class="p">{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">df</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">))},</span>
+    <span class="p">{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">df</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">100</span><span class="p">))},</span>
+<span class="p">]</span>
+
+<span class="c1"># plot_qq(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], column=&quot;v1&quot;, axis=None, weighted=False)</span>
+<span class="n">plot_qq</span><span class="p">(</span><span class="n">dfs1</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;unadjusted&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">],</span> <span class="n">column</span><span class="o">=</span><span class="s2">&quot;v1&quot;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weighted</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -379,31 +386,35 @@ Uses the last df item in the list as the target.</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>import numpy as np
-import pandas as pd
-from balance.stats_and_plots.weighted_comparisons_plots import plot_qq_categorical
-from numpy import random</p>
-<dl class="simple">
-<dt>df = pd.DataFrame({</dt><dd><p>‘v1’: random.random_integers(11111, 11114, size=100),</p>
-</dd>
-</dl>
-<p>}).sort_values(by=[‘v1’])</p>
-<dl class="simple">
-<dt>dfs1 = [</dt><dd><p>{“df”: df, “weights”: pd.Series(np.ones(100))},
-{“df”: df, “weights”: pd.Series(np.ones(99).tolist() + [1000])},
-{“df”: df, “weights”: pd.Series(np.ones(100))},</p>
-</dd>
-</dl>
-<p>]</p>
-<p>import matplotlib.pyplot as plt</p>
-<p>plt.rcParams[“figure.figsize”] = (20, 6) # (w, h)</p>
-<p>fig, axs = plt.subplots(1,3)</p>
-<p># Without using weights
-plot_qq_categorical(dfs1, names=[“self”, “unadjusted”, “target”], column=”v1”, axis=axs[0], weighted=False)
-# With weights
-plot_qq_categorical(dfs1, names=[“self”, “unadjusted”, “target”], column=”v1”, axis=axs[1], weighted=True)
-# With label trimming if the text is longer than 3.
-plot_qq_categorical(dfs1, names=[“self”, “unadjusted”, “target”], column=”v1”, axis=axs[2], weighted=True, label_threshold=3)</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">balance.stats_and_plots.weighted_comparisons_plots</span> <span class="kn">import</span> <span class="n">plot_qq_categorical</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">random</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s1">&#39;v1&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">random_integers</span><span class="p">(</span><span class="mi">11111</span><span class="p">,</span> <span class="mi">11114</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">100</span><span class="p">),</span>
+<span class="p">})</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;v1&#39;</span><span class="p">])</span>
+
+<span class="n">dfs1</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">df</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">100</span><span class="p">))},</span>
+    <span class="p">{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">df</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">99</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1000</span><span class="p">])},</span>
+    <span class="p">{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">df</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">100</span><span class="p">))},</span>
+<span class="p">]</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;figure.figsize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span> <span class="c1"># (w, h)</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+
+<span class="c1"># Without using weights</span>
+<span class="n">plot_qq_categorical</span><span class="p">(</span><span class="n">dfs1</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;unadjusted&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">],</span> <span class="n">column</span><span class="o">=</span><span class="s2">&quot;v1&quot;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">weighted</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="c1"># With weights</span>
+<span class="n">plot_qq_categorical</span><span class="p">(</span><span class="n">dfs1</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;unadjusted&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">],</span> <span class="n">column</span><span class="o">=</span><span class="s2">&quot;v1&quot;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">weighted</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="c1"># With label trimming if the text is longer than 3.</span>
+<span class="n">plot_qq_categorical</span><span class="p">(</span><span class="n">dfs1</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;unadjusted&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">],</span> <span class="n">column</span><span class="o">=</span><span class="s2">&quot;v1&quot;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">weighted</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">label_threshold</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -428,27 +439,29 @@ and the value is the DataFrame that contains the variables that we want to plot.
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>import numpy as np
-import pandas as pd
-from numpy import random
-from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_bar</p>
-<p>random.seed(96483)</p>
-<dl class="simple">
-<dt>df = pd.DataFrame({</dt><dd><p>‘v1’: random.random_integers(11111, 11114, size=100).astype(str),
-‘v2’: random.normal(size = 100),
-‘v3’: random.uniform(size = 100),</p>
-</dd>
-</dl>
-<p>}).sort_values(by=[‘v2’])</p>
-<dl class="simple">
-<dt>dict_of_dfs = {</dt><dd><p>“self”: pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = “weight”)], axis = 1),
-“unadjusted”: pd.concat([df, pd.Series(np.ones(99).tolist() + [1000], name = “weight”)], axis = 1),
-“target”: pd.concat([df, pd.Series(np.ones(100), name = “weight”)], axis = 1),</p>
-</dd>
-</dl>
-<p>}</p>
-<p># It can work with “v2” and “v3”, but it would be very sparse
-plotly_plot_bar(dict_of_dfs, variables= [“v1”])</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">random</span>
+<span class="kn">from</span> <span class="nn">balance.stats_and_plots.weighted_comparisons_plots</span> <span class="kn">import</span> <span class="n">plotly_plot_bar</span>
+
+<span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">96483</span><span class="p">)</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s1">&#39;v1&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">random_integers</span><span class="p">(</span><span class="mi">11111</span><span class="p">,</span> <span class="mi">11114</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">),</span>
+    <span class="s1">&#39;v2&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="mi">100</span><span class="p">),</span>
+    <span class="s1">&#39;v3&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="mi">100</span><span class="p">),</span>
+<span class="p">})</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;v2&#39;</span><span class="p">])</span>
+
+<span class="n">dict_of_dfs</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;self&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="mi">100</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;weight&quot;</span><span class="p">)],</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="s2">&quot;unadjusted&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">99</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1000</span><span class="p">],</span> <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;weight&quot;</span><span class="p">)],</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;weight&quot;</span><span class="p">)],</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">),</span>
+<span class="p">}</span>
+
+<span class="c1"># It can work with &quot;v2&quot; and &quot;v3&quot;, but it would be very sparse</span>
+<span class="n">plotly_plot_bar</span><span class="p">(</span><span class="n">dict_of_dfs</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span> <span class="p">[</span><span class="s2">&quot;v1&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -490,26 +503,28 @@ Values are plotly plot objects plotted like:</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>import numpy as np
-import pandas as pd
-from numpy import random
-from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_dist</p>
-<p>random.seed(96483)</p>
-<dl class="simple">
-<dt>df = pd.DataFrame({</dt><dd><p>‘v1’: random.random_integers(11111, 11114, size=100).astype(str),
-‘v2’: random.normal(size = 100),
-‘v3’: random.uniform(size = 100),</p>
-</dd>
-</dl>
-<p>}).sort_values(by=[‘v2’])</p>
-<dl class="simple">
-<dt>dict_of_dfs = {</dt><dd><p>“self”: pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = “weight”)], axis = 1),
-“unadjusted”: pd.concat([df, pd.Series(np.ones(99).tolist() + [1000], name = “weight”)], axis = 1),
-“target”: pd.concat([df, pd.Series(np.ones(100), name = “weight”)], axis = 1),</p>
-</dd>
-</dl>
-<p>}</p>
-<p>plotly_plot_dist(dict_of_dfs)</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">random</span>
+<span class="kn">from</span> <span class="nn">balance.stats_and_plots.weighted_comparisons_plots</span> <span class="kn">import</span> <span class="n">plotly_plot_dist</span>
+
+<span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">96483</span><span class="p">)</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s1">&#39;v1&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">random_integers</span><span class="p">(</span><span class="mi">11111</span><span class="p">,</span> <span class="mi">11114</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">),</span>
+    <span class="s1">&#39;v2&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="mi">100</span><span class="p">),</span>
+    <span class="s1">&#39;v3&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="mi">100</span><span class="p">),</span>
+<span class="p">})</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;v2&#39;</span><span class="p">])</span>
+
+<span class="n">dict_of_dfs</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;self&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="mi">100</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;weight&quot;</span><span class="p">)],</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="s2">&quot;unadjusted&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">99</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1000</span><span class="p">],</span> <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;weight&quot;</span><span class="p">)],</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;weight&quot;</span><span class="p">)],</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">),</span>
+<span class="p">}</span>
+
+<span class="n">plotly_plot_dist</span><span class="p">(</span><span class="n">dict_of_dfs</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -536,27 +551,29 @@ and the value is the DataFrame that contains the variables that we want to plot.
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>import numpy as np
-import pandas as pd
-from numpy import random
-from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_qq</p>
-<p>random.seed(96483)</p>
-<dl class="simple">
-<dt>df = pd.DataFrame({</dt><dd><p>‘v1’: random.random_integers(11111, 11114, size=100).astype(str),
-‘v2’: random.normal(size = 100),
-‘v3’: random.uniform(size = 100),</p>
-</dd>
-</dl>
-<p>}).sort_values(by=[‘v2’])</p>
-<dl class="simple">
-<dt>dict_of_dfs = {</dt><dd><p>“self”: pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = “weight”)], axis = 1),
-“unadjusted”: pd.concat([df, pd.Series(np.ones(99).tolist() + [1000], name = “weight”)], axis = 1),
-“target”: pd.concat([df, pd.Series(np.ones(100), name = “weight”)], axis = 1),</p>
-</dd>
-</dl>
-<p>}</p>
-<p># It won’t work with “v1” since it is not numeric.
-plotly_plot_qq(dict_of_dfs, variables= [“v2”, “v3”])</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">random</span>
+<span class="kn">from</span> <span class="nn">balance.stats_and_plots.weighted_comparisons_plots</span> <span class="kn">import</span> <span class="n">plotly_plot_qq</span>
+
+<span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">96483</span><span class="p">)</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s1">&#39;v1&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">random_integers</span><span class="p">(</span><span class="mi">11111</span><span class="p">,</span> <span class="mi">11114</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">),</span>
+    <span class="s1">&#39;v2&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="mi">100</span><span class="p">),</span>
+    <span class="s1">&#39;v3&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="mi">100</span><span class="p">),</span>
+<span class="p">})</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;v2&#39;</span><span class="p">])</span>
+
+<span class="n">dict_of_dfs</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;self&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="mi">100</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;weight&quot;</span><span class="p">)],</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="s2">&quot;unadjusted&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">99</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1000</span><span class="p">],</span> <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;weight&quot;</span><span class="p">)],</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;weight&quot;</span><span class="p">)],</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">),</span>
+<span class="p">}</span>
+
+<span class="c1"># It won&#39;t work with &quot;v1&quot; since it is not numeric.</span>
+<span class="n">plotly_plot_qq</span><span class="p">(</span><span class="n">dict_of_dfs</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span> <span class="p">[</span><span class="s2">&quot;v2&quot;</span><span class="p">,</span> <span class="s2">&quot;v3&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -601,28 +618,29 @@ NOTE: There is no AxesSubplot class until one is invoked and created on the fly.
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>import numpy as np
-import pandas as pd
-from balance.stats_and_plots.weighted_comparisons_plots import seaborn_plot_dist
-from numpy import random</p>
-<dl class="simple">
-<dt>df = pd.DataFrame({</dt><dd><p>‘v1’: random.random_integers(11111, 11114, size=100).astype(str),
-‘v2’: random.normal(size = 100),
-‘v3’: random.uniform(size = 100),</p>
-</dd>
-</dl>
-<p>}).sort_values(by=[‘v2’])</p>
-<dl class="simple">
-<dt>dfs1 = [</dt><dd><p>{“df”: df, “weights”: pd.Series(np.ones(100))},
-{“df”: df, “weights”: pd.Series(np.ones(99).tolist() + [1000])},
-{“df”: df, “weights”: pd.Series(np.random.uniform(size=100))},</p>
-</dd>
-</dl>
-<p>]</p>
-<p>seaborn_plot_dist(dfs1, names=[“self”, “unadjusted”, “target”], dist_type = “qq”)  # default
-seaborn_plot_dist(dfs1, names=[“self”, “unadjusted”, “target”], dist_type = “hist”)
-seaborn_plot_dist(dfs1, names=[“self”, “unadjusted”, “target”], dist_type = “kde”)
-seaborn_plot_dist(dfs1, names=[“self”, “unadjusted”, “target”], dist_type = “ecdf”)</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">balance.stats_and_plots.weighted_comparisons_plots</span> <span class="kn">import</span> <span class="n">seaborn_plot_dist</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">random</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s1">&#39;v1&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">random_integers</span><span class="p">(</span><span class="mi">11111</span><span class="p">,</span> <span class="mi">11114</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">),</span>
+    <span class="s1">&#39;v2&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="mi">100</span><span class="p">),</span>
+    <span class="s1">&#39;v3&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="mi">100</span><span class="p">),</span>
+<span class="p">})</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;v2&#39;</span><span class="p">])</span>
+
+<span class="n">dfs1</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">df</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">100</span><span class="p">))},</span>
+    <span class="p">{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">df</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">99</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1000</span><span class="p">])},</span>
+    <span class="p">{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">df</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">100</span><span class="p">))},</span>
+<span class="p">]</span>
+
+<span class="n">seaborn_plot_dist</span><span class="p">(</span><span class="n">dfs1</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;unadjusted&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">],</span> <span class="n">dist_type</span> <span class="o">=</span> <span class="s2">&quot;qq&quot;</span><span class="p">)</span>  <span class="c1"># default</span>
+<span class="n">seaborn_plot_dist</span><span class="p">(</span><span class="n">dfs1</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;unadjusted&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">],</span> <span class="n">dist_type</span> <span class="o">=</span> <span class="s2">&quot;hist&quot;</span><span class="p">)</span>
+<span class="n">seaborn_plot_dist</span><span class="p">(</span><span class="n">dfs1</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;unadjusted&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">],</span> <span class="n">dist_type</span> <span class="o">=</span> <span class="s2">&quot;kde&quot;</span><span class="p">)</span>
+<span class="n">seaborn_plot_dist</span><span class="p">(</span><span class="n">dfs1</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;unadjusted&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">],</span> <span class="n">dist_type</span> <span class="o">=</span> <span class="s2">&quot;ecdf&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -636,13 +654,16 @@ seaborn_plot_dist(dfs1, names=[“self”, “unadjusted”, “target”], dist
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>import matplotlib.pyplot as plt
-plt.figure(1)
-plt.scatter(x= [1,2,3], y = [3,4,5])</p>
-<p>plt.figure(2)
-fig, ax = plt.subplots(1, 1, figsize=(7.2, 7.2))
-plt.scatter(x= [1,2,3], y = [3,4,5])
-set_xy_axes_to_use_the_same_lim(ax)</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="n">y</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">])</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">7.2</span><span class="p">,</span> <span class="mf">7.2</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="n">y</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">])</span>
+<span class="n">set_xy_axes_to_use_the_same_lim</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 </section>

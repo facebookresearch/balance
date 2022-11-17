@@ -550,24 +550,26 @@
 <span class="sd">            The cells show the mean value. For categorical features, they are first transformed into the one-hot encoding.</span>
 <span class="sd">            For these columns, since they are all either 0 or 1, their means should be interpreted as proportions.</span>
 
-<span class="sd">        Example:</span>
-<span class="sd">            from balance import Sample</span>
-<span class="sd">            import pandas as pd</span>
+<span class="sd">        Examples:</span>
+<span class="sd">            ::</span>
 
-<span class="sd">            s = Sample.from_frame(</span>
-<span class="sd">                pd.DataFrame(</span>
-<span class="sd">                    {&quot;a&quot;: (0, 1, 2), &quot;c&quot;: (&quot;a&quot;, &quot;b&quot;, &quot;c&quot;), &quot;o&quot;: (1,3,5), &quot;id&quot;: (1, 2, 3)}</span>
-<span class="sd">                ),</span>
-<span class="sd">                outcome_columns=(&quot;o&quot;),</span>
-<span class="sd">            )</span>
-<span class="sd">            s_adjusted = s.set_target(s).adjust(method = &#39;null&#39;)</span>
-<span class="sd">            print(s_adjusted.covar_means())</span>
+<span class="sd">                from balance import Sample</span>
+<span class="sd">                import pandas as pd</span>
 
-<span class="sd">            # source  unadjusted  adjusted    target</span>
-<span class="sd">            # a         1.000000  1.000000  1.000000</span>
-<span class="sd">            # c[a]      0.333333  0.333333  0.333333</span>
-<span class="sd">            # c[b]      0.333333  0.333333  0.333333</span>
-<span class="sd">            # c[c]      0.333333  0.333333  0.333333</span>
+<span class="sd">                s = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {&quot;a&quot;: (0, 1, 2), &quot;c&quot;: (&quot;a&quot;, &quot;b&quot;, &quot;c&quot;), &quot;o&quot;: (1,3,5), &quot;id&quot;: (1, 2, 3)}</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    outcome_columns=(&quot;o&quot;),</span>
+<span class="sd">                )</span>
+<span class="sd">                s_adjusted = s.set_target(s).adjust(method = &#39;null&#39;)</span>
+<span class="sd">                print(s_adjusted.covar_means())</span>
+
+<span class="sd">                    # source  unadjusted  adjusted    target</span>
+<span class="sd">                    # a         1.000000  1.000000  1.000000</span>
+<span class="sd">                    # c[a]      0.333333  0.333333  0.333333</span>
+<span class="sd">                    # c[b]      0.333333  0.333333  0.333333</span>
+<span class="sd">                    # c[c]      0.333333  0.333333  0.333333</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_if_adjusted</span><span class="p">()</span>
 
@@ -616,30 +618,32 @@
         <span class="sd">&quot;&quot;&quot;Plot the density of weights of Sample.</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            import numpy as np</span>
-<span class="sd">            import pandas as pd</span>
-<span class="sd">            from balance.sample_class import Sample</span>
+<span class="sd">            ::</span>
+
+<span class="sd">                import numpy as np</span>
+<span class="sd">                import pandas as pd</span>
+<span class="sd">                from balance.sample_class import Sample</span>
 
 
-<span class="sd">            np.random.seed(123)</span>
-<span class="sd">            df = pd.DataFrame(</span>
-<span class="sd">                {</span>
-<span class="sd">                    &quot;a&quot;: np.random.uniform(size=100),</span>
-<span class="sd">                    &quot;c&quot;: np.random.choice(</span>
-<span class="sd">                        [&quot;a&quot;, &quot;b&quot;, &quot;c&quot;, &quot;d&quot;],</span>
-<span class="sd">                        size=100,</span>
-<span class="sd">                        replace=True,</span>
-<span class="sd">                        p=[0.01, 0.04, 0.5, 0.45],</span>
-<span class="sd">                    ),</span>
-<span class="sd">                    &quot;id&quot;: range(100),</span>
-<span class="sd">                    &quot;weight&quot;: np.random.uniform(size=100) + 0.5,</span>
-<span class="sd">                }</span>
-<span class="sd">            )</span>
+<span class="sd">                np.random.seed(123)</span>
+<span class="sd">                df = pd.DataFrame(</span>
+<span class="sd">                    {</span>
+<span class="sd">                        &quot;a&quot;: np.random.uniform(size=100),</span>
+<span class="sd">                        &quot;c&quot;: np.random.choice(</span>
+<span class="sd">                            [&quot;a&quot;, &quot;b&quot;, &quot;c&quot;, &quot;d&quot;],</span>
+<span class="sd">                            size=100,</span>
+<span class="sd">                            replace=True,</span>
+<span class="sd">                            p=[0.01, 0.04, 0.5, 0.45],</span>
+<span class="sd">                        ),</span>
+<span class="sd">                        &quot;id&quot;: range(100),</span>
+<span class="sd">                        &quot;weight&quot;: np.random.uniform(size=100) + 0.5,</span>
+<span class="sd">                    }</span>
+<span class="sd">                )</span>
 
-<span class="sd">            a = Sample.from_frame(df)</span>
-<span class="sd">            sample.weights().plot()</span>
-<span class="sd">            # The same as:</span>
-<span class="sd">            sample.plot_weight_density()</span>
+<span class="sd">                a = Sample.from_frame(df)</span>
+<span class="sd">                sample.weights().plot()</span>
+<span class="sd">                # The same as:</span>
+<span class="sd">                sample.plot_weight_density()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span></div>
 

@@ -181,121 +181,121 @@
 <span class="sd">                First item is self, and it just returns it without using method on it.</span>
 <span class="sd">                The other items are based on the objects in _links. E.g.: it can be &#39;target&#39;</span>
 <span class="sd">                and &#39;unadjusted&#39;, and it will return them after running the same BalanceDF child creation method on them.</span>
-
 <span class="sd">        Examples:</span>
-<span class="sd">            from balance.sample_class import Sample</span>
-<span class="sd">            import pandas as pd</span>
+<span class="sd">            ::</span>
+<span class="sd">                from balance.sample_class import Sample</span>
+<span class="sd">                import pandas as pd</span>
 
-<span class="sd">            s1 = Sample.from_frame(</span>
-<span class="sd">                pd.DataFrame(</span>
-<span class="sd">                    {</span>
-<span class="sd">                        &quot;a&quot;: (1, 2, 3, 1),</span>
-<span class="sd">                        &quot;b&quot;: (-42, 8, 2, -42),</span>
-<span class="sd">                        &quot;o&quot;: (7, 8, 9, 10),</span>
-<span class="sd">                        &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;, &quot;v&quot;),</span>
-<span class="sd">                        &quot;id&quot;: (1, 2, 3, 4),</span>
-<span class="sd">                        &quot;w&quot;: (0.5, 2, 1, 1),</span>
-<span class="sd">                    }</span>
-<span class="sd">                ),</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                weight_column=&quot;w&quot;,</span>
-<span class="sd">                outcome_columns=&quot;o&quot;,</span>
-<span class="sd">            )</span>
+<span class="sd">                s1 = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;a&quot;: (1, 2, 3, 1),</span>
+<span class="sd">                            &quot;b&quot;: (-42, 8, 2, -42),</span>
+<span class="sd">                            &quot;o&quot;: (7, 8, 9, 10),</span>
+<span class="sd">                            &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;, &quot;v&quot;),</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3, 4),</span>
+<span class="sd">                            &quot;w&quot;: (0.5, 2, 1, 1),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                    outcome_columns=&quot;o&quot;,</span>
+<span class="sd">                )</span>
 
-<span class="sd">            s2 = Sample.from_frame(</span>
-<span class="sd">                pd.DataFrame(</span>
-<span class="sd">                    {</span>
-<span class="sd">                        &quot;a&quot;: (1, 2, 3),</span>
-<span class="sd">                        &quot;b&quot;: (4, 6, 8),</span>
-<span class="sd">                        &quot;id&quot;: (1, 2, 3),</span>
-<span class="sd">                        &quot;w&quot;: (0.5, 1, 2),</span>
-<span class="sd">                        &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;),</span>
-<span class="sd">                    }</span>
-<span class="sd">                ),</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                weight_column=&quot;w&quot;,</span>
-<span class="sd">            )</span>
+<span class="sd">                s2 = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;a&quot;: (1, 2, 3),</span>
+<span class="sd">                            &quot;b&quot;: (4, 6, 8),</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3),</span>
+<span class="sd">                            &quot;w&quot;: (0.5, 1, 2),</span>
+<span class="sd">                            &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                )</span>
 
-<span class="sd">            s3 = s1.set_target(s2)</span>
-<span class="sd">            s3_null = s3.adjust(method=&quot;null&quot;)</span>
-
-
-<span class="sd">            # keys depends on which samples are linked to the object:</span>
-<span class="sd">            list(s1.covars()._BalanceDF_child_from_linked_samples().keys())  # [&#39;self&#39;]</span>
-<span class="sd">            list(s3.covars()._BalanceDF_child_from_linked_samples().keys())  # [&#39;self&#39;, &#39;target&#39;]</span>
-<span class="sd">            list(s3_null.covars()._BalanceDF_child_from_linked_samples().keys())  # [&#39;self&#39;, &#39;target&#39;, &#39;unadjusted&#39;]</span>
-
-<span class="sd">            # Indeed, all are of the same BalanceDF child type:</span>
-<span class="sd">            s3.covars()._BalanceDF_child_from_linked_samples()</span>
-<span class="sd">            # {&#39;self&#39;: (balance.balancedf_class.BalanceCovarsDF)</span>
-<span class="sd">            # covars from &lt;balance.sample_class.Sample object at 0x7f4392ea61c0&gt;:</span>
-<span class="sd">            #     a   b  c</span>
-<span class="sd">            # 0  1 -42  x</span>
-<span class="sd">            # 1  2   8  y</span>
-<span class="sd">            # 2  3   2  z</span>
-<span class="sd">            # 3  1 -42  v,</span>
-<span class="sd">            # &#39;target&#39;: (balance.balancedf_class.BalanceCovarsDF)</span>
-<span class="sd">            # covars from &lt;balance.sample_class.Sample object at 0x7f43958fbd90&gt;:</span>
-<span class="sd">            #     a  b  c</span>
-<span class="sd">            # 0  1  4  x</span>
-<span class="sd">            # 1  2  6  y</span>
-<span class="sd">            # 2  3  8  z}</span>
-
-<span class="sd">            s3_null.covars()._BalanceDF_child_from_linked_samples()</span>
-<span class="sd">            # {&#39;self&#39;: (balance.balancedf_class.BalanceCovarsDF)</span>
-<span class="sd">            # covars from &lt;balance.sample_class.Sample object at 0x7f4392ea60d0&gt;:</span>
-<span class="sd">            #     a   b  c</span>
-<span class="sd">            # 0  1 -42  x</span>
-<span class="sd">            # 1  2   8  y</span>
-<span class="sd">            # 2  3   2  z</span>
-<span class="sd">            # 3  1 -42  v,</span>
-<span class="sd">            # &#39;target&#39;: (balance.balancedf_class.BalanceCovarsDF)</span>
-<span class="sd">            # covars from &lt;balance.sample_class.Sample object at 0x7f43958fbd90&gt;:</span>
-<span class="sd">            #     a  b  c</span>
-<span class="sd">            # 0  1  4  x</span>
-<span class="sd">            # 1  2  6  y</span>
-<span class="sd">            # 2  3  8  z,</span>
-<span class="sd">            # &#39;unadjusted&#39;: (balance.balancedf_class.BalanceCovarsDF)</span>
-<span class="sd">            # covars from &lt;balance.sample_class.Sample object at 0x7f4392ea61c0&gt;:</span>
-<span class="sd">            #     a   b  c</span>
-<span class="sd">            # 0  1 -42  x</span>
-<span class="sd">            # 1  2   8  y</span>
-<span class="sd">            # 2  3   2  z</span>
-<span class="sd">            # 3  1 -42  v}</span>
-
-<span class="sd">            the_dict = s3_null.covars()._BalanceDF_child_from_linked_samples()</span>
-<span class="sd">            [v.__class__ for (k,v) in the_dict.items()]</span>
-<span class="sd">            [balance.balancedf_class.BalanceCovarsDF,</span>
-<span class="sd">            balance.balancedf_class.BalanceCovarsDF,</span>
-<span class="sd">            balance.balancedf_class.BalanceCovarsDF]</span>
+<span class="sd">                s3 = s1.set_target(s2)</span>
+<span class="sd">                s3_null = s3.adjust(method=&quot;null&quot;)</span>
 
 
-<span class="sd">            # This also works for outcomes (returns None if there is none):</span>
-<span class="sd">            s3.outcomes()._BalanceDF_child_from_linked_samples()</span>
-<span class="sd">            # {&#39;self&#39;: (balance.balancedf_class.BalanceOutcomesDF)</span>
-<span class="sd">            #  outcomes from &lt;balance.sample_class.Sample object at 0x7f4392ea61c0&gt;:</span>
-<span class="sd">            #      o</span>
-<span class="sd">            #  0   7</span>
-<span class="sd">            #  1   8</span>
-<span class="sd">            #  2   9</span>
-<span class="sd">            #  3  10,</span>
-<span class="sd">            #  &#39;target&#39;: None}</span>
+<span class="sd">                # keys depends on which samples are linked to the object:</span>
+<span class="sd">                list(s1.covars()._BalanceDF_child_from_linked_samples().keys())  # [&#39;self&#39;]</span>
+<span class="sd">                list(s3.covars()._BalanceDF_child_from_linked_samples().keys())  # [&#39;self&#39;, &#39;target&#39;]</span>
+<span class="sd">                list(s3_null.covars()._BalanceDF_child_from_linked_samples().keys())  # [&#39;self&#39;, &#39;target&#39;, &#39;unadjusted&#39;]</span>
 
-<span class="sd">            # And also works for weights:</span>
-<span class="sd">            s3.weights()._BalanceDF_child_from_linked_samples()</span>
-<span class="sd">            # {&#39;self&#39;: (balance.balancedf_class.BalanceWeightsDF)</span>
-<span class="sd">            #  weights from &lt;balance.sample_class.Sample object at 0x7f4392ea61c0&gt;:</span>
-<span class="sd">            #       w</span>
-<span class="sd">            #  0  0.5</span>
-<span class="sd">            #  1  2.0</span>
-<span class="sd">            #  2  1.0</span>
-<span class="sd">            #  3  1.0,</span>
-<span class="sd">            #  &#39;target&#39;: (balance.balancedf_class.BalanceWeightsDF)</span>
-<span class="sd">            #  weights from &lt;balance.sample_class.Sample object at 0x7f43958fbd90&gt;:</span>
-<span class="sd">            #       w</span>
-<span class="sd">            #  0  0.5</span>
-<span class="sd">            #  1  1.0</span>
-<span class="sd">            #  2  2.0}</span>
+<span class="sd">                # Indeed, all are of the same BalanceDF child type:</span>
+<span class="sd">                s3.covars()._BalanceDF_child_from_linked_samples()</span>
+<span class="sd">                # {&#39;self&#39;: (balance.balancedf_class.BalanceCovarsDF)</span>
+<span class="sd">                # covars from &lt;balance.sample_class.Sample object at 0x7f4392ea61c0&gt;:</span>
+<span class="sd">                #     a   b  c</span>
+<span class="sd">                # 0  1 -42  x</span>
+<span class="sd">                # 1  2   8  y</span>
+<span class="sd">                # 2  3   2  z</span>
+<span class="sd">                # 3  1 -42  v,</span>
+<span class="sd">                # &#39;target&#39;: (balance.balancedf_class.BalanceCovarsDF)</span>
+<span class="sd">                # covars from &lt;balance.sample_class.Sample object at 0x7f43958fbd90&gt;:</span>
+<span class="sd">                #     a  b  c</span>
+<span class="sd">                # 0  1  4  x</span>
+<span class="sd">                # 1  2  6  y</span>
+<span class="sd">                # 2  3  8  z}</span>
+
+<span class="sd">                s3_null.covars()._BalanceDF_child_from_linked_samples()</span>
+<span class="sd">                # {&#39;self&#39;: (balance.balancedf_class.BalanceCovarsDF)</span>
+<span class="sd">                # covars from &lt;balance.sample_class.Sample object at 0x7f4392ea60d0&gt;:</span>
+<span class="sd">                #     a   b  c</span>
+<span class="sd">                # 0  1 -42  x</span>
+<span class="sd">                # 1  2   8  y</span>
+<span class="sd">                # 2  3   2  z</span>
+<span class="sd">                # 3  1 -42  v,</span>
+<span class="sd">                # &#39;target&#39;: (balance.balancedf_class.BalanceCovarsDF)</span>
+<span class="sd">                # covars from &lt;balance.sample_class.Sample object at 0x7f43958fbd90&gt;:</span>
+<span class="sd">                #     a  b  c</span>
+<span class="sd">                # 0  1  4  x</span>
+<span class="sd">                # 1  2  6  y</span>
+<span class="sd">                # 2  3  8  z,</span>
+<span class="sd">                # &#39;unadjusted&#39;: (balance.balancedf_class.BalanceCovarsDF)</span>
+<span class="sd">                # covars from &lt;balance.sample_class.Sample object at 0x7f4392ea61c0&gt;:</span>
+<span class="sd">                #     a   b  c</span>
+<span class="sd">                # 0  1 -42  x</span>
+<span class="sd">                # 1  2   8  y</span>
+<span class="sd">                # 2  3   2  z</span>
+<span class="sd">                # 3  1 -42  v}</span>
+
+<span class="sd">                the_dict = s3_null.covars()._BalanceDF_child_from_linked_samples()</span>
+<span class="sd">                [v.__class__ for (k,v) in the_dict.items()]</span>
+<span class="sd">                [balance.balancedf_class.BalanceCovarsDF,</span>
+<span class="sd">                balance.balancedf_class.BalanceCovarsDF,</span>
+<span class="sd">                balance.balancedf_class.BalanceCovarsDF]</span>
+
+
+<span class="sd">                # This also works for outcomes (returns None if there is none):</span>
+<span class="sd">                s3.outcomes()._BalanceDF_child_from_linked_samples()</span>
+<span class="sd">                # {&#39;self&#39;: (balance.balancedf_class.BalanceOutcomesDF)</span>
+<span class="sd">                #  outcomes from &lt;balance.sample_class.Sample object at 0x7f4392ea61c0&gt;:</span>
+<span class="sd">                #      o</span>
+<span class="sd">                #  0   7</span>
+<span class="sd">                #  1   8</span>
+<span class="sd">                #  2   9</span>
+<span class="sd">                #  3  10,</span>
+<span class="sd">                #  &#39;target&#39;: None}</span>
+
+<span class="sd">                # And also works for weights:</span>
+<span class="sd">                s3.weights()._BalanceDF_child_from_linked_samples()</span>
+<span class="sd">                # {&#39;self&#39;: (balance.balancedf_class.BalanceWeightsDF)</span>
+<span class="sd">                #  weights from &lt;balance.sample_class.Sample object at 0x7f4392ea61c0&gt;:</span>
+<span class="sd">                #       w</span>
+<span class="sd">                #  0  0.5</span>
+<span class="sd">                #  1  2.0</span>
+<span class="sd">                #  2  1.0</span>
+<span class="sd">                #  3  1.0,</span>
+<span class="sd">                #  &#39;target&#39;: (balance.balancedf_class.BalanceWeightsDF)</span>
+<span class="sd">                #  weights from &lt;balance.sample_class.Sample object at 0x7f43958fbd90&gt;:</span>
+<span class="sd">                #       w</span>
+<span class="sd">                #  0  0.5</span>
+<span class="sd">                #  1  1.0</span>
+<span class="sd">                #  2  2.0}</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># NOTE: this assumes that the .__name is the same as the creation method (i.e.: .covars(), .weights(), .outcomes())</span>
         <span class="n">BalanceDF_child_method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__name</span>
@@ -333,58 +333,59 @@
 <span class="sd">                per column mean, after applying `model_matrix` to the df from each object.</span>
 
 <span class="sd">        Examples:</span>
+<span class="sd">            ::</span>
 
-<span class="sd">            from balance.sample_class import Sample</span>
-<span class="sd">            import pandas as pd</span>
+<span class="sd">                from balance.sample_class import Sample</span>
+<span class="sd">                import pandas as pd</span>
 
-<span class="sd">            s1 = Sample.from_frame(</span>
-<span class="sd">                pd.DataFrame(</span>
-<span class="sd">                    {</span>
-<span class="sd">                        &quot;a&quot;: (1, 2, 3, 1),</span>
-<span class="sd">                        &quot;b&quot;: (-42, 8, 2, -42),</span>
-<span class="sd">                        &quot;o&quot;: (7, 8, 9, 10),</span>
-<span class="sd">                        &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;, &quot;v&quot;),</span>
-<span class="sd">                        &quot;id&quot;: (1, 2, 3, 4),</span>
-<span class="sd">                        &quot;w&quot;: (0.5, 2, 1, 1),</span>
-<span class="sd">                    }</span>
-<span class="sd">                ),</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                weight_column=&quot;w&quot;,</span>
-<span class="sd">                outcome_columns=&quot;o&quot;,</span>
-<span class="sd">            )</span>
+<span class="sd">                s1 = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;a&quot;: (1, 2, 3, 1),</span>
+<span class="sd">                            &quot;b&quot;: (-42, 8, 2, -42),</span>
+<span class="sd">                            &quot;o&quot;: (7, 8, 9, 10),</span>
+<span class="sd">                            &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;, &quot;v&quot;),</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3, 4),</span>
+<span class="sd">                            &quot;w&quot;: (0.5, 2, 1, 1),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                    outcome_columns=&quot;o&quot;,</span>
+<span class="sd">                )</span>
 
-<span class="sd">            s2 = Sample.from_frame(</span>
-<span class="sd">                pd.DataFrame(</span>
-<span class="sd">                    {</span>
-<span class="sd">                        &quot;a&quot;: (1, 2, 3),</span>
-<span class="sd">                        &quot;b&quot;: (4, 6, 8),</span>
-<span class="sd">                        &quot;id&quot;: (1, 2, 3),</span>
-<span class="sd">                        &quot;w&quot;: (0.5, 1, 2),</span>
-<span class="sd">                        &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;),</span>
-<span class="sd">                    }</span>
-<span class="sd">                ),</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                weight_column=&quot;w&quot;,</span>
-<span class="sd">            )</span>
+<span class="sd">                s2 = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;a&quot;: (1, 2, 3),</span>
+<span class="sd">                            &quot;b&quot;: (4, 6, 8),</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3),</span>
+<span class="sd">                            &quot;w&quot;: (0.5, 1, 2),</span>
+<span class="sd">                            &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                )</span>
 
-<span class="sd">            s3 = s1.set_target(s2)</span>
+<span class="sd">                s3 = s1.set_target(s2)</span>
 
-<span class="sd">            print(s3.covars()._call_on_linked(&quot;mean&quot;).round(3))</span>
-<span class="sd">                #             a       b   c[v]   c[x]   c[y]   c[z]</span>
-<span class="sd">                # source</span>
-<span class="sd">                # self    1.889 -10.000  0.222  0.111  0.444  0.222</span>
-<span class="sd">                # target  2.429   6.857    NaN  0.143  0.286  0.571</span>
+<span class="sd">                print(s3.covars()._call_on_linked(&quot;mean&quot;).round(3))</span>
+<span class="sd">                    #             a       b   c[v]   c[x]   c[y]   c[z]</span>
+<span class="sd">                    # source</span>
+<span class="sd">                    # self    1.889 -10.000  0.222  0.111  0.444  0.222</span>
+<span class="sd">                    # target  2.429   6.857    NaN  0.143  0.286  0.571</span>
 
-<span class="sd">            print(s3.covars()._call_on_linked(&quot;df&quot;).round(3))</span>
-<span class="sd">                #         a   b  c</span>
-<span class="sd">                # source</span>
-<span class="sd">                # self    1 -42  x</span>
-<span class="sd">                # self    2   8  y</span>
-<span class="sd">                # self    3   2  z</span>
-<span class="sd">                # self    1 -42  v</span>
-<span class="sd">                # target  1   4  x</span>
-<span class="sd">                # target  2   6  y</span>
-<span class="sd">                # target  3   8  z</span>
+<span class="sd">                print(s3.covars()._call_on_linked(&quot;df&quot;).round(3))</span>
+<span class="sd">                    #         a   b  c</span>
+<span class="sd">                    # source</span>
+<span class="sd">                    # self    1 -42  x</span>
+<span class="sd">                    # self    2   8  y</span>
+<span class="sd">                    # self    3   2  z</span>
+<span class="sd">                    # self    1 -42  v</span>
+<span class="sd">                    # target  1   4  x</span>
+<span class="sd">                    # target  2   6  y</span>
+<span class="sd">                    # target  3   8  z</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">output</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_BalanceDF_child_from_linked_samples</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -427,39 +428,40 @@
 <span class="sd">            pd.DataFrame: The output from :func:`balance_util.model_matrix`</span>
 
 <span class="sd">        Examples:</span>
+<span class="sd">            ::</span>
 
-<span class="sd">            import pandas as pd</span>
-<span class="sd">            from balance.sample_class import Sample</span>
+<span class="sd">                import pandas as pd</span>
+<span class="sd">                from balance.sample_class import Sample</span>
 
-<span class="sd">            s1 = Sample.from_frame(</span>
-<span class="sd">                pd.DataFrame(</span>
-<span class="sd">                    {</span>
-<span class="sd">                        &quot;a&quot;: (1, 2, 3, 1),</span>
-<span class="sd">                        &quot;b&quot;: (-42, 8, 2, -42),</span>
-<span class="sd">                        &quot;o&quot;: (7, 8, 9, 10),</span>
-<span class="sd">                        &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;, &quot;v&quot;),</span>
-<span class="sd">                        &quot;id&quot;: (1, 2, 3, 4),</span>
-<span class="sd">                        &quot;w&quot;: (0.5, 2, 1, 1),</span>
-<span class="sd">                    }</span>
-<span class="sd">                ),</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                weight_column=&quot;w&quot;,</span>
-<span class="sd">                outcome_columns=&quot;o&quot;,</span>
-<span class="sd">            )</span>
+<span class="sd">                s1 = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;a&quot;: (1, 2, 3, 1),</span>
+<span class="sd">                            &quot;b&quot;: (-42, 8, 2, -42),</span>
+<span class="sd">                            &quot;o&quot;: (7, 8, 9, 10),</span>
+<span class="sd">                            &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;, &quot;v&quot;),</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3, 4),</span>
+<span class="sd">                            &quot;w&quot;: (0.5, 2, 1, 1),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                    outcome_columns=&quot;o&quot;,</span>
+<span class="sd">                )</span>
 
-<span class="sd">            print(s1.covars().df)</span>
-<span class="sd">                # a   b  c</span>
-<span class="sd">                # 0  1 -42  x</span>
-<span class="sd">                # 1  2   8  y</span>
-<span class="sd">                # 2  3   2  z</span>
-<span class="sd">                # 3  1 -42  v</span>
+<span class="sd">                print(s1.covars().df)</span>
+<span class="sd">                    # a   b  c</span>
+<span class="sd">                    # 0  1 -42  x</span>
+<span class="sd">                    # 1  2   8  y</span>
+<span class="sd">                    # 2  3   2  z</span>
+<span class="sd">                    # 3  1 -42  v</span>
 
-<span class="sd">            print(s1.covars().model_matrix())</span>
-<span class="sd">                #      a     b  c[v]  c[x]  c[y]  c[z]</span>
-<span class="sd">                # 0  1.0 -42.0   0.0   1.0   0.0   0.0</span>
-<span class="sd">                # 1  2.0   8.0   0.0   0.0   1.0   0.0</span>
-<span class="sd">                # 2  3.0   2.0   0.0   0.0   0.0   1.0</span>
-<span class="sd">                # 3  1.0 -42.0   1.0   0.0   0.0   0.0</span>
+<span class="sd">                print(s1.covars().model_matrix())</span>
+<span class="sd">                    #      a     b  c[v]  c[x]  c[y]  c[z]</span>
+<span class="sd">                    # 0  1.0 -42.0   0.0   1.0   0.0   0.0</span>
+<span class="sd">                    # 1  2.0   8.0   0.0   0.0   1.0   0.0</span>
+<span class="sd">                    # 2  3.0   2.0   0.0   0.0   0.0   1.0</span>
+<span class="sd">                    # 3  1.0 -42.0   1.0   0.0   0.0   0.0</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_model_matrix&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model_matrix</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_model_matrix</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">model_matrix</span><span class="p">(</span>
@@ -550,28 +552,30 @@
 <span class="sd">            List: Of column names.</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            s1 = Sample.from_frame(</span>
-<span class="sd">                pd.DataFrame(</span>
-<span class="sd">                    {</span>
-<span class="sd">                        &quot;a&quot;: (1, 2, 3, 1),</span>
-<span class="sd">                        &quot;b&quot;: (-42, 8, 2, -42),</span>
-<span class="sd">                        &quot;o&quot;: (7, 8, 9, 10),</span>
-<span class="sd">                        &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;, &quot;v&quot;),</span>
-<span class="sd">                        &quot;id&quot;: (1, 2, 3, 4),</span>
-<span class="sd">                        &quot;w&quot;: (0.5, 2, 1, 1),</span>
-<span class="sd">                    }</span>
-<span class="sd">                ),</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                weight_column=&quot;w&quot;,</span>
-<span class="sd">                outcome_columns=&quot;o&quot;,</span>
-<span class="sd">            )</span>
+<span class="sd">            ::</span>
 
-<span class="sd">            s1.covars().names()</span>
-<span class="sd">            # [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]</span>
-<span class="sd">            s1.weights().names()</span>
-<span class="sd">            # [&#39;w&#39;]</span>
-<span class="sd">            s1.outcomes().names()</span>
-<span class="sd">            # [&#39;o&#39;]</span>
+<span class="sd">                s1 = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;a&quot;: (1, 2, 3, 1),</span>
+<span class="sd">                            &quot;b&quot;: (-42, 8, 2, -42),</span>
+<span class="sd">                            &quot;o&quot;: (7, 8, 9, 10),</span>
+<span class="sd">                            &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;, &quot;v&quot;),</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3, 4),</span>
+<span class="sd">                            &quot;w&quot;: (0.5, 2, 1, 1),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                    outcome_columns=&quot;o&quot;,</span>
+<span class="sd">                )</span>
+
+<span class="sd">                s1.covars().names()</span>
+<span class="sd">                # [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]</span>
+<span class="sd">                s1.weights().names()</span>
+<span class="sd">                # [&#39;w&#39;]</span>
+<span class="sd">                s1.outcomes().names()</span>
+<span class="sd">                # [&#39;o&#39;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">)</span></div>
 
@@ -597,38 +601,40 @@
 <span class="sd">                If library=&quot;seaborn&quot; then returns either a list or an np.array of matplotlib axis.</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            import numpy as np</span>
-<span class="sd">            import pandas as pd</span>
-<span class="sd">            from numpy import random</span>
-<span class="sd">            from balance.sample_class import Sample</span>
+<span class="sd">            ::</span>
 
-<span class="sd">            random.seed(96483)</span>
+<span class="sd">                import numpy as np</span>
+<span class="sd">                import pandas as pd</span>
+<span class="sd">                from numpy import random</span>
+<span class="sd">                from balance.sample_class import Sample</span>
 
-<span class="sd">            df = pd.DataFrame({</span>
-<span class="sd">                &quot;id&quot;: range(100),</span>
-<span class="sd">                &#39;v1&#39;: random.random_integers(11111, 11114, size=100).astype(str),</span>
-<span class="sd">                &#39;v2&#39;: random.normal(size = 100),</span>
-<span class="sd">                &#39;v3&#39;: random.uniform(size = 100),</span>
-<span class="sd">                &quot;w&quot;: pd.Series(np.ones(99).tolist() + [1000]),</span>
-<span class="sd">            }).sort_values(by=[&#39;v2&#39;])</span>
+<span class="sd">                random.seed(96483)</span>
 
-<span class="sd">            s1 = Sample.from_frame(df,</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                weight_column=&quot;w&quot;,</span>
-<span class="sd">            )</span>
+<span class="sd">                df = pd.DataFrame({</span>
+<span class="sd">                    &quot;id&quot;: range(100),</span>
+<span class="sd">                    &#39;v1&#39;: random.random_integers(11111, 11114, size=100).astype(str),</span>
+<span class="sd">                    &#39;v2&#39;: random.normal(size = 100),</span>
+<span class="sd">                    &#39;v3&#39;: random.uniform(size = 100),</span>
+<span class="sd">                    &quot;w&quot;: pd.Series(np.ones(99).tolist() + [1000]),</span>
+<span class="sd">                }).sort_values(by=[&#39;v2&#39;])</span>
 
-<span class="sd">            s2 = Sample.from_frame(</span>
-<span class="sd">                df.assign(w = pd.Series(np.ones(100))),</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                weight_column=&quot;w&quot;,</span>
-<span class="sd">            )</span>
+<span class="sd">                s1 = Sample.from_frame(df,</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                )</span>
 
-<span class="sd">            s3 = s1.set_target(s2)</span>
-<span class="sd">            s3_null = s3.adjust(method=&quot;null&quot;)</span>
-<span class="sd">            s3_null.set_weights(random.random(size = 100) + 0.5)</span>
+<span class="sd">                s2 = Sample.from_frame(</span>
+<span class="sd">                    df.assign(w = pd.Series(np.ones(100))),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                )</span>
 
-<span class="sd">            s3_null.covars().plot()</span>
-<span class="sd">            s3_null.covars().plot(library = &quot;seaborn&quot;)</span>
+<span class="sd">                s3 = s1.set_target(s2)</span>
+<span class="sd">                s3_null = s3.adjust(method=&quot;null&quot;)</span>
+<span class="sd">                s3_null.set_weights(random.random(size = 100) + 0.5)</span>
+
+<span class="sd">                s3_null.covars().plot()</span>
+<span class="sd">                s3_null.covars().plot(library = &quot;seaborn&quot;)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">on_linked_samples</span><span class="p">:</span>
             <span class="n">dfs_to_add</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_BalanceDF_child_from_linked_samples</span><span class="p">()</span>
@@ -673,50 +679,51 @@
 <span class="sd">                Columns are for each of the columns in the relevant df (after applying :func:`model_matrix`)</span>
 
 <span class="sd">        Examples:</span>
+<span class="sd">            ::</span>
 
-<span class="sd">            import pandas as pd</span>
-<span class="sd">            from balance.sample_class import Sample</span>
+<span class="sd">                import pandas as pd</span>
+<span class="sd">                from balance.sample_class import Sample</span>
 
-<span class="sd">            s1 = Sample.from_frame(</span>
-<span class="sd">                pd.DataFrame(</span>
-<span class="sd">                    {</span>
-<span class="sd">                        &quot;a&quot;: (1, 2, 3, 1),</span>
-<span class="sd">                        &quot;b&quot;: (-42, 8, 2, -42),</span>
-<span class="sd">                        &quot;o&quot;: (7, 8, 9, 10),</span>
-<span class="sd">                        &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;, &quot;v&quot;),</span>
-<span class="sd">                        &quot;id&quot;: (1, 2, 3, 4),</span>
-<span class="sd">                        &quot;w&quot;: (0.5, 2, 1, 1),</span>
-<span class="sd">                    }</span>
-<span class="sd">                ),</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                weight_column=&quot;w&quot;,</span>
-<span class="sd">                outcome_columns=&quot;o&quot;,</span>
-<span class="sd">            )</span>
+<span class="sd">                s1 = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;a&quot;: (1, 2, 3, 1),</span>
+<span class="sd">                            &quot;b&quot;: (-42, 8, 2, -42),</span>
+<span class="sd">                            &quot;o&quot;: (7, 8, 9, 10),</span>
+<span class="sd">                            &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;, &quot;v&quot;),</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3, 4),</span>
+<span class="sd">                            &quot;w&quot;: (0.5, 2, 1, 1),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                    outcome_columns=&quot;o&quot;,</span>
+<span class="sd">                )</span>
 
-<span class="sd">            s2 = Sample.from_frame(</span>
-<span class="sd">                pd.DataFrame(</span>
-<span class="sd">                    {</span>
-<span class="sd">                        &quot;a&quot;: (1, 2, 3),</span>
-<span class="sd">                        &quot;b&quot;: (4, 6, 8),</span>
-<span class="sd">                        &quot;id&quot;: (1, 2, 3),</span>
-<span class="sd">                        &quot;w&quot;: (0.5, 1, 2),</span>
-<span class="sd">                        &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;),</span>
-<span class="sd">                    }</span>
-<span class="sd">                ),</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                weight_column=&quot;w&quot;,</span>
-<span class="sd">            )</span>
+<span class="sd">                s2 = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;a&quot;: (1, 2, 3),</span>
+<span class="sd">                            &quot;b&quot;: (4, 6, 8),</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3),</span>
+<span class="sd">                            &quot;w&quot;: (0.5, 1, 2),</span>
+<span class="sd">                            &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                )</span>
 
-<span class="sd">            s3 = s1.set_target(s2)</span>
-<span class="sd">            s3_null = s3.adjust(method=&quot;null&quot;)</span>
+<span class="sd">                s3 = s1.set_target(s2)</span>
+<span class="sd">                s3_null = s3.adjust(method=&quot;null&quot;)</span>
 
-<span class="sd">            print(s3_null.covars().mean())</span>
+<span class="sd">                print(s3_null.covars().mean())</span>
 
-<span class="sd">            #                 a          b      c[v]      c[x]      c[y]      c[z]</span>
-<span class="sd">            # source</span>
-<span class="sd">            # self        1.888889 -10.000000  0.222222  0.111111  0.444444  0.222222</span>
-<span class="sd">            # target      2.428571   6.857143       NaN  0.142857  0.285714  0.571429</span>
-<span class="sd">            # unadjusted  1.888889 -10.000000  0.222222  0.111111  0.444444  0.222222</span>
+<span class="sd">                #                 a          b      c[v]      c[x]      c[y]      c[z]</span>
+<span class="sd">                # source</span>
+<span class="sd">                # self        1.888889 -10.000000  0.222222  0.111111  0.444444  0.222222</span>
+<span class="sd">                # target      2.428571   6.857143       NaN  0.142857  0.285714  0.571429</span>
+<span class="sd">                # unadjusted  1.888889 -10.000000  0.222222  0.111111  0.444444  0.222222</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">on_linked_samples</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_on_linked</span><span class="p">(</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -740,50 +747,51 @@
 <span class="sd">                Columns are for each of the columns in the relevant df (after applying :func:`model_matrix`)</span>
 
 <span class="sd">        Examples:</span>
+<span class="sd">            ::</span>
 
-<span class="sd">            import pandas as pd</span>
-<span class="sd">            from balance.sample_class import Sample</span>
+<span class="sd">                import pandas as pd</span>
+<span class="sd">                from balance.sample_class import Sample</span>
 
-<span class="sd">            s1 = Sample.from_frame(</span>
-<span class="sd">                pd.DataFrame(</span>
-<span class="sd">                    {</span>
-<span class="sd">                        &quot;a&quot;: (1, 2, 3, 1),</span>
-<span class="sd">                        &quot;b&quot;: (-42, 8, 2, -42),</span>
-<span class="sd">                        &quot;o&quot;: (7, 8, 9, 10),</span>
-<span class="sd">                        &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;, &quot;v&quot;),</span>
-<span class="sd">                        &quot;id&quot;: (1, 2, 3, 4),</span>
-<span class="sd">                        &quot;w&quot;: (0.5, 2, 1, 1),</span>
-<span class="sd">                    }</span>
-<span class="sd">                ),</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                weight_column=&quot;w&quot;,</span>
-<span class="sd">                outcome_columns=&quot;o&quot;,</span>
-<span class="sd">            )</span>
+<span class="sd">                s1 = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;a&quot;: (1, 2, 3, 1),</span>
+<span class="sd">                            &quot;b&quot;: (-42, 8, 2, -42),</span>
+<span class="sd">                            &quot;o&quot;: (7, 8, 9, 10),</span>
+<span class="sd">                            &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;, &quot;v&quot;),</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3, 4),</span>
+<span class="sd">                            &quot;w&quot;: (0.5, 2, 1, 1),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                    outcome_columns=&quot;o&quot;,</span>
+<span class="sd">                )</span>
 
-<span class="sd">            s2 = Sample.from_frame(</span>
-<span class="sd">                pd.DataFrame(</span>
-<span class="sd">                    {</span>
-<span class="sd">                        &quot;a&quot;: (1, 2, 3),</span>
-<span class="sd">                        &quot;b&quot;: (4, 6, 8),</span>
-<span class="sd">                        &quot;id&quot;: (1, 2, 3),</span>
-<span class="sd">                        &quot;w&quot;: (0.5, 1, 2),</span>
-<span class="sd">                        &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;),</span>
-<span class="sd">                    }</span>
-<span class="sd">                ),</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                weight_column=&quot;w&quot;,</span>
-<span class="sd">            )</span>
+<span class="sd">                s2 = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;a&quot;: (1, 2, 3),</span>
+<span class="sd">                            &quot;b&quot;: (4, 6, 8),</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3),</span>
+<span class="sd">                            &quot;w&quot;: (0.5, 1, 2),</span>
+<span class="sd">                            &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                )</span>
 
-<span class="sd">            s3 = s1.set_target(s2)</span>
-<span class="sd">            s3_null = s3.adjust(method=&quot;null&quot;)</span>
+<span class="sd">                s3 = s1.set_target(s2)</span>
+<span class="sd">                s3_null = s3.adjust(method=&quot;null&quot;)</span>
 
-<span class="sd">            print(s3_null.covars().std())</span>
+<span class="sd">                print(s3_null.covars().std())</span>
 
-<span class="sd">            #                 a          b  c[v]      c[x]      c[y]      c[z]</span>
-<span class="sd">            # source</span>
-<span class="sd">            # self        0.886405  27.354812   0.5  0.377964  0.597614  0.500000</span>
-<span class="sd">            # target      0.963624   1.927248   NaN  0.462910  0.597614  0.654654</span>
-<span class="sd">            # unadjusted  0.886405  27.354812   0.5  0.377964  0.597614  0.500000</span>
+<span class="sd">                    #                 a          b  c[v]      c[x]      c[y]      c[z]</span>
+<span class="sd">                    # source</span>
+<span class="sd">                    # self        0.886405  27.354812   0.5  0.377964  0.597614  0.500000</span>
+<span class="sd">                    # target      0.963624   1.927248   NaN  0.462910  0.597614  0.654654</span>
+<span class="sd">                    # unadjusted  0.886405  27.354812   0.5  0.377964  0.597614  0.500000</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">on_linked_samples</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_on_linked</span><span class="p">(</span><span class="s2">&quot;std&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -855,26 +863,27 @@
 <span class="sd">            pd.Series: See :func:`weighted_comparisons_stats.asmd`</span>
 
 <span class="sd">        Examples:</span>
+<span class="sd">            ::</span>
 
-<span class="sd">            from balance.balancedf_class import BalanceDF</span>
+<span class="sd">                from balance.balancedf_class import BalanceDF</span>
 
-<span class="sd">            BalanceDF._asmd_BalanceDF(</span>
-<span class="sd">                Sample.from_frame(</span>
-<span class="sd">                    pd.DataFrame(</span>
-<span class="sd">                        {&quot;id&quot;: (1, 2), &quot;a&quot;: (1, 2), &quot;b&quot;: (-1, 12), &quot;weight&quot;: (1, 2)}</span>
-<span class="sd">                    )</span>
-<span class="sd">                ).covars(),</span>
-<span class="sd">                Sample.from_frame(</span>
-<span class="sd">                    pd.DataFrame(</span>
-<span class="sd">                        {&quot;id&quot;: (1, 2), &quot;a&quot;: (3, 4), &quot;b&quot;: (0, 42), &quot;weight&quot;: (1, 2)}</span>
-<span class="sd">                    )</span>
-<span class="sd">                ).covars(),</span>
-<span class="sd">            )</span>
+<span class="sd">                BalanceDF._asmd_BalanceDF(</span>
+<span class="sd">                    Sample.from_frame(</span>
+<span class="sd">                        pd.DataFrame(</span>
+<span class="sd">                            {&quot;id&quot;: (1, 2), &quot;a&quot;: (1, 2), &quot;b&quot;: (-1, 12), &quot;weight&quot;: (1, 2)}</span>
+<span class="sd">                        )</span>
+<span class="sd">                    ).covars(),</span>
+<span class="sd">                    Sample.from_frame(</span>
+<span class="sd">                        pd.DataFrame(</span>
+<span class="sd">                            {&quot;id&quot;: (1, 2), &quot;a&quot;: (3, 4), &quot;b&quot;: (0, 42), &quot;weight&quot;: (1, 2)}</span>
+<span class="sd">                        )</span>
+<span class="sd">                    ).covars(),</span>
+<span class="sd">                )</span>
 
-<span class="sd">                # a             2.828427</span>
-<span class="sd">                # b             0.684659</span>
-<span class="sd">                # mean(asmd)    1.756543</span>
-<span class="sd">                # dtype: float64</span>
+<span class="sd">                    # a             2.828427</span>
+<span class="sd">                    # b             0.684659</span>
+<span class="sd">                    # mean(asmd)    1.756543</span>
+<span class="sd">                    # dtype: float64</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_check_if_not_BalanceDF</span><span class="p">(</span><span class="n">sample_BalanceDF</span><span class="p">,</span> <span class="s2">&quot;sample_BalanceDF&quot;</span><span class="p">)</span>
         <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_check_if_not_BalanceDF</span><span class="p">(</span><span class="n">sample_BalanceDF</span><span class="p">,</span> <span class="s2">&quot;target_BalanceDF&quot;</span><span class="p">)</span>
@@ -924,68 +933,70 @@
 <span class="sd">                If on_linked_samples is True, then two rows per source (self, unadjusted), each with the asmd compared to target, and a third row for the difference (self-unadjusted).</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            import pandas as pd</span>
-<span class="sd">            from balance.sample_class import Sample</span>
+<span class="sd">            ::</span>
 
-<span class="sd">            from copy import deepcopy</span>
+<span class="sd">                import pandas as pd</span>
+<span class="sd">                from balance.sample_class import Sample</span>
+
+<span class="sd">                from copy import deepcopy</span>
 
 
-<span class="sd">            s1 = Sample.from_frame(</span>
-<span class="sd">                pd.DataFrame(</span>
-<span class="sd">                    {</span>
-<span class="sd">                        &quot;a&quot;: (1, 2, 3, 1),</span>
-<span class="sd">                        &quot;b&quot;: (-42, 8, 2, -42),</span>
-<span class="sd">                        &quot;o&quot;: (7, 8, 9, 10),</span>
-<span class="sd">                        &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;, &quot;v&quot;),</span>
-<span class="sd">                        &quot;id&quot;: (1, 2, 3, 4),</span>
-<span class="sd">                        &quot;w&quot;: (0.5, 2, 1, 1),</span>
-<span class="sd">                    }</span>
-<span class="sd">                ),</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                weight_column=&quot;w&quot;,</span>
-<span class="sd">                outcome_columns=&quot;o&quot;,</span>
-<span class="sd">            )</span>
+<span class="sd">                s1 = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;a&quot;: (1, 2, 3, 1),</span>
+<span class="sd">                            &quot;b&quot;: (-42, 8, 2, -42),</span>
+<span class="sd">                            &quot;o&quot;: (7, 8, 9, 10),</span>
+<span class="sd">                            &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;, &quot;v&quot;),</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3, 4),</span>
+<span class="sd">                            &quot;w&quot;: (0.5, 2, 1, 1),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                    outcome_columns=&quot;o&quot;,</span>
+<span class="sd">                )</span>
 
-<span class="sd">            s2 = Sample.from_frame(</span>
-<span class="sd">                pd.DataFrame(</span>
-<span class="sd">                    {</span>
-<span class="sd">                        &quot;a&quot;: (1, 2, 3),</span>
-<span class="sd">                        &quot;b&quot;: (4, 6, 8),</span>
-<span class="sd">                        &quot;id&quot;: (1, 2, 3),</span>
-<span class="sd">                        &quot;w&quot;: (0.5, 1, 2),</span>
-<span class="sd">                        &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;),</span>
-<span class="sd">                    }</span>
-<span class="sd">                ),</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                weight_column=&quot;w&quot;,</span>
-<span class="sd">            )</span>
+<span class="sd">                s2 = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;a&quot;: (1, 2, 3),</span>
+<span class="sd">                            &quot;b&quot;: (4, 6, 8),</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3),</span>
+<span class="sd">                            &quot;w&quot;: (0.5, 1, 2),</span>
+<span class="sd">                            &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                )</span>
 
-<span class="sd">            s3 = s1.set_target(s2)</span>
-<span class="sd">            s3_null = s3.adjust(method=&quot;null&quot;)</span>
+<span class="sd">                s3 = s1.set_target(s2)</span>
+<span class="sd">                s3_null = s3.adjust(method=&quot;null&quot;)</span>
 
-<span class="sd">            s3_null_madeup_weights = deepcopy(s3_null)</span>
-<span class="sd">            s3_null_madeup_weights.set_weights((1, 2, 3, 1))</span>
+<span class="sd">                s3_null_madeup_weights = deepcopy(s3_null)</span>
+<span class="sd">                s3_null_madeup_weights.set_weights((1, 2, 3, 1))</span>
 
-<span class="sd">            print(s3_null.covars().asmd().round(3))</span>
-<span class="sd">                #                     a      b  c[v]   c[x]   c[y]   c[z]  mean(asmd)</span>
-<span class="sd">                # source</span>
-<span class="sd">                # self               0.56  8.747   NaN  0.069  0.266  0.533       3.175</span>
-<span class="sd">                # unadjusted         0.56  8.747   NaN  0.069  0.266  0.533       3.175</span>
-<span class="sd">                # unadjusted - self  0.00  0.000   NaN  0.000  0.000  0.000       0.000</span>
+<span class="sd">                print(s3_null.covars().asmd().round(3))</span>
+<span class="sd">                    #                     a      b  c[v]   c[x]   c[y]   c[z]  mean(asmd)</span>
+<span class="sd">                    # source</span>
+<span class="sd">                    # self               0.56  8.747   NaN  0.069  0.266  0.533       3.175</span>
+<span class="sd">                    # unadjusted         0.56  8.747   NaN  0.069  0.266  0.533       3.175</span>
+<span class="sd">                    # unadjusted - self  0.00  0.000   NaN  0.000  0.000  0.000       0.000</span>
 
-<span class="sd">            # show that on_linked_samples = False works:</span>
-<span class="sd">            print(s3_null.covars().asmd(on_linked_samples = False).round(3))</span>
-<span class="sd">                #            a      b  c[v]   c[x]   c[y]   c[z]  mean(asmd)</span>
-<span class="sd">                # index</span>
-<span class="sd">                # covars  0.56  8.747   NaN  0.069  0.266  0.533       3.175</span>
+<span class="sd">                # show that on_linked_samples = False works:</span>
+<span class="sd">                print(s3_null.covars().asmd(on_linked_samples = False).round(3))</span>
+<span class="sd">                    #            a      b  c[v]   c[x]   c[y]   c[z]  mean(asmd)</span>
+<span class="sd">                    # index</span>
+<span class="sd">                    # covars  0.56  8.747   NaN  0.069  0.266  0.533       3.175</span>
 
-<span class="sd">            # verify this also works when we have some weights</span>
-<span class="sd">            print(s3_null_madeup_weights.covars().asmd())</span>
-<span class="sd">                #                           a         b  c[v]  ...      c[y]      c[z]  mean(asmd)</span>
-<span class="sd">                # source                                       ...</span>
-<span class="sd">                # self               0.296500  8.153742   NaN  ...  0.000000  0.218218    2.834932</span>
-<span class="sd">                # unadjusted         0.560055  8.746742   NaN  ...  0.265606  0.533422    3.174566</span>
-<span class="sd">                # unadjusted - self  0.263555  0.592999   NaN  ...  0.265606  0.315204    0.33963</span>
+<span class="sd">                # verify this also works when we have some weights</span>
+<span class="sd">                print(s3_null_madeup_weights.covars().asmd())</span>
+<span class="sd">                    #                           a         b  c[v]  ...      c[y]      c[z]  mean(asmd)</span>
+<span class="sd">                    # source                                       ...</span>
+<span class="sd">                    # self               0.296500  8.153742   NaN  ...  0.000000  0.218218    2.834932</span>
+<span class="sd">                    # unadjusted         0.560055  8.746742   NaN  ...  0.265606  0.533422    3.174566</span>
+<span class="sd">                    # unadjusted - self  0.263555  0.592999   NaN  ...  0.265606  0.315204    0.33963</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">target_from_self</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_BalanceDF_child_from_linked_samples</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
 
@@ -1040,60 +1051,62 @@
 <span class="sd">                The asmd is calculated using :func:`asmd`.</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            import pandas as pd</span>
-<span class="sd">            from balance.sample_class import Sample</span>
+<span class="sd">            ::</span>
 
-<span class="sd">            from copy import deepcopy</span>
+<span class="sd">                import pandas as pd</span>
+<span class="sd">                from balance.sample_class import Sample</span>
+
+<span class="sd">                from copy import deepcopy</span>
 
 
-<span class="sd">            s1 = Sample.from_frame(</span>
-<span class="sd">                pd.DataFrame(</span>
-<span class="sd">                    {</span>
-<span class="sd">                        &quot;a&quot;: (1, 2, 3, 1),</span>
-<span class="sd">                        &quot;b&quot;: (-42, 8, 2, -42),</span>
-<span class="sd">                        &quot;o&quot;: (7, 8, 9, 10),</span>
-<span class="sd">                        &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;, &quot;v&quot;),</span>
-<span class="sd">                        &quot;id&quot;: (1, 2, 3, 4),</span>
-<span class="sd">                        &quot;w&quot;: (0.5, 2, 1, 1),</span>
-<span class="sd">                    }</span>
-<span class="sd">                ),</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                weight_column=&quot;w&quot;,</span>
-<span class="sd">                outcome_columns=&quot;o&quot;,</span>
-<span class="sd">            )</span>
+<span class="sd">                s1 = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;a&quot;: (1, 2, 3, 1),</span>
+<span class="sd">                            &quot;b&quot;: (-42, 8, 2, -42),</span>
+<span class="sd">                            &quot;o&quot;: (7, 8, 9, 10),</span>
+<span class="sd">                            &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;, &quot;v&quot;),</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3, 4),</span>
+<span class="sd">                            &quot;w&quot;: (0.5, 2, 1, 1),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                    outcome_columns=&quot;o&quot;,</span>
+<span class="sd">                )</span>
 
-<span class="sd">            s2 = Sample.from_frame(</span>
-<span class="sd">                pd.DataFrame(</span>
-<span class="sd">                    {</span>
-<span class="sd">                        &quot;a&quot;: (1, 2, 3),</span>
-<span class="sd">                        &quot;b&quot;: (4, 6, 8),</span>
-<span class="sd">                        &quot;id&quot;: (1, 2, 3),</span>
-<span class="sd">                        &quot;w&quot;: (0.5, 1, 2),</span>
-<span class="sd">                        &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;),</span>
-<span class="sd">                    }</span>
-<span class="sd">                ),</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                weight_column=&quot;w&quot;,</span>
-<span class="sd">            )</span>
+<span class="sd">                s2 = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;a&quot;: (1, 2, 3),</span>
+<span class="sd">                            &quot;b&quot;: (4, 6, 8),</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3),</span>
+<span class="sd">                            &quot;w&quot;: (0.5, 1, 2),</span>
+<span class="sd">                            &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                )</span>
 
-<span class="sd">            s3 = s1.set_target(s2)</span>
-<span class="sd">            s3_null = s3.adjust(method=&quot;null&quot;)</span>
+<span class="sd">                s3 = s1.set_target(s2)</span>
+<span class="sd">                s3_null = s3.adjust(method=&quot;null&quot;)</span>
 
-<span class="sd">            s3_null_madeup_weights = deepcopy(s3_null)</span>
-<span class="sd">            s3_null_madeup_weights.set_weights((1, 2, 3, 1))</span>
+<span class="sd">                s3_null_madeup_weights = deepcopy(s3_null)</span>
+<span class="sd">                s3_null_madeup_weights.set_weights((1, 2, 3, 1))</span>
 
-<span class="sd">            s3_null.covars().asmd_improvement() # 0. since unadjusted is just a copy of self</span>
-<span class="sd">            s3_null_madeup_weights.covars().asmd_improvement() # 0.10698596233975825</span>
+<span class="sd">                s3_null.covars().asmd_improvement() # 0. since unadjusted is just a copy of self</span>
+<span class="sd">                s3_null_madeup_weights.covars().asmd_improvement() # 0.10698596233975825</span>
 
-<span class="sd">            asmd_df = s3_null_madeup_weights.covars().asmd()</span>
-<span class="sd">            print(asmd_df[&quot;mean(asmd)&quot;])</span>
-<span class="sd">                # source</span>
-<span class="sd">                # self                 2.834932</span>
-<span class="sd">                # unadjusted           3.174566</span>
-<span class="sd">                # unadjusted - self    0.339634</span>
-<span class="sd">                # Name: mean(asmd), dtype: float64</span>
-<span class="sd">            (asmd_df[&quot;mean(asmd)&quot;][1] - asmd_df[&quot;mean(asmd)&quot;][0]) / asmd_df[&quot;mean(asmd)&quot;][1]  # 0.10698596233975825</span>
-<span class="sd">            # just like asmd_improvement</span>
+<span class="sd">                asmd_df = s3_null_madeup_weights.covars().asmd()</span>
+<span class="sd">                print(asmd_df[&quot;mean(asmd)&quot;])</span>
+<span class="sd">                    # source</span>
+<span class="sd">                    # self                 2.834932</span>
+<span class="sd">                    # unadjusted           3.174566</span>
+<span class="sd">                    # unadjusted - self    0.339634</span>
+<span class="sd">                    # Name: mean(asmd), dtype: float64</span>
+<span class="sd">                (asmd_df[&quot;mean(asmd)&quot;][1] - asmd_df[&quot;mean(asmd)&quot;][0]) / asmd_df[&quot;mean(asmd)&quot;][1]  # 0.10698596233975825</span>
+<span class="sd">                # just like asmd_improvement</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">unadjusted</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">unadjusted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_BalanceDF_child_from_linked_samples</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">)</span>
@@ -1212,57 +1225,59 @@
 <span class="sd">                If &#39;target&#39; is set to True but there is no target, the function returns None.</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            import numpy as np</span>
-<span class="sd">            import pandas as pd</span>
+<span class="sd">            ::</span>
 
-<span class="sd">            from balance.sample_class import Sample</span>
+<span class="sd">                import numpy as np</span>
+<span class="sd">                import pandas as pd</span>
+
+<span class="sd">                from balance.sample_class import Sample</span>
 
 
-<span class="sd">            s_o = Sample.from_frame(</span>
-<span class="sd">                pd.DataFrame({&quot;o1&quot;: (7, 8, 9, 10), &quot;o2&quot;: (7, 8, 9, np.nan), &quot;id&quot;: (1, 2, 3, 4)}),</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                outcome_columns=(&quot;o1&quot;, &quot;o2&quot;),</span>
-<span class="sd">            )</span>
-
-<span class="sd">            print(s_o.outcomes().relative_response_rates())</span>
-<span class="sd">                #       o1    o2</span>
-<span class="sd">                # n    4.0   3.0</span>
-<span class="sd">                # %  100.0  75.0</span>
-
-<span class="sd">            s_o.outcomes().relative_response_rates(target = True)</span>
-<span class="sd">            # None</span>
-
-<span class="sd">            # compared with a larget target</span>
-
-<span class="sd">            t_o = Sample.from_frame(</span>
-<span class="sd">                pd.DataFrame(</span>
-<span class="sd">                    {</span>
-<span class="sd">                        &quot;o1&quot;: (7, 8, 9, 10, 11, 12, 13, 14),</span>
-<span class="sd">                        &quot;o2&quot;: (7, 8, 9, np.nan, np.nan, 12, 13, 14),</span>
-<span class="sd">                        &quot;id&quot;: (1, 2, 3, 4, 5, 6, 7, 8),</span>
-<span class="sd">                    }</span>
-<span class="sd">                ),</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                outcome_columns=(&quot;o1&quot;, &quot;o2&quot;),</span>
-<span class="sd">            )</span>
-<span class="sd">            s_o2 = s_o.set_target(t_o)</span>
-
-<span class="sd">            print(s_o2.outcomes().relative_response_rates(True, per_column = True))</span>
-<span class="sd">                #     o1    o2</span>
-<span class="sd">                # n   4.0   3.0</span>
-<span class="sd">                # %  50.0  50.0</span>
-
-<span class="sd">            df_target = pd.DataFrame(</span>
-<span class="sd">                    {</span>
-<span class="sd">                        &quot;o1&quot;: (7, 8, 9, 10, 11, 12, 13, 14),</span>
-<span class="sd">                        &quot;o2&quot;: (7, 8, 9, np.nan, np.nan, 12, 13, 14),</span>
-<span class="sd">                    }</span>
+<span class="sd">                s_o = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame({&quot;o1&quot;: (7, 8, 9, 10), &quot;o2&quot;: (7, 8, 9, np.nan), &quot;id&quot;: (1, 2, 3, 4)}),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    outcome_columns=(&quot;o1&quot;, &quot;o2&quot;),</span>
 <span class="sd">                )</span>
 
-<span class="sd">            print(s_o2.outcomes().relative_response_rates(target = df_target, per_column = True))</span>
-<span class="sd">                #     o1    o2</span>
-<span class="sd">                # n   4.0   3.0</span>
-<span class="sd">                # %  50.0  50.0</span>
+<span class="sd">                print(s_o.outcomes().relative_response_rates())</span>
+<span class="sd">                    #       o1    o2</span>
+<span class="sd">                    # n    4.0   3.0</span>
+<span class="sd">                    # %  100.0  75.0</span>
+
+<span class="sd">                s_o.outcomes().relative_response_rates(target = True)</span>
+<span class="sd">                # None</span>
+
+<span class="sd">                # compared with a larget target</span>
+
+<span class="sd">                t_o = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;o1&quot;: (7, 8, 9, 10, 11, 12, 13, 14),</span>
+<span class="sd">                            &quot;o2&quot;: (7, 8, 9, np.nan, np.nan, 12, 13, 14),</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3, 4, 5, 6, 7, 8),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    outcome_columns=(&quot;o1&quot;, &quot;o2&quot;),</span>
+<span class="sd">                )</span>
+<span class="sd">                s_o2 = s_o.set_target(t_o)</span>
+
+<span class="sd">                print(s_o2.outcomes().relative_response_rates(True, per_column = True))</span>
+<span class="sd">                    #     o1    o2</span>
+<span class="sd">                    # n   4.0   3.0</span>
+<span class="sd">                    # %  50.0  50.0</span>
+
+<span class="sd">                df_target = pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;o1&quot;: (7, 8, 9, 10, 11, 12, 13, 14),</span>
+<span class="sd">                            &quot;o2&quot;: (7, 8, 9, np.nan, np.nan, 12, 13, 14),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    )</span>
+
+<span class="sd">                print(s_o2.outcomes().relative_response_rates(target = df_target, per_column = True))</span>
+<span class="sd">                    #     o1    o2</span>
+<span class="sd">                    # n   4.0   3.0</span>
+<span class="sd">                    # %  50.0  50.0</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">target</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">bool</span><span class="p">:</span>
             <span class="c1"># Then: get target from self:</span>
@@ -1295,35 +1310,37 @@
 <span class="sd">                If the object has a target, it returns the output of :func:`general_stats.relative_response_rates`.</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            import numpy as np</span>
-<span class="sd">            import pandas as pd</span>
+<span class="sd">            ::</span>
 
-<span class="sd">            from balance.sample_class import Sample</span>
+<span class="sd">                import numpy as np</span>
+<span class="sd">                import pandas as pd</span>
+
+<span class="sd">                from balance.sample_class import Sample</span>
 
 
-<span class="sd">            s_o = Sample.from_frame(</span>
-<span class="sd">                pd.DataFrame({&quot;o1&quot;: (7, 8, 9, 10), &quot;o2&quot;: (7, 8, 9, np.nan), &quot;id&quot;: (1, 2, 3, 4)}),</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                outcome_columns=(&quot;o1&quot;, &quot;o2&quot;),</span>
-<span class="sd">            )</span>
+<span class="sd">                s_o = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame({&quot;o1&quot;: (7, 8, 9, 10), &quot;o2&quot;: (7, 8, 9, np.nan), &quot;id&quot;: (1, 2, 3, 4)}),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    outcome_columns=(&quot;o1&quot;, &quot;o2&quot;),</span>
+<span class="sd">                )</span>
 
-<span class="sd">            t_o = Sample.from_frame(</span>
-<span class="sd">                pd.DataFrame(</span>
-<span class="sd">                    {</span>
-<span class="sd">                        &quot;o1&quot;: (7, 8, 9, 10, 11, 12, 13, 14),</span>
-<span class="sd">                        &quot;o2&quot;: (7, 8, 9, np.nan, 11, 12, 13, 14),</span>
-<span class="sd">                        &quot;id&quot;: (1, 2, 3, 4, 5, 6, 7, 8),</span>
-<span class="sd">                    }</span>
-<span class="sd">                ),</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                outcome_columns=(&quot;o1&quot;, &quot;o2&quot;),</span>
-<span class="sd">            )</span>
-<span class="sd">            s_o = s_o.set_target(t_o)</span>
+<span class="sd">                t_o = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;o1&quot;: (7, 8, 9, 10, 11, 12, 13, 14),</span>
+<span class="sd">                            &quot;o2&quot;: (7, 8, 9, np.nan, 11, 12, 13, 14),</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3, 4, 5, 6, 7, 8),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    outcome_columns=(&quot;o1&quot;, &quot;o2&quot;),</span>
+<span class="sd">                )</span>
+<span class="sd">                s_o = s_o.set_target(t_o)</span>
 
-<span class="sd">            print(s_o.outcomes().target_response_rates())</span>
-<span class="sd">                #       o1    o2</span>
-<span class="sd">                # n    8.0   7.0</span>
-<span class="sd">                # %  100.0  87.5</span>
+<span class="sd">                print(s_o.outcomes().target_response_rates())</span>
+<span class="sd">                    #       o1    o2</span>
+<span class="sd">                    # n    8.0   7.0</span>
+<span class="sd">                    # %  100.0  87.5</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">self_target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_BalanceDF_child_from_linked_samples</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">self_target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1348,66 +1365,67 @@
 <span class="sd">            str: A printable string, with mean of outcome variables and reponse rates.</span>
 
 <span class="sd">        Examples:</span>
+<span class="sd">            ::</span>
 
-<span class="sd">            import numpy as np</span>
-<span class="sd">            import pandas as pd</span>
+<span class="sd">                import numpy as np</span>
+<span class="sd">                import pandas as pd</span>
 
-<span class="sd">            from balance.sample_class import Sample</span>
+<span class="sd">                from balance.sample_class import Sample</span>
 
-<span class="sd">            s_o = Sample.from_frame(</span>
-<span class="sd">                pd.DataFrame({&quot;o1&quot;: (7, 8, 9, 10), &quot;o2&quot;: (7, 8, 9, np.nan), &quot;id&quot;: (1, 2, 3, 4)}),</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                outcome_columns=(&quot;o1&quot;, &quot;o2&quot;),</span>
-<span class="sd">            )</span>
+<span class="sd">                s_o = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame({&quot;o1&quot;: (7, 8, 9, 10), &quot;o2&quot;: (7, 8, 9, np.nan), &quot;id&quot;: (1, 2, 3, 4)}),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    outcome_columns=(&quot;o1&quot;, &quot;o2&quot;),</span>
+<span class="sd">                )</span>
 
-<span class="sd">            t_o = Sample.from_frame(</span>
-<span class="sd">                pd.DataFrame(</span>
-<span class="sd">                    {</span>
-<span class="sd">                        &quot;o1&quot;: (7, 8, 9, 10, 11, 12, 13, 14),</span>
-<span class="sd">                        &quot;o2&quot;: (7, 8, 9, np.nan, np.nan, 12, 13, 14),</span>
-<span class="sd">                        &quot;id&quot;: (1, 2, 3, 4, 5, 6, 7, 8),</span>
-<span class="sd">                    }</span>
-<span class="sd">                ),</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                outcome_columns=(&quot;o1&quot;, &quot;o2&quot;),</span>
-<span class="sd">            )</span>
-<span class="sd">            s_o2 = s_o.set_target(t_o)</span>
+<span class="sd">                t_o = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;o1&quot;: (7, 8, 9, 10, 11, 12, 13, 14),</span>
+<span class="sd">                            &quot;o2&quot;: (7, 8, 9, np.nan, np.nan, 12, 13, 14),</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3, 4, 5, 6, 7, 8),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    outcome_columns=(&quot;o1&quot;, &quot;o2&quot;),</span>
+<span class="sd">                )</span>
+<span class="sd">                s_o2 = s_o.set_target(t_o)</span>
 
-<span class="sd">            print(s_o.outcomes().summary())</span>
+<span class="sd">                print(s_o.outcomes().summary())</span>
 
-<span class="sd">            # 2 outcomes: [&#39;o1&#39; &#39;o2&#39;]</span>
-<span class="sd">            # Mean outcomes:</span>
-<span class="sd">            #         _is_na_o2[False]  _is_na_o2[True]   o1   o2</span>
-<span class="sd">            # source</span>
-<span class="sd">            # self                0.75             0.25  8.5  6.0</span>
+<span class="sd">                # 2 outcomes: [&#39;o1&#39; &#39;o2&#39;]</span>
+<span class="sd">                # Mean outcomes:</span>
+<span class="sd">                #         _is_na_o2[False]  _is_na_o2[True]   o1   o2</span>
+<span class="sd">                # source</span>
+<span class="sd">                # self                0.75             0.25  8.5  6.0</span>
 
-<span class="sd">            # Response rates (relative to number of respondents in sample):</span>
-<span class="sd">            #       o1    o2</span>
-<span class="sd">            # n    4.0   3.0</span>
-<span class="sd">            # %  100.0  75.0</span>
+<span class="sd">                # Response rates (relative to number of respondents in sample):</span>
+<span class="sd">                #       o1    o2</span>
+<span class="sd">                # n    4.0   3.0</span>
+<span class="sd">                # %  100.0  75.0</span>
 
 
-<span class="sd">            print(s_o2.outcomes().summary())</span>
+<span class="sd">                print(s_o2.outcomes().summary())</span>
 
-<span class="sd">            # 2 outcomes: [&#39;o1&#39; &#39;o2&#39;]</span>
-<span class="sd">            # Mean outcomes:</span>
-<span class="sd">            #         _is_na_o2[False]  _is_na_o2[True]    o1     o2</span>
-<span class="sd">            # source</span>
-<span class="sd">            # self                0.75             0.25   8.5  6.000</span>
-<span class="sd">            # target              0.75             0.25  10.5  7.875</span>
+<span class="sd">                # 2 outcomes: [&#39;o1&#39; &#39;o2&#39;]</span>
+<span class="sd">                # Mean outcomes:</span>
+<span class="sd">                #         _is_na_o2[False]  _is_na_o2[True]    o1     o2</span>
+<span class="sd">                # source</span>
+<span class="sd">                # self                0.75             0.25   8.5  6.000</span>
+<span class="sd">                # target              0.75             0.25  10.5  7.875</span>
 
-<span class="sd">            # Response rates (relative to number of respondents in sample):</span>
-<span class="sd">            #       o1    o2</span>
-<span class="sd">            # n    4.0   3.0</span>
-<span class="sd">            # %  100.0  75.0</span>
-<span class="sd">            # Response rates (relative to notnull rows in the target):</span>
-<span class="sd">            #            o1    o2</span>
-<span class="sd">            # n   4.000000   3.0</span>
-<span class="sd">            # %  66.666667  50.0</span>
-<span class="sd">            # Response rates (in the target):</span>
-<span class="sd">            #        o1    o2</span>
-<span class="sd">            # n    8.0   6.0</span>
-<span class="sd">            # %  100.0  75.0</span>
+<span class="sd">                # Response rates (relative to number of respondents in sample):</span>
+<span class="sd">                #       o1    o2</span>
+<span class="sd">                # n    4.0   3.0</span>
+<span class="sd">                # %  100.0  75.0</span>
+<span class="sd">                # Response rates (relative to notnull rows in the target):</span>
+<span class="sd">                #            o1    o2</span>
+<span class="sd">                # n   4.000000   3.0</span>
+<span class="sd">                # %  66.666667  50.0</span>
+<span class="sd">                # Response rates (in the target):</span>
+<span class="sd">                #        o1    o2</span>
+<span class="sd">                # n    8.0   6.0</span>
+<span class="sd">                # %  100.0  75.0</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">mean_outcomes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
         <span class="n">relative_response_rates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relative_response_rates</span><span class="p">()</span>
@@ -1461,46 +1479,48 @@
 <span class="sd">                If library=&quot;seaborn&quot; then returns either a list or an np.array of matplotlib axis.</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            import numpy as np</span>
-<span class="sd">            import pandas as pd</span>
-<span class="sd">            from numpy import random</span>
-<span class="sd">            from balance.sample_class import Sample</span>
+<span class="sd">            ::</span>
 
-<span class="sd">            random.seed(96483)</span>
+<span class="sd">                import numpy as np</span>
+<span class="sd">                import pandas as pd</span>
+<span class="sd">                from numpy import random</span>
+<span class="sd">                from balance.sample_class import Sample</span>
 
-<span class="sd">            df = pd.DataFrame({</span>
-<span class="sd">                &quot;id&quot;: range(100),</span>
-<span class="sd">                &#39;v1&#39;: random.random_integers(11111, 11114, size=100).astype(str),</span>
-<span class="sd">                &#39;v2&#39;: random.normal(size = 100),</span>
-<span class="sd">                &#39;v3&#39;: random.uniform(size = 100),</span>
-<span class="sd">                &quot;w&quot;: pd.Series(np.ones(99).tolist() + [1000]),</span>
-<span class="sd">            }).sort_values(by=[&#39;v2&#39;])</span>
+<span class="sd">                random.seed(96483)</span>
 
-<span class="sd">            s1 = Sample.from_frame(df,</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                weight_column=&quot;w&quot;,</span>
-<span class="sd">                outcome_columns=[&quot;v1&quot;, &quot;v2&quot;],</span>
-<span class="sd">            )</span>
+<span class="sd">                df = pd.DataFrame({</span>
+<span class="sd">                    &quot;id&quot;: range(100),</span>
+<span class="sd">                    &#39;v1&#39;: random.random_integers(11111, 11114, size=100).astype(str),</span>
+<span class="sd">                    &#39;v2&#39;: random.normal(size = 100),</span>
+<span class="sd">                    &#39;v3&#39;: random.uniform(size = 100),</span>
+<span class="sd">                    &quot;w&quot;: pd.Series(np.ones(99).tolist() + [1000]),</span>
+<span class="sd">                }).sort_values(by=[&#39;v2&#39;])</span>
 
-<span class="sd">            s2 = Sample.from_frame(</span>
-<span class="sd">                df.assign(w = pd.Series(np.ones(100))),</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                weight_column=&quot;w&quot;,</span>
-<span class="sd">                outcome_columns=[&quot;v1&quot;, &quot;v2&quot;],</span>
-<span class="sd">            )</span>
+<span class="sd">                s1 = Sample.from_frame(df,</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                    outcome_columns=[&quot;v1&quot;, &quot;v2&quot;],</span>
+<span class="sd">                )</span>
 
-<span class="sd">            s3 = s1.set_target(s2)</span>
-<span class="sd">            s3_null = s3.adjust(method=&quot;null&quot;)</span>
-<span class="sd">            s3_null.set_weights(random.random(size = 100) + 0.5)</span>
+<span class="sd">                s2 = Sample.from_frame(</span>
+<span class="sd">                    df.assign(w = pd.Series(np.ones(100))),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                    outcome_columns=[&quot;v1&quot;, &quot;v2&quot;],</span>
+<span class="sd">                )</span>
 
-<span class="sd">            # default: seaborn with dist_type = &quot;hist&quot;</span>
-<span class="sd">            s3_null.outcomes().plot()</span>
+<span class="sd">                s3 = s1.set_target(s2)</span>
+<span class="sd">                s3_null = s3.adjust(method=&quot;null&quot;)</span>
+<span class="sd">                s3_null.set_weights(random.random(size = 100) + 0.5)</span>
 
-<span class="sd">            # using dist_type = &quot;kde&quot;</span>
-<span class="sd">            s3_null.outcomes().plot(dist_type = &quot;kde&quot;)</span>
+<span class="sd">                # default: seaborn with dist_type = &quot;hist&quot;</span>
+<span class="sd">                s3_null.outcomes().plot()</span>
 
-<span class="sd">            # using plotly</span>
-<span class="sd">            s3_null.outcomes().plot(library = &quot;plotly&quot;)</span>
+<span class="sd">                # using dist_type = &quot;kde&quot;</span>
+<span class="sd">                s3_null.outcomes().plot(dist_type = &quot;kde&quot;)</span>
+
+<span class="sd">                # using plotly</span>
+<span class="sd">                s3_null.outcomes().plot(library = &quot;plotly&quot;)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">default_kwargs</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;library&quot;</span><span class="p">:</span> <span class="s2">&quot;seaborn&quot;</span><span class="p">,</span>
@@ -1582,40 +1602,42 @@
 <span class="sd">                If library=&quot;seaborn&quot; then returns either a list or an np.array of matplotlib axis.</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            import numpy as np</span>
-<span class="sd">            import pandas as pd</span>
-<span class="sd">            from numpy import random</span>
-<span class="sd">            from balance.sample_class import Sample</span>
+<span class="sd">            ::</span>
 
-<span class="sd">            random.seed(96483)</span>
+<span class="sd">                import numpy as np</span>
+<span class="sd">                import pandas as pd</span>
+<span class="sd">                from numpy import random</span>
+<span class="sd">                from balance.sample_class import Sample</span>
 
-<span class="sd">            df = pd.DataFrame({</span>
-<span class="sd">                &quot;id&quot;: range(100),</span>
-<span class="sd">                &#39;v1&#39;: random.random_integers(11111, 11114, size=100).astype(str),</span>
-<span class="sd">                &#39;v2&#39;: random.normal(size = 100),</span>
-<span class="sd">                &#39;v3&#39;: random.uniform(size = 100),</span>
-<span class="sd">                &quot;w&quot;: pd.Series(np.ones(99).tolist() + [1000]),</span>
-<span class="sd">            }).sort_values(by=[&#39;v2&#39;])</span>
+<span class="sd">                random.seed(96483)</span>
 
-<span class="sd">            s1 = Sample.from_frame(df,</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                weight_column=&quot;w&quot;,</span>
-<span class="sd">                outcome_columns=[&quot;v1&quot;, &quot;v2&quot;],</span>
-<span class="sd">            )</span>
+<span class="sd">                df = pd.DataFrame({</span>
+<span class="sd">                    &quot;id&quot;: range(100),</span>
+<span class="sd">                    &#39;v1&#39;: random.random_integers(11111, 11114, size=100).astype(str),</span>
+<span class="sd">                    &#39;v2&#39;: random.normal(size = 100),</span>
+<span class="sd">                    &#39;v3&#39;: random.uniform(size = 100),</span>
+<span class="sd">                    &quot;w&quot;: pd.Series(np.ones(99).tolist() + [1000]),</span>
+<span class="sd">                }).sort_values(by=[&#39;v2&#39;])</span>
 
-<span class="sd">            s2 = Sample.from_frame(</span>
-<span class="sd">                df.assign(w = pd.Series(np.ones(100))),</span>
-<span class="sd">                id_column=&quot;id&quot;,</span>
-<span class="sd">                weight_column=&quot;w&quot;,</span>
-<span class="sd">                outcome_columns=[&quot;v1&quot;, &quot;v2&quot;],</span>
-<span class="sd">            )</span>
+<span class="sd">                s1 = Sample.from_frame(df,</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                    outcome_columns=[&quot;v1&quot;, &quot;v2&quot;],</span>
+<span class="sd">                )</span>
 
-<span class="sd">            s3 = s1.set_target(s2)</span>
-<span class="sd">            s3_null = s3.adjust(method=&quot;null&quot;)</span>
-<span class="sd">            s3_null.set_weights(random.random(size = 100) + 0.5)</span>
+<span class="sd">                s2 = Sample.from_frame(</span>
+<span class="sd">                    df.assign(w = pd.Series(np.ones(100))),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                    outcome_columns=[&quot;v1&quot;, &quot;v2&quot;],</span>
+<span class="sd">                )</span>
 
-<span class="sd">            # default: seaborn with dist_type = &quot;kde&quot;</span>
-<span class="sd">            s3_null.weights().plot()</span>
+<span class="sd">                s3 = s1.set_target(s2)</span>
+<span class="sd">                s3_null = s3.adjust(method=&quot;null&quot;)</span>
+<span class="sd">                s3_null.set_weights(random.random(size = 100) + 0.5)</span>
+
+<span class="sd">                # default: seaborn with dist_type = &quot;kde&quot;</span>
+<span class="sd">                s3_null.weights().plot()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">default_kwargs</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;weighted&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>

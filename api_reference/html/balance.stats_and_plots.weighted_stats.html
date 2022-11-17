@@ -90,51 +90,57 @@ Defaults to True.</p></li>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>import numpy as np
-import pandas as pd
-from balance.stats_and_plots.weighted_stats import descriptive_stats, weighted_mean, weighted_sd</p>
-<p># Without weights
-x = [1, 2, 3, 4]
-print(descriptive_stats(pd.DataFrame(x), stat=”mean”))
-print(np.mean(x))
-print(weighted_mean(x))
-#     0
-# 0  2.5
-# 2.5
-# 0    2.5
-# dtype: float64</p>
-<p>print(descriptive_stats(pd.DataFrame(x), stat=”std”))
-print(weighted_sd(x))
-x2 = pd.Series(x)
-print(np.sqrt( np.sum((x2 - x2.mean())**2) / (len(x)-1) ))
-#         0
-# 0  1.290994
-# 0    1.290994
-# dtype: float64
-# 1.2909944487358056
-# Notice that it is different from
-# print(np.std(x))
-# which gives: 1.118033988749895
-# Which is the MLE (i.e.: biased, dividing by n and not n-1) estimator for std:
-# (np.sqrt( np.sum((x2 - x2.mean())**2) / (len(x)) ))</p>
-<p>x2 = pd.Series(x)
-tmp_sd = np.sqrt(np.sum((x2 - x2.mean()) ** 2) / (len(x) - 1))
-tmp_se = tmp_sd / np.sqrt(len(x))
-print(descriptive_stats(pd.DataFrame(x), stat=”std_mean”).iloc[0, 0])
-print(tmp_se)
-# 0.6454972243679029
-# 0.6454972243679028</p>
-<p># Weighted results
-x, w = [1, 2, 3, 4], [1, 2, 3, 4]
-print(descriptive_stats(pd.DataFrame(x), w, stat=”mean”))
-print(descriptive_stats(pd.DataFrame(x), w, stat=”std”))
-print(descriptive_stats(pd.DataFrame(x), w, stat=”std_mean”))
-#      0
-# 0  3.0
-#           0
-# 0  1.195229
-#           0
-# 0  0.333333</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">balance.stats_and_plots.weighted_stats</span> <span class="kn">import</span> <span class="n">descriptive_stats</span><span class="p">,</span> <span class="n">weighted_mean</span><span class="p">,</span> <span class="n">weighted_sd</span>
+
+<span class="c1"># Without weights</span>
+<span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">descriptive_stats</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">weighted_mean</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+    <span class="c1">#     0</span>
+    <span class="c1"># 0  2.5</span>
+    <span class="c1"># 2.5</span>
+    <span class="c1"># 0    2.5</span>
+    <span class="c1"># dtype: float64</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">descriptive_stats</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;std&quot;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">weighted_sd</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+<span class="n">x2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x2</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">))</span>
+    <span class="c1">#         0</span>
+    <span class="c1"># 0  1.290994</span>
+    <span class="c1"># 0    1.290994</span>
+    <span class="c1"># dtype: float64</span>
+    <span class="c1"># 1.2909944487358056</span>
+    <span class="c1"># Notice that it is different from</span>
+    <span class="c1"># print(np.std(x))</span>
+    <span class="c1"># which gives: 1.118033988749895</span>
+    <span class="c1"># Which is the MLE (i.e.: biased, dividing by n and not n-1) estimator for std:</span>
+    <span class="c1"># (np.sqrt( np.sum((x2 - x2.mean())**2) / (len(x)) ))</span>
+
+<span class="n">x2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">tmp_sd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x2</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">tmp_se</span> <span class="o">=</span> <span class="n">tmp_sd</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">descriptive_stats</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;std_mean&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tmp_se</span><span class="p">)</span>
+    <span class="c1"># 0.6454972243679029</span>
+    <span class="c1"># 0.6454972243679028</span>
+
+<span class="c1"># Weighted results</span>
+<span class="n">x</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">descriptive_stats</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">w</span><span class="p">,</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">descriptive_stats</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">w</span><span class="p">,</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;std&quot;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">descriptive_stats</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">w</span><span class="p">,</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;std_mean&quot;</span><span class="p">))</span>
+    <span class="c1">#      0</span>
+    <span class="c1"># 0  3.0</span>
+    <span class="c1">#           0</span>
+    <span class="c1"># 0  1.195229</span>
+    <span class="c1">#           0</span>
+    <span class="c1"># 0  0.333333</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -169,35 +175,33 @@ If None than assumes weights is 1 for all rows. The defaults is None.</p></li>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>from balance.stats_and_plots.weighted_stats import relative_frequency_table
-import pandas as pd</p>
-<dl class="simple">
-<dt>df = pd.DataFrame({</dt><dd><p>‘group’: (‘a’, ‘b’, ‘c’, ‘c’),
-‘v1’: (1, 2, 3, 4),</p>
-</dd>
-</dl>
-<p>})
-print(relative_frequency_table(df, ‘group’))</p>
-<blockquote>
-<div><p>#     group  prop
-#   0     a  0.25
-#   1     b  0.25
-#   2     c  0.50</p>
-</div></blockquote>
-<dl class="simple">
-<dt>print(relative_frequency_table(df, ‘group’, pd.Series((2, 1, 1, 1),)))</dt><dd><p>#     group  prop
-#   0     a   0.4
-#   1     b   0.2
-#   2     c   0.4</p>
-</dd>
-</dl>
-<p># Using a pd.Series:
-a_series = df[‘group’]
-print(relative_frequency_table(a_series))
-#   group  prop
-# 0     a  0.25
-# 1     b  0.25
-# 2     c  0.50</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">balance.stats_and_plots.weighted_stats</span> <span class="kn">import</span> <span class="n">relative_frequency_table</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s1">&#39;group&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;v1&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+<span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">relative_frequency_table</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="s1">&#39;group&#39;</span><span class="p">))</span>
+    <span class="c1">#     group  prop</span>
+    <span class="c1">#   0     a  0.25</span>
+    <span class="c1">#   1     b  0.25</span>
+    <span class="c1">#   2     c  0.50</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">relative_frequency_table</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="s1">&#39;group&#39;</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),)))</span>
+    <span class="c1">#     group  prop</span>
+    <span class="c1">#   0     a   0.4</span>
+    <span class="c1">#   1     b   0.2</span>
+    <span class="c1">#   2     c   0.4</span>
+
+<span class="c1"># Using a pd.Series:</span>
+<span class="n">a_series</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;group&#39;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">relative_frequency_table</span><span class="p">(</span><span class="n">a_series</span><span class="p">))</span>
+    <span class="c1">#   group  prop</span>
+    <span class="c1"># 0     a  0.25</span>
+    <span class="c1"># 1     b  0.25</span>
+    <span class="c1"># 2     c  0.50</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">

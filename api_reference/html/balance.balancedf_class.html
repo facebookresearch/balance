@@ -111,77 +111,70 @@ If on_linked_samples is True, then two rows per source (self, unadjusted), each 
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>import pandas as pd
-from balance.sample_class import Sample</p>
-<p>from copy import deepcopy</p>
-<dl>
-<dt>s1 = Sample.from_frame(</dt><dd><dl>
-<dt>pd.DataFrame(</dt><dd><dl class="simple">
-<dt>{</dt><dd><p>“a”: (1, 2, 3, 1),
-“b”: (-42, 8, 2, -42),
-“o”: (7, 8, 9, 10),
-“c”: (“x”, “y”, “z”, “v”),
-“id”: (1, 2, 3, 4),
-“w”: (0.5, 2, 1, 1),</p>
-</dd>
-</dl>
-<p>}</p>
-</dd>
-</dl>
-<p>),
-id_column=”id”,
-weight_column=”w”,
-outcome_columns=”o”,</p>
-</dd>
-</dl>
-<p>)</p>
-<dl>
-<dt>s2 = Sample.from_frame(</dt><dd><dl>
-<dt>pd.DataFrame(</dt><dd><dl class="simple">
-<dt>{</dt><dd><p>“a”: (1, 2, 3),
-“b”: (4, 6, 8),
-“id”: (1, 2, 3),
-“w”: (0.5, 1, 2),
-“c”: (“x”, “y”, “z”),</p>
-</dd>
-</dl>
-<p>}</p>
-</dd>
-</dl>
-<p>),
-id_column=”id”,
-weight_column=”w”,</p>
-</dd>
-</dl>
-<p>)</p>
-<p>s3 = s1.set_target(s2)
-s3_null = s3.adjust(method=”null”)</p>
-<p>s3_null_madeup_weights = deepcopy(s3_null)
-s3_null_madeup_weights.set_weights((1, 2, 3, 1))</p>
-<dl class="simple">
-<dt>print(s3_null.covars().asmd().round(3))</dt><dd><p>#                     a      b  c[v]   c[x]   c[y]   c[z]  mean(asmd)
-# source
-# self               0.56  8.747   NaN  0.069  0.266  0.533       3.175
-# unadjusted         0.56  8.747   NaN  0.069  0.266  0.533       3.175
-# unadjusted - self  0.00  0.000   NaN  0.000  0.000  0.000       0.000</p>
-</dd>
-</dl>
-<p># show that on_linked_samples = False works:
-print(s3_null.covars().asmd(on_linked_samples = False).round(3))</p>
-<blockquote>
-<div><p>#            a      b  c[v]   c[x]   c[y]   c[z]  mean(asmd)
-# index
-# covars  0.56  8.747   NaN  0.069  0.266  0.533       3.175</p>
-</div></blockquote>
-<p># verify this also works when we have some weights
-print(s3_null_madeup_weights.covars().asmd())</p>
-<blockquote>
-<div><p>#                           a         b  c[v]  …      c[y]      c[z]  mean(asmd)
-# source                                       …
-# self               0.296500  8.153742   NaN  …  0.000000  0.218218    2.834932
-# unadjusted         0.560055  8.746742   NaN  …  0.265606  0.533422    3.174566
-# unadjusted - self  0.263555  0.592999   NaN  …  0.265606  0.315204    0.33963</p>
-</div></blockquote>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">balance.sample_class</span> <span class="kn">import</span> <span class="n">Sample</span>
+
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+
+
+<span class="n">s1</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mi">42</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">42</span><span class="p">),</span>
+            <span class="s2">&quot;o&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+            <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="s2">&quot;v&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+            <span class="s2">&quot;w&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="p">}</span>
+    <span class="p">),</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="n">weight_column</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span>
+    <span class="n">outcome_columns</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">s2</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="s2">&quot;w&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+            <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">),</span>
+        <span class="p">}</span>
+    <span class="p">),</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="n">weight_column</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">s3</span> <span class="o">=</span> <span class="n">s1</span><span class="o">.</span><span class="n">set_target</span><span class="p">(</span><span class="n">s2</span><span class="p">)</span>
+<span class="n">s3_null</span> <span class="o">=</span> <span class="n">s3</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;null&quot;</span><span class="p">)</span>
+
+<span class="n">s3_null_madeup_weights</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">s3_null</span><span class="p">)</span>
+<span class="n">s3_null_madeup_weights</span><span class="o">.</span><span class="n">set_weights</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">s3_null</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">asmd</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+    <span class="c1">#                     a      b  c[v]   c[x]   c[y]   c[z]  mean(asmd)</span>
+    <span class="c1"># source</span>
+    <span class="c1"># self               0.56  8.747   NaN  0.069  0.266  0.533       3.175</span>
+    <span class="c1"># unadjusted         0.56  8.747   NaN  0.069  0.266  0.533       3.175</span>
+    <span class="c1"># unadjusted - self  0.00  0.000   NaN  0.000  0.000  0.000       0.000</span>
+
+<span class="c1"># show that on_linked_samples = False works:</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">s3_null</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">asmd</span><span class="p">(</span><span class="n">on_linked_samples</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+    <span class="c1">#            a      b  c[v]   c[x]   c[y]   c[z]  mean(asmd)</span>
+    <span class="c1"># index</span>
+    <span class="c1"># covars  0.56  8.747   NaN  0.069  0.266  0.533       3.175</span>
+
+<span class="c1"># verify this also works when we have some weights</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">s3_null_madeup_weights</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">asmd</span><span class="p">())</span>
+    <span class="c1">#                           a         b  c[v]  ...      c[y]      c[z]  mean(asmd)</span>
+    <span class="c1"># source                                       ...</span>
+    <span class="c1"># self               0.296500  8.153742   NaN  ...  0.000000  0.218218    2.834932</span>
+    <span class="c1"># unadjusted         0.560055  8.746742   NaN  ...  0.265606  0.533422    3.174566</span>
+    <span class="c1"># unadjusted - self  0.263555  0.592999   NaN  ...  0.265606  0.315204    0.33963</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -215,66 +208,62 @@ print(s3_null_madeup_weights.covars().asmd())</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>import pandas as pd
-from balance.sample_class import Sample</p>
-<p>from copy import deepcopy</p>
-<dl>
-<dt>s1 = Sample.from_frame(</dt><dd><dl>
-<dt>pd.DataFrame(</dt><dd><dl class="simple">
-<dt>{</dt><dd><p>“a”: (1, 2, 3, 1),
-“b”: (-42, 8, 2, -42),
-“o”: (7, 8, 9, 10),
-“c”: (“x”, “y”, “z”, “v”),
-“id”: (1, 2, 3, 4),
-“w”: (0.5, 2, 1, 1),</p>
-</dd>
-</dl>
-<p>}</p>
-</dd>
-</dl>
-<p>),
-id_column=”id”,
-weight_column=”w”,
-outcome_columns=”o”,</p>
-</dd>
-</dl>
-<p>)</p>
-<dl>
-<dt>s2 = Sample.from_frame(</dt><dd><dl>
-<dt>pd.DataFrame(</dt><dd><dl class="simple">
-<dt>{</dt><dd><p>“a”: (1, 2, 3),
-“b”: (4, 6, 8),
-“id”: (1, 2, 3),
-“w”: (0.5, 1, 2),
-“c”: (“x”, “y”, “z”),</p>
-</dd>
-</dl>
-<p>}</p>
-</dd>
-</dl>
-<p>),
-id_column=”id”,
-weight_column=”w”,</p>
-</dd>
-</dl>
-<p>)</p>
-<p>s3 = s1.set_target(s2)
-s3_null = s3.adjust(method=”null”)</p>
-<p>s3_null_madeup_weights = deepcopy(s3_null)
-s3_null_madeup_weights.set_weights((1, 2, 3, 1))</p>
-<p>s3_null.covars().asmd_improvement() # 0. since unadjusted is just a copy of self
-s3_null_madeup_weights.covars().asmd_improvement() # 0.10698596233975825</p>
-<p>asmd_df = s3_null_madeup_weights.covars().asmd()
-print(asmd_df[“mean(asmd)”])</p>
-<blockquote>
-<div><p># source
-# self                 2.834932
-# unadjusted           3.174566
-# unadjusted - self    0.339634
-# Name: mean(asmd), dtype: float64</p>
-</div></blockquote>
-<p>(asmd_df[“mean(asmd)”][1] - asmd_df[“mean(asmd)”][0]) / asmd_df[“mean(asmd)”][1]  # 0.10698596233975825
-# just like asmd_improvement</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">balance.sample_class</span> <span class="kn">import</span> <span class="n">Sample</span>
+
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+
+
+<span class="n">s1</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mi">42</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">42</span><span class="p">),</span>
+            <span class="s2">&quot;o&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+            <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="s2">&quot;v&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+            <span class="s2">&quot;w&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="p">}</span>
+    <span class="p">),</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="n">weight_column</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span>
+    <span class="n">outcome_columns</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">s2</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="s2">&quot;w&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+            <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">),</span>
+        <span class="p">}</span>
+    <span class="p">),</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="n">weight_column</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">s3</span> <span class="o">=</span> <span class="n">s1</span><span class="o">.</span><span class="n">set_target</span><span class="p">(</span><span class="n">s2</span><span class="p">)</span>
+<span class="n">s3_null</span> <span class="o">=</span> <span class="n">s3</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;null&quot;</span><span class="p">)</span>
+
+<span class="n">s3_null_madeup_weights</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">s3_null</span><span class="p">)</span>
+<span class="n">s3_null_madeup_weights</span><span class="o">.</span><span class="n">set_weights</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+<span class="n">s3_null</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">asmd_improvement</span><span class="p">()</span> <span class="c1"># 0. since unadjusted is just a copy of self</span>
+<span class="n">s3_null_madeup_weights</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">asmd_improvement</span><span class="p">()</span> <span class="c1"># 0.10698596233975825</span>
+
+<span class="n">asmd_df</span> <span class="o">=</span> <span class="n">s3_null_madeup_weights</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">asmd</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">asmd_df</span><span class="p">[</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">])</span>
+    <span class="c1"># source</span>
+    <span class="c1"># self                 2.834932</span>
+    <span class="c1"># unadjusted           3.174566</span>
+    <span class="c1"># unadjusted - self    0.339634</span>
+    <span class="c1"># Name: mean(asmd), dtype: float64</span>
+<span class="p">(</span><span class="n">asmd_df</span><span class="p">[</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">asmd_df</span><span class="p">[</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">asmd_df</span><span class="p">[</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># 0.10698596233975825</span>
+<span class="c1"># just like asmd_improvement</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py property">
@@ -317,56 +306,51 @@ Columns are for each of the columns in the relevant df (after applying <a class=
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>import pandas as pd
-from balance.sample_class import Sample</p>
-<dl>
-<dt>s1 = Sample.from_frame(</dt><dd><dl>
-<dt>pd.DataFrame(</dt><dd><dl class="simple">
-<dt>{</dt><dd><p>“a”: (1, 2, 3, 1),
-“b”: (-42, 8, 2, -42),
-“o”: (7, 8, 9, 10),
-“c”: (“x”, “y”, “z”, “v”),
-“id”: (1, 2, 3, 4),
-“w”: (0.5, 2, 1, 1),</p>
-</dd>
-</dl>
-<p>}</p>
-</dd>
-</dl>
-<p>),
-id_column=”id”,
-weight_column=”w”,
-outcome_columns=”o”,</p>
-</dd>
-</dl>
-<p>)</p>
-<dl>
-<dt>s2 = Sample.from_frame(</dt><dd><dl>
-<dt>pd.DataFrame(</dt><dd><dl class="simple">
-<dt>{</dt><dd><p>“a”: (1, 2, 3),
-“b”: (4, 6, 8),
-“id”: (1, 2, 3),
-“w”: (0.5, 1, 2),
-“c”: (“x”, “y”, “z”),</p>
-</dd>
-</dl>
-<p>}</p>
-</dd>
-</dl>
-<p>),
-id_column=”id”,
-weight_column=”w”,</p>
-</dd>
-</dl>
-<p>)</p>
-<p>s3 = s1.set_target(s2)
-s3_null = s3.adjust(method=”null”)</p>
-<p>print(s3_null.covars().mean())</p>
-<p>#                 a          b      c[v]      c[x]      c[y]      c[z]
-# source
-# self        1.888889 -10.000000  0.222222  0.111111  0.444444  0.222222
-# target      2.428571   6.857143       NaN  0.142857  0.285714  0.571429
-# unadjusted  1.888889 -10.000000  0.222222  0.111111  0.444444  0.222222</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">balance.sample_class</span> <span class="kn">import</span> <span class="n">Sample</span>
+
+<span class="n">s1</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mi">42</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">42</span><span class="p">),</span>
+            <span class="s2">&quot;o&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+            <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="s2">&quot;v&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+            <span class="s2">&quot;w&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="p">}</span>
+    <span class="p">),</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="n">weight_column</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span>
+    <span class="n">outcome_columns</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">s2</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="s2">&quot;w&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+            <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">),</span>
+        <span class="p">}</span>
+    <span class="p">),</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="n">weight_column</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">s3</span> <span class="o">=</span> <span class="n">s1</span><span class="o">.</span><span class="n">set_target</span><span class="p">(</span><span class="n">s2</span><span class="p">)</span>
+<span class="n">s3_null</span> <span class="o">=</span> <span class="n">s3</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;null&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">s3_null</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+
+<span class="c1">#                 a          b      c[v]      c[x]      c[y]      c[z]</span>
+<span class="c1"># source</span>
+<span class="c1"># self        1.888889 -10.000000  0.222222  0.111111  0.444444  0.222222</span>
+<span class="c1"># target      2.428571   6.857143       NaN  0.142857  0.285714  0.571429</span>
+<span class="c1"># unadjusted  1.888889 -10.000000  0.222222  0.111111  0.444444  0.222222</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -386,43 +370,40 @@ s3_null = s3.adjust(method=”null”)</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>import pandas as pd
-from balance.sample_class import Sample</p>
-<dl>
-<dt>s1 = Sample.from_frame(</dt><dd><dl>
-<dt>pd.DataFrame(</dt><dd><dl class="simple">
-<dt>{</dt><dd><p>“a”: (1, 2, 3, 1),
-“b”: (-42, 8, 2, -42),
-“o”: (7, 8, 9, 10),
-“c”: (“x”, “y”, “z”, “v”),
-“id”: (1, 2, 3, 4),
-“w”: (0.5, 2, 1, 1),</p>
-</dd>
-</dl>
-<p>}</p>
-</dd>
-</dl>
-<p>),
-id_column=”id”,
-weight_column=”w”,
-outcome_columns=”o”,</p>
-</dd>
-</dl>
-<p>)</p>
-<dl class="simple">
-<dt>print(s1.covars().df)</dt><dd><p># a   b  c
-# 0  1 -42  x
-# 1  2   8  y
-# 2  3   2  z
-# 3  1 -42  v</p>
-</dd>
-<dt>print(s1.covars().model_matrix())</dt><dd><p>#      a     b  c[v]  c[x]  c[y]  c[z]
-# 0  1.0 -42.0   0.0   1.0   0.0   0.0
-# 1  2.0   8.0   0.0   0.0   1.0   0.0
-# 2  3.0   2.0   0.0   0.0   0.0   1.0
-# 3  1.0 -42.0   1.0   0.0   0.0   0.0</p>
-</dd>
-</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">balance.sample_class</span> <span class="kn">import</span> <span class="n">Sample</span>
+
+<span class="n">s1</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mi">42</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">42</span><span class="p">),</span>
+            <span class="s2">&quot;o&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+            <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="s2">&quot;v&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+            <span class="s2">&quot;w&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="p">}</span>
+    <span class="p">),</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="n">weight_column</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span>
+    <span class="n">outcome_columns</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">s1</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="p">)</span>
+    <span class="c1"># a   b  c</span>
+    <span class="c1"># 0  1 -42  x</span>
+    <span class="c1"># 1  2   8  y</span>
+    <span class="c1"># 2  3   2  z</span>
+    <span class="c1"># 3  1 -42  v</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">s1</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">model_matrix</span><span class="p">())</span>
+    <span class="c1">#      a     b  c[v]  c[x]  c[y]  c[z]</span>
+    <span class="c1"># 0  1.0 -42.0   0.0   1.0   0.0   0.0</span>
+    <span class="c1"># 1  2.0   8.0   0.0   0.0   1.0   0.0</span>
+    <span class="c1"># 2  3.0   2.0   0.0   0.0   0.0   1.0</span>
+    <span class="c1"># 3  1.0 -42.0   1.0   0.0   0.0   0.0</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -441,33 +422,30 @@ outcome_columns=”o”,</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<dl>
-<dt>s1 = Sample.from_frame(</dt><dd><dl>
-<dt>pd.DataFrame(</dt><dd><dl class="simple">
-<dt>{</dt><dd><p>“a”: (1, 2, 3, 1),
-“b”: (-42, 8, 2, -42),
-“o”: (7, 8, 9, 10),
-“c”: (“x”, “y”, “z”, “v”),
-“id”: (1, 2, 3, 4),
-“w”: (0.5, 2, 1, 1),</p>
-</dd>
-</dl>
-<p>}</p>
-</dd>
-</dl>
-<p>),
-id_column=”id”,
-weight_column=”w”,
-outcome_columns=”o”,</p>
-</dd>
-</dl>
-<p>)</p>
-<p>s1.covars().names()
-# [‘a’, ‘b’, ‘c’]
-s1.weights().names()
-# [‘w’]
-s1.outcomes().names()
-# [‘o’]</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">s1</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mi">42</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">42</span><span class="p">),</span>
+            <span class="s2">&quot;o&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+            <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="s2">&quot;v&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+            <span class="s2">&quot;w&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="p">}</span>
+    <span class="p">),</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="n">weight_column</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span>
+    <span class="n">outcome_columns</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">s1</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">names</span><span class="p">()</span>
+<span class="c1"># [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]</span>
+<span class="n">s1</span><span class="o">.</span><span class="n">weights</span><span class="p">()</span><span class="o">.</span><span class="n">names</span><span class="p">()</span>
+<span class="c1"># [&#39;w&#39;]</span>
+<span class="n">s1</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">names</span><span class="p">()</span>
+<span class="c1"># [&#39;o&#39;]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -495,38 +473,40 @@ If library=”seaborn” then returns either a list or an np.array of matplotlib
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>import numpy as np
-import pandas as pd
-from numpy import random
-from balance.sample_class import Sample</p>
-<p>random.seed(96483)</p>
-<dl class="simple">
-<dt>df = pd.DataFrame({</dt><dd><p>“id”: range(100),
-‘v1’: random.random_integers(11111, 11114, size=100).astype(str),
-‘v2’: random.normal(size = 100),
-‘v3’: random.uniform(size = 100),
-“w”: pd.Series(np.ones(99).tolist() + [1000]),</p>
-</dd>
-</dl>
-<p>}).sort_values(by=[‘v2’])</p>
-<dl class="simple">
-<dt>s1 = Sample.from_frame(df,</dt><dd><p>id_column=”id”,
-weight_column=”w”,</p>
-</dd>
-</dl>
-<p>)</p>
-<dl class="simple">
-<dt>s2 = Sample.from_frame(</dt><dd><p>df.assign(w = pd.Series(np.ones(100))),
-id_column=”id”,
-weight_column=”w”,</p>
-</dd>
-</dl>
-<p>)</p>
-<p>s3 = s1.set_target(s2)
-s3_null = s3.adjust(method=”null”)
-s3_null.set_weights(random.random(size = 100) + 0.5)</p>
-<p>s3_null.covars().plot()
-s3_null.covars().plot(library = “seaborn”)</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">random</span>
+<span class="kn">from</span> <span class="nn">balance.sample_class</span> <span class="kn">import</span> <span class="n">Sample</span>
+
+<span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">96483</span><span class="p">)</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span>
+    <span class="s1">&#39;v1&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">random_integers</span><span class="p">(</span><span class="mi">11111</span><span class="p">,</span> <span class="mi">11114</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">),</span>
+    <span class="s1">&#39;v2&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="mi">100</span><span class="p">),</span>
+    <span class="s1">&#39;v3&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="mi">100</span><span class="p">),</span>
+    <span class="s2">&quot;w&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">99</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1000</span><span class="p">]),</span>
+<span class="p">})</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;v2&#39;</span><span class="p">])</span>
+
+<span class="n">s1</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">df</span><span class="p">,</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="n">weight_column</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">s2</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">w</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">100</span><span class="p">))),</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="n">weight_column</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">s3</span> <span class="o">=</span> <span class="n">s1</span><span class="o">.</span><span class="n">set_target</span><span class="p">(</span><span class="n">s2</span><span class="p">)</span>
+<span class="n">s3_null</span> <span class="o">=</span> <span class="n">s3</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;null&quot;</span><span class="p">)</span>
+<span class="n">s3_null</span><span class="o">.</span><span class="n">set_weights</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="mi">100</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
+
+<span class="n">s3_null</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="n">s3_null</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">library</span> <span class="o">=</span> <span class="s2">&quot;seaborn&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -551,56 +531,51 @@ Columns are for each of the columns in the relevant df (after applying <a class=
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>import pandas as pd
-from balance.sample_class import Sample</p>
-<dl>
-<dt>s1 = Sample.from_frame(</dt><dd><dl>
-<dt>pd.DataFrame(</dt><dd><dl class="simple">
-<dt>{</dt><dd><p>“a”: (1, 2, 3, 1),
-“b”: (-42, 8, 2, -42),
-“o”: (7, 8, 9, 10),
-“c”: (“x”, “y”, “z”, “v”),
-“id”: (1, 2, 3, 4),
-“w”: (0.5, 2, 1, 1),</p>
-</dd>
-</dl>
-<p>}</p>
-</dd>
-</dl>
-<p>),
-id_column=”id”,
-weight_column=”w”,
-outcome_columns=”o”,</p>
-</dd>
-</dl>
-<p>)</p>
-<dl>
-<dt>s2 = Sample.from_frame(</dt><dd><dl>
-<dt>pd.DataFrame(</dt><dd><dl class="simple">
-<dt>{</dt><dd><p>“a”: (1, 2, 3),
-“b”: (4, 6, 8),
-“id”: (1, 2, 3),
-“w”: (0.5, 1, 2),
-“c”: (“x”, “y”, “z”),</p>
-</dd>
-</dl>
-<p>}</p>
-</dd>
-</dl>
-<p>),
-id_column=”id”,
-weight_column=”w”,</p>
-</dd>
-</dl>
-<p>)</p>
-<p>s3 = s1.set_target(s2)
-s3_null = s3.adjust(method=”null”)</p>
-<p>print(s3_null.covars().std())</p>
-<p>#                 a          b  c[v]      c[x]      c[y]      c[z]
-# source
-# self        0.886405  27.354812   0.5  0.377964  0.597614  0.500000
-# target      0.963624   1.927248   NaN  0.462910  0.597614  0.654654
-# unadjusted  0.886405  27.354812   0.5  0.377964  0.597614  0.500000</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">balance.sample_class</span> <span class="kn">import</span> <span class="n">Sample</span>
+
+<span class="n">s1</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mi">42</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">42</span><span class="p">),</span>
+            <span class="s2">&quot;o&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+            <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="s2">&quot;v&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+            <span class="s2">&quot;w&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="p">}</span>
+    <span class="p">),</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="n">weight_column</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span>
+    <span class="n">outcome_columns</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">s2</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="s2">&quot;w&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+            <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">),</span>
+        <span class="p">}</span>
+    <span class="p">),</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="n">weight_column</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">s3</span> <span class="o">=</span> <span class="n">s1</span><span class="o">.</span><span class="n">set_target</span><span class="p">(</span><span class="n">s2</span><span class="p">)</span>
+<span class="n">s3_null</span> <span class="o">=</span> <span class="n">s3</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;null&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">s3_null</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">std</span><span class="p">())</span>
+
+    <span class="c1">#                 a          b  c[v]      c[x]      c[y]      c[z]</span>
+    <span class="c1"># source</span>
+    <span class="c1"># self        0.886405  27.354812   0.5  0.377964  0.597614  0.500000</span>
+    <span class="c1"># target      0.963624   1.927248   NaN  0.462910  0.597614  0.654654</span>
+    <span class="c1"># unadjusted  0.886405  27.354812   0.5  0.377964  0.597614  0.500000</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -695,44 +670,48 @@ If library=”seaborn” then returns either a list or an np.array of matplotlib
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>import numpy as np
-import pandas as pd
-from numpy import random
-from balance.sample_class import Sample</p>
-<p>random.seed(96483)</p>
-<dl class="simple">
-<dt>df = pd.DataFrame({</dt><dd><p>“id”: range(100),
-‘v1’: random.random_integers(11111, 11114, size=100).astype(str),
-‘v2’: random.normal(size = 100),
-‘v3’: random.uniform(size = 100),
-“w”: pd.Series(np.ones(99).tolist() + [1000]),</p>
-</dd>
-</dl>
-<p>}).sort_values(by=[‘v2’])</p>
-<dl class="simple">
-<dt>s1 = Sample.from_frame(df,</dt><dd><p>id_column=”id”,
-weight_column=”w”,
-outcome_columns=[“v1”, “v2”],</p>
-</dd>
-</dl>
-<p>)</p>
-<dl class="simple">
-<dt>s2 = Sample.from_frame(</dt><dd><p>df.assign(w = pd.Series(np.ones(100))),
-id_column=”id”,
-weight_column=”w”,
-outcome_columns=[“v1”, “v2”],</p>
-</dd>
-</dl>
-<p>)</p>
-<p>s3 = s1.set_target(s2)
-s3_null = s3.adjust(method=”null”)
-s3_null.set_weights(random.random(size = 100) + 0.5)</p>
-<p># default: seaborn with dist_type = “hist”
-s3_null.outcomes().plot()</p>
-<p># using dist_type = “kde”
-s3_null.outcomes().plot(dist_type = “kde”)</p>
-<p># using plotly
-s3_null.outcomes().plot(library = “plotly”)</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">random</span>
+<span class="kn">from</span> <span class="nn">balance.sample_class</span> <span class="kn">import</span> <span class="n">Sample</span>
+
+<span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">96483</span><span class="p">)</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span>
+    <span class="s1">&#39;v1&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">random_integers</span><span class="p">(</span><span class="mi">11111</span><span class="p">,</span> <span class="mi">11114</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">),</span>
+    <span class="s1">&#39;v2&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="mi">100</span><span class="p">),</span>
+    <span class="s1">&#39;v3&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="mi">100</span><span class="p">),</span>
+    <span class="s2">&quot;w&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">99</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1000</span><span class="p">]),</span>
+<span class="p">})</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;v2&#39;</span><span class="p">])</span>
+
+<span class="n">s1</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">df</span><span class="p">,</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="n">weight_column</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span>
+    <span class="n">outcome_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;v1&quot;</span><span class="p">,</span> <span class="s2">&quot;v2&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+
+<span class="n">s2</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">w</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">100</span><span class="p">))),</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="n">weight_column</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span>
+    <span class="n">outcome_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;v1&quot;</span><span class="p">,</span> <span class="s2">&quot;v2&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+
+<span class="n">s3</span> <span class="o">=</span> <span class="n">s1</span><span class="o">.</span><span class="n">set_target</span><span class="p">(</span><span class="n">s2</span><span class="p">)</span>
+<span class="n">s3_null</span> <span class="o">=</span> <span class="n">s3</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;null&quot;</span><span class="p">)</span>
+<span class="n">s3_null</span><span class="o">.</span><span class="n">set_weights</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="mi">100</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
+
+<span class="c1"># default: seaborn with dist_type = &quot;hist&quot;</span>
+<span class="n">s3_null</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+
+<span class="c1"># using dist_type = &quot;kde&quot;</span>
+<span class="n">s3_null</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">dist_type</span> <span class="o">=</span> <span class="s2">&quot;kde&quot;</span><span class="p">)</span>
+
+<span class="c1"># using plotly</span>
+<span class="n">s3_null</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">library</span> <span class="o">=</span> <span class="s2">&quot;plotly&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -774,63 +753,59 @@ A second row with the proportion of non-null observations.</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>import numpy as np
-import pandas as pd</p>
-<p>from balance.sample_class import Sample</p>
-<dl class="simple">
-<dt>s_o = Sample.from_frame(</dt><dd><p>pd.DataFrame({“o1”: (7, 8, 9, 10), “o2”: (7, 8, 9, np.nan), “id”: (1, 2, 3, 4)}),
-id_column=”id”,
-outcome_columns=(“o1”, “o2”),</p>
-</dd>
-</dl>
-<p>)</p>
-<dl class="simple">
-<dt>print(s_o.outcomes().relative_response_rates())</dt><dd><p>#       o1    o2
-# n    4.0   3.0
-# %  100.0  75.0</p>
-</dd>
-</dl>
-<p>s_o.outcomes().relative_response_rates(target = True)
-# None</p>
-<p># compared with a larget target</p>
-<dl>
-<dt>t_o = Sample.from_frame(</dt><dd><dl>
-<dt>pd.DataFrame(</dt><dd><dl class="simple">
-<dt>{</dt><dd><p>“o1”: (7, 8, 9, 10, 11, 12, 13, 14),
-“o2”: (7, 8, 9, np.nan, np.nan, 12, 13, 14),
-“id”: (1, 2, 3, 4, 5, 6, 7, 8),</p>
-</dd>
-</dl>
-<p>}</p>
-</dd>
-</dl>
-<p>),
-id_column=”id”,
-outcome_columns=(“o1”, “o2”),</p>
-</dd>
-</dl>
-<p>)
-s_o2 = s_o.set_target(t_o)</p>
-<dl>
-<dt>print(s_o2.outcomes().relative_response_rates(True, per_column = True))</dt><dd><p>#     o1    o2
-# n   4.0   3.0
-# %  50.0  50.0</p>
-</dd>
-<dt>df_target = pd.DataFrame(</dt><dd><blockquote>
-<div><dl class="simple">
-<dt>{</dt><dd><p>“o1”: (7, 8, 9, 10, 11, 12, 13, 14),
-“o2”: (7, 8, 9, np.nan, np.nan, 12, 13, 14),</p>
-</dd>
-</dl>
-<p>}</p>
-</div></blockquote>
-<p>)</p>
-</dd>
-<dt>print(s_o2.outcomes().relative_response_rates(target = df_target, per_column = True))</dt><dd><p>#     o1    o2
-# n   4.0   3.0
-# %  50.0  50.0</p>
-</dd>
-</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">balance.sample_class</span> <span class="kn">import</span> <span class="n">Sample</span>
+
+
+<span class="n">s_o</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;o1&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="s2">&quot;o2&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">),</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)}),</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="n">outcome_columns</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;o1&quot;</span><span class="p">,</span> <span class="s2">&quot;o2&quot;</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">s_o</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">relative_response_rates</span><span class="p">())</span>
+    <span class="c1">#       o1    o2</span>
+    <span class="c1"># n    4.0   3.0</span>
+    <span class="c1"># %  100.0  75.0</span>
+
+<span class="n">s_o</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">relative_response_rates</span><span class="p">(</span><span class="n">target</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+<span class="c1"># None</span>
+
+<span class="c1"># compared with a larget target</span>
+
+<span class="n">t_o</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;o1&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">14</span><span class="p">),</span>
+            <span class="s2">&quot;o2&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">14</span><span class="p">),</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+        <span class="p">}</span>
+    <span class="p">),</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="n">outcome_columns</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;o1&quot;</span><span class="p">,</span> <span class="s2">&quot;o2&quot;</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">s_o2</span> <span class="o">=</span> <span class="n">s_o</span><span class="o">.</span><span class="n">set_target</span><span class="p">(</span><span class="n">t_o</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">s_o2</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">relative_response_rates</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">per_column</span> <span class="o">=</span> <span class="kc">True</span><span class="p">))</span>
+    <span class="c1">#     o1    o2</span>
+    <span class="c1"># n   4.0   3.0</span>
+    <span class="c1"># %  50.0  50.0</span>
+
+<span class="n">df_target</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;o1&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">14</span><span class="p">),</span>
+            <span class="s2">&quot;o2&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">14</span><span class="p">),</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">s_o2</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">relative_response_rates</span><span class="p">(</span><span class="n">target</span> <span class="o">=</span> <span class="n">df_target</span><span class="p">,</span> <span class="n">per_column</span> <span class="o">=</span> <span class="kc">True</span><span class="p">))</span>
+    <span class="c1">#     o1    o2</span>
+    <span class="c1"># n   4.0   3.0</span>
+    <span class="c1"># %  50.0  50.0</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -852,63 +827,67 @@ s_o2 = s_o.set_target(t_o)</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>import numpy as np
-import pandas as pd</p>
-<p>from balance.sample_class import Sample</p>
-<dl class="simple">
-<dt>s_o = Sample.from_frame(</dt><dd><p>pd.DataFrame({“o1”: (7, 8, 9, 10), “o2”: (7, 8, 9, np.nan), “id”: (1, 2, 3, 4)}),
-id_column=”id”,
-outcome_columns=(“o1”, “o2”),</p>
-</dd>
-</dl>
-<p>)</p>
-<dl>
-<dt>t_o = Sample.from_frame(</dt><dd><dl>
-<dt>pd.DataFrame(</dt><dd><dl class="simple">
-<dt>{</dt><dd><p>“o1”: (7, 8, 9, 10, 11, 12, 13, 14),
-“o2”: (7, 8, 9, np.nan, np.nan, 12, 13, 14),
-“id”: (1, 2, 3, 4, 5, 6, 7, 8),</p>
-</dd>
-</dl>
-<p>}</p>
-</dd>
-</dl>
-<p>),
-id_column=”id”,
-outcome_columns=(“o1”, “o2”),</p>
-</dd>
-</dl>
-<p>)
-s_o2 = s_o.set_target(t_o)</p>
-<p>print(s_o.outcomes().summary())</p>
-<p># 2 outcomes: [‘o1’ ‘o2’]
-# Mean outcomes:
-#         _is_na_o2[False]  _is_na_o2[True]   o1   o2
-# source
-# self                0.75             0.25  8.5  6.0</p>
-<p># Response rates (relative to number of respondents in sample):
-#       o1    o2
-# n    4.0   3.0
-# %  100.0  75.0</p>
-<p>print(s_o2.outcomes().summary())</p>
-<p># 2 outcomes: [‘o1’ ‘o2’]
-# Mean outcomes:
-#         _is_na_o2[False]  _is_na_o2[True]    o1     o2
-# source
-# self                0.75             0.25   8.5  6.000
-# target              0.75             0.25  10.5  7.875</p>
-<p># Response rates (relative to number of respondents in sample):
-#       o1    o2
-# n    4.0   3.0
-# %  100.0  75.0
-# Response rates (relative to notnull rows in the target):
-#            o1    o2
-# n   4.000000   3.0
-# %  66.666667  50.0
-# Response rates (in the target):
-#        o1    o2
-# n    8.0   6.0
-# %  100.0  75.0</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">balance.sample_class</span> <span class="kn">import</span> <span class="n">Sample</span>
+
+<span class="n">s_o</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;o1&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="s2">&quot;o2&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">),</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)}),</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="n">outcome_columns</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;o1&quot;</span><span class="p">,</span> <span class="s2">&quot;o2&quot;</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">t_o</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;o1&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">14</span><span class="p">),</span>
+            <span class="s2">&quot;o2&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">14</span><span class="p">),</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+        <span class="p">}</span>
+    <span class="p">),</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="n">outcome_columns</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;o1&quot;</span><span class="p">,</span> <span class="s2">&quot;o2&quot;</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">s_o2</span> <span class="o">=</span> <span class="n">s_o</span><span class="o">.</span><span class="n">set_target</span><span class="p">(</span><span class="n">t_o</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">s_o</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
+
+<span class="c1"># 2 outcomes: [&#39;o1&#39; &#39;o2&#39;]</span>
+<span class="c1"># Mean outcomes:</span>
+<span class="c1">#         _is_na_o2[False]  _is_na_o2[True]   o1   o2</span>
+<span class="c1"># source</span>
+<span class="c1"># self                0.75             0.25  8.5  6.0</span>
+
+<span class="c1"># Response rates (relative to number of respondents in sample):</span>
+<span class="c1">#       o1    o2</span>
+<span class="c1"># n    4.0   3.0</span>
+<span class="c1"># %  100.0  75.0</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">s_o2</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
+
+<span class="c1"># 2 outcomes: [&#39;o1&#39; &#39;o2&#39;]</span>
+<span class="c1"># Mean outcomes:</span>
+<span class="c1">#         _is_na_o2[False]  _is_na_o2[True]    o1     o2</span>
+<span class="c1"># source</span>
+<span class="c1"># self                0.75             0.25   8.5  6.000</span>
+<span class="c1"># target              0.75             0.25  10.5  7.875</span>
+
+<span class="c1"># Response rates (relative to number of respondents in sample):</span>
+<span class="c1">#       o1    o2</span>
+<span class="c1"># n    4.0   3.0</span>
+<span class="c1"># %  100.0  75.0</span>
+<span class="c1"># Response rates (relative to notnull rows in the target):</span>
+<span class="c1">#            o1    o2</span>
+<span class="c1"># n   4.000000   3.0</span>
+<span class="c1"># %  66.666667  50.0</span>
+<span class="c1"># Response rates (in the target):</span>
+<span class="c1">#        o1    o2</span>
+<span class="c1"># n    8.0   6.0</span>
+<span class="c1"># %  100.0  75.0</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -932,40 +911,37 @@ s_o2 = s_o.set_target(t_o)</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>import numpy as np
-import pandas as pd</p>
-<p>from balance.sample_class import Sample</p>
-<dl class="simple">
-<dt>s_o = Sample.from_frame(</dt><dd><p>pd.DataFrame({“o1”: (7, 8, 9, 10), “o2”: (7, 8, 9, np.nan), “id”: (1, 2, 3, 4)}),
-id_column=”id”,
-outcome_columns=(“o1”, “o2”),</p>
-</dd>
-</dl>
-<p>)</p>
-<dl>
-<dt>t_o = Sample.from_frame(</dt><dd><dl>
-<dt>pd.DataFrame(</dt><dd><dl class="simple">
-<dt>{</dt><dd><p>“o1”: (7, 8, 9, 10, 11, 12, 13, 14),
-“o2”: (7, 8, 9, np.nan, 11, 12, 13, 14),
-“id”: (1, 2, 3, 4, 5, 6, 7, 8),</p>
-</dd>
-</dl>
-<p>}</p>
-</dd>
-</dl>
-<p>),
-id_column=”id”,
-outcome_columns=(“o1”, “o2”),</p>
-</dd>
-</dl>
-<p>)
-s_o = s_o.set_target(t_o)</p>
-<dl class="simple">
-<dt>print(s_o.outcomes().target_response_rates())</dt><dd><p>#       o1    o2
-# n    8.0   7.0
-# %  100.0  87.5</p>
-</dd>
-</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">balance.sample_class</span> <span class="kn">import</span> <span class="n">Sample</span>
+
+
+<span class="n">s_o</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;o1&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="s2">&quot;o2&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">),</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)}),</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="n">outcome_columns</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;o1&quot;</span><span class="p">,</span> <span class="s2">&quot;o2&quot;</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">t_o</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;o1&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">14</span><span class="p">),</span>
+            <span class="s2">&quot;o2&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">14</span><span class="p">),</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+        <span class="p">}</span>
+    <span class="p">),</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="n">outcome_columns</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;o1&quot;</span><span class="p">,</span> <span class="s2">&quot;o2&quot;</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">s_o</span> <span class="o">=</span> <span class="n">s_o</span><span class="o">.</span><span class="n">set_target</span><span class="p">(</span><span class="n">t_o</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">s_o</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">target_response_rates</span><span class="p">())</span>
+    <span class="c1">#       o1    o2</span>
+    <span class="c1"># n    8.0   7.0</span>
+    <span class="c1"># %  100.0  87.5</span>
+</pre></div>
+</div>
 </dd></dl>
 
 </dd></dl>
@@ -1015,40 +991,42 @@ If library=”seaborn” then returns either a list or an np.array of matplotlib
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>import numpy as np
-import pandas as pd
-from numpy import random
-from balance.sample_class import Sample</p>
-<p>random.seed(96483)</p>
-<dl class="simple">
-<dt>df = pd.DataFrame({</dt><dd><p>“id”: range(100),
-‘v1’: random.random_integers(11111, 11114, size=100).astype(str),
-‘v2’: random.normal(size = 100),
-‘v3’: random.uniform(size = 100),
-“w”: pd.Series(np.ones(99).tolist() + [1000]),</p>
-</dd>
-</dl>
-<p>}).sort_values(by=[‘v2’])</p>
-<dl class="simple">
-<dt>s1 = Sample.from_frame(df,</dt><dd><p>id_column=”id”,
-weight_column=”w”,
-outcome_columns=[“v1”, “v2”],</p>
-</dd>
-</dl>
-<p>)</p>
-<dl class="simple">
-<dt>s2 = Sample.from_frame(</dt><dd><p>df.assign(w = pd.Series(np.ones(100))),
-id_column=”id”,
-weight_column=”w”,
-outcome_columns=[“v1”, “v2”],</p>
-</dd>
-</dl>
-<p>)</p>
-<p>s3 = s1.set_target(s2)
-s3_null = s3.adjust(method=”null”)
-s3_null.set_weights(random.random(size = 100) + 0.5)</p>
-<p># default: seaborn with dist_type = “kde”
-s3_null.weights().plot()</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">random</span>
+<span class="kn">from</span> <span class="nn">balance.sample_class</span> <span class="kn">import</span> <span class="n">Sample</span>
+
+<span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">96483</span><span class="p">)</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span>
+    <span class="s1">&#39;v1&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">random_integers</span><span class="p">(</span><span class="mi">11111</span><span class="p">,</span> <span class="mi">11114</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">),</span>
+    <span class="s1">&#39;v2&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="mi">100</span><span class="p">),</span>
+    <span class="s1">&#39;v3&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="mi">100</span><span class="p">),</span>
+    <span class="s2">&quot;w&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">99</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1000</span><span class="p">]),</span>
+<span class="p">})</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;v2&#39;</span><span class="p">])</span>
+
+<span class="n">s1</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">df</span><span class="p">,</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="n">weight_column</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span>
+    <span class="n">outcome_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;v1&quot;</span><span class="p">,</span> <span class="s2">&quot;v2&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+
+<span class="n">s2</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">w</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">100</span><span class="p">))),</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="n">weight_column</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span>
+    <span class="n">outcome_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;v1&quot;</span><span class="p">,</span> <span class="s2">&quot;v2&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+
+<span class="n">s3</span> <span class="o">=</span> <span class="n">s1</span><span class="o">.</span><span class="n">set_target</span><span class="p">(</span><span class="n">s2</span><span class="p">)</span>
+<span class="n">s3_null</span> <span class="o">=</span> <span class="n">s3</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;null&quot;</span><span class="p">)</span>
+<span class="n">s3_null</span><span class="o">.</span><span class="n">set_weights</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="mi">100</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
+
+<span class="c1"># default: seaborn with dist_type = &quot;kde&quot;</span>
+<span class="n">s3_null</span><span class="o">.</span><span class="n">weights</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">

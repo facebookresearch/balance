@@ -104,36 +104,38 @@
 <span class="sd">        pd.DataFrame: with two columns, one for weights and another for main_covar_names,</span>
 <span class="sd">        with rows for each of the columns from &#39;covar_names&#39;</span>
 
-<span class="sd">    Example:</span>
-<span class="sd">        asmd_df = pd.DataFrame(</span>
-<span class="sd">        {</span>
-<span class="sd">            &#39;age&#39;: 0.5,</span>
-<span class="sd">            &#39;education[T.high_school]&#39;: 1,</span>
-<span class="sd">            &#39;education[T.bachelor]&#39;: 1,</span>
-<span class="sd">            &#39;education[T.masters]&#39;: 1,</span>
-<span class="sd">            &#39;education[T.phd]&#39;: 1,</span>
-<span class="sd">        }, index = (&#39;self&#39;, ))</span>
+<span class="sd">    Examples:</span>
+<span class="sd">        ::</span>
 
-<span class="sd">        input = asmd_df.columns.values.tolist()</span>
-<span class="sd">        # input</span>
-<span class="sd">        # [&#39;age&#39;,</span>
-<span class="sd">        #  &#39;education[T.high_school]&#39;,</span>
-<span class="sd">        #  &#39;education[T. bachelor]&#39;,</span>
-<span class="sd">        #  &#39;education[T. masters]&#39;,</span>
-<span class="sd">        #  &#39;education[T. phd]&#39;]</span>
+<span class="sd">            asmd_df = pd.DataFrame(</span>
+<span class="sd">            {</span>
+<span class="sd">                &#39;age&#39;: 0.5,</span>
+<span class="sd">                &#39;education[T.high_school]&#39;: 1,</span>
+<span class="sd">                &#39;education[T.bachelor]&#39;: 1,</span>
+<span class="sd">                &#39;education[T.masters]&#39;: 1,</span>
+<span class="sd">                &#39;education[T.phd]&#39;: 1,</span>
+<span class="sd">            }, index = (&#39;self&#39;, ))</span>
 
-<span class="sd">        _weights_per_covars_names(input).to_dict()</span>
-<span class="sd">        # Output:</span>
-<span class="sd">        # {&#39;weight&#39;: {&#39;age&#39;: 1.0,</span>
-<span class="sd">        #   &#39;education[T.high_school]&#39;: 0.25,</span>
-<span class="sd">        #   &#39;education[T.bachelor]&#39;: 0.25,</span>
-<span class="sd">        #   &#39;education[T.masters]&#39;: 0.25,</span>
-<span class="sd">        #   &#39;education[T.phd]&#39;: 0.25},</span>
-<span class="sd">        #  &#39;main_covar_names&#39;: {&#39;age&#39;: &#39;age&#39;,</span>
-<span class="sd">        #   &#39;education[T.high_school]&#39;: &#39;education&#39;,</span>
-<span class="sd">        #   &#39;education[T.bachelor]&#39;: &#39;education&#39;,</span>
-<span class="sd">        #   &#39;education[T.masters]&#39;: &#39;education&#39;,</span>
-<span class="sd">        #   &#39;education[T.phd]&#39;: &#39;education&#39;}}</span>
+<span class="sd">            input = asmd_df.columns.values.tolist()</span>
+<span class="sd">                # input</span>
+<span class="sd">                # [&#39;age&#39;,</span>
+<span class="sd">                #  &#39;education[T.high_school]&#39;,</span>
+<span class="sd">                #  &#39;education[T. bachelor]&#39;,</span>
+<span class="sd">                #  &#39;education[T. masters]&#39;,</span>
+<span class="sd">                #  &#39;education[T. phd]&#39;]</span>
+
+<span class="sd">            _weights_per_covars_names(input).to_dict()</span>
+<span class="sd">                # Output:</span>
+<span class="sd">                # {&#39;weight&#39;: {&#39;age&#39;: 1.0,</span>
+<span class="sd">                #   &#39;education[T.high_school]&#39;: 0.25,</span>
+<span class="sd">                #   &#39;education[T.bachelor]&#39;: 0.25,</span>
+<span class="sd">                #   &#39;education[T.masters]&#39;: 0.25,</span>
+<span class="sd">                #   &#39;education[T.phd]&#39;: 0.25},</span>
+<span class="sd">                #  &#39;main_covar_names&#39;: {&#39;age&#39;: &#39;age&#39;,</span>
+<span class="sd">                #   &#39;education[T.high_school]&#39;: &#39;education&#39;,</span>
+<span class="sd">                #   &#39;education[T.bachelor]&#39;: &#39;education&#39;,</span>
+<span class="sd">                #   &#39;education[T.masters]&#39;: &#39;education&#39;,</span>
+<span class="sd">                #   &#39;education[T.phd]&#39;: &#39;education&#39;}}</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">columns_to_original_variable</span> <span class="o">=</span> <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\[.*\]$&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">covar_names</span><span class="p">}</span>
     <span class="n">counts</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">Counter</span><span class="p">(</span><span class="n">columns_to_original_variable</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
@@ -226,70 +228,71 @@
 <span class="sd">        The values (of type np.float64) are of the ASMD calculation.</span>
 <span class="sd">        The last element is &#39;mean(asmd)&#39;, which is the average of the calculated ASMD values.</span>
 
-<span class="sd">    Example:</span>
+<span class="sd">    Examples:</span>
+<span class="sd">        ::</span>
 
-<span class="sd">        import numpy as np</span>
-<span class="sd">        import pandas as pd</span>
-<span class="sd">        from balance.stats_and_plots import weighted_comparisons_stats</span>
+<span class="sd">            import numpy as np</span>
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from balance.stats_and_plots import weighted_comparisons_stats</span>
 
-<span class="sd">        a1 = pd.Series((1, 2))</span>
-<span class="sd">        b1 = pd.Series((-1, 1))</span>
-<span class="sd">        a2 = pd.Series((3, 4))</span>
-<span class="sd">        b2 = pd.Series((-2, 2))</span>
-<span class="sd">        w1 = pd.Series((1, 1))</span>
-<span class="sd">        w2 = w1</span>
+<span class="sd">            a1 = pd.Series((1, 2))</span>
+<span class="sd">            b1 = pd.Series((-1, 1))</span>
+<span class="sd">            a2 = pd.Series((3, 4))</span>
+<span class="sd">            b2 = pd.Series((-2, 2))</span>
+<span class="sd">            w1 = pd.Series((1, 1))</span>
+<span class="sd">            w2 = w1</span>
 
-<span class="sd">        r = weighted_comparisons_stats.asmd(</span>
-<span class="sd">                    pd.DataFrame({&quot;a&quot;: a1, &quot;b&quot;: b1}),</span>
-<span class="sd">                    pd.DataFrame({&quot;a&quot;: a2, &quot;b&quot;: b2}),</span>
-<span class="sd">                    w1,</span>
-<span class="sd">                    w2,</span>
-<span class="sd">                )</span>
+<span class="sd">            r = weighted_comparisons_stats.asmd(</span>
+<span class="sd">                        pd.DataFrame({&quot;a&quot;: a1, &quot;b&quot;: b1}),</span>
+<span class="sd">                        pd.DataFrame({&quot;a&quot;: a2, &quot;b&quot;: b2}),</span>
+<span class="sd">                        w1,</span>
+<span class="sd">                        w2,</span>
+<span class="sd">                    )</span>
 
-<span class="sd">        exp_a = np.abs(a1.mean() - a2.mean()) / a2.std()</span>
-<span class="sd">        exp_b = np.abs(b1.mean() - b2.mean()) / b2.std()</span>
-<span class="sd">        print(r)</span>
-<span class="sd">        print(exp_a)</span>
-<span class="sd">        print(exp_b)</span>
+<span class="sd">            exp_a = np.abs(a1.mean() - a2.mean()) / a2.std()</span>
+<span class="sd">            exp_b = np.abs(b1.mean() - b2.mean()) / b2.std()</span>
+<span class="sd">            print(r)</span>
+<span class="sd">            print(exp_a)</span>
+<span class="sd">            print(exp_b)</span>
 
-<span class="sd">        # output:</span>
-<span class="sd">        # {&#39;a&#39;: 2.82842712474619, &#39;b&#39;: 0.0, &#39;mean(asmd)&#39;: 1.414213562373095}</span>
-<span class="sd">        # 2.82842712474619</span>
-<span class="sd">        # 0.0</span>
+<span class="sd">            # output:</span>
+<span class="sd">            # {&#39;a&#39;: 2.82842712474619, &#39;b&#39;: 0.0, &#39;mean(asmd)&#39;: 1.414213562373095}</span>
+<span class="sd">            # 2.82842712474619</span>
+<span class="sd">            # 0.0</span>
 
 
 
-<span class="sd">        a1 = pd.Series((1, 2))</span>
-<span class="sd">        b1_A = pd.Series((1, 3))</span>
-<span class="sd">        b1_B = pd.Series((-1, -3))</span>
-<span class="sd">        a2 = pd.Series((3, 4))</span>
-<span class="sd">        b2_A = pd.Series((2, 3))</span>
-<span class="sd">        b2_B = pd.Series((-2, -3))</span>
-<span class="sd">        w1 = pd.Series((1, 1))</span>
-<span class="sd">        w2 = w1</span>
+<span class="sd">            a1 = pd.Series((1, 2))</span>
+<span class="sd">            b1_A = pd.Series((1, 3))</span>
+<span class="sd">            b1_B = pd.Series((-1, -3))</span>
+<span class="sd">            a2 = pd.Series((3, 4))</span>
+<span class="sd">            b2_A = pd.Series((2, 3))</span>
+<span class="sd">            b2_B = pd.Series((-2, -3))</span>
+<span class="sd">            w1 = pd.Series((1, 1))</span>
+<span class="sd">            w2 = w1</span>
 
-<span class="sd">        r = weighted_comparisons_stats.asmd(</span>
-<span class="sd">            pd.DataFrame({&quot;a&quot;: a1, &quot;b[A]&quot;: b1_A, &quot;b[B]&quot;: b1_B}),</span>
-<span class="sd">            pd.DataFrame({&quot;a&quot;: a2, &quot;b[A]&quot;: b2_A, &quot;b[B]&quot;: b2_B}),</span>
-<span class="sd">            w1,</span>
-<span class="sd">            w2,</span>
-<span class="sd">        ).to_dict()</span>
+<span class="sd">            r = weighted_comparisons_stats.asmd(</span>
+<span class="sd">                pd.DataFrame({&quot;a&quot;: a1, &quot;b[A]&quot;: b1_A, &quot;b[B]&quot;: b1_B}),</span>
+<span class="sd">                pd.DataFrame({&quot;a&quot;: a2, &quot;b[A]&quot;: b2_A, &quot;b[B]&quot;: b2_B}),</span>
+<span class="sd">                w1,</span>
+<span class="sd">                w2,</span>
+<span class="sd">            ).to_dict()</span>
 
-<span class="sd">        print(r)</span>
-<span class="sd">        # {&#39;a&#39;: 2.82842712474619, &#39;b[A]&#39;: 0.7071067811865475, &#39;b[B]&#39;: 0.7071067811865475, &#39;mean(asmd)&#39;: 1.7677669529663689}</span>
+<span class="sd">            print(r)</span>
+<span class="sd">            # {&#39;a&#39;: 2.82842712474619, &#39;b[A]&#39;: 0.7071067811865475, &#39;b[B]&#39;: 0.7071067811865475, &#39;mean(asmd)&#39;: 1.7677669529663689}</span>
 
-<span class="sd">        # Check that using aggregate_by_main_covar works</span>
-<span class="sd">        r = weighted_comparisons_stats.asmd(</span>
-<span class="sd">            pd.DataFrame({&quot;a&quot;: a1, &quot;b[A]&quot;: b1_A, &quot;b[B]&quot;: b1_B}),</span>
-<span class="sd">            pd.DataFrame({&quot;a&quot;: a2, &quot;b[A]&quot;: b2_A, &quot;b[B]&quot;: b2_B}),</span>
-<span class="sd">            w1,</span>
-<span class="sd">            w2,</span>
-<span class="sd">            &quot;target&quot;,</span>
-<span class="sd">            True,</span>
-<span class="sd">        ).to_dict()</span>
+<span class="sd">            # Check that using aggregate_by_main_covar works</span>
+<span class="sd">            r = weighted_comparisons_stats.asmd(</span>
+<span class="sd">                pd.DataFrame({&quot;a&quot;: a1, &quot;b[A]&quot;: b1_A, &quot;b[B]&quot;: b1_B}),</span>
+<span class="sd">                pd.DataFrame({&quot;a&quot;: a2, &quot;b[A]&quot;: b2_A, &quot;b[B]&quot;: b2_B}),</span>
+<span class="sd">                w1,</span>
+<span class="sd">                w2,</span>
+<span class="sd">                &quot;target&quot;,</span>
+<span class="sd">                True,</span>
+<span class="sd">            ).to_dict()</span>
 
-<span class="sd">        print(r)</span>
-<span class="sd">        # {&#39;a&#39;: 2.82842712474619, &#39;b&#39;: 0.7071067811865475, &#39;mean(asmd)&#39;: 1.7677669529663689}</span>
+<span class="sd">            print(r)</span>
+<span class="sd">            # {&#39;a&#39;: 2.82842712474619, &#39;b&#39;: 0.7071067811865475, &#39;mean(asmd)&#39;: 1.7677669529663689}</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
@@ -357,22 +360,24 @@
 <span class="sd">        pd.Series: If asmd_series had several items broken by one-hot encoding,</span>
 <span class="sd">            then they would be averaged (with equal weight to each).</span>
 
-<span class="sd">    Example:</span>
-<span class="sd">        from balance.stats_and_plots.weighted_comparisons_stats import _aggregate_asmd_by_main_covar</span>
+<span class="sd">    Examples:</span>
+<span class="sd">        ::</span>
 
-<span class="sd">        asmd_series = pd.Series(</span>
-<span class="sd">        {</span>
-<span class="sd">            &#39;age&#39;: 0.5,</span>
-<span class="sd">            &#39;education[T.high_school]&#39;: 1,</span>
-<span class="sd">            &#39;education[T.bachelor]&#39;: 2,</span>
-<span class="sd">            &#39;education[T.masters]&#39;: 3,</span>
-<span class="sd">            &#39;education[T.phd]&#39;: 4,</span>
-<span class="sd">        })</span>
+<span class="sd">            from balance.stats_and_plots.weighted_comparisons_stats import _aggregate_asmd_by_main_covar</span>
 
-<span class="sd">        _aggregate_asmd_by_main_covar(asmd_series).to_dict()</span>
+<span class="sd">            asmd_series = pd.Series(</span>
+<span class="sd">            {</span>
+<span class="sd">                &#39;age&#39;: 0.5,</span>
+<span class="sd">                &#39;education[T.high_school]&#39;: 1,</span>
+<span class="sd">                &#39;education[T.bachelor]&#39;: 2,</span>
+<span class="sd">                &#39;education[T.masters]&#39;: 3,</span>
+<span class="sd">                &#39;education[T.phd]&#39;: 4,</span>
+<span class="sd">            })</span>
 
-<span class="sd">        # output:</span>
-<span class="sd">        # {&#39;age&#39;: 0.5, &#39;education&#39;: 2.5}</span>
+<span class="sd">            _aggregate_asmd_by_main_covar(asmd_series).to_dict()</span>
+
+<span class="sd">            # output:</span>
+<span class="sd">            # {&#39;age&#39;: 0.5, &#39;education&#39;: 2.5}</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">_weights_per_covars_names</span><span class="p">(</span><span class="n">asmd_series</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
 

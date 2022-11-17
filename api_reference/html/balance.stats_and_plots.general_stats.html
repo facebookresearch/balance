@@ -87,25 +87,35 @@ A second row with the proportion of non-null observations.</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>import numpy as np
-import pandas as pd
-from balance.stats_and_plots.general_stats import relative_response_rates</p>
-<p>df = pd.DataFrame({“o1”: (7, 8, 9, 10), “o2”: (7, 8, 9, np.nan), “id”: (1, 2, 3, 4)})</p>
-<p>relative_response_rates(df).to_dict()</p>
-<p># {‘o1’: {‘n’: 4.0, ‘%’: 100.0},
-# ‘o2’: {‘n’: 3.0, ‘%’: 75.0},
-# ‘id’: {‘n’: 4.0, ‘%’: 100.0}}</p>
-<p>df_target = pd.concat([df, df])
-relative_response_rates(df, df_target).to_dict()</p>
-<p># {‘o1’: {‘n’: 4.0, ‘%’: 50.0},
-#  ‘o2’: {‘n’: 3.0, ‘%’: 50.0},
-#  ‘id’: {‘n’: 4.0, ‘%’: 50.0}}</p>
-<p># Dividing by number of total notnull rows in df_rarget
-df_target.notnull().all(axis=1).sum()  # == 6
-relative_response_rates(df, df_target, False).to_dict()</p>
-<p># {‘o1’: {‘n’: 4.0, ‘%’: 66.66666666666666},
-# ‘o2’: {‘n’: 3.0, ‘%’: 50.0},
-# ‘id’: {‘n’: 4.0, ‘%’: 66.66666666666666}}</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">balance.stats_and_plots.general_stats</span> <span class="kn">import</span> <span class="n">relative_response_rates</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;o1&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="s2">&quot;o2&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">),</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)})</span>
+
+<span class="n">relative_response_rates</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+
+    <span class="c1"># {&#39;o1&#39;: {&#39;n&#39;: 4.0, &#39;%&#39;: 100.0},</span>
+    <span class="c1"># &#39;o2&#39;: {&#39;n&#39;: 3.0, &#39;%&#39;: 75.0},</span>
+    <span class="c1"># &#39;id&#39;: {&#39;n&#39;: 4.0, &#39;%&#39;: 100.0}}</span>
+
+<span class="n">df_target</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df</span><span class="p">,</span> <span class="n">df</span><span class="p">])</span>
+<span class="n">relative_response_rates</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">df_target</span><span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+
+    <span class="c1"># {&#39;o1&#39;: {&#39;n&#39;: 4.0, &#39;%&#39;: 50.0},</span>
+    <span class="c1">#  &#39;o2&#39;: {&#39;n&#39;: 3.0, &#39;%&#39;: 50.0},</span>
+    <span class="c1">#  &#39;id&#39;: {&#39;n&#39;: 4.0, &#39;%&#39;: 50.0}}</span>
+
+
+<span class="c1"># Dividing by number of total notnull rows in df_rarget</span>
+<span class="n">df_target</span><span class="o">.</span><span class="n">notnull</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>  <span class="c1"># == 6</span>
+<span class="n">relative_response_rates</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">df_target</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+
+    <span class="c1"># {&#39;o1&#39;: {&#39;n&#39;: 4.0, &#39;%&#39;: 66.66666666666666},</span>
+    <span class="c1"># &#39;o2&#39;: {&#39;n&#39;: 3.0, &#39;%&#39;: 50.0},</span>
+    <span class="c1"># &#39;id&#39;: {&#39;n&#39;: 4.0, &#39;%&#39;: 66.66666666666666}}</span>
+</pre></div>
+</div>
 </dd></dl>
 
 </section>

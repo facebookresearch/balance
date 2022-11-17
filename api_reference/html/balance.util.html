@@ -165,38 +165,47 @@ see here:
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>import pandas as pd
-d = {‘a’: [‘a1’,’a2’,’a1’,’a1’], ‘b’: [‘b1’,’b2’,’b3’,’b3’]}
-df = pd.DataFrame(data=d)</p>
-<p>print(build_model_matrix(df, ‘a’))
-# {‘model_matrix’:    a[a1]  a[a2]
-# 0    1.0    0.0
-# 1    0.0    1.0
-# 2    1.0    0.0
-# 3    1.0    0.0,
-# ‘model_matrix_columns’: [‘a[a1]’, ‘a[a2]’]}</p>
-<p>print(build_model_matrix(df, ‘.’))
-# {‘model_matrix’:    a[a1]  a[a2]  b[T.b2]  b[T.b3]
-# 0    1.0    0.0      0.0      0.0
-# 1    0.0    1.0      1.0      0.0
-# 2    1.0    0.0      0.0      1.0
-# 3    1.0    0.0      0.0      1.0,
-# ‘model_matrix_columns’: [‘a[a1]’, ‘a[a2]’, ‘b[T.b2]’, ‘b[T.b3]’]}</p>
-<p>print(build_model_matrix(df, ‘.’, factor_variables=[‘a’]))
-# {‘model_matrix’:    C(a, one_hot_encoding_greater_2)[a2]  b[T.b2]  b[T.b3]
-# 0                                0.0      0.0      0.0
-# 1                                1.0      1.0      0.0
-# 2                                0.0      0.0      1.0
-# 3                                0.0      0.0      1.0,
-# ‘model_matrix_columns’: [‘C(a, one_hot_encoding_greater_2)[a2]’, ‘b[T.b2]’, ‘b[T.b3]’]}</p>
-<p>print(build_model_matrix(df, ‘a’, return_sparse=True))
-# {‘model_matrix’: &lt;4x2 sparse matrix of type ‘&lt;class ‘numpy.float64’&gt;’
-# with 4 stored elements in Compressed Sparse Column format&gt;, ‘model_matrix_columns’: [‘a[a1]’, ‘a[a2]’]}
-print(build_model_matrix(df, ‘a’, return_sparse=True)[“model_matrix”].toarray())
-# [[1. 0.]
-# [0. 1.]
-# [1. 0.]
-# [1. 0.]]</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;a1&#39;</span><span class="p">,</span><span class="s1">&#39;a2&#39;</span><span class="p">,</span><span class="s1">&#39;a1&#39;</span><span class="p">,</span><span class="s1">&#39;a1&#39;</span><span class="p">],</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;b1&#39;</span><span class="p">,</span><span class="s1">&#39;b2&#39;</span><span class="p">,</span><span class="s1">&#39;b3&#39;</span><span class="p">,</span><span class="s1">&#39;b3&#39;</span><span class="p">]}</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">d</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">build_model_matrix</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">))</span>
+    <span class="c1"># {&#39;model_matrix&#39;:    a[a1]  a[a2]</span>
+    <span class="c1"># 0    1.0    0.0</span>
+    <span class="c1"># 1    0.0    1.0</span>
+    <span class="c1"># 2    1.0    0.0</span>
+    <span class="c1"># 3    1.0    0.0,</span>
+    <span class="c1"># &#39;model_matrix_columns&#39;: [&#39;a[a1]&#39;, &#39;a[a2]&#39;]}</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">build_model_matrix</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">))</span>
+    <span class="c1"># {&#39;model_matrix&#39;:    a[a1]  a[a2]  b[T.b2]  b[T.b3]</span>
+    <span class="c1"># 0    1.0    0.0      0.0      0.0</span>
+    <span class="c1"># 1    0.0    1.0      1.0      0.0</span>
+    <span class="c1"># 2    1.0    0.0      0.0      1.0</span>
+    <span class="c1"># 3    1.0    0.0      0.0      1.0,</span>
+    <span class="c1"># &#39;model_matrix_columns&#39;: [&#39;a[a1]&#39;, &#39;a[a2]&#39;, &#39;b[T.b2]&#39;, &#39;b[T.b3]&#39;]}</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">build_model_matrix</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">factor_variables</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]))</span>
+    <span class="c1"># {&#39;model_matrix&#39;:    C(a, one_hot_encoding_greater_2)[a2]  b[T.b2]  b[T.b3]</span>
+    <span class="c1"># 0                                0.0      0.0      0.0</span>
+    <span class="c1"># 1                                1.0      1.0      0.0</span>
+    <span class="c1"># 2                                0.0      0.0      1.0</span>
+    <span class="c1"># 3                                0.0      0.0      1.0,</span>
+    <span class="c1"># &#39;model_matrix_columns&#39;: [&#39;C(a, one_hot_encoding_greater_2)[a2]&#39;, &#39;b[T.b2]&#39;, &#39;b[T.b3]&#39;]}</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">build_model_matrix</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">return_sparse</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+    <span class="c1"># {&#39;model_matrix&#39;: &lt;4x2 sparse matrix of type &#39;&lt;class &#39;numpy.float64&#39;&gt;&#39;</span>
+    <span class="c1"># with 4 stored elements in Compressed Sparse Column format&gt;, &#39;model_matrix_columns&#39;: [&#39;a[a1]&#39;, &#39;a[a2]&#39;]}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">build_model_matrix</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">return_sparse</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="s2">&quot;model_matrix&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">toarray</span><span class="p">())</span>
+    <span class="c1"># [[1. 0.]</span>
+    <span class="c1"># [0. 1.]</span>
+    <span class="c1"># [1. 0.]</span>
+    <span class="c1"># [1. 0.]]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -249,18 +258,19 @@ If no ‘.’ is present, then the original formula is returned as is.</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>dot_expansion(‘.’, [‘a’,’b’,’c’,’d’]) # (a+b+c+d)
-dot_expansion(‘b:(. - a)’, [‘a’,’b’,’c’,’d’]) # b:((a+b+c+d) - a)
-dot_expansion(‘a*b’, [‘a’,’b’,’c’,’d’]) # a*b
-dot_expansion(‘.’, None) # Raise error</p>
-<p>import pandas as pd
-d = {‘a’: [‘a1’,’a2’,’a1’,’a1’], ‘b’: [‘b1’,’b2’,’b3’,’b3’],</p>
-<blockquote>
-<div><p>‘c’: [‘c1’,’c1’,’c2’,’c1’], ‘d’:[‘d1’,’d1’,’d2’,’d3’]}</p>
-</div></blockquote>
-<p>df = pd.DataFrame(data=d)
-dot_expansion(‘.’, df) # Raise error
-dot_expansion(‘.’, list(df.columns)) # (a+b+c+d)</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dot_expansion</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span><span class="s1">&#39;b&#39;</span><span class="p">,</span><span class="s1">&#39;c&#39;</span><span class="p">,</span><span class="s1">&#39;d&#39;</span><span class="p">])</span> <span class="c1"># (a+b+c+d)</span>
+<span class="n">dot_expansion</span><span class="p">(</span><span class="s1">&#39;b:(. - a)&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span><span class="s1">&#39;b&#39;</span><span class="p">,</span><span class="s1">&#39;c&#39;</span><span class="p">,</span><span class="s1">&#39;d&#39;</span><span class="p">])</span> <span class="c1"># b:((a+b+c+d) - a)</span>
+<span class="n">dot_expansion</span><span class="p">(</span><span class="s1">&#39;a*b&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span><span class="s1">&#39;b&#39;</span><span class="p">,</span><span class="s1">&#39;c&#39;</span><span class="p">,</span><span class="s1">&#39;d&#39;</span><span class="p">])</span> <span class="c1"># a*b</span>
+<span class="n">dot_expansion</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="c1"># Raise error</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;a1&#39;</span><span class="p">,</span><span class="s1">&#39;a2&#39;</span><span class="p">,</span><span class="s1">&#39;a1&#39;</span><span class="p">,</span><span class="s1">&#39;a1&#39;</span><span class="p">],</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;b1&#39;</span><span class="p">,</span><span class="s1">&#39;b2&#39;</span><span class="p">,</span><span class="s1">&#39;b3&#39;</span><span class="p">,</span><span class="s1">&#39;b3&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;c1&#39;</span><span class="p">,</span><span class="s1">&#39;c1&#39;</span><span class="p">,</span><span class="s1">&#39;c2&#39;</span><span class="p">,</span><span class="s1">&#39;c1&#39;</span><span class="p">],</span> <span class="s1">&#39;d&#39;</span><span class="p">:[</span><span class="s1">&#39;d1&#39;</span><span class="p">,</span><span class="s1">&#39;d1&#39;</span><span class="p">,</span><span class="s1">&#39;d2&#39;</span><span class="p">,</span><span class="s1">&#39;d3&#39;</span><span class="p">]}</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">d</span><span class="p">)</span>
+<span class="n">dot_expansion</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span> <span class="c1"># Raise error</span>
+<span class="n">dot_expansion</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">))</span> <span class="c1"># (a+b+c+d)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -306,21 +316,22 @@ Note that all values with proprtion less than prop output the same value ‘_lum
 <dd class="field-odd"><p>pd.Series</p>
 </dd>
 </dl>
-<p class="rubric">Example</p>
-<p>from balance.util import fct_lump
-import pandas as pd</p>
-<p>s = pd.Series([‘a’,’a’,’b’,’b’,’c’,’a’,’b’], dtype = ‘category’)
-fct_lump(s, 0.25)</p>
-<blockquote>
-<div><p># 0                a
-# 1                a
-# 2                b
-# 3                b
-# 4    _lumped_other
-# 5                a
-# 6                b
-# dtype: object</p>
-</div></blockquote>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">balance.util</span> <span class="kn">import</span> <span class="n">fct_lump</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">s</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="s1">&#39;a&#39;</span><span class="p">,</span><span class="s1">&#39;a&#39;</span><span class="p">,</span><span class="s1">&#39;b&#39;</span><span class="p">,</span><span class="s1">&#39;b&#39;</span><span class="p">,</span><span class="s1">&#39;c&#39;</span><span class="p">,</span><span class="s1">&#39;a&#39;</span><span class="p">,</span><span class="s1">&#39;b&#39;</span><span class="p">],</span> <span class="n">dtype</span> <span class="o">=</span> <span class="s1">&#39;category&#39;</span><span class="p">)</span>
+<span class="n">fct_lump</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">)</span>
+    <span class="c1"># 0                a</span>
+    <span class="c1"># 1                a</span>
+    <span class="c1"># 2                b</span>
+    <span class="c1"># 3                b</span>
+    <span class="c1"># 4    _lumped_other</span>
+    <span class="c1"># 5                a</span>
+    <span class="c1"># 6                b</span>
+    <span class="c1"># dtype: object</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -344,18 +355,20 @@ most important interactions in a model.</p>
 <dd class="field-odd"><p>pd.Series</p>
 </dd>
 </dl>
-<p class="rubric">Example</p>
-<p>s = pd.Series([1,1,1,2,3,1,2])
-by = pd.Series([‘a’,’a’,’a’,’a’,’a’,’b’,’b’])
-fct_lump_by(s, by, 0.5)
-# 0                1
-# 1                1
-# 2                1
-# 3    _lumped_other
-# 4    _lumped_other
-# 5                1
-# 6                2
-# dtype: object</p>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">s</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span>
+<span class="n">by</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="s1">&#39;a&#39;</span><span class="p">,</span><span class="s1">&#39;a&#39;</span><span class="p">,</span><span class="s1">&#39;a&#39;</span><span class="p">,</span><span class="s1">&#39;a&#39;</span><span class="p">,</span><span class="s1">&#39;a&#39;</span><span class="p">,</span><span class="s1">&#39;b&#39;</span><span class="p">,</span><span class="s1">&#39;b&#39;</span><span class="p">])</span>
+<span class="n">fct_lump_by</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">by</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+    <span class="c1"># 0                1</span>
+    <span class="c1"># 1                1</span>
+    <span class="c1"># 2                1</span>
+    <span class="c1"># 3    _lumped_other</span>
+    <span class="c1"># 4    _lumped_other</span>
+    <span class="c1"># 5                1</span>
+    <span class="c1"># 6                2</span>
+    <span class="c1"># dtype: object</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -383,8 +396,10 @@ fct_lump_by(s, by, 0.5)
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>formula_generator([‘a’,’b’,’c’])
-# returns ‘c + b + a’</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">formula_generator</span><span class="p">([</span><span class="s1">&#39;a&#39;</span><span class="p">,</span><span class="s1">&#39;b&#39;</span><span class="p">,</span><span class="s1">&#39;c&#39;</span><span class="p">])</span>
+<span class="c1"># returns &#39;c + b + a&#39;</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -468,97 +483,107 @@ and only 1 column for variables with 2 levels (treatment contrast). Defaults to 
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>import pandas as pd
-d = {‘a’: [‘a1’,’a2’,’a1’,’a1’], ‘b’: [‘b1’,’b2’,’b3’,’b3’]}
-df = pd.DataFrame(data=d)</p>
-<p>model_matrix(df)
-# {‘model_matrix_columns_names’: [‘b[b1]’, ‘b[b2]’, ‘b[b3]’, ‘a[T.a2]’],
-#  ‘penalty_factor’: array([1, 1, 1, 1]),
-#  ‘sample’:    b[b1]  b[b2]  b[b3]  a[T.a2]
-#  0    1.0    0.0    0.0      0.0
-#  1    0.0    1.0    0.0      1.0
-#  2    0.0    0.0    1.0      0.0
-#  3    0.0    0.0    1.0      0.0,
-#  ‘target’: None}</p>
-<p>model_matrix(df, formula = ‘a*b’)
-# {‘model_matrix_columns_names’: [‘a[a1]’,
-#   ‘a[a2]’,
-#   ‘b[T.b2]’,
-#   ‘b[T.b3]’,
-#   ‘a[T.a2]:b[T.b2]’,
-#   ‘a[T.a2]:b[T.b3]’],
-#  ‘penalty_factor’: array([1, 1, 1, 1, 1, 1]),
-#  ‘sample’:    a[a1]  a[a2]  b[T.b2]  b[T.b3]  a[T.a2]:b[T.b2]  a[T.a2]:b[T.b3]
-#  0    1.0    0.0      0.0      0.0              0.0              0.0
-#  1    0.0    1.0      1.0      0.0              1.0              0.0
-#  2    1.0    0.0      0.0      1.0              0.0              0.0
-#  3    1.0    0.0      0.0      1.0              0.0              0.0,
-#  ‘target’: None}</p>
-<p>model_matrix(df, formula = [‘a’,’b’], penalty_factor=[1,2])
-# {‘model_matrix_columns_names’: [‘a[a1]’, ‘a[a2]’, ‘b[b1]’, ‘b[b2]’, ‘b[b3]’],
-#  ‘penalty_factor’: array([1, 1, 2, 2, 2]),
-#  ‘sample’:    a[a1]  a[a2]  b[b1]  b[b2]  b[b3]
-#  0    1.0    0.0    1.0    0.0    0.0
-#  1    0.0    1.0    0.0    1.0    0.0
-#  2    1.0    0.0    0.0    0.0    1.0
-#  3    1.0    0.0    0.0    0.0    1.0,
-#  ‘target’: None}</p>
-<p>model_matrix(df, formula = [‘a’,’b’], penalty_factor=[1,2], one_hot_encoding=True)
-# {‘model_matrix_columns_names’: [‘C(a, one_hot_encoding_greater_2)[a2]’,
-#   ‘C(b, one_hot_encoding_greater_2)[b1]’,
-#   ‘C(b, one_hot_encoding_greater_2)[b2]’,
-#   ‘C(b, one_hot_encoding_greater_2)[b3]’],
-#  ‘penalty_factor’: array([1, 2, 2, 2]),
-#  ‘sample’:    C(a, one_hot_encoding_greater_2)[a2]  …  C(b, one_hot_encoding_greater_2)[b3]
-#  0                                0.0  …                                0.0
-#  1                                1.0  …                                0.0
-#  2                                0.0  …                                1.0
-#  3                                0.0  …                                1.0
-# [4 rows x 4 columns],
-# ‘target’: None}</p>
-<p>model_matrix(df, formula = [‘a’,’b’], penalty_factor=[1,2], return_sparse = True)
-# {‘model_matrix_columns_names’: [‘a[a1]’, ‘a[a2]’, ‘b[b1]’, ‘b[b2]’, ‘b[b3]’],
-#  ‘penalty_factor’: array([1, 1, 2, 2, 2]),
-#  ‘sample’: &lt;4x5 sparse matrix of type ‘&lt;class ‘numpy.float64’&gt;’
-#       with 8 stored elements in Compressed Sparse Column format&gt;,
-#  ‘target’: None}</p>
-<p>model_matrix(df, target = df)
-# {‘model_matrix_columns_names’: [‘b[b1]’, ‘b[b2]’, ‘b[b3]’, ‘a[T.a2]’],
-#  ‘penalty_factor’: array([1, 1, 1, 1]),
-#  ‘sample’:    b[b1]  b[b2]  b[b3]  a[T.a2]
-#  0    1.0    0.0    0.0      0.0
-#  1    0.0    1.0    0.0      1.0
-#  2    0.0    0.0    1.0      0.0
-#  3    0.0    0.0    1.0      0.0,
-#  ‘target’:    b[b1]  b[b2]  b[b3]  a[T.a2]
-#  0    1.0    0.0    0.0      0.0
-#  1    0.0    1.0    0.0      1.0
-#  2    0.0    0.0    1.0      0.0
-#  3    0.0    0.0    1.0      0.0}</p>
-<p>model_matrix(df, target = df, return_type = “one”)
-# {‘model_matrix_columns_names’: [‘b[b1]’, ‘b[b2]’, ‘b[b3]’, ‘a[T.a2]’],
-#  ‘penalty_factor’: array([1, 1, 1, 1]),
-#  ‘model_matrix’:    b[b1]  b[b2]  b[b3]  a[T.a2]
-#  0    1.0    0.0    0.0      0.0
-#  1    0.0    1.0    0.0      1.0
-#  2    0.0    0.0    1.0      0.0
-#  3    0.0    0.0    1.0      0.0
-#  0    1.0    0.0    0.0      0.0
-#  1    0.0    1.0    0.0      1.0
-#  2    0.0    0.0    1.0      0.0
-#  3    0.0    0.0    1.0      0.0}</p>
-<p>model_matrix(df, target = df, formula=[‘a’,’b’],return_type = “one”)
-# {‘model_matrix_columns_names’: [‘a[a1]’, ‘a[a2]’, ‘b[b1]’, ‘b[b2]’, ‘b[b3]’],
-#  ‘penalty_factor’: array([1, 1, 1, 1, 1]),
-#  ‘model_matrix’:    a[a1]  a[a2]  b[b1]  b[b2]  b[b3]
-#  0    1.0    0.0    1.0    0.0    0.0
-#  1    0.0    1.0    0.0    1.0    0.0
-#  2    1.0    0.0    0.0    0.0    1.0
-#  3    1.0    0.0    0.0    0.0    1.0
-#  0    1.0    0.0    1.0    0.0    0.0
-#  1    0.0    1.0    0.0    1.0    0.0
-#  2    1.0    0.0    0.0    0.0    1.0
-#  3    1.0    0.0    0.0    0.0    1.0}</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;a1&#39;</span><span class="p">,</span><span class="s1">&#39;a2&#39;</span><span class="p">,</span><span class="s1">&#39;a1&#39;</span><span class="p">,</span><span class="s1">&#39;a1&#39;</span><span class="p">],</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;b1&#39;</span><span class="p">,</span><span class="s1">&#39;b2&#39;</span><span class="p">,</span><span class="s1">&#39;b3&#39;</span><span class="p">,</span><span class="s1">&#39;b3&#39;</span><span class="p">]}</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">d</span><span class="p">)</span>
+
+<span class="n">model_matrix</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="c1"># {&#39;model_matrix_columns_names&#39;: [&#39;b[b1]&#39;, &#39;b[b2]&#39;, &#39;b[b3]&#39;, &#39;a[T.a2]&#39;],</span>
+    <span class="c1">#  &#39;penalty_factor&#39;: array([1, 1, 1, 1]),</span>
+    <span class="c1">#  &#39;sample&#39;:    b[b1]  b[b2]  b[b3]  a[T.a2]</span>
+    <span class="c1">#  0    1.0    0.0    0.0      0.0</span>
+    <span class="c1">#  1    0.0    1.0    0.0      1.0</span>
+    <span class="c1">#  2    0.0    0.0    1.0      0.0</span>
+    <span class="c1">#  3    0.0    0.0    1.0      0.0,</span>
+    <span class="c1">#  &#39;target&#39;: None}</span>
+
+<span class="n">model_matrix</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">formula</span> <span class="o">=</span> <span class="s1">&#39;a*b&#39;</span><span class="p">)</span>
+    <span class="c1"># {&#39;model_matrix_columns_names&#39;: [&#39;a[a1]&#39;,</span>
+    <span class="c1">#   &#39;a[a2]&#39;,</span>
+    <span class="c1">#   &#39;b[T.b2]&#39;,</span>
+    <span class="c1">#   &#39;b[T.b3]&#39;,</span>
+    <span class="c1">#   &#39;a[T.a2]:b[T.b2]&#39;,</span>
+    <span class="c1">#   &#39;a[T.a2]:b[T.b3]&#39;],</span>
+    <span class="c1">#  &#39;penalty_factor&#39;: array([1, 1, 1, 1, 1, 1]),</span>
+    <span class="c1">#  &#39;sample&#39;:    a[a1]  a[a2]  b[T.b2]  b[T.b3]  a[T.a2]:b[T.b2]  a[T.a2]:b[T.b3]</span>
+    <span class="c1">#  0    1.0    0.0      0.0      0.0              0.0              0.0</span>
+    <span class="c1">#  1    0.0    1.0      1.0      0.0              1.0              0.0</span>
+    <span class="c1">#  2    1.0    0.0      0.0      1.0              0.0              0.0</span>
+    <span class="c1">#  3    1.0    0.0      0.0      1.0              0.0              0.0,</span>
+    <span class="c1">#  &#39;target&#39;: None}</span>
+
+<span class="n">model_matrix</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">formula</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span><span class="s1">&#39;b&#39;</span><span class="p">],</span> <span class="n">penalty_factor</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span>
+    <span class="c1"># {&#39;model_matrix_columns_names&#39;: [&#39;a[a1]&#39;, &#39;a[a2]&#39;, &#39;b[b1]&#39;, &#39;b[b2]&#39;, &#39;b[b3]&#39;],</span>
+    <span class="c1">#  &#39;penalty_factor&#39;: array([1, 1, 2, 2, 2]),</span>
+    <span class="c1">#  &#39;sample&#39;:    a[a1]  a[a2]  b[b1]  b[b2]  b[b3]</span>
+    <span class="c1">#  0    1.0    0.0    1.0    0.0    0.0</span>
+    <span class="c1">#  1    0.0    1.0    0.0    1.0    0.0</span>
+    <span class="c1">#  2    1.0    0.0    0.0    0.0    1.0</span>
+    <span class="c1">#  3    1.0    0.0    0.0    0.0    1.0,</span>
+    <span class="c1">#  &#39;target&#39;: None}</span>
+
+<span class="n">model_matrix</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">formula</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span><span class="s1">&#39;b&#39;</span><span class="p">],</span> <span class="n">penalty_factor</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="n">one_hot_encoding</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># {&#39;model_matrix_columns_names&#39;: [&#39;C(a, one_hot_encoding_greater_2)[a2]&#39;,</span>
+    <span class="c1">#   &#39;C(b, one_hot_encoding_greater_2)[b1]&#39;,</span>
+    <span class="c1">#   &#39;C(b, one_hot_encoding_greater_2)[b2]&#39;,</span>
+    <span class="c1">#   &#39;C(b, one_hot_encoding_greater_2)[b3]&#39;],</span>
+    <span class="c1">#  &#39;penalty_factor&#39;: array([1, 2, 2, 2]),</span>
+    <span class="c1">#  &#39;sample&#39;:    C(a, one_hot_encoding_greater_2)[a2]  ...  C(b, one_hot_encoding_greater_2)[b3]</span>
+    <span class="c1">#  0                                0.0  ...                                0.0</span>
+    <span class="c1">#  1                                1.0  ...                                0.0</span>
+    <span class="c1">#  2                                0.0  ...                                1.0</span>
+    <span class="c1">#  3                                0.0  ...                                1.0</span>
+    <span class="c1"># [4 rows x 4 columns],</span>
+    <span class="c1"># &#39;target&#39;: None}</span>
+
+<span class="n">model_matrix</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">formula</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span><span class="s1">&#39;b&#39;</span><span class="p">],</span> <span class="n">penalty_factor</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="n">return_sparse</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># {&#39;model_matrix_columns_names&#39;: [&#39;a[a1]&#39;, &#39;a[a2]&#39;, &#39;b[b1]&#39;, &#39;b[b2]&#39;, &#39;b[b3]&#39;],</span>
+    <span class="c1">#  &#39;penalty_factor&#39;: array([1, 1, 2, 2, 2]),</span>
+    <span class="c1">#  &#39;sample&#39;: &lt;4x5 sparse matrix of type &#39;&lt;class &#39;numpy.float64&#39;&gt;&#39;</span>
+    <span class="c1">#       with 8 stored elements in Compressed Sparse Column format&gt;,</span>
+    <span class="c1">#  &#39;target&#39;: None}</span>
+
+<span class="n">model_matrix</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">target</span> <span class="o">=</span> <span class="n">df</span><span class="p">)</span>
+    <span class="c1"># {&#39;model_matrix_columns_names&#39;: [&#39;b[b1]&#39;, &#39;b[b2]&#39;, &#39;b[b3]&#39;, &#39;a[T.a2]&#39;],</span>
+    <span class="c1">#  &#39;penalty_factor&#39;: array([1, 1, 1, 1]),</span>
+    <span class="c1">#  &#39;sample&#39;:    b[b1]  b[b2]  b[b3]  a[T.a2]</span>
+    <span class="c1">#  0    1.0    0.0    0.0      0.0</span>
+    <span class="c1">#  1    0.0    1.0    0.0      1.0</span>
+    <span class="c1">#  2    0.0    0.0    1.0      0.0</span>
+    <span class="c1">#  3    0.0    0.0    1.0      0.0,</span>
+    <span class="c1">#  &#39;target&#39;:    b[b1]  b[b2]  b[b3]  a[T.a2]</span>
+    <span class="c1">#  0    1.0    0.0    0.0      0.0</span>
+    <span class="c1">#  1    0.0    1.0    0.0      1.0</span>
+    <span class="c1">#  2    0.0    0.0    1.0      0.0</span>
+    <span class="c1">#  3    0.0    0.0    1.0      0.0}</span>
+
+<span class="n">model_matrix</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">target</span> <span class="o">=</span> <span class="n">df</span><span class="p">,</span> <span class="n">return_type</span> <span class="o">=</span> <span class="s2">&quot;one&quot;</span><span class="p">)</span>
+    <span class="c1"># {&#39;model_matrix_columns_names&#39;: [&#39;b[b1]&#39;, &#39;b[b2]&#39;, &#39;b[b3]&#39;, &#39;a[T.a2]&#39;],</span>
+    <span class="c1">#  &#39;penalty_factor&#39;: array([1, 1, 1, 1]),</span>
+    <span class="c1">#  &#39;model_matrix&#39;:    b[b1]  b[b2]  b[b3]  a[T.a2]</span>
+    <span class="c1">#  0    1.0    0.0    0.0      0.0</span>
+    <span class="c1">#  1    0.0    1.0    0.0      1.0</span>
+    <span class="c1">#  2    0.0    0.0    1.0      0.0</span>
+    <span class="c1">#  3    0.0    0.0    1.0      0.0</span>
+    <span class="c1">#  0    1.0    0.0    0.0      0.0</span>
+    <span class="c1">#  1    0.0    1.0    0.0      1.0</span>
+    <span class="c1">#  2    0.0    0.0    1.0      0.0</span>
+    <span class="c1">#  3    0.0    0.0    1.0      0.0}</span>
+
+<span class="n">model_matrix</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">target</span> <span class="o">=</span> <span class="n">df</span><span class="p">,</span> <span class="n">formula</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span><span class="s1">&#39;b&#39;</span><span class="p">],</span><span class="n">return_type</span> <span class="o">=</span> <span class="s2">&quot;one&quot;</span><span class="p">)</span>
+    <span class="c1"># {&#39;model_matrix_columns_names&#39;: [&#39;a[a1]&#39;, &#39;a[a2]&#39;, &#39;b[b1]&#39;, &#39;b[b2]&#39;, &#39;b[b3]&#39;],</span>
+    <span class="c1">#  &#39;penalty_factor&#39;: array([1, 1, 1, 1, 1]),</span>
+    <span class="c1">#  &#39;model_matrix&#39;:    a[a1]  a[a2]  b[b1]  b[b2]  b[b3]</span>
+    <span class="c1">#  0    1.0    0.0    1.0    0.0    0.0</span>
+    <span class="c1">#  1    0.0    1.0    0.0    1.0    0.0</span>
+    <span class="c1">#  2    1.0    0.0    0.0    0.0    1.0</span>
+    <span class="c1">#  3    1.0    0.0    0.0    0.0    1.0</span>
+    <span class="c1">#  0    1.0    0.0    1.0    0.0    0.0</span>
+    <span class="c1">#  1    0.0    1.0    0.0    1.0    0.0</span>
+    <span class="c1">#  2    1.0    0.0    0.0    0.0    1.0</span>
+    <span class="c1">#  3    1.0    0.0    0.0    0.0    1.0}</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py class">
@@ -575,27 +600,25 @@ as columns of the matrix.</p>
 # <a class="reference external" href="https://stats.stackexchange.com/questions/69804/group-categorical-variables-in-glmnet/107958#107958">https://stats.stackexchange.com/questions/69804/group-categorical-variables-in-glmnet/107958#107958</a>
 3. Source code: adaptation of
 # <a class="reference external" href="https://patsy.readthedocs.io/en/latest/categorical-coding.html">https://patsy.readthedocs.io/en/latest/categorical-coding.html</a></p>
-<p>Examples:
-import pandas as pd
-d = {‘a’: [‘a1’,’a2’,’a1’,’a1’], ‘b’: [‘b1’,’b2’,’b3’,’b3’],</p>
-<blockquote>
-<div><p>‘c’: [‘c1’,’c1’,’c2’,’c1’], ‘d’:[‘d1’,’d1’,’d2’,’d3’]}</p>
-</div></blockquote>
-<p>df = pd.DataFrame(data=d)</p>
-<p>print(dmatrix(‘C(a, one_hot_encoding_greater_2)’, df, return_type = ‘dataframe’))
-#   Intercept  C(a, one_hot_encoding_greater_2)[a2]
+<p class="rubric">Examples</p>
+<p>import pandas as pd
+d = {‘a’: [‘a1’,’a2’,’a1’,’a1’], ‘b’: [‘b1’,’b2’,’b3’,’b3’],
+‘c’: [‘c1’,’c1’,’c2’,’c1’], ‘d’:[‘d1’,’d1’,’d2’,’d3’]}
+df = pd.DataFrame(data=d)</p>
+<dl class="simple">
+<dt>print(dmatrix(‘C(a, one_hot_encoding_greater_2)’, df, return_type = ‘dataframe’))</dt><dd><p>#   Intercept  C(a, one_hot_encoding_greater_2)[a2]
 #0        1.0                                   0.0
 #1        1.0                                   1.0
 #2        1.0                                   0.0
-#3        1.0                                   0.0
-print(dmatrix(‘C(a, one_hot_encoding_greater_2)-1’, df, return_type = ‘dataframe’))
-#   C(a, one_hot_encoding_greater_2)[a2]
+#3        1.0                                   0.0</p>
+</dd>
+<dt>print(dmatrix(‘C(a, one_hot_encoding_greater_2)-1’, df, return_type = ‘dataframe’))</dt><dd><p>#   C(a, one_hot_encoding_greater_2)[a2]
 #0                                   0.0
 #1                                   1.0
 #2                                   0.0
-#3                                   0.0
-print(dmatrix(‘C(b, one_hot_encoding_greater_2)’, df, return_type = ‘dataframe’))
-#   Intercept  C(b, one_hot_encoding_greater_2)[b1]      #0        1.0                                   1.0
+#3                                   0.0</p>
+</dd>
+<dt>print(dmatrix(‘C(b, one_hot_encoding_greater_2)’, df, return_type = ‘dataframe’))</dt><dd><p>#   Intercept  C(b, one_hot_encoding_greater_2)[b1]              #0        1.0                                   1.0
 #1        1.0                                   0.0
 #2        1.0                                   0.0
 #3        1.0                                   0.0
@@ -604,9 +627,9 @@ print(dmatrix(‘C(b, one_hot_encoding_greater_2)’, df, return_type = ‘dataf
 #0                                   0.0                                   0.0
 #1                                   1.0                                   0.0
 #2                                   0.0                                   1.0
-#3                                   0.0                                   1.0
-print(dmatrix(‘C(b, one_hot_encoding_greater_2)-1’, df, return_type = ‘dataframe’))
-#   C(b, one_hot_encoding_greater_2)[b1]  C(b, one_hot_encoding_greater_2)[b2]      #0                                   1.0                                   0.0
+#3                                   0.0                                   1.0</p>
+</dd>
+<dt>print(dmatrix(‘C(b, one_hot_encoding_greater_2)-1’, df, return_type = ‘dataframe’))</dt><dd><p>#   C(b, one_hot_encoding_greater_2)[b1]  C(b, one_hot_encoding_greater_2)[b2]              #0                                   1.0                                   0.0
 #1                                   0.0                                   1.0
 #2                                   0.0                                   0.0
 #3                                   0.0                                   0.0
@@ -615,23 +638,27 @@ print(dmatrix(‘C(b, one_hot_encoding_greater_2)-1’, df, return_type = ‘dat
 #0                                   0.0
 #1                                   0.0
 #2                                   1.0</p>
+</dd>
+</dl>
 <p>d = {‘a’: [‘a1’,’a1’,’a1’,’a1’], ‘b’: [‘b1’,’b2’,’b3’,’b3’]}
 df = pd.DataFrame(data=d)</p>
 <p>print(dmatrix(‘C(a, one_hot_encoding_greater_2)-1’, df, return_type = ‘dataframe’))
-print(dmatrix(‘C(a, one_hot_encoding_greater_2):C(b, one_hot_encoding_greater_2)-1’, df, return_type = ‘dataframe’))   C(a, one_hot_encoding_greater_2)[a1]
-#0                                   1.0
+print(dmatrix(‘C(a, one_hot_encoding_greater_2):C(b, one_hot_encoding_greater_2)-1’, df, return_type = ‘dataframe’))   C(a, one_hot_encoding_greater_2)[a1]</p>
+<blockquote>
+<div><p>#0                                   1.0
 #1                                   1.0
 #2                                   1.0
 #3                                   1.0
-#   C(a, one_hot_encoding_greater_2)[a1]:C(b, one_hot_encoding_greater_2)[b1]      #0                                                1.0
+#   C(a, one_hot_encoding_greater_2)[a1]:C(b, one_hot_encoding_greater_2)[b1]              #0                                                1.0
 #1                                                0.0
 #2                                                0.0
 #3                                                0.0
 #
-#   C(a, one_hot_encoding_greater_2)[a1]:C(b, one_hot_encoding_greater_2)[b2]      #0                                                0.0
+#   C(a, one_hot_encoding_greater_2)[a1]:C(b, one_hot_encoding_greater_2)[b2]              #0                                                0.0
 #1                                                1.0
 #2                                                0.0
 #3                                                0.0</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -670,18 +697,20 @@ column for variables with 2 levels (treatment contrast).</p></li>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>f1 = process_formula(‘a:(b+aab)’, [‘a’,’b’,’aab’])
-print(f1)
-# ModelDesc(lhs_termlist=[],
-#       rhs_termlist=[Term([EvalFactor(‘a’), EvalFactor(‘b’)]),
-#                     Term([EvalFactor(‘a’), EvalFactor(‘aab’)])])
-f2 = process_formula(‘a:(b+aab)’, [‘a’,’b’,’aab’], [‘a’,’b’])
-print(f2)
-# ModelDesc(lhs_termlist=[],
-#       rhs_termlist=[Term([EvalFactor(‘C(a, one_hot_encoding_greater_2)’),
-#                           EvalFactor(‘C(b, one_hot_encoding_greater_2)’)]),
-#                     Term([EvalFactor(‘C(a, one_hot_encoding_greater_2)’),
-#                           EvalFactor(‘aab’)])])</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">f1</span> <span class="o">=</span> <span class="n">process_formula</span><span class="p">(</span><span class="s1">&#39;a:(b+aab)&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span><span class="s1">&#39;b&#39;</span><span class="p">,</span><span class="s1">&#39;aab&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">f1</span><span class="p">)</span>
+    <span class="c1"># ModelDesc(lhs_termlist=[],</span>
+    <span class="c1">#       rhs_termlist=[Term([EvalFactor(&#39;a&#39;), EvalFactor(&#39;b&#39;)]),</span>
+    <span class="c1">#                     Term([EvalFactor(&#39;a&#39;), EvalFactor(&#39;aab&#39;)])])</span>
+<span class="n">f2</span> <span class="o">=</span> <span class="n">process_formula</span><span class="p">(</span><span class="s1">&#39;a:(b+aab)&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span><span class="s1">&#39;b&#39;</span><span class="p">,</span><span class="s1">&#39;aab&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span><span class="s1">&#39;b&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">f2</span><span class="p">)</span>
+    <span class="c1"># ModelDesc(lhs_termlist=[],</span>
+    <span class="c1">#       rhs_termlist=[Term([EvalFactor(&#39;C(a, one_hot_encoding_greater_2)&#39;),</span>
+    <span class="c1">#                           EvalFactor(&#39;C(b, one_hot_encoding_greater_2)&#39;)]),</span>
+    <span class="c1">#                     Term([EvalFactor(&#39;C(a, one_hot_encoding_greater_2)&#39;),</span>
+    <span class="c1">#                           EvalFactor(&#39;aab&#39;)])])</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -752,59 +781,59 @@ any of the other arrays.</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>import pandas as pd
-import numpy as np</p>
-<p>x1 = pd.array([1,2, None, np.nan, pd.NA, 3])
-x2 = pd.array([1.1,2,3, None, np.nan, pd.NA])
-x3 = pd.array([1.1,2,3, 4,5,6])
-x4 = pd.array([“1.1”,2,3, None, np.nan, pd.NA])
-x5 = pd.array([“1.1”,”2”,”3”, None, np.nan, pd.NA], dtype = “string”)
-x6 = np.array([1,2,3.3,4,5,6])
-x7 = np.array([1,2,3.3,4,”5”,”6”])
-x8 = [1,2,3.3,4,”5”,”6”]
-(x1,x2, x3, x4, x5, x6, x7, x8)</p>
-<blockquote>
-<div><p># (&lt;IntegerArray&gt;
-# [1, 2, &lt;NA&gt;, &lt;NA&gt;, &lt;NA&gt;, 3]
-# Length: 6, dtype: Int64,
-# &lt;PandasArray&gt;
-# [1.1, 2, 3, None, nan, &lt;NA&gt;]
-# Length: 6, dtype: object,
-# &lt;PandasArray&gt;
-# [1.1, 2.0, 3.0, 4.0, 5.0, 6.0]
-# Length: 6, dtype: float64,
-# &lt;PandasArray&gt;
-# [‘1.1’, 2, 3, None, nan, &lt;NA&gt;]
-# Length: 6, dtype: object,
-# &lt;StringArray&gt;
-# [‘1.1’, ‘2’, ‘3’, &lt;NA&gt;, &lt;NA&gt;, &lt;NA&gt;]
-# Length: 6, dtype: string,
-# array([1. , 2. , 3.3, 4. , 5. , 6. ]),
-# array([‘1’, ‘2’, ‘3.3’, ‘4’, ‘5’, ‘6’], dtype=’&lt;U32’),
-# [1, 2, 3.3, 4, ‘5’, ‘6’])</p>
-</div></blockquote>
-<p>from balance.util import rm_mutual_nas
-rm_mutual_nas(x1,x2, x3, x4, x5,x6,x7,x8)</p>
-<blockquote>
-<div><p># [&lt;IntegerArray&gt;
-#  [1, 2]
-#  Length: 2, dtype: Int64,
-#  &lt;PandasArray&gt;
-#  [1.1, 2]
-#  Length: 2, dtype: object,
-#  &lt;PandasArray&gt;
-#  [1.1, 2.0]
-#  Length: 2, dtype: float64,
-#  &lt;PandasArray&gt;
-#  [‘1.1’, 2]
-#  Length: 2, dtype: object,
-#  &lt;StringArray&gt;
-#  [‘1.1’, ‘2’]
-#  Length: 2, dtype: string,
-#  array([1., 2.]),
-#  array([‘1’, ‘2’], dtype=’&lt;U32’),
-#  [1, 2]]</p>
-</div></blockquote>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">x1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">NA</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="n">x2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">NA</span><span class="p">])</span>
+<span class="n">x3</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">])</span>
+<span class="n">x4</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s2">&quot;1.1&quot;</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">NA</span><span class="p">])</span>
+<span class="n">x5</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s2">&quot;1.1&quot;</span><span class="p">,</span><span class="s2">&quot;2&quot;</span><span class="p">,</span><span class="s2">&quot;3&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">NA</span><span class="p">],</span> <span class="n">dtype</span> <span class="o">=</span> <span class="s2">&quot;string&quot;</span><span class="p">)</span>
+<span class="n">x6</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mf">3.3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">])</span>
+<span class="n">x7</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mf">3.3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="s2">&quot;5&quot;</span><span class="p">,</span><span class="s2">&quot;6&quot;</span><span class="p">])</span>
+<span class="n">x8</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mf">3.3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="s2">&quot;5&quot;</span><span class="p">,</span><span class="s2">&quot;6&quot;</span><span class="p">]</span>
+<span class="p">(</span><span class="n">x1</span><span class="p">,</span><span class="n">x2</span><span class="p">,</span> <span class="n">x3</span><span class="p">,</span> <span class="n">x4</span><span class="p">,</span> <span class="n">x5</span><span class="p">,</span> <span class="n">x6</span><span class="p">,</span> <span class="n">x7</span><span class="p">,</span> <span class="n">x8</span><span class="p">)</span>
+    <span class="c1"># (&lt;IntegerArray&gt;</span>
+    <span class="c1"># [1, 2, &lt;NA&gt;, &lt;NA&gt;, &lt;NA&gt;, 3]</span>
+    <span class="c1"># Length: 6, dtype: Int64,</span>
+    <span class="c1"># &lt;PandasArray&gt;</span>
+    <span class="c1"># [1.1, 2, 3, None, nan, &lt;NA&gt;]</span>
+    <span class="c1"># Length: 6, dtype: object,</span>
+    <span class="c1"># &lt;PandasArray&gt;</span>
+    <span class="c1"># [1.1, 2.0, 3.0, 4.0, 5.0, 6.0]</span>
+    <span class="c1"># Length: 6, dtype: float64,</span>
+    <span class="c1"># &lt;PandasArray&gt;</span>
+    <span class="c1"># [&#39;1.1&#39;, 2, 3, None, nan, &lt;NA&gt;]</span>
+    <span class="c1"># Length: 6, dtype: object,</span>
+    <span class="c1"># &lt;StringArray&gt;</span>
+    <span class="c1"># [&#39;1.1&#39;, &#39;2&#39;, &#39;3&#39;, &lt;NA&gt;, &lt;NA&gt;, &lt;NA&gt;]</span>
+    <span class="c1"># Length: 6, dtype: string,</span>
+    <span class="c1"># array([1. , 2. , 3.3, 4. , 5. , 6. ]),</span>
+    <span class="c1"># array([&#39;1&#39;, &#39;2&#39;, &#39;3.3&#39;, &#39;4&#39;, &#39;5&#39;, &#39;6&#39;], dtype=&#39;&lt;U32&#39;),</span>
+    <span class="c1"># [1, 2, 3.3, 4, &#39;5&#39;, &#39;6&#39;])</span>
+
+<span class="kn">from</span> <span class="nn">balance.util</span> <span class="kn">import</span> <span class="n">rm_mutual_nas</span>
+<span class="n">rm_mutual_nas</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span><span class="n">x2</span><span class="p">,</span> <span class="n">x3</span><span class="p">,</span> <span class="n">x4</span><span class="p">,</span> <span class="n">x5</span><span class="p">,</span><span class="n">x6</span><span class="p">,</span><span class="n">x7</span><span class="p">,</span><span class="n">x8</span><span class="p">)</span>
+    <span class="c1"># [&lt;IntegerArray&gt;</span>
+    <span class="c1">#  [1, 2]</span>
+    <span class="c1">#  Length: 2, dtype: Int64,</span>
+    <span class="c1">#  &lt;PandasArray&gt;</span>
+    <span class="c1">#  [1.1, 2]</span>
+    <span class="c1">#  Length: 2, dtype: object,</span>
+    <span class="c1">#  &lt;PandasArray&gt;</span>
+    <span class="c1">#  [1.1, 2.0]</span>
+    <span class="c1">#  Length: 2, dtype: float64,</span>
+    <span class="c1">#  &lt;PandasArray&gt;</span>
+    <span class="c1">#  [&#39;1.1&#39;, 2]</span>
+    <span class="c1">#  Length: 2, dtype: object,</span>
+    <span class="c1">#  &lt;StringArray&gt;</span>
+    <span class="c1">#  [&#39;1.1&#39;, &#39;2&#39;]</span>
+    <span class="c1">#  Length: 2, dtype: string,</span>
+    <span class="c1">#  array([1., 2.]),</span>
+    <span class="c1">#  array([&#39;1&#39;, &#39;2&#39;], dtype=&#39;&lt;U32&#39;),</span>
+    <span class="c1">#  [1, 2]]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -822,16 +851,18 @@ rm_mutual_nas(x1,x2, x3, x4, x5,x6,x7,x8)</p>
 <dd class="field-odd"><p>pd.DataFrame</p>
 </dd>
 </dl>
-<p class="rubric">Example</p>
-<p>d = pd.DataFrame({“a”: (1, 2, 3), “b”: (-42, 8, 2)})
-row_pairwise_diffs(d)
-#        a   b
-# 0      1 -42
-# 1      2   8
-# 2      3   2
-# 1 - 0  1  50
-# 2 - 0  2  44
-# 2 - 1  1  -6</p>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">d</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mi">42</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">2</span><span class="p">)})</span>
+<span class="n">row_pairwise_diffs</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+    <span class="c1">#        a   b</span>
+    <span class="c1"># 0      1 -42</span>
+    <span class="c1"># 1      2   8</span>
+    <span class="c1"># 2      3   2</span>
+    <span class="c1"># 1 - 0  1  50</span>
+    <span class="c1"># 2 - 0  2  44</span>
+    <span class="c1"># 2 - 1  1  -6</span>
+</pre></div>
+</div>
 </dd></dl>
 
 </section>

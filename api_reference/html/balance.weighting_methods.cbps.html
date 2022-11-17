@@ -51,9 +51,26 @@
 <span id="balance-weighting-methods-cbps"></span><h1>balance.weighting_methods.cbps<a class="headerlink" href="#module-balance.weighting_methods.cbps" title="Permalink to this heading">¶</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="balance.weighting_methods.cbps.alpha_function">
-<span class="sig-prename descclassname"><span class="pre">balance.weighting_methods.cbps.</span></span><span class="sig-name descname"><span class="pre">alpha_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">design_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_pop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/weighting_methods/cbps.html#alpha_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.weighting_methods.cbps.alpha_function" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">balance.weighting_methods.cbps.</span></span><span class="sig-name descname"><span class="pre">alpha_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">design_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_pop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/weighting_methods/cbps.html#alpha_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.weighting_methods.cbps.alpha_function" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is a helper function for cbps.
 It computes the gmm loss of alpha*beta.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>alpha</strong> (<em>np.ndarray</em>) – multiplication factor</p></li>
+<li><p><strong>beta</strong> (<em>np.ndarray</em>) – vector of coefficients</p></li>
+<li><p><strong>X</strong> (<em>Union</em><em>[</em><em>np.ndarray</em><em>, </em><em>pd.DataFrame</em><em>]</em>) – covariates matrix</p></li>
+<li><p><strong>design_weights</strong> (<em>Union</em><em>[</em><em>np.ndarray</em><em>, </em><em>pd.DataFrame</em><em>]</em>) – vector of design weights of sample and target</p></li>
+<li><p><strong>in_pop</strong> (<em>Union</em><em>[</em><em>np.ndarray</em><em>, </em><em>pd.DataFrame</em><em>]</em>) – indicator vector for target</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>loss (float) computed gmm loss</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[float, np.ndarray]</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -64,22 +81,25 @@ It computes the balance loss.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>---</strong> (<em>XtXinv</em>) – </p></li>
-<li><p><strong>---</strong> – </p></li>
-<li><p><strong>---</strong> – </p></li>
-<li><p><strong>---</strong> – </p></li>
-<li><p><strong>---</strong> – </p></li>
+<li><p><strong>beta</strong> (<em>np.ndarray</em>) – vector of coefficients</p></li>
+<li><p><strong>X</strong> (<em>np.ndarray</em>) – Covariate matrix</p></li>
+<li><p><strong>design_weights</strong> (<em>np.ndarray</em>) – vector of design weights of sample and target</p></li>
+<li><p><strong>in_pop</strong> (<em>np.ndarray</em>) – indicator vector for target</p></li>
+<li><p><strong>XtXinv</strong> (<em>np.ndarray</em>) – (X.T %*% X)^(-1)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>(float) computed balance loss</p>
+<dd class="field-even"><p>computed balance loss</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.float64</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="balance.weighting_methods.cbps.cbps">
-<span class="sig-prename descclassname"><span class="pre">balance.weighting_methods.cbps.</span></span><span class="sig-name descname"><span class="pre">cbps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">na_action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'add_indicator'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">formula</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">balance_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cbps_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'over'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_de</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'COBYLA'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt_opts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_trimming_mean_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_trimming_percentile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2020</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/weighting_methods/cbps.html#cbps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.weighting_methods.cbps.cbps" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">balance.weighting_methods.cbps.</span></span><span class="sig-name descname"><span class="pre">cbps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">na_action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'add_indicator'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">formula</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">balance_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cbps_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'over'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_de</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'COBYLA'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt_opts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_trimming_mean_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_trimming_percentile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2020</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/weighting_methods/cbps.html#cbps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.weighting_methods.cbps.cbps" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit cbps (covariate balancing propensity score model) for the sample using the target.
 Final weights are normalized to target size.
 We use a two-step GMM estimator (as in the default R package), unlike the suggeted continuous-updating
@@ -89,51 +109,83 @@ Journal of the Royal Statistical Society: Series B: Statistical Methodology, 243
 <a class="reference external" href="https://rss.onlinelibrary.wiley.com/doi/abs/10.1111/rssb.12027">https://rss.onlinelibrary.wiley.com/doi/abs/10.1111/rssb.12027</a>
 R code source: <a class="reference external" href="https://github.com/kosukeimai/CBPS">https://github.com/kosukeimai/CBPS</a>
 two-step GMM: <a class="reference external" href="https://en.wikipedia.org/wiki/Generalized_method_of_moments">https://en.wikipedia.org/wiki/Generalized_method_of_moments</a></p>
-<p>Arguments:
-sample_df — (pandas dataframe) a dataframe representing the sample
-sample_weights — (pandas series) design weights for sample
-target_df —  (pandas dataframe) a dataframe representing the target
-target_weights — (pandas series) design weights for target
-variables —  (list of strings) list of variables to include in the model.</p>
-<blockquote>
-<div><p>If None all joint variables of sample_df and target_df are used</p>
-</div></blockquote>
-<dl class="simple">
-<dt>transformations — (dict) what transformations to apply to data before fitting the model. §</dt><dd><p>Default is “default” (see apply_transformations function)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sample_df</strong> (<em>pd.DataFrame</em>) – a dataframe representing the sample</p></li>
+<li><p><strong>sample_weights</strong> (<em>pd.Series</em>) – design weights for sample</p></li>
+<li><p><strong>target_df</strong> (<em>pd.DataFrame</em>) – a dataframe representing the target</p></li>
+<li><p><strong>target_weights</strong> (<em>pd.Series</em>) – design weights for target</p></li>
+<li><p><strong>variables</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – list of variables to include in the model.
+If None all joint variables of sample_df and target_df are used. Defaults to None.</p></li>
+<li><p><strong>transformations</strong> (<em>str</em><em>, </em><em>optional</em>) – what transformations to apply to data before fitting the model.
+Default is “default” (see apply_transformations function). Defaults to “default”.</p></li>
+<li><p><strong>na_action</strong> (<em>str</em><em>, </em><em>optional</em>) – what to do with NAs. (see add_na_indicator function).
+Defaults to “add_indicator”.</p></li>
+<li><p><strong>formula</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>str</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – The formula according to which build the model.
+In case of list of formula, the model matrix will be built in steps and
+concatenated together.. Defaults to None.</p></li>
+<li><p><strong>balance_classes</strong> (<em>bool</em><em>, </em><em>optional</em>) – whether to balance the sample and target size for running the model.
+True is preferable for imbalanced cases. Defaults to True.</p></li>
+<li><p><strong>cbps_method</strong> (<em>str</em><em>, </em><em>optional</em>) – method used for cbps. “over” fits an over-identified model that combines
+the propensity score and covariate balancing conditions; “exact” fits a model that only c
+ontains the covariate balancing conditions. Defaults to “over”.</p></li>
+<li><p><strong>max_de</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em><em>, </em><em>optional</em>) – upper bound for the design effect of the computed weights.
+Default is None.</p></li>
+<li><p><strong>opt_method</strong> (<em>str</em><em>, </em><em>optional</em>) – type of optimization solver. See <code class="xref py py-func docutils literal notranslate"><span class="pre">scipy.optimize.minimize()</span></code>
+for other options. Defaults to “COBYLA”.</p></li>
+<li><p><strong>opt_opts</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>]</em><em>, </em><em>optional</em>) – A dictionary of solver options. Default is None. See <code class="xref py py-func docutils literal notranslate"><span class="pre">scipy.optimize.minimize()</span></code>
+for other options. Defaults to None.</p></li>
+<li><p><strong>weight_trimming_mean_ratio</strong> (<em>Union</em><em>[</em><em>None</em><em>, </em><em>float</em><em>, </em><em>int</em><em>]</em><em>, </em><em>optional</em>) – indicating the ratio from above according to which
+the weights are trimmed by mean(weights) * ratio. Defaults to 20.</p></li>
+<li><p><strong>weight_trimming_percentile</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em><em>, </em><em>optional</em>) – if weight_trimming_percentile is not none, winsorization is applied.
+Default is None, i.e. trimming is applied.</p></li>
+<li><p><strong>random_seed</strong> (<em>int</em><em>, </em><em>optional</em>) – a random seed. Defaults to 2020.</p></li>
+</ul>
 </dd>
-<dt>na_action — (string) what to do with NAs. Default is “add_indicator”</dt><dd><p>(see add_na_indicator function)</p>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>Exception</strong> – _description_</p></li>
+<li><p><strong>Exception</strong> – _description_</p></li>
+<li><p><strong>Exception</strong> – _description_</p></li>
+<li><p><strong>Exception</strong> – _description_</p></li>
+</ul>
 </dd>
-<dt>formula — (string or list of strings) The formula according to which build the model.</dt><dd><p>In case of list of formula, the model matrix will be built in steps and
-concatenated together.</p>
-</dd>
-<dt>balance_classes — (boolean) whether to balance the sample and target size for running the model.</dt><dd><p>Default is True (preferable for imbalanced cases).</p>
-</dd>
-<dt>cbps_method — (string) method used for cbps. “over” fits an over-identified model that combines</dt><dd><p>the propensity score and covariate balancing conditions; “exact” fits a model that only c
-ontains the covariate balancing conditions.</p>
-</dd>
-<dt>max_de — (float) upper bound for the design effect of the computed weights.</dt><dd><p>Default is None.</p>
-</dd>
-<dt>opt_method — (string) type of optimization solver. Default is “COBYLA”. See scipy.optimize.minimize</dt><dd><p>for other options.</p>
-</dd>
-<dt>opt_opts — (dict) A dictionary of solver options. Default is None. See scipy.optimize.minimize</dt><dd><p>for other options.</p>
-</dd>
-<dt>weight_trimming_mean_ratio —  (float or int) indicating the ratio from above according to which</dt><dd><p>the weights are trimmed by mean(weights) * ratio.
-Default is 20.</p>
-</dd>
-<dt>weight_trimming_percentile — (float) if weight_trimming_percentile is not none, winsorization is applied.</dt><dd><p>Default is None, i.e. trimming is applied.</p>
-</dd>
-</dl>
-<p>random_seed — (int) a random seed</p>
-<p>Returns:
-A dictionary includes:</p>
-<blockquote>
-<div><p>“weights” — The weights for the sample.
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><p>A dictionary includes:
+“weights” — The weights for the sample.
 “model” – dictionary with details about the fitted model:</p>
 <blockquote>
 <div><p>X_matrix_columns, deviance, beta_optimal, balance_optimize_result,
-gmm_optimize_result_glm_init, gmm_optimize_result_bal_init</p>
+gmm_optimize_result_glm_init, gmm_optimize_result_bal_init
+It has the following shape:
+“model”: {</p>
+<blockquote>
+<div><p>”method”: “cbps”,
+“X_matrix_columns”: X_matrix_columns_names,
+“deviance”: deviance,
+“original_sum_weights”: original_sum_weights,  # This can be used to reconstruct the propensity probablities
+“beta_optimal”: beta_opt,
+“beta_init_glm”: beta_0,  # The initial estimator by glm
+“gmm_init”: gmm_init,  # The rescaled initial estimator
+# The following are the results of the optimizations
+“rescale_initial_result”: rescale_initial_result,
+“balance_optimize_result”: balance_optimize_result,
+“gmm_optimize_result_glm_init”: gmm_optimize_result_glm_init
+if cbps_method == “over”
+else None,
+“gmm_optimize_result_bal_init”: gmm_optimize_result_bal_init
+if cbps_method == “over”
+else None,</p>
 </div></blockquote>
+<p>},</p>
 </div></blockquote>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dict[str, Union[pd.Series, Dict]]</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -145,14 +197,17 @@ It is used for setting a constraints on max_de.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>---</strong> (<em>in_pop</em>) – </p></li>
-<li><p><strong>---</strong> – </p></li>
-<li><p><strong>---</strong> – </p></li>
-<li><p><strong>---</strong> – </p></li>
+<li><p><strong>X</strong> (<em>np.ndarray</em>) – covariates matrix</p></li>
+<li><p><strong>beta</strong> (<em>np.ndarray</em>) – vector of coefficients</p></li>
+<li><p><strong>design_weights</strong> (<em>np.ndarray</em>) – vector of design weights of sample and target</p></li>
+<li><p><strong>in_pop</strong> (<em>np.ndarray</em>) – indicator vector for target</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>(float) design effect</p>
+<dd class="field-even"><p>design effect</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.float64</p>
 </dd>
 </dl>
 </dd></dl>
@@ -166,13 +221,16 @@ Given computed probs, it computes the weights: N/N_t * (in_pop - p_i)/(1 - p_i).
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>---</strong> (<em>in_pop</em>) – </p></li>
-<li><p><strong>---</strong> – </p></li>
-<li><p><strong>---</strong> – </p></li>
+<li><p><strong>probs</strong> (<em>np.ndarray</em>) – vector of probabilities</p></li>
+<li><p><strong>design_weights</strong> (<em>Union</em><em>[</em><em>np.ndarray</em><em>, </em><em>pd.DataFrame</em><em>]</em>) – vector of design weights of sample and target</p></li>
+<li><p><strong>in_pop</strong> (<em>Union</em><em>[</em><em>np.ndarray</em><em>, </em><em>pd.DataFrame</em><em>]</em>) – indicator vector for target</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>np.ndarray of computed weights</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -185,16 +243,23 @@ It computes the gmm loss.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>---</strong> (<em>invV</em>) – </p></li>
-<li><p><strong>---</strong> – </p></li>
-<li><p><strong>---</strong> – </p></li>
-<li><p><strong>---</strong> – </p></li>
-<li><p><strong>---</strong> – </p></li>
+<li><p><strong>beta</strong> (<em>np.ndarray</em>) – vector of coefficients</p></li>
+<li><p><strong>X</strong> (<em>Union</em><em>[</em><em>np.ndarray</em><em>, </em><em>pd.DataFrame</em><em>]</em>) – covariates matrix</p></li>
+<li><p><strong>design_weights</strong> (<em>Union</em><em>[</em><em>np.ndarray</em><em>, </em><em>pd.DataFrame</em><em>]</em>) – vector of design weights of sample and target</p></li>
+<li><p><strong>in_pop</strong> (<em>Union</em><em>[</em><em>np.ndarray</em><em>, </em><em>pd.DataFrame</em><em>]</em>) – indicator vector for target</p></li>
+<li><p><strong>invV</strong> (<em>Union</em><em>[</em><em>np.ndarray</em><em>, </em><em>None</em><em>]</em><em>, </em><em>optional</em>) – the inverse weighting matrix for GMM. Default is None.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>loss — (float) computed gmm loss
-invV — (np.ndarray) the weighting matrix for GMM</p>
+<dd class="field-even"><p><dl class="simple">
+<dt>Dict with two items for loss and invV:</dt><dd><p>loss (float) computed gmm loss
+invV (np.ndarray) the weighting matrix for GMM</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, Union[float, np.ndarray]]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -205,6 +270,23 @@ invV — (np.ndarray) the weighting matrix for GMM</p>
 <dd><p>This is a helper function for cbps.
 It computes the gmm loss.
 See gmm_function for detials.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>beta</strong> (<em>np.ndarray</em>) – vector of coefficients</p></li>
+<li><p><strong>X</strong> (<em>Union</em><em>[</em><em>np.ndarray</em><em>, </em><em>pd.DataFrame</em><em>]</em>) – covariates matrix</p></li>
+<li><p><strong>design_weights</strong> (<em>Union</em><em>[</em><em>np.ndarray</em><em>, </em><em>pd.DataFrame</em><em>]</em>) – vector of design weights of sample and target</p></li>
+<li><p><strong>in_pop</strong> (<em>Union</em><em>[</em><em>np.ndarray</em><em>, </em><em>pd.DataFrame</em><em>]</em>) – indicator vector for target</p></li>
+<li><p><strong>invV</strong> (<em>Union</em><em>[</em><em>np.ndarray</em><em>, </em><em>None</em><em>]</em><em>, </em><em>optional</em>) – the inverse weighting matrix for GMM. Default is None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>loss (float) computed gmm loss</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[float, np.ndarray]</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -216,13 +298,16 @@ version of the logit function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>---</strong> (<em>truncation_value</em>) – </p></li>
-<li><p><strong>---</strong> – </p></li>
-<li><p><strong>---</strong> – </p></li>
+<li><p><strong>X</strong> (<em>Union</em><em>[</em><em>np.ndarray</em><em>, </em><em>pd.DataFrame</em><em>]</em>) – Covariate matrix</p></li>
+<li><p><strong>beta</strong> (<em>np.ndarray</em>) – vector of coefficients</p></li>
+<li><p><strong>truncation_value</strong> (<em>float</em><em>, </em><em>optional</em>) – upper and lower bound for the computed probabilities. Defaults to 1e-5.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>np.ndarray of computed probablities</p>
+<dd class="field-even"><p>numpy array of computed probablities</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>

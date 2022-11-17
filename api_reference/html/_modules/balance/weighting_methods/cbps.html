@@ -48,7 +48,7 @@
 
 <span class="kn">import</span> <span class="nn">logging</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
@@ -58,7 +58,6 @@
 
 <span class="kn">from</span> <span class="nn">balance</span> <span class="kn">import</span> <span class="n">adjustment</span> <span class="k">as</span> <span class="n">balance_adjustment</span><span class="p">,</span> <span class="n">util</span> <span class="k">as</span> <span class="n">balance_util</span>
 <span class="kn">from</span> <span class="nn">balance.stats_and_plots.weights_stats</span> <span class="kn">import</span> <span class="n">design_effect</span>
-<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">ndarray</span>
 <span class="kn">from</span> <span class="nn">scipy.sparse</span> <span class="kn">import</span> <span class="n">csc_matrix</span>
 
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
@@ -67,18 +66,17 @@
 <div class="viewcode-block" id="logit_truncated"><a class="viewcode-back" href="../../../balance.weighting_methods.cbps.html#balance.weighting_methods.cbps.logit_truncated">[docs]</a><span class="k">def</span> <span class="nf">logit_truncated</span><span class="p">(</span>
     <span class="n">X</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span> <span class="n">beta</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">truncation_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-5</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This is a helper function for cbps.</span>
+    <span class="sd">&quot;&quot;&quot;This is a helper function for cbps.</span>
 <span class="sd">    Given an X matrx and avector of coeeficients beta, it computes the truncated</span>
 <span class="sd">    version of the logit function.</span>
 
-<span class="sd">    Arguments:</span>
-<span class="sd">        X --- (np.ndarray) Covariate matrix</span>
-<span class="sd">        beta --- (np.ndarray) vector of coefficients</span>
-<span class="sd">        truncation_value --- (float) upper and lower bound for the computed probabilities</span>
+<span class="sd">    Args:</span>
+<span class="sd">        X (Union[np.ndarray, pd.DataFrame]): Covariate matrix</span>
+<span class="sd">        beta (np.ndarray): vector of coefficients</span>
+<span class="sd">        truncation_value (float, optional): upper and lower bound for the computed probabilities. Defaults to 1e-5.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        np.ndarray of computed probablities</span>
+<span class="sd">        np.ndarray: numpy array of computed probablities</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">probs</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">beta</span><span class="p">))))</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">probs</span><span class="p">,</span> <span class="n">truncation_value</span><span class="p">),</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">truncation_value</span><span class="p">)</span></div>
@@ -89,18 +87,17 @@
     <span class="n">design_weights</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
     <span class="n">in_pop</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This is a helper function for cbps.</span>
+    <span class="sd">&quot;&quot;&quot;This is a helper function for cbps.</span>
 <span class="sd">    Given computed probs, it computes the weights: N/N_t * (in_pop - p_i)/(1 - p_i).</span>
 <span class="sd">    (Note that these weights on sample are negative for convenience of notations)</span>
 
-<span class="sd">    Arguments:</span>
-<span class="sd">        probs --- (np.ndarray) vector of probabilities</span>
-<span class="sd">        design_weights --- (np.ndarray) vector of design weights of sample and target</span>
-<span class="sd">        in_pop --- (np.ndarray) indicator vector for target</span>
+<span class="sd">    Args:</span>
+<span class="sd">        probs (np.ndarray): vector of probabilities</span>
+<span class="sd">        design_weights (Union[np.ndarray, pd.DataFrame]): vector of design weights of sample and target</span>
+<span class="sd">        in_pop (Union[np.ndarray, pd.DataFrame]): indicator vector for target</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        np.ndarray of computed weights</span>
+<span class="sd">        np.ndarray: np.ndarray of computed weights</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">N</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">design_weights</span><span class="p">)</span>
     <span class="n">N_target</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">design_weights</span><span class="p">[</span><span class="n">in_pop</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">])</span>
@@ -114,19 +111,18 @@
     <span class="n">in_pop</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">XtXinv</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This is a helper function for cbps.</span>
+    <span class="sd">&quot;&quot;&quot;This is a helper function for cbps.</span>
 <span class="sd">    It computes the balance loss.</span>
 
-<span class="sd">    Arguments:</span>
-<span class="sd">        beta --- (np.ndarray) vector of coefficients</span>
-<span class="sd">        X --- (np.ndarray) Covariate matrix</span>
-<span class="sd">        design_weights --- (np.ndarray) vector of design weights of sample and target</span>
-<span class="sd">        in_pop --- (np.ndarray) indicator vector for target</span>
-<span class="sd">        XtXinv --- (np.ndarray) (X.T %*% X)^(-1)</span>
+<span class="sd">    Args:</span>
+<span class="sd">        beta (np.ndarray): vector of coefficients</span>
+<span class="sd">        X (np.ndarray): Covariate matrix</span>
+<span class="sd">        design_weights (np.ndarray): vector of design weights of sample and target</span>
+<span class="sd">        in_pop (np.ndarray): indicator vector for target</span>
+<span class="sd">        XtXinv (np.ndarray): (X.T %*% X)^(-1)</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        (float) computed balance loss</span>
+<span class="sd">        np.float64: computed balance loss</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">probs</span> <span class="o">=</span> <span class="n">logit_truncated</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
     <span class="n">N</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">design_weights</span><span class="p">)</span>
@@ -147,20 +143,20 @@
     <span class="n">in_pop</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
     <span class="n">invV</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This is a helper function for cbps.</span>
+    <span class="sd">&quot;&quot;&quot;This is a helper function for cbps.</span>
 <span class="sd">    It computes the gmm loss.</span>
 
-<span class="sd">    Arguments:</span>
-<span class="sd">        beta --- (np.ndarray) vector of coefficients</span>
-<span class="sd">        X --- (np.ndarray) covariates matrix</span>
-<span class="sd">        design_weights --- (np.ndarray) vector of design weights of sample and target</span>
-<span class="sd">        in_pop --- (np.ndarray) indicator vector for target</span>
-<span class="sd">        invV --- (np.ndarray) the inverse weighting matrix for GMM. Default is None.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        beta (np.ndarray): vector of coefficients</span>
+<span class="sd">        X (Union[np.ndarray, pd.DataFrame]): covariates matrix</span>
+<span class="sd">        design_weights (Union[np.ndarray, pd.DataFrame]): vector of design weights of sample and target</span>
+<span class="sd">        in_pop (Union[np.ndarray, pd.DataFrame]): indicator vector for target</span>
+<span class="sd">        invV (Union[np.ndarray, None], optional): the inverse weighting matrix for GMM. Default is None.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        loss --- (float) computed gmm loss</span>
-<span class="sd">        invV --- (np.ndarray) the weighting matrix for GMM</span>
+<span class="sd">        Dict[str, Union[float, np.ndarray]]: Dict with two items for loss and invV:</span>
+<span class="sd">            loss (float) computed gmm loss</span>
+<span class="sd">            invV (np.ndarray) the weighting matrix for GMM</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">probs</span> <span class="o">=</span> <span class="n">logit_truncated</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
     <span class="n">N</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">design_weights</span><span class="p">)</span>
@@ -206,30 +202,48 @@
 
 
 <div class="viewcode-block" id="gmm_loss"><a class="viewcode-back" href="../../../balance.weighting_methods.cbps.html#balance.weighting_methods.cbps.gmm_loss">[docs]</a><span class="k">def</span> <span class="nf">gmm_loss</span><span class="p">(</span>
-    <span class="n">beta</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">X</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
-    <span class="n">design_weights</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
-    <span class="n">in_pop</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
-    <span class="n">invV</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">ndarray</span><span class="p">]:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This is a helper function for cbps.</span>
+    <span class="n">beta</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">X</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
+    <span class="n">design_weights</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
+    <span class="n">in_pop</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
+    <span class="n">invV</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;This is a helper function for cbps.</span>
 <span class="sd">    It computes the gmm loss.</span>
 <span class="sd">    See gmm_function for detials.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        beta (np.ndarray): vector of coefficients</span>
+<span class="sd">        X (Union[np.ndarray, pd.DataFrame]): covariates matrix</span>
+<span class="sd">        design_weights (Union[np.ndarray, pd.DataFrame]): vector of design weights of sample and target</span>
+<span class="sd">        in_pop (Union[np.ndarray, pd.DataFrame]): indicator vector for target</span>
+<span class="sd">        invV (Union[np.ndarray, None], optional): the inverse weighting matrix for GMM. Default is None.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Union[float, np.ndarray]: loss (float) computed gmm loss</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">gmm_function</span><span class="p">(</span><span class="n">beta</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">design_weights</span><span class="p">,</span> <span class="n">in_pop</span><span class="p">,</span> <span class="n">invV</span><span class="p">)[</span><span class="s2">&quot;loss&quot;</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="alpha_function"><a class="viewcode-back" href="../../../balance.weighting_methods.cbps.html#balance.weighting_methods.cbps.alpha_function">[docs]</a><span class="k">def</span> <span class="nf">alpha_function</span><span class="p">(</span>
-    <span class="n">alpha</span><span class="p">,</span>
-    <span class="n">beta</span><span class="p">,</span>
-    <span class="n">X</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
-    <span class="n">design_weights</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
-    <span class="n">in_pop</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">ndarray</span><span class="p">]:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This is a helper function for cbps.</span>
+    <span class="n">alpha</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">beta</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">X</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
+    <span class="n">design_weights</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
+    <span class="n">in_pop</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;This is a helper function for cbps.</span>
 <span class="sd">    It computes the gmm loss of alpha*beta.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        alpha (np.ndarray): multiplication factor</span>
+<span class="sd">        beta (np.ndarray): vector of coefficients</span>
+<span class="sd">        X (Union[np.ndarray, pd.DataFrame]): covariates matrix</span>
+<span class="sd">        design_weights (Union[np.ndarray, pd.DataFrame]): vector of design weights of sample and target</span>
+<span class="sd">        in_pop (Union[np.ndarray, pd.DataFrame]): indicator vector for target</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Union[float, np.ndarray]: loss (float) computed gmm loss</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">gmm_loss</span><span class="p">(</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">beta</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">design_weights</span><span class="p">,</span> <span class="n">in_pop</span><span class="p">)</span></div>
 
@@ -237,19 +251,18 @@
 <div class="viewcode-block" id="compute_deff_from_beta"><a class="viewcode-back" href="../../../balance.weighting_methods.cbps.html#balance.weighting_methods.cbps.compute_deff_from_beta">[docs]</a><span class="k">def</span> <span class="nf">compute_deff_from_beta</span><span class="p">(</span>
     <span class="n">X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">beta</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">design_weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">in_pop</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This is a helper function for cbps. It computes the design effect of</span>
+    <span class="sd">&quot;&quot;&quot;This is a helper function for cbps. It computes the design effect of</span>
 <span class="sd">    the estimated weights on the sample given a value of beta.</span>
 <span class="sd">    It is used for setting a constraints on max_de.</span>
 
-<span class="sd">    Arguments:</span>
-<span class="sd">        beta --- (np.ndarray) vector of coefficients</span>
-<span class="sd">        X --- (np.ndarray) covariates matrix</span>
-<span class="sd">        design_weights --- (np.ndarray) vector of design weights of sample and target</span>
-<span class="sd">        in_pop --- (np.ndarray) indicator vector for target</span>
+<span class="sd">    Args:</span>
+<span class="sd">        X (np.ndarray): covariates matrix</span>
+<span class="sd">        beta (np.ndarray): vector of coefficients</span>
+<span class="sd">        design_weights (np.ndarray): vector of design weights of sample and target</span>
+<span class="sd">        in_pop (np.ndarray): indicator vector for target</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        (float) design effect</span>
+<span class="sd">        np.float64: design effect</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">probs</span> <span class="o">=</span> <span class="n">logit_truncated</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span>
@@ -260,10 +273,22 @@
 
 
 <span class="k">def</span> <span class="nf">_standardize_model_matrix</span><span class="p">(</span>
-    <span class="n">model_matrix</span><span class="p">,</span> <span class="n">model_matrix_columns_names</span>
+    <span class="n">model_matrix</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">model_matrix_columns_names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This is a helper function for cbps. It standardizes the columns of the model matrix.</span>
+    <span class="sd">&quot;&quot;&quot;This is a helper function for cbps. It standardizes the columns of the model matrix.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model_matrix (pd.DataFrame): the matrix of covariates</span>
+<span class="sd">        model_matrix_columns_names (List[str]): list of columns in the covariates matrix</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict[str, Any]: Dict of the shape</span>
+<span class="sd">            {</span>
+<span class="sd">                &quot;model_matrix&quot;: model_matrix,</span>
+<span class="sd">                &quot;model_matrix_columns_names&quot;: model_matrix_columns_names,</span>
+<span class="sd">                &quot;model_matrix_mean&quot;: model_matrix_mean,</span>
+<span class="sd">                &quot;model_matrix_std&quot;: model_matrix_std,</span>
+<span class="sd">            }</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># TODO: Verify if scikit-learn have something similar</span>
     <span class="n">model_matrix_std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">model_matrix</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
@@ -292,10 +317,21 @@
     <span class="p">}</span>
 
 
+<span class="c1"># TODO: update docs</span>
 <span class="k">def</span> <span class="nf">_reverse_svd_and_centralization</span><span class="p">(</span><span class="n">beta</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">Vh</span><span class="p">,</span> <span class="n">X_matrix_mean</span><span class="p">,</span> <span class="n">X_matrix_std</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This is a helper function for cbps. It revrse the svd and the centralization to get an estimate of beta</span>
+    <span class="sd">&quot;&quot;&quot;This is a helper function for cbps. It revrse the svd and the centralization to get an estimate of beta</span>
 <span class="sd">    Source: https://github.com/kosukeimai/CBPS/blob/master/R/CBPSMain.R#L353</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        beta (_type_): _description_</span>
+<span class="sd">        U (_type_): _description_</span>
+<span class="sd">        s (_type_): _description_</span>
+<span class="sd">        Vh (_type_): _description_</span>
+<span class="sd">        X_matrix_mean (_type_): _description_</span>
+<span class="sd">        X_matrix_std (_type_): _description_</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        _type_: _description_</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># TODO: update SVD and reverse SVD to the functions in scikit-learn</span>
     <span class="c1"># Invert s</span>
@@ -321,23 +357,22 @@
     <span class="n">sample_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="n">target_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">target_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
-    <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">variables</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">transformations</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
     <span class="n">na_action</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">,</span>
-    <span class="n">formula</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">formula</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">balance_classes</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">cbps_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;over&quot;</span><span class="p">,</span>  <span class="c1"># other option: &quot;exact&quot;</span>
-    <span class="n">max_de</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">max_de</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">opt_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;COBYLA&quot;</span><span class="p">,</span>
-    <span class="n">opt_opts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">opt_opts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">weight_trimming_mean_ratio</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
     <span class="n">weight_trimming_percentile</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">random_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2020</span><span class="p">,</span>
     <span class="o">*</span><span class="n">args</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-<span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Fit cbps (covariate balancing propensity score model) for the sample using the target.</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]]:</span>
+    <span class="sd">&quot;&quot;&quot;Fit cbps (covariate balancing propensity score model) for the sample using the target.</span>
 <span class="sd">    Final weights are normalized to target size.</span>
 <span class="sd">    We use a two-step GMM estimator (as in the default R package), unlike the suggeted continuous-updating</span>
 <span class="sd">    estimator in the paper. The reason is that it runs much faster than the continuous one.</span>
@@ -348,45 +383,70 @@
 <span class="sd">    R code source: https://github.com/kosukeimai/CBPS</span>
 <span class="sd">    two-step GMM: https://en.wikipedia.org/wiki/Generalized_method_of_moments</span>
 
-<span class="sd">    Arguments:</span>
-<span class="sd">    sample_df --- (pandas dataframe) a dataframe representing the sample</span>
-<span class="sd">    sample_weights --- (pandas series) design weights for sample</span>
-<span class="sd">    target_df ---  (pandas dataframe) a dataframe representing the target</span>
-<span class="sd">    target_weights --- (pandas series) design weights for target</span>
-<span class="sd">    variables ---  (list of strings) list of variables to include in the model.</span>
-<span class="sd">                   If None all joint variables of sample_df and target_df are used</span>
-<span class="sd">    transformations --- (dict) what transformations to apply to data before fitting the model. §</span>
-<span class="sd">                        Default is &quot;default&quot; (see apply_transformations function)</span>
-<span class="sd">    na_action --- (string) what to do with NAs. Default is &quot;add_indicator&quot;</span>
-<span class="sd">                  (see add_na_indicator function)</span>
-<span class="sd">    formula --- (string or list of strings) The formula according to which build the model.</span>
-<span class="sd">                In case of list of formula, the model matrix will be built in steps and</span>
-<span class="sd">                concatenated together.</span>
-<span class="sd">    balance_classes --- (boolean) whether to balance the sample and target size for running the model.</span>
-<span class="sd">                              Default is True (preferable for imbalanced cases).</span>
-<span class="sd">    cbps_method --- (string) method used for cbps. &quot;over&quot; fits an over-identified model that combines</span>
-<span class="sd">                    the propensity score and covariate balancing conditions; &quot;exact&quot; fits a model that only c</span>
-<span class="sd">                    ontains the covariate balancing conditions.</span>
-<span class="sd">    max_de --- (float) upper bound for the design effect of the computed weights.</span>
-<span class="sd">                Default is None.</span>
-<span class="sd">    opt_method --- (string) type of optimization solver. Default is &quot;COBYLA&quot;. See scipy.optimize.minimize</span>
-<span class="sd">                   for other options.</span>
-<span class="sd">    opt_opts --- (dict) A dictionary of solver options. Default is None. See scipy.optimize.minimize</span>
-<span class="sd">                   for other options.</span>
-<span class="sd">    weight_trimming_mean_ratio ---  (float or int) indicating the ratio from above according to which</span>
-<span class="sd">                                    the weights are trimmed by mean(weights) * ratio.</span>
-<span class="sd">                                    Default is 20.</span>
-<span class="sd">    weight_trimming_percentile --- (float) if weight_trimming_percentile is not none, winsorization is applied.</span>
-<span class="sd">                                    Default is None, i.e. trimming is applied.</span>
-<span class="sd">    random_seed --- (int) a random seed</span>
+<span class="sd">    Args:</span>
+<span class="sd">        sample_df (pd.DataFrame): a dataframe representing the sample</span>
+<span class="sd">        sample_weights (pd.Series): design weights for sample</span>
+<span class="sd">        target_df (pd.DataFrame): a dataframe representing the target</span>
+<span class="sd">        target_weights (pd.Series): design weights for target</span>
+<span class="sd">        variables (Optional[List[str]], optional): list of variables to include in the model.</span>
+<span class="sd">            If None all joint variables of sample_df and target_df are used. Defaults to None.</span>
+<span class="sd">        transformations (str, optional): what transformations to apply to data before fitting the model.</span>
+<span class="sd">            Default is &quot;default&quot; (see apply_transformations function). Defaults to &quot;default&quot;.</span>
+<span class="sd">        na_action (str, optional): what to do with NAs. (see add_na_indicator function).</span>
+<span class="sd">            Defaults to &quot;add_indicator&quot;.</span>
+<span class="sd">        formula (Optional[Union[str, List[str]]], optional): The formula according to which build the model.</span>
+<span class="sd">            In case of list of formula, the model matrix will be built in steps and</span>
+<span class="sd">            concatenated together.. Defaults to None.</span>
+<span class="sd">        balance_classes (bool, optional): whether to balance the sample and target size for running the model.</span>
+<span class="sd">            True is preferable for imbalanced cases. Defaults to True.</span>
+<span class="sd">        cbps_method (str, optional): method used for cbps. &quot;over&quot; fits an over-identified model that combines</span>
+<span class="sd">            the propensity score and covariate balancing conditions; &quot;exact&quot; fits a model that only c</span>
+<span class="sd">            ontains the covariate balancing conditions. Defaults to &quot;over&quot;.</span>
+<span class="sd">        max_de (Optional[float], optional): upper bound for the design effect of the computed weights.</span>
+<span class="sd">            Default is None.</span>
+<span class="sd">        opt_method (str, optional): type of optimization solver. See :func:`scipy.optimize.minimize`</span>
+<span class="sd">                   for other options. Defaults to &quot;COBYLA&quot;.</span>
+<span class="sd">        opt_opts (Optional[Dict], optional): A dictionary of solver options. Default is None. See :func:`scipy.optimize.minimize`</span>
+<span class="sd">            for other options. Defaults to None.</span>
+<span class="sd">        weight_trimming_mean_ratio (Union[None, float, int], optional): indicating the ratio from above according to which</span>
+<span class="sd">            the weights are trimmed by mean(weights) * ratio. Defaults to 20.</span>
+<span class="sd">        weight_trimming_percentile (Optional[float], optional): if weight_trimming_percentile is not none, winsorization is applied.</span>
+<span class="sd">            Default is None, i.e. trimming is applied.</span>
+<span class="sd">        random_seed (int, optional): a random seed. Defaults to 2020.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        Exception: _description_</span>
+<span class="sd">        Exception: _description_</span>
+<span class="sd">        Exception: _description_</span>
+<span class="sd">        Exception: _description_</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">    A dictionary includes:</span>
+<span class="sd">        Dict[str, Union[pd.Series, Dict]]: A dictionary includes:</span>
 <span class="sd">        &quot;weights&quot; --- The weights for the sample.</span>
 <span class="sd">        &quot;model&quot; -- dictionary with details about the fitted model:</span>
 <span class="sd">            X_matrix_columns, deviance, beta_optimal, balance_optimize_result,</span>
 <span class="sd">            gmm_optimize_result_glm_init, gmm_optimize_result_bal_init</span>
+<span class="sd">            It has the following shape:</span>
+<span class="sd">            &quot;model&quot;: {</span>
+<span class="sd">                &quot;method&quot;: &quot;cbps&quot;,</span>
+<span class="sd">                &quot;X_matrix_columns&quot;: X_matrix_columns_names,</span>
+<span class="sd">                &quot;deviance&quot;: deviance,</span>
+<span class="sd">                &quot;original_sum_weights&quot;: original_sum_weights,  # This can be used to reconstruct the propensity probablities</span>
+<span class="sd">                &quot;beta_optimal&quot;: beta_opt,</span>
+<span class="sd">                &quot;beta_init_glm&quot;: beta_0,  # The initial estimator by glm</span>
+<span class="sd">                &quot;gmm_init&quot;: gmm_init,  # The rescaled initial estimator</span>
+<span class="sd">                # The following are the results of the optimizations</span>
+<span class="sd">                &quot;rescale_initial_result&quot;: rescale_initial_result,</span>
+<span class="sd">                &quot;balance_optimize_result&quot;: balance_optimize_result,</span>
+<span class="sd">                &quot;gmm_optimize_result_glm_init&quot;: gmm_optimize_result_glm_init</span>
+<span class="sd">                if cbps_method == &quot;over&quot;</span>
+<span class="sd">                else None,</span>
+<span class="sd">                &quot;gmm_optimize_result_bal_init&quot;: gmm_optimize_result_bal_init</span>
+<span class="sd">                if cbps_method == &quot;over&quot;</span>
+<span class="sd">                else None,</span>
+<span class="sd">            },</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting cbps function&quot;</span><span class="p">)</span>
     <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>  <span class="c1"># setting random seed for cases of variations in glmnet</span>
 
@@ -428,6 +488,7 @@
         <span class="n">add_na</span><span class="o">=</span><span class="p">(</span><span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">),</span>
         <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;one&quot;</span><span class="p">,</span>
         <span class="n">return_var_type</span><span class="o">=</span><span class="s2">&quot;sparse&quot;</span><span class="p">,</span>
+        <span class="c1"># pyre-fixme[6]: for 7th parameter `formula` expected `Optional[List[str]]` but got `Union[None, List[str], str]`.</span>
         <span class="n">formula</span><span class="o">=</span><span class="n">formula</span><span class="p">,</span>
         <span class="n">one_hot_encoding</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span>
@@ -443,7 +504,9 @@
 
     <span class="c1"># Standardize the X_matrix for SVD</span>
     <span class="n">model_matrix_standardized</span> <span class="o">=</span> <span class="n">_standardize_model_matrix</span><span class="p">(</span>
-        <span class="n">X_matrix</span><span class="p">,</span> <span class="n">X_matrix_columns_names</span>
+        <span class="n">X_matrix</span><span class="p">,</span>
+        <span class="c1"># pyre-fixme[6]: for 2nd positional only parameter expected `List[str]` but got `Union[None, List[str], ndarray, DataFrame, csc_matrix]`.</span>
+        <span class="n">X_matrix_columns_names</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">model_matrix_standardized</span><span class="p">[</span><span class="s2">&quot;model_matrix&quot;</span><span class="p">]</span>
     <span class="n">X_matrix_columns_names</span> <span class="o">=</span> <span class="n">model_matrix_standardized</span><span class="p">[</span><span class="s2">&quot;model_matrix_columns_names&quot;</span><span class="p">]</span>

@@ -47,7 +47,7 @@
 <span id="balance-weighting-methods-poststratify"></span><h1>balance.weighting_methods.poststratify<a class="headerlink" href="#module-balance.weighting_methods.poststratify" title="Permalink to this heading">¶</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="balance.weighting_methods.poststratify.poststratify">
-<span class="sig-prename descclassname"><span class="pre">balance.weighting_methods.poststratify.</span></span><span class="sig-name descname"><span class="pre">poststratify</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformations_drop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/weighting_methods/poststratify.html#poststratify"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.weighting_methods.poststratify.poststratify" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">balance.weighting_methods.poststratify.</span></span><span class="sig-name descname"><span class="pre">poststratify</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformations_drop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/weighting_methods/poststratify.html#poststratify"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.weighting_methods.poststratify.poststratify" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perform cell-based post-stratification. The output weights take into account
 the design weights and the post-stratification weights.
 Reference: <a class="reference external" href="https://docs.wfp.org/api/documents/WFP-0000121326/download/">https://docs.wfp.org/api/documents/WFP-0000121326/download/</a></p>
@@ -58,20 +58,34 @@ Reference: <a class="reference external" href="https://docs.wfp.org/api/document
 <li><p><strong>sample_weights</strong> (<em>pd.Series</em>) – design weights for sample</p></li>
 <li><p><strong>target_df</strong> (<em>pd.DataFrame</em>) – a dataframe representing the target</p></li>
 <li><p><strong>target_weights</strong> (<em>pd.Series</em>) – design weights for target</p></li>
-<li><p><strong>variables</strong> (<em>list</em><em> of </em><em>strings</em><em> or </em><em>None</em>) – list of variables to include in the model.
+<li><p><strong>variables</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – list of variables to include in the model.
 If None all joint variables of sample_df and target_df are used</p></li>
-<li><p><strong>transformations</strong> (<em>dict</em>) – what transformations to apply to data before fitting the model.
+<li><p><strong>transformations</strong> (<em>str</em><em>, </em><em>optional</em>) – what transformations to apply to data before fitting the model.
 Default is “default” (see apply_transformations function)</p></li>
-<li><p><strong>transformations_drop</strong> (<em>bool</em>) – whether the function should drop non-transformed variables.
+<li><p><strong>transformations_drop</strong> (<em>bool</em><em>, </em><em>optional</em>) – whether the function should drop non-transformed variables.
 Default is True.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>weights (pd.Series): final weights (sum up to target’s sum of weights)
-model (dict): method of adjustment</p>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – _description_</p></li>
+<li><p><strong>ValueError</strong> – _description_</p></li>
+</ul>
 </dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Dict</p>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><p>weights (pd.Series): final weights (sum up to target’s sum of weights)
+model (dict): method of adjustment</p>
+<p>Dict shape:
+{</p>
+<blockquote>
+<div><p>”weights”: w,
+“model”: {“method”: “poststratify”},</p>
+</div></blockquote>
+<p>}</p>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dict[str, Union[pd.Series, Dict[str, str]]]</p>
 </dd>
 </dl>
 </dd></dl>

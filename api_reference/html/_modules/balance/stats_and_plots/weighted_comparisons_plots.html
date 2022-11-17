@@ -146,29 +146,31 @@
 <span class="sd">        weighted (bool, optional): If to pass the weights from the dicts inside dfs. Defaults to True.</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        from balance.stats_and_plots.weighted_comparisons_plots import plot_bar</span>
-<span class="sd">        import pandas as pd</span>
-<span class="sd">        import numpy as np</span>
+<span class="sd">        ::</span>
 
-<span class="sd">        df = pd.DataFrame({</span>
-<span class="sd">            &#39;group&#39;: (&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;c&#39;),</span>
-<span class="sd">            &#39;v1&#39;: (1, 2, 3, 4),</span>
-<span class="sd">        })</span>
+<span class="sd">            from balance.stats_and_plots.weighted_comparisons_plots import plot_bar</span>
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            import numpy as np</span>
 
-<span class="sd">        plot_bar(</span>
-<span class="sd">            [{&quot;df&quot;: df, &quot;weights&quot;: pd.Series((1, 1, 1, 1))}, {&quot;df&quot;: df, &quot;weights&quot;: pd.Series((2, 1, 1, 1))}],</span>
-<span class="sd">            names = [&quot;self&quot;, &quot;target&quot;],</span>
-<span class="sd">            column = &quot;group&quot;,</span>
-<span class="sd">            axis = None,</span>
-<span class="sd">            weighted = True)</span>
+<span class="sd">            df = pd.DataFrame({</span>
+<span class="sd">                &#39;group&#39;: (&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;c&#39;),</span>
+<span class="sd">                &#39;v1&#39;: (1, 2, 3, 4),</span>
+<span class="sd">            })</span>
 
-<span class="sd">        # Also deals with np.nan weights</span>
-<span class="sd">        a = plot_bar(</span>
-<span class="sd">            [{&quot;df&quot;: df, &quot;weights&quot;: pd.Series((1, 1, 1, np.nan))}, {&quot;df&quot;: df, &quot;weights&quot;: pd.Series((2, 1, 1, np.nan))}],</span>
-<span class="sd">            names = [&quot;self&quot;, &quot;target&quot;],</span>
-<span class="sd">            column = &quot;group&quot;,</span>
-<span class="sd">            axis = None,</span>
-<span class="sd">            weighted = True)</span>
+<span class="sd">            plot_bar(</span>
+<span class="sd">                [{&quot;df&quot;: df, &quot;weights&quot;: pd.Series((1, 1, 1, 1))}, {&quot;df&quot;: df, &quot;weights&quot;: pd.Series((2, 1, 1, 1))}],</span>
+<span class="sd">                names = [&quot;self&quot;, &quot;target&quot;],</span>
+<span class="sd">                column = &quot;group&quot;,</span>
+<span class="sd">                axis = None,</span>
+<span class="sd">                weighted = True)</span>
+
+<span class="sd">            # Also deals with np.nan weights</span>
+<span class="sd">            a = plot_bar(</span>
+<span class="sd">                [{&quot;df&quot;: df, &quot;weights&quot;: pd.Series((1, 1, 1, np.nan))}, {&quot;df&quot;: df, &quot;weights&quot;: pd.Series((2, 1, 1, np.nan))}],</span>
+<span class="sd">                names = [&quot;self&quot;, &quot;target&quot;],</span>
+<span class="sd">                column = &quot;group&quot;,</span>
+<span class="sd">                axis = None,</span>
+<span class="sd">                weighted = True)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">plot_data</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">ii</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dfs</span><span class="p">):</span>
@@ -225,74 +227,75 @@
 <span class="sd">        dist_type (Literal[&quot;hist&quot;, &quot;kde&quot;, &quot;ecdf&quot;], optional): The type of plot to draw. Defaults to &quot;hist&quot;.</span>
 
 <span class="sd">    Examples:</span>
+<span class="sd">        ::</span>
 
-<span class="sd">        from balance.stats_and_plots.weighted_comparisons_plots import plot_hist_kde</span>
-<span class="sd">        import pandas as pd</span>
-<span class="sd">        import numpy as np</span>
-<span class="sd">        import matplotlib.pyplot as plt</span>
+<span class="sd">            from balance.stats_and_plots.weighted_comparisons_plots import plot_hist_kde</span>
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            import numpy as np</span>
+<span class="sd">            import matplotlib.pyplot as plt</span>
 
-<span class="sd">        df = pd.DataFrame({</span>
-<span class="sd">            &#39;group&#39;: (&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;c&#39;),</span>
-<span class="sd">            &#39;v1&#39;: (1, 2, 3, 4),</span>
-<span class="sd">        })</span>
+<span class="sd">            df = pd.DataFrame({</span>
+<span class="sd">                &#39;group&#39;: (&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;c&#39;),</span>
+<span class="sd">                &#39;v1&#39;: (1, 2, 3, 4),</span>
+<span class="sd">            })</span>
 
-<span class="sd">        dfs1 = [{&quot;df&quot;: pd.DataFrame(pd.Series([1,2,2,2,3,4,5,5,7,8,9,9,9,9,5,2,5,4,4,4], name = &quot;v1&quot;)), &quot;weights&quot;: None}, {&quot;df&quot;: df, &quot;weights&quot;: pd.Series((200, 1, 0, 20))}]</span>
+<span class="sd">            dfs1 = [{&quot;df&quot;: pd.DataFrame(pd.Series([1,2,2,2,3,4,5,5,7,8,9,9,9,9,5,2,5,4,4,4], name = &quot;v1&quot;)), &quot;weights&quot;: None}, {&quot;df&quot;: df, &quot;weights&quot;: pd.Series((200, 1, 0, 20))}]</span>
 
-<span class="sd">        plt.figure(1)</span>
+<span class="sd">            plt.figure(1)</span>
 
-<span class="sd">        # kde: no weights</span>
-<span class="sd">        plot_hist_kde(</span>
-<span class="sd">            dfs1,</span>
-<span class="sd">            names = [&quot;self&quot;, &quot;target&quot;],</span>
-<span class="sd">            column = &quot;v1&quot;,</span>
-<span class="sd">            axis = None,</span>
-<span class="sd">            weighted = False, dist_type = &quot;kde&quot;)</span>
+<span class="sd">            # kde: no weights</span>
+<span class="sd">            plot_hist_kde(</span>
+<span class="sd">                dfs1,</span>
+<span class="sd">                names = [&quot;self&quot;, &quot;target&quot;],</span>
+<span class="sd">                column = &quot;v1&quot;,</span>
+<span class="sd">                axis = None,</span>
+<span class="sd">                weighted = False, dist_type = &quot;kde&quot;)</span>
 
-<span class="sd">        plt.figure(2)</span>
+<span class="sd">            plt.figure(2)</span>
 
-<span class="sd">        # kde: with weights</span>
-<span class="sd">        plot_hist_kde(</span>
-<span class="sd">            dfs1,</span>
-<span class="sd">            names = [&quot;self&quot;, &quot;target&quot;],</span>
-<span class="sd">            column = &quot;v1&quot;,</span>
-<span class="sd">            axis = None,</span>
-<span class="sd">            weighted = True, dist_type = &quot;kde&quot;)</span>
+<span class="sd">            # kde: with weights</span>
+<span class="sd">            plot_hist_kde(</span>
+<span class="sd">                dfs1,</span>
+<span class="sd">                names = [&quot;self&quot;, &quot;target&quot;],</span>
+<span class="sd">                column = &quot;v1&quot;,</span>
+<span class="sd">                axis = None,</span>
+<span class="sd">                weighted = True, dist_type = &quot;kde&quot;)</span>
 
-<span class="sd">        plt.figure(3)</span>
+<span class="sd">            plt.figure(3)</span>
 
-<span class="sd">        # hist</span>
-<span class="sd">        plot_hist_kde(</span>
-<span class="sd">            dfs1,</span>
-<span class="sd">            names = [&quot;self&quot;, &quot;target&quot;],</span>
-<span class="sd">            column = &quot;v1&quot;,</span>
-<span class="sd">            axis = None,</span>
-<span class="sd">            weighted = True, dist_type = &quot;hist&quot;)</span>
+<span class="sd">            # hist</span>
+<span class="sd">            plot_hist_kde(</span>
+<span class="sd">                dfs1,</span>
+<span class="sd">                names = [&quot;self&quot;, &quot;target&quot;],</span>
+<span class="sd">                column = &quot;v1&quot;,</span>
+<span class="sd">                axis = None,</span>
+<span class="sd">                weighted = True, dist_type = &quot;hist&quot;)</span>
 
-<span class="sd">        plt.figure(4)</span>
+<span class="sd">            plt.figure(4)</span>
 
-<span class="sd">        # ecdf</span>
-<span class="sd">        plot_hist_kde(</span>
-<span class="sd">            dfs1,</span>
-<span class="sd">            names = [&quot;self&quot;, &quot;target&quot;],</span>
-<span class="sd">            column = &quot;v1&quot;,</span>
-<span class="sd">            axis = None,</span>
-<span class="sd">            weighted = True, dist_type = &quot;ecdf&quot;)</span>
+<span class="sd">            # ecdf</span>
+<span class="sd">            plot_hist_kde(</span>
+<span class="sd">                dfs1,</span>
+<span class="sd">                names = [&quot;self&quot;, &quot;target&quot;],</span>
+<span class="sd">                column = &quot;v1&quot;,</span>
+<span class="sd">                axis = None,</span>
+<span class="sd">                weighted = True, dist_type = &quot;ecdf&quot;)</span>
 
 
-<span class="sd">        # can work nicely with plt.subplots:</span>
-<span class="sd">        f, axes = plt.subplots(1, 2, figsize=(7, 7 * 1))</span>
-<span class="sd">        plot_hist_kde(</span>
-<span class="sd">            dfs1,</span>
-<span class="sd">            names = [&quot;self&quot;, &quot;target&quot;],</span>
-<span class="sd">            column = &quot;v1&quot;,</span>
-<span class="sd">            axis = axes[0],</span>
-<span class="sd">            weighted = False, dist_type = &quot;kde&quot;)</span>
-<span class="sd">        plot_hist_kde(</span>
-<span class="sd">            dfs1,</span>
-<span class="sd">            names = [&quot;self&quot;, &quot;target&quot;],</span>
-<span class="sd">            column = &quot;v1&quot;,</span>
-<span class="sd">            axis = axes[1],</span>
-<span class="sd">            weighted = False, dist_type = &quot;kde&quot;)</span>
+<span class="sd">            # can work nicely with plt.subplots:</span>
+<span class="sd">            f, axes = plt.subplots(1, 2, figsize=(7, 7 * 1))</span>
+<span class="sd">            plot_hist_kde(</span>
+<span class="sd">                dfs1,</span>
+<span class="sd">                names = [&quot;self&quot;, &quot;target&quot;],</span>
+<span class="sd">                column = &quot;v1&quot;,</span>
+<span class="sd">                axis = axes[0],</span>
+<span class="sd">                weighted = False, dist_type = &quot;kde&quot;)</span>
+<span class="sd">            plot_hist_kde(</span>
+<span class="sd">                dfs1,</span>
+<span class="sd">                names = [&quot;self&quot;, &quot;target&quot;],</span>
+<span class="sd">                column = &quot;v1&quot;,</span>
+<span class="sd">                axis = axes[1],</span>
+<span class="sd">                weighted = False, dist_type = &quot;kde&quot;)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">possible_dist_function</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;hist&quot;</span><span class="p">:</span> <span class="n">sns</span><span class="o">.</span><span class="n">histplot</span><span class="p">,</span>
@@ -363,23 +366,25 @@
 <span class="sd">        weighted (bool, optional): If to pass the weights from the dicts inside dfs. Defaults to True.</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        import numpy as np</span>
-<span class="sd">        import pandas as pd</span>
-<span class="sd">        from balance.stats_and_plots.weighted_comparisons_plots import plot_qq</span>
-<span class="sd">        from numpy import random</span>
+<span class="sd">        ::</span>
 
-<span class="sd">        df = pd.DataFrame({</span>
-<span class="sd">            &#39;v1&#39;: random.uniform(size=100),</span>
-<span class="sd">        }).sort_values(by=[&#39;v1&#39;])</span>
+<span class="sd">            import numpy as np</span>
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from balance.stats_and_plots.weighted_comparisons_plots import plot_qq</span>
+<span class="sd">            from numpy import random</span>
 
-<span class="sd">        dfs1 = [</span>
-<span class="sd">            {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(100))},</span>
-<span class="sd">            {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(range(100))},</span>
-<span class="sd">            {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(100))},</span>
-<span class="sd">        ]</span>
+<span class="sd">            df = pd.DataFrame({</span>
+<span class="sd">                &#39;v1&#39;: random.uniform(size=100),</span>
+<span class="sd">            }).sort_values(by=[&#39;v1&#39;])</span>
 
-<span class="sd">        # plot_qq(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], column=&quot;v1&quot;, axis=None, weighted=False)</span>
-<span class="sd">        plot_qq(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], column=&quot;v1&quot;, axis=None, weighted=True)</span>
+<span class="sd">            dfs1 = [</span>
+<span class="sd">                {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(100))},</span>
+<span class="sd">                {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(range(100))},</span>
+<span class="sd">                {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(100))},</span>
+<span class="sd">            ]</span>
+
+<span class="sd">            # plot_qq(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], column=&quot;v1&quot;, axis=None, weighted=False)</span>
+<span class="sd">            plot_qq(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], column=&quot;v1&quot;, axis=None, weighted=True)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">target</span> <span class="o">=</span> <span class="n">dfs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># assumes the last item is target</span>
     <span class="n">dfs</span> <span class="o">=</span> <span class="n">dfs</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># assumes the non-last item are dfs to be compared to target</span>
@@ -450,33 +455,35 @@
 <span class="sd">        label_threshold (int, optional): All labels that are larger from the threshold will be omitted from the scatter plot (so to reduce clutter). Defaults to 30.</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        import numpy as np</span>
-<span class="sd">        import pandas as pd</span>
-<span class="sd">        from balance.stats_and_plots.weighted_comparisons_plots import plot_qq_categorical</span>
-<span class="sd">        from numpy import random</span>
+<span class="sd">        ::</span>
 
-<span class="sd">        df = pd.DataFrame({</span>
-<span class="sd">            &#39;v1&#39;: random.random_integers(11111, 11114, size=100),</span>
-<span class="sd">        }).sort_values(by=[&#39;v1&#39;])</span>
+<span class="sd">            import numpy as np</span>
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from balance.stats_and_plots.weighted_comparisons_plots import plot_qq_categorical</span>
+<span class="sd">            from numpy import random</span>
 
-<span class="sd">        dfs1 = [</span>
-<span class="sd">            {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(100))},</span>
-<span class="sd">            {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(99).tolist() + [1000])},</span>
-<span class="sd">            {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(100))},</span>
-<span class="sd">        ]</span>
+<span class="sd">            df = pd.DataFrame({</span>
+<span class="sd">                &#39;v1&#39;: random.random_integers(11111, 11114, size=100),</span>
+<span class="sd">            }).sort_values(by=[&#39;v1&#39;])</span>
 
-<span class="sd">        import matplotlib.pyplot as plt</span>
+<span class="sd">            dfs1 = [</span>
+<span class="sd">                {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(100))},</span>
+<span class="sd">                {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(99).tolist() + [1000])},</span>
+<span class="sd">                {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(100))},</span>
+<span class="sd">            ]</span>
 
-<span class="sd">        plt.rcParams[&quot;figure.figsize&quot;] = (20, 6) # (w, h)</span>
+<span class="sd">            import matplotlib.pyplot as plt</span>
 
-<span class="sd">        fig, axs = plt.subplots(1,3)</span>
+<span class="sd">            plt.rcParams[&quot;figure.figsize&quot;] = (20, 6) # (w, h)</span>
 
-<span class="sd">        # Without using weights</span>
-<span class="sd">        plot_qq_categorical(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], column=&quot;v1&quot;, axis=axs[0], weighted=False)</span>
-<span class="sd">        # With weights</span>
-<span class="sd">        plot_qq_categorical(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], column=&quot;v1&quot;, axis=axs[1], weighted=True)</span>
-<span class="sd">        # With label trimming if the text is longer than 3.</span>
-<span class="sd">        plot_qq_categorical(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], column=&quot;v1&quot;, axis=axs[2], weighted=True, label_threshold=3)</span>
+<span class="sd">            fig, axs = plt.subplots(1,3)</span>
+
+<span class="sd">            # Without using weights</span>
+<span class="sd">            plot_qq_categorical(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], column=&quot;v1&quot;, axis=axs[0], weighted=False)</span>
+<span class="sd">            # With weights</span>
+<span class="sd">            plot_qq_categorical(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], column=&quot;v1&quot;, axis=axs[1], weighted=True)</span>
+<span class="sd">            # With label trimming if the text is longer than 3.</span>
+<span class="sd">            plot_qq_categorical(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], column=&quot;v1&quot;, axis=axs[2], weighted=True, label_threshold=3)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">target</span> <span class="o">=</span> <span class="n">dfs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;df&quot;</span><span class="p">]</span>
     <span class="n">target_weights</span> <span class="o">=</span> <span class="n">dfs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span>
@@ -555,27 +562,29 @@
 <span class="sd">            See details here: https://stackoverflow.com/a/11690800/256662</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        import numpy as np</span>
-<span class="sd">        import pandas as pd</span>
-<span class="sd">        from balance.stats_and_plots.weighted_comparisons_plots import seaborn_plot_dist</span>
-<span class="sd">        from numpy import random</span>
+<span class="sd">        ::</span>
 
-<span class="sd">        df = pd.DataFrame({</span>
-<span class="sd">            &#39;v1&#39;: random.random_integers(11111, 11114, size=100).astype(str),</span>
-<span class="sd">            &#39;v2&#39;: random.normal(size = 100),</span>
-<span class="sd">            &#39;v3&#39;: random.uniform(size = 100),</span>
-<span class="sd">        }).sort_values(by=[&#39;v2&#39;])</span>
+<span class="sd">            import numpy as np</span>
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from balance.stats_and_plots.weighted_comparisons_plots import seaborn_plot_dist</span>
+<span class="sd">            from numpy import random</span>
 
-<span class="sd">        dfs1 = [</span>
-<span class="sd">            {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(100))},</span>
-<span class="sd">            {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(99).tolist() + [1000])},</span>
-<span class="sd">            {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.random.uniform(size=100))},</span>
-<span class="sd">        ]</span>
+<span class="sd">            df = pd.DataFrame({</span>
+<span class="sd">                &#39;v1&#39;: random.random_integers(11111, 11114, size=100).astype(str),</span>
+<span class="sd">                &#39;v2&#39;: random.normal(size = 100),</span>
+<span class="sd">                &#39;v3&#39;: random.uniform(size = 100),</span>
+<span class="sd">            }).sort_values(by=[&#39;v2&#39;])</span>
 
-<span class="sd">        seaborn_plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], dist_type = &quot;qq&quot;)  # default</span>
-<span class="sd">        seaborn_plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], dist_type = &quot;hist&quot;)</span>
-<span class="sd">        seaborn_plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], dist_type = &quot;kde&quot;)</span>
-<span class="sd">        seaborn_plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], dist_type = &quot;ecdf&quot;)</span>
+<span class="sd">            dfs1 = [</span>
+<span class="sd">                {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(100))},</span>
+<span class="sd">                {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(99).tolist() + [1000])},</span>
+<span class="sd">                {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.random.uniform(size=100))},</span>
+<span class="sd">            ]</span>
+
+<span class="sd">            seaborn_plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], dist_type = &quot;qq&quot;)  # default</span>
+<span class="sd">            seaborn_plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], dist_type = &quot;hist&quot;)</span>
+<span class="sd">            seaborn_plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], dist_type = &quot;kde&quot;)</span>
+<span class="sd">            seaborn_plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], dist_type = &quot;ecdf&quot;)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">dist_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dfs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -635,14 +644,16 @@
 <span class="sd">        ax (plt.Axes): matplotlib Axes object to draw the plot onto.</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        import matplotlib.pyplot as plt</span>
-<span class="sd">        plt.figure(1)</span>
-<span class="sd">        plt.scatter(x= [1,2,3], y = [3,4,5])</span>
+<span class="sd">        ::</span>
 
-<span class="sd">        plt.figure(2)</span>
-<span class="sd">        fig, ax = plt.subplots(1, 1, figsize=(7.2, 7.2))</span>
-<span class="sd">        plt.scatter(x= [1,2,3], y = [3,4,5])</span>
-<span class="sd">        set_xy_axes_to_use_the_same_lim(ax)</span>
+<span class="sd">            import matplotlib.pyplot as plt</span>
+<span class="sd">            plt.figure(1)</span>
+<span class="sd">            plt.scatter(x= [1,2,3], y = [3,4,5])</span>
+
+<span class="sd">            plt.figure(2)</span>
+<span class="sd">            fig, ax = plt.subplots(1, 1, figsize=(7.2, 7.2))</span>
+<span class="sd">            plt.scatter(x= [1,2,3], y = [3,4,5])</span>
+<span class="sd">            set_xy_axes_to_use_the_same_lim(ax)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">xlim</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_xlim</span><span class="p">()</span>
     <span class="n">ylim</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">()</span>
@@ -678,28 +689,29 @@
 <span class="sd">        Optional[Dict[str, go.Figure]]: Dictionary containing plots if return_dict_of_figures is True. None otherwise.</span>
 
 <span class="sd">    Examples:</span>
+<span class="sd">        ::</span>
 
-<span class="sd">        import numpy as np</span>
-<span class="sd">        import pandas as pd</span>
-<span class="sd">        from numpy import random</span>
-<span class="sd">        from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_qq</span>
+<span class="sd">            import numpy as np</span>
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from numpy import random</span>
+<span class="sd">            from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_qq</span>
 
-<span class="sd">        random.seed(96483)</span>
+<span class="sd">            random.seed(96483)</span>
 
-<span class="sd">        df = pd.DataFrame({</span>
-<span class="sd">            &#39;v1&#39;: random.random_integers(11111, 11114, size=100).astype(str),</span>
-<span class="sd">            &#39;v2&#39;: random.normal(size = 100),</span>
-<span class="sd">            &#39;v3&#39;: random.uniform(size = 100),</span>
-<span class="sd">        }).sort_values(by=[&#39;v2&#39;])</span>
+<span class="sd">            df = pd.DataFrame({</span>
+<span class="sd">                &#39;v1&#39;: random.random_integers(11111, 11114, size=100).astype(str),</span>
+<span class="sd">                &#39;v2&#39;: random.normal(size = 100),</span>
+<span class="sd">                &#39;v3&#39;: random.uniform(size = 100),</span>
+<span class="sd">            }).sort_values(by=[&#39;v2&#39;])</span>
 
-<span class="sd">        dict_of_dfs = {</span>
-<span class="sd">            &quot;self&quot;: pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = &quot;weight&quot;)], axis = 1),</span>
-<span class="sd">            &quot;unadjusted&quot;: pd.concat([df, pd.Series(np.ones(99).tolist() + [1000], name = &quot;weight&quot;)], axis = 1),</span>
-<span class="sd">            &quot;target&quot;: pd.concat([df, pd.Series(np.ones(100), name = &quot;weight&quot;)], axis = 1),</span>
-<span class="sd">        }</span>
+<span class="sd">            dict_of_dfs = {</span>
+<span class="sd">                &quot;self&quot;: pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = &quot;weight&quot;)], axis = 1),</span>
+<span class="sd">                &quot;unadjusted&quot;: pd.concat([df, pd.Series(np.ones(99).tolist() + [1000], name = &quot;weight&quot;)], axis = 1),</span>
+<span class="sd">                &quot;target&quot;: pd.concat([df, pd.Series(np.ones(100), name = &quot;weight&quot;)], axis = 1),</span>
+<span class="sd">            }</span>
 
-<span class="sd">        # It won&#39;t work with &quot;v1&quot; since it is not numeric.</span>
-<span class="sd">        plotly_plot_qq(dict_of_dfs, variables= [&quot;v2&quot;, &quot;v3&quot;])</span>
+<span class="sd">            # It won&#39;t work with &quot;v1&quot; since it is not numeric.</span>
+<span class="sd">            plotly_plot_qq(dict_of_dfs, variables= [&quot;v2&quot;, &quot;v3&quot;])</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">dict_of_qqs</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">variable</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
@@ -792,27 +804,29 @@
 <span class="sd">        Optional[Dict[str, go.Figure]]: Dictionary containing plots if return_dict_of_figures is True. None otherwise.</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        import numpy as np</span>
-<span class="sd">        import pandas as pd</span>
-<span class="sd">        from numpy import random</span>
-<span class="sd">        from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_bar</span>
+<span class="sd">        ::</span>
 
-<span class="sd">        random.seed(96483)</span>
+<span class="sd">            import numpy as np</span>
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from numpy import random</span>
+<span class="sd">            from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_bar</span>
 
-<span class="sd">        df = pd.DataFrame({</span>
-<span class="sd">            &#39;v1&#39;: random.random_integers(11111, 11114, size=100).astype(str),</span>
-<span class="sd">            &#39;v2&#39;: random.normal(size = 100),</span>
-<span class="sd">            &#39;v3&#39;: random.uniform(size = 100),</span>
-<span class="sd">        }).sort_values(by=[&#39;v2&#39;])</span>
+<span class="sd">            random.seed(96483)</span>
 
-<span class="sd">        dict_of_dfs = {</span>
-<span class="sd">            &quot;self&quot;: pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = &quot;weight&quot;)], axis = 1),</span>
-<span class="sd">            &quot;unadjusted&quot;: pd.concat([df, pd.Series(np.ones(99).tolist() + [1000], name = &quot;weight&quot;)], axis = 1),</span>
-<span class="sd">            &quot;target&quot;: pd.concat([df, pd.Series(np.ones(100), name = &quot;weight&quot;)], axis = 1),</span>
-<span class="sd">        }</span>
+<span class="sd">            df = pd.DataFrame({</span>
+<span class="sd">                &#39;v1&#39;: random.random_integers(11111, 11114, size=100).astype(str),</span>
+<span class="sd">                &#39;v2&#39;: random.normal(size = 100),</span>
+<span class="sd">                &#39;v3&#39;: random.uniform(size = 100),</span>
+<span class="sd">            }).sort_values(by=[&#39;v2&#39;])</span>
 
-<span class="sd">        # It can work with &quot;v2&quot; and &quot;v3&quot;, but it would be very sparse</span>
-<span class="sd">        plotly_plot_bar(dict_of_dfs, variables= [&quot;v1&quot;])</span>
+<span class="sd">            dict_of_dfs = {</span>
+<span class="sd">                &quot;self&quot;: pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = &quot;weight&quot;)], axis = 1),</span>
+<span class="sd">                &quot;unadjusted&quot;: pd.concat([df, pd.Series(np.ones(99).tolist() + [1000], name = &quot;weight&quot;)], axis = 1),</span>
+<span class="sd">                &quot;target&quot;: pd.concat([df, pd.Series(np.ones(100), name = &quot;weight&quot;)], axis = 1),</span>
+<span class="sd">            }</span>
+
+<span class="sd">            # It can work with &quot;v2&quot; and &quot;v3&quot;, but it would be very sparse</span>
+<span class="sd">            plotly_plot_bar(dict_of_dfs, variables= [&quot;v1&quot;])</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">dict_of_bars</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">variable</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
@@ -906,26 +920,28 @@
 <span class="sd">        Optional[Dict[str, go.Figure]]: Dictionary containing plots if return_dict_of_figures is True. None otherwise.</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        import numpy as np</span>
-<span class="sd">        import pandas as pd</span>
-<span class="sd">        from numpy import random</span>
-<span class="sd">        from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_dist</span>
+<span class="sd">        ::</span>
 
-<span class="sd">        random.seed(96483)</span>
+<span class="sd">            import numpy as np</span>
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from numpy import random</span>
+<span class="sd">            from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_dist</span>
 
-<span class="sd">        df = pd.DataFrame({</span>
-<span class="sd">            &#39;v1&#39;: random.random_integers(11111, 11114, size=100).astype(str),</span>
-<span class="sd">            &#39;v2&#39;: random.normal(size = 100),</span>
-<span class="sd">            &#39;v3&#39;: random.uniform(size = 100),</span>
-<span class="sd">        }).sort_values(by=[&#39;v2&#39;])</span>
+<span class="sd">            random.seed(96483)</span>
 
-<span class="sd">        dict_of_dfs = {</span>
-<span class="sd">            &quot;self&quot;: pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = &quot;weight&quot;)], axis = 1),</span>
-<span class="sd">            &quot;unadjusted&quot;: pd.concat([df, pd.Series(np.ones(99).tolist() + [1000], name = &quot;weight&quot;)], axis = 1),</span>
-<span class="sd">            &quot;target&quot;: pd.concat([df, pd.Series(np.ones(100), name = &quot;weight&quot;)], axis = 1),</span>
-<span class="sd">        }</span>
+<span class="sd">            df = pd.DataFrame({</span>
+<span class="sd">                &#39;v1&#39;: random.random_integers(11111, 11114, size=100).astype(str),</span>
+<span class="sd">                &#39;v2&#39;: random.normal(size = 100),</span>
+<span class="sd">                &#39;v3&#39;: random.uniform(size = 100),</span>
+<span class="sd">            }).sort_values(by=[&#39;v2&#39;])</span>
 
-<span class="sd">        plotly_plot_dist(dict_of_dfs)</span>
+<span class="sd">            dict_of_dfs = {</span>
+<span class="sd">                &quot;self&quot;: pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = &quot;weight&quot;)], axis = 1),</span>
+<span class="sd">                &quot;unadjusted&quot;: pd.concat([df, pd.Series(np.ones(99).tolist() + [1000], name = &quot;weight&quot;)], axis = 1),</span>
+<span class="sd">                &quot;target&quot;: pd.concat([df, pd.Series(np.ones(100), name = &quot;weight&quot;)], axis = 1),</span>
+<span class="sd">            }</span>
+
+<span class="sd">            plotly_plot_dist(dict_of_dfs)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">dict_of_all_plots</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="c1">#  Choose set of variables to plot</span>
@@ -1006,10 +1022,12 @@
 <span class="sd">        str: a string with the desired name</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        naming_legend(&#39;self&#39;, [&#39;self&#39;, &#39;target&#39;, &#39;unadjusted&#39;]) #&#39;adjusted&#39;</span>
-<span class="sd">        naming_legend(&#39;unadjusted&#39;, [&#39;self&#39;, &#39;target&#39;, &#39;unadjusted&#39;]) #&#39;sample&#39;</span>
-<span class="sd">        naming_legend(&#39;self&#39;, [&#39;self&#39;, &#39;target&#39;]) #&#39;sample&#39;</span>
-<span class="sd">        naming_legend(&#39;other_name&#39;, [&#39;self&#39;, &#39;target&#39;]) #&#39;other_name&#39;</span>
+<span class="sd">        ::</span>
+
+<span class="sd">            naming_legend(&#39;self&#39;, [&#39;self&#39;, &#39;target&#39;, &#39;unadjusted&#39;]) #&#39;adjusted&#39;</span>
+<span class="sd">            naming_legend(&#39;unadjusted&#39;, [&#39;self&#39;, &#39;target&#39;, &#39;unadjusted&#39;]) #&#39;sample&#39;</span>
+<span class="sd">            naming_legend(&#39;self&#39;, [&#39;self&#39;, &#39;target&#39;]) #&#39;sample&#39;</span>
+<span class="sd">            naming_legend(&#39;other_name&#39;, [&#39;self&#39;, &#39;target&#39;]) #&#39;other_name&#39;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">object_name</span> <span class="ow">in</span> <span class="n">names_of_dfs</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span>
@@ -1073,37 +1091,38 @@
 <span class="sd">            If library=&quot;seaborn&quot; then returns either a list or an np.array of matplotlib axis.</span>
 
 <span class="sd">    Examples:</span>
+<span class="sd">        ::</span>
 
-<span class="sd">        import numpy as np</span>
-<span class="sd">        import pandas as pd</span>
-<span class="sd">        from numpy import random</span>
-<span class="sd">        from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_bar</span>
+<span class="sd">            import numpy as np</span>
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from numpy import random</span>
+<span class="sd">            from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_bar</span>
 
-<span class="sd">        random.seed(96483)</span>
+<span class="sd">            random.seed(96483)</span>
 
-<span class="sd">        df = pd.DataFrame({</span>
-<span class="sd">            &#39;v1&#39;: random.random_integers(11111, 11114, size=100).astype(str),</span>
-<span class="sd">            &#39;v2&#39;: random.normal(size = 100),</span>
-<span class="sd">            &#39;v3&#39;: random.uniform(size = 100),</span>
-<span class="sd">        }).sort_values(by=[&#39;v2&#39;])</span>
+<span class="sd">            df = pd.DataFrame({</span>
+<span class="sd">                &#39;v1&#39;: random.random_integers(11111, 11114, size=100).astype(str),</span>
+<span class="sd">                &#39;v2&#39;: random.normal(size = 100),</span>
+<span class="sd">                &#39;v3&#39;: random.uniform(size = 100),</span>
+<span class="sd">            }).sort_values(by=[&#39;v2&#39;])</span>
 
-<span class="sd">        dfs1 = [</span>
-<span class="sd">            {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(random.random(size = 100) + 0.5)},</span>
-<span class="sd">            {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(99).tolist() + [1000])},</span>
-<span class="sd">            {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(100))},</span>
-<span class="sd">        ]</span>
+<span class="sd">            dfs1 = [</span>
+<span class="sd">                {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(random.random(size = 100) + 0.5)},</span>
+<span class="sd">                {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(99).tolist() + [1000])},</span>
+<span class="sd">                {&quot;df&quot;: df, &quot;weights&quot;: pd.Series(np.ones(100))},</span>
+<span class="sd">            ]</span>
 
 
-<span class="sd">        from balance.stats_and_plots.weighted_comparisons_plots import plot_dist</span>
+<span class="sd">            from balance.stats_and_plots.weighted_comparisons_plots import plot_dist</span>
 
-<span class="sd">        # defaults to plotly with bar and qq plots. Returns None.</span>
-<span class="sd">        plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;])</span>
+<span class="sd">            # defaults to plotly with bar and qq plots. Returns None.</span>
+<span class="sd">            plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;])</span>
 
-<span class="sd">        # Using seaborn, deafults to qq plots</span>
-<span class="sd">        plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], library=&quot;seaborn&quot;) # like using dist_type = &quot;qq&quot;</span>
-<span class="sd">        plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], library=&quot;seaborn&quot;, dist_type = &quot;hist&quot;)</span>
-<span class="sd">        plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], library=&quot;seaborn&quot;, dist_type = &quot;kde&quot;)</span>
-<span class="sd">        plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], library=&quot;seaborn&quot;, dist_type = &quot;ecdf&quot;)</span>
+<span class="sd">            # Using seaborn, deafults to qq plots</span>
+<span class="sd">            plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], library=&quot;seaborn&quot;) # like using dist_type = &quot;qq&quot;</span>
+<span class="sd">            plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], library=&quot;seaborn&quot;, dist_type = &quot;hist&quot;)</span>
+<span class="sd">            plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], library=&quot;seaborn&quot;, dist_type = &quot;kde&quot;)</span>
+<span class="sd">            plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], library=&quot;seaborn&quot;, dist_type = &quot;ecdf&quot;)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">library</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;plotly&quot;</span><span class="p">,</span> <span class="s2">&quot;seaborn&quot;</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;library must be either &#39;plotly&#39; or &#39;seaborn&#39;, is </span><span class="si">{</span><span class="n">library</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>

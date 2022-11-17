@@ -115,19 +115,26 @@
 
 
 <div class="viewcode-block" id="cv_glmnet_performance"><a class="viewcode-back" href="../../../balance.weighting_methods.ipw.html#balance.weighting_methods.ipw.cv_glmnet_performance">[docs]</a><span class="k">def</span> <span class="nf">cv_glmnet_performance</span><span class="p">(</span>
-    <span class="n">fit</span><span class="p">,</span> <span class="n">feature_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;lambda_1se&quot;</span>
+    <span class="n">fit</span><span class="p">,</span> <span class="n">feature_names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;lambda_1se&quot;</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Extract elements from cvglmnet to describe the fitness quality.</span>
+    <span class="sd">&quot;&quot;&quot;Extract elements from cvglmnet to describe the fitness quality.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        fit:output of cvglmnet</span>
-<span class="sd">        feature_names (list, optional): The coeficieents of which features should be included.</span>
-<span class="sd">            Defaults to None = all features are included..</span>
-<span class="sd">        s (str or numeric, optional): lambda avlue for cvglmnet. Defaults to &quot;lambda_1se&quot;.</span>
+<span class="sd">        fit (_type_): output of cvglmnet</span>
+<span class="sd">        feature_names (Optional[list], optional): The coeficieents of which features should be included.</span>
+<span class="sd">            None = all features are included. Defaults to None.</span>
+<span class="sd">        s (Union[str, float, None], optional): lambda avlue for cvglmnet. Defaults to &quot;lambda_1se&quot;.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        Exception: _description_</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        dict: 3 elements: prop_dev_explained, mean_cv_error and coefs</span>
+<span class="sd">        Dict[str, Any]: Dict of the shape:</span>
+<span class="sd">            {</span>
+<span class="sd">                &quot;prop_dev_explained&quot;: fit[&quot;glmnet_fit&quot;][&quot;dev&quot;][optimal_lambda_index],</span>
+<span class="sd">                &quot;mean_cv_error&quot;: fit[&quot;cvm&quot;][optimal_lambda_index],</span>
+<span class="sd">                &quot;coefs&quot;: coefs,</span>
+<span class="sd">            }</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">optimal_lambda</span> <span class="o">=</span> <span class="n">fit</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
@@ -161,28 +168,29 @@
 
 <span class="c1"># TODO: consider add option to normalize weights to sample size</span>
 <div class="viewcode-block" id="weights_from_link"><a class="viewcode-back" href="../../../balance.weighting_methods.ipw.html#balance.weighting_methods.ipw.weights_from_link">[docs]</a><span class="k">def</span> <span class="nf">weights_from_link</span><span class="p">(</span>
-    <span class="n">link</span><span class="p">,</span>
+    <span class="n">link</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="n">balance_classes</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="n">sample_weights</span><span class="p">,</span>
-    <span class="n">target_weights</span><span class="p">,</span>
+    <span class="n">sample_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">target_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="n">weight_trimming_mean_ratio</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">weight_trimming_percentile</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">keep_sum_of_weights</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Transform output of cvglmnetPredict(..., type=&#39;link&#39;) into weights, by</span>
+    <span class="sd">&quot;&quot;&quot;Transform output of cvglmnetPredict(..., type=&#39;link&#39;) into weights, by</span>
 <span class="sd">    exponentiating them, and optionally balancing the classes and trimming</span>
 <span class="sd">    the weights, then normalize the weights to have sum equal to the sum of the target weights.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        link --- output of cvglmnetPredict(..., type=&#39;link&#39;)</span>
-<span class="sd">        balance_classes --- True of False, whether balance_classes used in glmnet</span>
-<span class="sd">        sample_weights, target_weights --- vecotr of sample and target weights</span>
-<span class="sd">        weight_trimming_mean_ratio --- to be used in trim_weights (Default None)</span>
-<span class="sd">        weight_trimming_percentile --- to be used in trim_weights (Default None)</span>
-<span class="sd">        keep_sum_of_weights --- to be used in trim_weights (Default True)</span>
+<span class="sd">        link (Any): output of cvglmnetPredict(..., type=&#39;link&#39;)</span>
+<span class="sd">        balance_classes (bool): whether balance_classes used in glmnet</span>
+<span class="sd">        sample_weights (pd.Series): vector of sample weights</span>
+<span class="sd">        target_weights (pd.Series): vector of sample weights</span>
+<span class="sd">        weight_trimming_mean_ratio (Union[None, float, int], optional): to be used in :func:`trim_weights`. Defaults to None.</span>
+<span class="sd">        weight_trimming_percentile (Optional[float], optional): to be used in :func:`trim_weights`. Defaults to None.</span>
+<span class="sd">        keep_sum_of_weights (bool, optional): to be used in :func:`trim_weights`. Defaults to True.</span>
+
 <span class="sd">    Returns:</span>
-<span class="sd">        A vecotr of normalized weights (for sum of target weights)</span>
+<span class="sd">        pd.Series: A vecotr of normalized weights (for sum of target weights)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">link</span> <span class="o">=</span> <span class="n">link</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">link</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],))</span>
     <span class="k">if</span> <span class="n">balance_classes</span><span class="p">:</span>
@@ -204,18 +212,17 @@
     <span class="n">fit</span><span class="p">,</span>
     <span class="n">sample_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">target_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
-    <span class="n">sample_weights</span><span class="p">,</span>
-    <span class="n">target_weights</span><span class="p">,</span>
+    <span class="n">sample_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">target_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="n">X_matrix_sample</span><span class="p">,</span>
-    <span class="n">balance_classes</span><span class="p">,</span>
+    <span class="n">balance_classes</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="n">max_de</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.5</span><span class="p">,</span>
     <span class="n">trim_options</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span>
         <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span>
     <span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">,</span> <span class="mf">1.25</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.125</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">),</span>
     <span class="n">n_asmd_candidates</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
-<span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Searches through the regularisation parameters of the model and weight</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Searches through the regularisation parameters of the model and weight</span>
 <span class="sd">    trimming levels to find the combination with the highest covariate</span>
 <span class="sd">    ASMD reduction (in sample_df and target_df, NOT in the model matrix used for modeling</span>
 <span class="sd">    the response) subject to the design effect being lower than max_de (deafults to 1.5).</span>
@@ -223,24 +230,29 @@
 <span class="sd">    with highest DE lower than max_de (assuming higher DE means more bias reduction).</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        fit --- output of cvglmnet</span>
-<span class="sd">        sample_df --- (pandas dataframe) a dataframe representing the sample</span>
-<span class="sd">        target_df ---  (pandas dataframe) a dataframe representing the target</span>
-<span class="sd">        sample_weights --- (pandas series) design weights for sample</span>
-<span class="sd">        target_weights --- (pandas series) design weights for target</span>
-<span class="sd">        X_matrix_sample --- the matrix that was used to consturct the model</span>
-<span class="sd">        balance_classes --- True of False, whether balance_classes used in glmnet</span>
-<span class="sd">        max_de --- (float) upper bound for the design effect of the computed weights.</span>
+<span class="sd">        fit (_type_): output of cvglmnet</span>
+<span class="sd">        sample_df (pd.DataFrame): a dataframe representing the sample</span>
+<span class="sd">        target_df (pd.DataFrame): a dataframe representing the target</span>
+<span class="sd">        sample_weights (pd.Series): design weights for sample</span>
+<span class="sd">        target_weights (pd.Series): design weights for target</span>
+<span class="sd">        X_matrix_sample (_type_): the matrix that was used to consturct the model</span>
+<span class="sd">        balance_classes (bool): whether balance_classes used in glmnet</span>
+<span class="sd">        max_de (float, optional): upper bound for the design effect of the computed weights.</span>
 <span class="sd">            Used for choosing the model regularization and trimming.</span>
-<span class="sd">            Default is 1.5. If set to None, then it uses &#39;lambda_1se&#39;</span>
-<span class="sd">        trim_options --- options for weight_trimming_mean_ratio.</span>
-<span class="sd">            Default to (20, 10, 5, 2.5, 1.25, 0.5, 0.25, 0.125, 0.05, 0.01),</span>
-<span class="sd">        n_asmd_candidates --- number of candidates for grid search.</span>
+<span class="sd">            If set to None, then it uses &#39;lambda_1se&#39;. Defaults to 1.5.</span>
+<span class="sd">        trim_options (Tuple[ int, int, int, float, float, float, float, float, float, float ], optional):</span>
+<span class="sd">            options for weight_trimming_mean_ratio. Defaults to (20, 10, 5, 2.5, 1.25, 0.5, 0.25, 0.125, 0.05, 0.01).</span>
+<span class="sd">        n_asmd_candidates (int, optional): number of candidates for grid search.. Defaults to 10.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        dict --- The value of the chosen lambda, the value of trimming, model description.</span>
-
+<span class="sd">        Dict[str, Any]: Dict of the value of the chosen lambda, the value of trimming, model description.</span>
+<span class="sd">            Shape is</span>
+<span class="sd">                {</span>
+<span class="sd">                    &quot;best&quot;: {&quot;s&quot;: best.s.values, &quot;trim&quot;: best.trim.values[0]},</span>
+<span class="sd">                    &quot;perf&quot;: all_perf,</span>
+<span class="sd">                }</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting choosing regularisation parameters&quot;</span><span class="p">)</span>
     <span class="c1"># get all links</span>
     <span class="n">links</span> <span class="o">=</span> <span class="n">cvglmnetPredict</span><span class="p">(</span><span class="n">fit</span><span class="p">,</span> <span class="n">X_matrix_sample</span><span class="p">,</span> <span class="n">ptype</span><span class="o">=</span><span class="s2">&quot;link&quot;</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">fit</span><span class="p">[</span><span class="s2">&quot;lambdau&quot;</span><span class="p">])</span>
@@ -351,16 +363,16 @@
     <span class="n">sample_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="n">target_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">target_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
-    <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">variables</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;glmnet&quot;</span><span class="p">,</span>
-    <span class="n">weight_trimming_mean_ratio</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
-    <span class="n">weight_trimming_percentile</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">weight_trimming_mean_ratio</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
+    <span class="n">weight_trimming_percentile</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">balance_classes</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">transformations</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
     <span class="n">na_action</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">,</span>
     <span class="c1"># TODO: set max_de to None as default</span>
     <span class="n">max_de</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.5</span><span class="p">,</span>
-    <span class="n">formula</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">formula</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">penalty_factor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">one_hot_encoding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="c1"># TODO: This is set to be false in order to keep reproducibility of works that uses balance.</span>
@@ -369,54 +381,70 @@
     <span class="o">*</span><span class="n">args</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Fit an ipw (inverse propensity score weighting) for the sample using the target.</span>
+    <span class="sd">&quot;&quot;&quot;Fit an ipw (inverse propensity score weighting) for the sample using the target.</span>
 
-<span class="sd">    Arguments:</span>
-<span class="sd">    sample_df --- (pandas dataframe) a dataframe representing the sample</span>
-<span class="sd">    sample_weights --- (pandas series) design weights for sample</span>
-<span class="sd">    target_df ---  (pandas dataframe) a dataframe representing the target</span>
-<span class="sd">    target_weights --- (pandas series) design weights for target</span>
-<span class="sd">    variable ---  (list of strings) list of variables to include in the model.</span>
-<span class="sd">                  If None all joint variables of sample_df and target_df are used</span>
-<span class="sd">    model --- (string) the model used for modeling the propensity scores.</span>
-<span class="sd">              Default is glmnet (logistic model)</span>
-<span class="sd">    weight_trimming_mean_ratio ---  (float or int) indicating the ratio from above according to which</span>
-<span class="sd">                                    the weights are trimmed by mean(weights) * ratio.</span>
-<span class="sd">                                    Default is 20.</span>
-<span class="sd">    weight_trimming_percentile --- (float) if weight_trimming_percentile is not none, winsorization is applied.</span>
-<span class="sd">                                    Default is None, i.e. trimming is applied.</span>
-<span class="sd">    balance_classes=False --- (boolean) whether to balance the sample and target size for running the model.</span>
-<span class="sd">                              Default is True (preferable for imbalanced cases).</span>
-<span class="sd">                              It is done to make the computation of the glmnet more efficient.</span>
-<span class="sd">                              It shouldn&#39;t have an effect on the final weights as this is factored</span>
-<span class="sd">                              into the computation of the weights. TODO: add ref.</span>
-<span class="sd">    transformations --- (dict) what transformations to apply to data before fitting the model.</span>
-<span class="sd">                                Default is &quot;default&quot; (see apply_transformations function)</span>
-<span class="sd">    na_action --- (string) what to do with NAs. Default is &quot;add_indicator&quot;</span>
-<span class="sd">                  (see add_na_indicator function)</span>
-<span class="sd">    max_de --- (float) upper bound for the design effect of the computed weights.</span>
-<span class="sd">                Used for choosing the model regularization and trimming.</span>
-<span class="sd">                Default is 1.5. If set to None, then it uses &#39;lambda_1se&#39;</span>
-<span class="sd">    formula --- (string or list of strings) The formula according to which build the model.</span>
-<span class="sd">                In case of list of formula, the model matrix will be built in steps and</span>
-<span class="sd">                concatenated together.</span>
-<span class="sd">    penalty_factor --- the penalty used in the glment function in ipw. The penalty</span>
-<span class="sd">                       should have the same length as the formula list. If not provided,</span>
-<span class="sd">                       assume the same panelty for all variables.</span>
-<span class="sd">    one_hot_encoding --- whether to encode all factor variables in the model matrix with</span>
-<span class="sd">                         almost_one_hot_encoding. This is recomended in case of using</span>
-<span class="sd">                         LASSO on the data (Default: False).</span>
-<span class="sd">                         one_hot_encoding_greater_3 creates one-hot-encoding for all</span>
-<span class="sd">                         categorical variables with more than 2 categories (i.e. the</span>
-<span class="sd">                         number of columns will be equal to the number of categories),</span>
-<span class="sd">                         and only 1 column for variables with 2 levels (treatment contrast).</span>
+<span class="sd">    Args:</span>
+<span class="sd">        sample_df (pd.DataFrame): a dataframe representing the sample</span>
+<span class="sd">        sample_weights (pd.Series): design weights for sample</span>
+<span class="sd">        target_df (pd.DataFrame): a dataframe representing the target</span>
+<span class="sd">        target_weights (pd.Series): design weights for target</span>
+<span class="sd">        variables (Optional[List[str]], optional): list of variables to include in the model.</span>
+<span class="sd">            If None all joint variables of sample_df and target_df are used. Defaults to None.</span>
+<span class="sd">        model (str, optional): the model used for modeling the propensity scores.</span>
+<span class="sd">            &quot;glmnet&quot; is logistic model. Defaults to &quot;glmnet&quot;.</span>
+<span class="sd">        weight_trimming_mean_ratio (Optional[Union[int, float]], optional): indicating the ratio from above according to which</span>
+<span class="sd">            the weights are trimmed by mean(weights) * ratio.</span>
+<span class="sd">            Defaults to 20.</span>
+<span class="sd">        weight_trimming_percentile (Optional[float], optional): if weight_trimming_percentile is not none, winsorization is applied.</span>
+<span class="sd">            if None then trimming is applied. Defaults to None.</span>
+<span class="sd">        balance_classes (bool, optional): whether to balance the sample and target size for running the model.</span>
+<span class="sd">            True is preferable for imbalanced cases.</span>
+<span class="sd">            It is done to make the computation of the glmnet more efficient.</span>
+<span class="sd">            It shouldn&#39;t have an effect on the final weights as this is factored</span>
+<span class="sd">            into the computation of the weights. TODO: add ref. Defaults to True.</span>
+<span class="sd">        transformations (str, optional): what transformations to apply to data before fitting the model.</span>
+<span class="sd">            See apply_transformations function. Defaults to &quot;default&quot;.</span>
+<span class="sd">        na_action (str, optional): what to do with NAs.</span>
+<span class="sd">            See add_na_indicator function. Defaults to &quot;add_indicator&quot;.</span>
+<span class="sd">        max_de (Optional[float], optional): upper bound for the design effect of the computed weights.</span>
+<span class="sd">            Used for choosing the model regularization and trimming.</span>
+<span class="sd">            If set to None, then it uses &#39;lambda_1se&#39;. Defaults to 1.5.</span>
+<span class="sd">        formula (Union[str, List[str], None], optional): The formula according to which build the model.</span>
+<span class="sd">            In case of list of formula, the model matrix will be built in steps and</span>
+<span class="sd">            concatenated together. Defaults to None.</span>
+<span class="sd">        penalty_factor (Optional[List[float]], optional): the penalty used in the glment function in ipw. The penalty</span>
+<span class="sd">            should have the same length as the formula list. If not provided,</span>
+<span class="sd">            assume the same panelty for all variables. Defaults to None.</span>
+<span class="sd">        one_hot_encoding (bool, optional): whether to encode all factor variables in the model matrix with</span>
+<span class="sd">            almost_one_hot_encoding. This is recomended in case of using</span>
+<span class="sd">            LASSO on the data (Default: False).</span>
+<span class="sd">            one_hot_encoding_greater_3 creates one-hot-encoding for all</span>
+<span class="sd">            categorical variables with more than 2 categories (i.e. the</span>
+<span class="sd">            number of columns will be equal to the number of categories),</span>
+<span class="sd">            and only 1 column for variables with 2 levels (treatment contrast). Defaults to False.</span>
+<span class="sd">        random_seed (int, optional): Random seed to use. Defaults to 2020.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        Exception: _description_</span>
+<span class="sd">        NotImplementedError: _description_</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">    A dictionary includes:</span>
-<span class="sd">    &quot;weights&quot; --- The weights for the sample.</span>
-<span class="sd">    &quot;model&quot; --- parameters of the model:fit, performance, X_matrix_columns, lambda,</span>
-<span class="sd">                weight_trimming_mean_ratio</span>
+<span class="sd">        Dict[str, Any]: A dictionary includes:</span>
+<span class="sd">            &quot;weights&quot; --- The weights for the sample.</span>
+<span class="sd">            &quot;model&quot; --- parameters of the model:fit, performance, X_matrix_columns, lambda,</span>
+<span class="sd">                        weight_trimming_mean_ratio</span>
+<span class="sd">            Shape of the Dict:</span>
+<span class="sd">            {</span>
+<span class="sd">                &quot;weights&quot;: weights,</span>
+<span class="sd">                &quot;model&quot;: {</span>
+<span class="sd">                    &quot;method&quot;: &quot;ipw&quot;,</span>
+<span class="sd">                    &quot;X_matrix_columns&quot;: X_matrix_columns_names,</span>
+<span class="sd">                    &quot;fit&quot;: fit,</span>
+<span class="sd">                    &quot;perf&quot;: performance,</span>
+<span class="sd">                    &quot;lambda&quot;: best_s,</span>
+<span class="sd">                    &quot;weight_trimming_mean_ratio&quot;: weight_trimming_mean_ratio,</span>
+<span class="sd">                },</span>
+<span class="sd">            }</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting ipw function&quot;</span><span class="p">)</span>
     <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span>
@@ -460,6 +488,8 @@
         <span class="n">add_na</span><span class="o">=</span><span class="p">(</span><span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">),</span>
         <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;one&quot;</span><span class="p">,</span>
         <span class="n">return_var_type</span><span class="o">=</span><span class="s2">&quot;sparse&quot;</span><span class="p">,</span>
+        <span class="c1"># pyre-fixme[6]: for 7th parameter `formula` expected `Optional[List[str]]` but got `Union[None, List[str], str]`.</span>
+        <span class="c1"># TODO: fix pyre issue</span>
         <span class="n">formula</span><span class="o">=</span><span class="n">formula</span><span class="p">,</span>
         <span class="n">penalty_factor</span><span class="o">=</span><span class="n">penalty_factor</span><span class="p">,</span>
         <span class="n">one_hot_encoding</span><span class="o">=</span><span class="n">one_hot_encoding</span><span class="p">,</span>

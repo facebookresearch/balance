@@ -68,17 +68,18 @@ due to application of the weights.</p>
 <dd class="field-odd"><p>np.float64</p>
 </dd>
 </dl>
-<p class="rubric">Example</p>
-<p>from balance.stats_and_plots.weights_stats import design_effect
-import pandas as pd</p>
-<dl class="simple">
-<dt>design_effect(pd.Series((0, 1, 2, 3)))</dt><dd><p># output:
-# 1.5555555555555556</p>
-</dd>
-<dt>design_effect(pd.Series((1, 1, 1000)))</dt><dd><p># 2.9880418803112336
-# As expected. With a single dominating weight - the Deff is almost equal to the sample size.</p>
-</dd>
-</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">balance.stats_and_plots.weights_stats</span> <span class="kn">import</span> <span class="n">design_effect</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">design_effect</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)))</span>
+    <span class="c1"># output:</span>
+    <span class="c1"># 1.5555555555555556</span>
+<span class="n">design_effect</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)))</span>
+    <span class="c1"># 2.9880418803112336</span>
+    <span class="c1"># As expected. With a single dominating weight - the Deff is almost equal to the sample size.</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -100,12 +101,15 @@ The value returned will be 0 if the standard deviation is 0 (i.e.: all values ar
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>from balance.stats_and_plots.weights_stats import nonparametric_skew</p>
-<p>nonparametric_skew(pd.Series((1, 1, 1, 1)))  # 0
-nonparametric_skew(pd.Series((1)))           # 0
-nonparametric_skew(pd.Series((1, 2, 3, 4)))  # 0
-nonparametric_skew(pd.Series((1, 1, 1, 2)))  # 0.5
-nonparametric_skew(pd.Series((-1,1,1, 1)))   #-0.5</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">balance.stats_and_plots.weights_stats</span> <span class="kn">import</span> <span class="n">nonparametric_skew</span>
+
+<span class="n">nonparametric_skew</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>  <span class="c1"># 0</span>
+<span class="n">nonparametric_skew</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">1</span><span class="p">)))</span>           <span class="c1"># 0</span>
+<span class="n">nonparametric_skew</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)))</span>  <span class="c1"># 0</span>
+<span class="n">nonparametric_skew</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)))</span>  <span class="c1"># 0.5</span>
+<span class="n">nonparametric_skew</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>   <span class="c1">#-0.5</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -144,52 +148,52 @@ If return_as_series is False we get a dict with ‘below’ and ‘above’ with
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>from balance.stats_and_plots.weights_stats import prop_above_and_below
-import pandas as pd</p>
-<p># normalized weights:
-print(pd.Series((1, 2, 3, 4)) / pd.Series((1, 2, 3, 4)).mean())</p>
-<blockquote>
-<div><p># 0    0.4
-# 1    0.8
-# 2    1.2
-# 3    1.6</p>
-</div></blockquote>
-<p># checking the function:
-prop_above_and_below(pd.Series((1, 2, 3, 4)))</p>
-<blockquote>
-<div><p># dtype: float64
-# prop(w &lt; 0.1)      0.00
-# prop(w &lt; 0.2)      0.00
-# prop(w &lt; 0.333)    0.00
-# prop(w &lt; 0.5)      0.25
-# prop(w &lt; 1.0)      0.50
-# prop(w &gt;= 1)       0.50
-# prop(w &gt;= 2)       0.00
-# prop(w &gt;= 3)       0.00
-# prop(w &gt;= 5)       0.00
-# prop(w &gt;= 10)      0.00
-# dtype: float64</p>
-</div></blockquote>
-<dl class="simple">
-<dt>prop_above_and_below(pd.Series((1, 2, 3, 4)), below = (0.1, 0.5), above = (2,3))</dt><dd><p># prop(w &lt; 0.1)    0.00
-# prop(w &lt; 0.5)    0.25
-# prop(w &gt;= 2)     0.00
-# prop(w &gt;= 3)     0.00
-# dtype: float64</p>
-</dd>
-<dt>prop_above_and_below(pd.Series((1, 2, 3, 4)), return_as_series = False)</dt><dd><p># {‘below’: prop(w &lt; 0.1)      0.00
-# prop(w &lt; 0.2)      0.00
-# prop(w &lt; 0.333)    0.00
-# prop(w &lt; 0.5)      0.25
-# prop(w &lt; 1)        0.50
-# dtype: float64, ‘above’: prop(w &gt;= 1)     0.5
-# prop(w &gt;= 2)     0.0
-# prop(w &gt;= 3)     0.0
-# prop(w &gt;= 5)     0.0
-# prop(w &gt;= 10)    0.0
-# dtype: float64}</p>
-</dd>
-</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">balance.stats_and_plots.weights_stats</span> <span class="kn">import</span> <span class="n">prop_above_and_below</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="c1"># normalized weights:</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span> <span class="o">/</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+    <span class="c1"># 0    0.4</span>
+    <span class="c1"># 1    0.8</span>
+    <span class="c1"># 2    1.2</span>
+    <span class="c1"># 3    1.6</span>
+
+<span class="c1"># checking the function:</span>
+<span class="n">prop_above_and_below</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)))</span>
+    <span class="c1"># dtype: float64</span>
+    <span class="c1"># prop(w &lt; 0.1)      0.00</span>
+    <span class="c1"># prop(w &lt; 0.2)      0.00</span>
+    <span class="c1"># prop(w &lt; 0.333)    0.00</span>
+    <span class="c1"># prop(w &lt; 0.5)      0.25</span>
+    <span class="c1"># prop(w &lt; 1.0)      0.50</span>
+    <span class="c1"># prop(w &gt;= 1)       0.50</span>
+    <span class="c1"># prop(w &gt;= 2)       0.00</span>
+    <span class="c1"># prop(w &gt;= 3)       0.00</span>
+    <span class="c1"># prop(w &gt;= 5)       0.00</span>
+    <span class="c1"># prop(w &gt;= 10)      0.00</span>
+    <span class="c1"># dtype: float64</span>
+
+<span class="n">prop_above_and_below</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)),</span> <span class="n">below</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span> <span class="n">above</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+    <span class="c1"># prop(w &lt; 0.1)    0.00</span>
+    <span class="c1"># prop(w &lt; 0.5)    0.25</span>
+    <span class="c1"># prop(w &gt;= 2)     0.00</span>
+    <span class="c1"># prop(w &gt;= 3)     0.00</span>
+    <span class="c1"># dtype: float64</span>
+
+<span class="n">prop_above_and_below</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)),</span> <span class="n">return_as_series</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="c1"># {&#39;below&#39;: prop(w &lt; 0.1)      0.00</span>
+    <span class="c1"># prop(w &lt; 0.2)      0.00</span>
+    <span class="c1"># prop(w &lt; 0.333)    0.00</span>
+    <span class="c1"># prop(w &lt; 0.5)      0.25</span>
+    <span class="c1"># prop(w &lt; 1)        0.50</span>
+    <span class="c1"># dtype: float64, &#39;above&#39;: prop(w &gt;= 1)     0.5</span>
+    <span class="c1"># prop(w &gt;= 2)     0.0</span>
+    <span class="c1"># prop(w &gt;= 3)     0.0</span>
+    <span class="c1"># prop(w &gt;= 5)     0.0</span>
+    <span class="c1"># prop(w &gt;= 10)    0.0</span>
+    <span class="c1"># dtype: float64}</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -213,14 +217,19 @@ See also:
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>w = pd.Series([1,1,1,1])
-print(weighted_median_breakdown_point(w)) # 0.5</p>
-<p>w = pd.Series([2,2,2,2])
-print(weighted_median_breakdown_point(w)) # 0.5</p>
-<p>w = pd.Series([1,1,1, 10])
-print(weighted_median_breakdown_point(w)) # 0.25</p>
-<p>w = pd.Series([1,1,1,1, 10])
-print(weighted_median_breakdown_point(w)) # 0.2</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">w</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">weighted_median_breakdown_point</span><span class="p">(</span><span class="n">w</span><span class="p">))</span> <span class="c1"># 0.5</span>
+
+<span class="n">w</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">weighted_median_breakdown_point</span><span class="p">(</span><span class="n">w</span><span class="p">))</span> <span class="c1"># 0.5</span>
+
+<span class="n">w</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">weighted_median_breakdown_point</span><span class="p">(</span><span class="n">w</span><span class="p">))</span> <span class="c1"># 0.25</span>
+
+<span class="n">w</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">weighted_median_breakdown_point</span><span class="p">(</span><span class="n">w</span><span class="p">))</span> <span class="c1"># 0.2</span>
+</pre></div>
+</div>
 </dd></dl>
 
 </section>
