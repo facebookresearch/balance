@@ -63,36 +63,38 @@ def _weights_per_covars_names(covar_names: List) -> pd.DataFrame:
         pd.DataFrame: with two columns, one for weights and another for main_covar_names,
         with rows for each of the columns from 'covar_names'
 
-    Example:
-        asmd_df = pd.DataFrame(
-        {
-            'age': 0.5,
-            'education[T.high_school]': 1,
-            'education[T.bachelor]': 1,
-            'education[T.masters]': 1,
-            'education[T.phd]': 1,
-        }, index = ('self', ))
+    Examples:
+        ::
 
-        input = asmd_df.columns.values.tolist()
-        # input
-        # ['age',
-        #  'education[T.high_school]',
-        #  'education[T. bachelor]',
-        #  'education[T. masters]',
-        #  'education[T. phd]']
+            asmd_df = pd.DataFrame(
+            {
+                'age': 0.5,
+                'education[T.high_school]': 1,
+                'education[T.bachelor]': 1,
+                'education[T.masters]': 1,
+                'education[T.phd]': 1,
+            }, index = ('self', ))
 
-        _weights_per_covars_names(input).to_dict()
-        # Output:
-        # {'weight': {'age': 1.0,
-        #   'education[T.high_school]': 0.25,
-        #   'education[T.bachelor]': 0.25,
-        #   'education[T.masters]': 0.25,
-        #   'education[T.phd]': 0.25},
-        #  'main_covar_names': {'age': 'age',
-        #   'education[T.high_school]': 'education',
-        #   'education[T.bachelor]': 'education',
-        #   'education[T.masters]': 'education',
-        #   'education[T.phd]': 'education'}}
+            input = asmd_df.columns.values.tolist()
+                # input
+                # ['age',
+                #  'education[T.high_school]',
+                #  'education[T. bachelor]',
+                #  'education[T. masters]',
+                #  'education[T. phd]']
+
+            _weights_per_covars_names(input).to_dict()
+                # Output:
+                # {'weight': {'age': 1.0,
+                #   'education[T.high_school]': 0.25,
+                #   'education[T.bachelor]': 0.25,
+                #   'education[T.masters]': 0.25,
+                #   'education[T.phd]': 0.25},
+                #  'main_covar_names': {'age': 'age',
+                #   'education[T.high_school]': 'education',
+                #   'education[T.bachelor]': 'education',
+                #   'education[T.masters]': 'education',
+                #   'education[T.phd]': 'education'}}
     """
     columns_to_original_variable = {v: re.sub(r"\[.*\]$", "", v) for v in covar_names}
     counts = collections.Counter(columns_to_original_variable.values())
@@ -185,70 +187,71 @@ def asmd(
         The values (of type np.float64) are of the ASMD calculation.
         The last element is 'mean(asmd)', which is the average of the calculated ASMD values.
 
-    Example:
+    Examples:
+        ::
 
-        import numpy as np
-        import pandas as pd
-        from balance.stats_and_plots import weighted_comparisons_stats
+            import numpy as np
+            import pandas as pd
+            from balance.stats_and_plots import weighted_comparisons_stats
 
-        a1 = pd.Series((1, 2))
-        b1 = pd.Series((-1, 1))
-        a2 = pd.Series((3, 4))
-        b2 = pd.Series((-2, 2))
-        w1 = pd.Series((1, 1))
-        w2 = w1
+            a1 = pd.Series((1, 2))
+            b1 = pd.Series((-1, 1))
+            a2 = pd.Series((3, 4))
+            b2 = pd.Series((-2, 2))
+            w1 = pd.Series((1, 1))
+            w2 = w1
 
-        r = weighted_comparisons_stats.asmd(
-                    pd.DataFrame({"a": a1, "b": b1}),
-                    pd.DataFrame({"a": a2, "b": b2}),
-                    w1,
-                    w2,
-                )
+            r = weighted_comparisons_stats.asmd(
+                        pd.DataFrame({"a": a1, "b": b1}),
+                        pd.DataFrame({"a": a2, "b": b2}),
+                        w1,
+                        w2,
+                    )
 
-        exp_a = np.abs(a1.mean() - a2.mean()) / a2.std()
-        exp_b = np.abs(b1.mean() - b2.mean()) / b2.std()
-        print(r)
-        print(exp_a)
-        print(exp_b)
+            exp_a = np.abs(a1.mean() - a2.mean()) / a2.std()
+            exp_b = np.abs(b1.mean() - b2.mean()) / b2.std()
+            print(r)
+            print(exp_a)
+            print(exp_b)
 
-        # output:
-        # {'a': 2.82842712474619, 'b': 0.0, 'mean(asmd)': 1.414213562373095}
-        # 2.82842712474619
-        # 0.0
+            # output:
+            # {'a': 2.82842712474619, 'b': 0.0, 'mean(asmd)': 1.414213562373095}
+            # 2.82842712474619
+            # 0.0
 
 
 
-        a1 = pd.Series((1, 2))
-        b1_A = pd.Series((1, 3))
-        b1_B = pd.Series((-1, -3))
-        a2 = pd.Series((3, 4))
-        b2_A = pd.Series((2, 3))
-        b2_B = pd.Series((-2, -3))
-        w1 = pd.Series((1, 1))
-        w2 = w1
+            a1 = pd.Series((1, 2))
+            b1_A = pd.Series((1, 3))
+            b1_B = pd.Series((-1, -3))
+            a2 = pd.Series((3, 4))
+            b2_A = pd.Series((2, 3))
+            b2_B = pd.Series((-2, -3))
+            w1 = pd.Series((1, 1))
+            w2 = w1
 
-        r = weighted_comparisons_stats.asmd(
-            pd.DataFrame({"a": a1, "b[A]": b1_A, "b[B]": b1_B}),
-            pd.DataFrame({"a": a2, "b[A]": b2_A, "b[B]": b2_B}),
-            w1,
-            w2,
-        ).to_dict()
+            r = weighted_comparisons_stats.asmd(
+                pd.DataFrame({"a": a1, "b[A]": b1_A, "b[B]": b1_B}),
+                pd.DataFrame({"a": a2, "b[A]": b2_A, "b[B]": b2_B}),
+                w1,
+                w2,
+            ).to_dict()
 
-        print(r)
-        # {'a': 2.82842712474619, 'b[A]': 0.7071067811865475, 'b[B]': 0.7071067811865475, 'mean(asmd)': 1.7677669529663689}
+            print(r)
+            # {'a': 2.82842712474619, 'b[A]': 0.7071067811865475, 'b[B]': 0.7071067811865475, 'mean(asmd)': 1.7677669529663689}
 
-        # Check that using aggregate_by_main_covar works
-        r = weighted_comparisons_stats.asmd(
-            pd.DataFrame({"a": a1, "b[A]": b1_A, "b[B]": b1_B}),
-            pd.DataFrame({"a": a2, "b[A]": b2_A, "b[B]": b2_B}),
-            w1,
-            w2,
-            "target",
-            True,
-        ).to_dict()
+            # Check that using aggregate_by_main_covar works
+            r = weighted_comparisons_stats.asmd(
+                pd.DataFrame({"a": a1, "b[A]": b1_A, "b[B]": b1_B}),
+                pd.DataFrame({"a": a2, "b[A]": b2_A, "b[B]": b2_B}),
+                w1,
+                w2,
+                "target",
+                True,
+            ).to_dict()
 
-        print(r)
-        # {'a': 2.82842712474619, 'b': 0.7071067811865475, 'mean(asmd)': 1.7677669529663689}
+            print(r)
+            # {'a': 2.82842712474619, 'b': 0.7071067811865475, 'mean(asmd)': 1.7677669529663689}
 
     """
     if not isinstance(sample_df, pd.DataFrame):
@@ -316,22 +319,24 @@ def _aggregate_asmd_by_main_covar(asmd_series: pd.Series) -> pd.Series:
         pd.Series: If asmd_series had several items broken by one-hot encoding,
             then they would be averaged (with equal weight to each).
 
-    Example:
-        from balance.stats_and_plots.weighted_comparisons_stats import _aggregate_asmd_by_main_covar
+    Examples:
+        ::
 
-        asmd_series = pd.Series(
-        {
-            'age': 0.5,
-            'education[T.high_school]': 1,
-            'education[T.bachelor]': 2,
-            'education[T.masters]': 3,
-            'education[T.phd]': 4,
-        })
+            from balance.stats_and_plots.weighted_comparisons_stats import _aggregate_asmd_by_main_covar
 
-        _aggregate_asmd_by_main_covar(asmd_series).to_dict()
+            asmd_series = pd.Series(
+            {
+                'age': 0.5,
+                'education[T.high_school]': 1,
+                'education[T.bachelor]': 2,
+                'education[T.masters]': 3,
+                'education[T.phd]': 4,
+            })
 
-        # output:
-        # {'age': 0.5, 'education': 2.5}
+            _aggregate_asmd_by_main_covar(asmd_series).to_dict()
+
+            # output:
+            # {'age': 0.5, 'education': 2.5}
     """
     weights = _weights_per_covars_names(asmd_series.index.values.tolist())
 

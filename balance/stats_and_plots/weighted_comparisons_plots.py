@@ -105,29 +105,31 @@ def plot_bar(
         weighted (bool, optional): If to pass the weights from the dicts inside dfs. Defaults to True.
 
     Examples:
-        from balance.stats_and_plots.weighted_comparisons_plots import plot_bar
-        import pandas as pd
-        import numpy as np
+        ::
 
-        df = pd.DataFrame({
-            'group': ('a', 'b', 'c', 'c'),
-            'v1': (1, 2, 3, 4),
-        })
+            from balance.stats_and_plots.weighted_comparisons_plots import plot_bar
+            import pandas as pd
+            import numpy as np
 
-        plot_bar(
-            [{"df": df, "weights": pd.Series((1, 1, 1, 1))}, {"df": df, "weights": pd.Series((2, 1, 1, 1))}],
-            names = ["self", "target"],
-            column = "group",
-            axis = None,
-            weighted = True)
+            df = pd.DataFrame({
+                'group': ('a', 'b', 'c', 'c'),
+                'v1': (1, 2, 3, 4),
+            })
 
-        # Also deals with np.nan weights
-        a = plot_bar(
-            [{"df": df, "weights": pd.Series((1, 1, 1, np.nan))}, {"df": df, "weights": pd.Series((2, 1, 1, np.nan))}],
-            names = ["self", "target"],
-            column = "group",
-            axis = None,
-            weighted = True)
+            plot_bar(
+                [{"df": df, "weights": pd.Series((1, 1, 1, 1))}, {"df": df, "weights": pd.Series((2, 1, 1, 1))}],
+                names = ["self", "target"],
+                column = "group",
+                axis = None,
+                weighted = True)
+
+            # Also deals with np.nan weights
+            a = plot_bar(
+                [{"df": df, "weights": pd.Series((1, 1, 1, np.nan))}, {"df": df, "weights": pd.Series((2, 1, 1, np.nan))}],
+                names = ["self", "target"],
+                column = "group",
+                axis = None,
+                weighted = True)
     """
     plot_data = []
     for ii, i in enumerate(dfs):
@@ -184,74 +186,75 @@ def plot_hist_kde(
         dist_type (Literal["hist", "kde", "ecdf"], optional): The type of plot to draw. Defaults to "hist".
 
     Examples:
+        ::
 
-        from balance.stats_and_plots.weighted_comparisons_plots import plot_hist_kde
-        import pandas as pd
-        import numpy as np
-        import matplotlib.pyplot as plt
+            from balance.stats_and_plots.weighted_comparisons_plots import plot_hist_kde
+            import pandas as pd
+            import numpy as np
+            import matplotlib.pyplot as plt
 
-        df = pd.DataFrame({
-            'group': ('a', 'b', 'c', 'c'),
-            'v1': (1, 2, 3, 4),
-        })
+            df = pd.DataFrame({
+                'group': ('a', 'b', 'c', 'c'),
+                'v1': (1, 2, 3, 4),
+            })
 
-        dfs1 = [{"df": pd.DataFrame(pd.Series([1,2,2,2,3,4,5,5,7,8,9,9,9,9,5,2,5,4,4,4], name = "v1")), "weights": None}, {"df": df, "weights": pd.Series((200, 1, 0, 20))}]
+            dfs1 = [{"df": pd.DataFrame(pd.Series([1,2,2,2,3,4,5,5,7,8,9,9,9,9,5,2,5,4,4,4], name = "v1")), "weights": None}, {"df": df, "weights": pd.Series((200, 1, 0, 20))}]
 
-        plt.figure(1)
+            plt.figure(1)
 
-        # kde: no weights
-        plot_hist_kde(
-            dfs1,
-            names = ["self", "target"],
-            column = "v1",
-            axis = None,
-            weighted = False, dist_type = "kde")
+            # kde: no weights
+            plot_hist_kde(
+                dfs1,
+                names = ["self", "target"],
+                column = "v1",
+                axis = None,
+                weighted = False, dist_type = "kde")
 
-        plt.figure(2)
+            plt.figure(2)
 
-        # kde: with weights
-        plot_hist_kde(
-            dfs1,
-            names = ["self", "target"],
-            column = "v1",
-            axis = None,
-            weighted = True, dist_type = "kde")
+            # kde: with weights
+            plot_hist_kde(
+                dfs1,
+                names = ["self", "target"],
+                column = "v1",
+                axis = None,
+                weighted = True, dist_type = "kde")
 
-        plt.figure(3)
+            plt.figure(3)
 
-        # hist
-        plot_hist_kde(
-            dfs1,
-            names = ["self", "target"],
-            column = "v1",
-            axis = None,
-            weighted = True, dist_type = "hist")
+            # hist
+            plot_hist_kde(
+                dfs1,
+                names = ["self", "target"],
+                column = "v1",
+                axis = None,
+                weighted = True, dist_type = "hist")
 
-        plt.figure(4)
+            plt.figure(4)
 
-        # ecdf
-        plot_hist_kde(
-            dfs1,
-            names = ["self", "target"],
-            column = "v1",
-            axis = None,
-            weighted = True, dist_type = "ecdf")
+            # ecdf
+            plot_hist_kde(
+                dfs1,
+                names = ["self", "target"],
+                column = "v1",
+                axis = None,
+                weighted = True, dist_type = "ecdf")
 
 
-        # can work nicely with plt.subplots:
-        f, axes = plt.subplots(1, 2, figsize=(7, 7 * 1))
-        plot_hist_kde(
-            dfs1,
-            names = ["self", "target"],
-            column = "v1",
-            axis = axes[0],
-            weighted = False, dist_type = "kde")
-        plot_hist_kde(
-            dfs1,
-            names = ["self", "target"],
-            column = "v1",
-            axis = axes[1],
-            weighted = False, dist_type = "kde")
+            # can work nicely with plt.subplots:
+            f, axes = plt.subplots(1, 2, figsize=(7, 7 * 1))
+            plot_hist_kde(
+                dfs1,
+                names = ["self", "target"],
+                column = "v1",
+                axis = axes[0],
+                weighted = False, dist_type = "kde")
+            plot_hist_kde(
+                dfs1,
+                names = ["self", "target"],
+                column = "v1",
+                axis = axes[1],
+                weighted = False, dist_type = "kde")
     """
     possible_dist_function = {
         "hist": sns.histplot,
@@ -322,23 +325,25 @@ def plot_qq(
         weighted (bool, optional): If to pass the weights from the dicts inside dfs. Defaults to True.
 
     Examples:
-        import numpy as np
-        import pandas as pd
-        from balance.stats_and_plots.weighted_comparisons_plots import plot_qq
-        from numpy import random
+        ::
 
-        df = pd.DataFrame({
-            'v1': random.uniform(size=100),
-        }).sort_values(by=['v1'])
+            import numpy as np
+            import pandas as pd
+            from balance.stats_and_plots.weighted_comparisons_plots import plot_qq
+            from numpy import random
 
-        dfs1 = [
-            {"df": df, "weights": pd.Series(np.ones(100))},
-            {"df": df, "weights": pd.Series(range(100))},
-            {"df": df, "weights": pd.Series(np.ones(100))},
-        ]
+            df = pd.DataFrame({
+                'v1': random.uniform(size=100),
+            }).sort_values(by=['v1'])
 
-        # plot_qq(dfs1, names=["self", "unadjusted", "target"], column="v1", axis=None, weighted=False)
-        plot_qq(dfs1, names=["self", "unadjusted", "target"], column="v1", axis=None, weighted=True)
+            dfs1 = [
+                {"df": df, "weights": pd.Series(np.ones(100))},
+                {"df": df, "weights": pd.Series(range(100))},
+                {"df": df, "weights": pd.Series(np.ones(100))},
+            ]
+
+            # plot_qq(dfs1, names=["self", "unadjusted", "target"], column="v1", axis=None, weighted=False)
+            plot_qq(dfs1, names=["self", "unadjusted", "target"], column="v1", axis=None, weighted=True)
     """
     target = dfs[-1]  # assumes the last item is target
     dfs = dfs[:-1]  # assumes the non-last item are dfs to be compared to target
@@ -409,33 +414,35 @@ def plot_qq_categorical(
         label_threshold (int, optional): All labels that are larger from the threshold will be omitted from the scatter plot (so to reduce clutter). Defaults to 30.
 
     Examples:
-        import numpy as np
-        import pandas as pd
-        from balance.stats_and_plots.weighted_comparisons_plots import plot_qq_categorical
-        from numpy import random
+        ::
 
-        df = pd.DataFrame({
-            'v1': random.random_integers(11111, 11114, size=100),
-        }).sort_values(by=['v1'])
+            import numpy as np
+            import pandas as pd
+            from balance.stats_and_plots.weighted_comparisons_plots import plot_qq_categorical
+            from numpy import random
 
-        dfs1 = [
-            {"df": df, "weights": pd.Series(np.ones(100))},
-            {"df": df, "weights": pd.Series(np.ones(99).tolist() + [1000])},
-            {"df": df, "weights": pd.Series(np.ones(100))},
-        ]
+            df = pd.DataFrame({
+                'v1': random.random_integers(11111, 11114, size=100),
+            }).sort_values(by=['v1'])
 
-        import matplotlib.pyplot as plt
+            dfs1 = [
+                {"df": df, "weights": pd.Series(np.ones(100))},
+                {"df": df, "weights": pd.Series(np.ones(99).tolist() + [1000])},
+                {"df": df, "weights": pd.Series(np.ones(100))},
+            ]
 
-        plt.rcParams["figure.figsize"] = (20, 6) # (w, h)
+            import matplotlib.pyplot as plt
 
-        fig, axs = plt.subplots(1,3)
+            plt.rcParams["figure.figsize"] = (20, 6) # (w, h)
 
-        # Without using weights
-        plot_qq_categorical(dfs1, names=["self", "unadjusted", "target"], column="v1", axis=axs[0], weighted=False)
-        # With weights
-        plot_qq_categorical(dfs1, names=["self", "unadjusted", "target"], column="v1", axis=axs[1], weighted=True)
-        # With label trimming if the text is longer than 3.
-        plot_qq_categorical(dfs1, names=["self", "unadjusted", "target"], column="v1", axis=axs[2], weighted=True, label_threshold=3)
+            fig, axs = plt.subplots(1,3)
+
+            # Without using weights
+            plot_qq_categorical(dfs1, names=["self", "unadjusted", "target"], column="v1", axis=axs[0], weighted=False)
+            # With weights
+            plot_qq_categorical(dfs1, names=["self", "unadjusted", "target"], column="v1", axis=axs[1], weighted=True)
+            # With label trimming if the text is longer than 3.
+            plot_qq_categorical(dfs1, names=["self", "unadjusted", "target"], column="v1", axis=axs[2], weighted=True, label_threshold=3)
     """
     target = dfs[-1]["df"]
     target_weights = dfs[-1]["weights"]
@@ -514,27 +521,29 @@ def seaborn_plot_dist(
             See details here: https://stackoverflow.com/a/11690800/256662
 
     Examples:
-        import numpy as np
-        import pandas as pd
-        from balance.stats_and_plots.weighted_comparisons_plots import seaborn_plot_dist
-        from numpy import random
+        ::
 
-        df = pd.DataFrame({
-            'v1': random.random_integers(11111, 11114, size=100).astype(str),
-            'v2': random.normal(size = 100),
-            'v3': random.uniform(size = 100),
-        }).sort_values(by=['v2'])
+            import numpy as np
+            import pandas as pd
+            from balance.stats_and_plots.weighted_comparisons_plots import seaborn_plot_dist
+            from numpy import random
 
-        dfs1 = [
-            {"df": df, "weights": pd.Series(np.ones(100))},
-            {"df": df, "weights": pd.Series(np.ones(99).tolist() + [1000])},
-            {"df": df, "weights": pd.Series(np.random.uniform(size=100))},
-        ]
+            df = pd.DataFrame({
+                'v1': random.random_integers(11111, 11114, size=100).astype(str),
+                'v2': random.normal(size = 100),
+                'v3': random.uniform(size = 100),
+            }).sort_values(by=['v2'])
 
-        seaborn_plot_dist(dfs1, names=["self", "unadjusted", "target"], dist_type = "qq")  # default
-        seaborn_plot_dist(dfs1, names=["self", "unadjusted", "target"], dist_type = "hist")
-        seaborn_plot_dist(dfs1, names=["self", "unadjusted", "target"], dist_type = "kde")
-        seaborn_plot_dist(dfs1, names=["self", "unadjusted", "target"], dist_type = "ecdf")
+            dfs1 = [
+                {"df": df, "weights": pd.Series(np.ones(100))},
+                {"df": df, "weights": pd.Series(np.ones(99).tolist() + [1000])},
+                {"df": df, "weights": pd.Series(np.random.uniform(size=100))},
+            ]
+
+            seaborn_plot_dist(dfs1, names=["self", "unadjusted", "target"], dist_type = "qq")  # default
+            seaborn_plot_dist(dfs1, names=["self", "unadjusted", "target"], dist_type = "hist")
+            seaborn_plot_dist(dfs1, names=["self", "unadjusted", "target"], dist_type = "kde")
+            seaborn_plot_dist(dfs1, names=["self", "unadjusted", "target"], dist_type = "ecdf")
     """
     if dist_type is None:
         if len(dfs) == 1:
@@ -594,14 +603,16 @@ def set_xy_axes_to_use_the_same_lim(ax: plt.Axes) -> None:
         ax (plt.Axes): matplotlib Axes object to draw the plot onto.
 
     Examples:
-        import matplotlib.pyplot as plt
-        plt.figure(1)
-        plt.scatter(x= [1,2,3], y = [3,4,5])
+        ::
 
-        plt.figure(2)
-        fig, ax = plt.subplots(1, 1, figsize=(7.2, 7.2))
-        plt.scatter(x= [1,2,3], y = [3,4,5])
-        set_xy_axes_to_use_the_same_lim(ax)
+            import matplotlib.pyplot as plt
+            plt.figure(1)
+            plt.scatter(x= [1,2,3], y = [3,4,5])
+
+            plt.figure(2)
+            fig, ax = plt.subplots(1, 1, figsize=(7.2, 7.2))
+            plt.scatter(x= [1,2,3], y = [3,4,5])
+            set_xy_axes_to_use_the_same_lim(ax)
     """
     xlim = ax.get_xlim()
     ylim = ax.get_ylim()
@@ -637,28 +648,29 @@ def plotly_plot_qq(
         Optional[Dict[str, go.Figure]]: Dictionary containing plots if return_dict_of_figures is True. None otherwise.
 
     Examples:
+        ::
 
-        import numpy as np
-        import pandas as pd
-        from numpy import random
-        from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_qq
+            import numpy as np
+            import pandas as pd
+            from numpy import random
+            from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_qq
 
-        random.seed(96483)
+            random.seed(96483)
 
-        df = pd.DataFrame({
-            'v1': random.random_integers(11111, 11114, size=100).astype(str),
-            'v2': random.normal(size = 100),
-            'v3': random.uniform(size = 100),
-        }).sort_values(by=['v2'])
+            df = pd.DataFrame({
+                'v1': random.random_integers(11111, 11114, size=100).astype(str),
+                'v2': random.normal(size = 100),
+                'v3': random.uniform(size = 100),
+            }).sort_values(by=['v2'])
 
-        dict_of_dfs = {
-            "self": pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = "weight")], axis = 1),
-            "unadjusted": pd.concat([df, pd.Series(np.ones(99).tolist() + [1000], name = "weight")], axis = 1),
-            "target": pd.concat([df, pd.Series(np.ones(100), name = "weight")], axis = 1),
-        }
+            dict_of_dfs = {
+                "self": pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = "weight")], axis = 1),
+                "unadjusted": pd.concat([df, pd.Series(np.ones(99).tolist() + [1000], name = "weight")], axis = 1),
+                "target": pd.concat([df, pd.Series(np.ones(100), name = "weight")], axis = 1),
+            }
 
-        # It won't work with "v1" since it is not numeric.
-        plotly_plot_qq(dict_of_dfs, variables= ["v2", "v3"])
+            # It won't work with "v1" since it is not numeric.
+            plotly_plot_qq(dict_of_dfs, variables= ["v2", "v3"])
     """
     dict_of_qqs = {}
     for variable in variables:
@@ -751,27 +763,29 @@ def plotly_plot_bar(
         Optional[Dict[str, go.Figure]]: Dictionary containing plots if return_dict_of_figures is True. None otherwise.
 
     Examples:
-        import numpy as np
-        import pandas as pd
-        from numpy import random
-        from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_bar
+        ::
 
-        random.seed(96483)
+            import numpy as np
+            import pandas as pd
+            from numpy import random
+            from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_bar
 
-        df = pd.DataFrame({
-            'v1': random.random_integers(11111, 11114, size=100).astype(str),
-            'v2': random.normal(size = 100),
-            'v3': random.uniform(size = 100),
-        }).sort_values(by=['v2'])
+            random.seed(96483)
 
-        dict_of_dfs = {
-            "self": pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = "weight")], axis = 1),
-            "unadjusted": pd.concat([df, pd.Series(np.ones(99).tolist() + [1000], name = "weight")], axis = 1),
-            "target": pd.concat([df, pd.Series(np.ones(100), name = "weight")], axis = 1),
-        }
+            df = pd.DataFrame({
+                'v1': random.random_integers(11111, 11114, size=100).astype(str),
+                'v2': random.normal(size = 100),
+                'v3': random.uniform(size = 100),
+            }).sort_values(by=['v2'])
 
-        # It can work with "v2" and "v3", but it would be very sparse
-        plotly_plot_bar(dict_of_dfs, variables= ["v1"])
+            dict_of_dfs = {
+                "self": pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = "weight")], axis = 1),
+                "unadjusted": pd.concat([df, pd.Series(np.ones(99).tolist() + [1000], name = "weight")], axis = 1),
+                "target": pd.concat([df, pd.Series(np.ones(100), name = "weight")], axis = 1),
+            }
+
+            # It can work with "v2" and "v3", but it would be very sparse
+            plotly_plot_bar(dict_of_dfs, variables= ["v1"])
     """
     dict_of_bars = {}
     for variable in variables:
@@ -865,26 +879,28 @@ def plotly_plot_dist(
         Optional[Dict[str, go.Figure]]: Dictionary containing plots if return_dict_of_figures is True. None otherwise.
 
     Examples:
-        import numpy as np
-        import pandas as pd
-        from numpy import random
-        from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_dist
+        ::
 
-        random.seed(96483)
+            import numpy as np
+            import pandas as pd
+            from numpy import random
+            from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_dist
 
-        df = pd.DataFrame({
-            'v1': random.random_integers(11111, 11114, size=100).astype(str),
-            'v2': random.normal(size = 100),
-            'v3': random.uniform(size = 100),
-        }).sort_values(by=['v2'])
+            random.seed(96483)
 
-        dict_of_dfs = {
-            "self": pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = "weight")], axis = 1),
-            "unadjusted": pd.concat([df, pd.Series(np.ones(99).tolist() + [1000], name = "weight")], axis = 1),
-            "target": pd.concat([df, pd.Series(np.ones(100), name = "weight")], axis = 1),
-        }
+            df = pd.DataFrame({
+                'v1': random.random_integers(11111, 11114, size=100).astype(str),
+                'v2': random.normal(size = 100),
+                'v3': random.uniform(size = 100),
+            }).sort_values(by=['v2'])
 
-        plotly_plot_dist(dict_of_dfs)
+            dict_of_dfs = {
+                "self": pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = "weight")], axis = 1),
+                "unadjusted": pd.concat([df, pd.Series(np.ones(99).tolist() + [1000], name = "weight")], axis = 1),
+                "target": pd.concat([df, pd.Series(np.ones(100), name = "weight")], axis = 1),
+            }
+
+            plotly_plot_dist(dict_of_dfs)
     """
     dict_of_all_plots = {}
     #  Choose set of variables to plot
@@ -965,10 +981,12 @@ def naming_legend(object_name: str, names_of_dfs: List[str]) -> str:
         str: a string with the desired name
 
     Examples:
-        naming_legend('self', ['self', 'target', 'unadjusted']) #'adjusted'
-        naming_legend('unadjusted', ['self', 'target', 'unadjusted']) #'sample'
-        naming_legend('self', ['self', 'target']) #'sample'
-        naming_legend('other_name', ['self', 'target']) #'other_name'
+        ::
+
+            naming_legend('self', ['self', 'target', 'unadjusted']) #'adjusted'
+            naming_legend('unadjusted', ['self', 'target', 'unadjusted']) #'sample'
+            naming_legend('self', ['self', 'target']) #'sample'
+            naming_legend('other_name', ['self', 'target']) #'other_name'
     """
     if object_name in names_of_dfs:
         return {
@@ -1032,37 +1050,38 @@ def plot_dist(
             If library="seaborn" then returns either a list or an np.array of matplotlib axis.
 
     Examples:
+        ::
 
-        import numpy as np
-        import pandas as pd
-        from numpy import random
-        from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_bar
+            import numpy as np
+            import pandas as pd
+            from numpy import random
+            from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_bar
 
-        random.seed(96483)
+            random.seed(96483)
 
-        df = pd.DataFrame({
-            'v1': random.random_integers(11111, 11114, size=100).astype(str),
-            'v2': random.normal(size = 100),
-            'v3': random.uniform(size = 100),
-        }).sort_values(by=['v2'])
+            df = pd.DataFrame({
+                'v1': random.random_integers(11111, 11114, size=100).astype(str),
+                'v2': random.normal(size = 100),
+                'v3': random.uniform(size = 100),
+            }).sort_values(by=['v2'])
 
-        dfs1 = [
-            {"df": df, "weights": pd.Series(random.random(size = 100) + 0.5)},
-            {"df": df, "weights": pd.Series(np.ones(99).tolist() + [1000])},
-            {"df": df, "weights": pd.Series(np.ones(100))},
-        ]
+            dfs1 = [
+                {"df": df, "weights": pd.Series(random.random(size = 100) + 0.5)},
+                {"df": df, "weights": pd.Series(np.ones(99).tolist() + [1000])},
+                {"df": df, "weights": pd.Series(np.ones(100))},
+            ]
 
 
-        from balance.stats_and_plots.weighted_comparisons_plots import plot_dist
+            from balance.stats_and_plots.weighted_comparisons_plots import plot_dist
 
-        # defaults to plotly with bar and qq plots. Returns None.
-        plot_dist(dfs1, names=["self", "unadjusted", "target"])
+            # defaults to plotly with bar and qq plots. Returns None.
+            plot_dist(dfs1, names=["self", "unadjusted", "target"])
 
-        # Using seaborn, deafults to qq plots
-        plot_dist(dfs1, names=["self", "unadjusted", "target"], library="seaborn") # like using dist_type = "qq"
-        plot_dist(dfs1, names=["self", "unadjusted", "target"], library="seaborn", dist_type = "hist")
-        plot_dist(dfs1, names=["self", "unadjusted", "target"], library="seaborn", dist_type = "kde")
-        plot_dist(dfs1, names=["self", "unadjusted", "target"], library="seaborn", dist_type = "ecdf")
+            # Using seaborn, deafults to qq plots
+            plot_dist(dfs1, names=["self", "unadjusted", "target"], library="seaborn") # like using dist_type = "qq"
+            plot_dist(dfs1, names=["self", "unadjusted", "target"], library="seaborn", dist_type = "hist")
+            plot_dist(dfs1, names=["self", "unadjusted", "target"], library="seaborn", dist_type = "kde")
+            plot_dist(dfs1, names=["self", "unadjusted", "target"], library="seaborn", dist_type = "ecdf")
     """
     if library not in ("plotly", "seaborn"):
         raise ValueError(f"library must be either 'plotly' or 'seaborn', is {library}")

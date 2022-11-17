@@ -36,33 +36,35 @@ def relative_response_rates(
             A second row with the proportion of non-null observations.
 
     Examples:
-        import numpy as np
-        import pandas as pd
-        from balance.stats_and_plots.general_stats import relative_response_rates
+        ::
 
-        df = pd.DataFrame({"o1": (7, 8, 9, 10), "o2": (7, 8, 9, np.nan), "id": (1, 2, 3, 4)})
+            import numpy as np
+            import pandas as pd
+            from balance.stats_and_plots.general_stats import relative_response_rates
 
-        relative_response_rates(df).to_dict()
+            df = pd.DataFrame({"o1": (7, 8, 9, 10), "o2": (7, 8, 9, np.nan), "id": (1, 2, 3, 4)})
 
-        # {'o1': {'n': 4.0, '%': 100.0},
-        # 'o2': {'n': 3.0, '%': 75.0},
-        # 'id': {'n': 4.0, '%': 100.0}}
+            relative_response_rates(df).to_dict()
 
-        df_target = pd.concat([df, df])
-        relative_response_rates(df, df_target).to_dict()
+                # {'o1': {'n': 4.0, '%': 100.0},
+                # 'o2': {'n': 3.0, '%': 75.0},
+                # 'id': {'n': 4.0, '%': 100.0}}
 
-        # {'o1': {'n': 4.0, '%': 50.0},
-        #  'o2': {'n': 3.0, '%': 50.0},
-        #  'id': {'n': 4.0, '%': 50.0}}
+            df_target = pd.concat([df, df])
+            relative_response_rates(df, df_target).to_dict()
+
+                # {'o1': {'n': 4.0, '%': 50.0},
+                #  'o2': {'n': 3.0, '%': 50.0},
+                #  'id': {'n': 4.0, '%': 50.0}}
 
 
-        # Dividing by number of total notnull rows in df_rarget
-        df_target.notnull().all(axis=1).sum()  # == 6
-        relative_response_rates(df, df_target, False).to_dict()
+            # Dividing by number of total notnull rows in df_rarget
+            df_target.notnull().all(axis=1).sum()  # == 6
+            relative_response_rates(df, df_target, False).to_dict()
 
-        # {'o1': {'n': 4.0, '%': 66.66666666666666},
-        # 'o2': {'n': 3.0, '%': 50.0},
-        # 'id': {'n': 4.0, '%': 66.66666666666666}}
+                # {'o1': {'n': 4.0, '%': 66.66666666666666},
+                # 'o2': {'n': 3.0, '%': 50.0},
+                # 'id': {'n': 4.0, '%': 66.66666666666666}}
 
     """
     df_n_notnull_rows = df.notnull().sum()

@@ -319,55 +319,57 @@ def descriptive_stats(
         pd.DataFrame: Returns pd.DataFrame of the output (based on stat argument), for each of the columns in df.
 
     Examples:
-        import numpy as np
-        import pandas as pd
-        from balance.stats_and_plots.weighted_stats import descriptive_stats, weighted_mean, weighted_sd
+        ::
 
-        # Without weights
-        x = [1, 2, 3, 4]
-        print(descriptive_stats(pd.DataFrame(x), stat="mean"))
-        print(np.mean(x))
-        print(weighted_mean(x))
-        #     0
-        # 0  2.5
-        # 2.5
-        # 0    2.5
-        # dtype: float64
+            import numpy as np
+            import pandas as pd
+            from balance.stats_and_plots.weighted_stats import descriptive_stats, weighted_mean, weighted_sd
 
-        print(descriptive_stats(pd.DataFrame(x), stat="std"))
-        print(weighted_sd(x))
-        x2 = pd.Series(x)
-        print(np.sqrt( np.sum((x2 - x2.mean())**2) / (len(x)-1) ))
-        #         0
-        # 0  1.290994
-        # 0    1.290994
-        # dtype: float64
-        # 1.2909944487358056
-        # Notice that it is different from
-        # print(np.std(x))
-        # which gives: 1.118033988749895
-        # Which is the MLE (i.e.: biased, dividing by n and not n-1) estimator for std:
-        # (np.sqrt( np.sum((x2 - x2.mean())**2) / (len(x)) ))
+            # Without weights
+            x = [1, 2, 3, 4]
+            print(descriptive_stats(pd.DataFrame(x), stat="mean"))
+            print(np.mean(x))
+            print(weighted_mean(x))
+                #     0
+                # 0  2.5
+                # 2.5
+                # 0    2.5
+                # dtype: float64
 
-        x2 = pd.Series(x)
-        tmp_sd = np.sqrt(np.sum((x2 - x2.mean()) ** 2) / (len(x) - 1))
-        tmp_se = tmp_sd / np.sqrt(len(x))
-        print(descriptive_stats(pd.DataFrame(x), stat="std_mean").iloc[0, 0])
-        print(tmp_se)
-        # 0.6454972243679029
-        # 0.6454972243679028
+            print(descriptive_stats(pd.DataFrame(x), stat="std"))
+            print(weighted_sd(x))
+            x2 = pd.Series(x)
+            print(np.sqrt( np.sum((x2 - x2.mean())**2) / (len(x)-1) ))
+                #         0
+                # 0  1.290994
+                # 0    1.290994
+                # dtype: float64
+                # 1.2909944487358056
+                # Notice that it is different from
+                # print(np.std(x))
+                # which gives: 1.118033988749895
+                # Which is the MLE (i.e.: biased, dividing by n and not n-1) estimator for std:
+                # (np.sqrt( np.sum((x2 - x2.mean())**2) / (len(x)) ))
 
-        # Weighted results
-        x, w = [1, 2, 3, 4], [1, 2, 3, 4]
-        print(descriptive_stats(pd.DataFrame(x), w, stat="mean"))
-        print(descriptive_stats(pd.DataFrame(x), w, stat="std"))
-        print(descriptive_stats(pd.DataFrame(x), w, stat="std_mean"))
-        #      0
-        # 0  3.0
-        #           0
-        # 0  1.195229
-        #           0
-        # 0  0.333333
+            x2 = pd.Series(x)
+            tmp_sd = np.sqrt(np.sum((x2 - x2.mean()) ** 2) / (len(x) - 1))
+            tmp_se = tmp_sd / np.sqrt(len(x))
+            print(descriptive_stats(pd.DataFrame(x), stat="std_mean").iloc[0, 0])
+            print(tmp_se)
+                # 0.6454972243679029
+                # 0.6454972243679028
+
+            # Weighted results
+            x, w = [1, 2, 3, 4], [1, 2, 3, 4]
+            print(descriptive_stats(pd.DataFrame(x), w, stat="mean"))
+            print(descriptive_stats(pd.DataFrame(x), w, stat="std"))
+            print(descriptive_stats(pd.DataFrame(x), w, stat="std_mean"))
+                #      0
+                # 0  3.0
+                #           0
+                # 0  1.195229
+                #           0
+                # 0  0.333333
     """
     if len(df.select_dtypes(np.number).columns) != len(df.columns):
         # If we have non-numeric columns, and want faster results,
@@ -427,31 +429,33 @@ def relative_frequency_table(
             -  'prop', the aggregated (weighted) proportion of rows from each group in 'column'.
 
     Examples:
-        from balance.stats_and_plots.weighted_stats import relative_frequency_table
-        import pandas as pd
+        ::
 
-        df = pd.DataFrame({
-            'group': ('a', 'b', 'c', 'c'),
-            'v1': (1, 2, 3, 4),
-        })
-        print(relative_frequency_table(df, 'group'))
-            #     group  prop
-            #   0     a  0.25
-            #   1     b  0.25
-            #   2     c  0.50
-        print(relative_frequency_table(df, 'group', pd.Series((2, 1, 1, 1),)))
-            #     group  prop
-            #   0     a   0.4
-            #   1     b   0.2
-            #   2     c   0.4
+            from balance.stats_and_plots.weighted_stats import relative_frequency_table
+            import pandas as pd
 
-        # Using a pd.Series:
-        a_series = df['group']
-        print(relative_frequency_table(a_series))
-        #   group  prop
-        # 0     a  0.25
-        # 1     b  0.25
-        # 2     c  0.50
+            df = pd.DataFrame({
+                'group': ('a', 'b', 'c', 'c'),
+                'v1': (1, 2, 3, 4),
+            })
+            print(relative_frequency_table(df, 'group'))
+                #     group  prop
+                #   0     a  0.25
+                #   1     b  0.25
+                #   2     c  0.50
+            print(relative_frequency_table(df, 'group', pd.Series((2, 1, 1, 1),)))
+                #     group  prop
+                #   0     a   0.4
+                #   1     b   0.2
+                #   2     c   0.4
+
+            # Using a pd.Series:
+            a_series = df['group']
+            print(relative_frequency_table(a_series))
+                #   group  prop
+                # 0     a  0.25
+                # 1     b  0.25
+                # 2     c  0.50
     """
     _check_weights_are_valid(w)
 

@@ -509,24 +509,26 @@ class Sample:
             The cells show the mean value. For categorical features, they are first transformed into the one-hot encoding.
             For these columns, since they are all either 0 or 1, their means should be interpreted as proportions.
 
-        Example:
-            from balance import Sample
-            import pandas as pd
+        Examples:
+            ::
 
-            s = Sample.from_frame(
-                pd.DataFrame(
-                    {"a": (0, 1, 2), "c": ("a", "b", "c"), "o": (1,3,5), "id": (1, 2, 3)}
-                ),
-                outcome_columns=("o"),
-            )
-            s_adjusted = s.set_target(s).adjust(method = 'null')
-            print(s_adjusted.covar_means())
+                from balance import Sample
+                import pandas as pd
 
-            # source  unadjusted  adjusted    target
-            # a         1.000000  1.000000  1.000000
-            # c[a]      0.333333  0.333333  0.333333
-            # c[b]      0.333333  0.333333  0.333333
-            # c[c]      0.333333  0.333333  0.333333
+                s = Sample.from_frame(
+                    pd.DataFrame(
+                        {"a": (0, 1, 2), "c": ("a", "b", "c"), "o": (1,3,5), "id": (1, 2, 3)}
+                    ),
+                    outcome_columns=("o"),
+                )
+                s_adjusted = s.set_target(s).adjust(method = 'null')
+                print(s_adjusted.covar_means())
+
+                    # source  unadjusted  adjusted    target
+                    # a         1.000000  1.000000  1.000000
+                    # c[a]      0.333333  0.333333  0.333333
+                    # c[b]      0.333333  0.333333  0.333333
+                    # c[c]      0.333333  0.333333  0.333333
         """
         self._check_if_adjusted()
 
@@ -575,30 +577,32 @@ class Sample:
         """Plot the density of weights of Sample.
 
         Examples:
-            import numpy as np
-            import pandas as pd
-            from balance.sample_class import Sample
+            ::
+
+                import numpy as np
+                import pandas as pd
+                from balance.sample_class import Sample
 
 
-            np.random.seed(123)
-            df = pd.DataFrame(
-                {
-                    "a": np.random.uniform(size=100),
-                    "c": np.random.choice(
-                        ["a", "b", "c", "d"],
-                        size=100,
-                        replace=True,
-                        p=[0.01, 0.04, 0.5, 0.45],
-                    ),
-                    "id": range(100),
-                    "weight": np.random.uniform(size=100) + 0.5,
-                }
-            )
+                np.random.seed(123)
+                df = pd.DataFrame(
+                    {
+                        "a": np.random.uniform(size=100),
+                        "c": np.random.choice(
+                            ["a", "b", "c", "d"],
+                            size=100,
+                            replace=True,
+                            p=[0.01, 0.04, 0.5, 0.45],
+                        ),
+                        "id": range(100),
+                        "weight": np.random.uniform(size=100) + 0.5,
+                    }
+                )
 
-            a = Sample.from_frame(df)
-            sample.weights().plot()
-            # The same as:
-            sample.plot_weight_density()
+                a = Sample.from_frame(df)
+                sample.weights().plot()
+                # The same as:
+                sample.plot_weight_density()
         """
         self.weights().plot()
 

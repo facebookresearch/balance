@@ -211,8 +211,10 @@ def formula_generator(variables, formula_type: str = "additive") -> str:
         str: A string representing the fomula
 
     Examples:
-        formula_generator(['a','b','c'])
-        # returns 'c + b + a'
+        ::
+
+            formula_generator(['a','b','c'])
+            # returns 'c + b + a'
     """
     if formula_type == "additive":
         rhs_formula = " + ".join(sorted(variables, reverse=True))
@@ -246,17 +248,19 @@ def dot_expansion(formula, variables: List):
         If no '.' is present, then the original formula is returned as is.
 
     Examples:
-        dot_expansion('.', ['a','b','c','d']) # (a+b+c+d)
-        dot_expansion('b:(. - a)', ['a','b','c','d']) # b:((a+b+c+d) - a)
-        dot_expansion('a*b', ['a','b','c','d']) # a*b
-        dot_expansion('.', None) # Raise error
+        ::
 
-        import pandas as pd
-        d = {'a': ['a1','a2','a1','a1'], 'b': ['b1','b2','b3','b3'],
-                    'c': ['c1','c1','c2','c1'], 'd':['d1','d1','d2','d3']}
-        df = pd.DataFrame(data=d)
-        dot_expansion('.', df) # Raise error
-        dot_expansion('.', list(df.columns)) # (a+b+c+d)
+            dot_expansion('.', ['a','b','c','d']) # (a+b+c+d)
+            dot_expansion('b:(. - a)', ['a','b','c','d']) # b:((a+b+c+d) - a)
+            dot_expansion('a*b', ['a','b','c','d']) # a*b
+            dot_expansion('.', None) # Raise error
+
+            import pandas as pd
+            d = {'a': ['a1','a2','a1','a1'], 'b': ['b1','b2','b3','b3'],
+                        'c': ['c1','c1','c2','c1'], 'd':['d1','d1','d2','d3']}
+            df = pd.DataFrame(data=d)
+            dot_expansion('.', df) # Raise error
+            dot_expansion('.', list(df.columns)) # (a+b+c+d)
     """
     if variables is None:
         # TODO: TypeError?
@@ -295,67 +299,69 @@ class one_hot_encoding_greater_2:
     # https://patsy.readthedocs.io/en/latest/categorical-coding.html
 
     Examples:
-    import pandas as pd
-    d = {'a': ['a1','a2','a1','a1'], 'b': ['b1','b2','b3','b3'],
-     'c': ['c1','c1','c2','c1'], 'd':['d1','d1','d2','d3']}
-    df = pd.DataFrame(data=d)
+        ::
 
-    print(dmatrix('C(a, one_hot_encoding_greater_2)', df, return_type = 'dataframe'))
-    #   Intercept  C(a, one_hot_encoding_greater_2)[a2]
-    #0        1.0                                   0.0
-    #1        1.0                                   1.0
-    #2        1.0                                   0.0
-    #3        1.0                                   0.0
-    print(dmatrix('C(a, one_hot_encoding_greater_2)-1', df, return_type = 'dataframe'))
-    #   C(a, one_hot_encoding_greater_2)[a2]
-    #0                                   0.0
-    #1                                   1.0
-    #2                                   0.0
-    #3                                   0.0
-    print(dmatrix('C(b, one_hot_encoding_greater_2)', df, return_type = 'dataframe'))
-    #   Intercept  C(b, one_hot_encoding_greater_2)[b1]  \
-    #0        1.0                                   1.0
-    #1        1.0                                   0.0
-    #2        1.0                                   0.0
-    #3        1.0                                   0.0
-    #
-    #   C(b, one_hot_encoding_greater_2)[b2]  C(b, one_hot_encoding_greater_2)[b3]
-    #0                                   0.0                                   0.0
-    #1                                   1.0                                   0.0
-    #2                                   0.0                                   1.0
-    #3                                   0.0                                   1.0
-    print(dmatrix('C(b, one_hot_encoding_greater_2)-1', df, return_type = 'dataframe'))
-    #   C(b, one_hot_encoding_greater_2)[b1]  C(b, one_hot_encoding_greater_2)[b2]  \
-    #0                                   1.0                                   0.0
-    #1                                   0.0                                   1.0
-    #2                                   0.0                                   0.0
-    #3                                   0.0                                   0.0
-    #
-    #   C(b, one_hot_encoding_greater_2)[b3]
-    #0                                   0.0
-    #1                                   0.0
-    #2                                   1.0
+        import pandas as pd
+        d = {'a': ['a1','a2','a1','a1'], 'b': ['b1','b2','b3','b3'],
+        'c': ['c1','c1','c2','c1'], 'd':['d1','d1','d2','d3']}
+        df = pd.DataFrame(data=d)
 
-    d = {'a': ['a1','a1','a1','a1'], 'b': ['b1','b2','b3','b3']}
-    df = pd.DataFrame(data=d)
+        print(dmatrix('C(a, one_hot_encoding_greater_2)', df, return_type = 'dataframe'))
+            #   Intercept  C(a, one_hot_encoding_greater_2)[a2]
+            #0        1.0                                   0.0
+            #1        1.0                                   1.0
+            #2        1.0                                   0.0
+            #3        1.0                                   0.0
+        print(dmatrix('C(a, one_hot_encoding_greater_2)-1', df, return_type = 'dataframe'))
+            #   C(a, one_hot_encoding_greater_2)[a2]
+            #0                                   0.0
+            #1                                   1.0
+            #2                                   0.0
+            #3                                   0.0
+        print(dmatrix('C(b, one_hot_encoding_greater_2)', df, return_type = 'dataframe'))
+            #   Intercept  C(b, one_hot_encoding_greater_2)[b1]  \
+            #0        1.0                                   1.0
+            #1        1.0                                   0.0
+            #2        1.0                                   0.0
+            #3        1.0                                   0.0
+            #
+            #   C(b, one_hot_encoding_greater_2)[b2]  C(b, one_hot_encoding_greater_2)[b3]
+            #0                                   0.0                                   0.0
+            #1                                   1.0                                   0.0
+            #2                                   0.0                                   1.0
+            #3                                   0.0                                   1.0
+        print(dmatrix('C(b, one_hot_encoding_greater_2)-1', df, return_type = 'dataframe'))
+            #   C(b, one_hot_encoding_greater_2)[b1]  C(b, one_hot_encoding_greater_2)[b2]  \
+            #0                                   1.0                                   0.0
+            #1                                   0.0                                   1.0
+            #2                                   0.0                                   0.0
+            #3                                   0.0                                   0.0
+            #
+            #   C(b, one_hot_encoding_greater_2)[b3]
+            #0                                   0.0
+            #1                                   0.0
+            #2                                   1.0
 
-    print(dmatrix('C(a, one_hot_encoding_greater_2)-1', df, return_type = 'dataframe'))
-    print(dmatrix('C(a, one_hot_encoding_greater_2):C(b, one_hot_encoding_greater_2)-1', df, return_type = 'dataframe'))   C(a, one_hot_encoding_greater_2)[a1]
-    #0                                   1.0
-    #1                                   1.0
-    #2                                   1.0
-    #3                                   1.0
-    #   C(a, one_hot_encoding_greater_2)[a1]:C(b, one_hot_encoding_greater_2)[b1]  \
-    #0                                                1.0
-    #1                                                0.0
-    #2                                                0.0
-    #3                                                0.0
-    #
-    #   C(a, one_hot_encoding_greater_2)[a1]:C(b, one_hot_encoding_greater_2)[b2]  \
-    #0                                                0.0
-    #1                                                1.0
-    #2                                                0.0
-    #3                                                0.0
+        d = {'a': ['a1','a1','a1','a1'], 'b': ['b1','b2','b3','b3']}
+        df = pd.DataFrame(data=d)
+
+        print(dmatrix('C(a, one_hot_encoding_greater_2)-1', df, return_type = 'dataframe'))
+        print(dmatrix('C(a, one_hot_encoding_greater_2):C(b, one_hot_encoding_greater_2)-1', df, return_type = 'dataframe'))   C(a, one_hot_encoding_greater_2)[a1]
+            #0                                   1.0
+            #1                                   1.0
+            #2                                   1.0
+            #3                                   1.0
+            #   C(a, one_hot_encoding_greater_2)[a1]:C(b, one_hot_encoding_greater_2)[b1]  \
+            #0                                                1.0
+            #1                                                0.0
+            #2                                                0.0
+            #3                                                0.0
+            #
+            #   C(a, one_hot_encoding_greater_2)[a1]:C(b, one_hot_encoding_greater_2)[b2]  \
+            #0                                                0.0
+            #1                                                1.0
+            #2                                                0.0
+            #3                                                0.0
 
     """
 
@@ -415,18 +421,20 @@ def process_formula(formula, variables: List, factor_variables=None):
         a ModelDesc object to build a model matrix using patsy.dmatrix.
 
     Examples:
-        f1 = process_formula('a:(b+aab)', ['a','b','aab'])
-        print(f1)
-        # ModelDesc(lhs_termlist=[],
-        #       rhs_termlist=[Term([EvalFactor('a'), EvalFactor('b')]),
-        #                     Term([EvalFactor('a'), EvalFactor('aab')])])
-        f2 = process_formula('a:(b+aab)', ['a','b','aab'], ['a','b'])
-        print(f2)
-        # ModelDesc(lhs_termlist=[],
-        #       rhs_termlist=[Term([EvalFactor('C(a, one_hot_encoding_greater_2)'),
-        #                           EvalFactor('C(b, one_hot_encoding_greater_2)')]),
-        #                     Term([EvalFactor('C(a, one_hot_encoding_greater_2)'),
-        #                           EvalFactor('aab')])])
+        ::
+
+            f1 = process_formula('a:(b+aab)', ['a','b','aab'])
+            print(f1)
+                # ModelDesc(lhs_termlist=[],
+                #       rhs_termlist=[Term([EvalFactor('a'), EvalFactor('b')]),
+                #                     Term([EvalFactor('a'), EvalFactor('aab')])])
+            f2 = process_formula('a:(b+aab)', ['a','b','aab'], ['a','b'])
+            print(f2)
+                # ModelDesc(lhs_termlist=[],
+                #       rhs_termlist=[Term([EvalFactor('C(a, one_hot_encoding_greater_2)'),
+                #                           EvalFactor('C(b, one_hot_encoding_greater_2)')]),
+                #                     Term([EvalFactor('C(a, one_hot_encoding_greater_2)'),
+                #                           EvalFactor('aab')])])
     """
     # Check all factor variables are in variables:
     if (factor_variables is not None) and (not set(factor_variables) <= set(variables)):
@@ -488,45 +496,47 @@ def build_model_matrix(
             https://stackoverflow.com/questions/35086940/how-can-i-give-row-and-column-names-to-scipys-csr-matrix.)
 
     Examples:
-        import pandas as pd
-        d = {'a': ['a1','a2','a1','a1'], 'b': ['b1','b2','b3','b3']}
-        df = pd.DataFrame(data=d)
+        ::
 
-        print(build_model_matrix(df, 'a'))
-        # {'model_matrix':    a[a1]  a[a2]
-        # 0    1.0    0.0
-        # 1    0.0    1.0
-        # 2    1.0    0.0
-        # 3    1.0    0.0,
-        # 'model_matrix_columns': ['a[a1]', 'a[a2]']}
+            import pandas as pd
+            d = {'a': ['a1','a2','a1','a1'], 'b': ['b1','b2','b3','b3']}
+            df = pd.DataFrame(data=d)
 
-
-        print(build_model_matrix(df, '.'))
-        # {'model_matrix':    a[a1]  a[a2]  b[T.b2]  b[T.b3]
-        # 0    1.0    0.0      0.0      0.0
-        # 1    0.0    1.0      1.0      0.0
-        # 2    1.0    0.0      0.0      1.0
-        # 3    1.0    0.0      0.0      1.0,
-        # 'model_matrix_columns': ['a[a1]', 'a[a2]', 'b[T.b2]', 'b[T.b3]']}
+            print(build_model_matrix(df, 'a'))
+                # {'model_matrix':    a[a1]  a[a2]
+                # 0    1.0    0.0
+                # 1    0.0    1.0
+                # 2    1.0    0.0
+                # 3    1.0    0.0,
+                # 'model_matrix_columns': ['a[a1]', 'a[a2]']}
 
 
-        print(build_model_matrix(df, '.', factor_variables=['a']))
-        # {'model_matrix':    C(a, one_hot_encoding_greater_2)[a2]  b[T.b2]  b[T.b3]
-        # 0                                0.0      0.0      0.0
-        # 1                                1.0      1.0      0.0
-        # 2                                0.0      0.0      1.0
-        # 3                                0.0      0.0      1.0,
-        # 'model_matrix_columns': ['C(a, one_hot_encoding_greater_2)[a2]', 'b[T.b2]', 'b[T.b3]']}
+            print(build_model_matrix(df, '.'))
+                # {'model_matrix':    a[a1]  a[a2]  b[T.b2]  b[T.b3]
+                # 0    1.0    0.0      0.0      0.0
+                # 1    0.0    1.0      1.0      0.0
+                # 2    1.0    0.0      0.0      1.0
+                # 3    1.0    0.0      0.0      1.0,
+                # 'model_matrix_columns': ['a[a1]', 'a[a2]', 'b[T.b2]', 'b[T.b3]']}
 
 
-        print(build_model_matrix(df, 'a', return_sparse=True))
-        # {'model_matrix': <4x2 sparse matrix of type '<class 'numpy.float64'>'
-        # with 4 stored elements in Compressed Sparse Column format>, 'model_matrix_columns': ['a[a1]', 'a[a2]']}
-        print(build_model_matrix(df, 'a', return_sparse=True)["model_matrix"].toarray())
-        # [[1. 0.]
-        # [0. 1.]
-        # [1. 0.]
-        # [1. 0.]]
+            print(build_model_matrix(df, '.', factor_variables=['a']))
+                # {'model_matrix':    C(a, one_hot_encoding_greater_2)[a2]  b[T.b2]  b[T.b3]
+                # 0                                0.0      0.0      0.0
+                # 1                                1.0      1.0      0.0
+                # 2                                0.0      0.0      1.0
+                # 3                                0.0      0.0      1.0,
+                # 'model_matrix_columns': ['C(a, one_hot_encoding_greater_2)[a2]', 'b[T.b2]', 'b[T.b3]']}
+
+
+            print(build_model_matrix(df, 'a', return_sparse=True))
+                # {'model_matrix': <4x2 sparse matrix of type '<class 'numpy.float64'>'
+                # with 4 stored elements in Compressed Sparse Column format>, 'model_matrix_columns': ['a[a1]', 'a[a2]']}
+            print(build_model_matrix(df, 'a', return_sparse=True)["model_matrix"].toarray())
+                # [[1. 0.]
+                # [0. 1.]
+                # [1. 0.]
+                # [1. 0.]]
     """
     variables = list(df.columns)
 
@@ -676,105 +686,107 @@ def model_matrix(
                     If return_sparse="True" returns a sparse matrix (csc_matrix)
 
     Examples:
-        import pandas as pd
-        d = {'a': ['a1','a2','a1','a1'], 'b': ['b1','b2','b3','b3']}
-        df = pd.DataFrame(data=d)
+        ::
 
-        model_matrix(df)
-        # {'model_matrix_columns_names': ['b[b1]', 'b[b2]', 'b[b3]', 'a[T.a2]'],
-        #  'penalty_factor': array([1, 1, 1, 1]),
-        #  'sample':    b[b1]  b[b2]  b[b3]  a[T.a2]
-        #  0    1.0    0.0    0.0      0.0
-        #  1    0.0    1.0    0.0      1.0
-        #  2    0.0    0.0    1.0      0.0
-        #  3    0.0    0.0    1.0      0.0,
-        #  'target': None}
+            import pandas as pd
+            d = {'a': ['a1','a2','a1','a1'], 'b': ['b1','b2','b3','b3']}
+            df = pd.DataFrame(data=d)
 
-        model_matrix(df, formula = 'a*b')
-        # {'model_matrix_columns_names': ['a[a1]',
-        #   'a[a2]',
-        #   'b[T.b2]',
-        #   'b[T.b3]',
-        #   'a[T.a2]:b[T.b2]',
-        #   'a[T.a2]:b[T.b3]'],
-        #  'penalty_factor': array([1, 1, 1, 1, 1, 1]),
-        #  'sample':    a[a1]  a[a2]  b[T.b2]  b[T.b3]  a[T.a2]:b[T.b2]  a[T.a2]:b[T.b3]
-        #  0    1.0    0.0      0.0      0.0              0.0              0.0
-        #  1    0.0    1.0      1.0      0.0              1.0              0.0
-        #  2    1.0    0.0      0.0      1.0              0.0              0.0
-        #  3    1.0    0.0      0.0      1.0              0.0              0.0,
-        #  'target': None}
+            model_matrix(df)
+                # {'model_matrix_columns_names': ['b[b1]', 'b[b2]', 'b[b3]', 'a[T.a2]'],
+                #  'penalty_factor': array([1, 1, 1, 1]),
+                #  'sample':    b[b1]  b[b2]  b[b3]  a[T.a2]
+                #  0    1.0    0.0    0.0      0.0
+                #  1    0.0    1.0    0.0      1.0
+                #  2    0.0    0.0    1.0      0.0
+                #  3    0.0    0.0    1.0      0.0,
+                #  'target': None}
 
-        model_matrix(df, formula = ['a','b'], penalty_factor=[1,2])
-        # {'model_matrix_columns_names': ['a[a1]', 'a[a2]', 'b[b1]', 'b[b2]', 'b[b3]'],
-        #  'penalty_factor': array([1, 1, 2, 2, 2]),
-        #  'sample':    a[a1]  a[a2]  b[b1]  b[b2]  b[b3]
-        #  0    1.0    0.0    1.0    0.0    0.0
-        #  1    0.0    1.0    0.0    1.0    0.0
-        #  2    1.0    0.0    0.0    0.0    1.0
-        #  3    1.0    0.0    0.0    0.0    1.0,
-        #  'target': None}
+            model_matrix(df, formula = 'a*b')
+                # {'model_matrix_columns_names': ['a[a1]',
+                #   'a[a2]',
+                #   'b[T.b2]',
+                #   'b[T.b3]',
+                #   'a[T.a2]:b[T.b2]',
+                #   'a[T.a2]:b[T.b3]'],
+                #  'penalty_factor': array([1, 1, 1, 1, 1, 1]),
+                #  'sample':    a[a1]  a[a2]  b[T.b2]  b[T.b3]  a[T.a2]:b[T.b2]  a[T.a2]:b[T.b3]
+                #  0    1.0    0.0      0.0      0.0              0.0              0.0
+                #  1    0.0    1.0      1.0      0.0              1.0              0.0
+                #  2    1.0    0.0      0.0      1.0              0.0              0.0
+                #  3    1.0    0.0      0.0      1.0              0.0              0.0,
+                #  'target': None}
 
-        model_matrix(df, formula = ['a','b'], penalty_factor=[1,2], one_hot_encoding=True)
-        # {'model_matrix_columns_names': ['C(a, one_hot_encoding_greater_2)[a2]',
-        #   'C(b, one_hot_encoding_greater_2)[b1]',
-        #   'C(b, one_hot_encoding_greater_2)[b2]',
-        #   'C(b, one_hot_encoding_greater_2)[b3]'],
-        #  'penalty_factor': array([1, 2, 2, 2]),
-        #  'sample':    C(a, one_hot_encoding_greater_2)[a2]  ...  C(b, one_hot_encoding_greater_2)[b3]
-        #  0                                0.0  ...                                0.0
-        #  1                                1.0  ...                                0.0
-        #  2                                0.0  ...                                1.0
-        #  3                                0.0  ...                                1.0
-        # [4 rows x 4 columns],
-        # 'target': None}
+            model_matrix(df, formula = ['a','b'], penalty_factor=[1,2])
+                # {'model_matrix_columns_names': ['a[a1]', 'a[a2]', 'b[b1]', 'b[b2]', 'b[b3]'],
+                #  'penalty_factor': array([1, 1, 2, 2, 2]),
+                #  'sample':    a[a1]  a[a2]  b[b1]  b[b2]  b[b3]
+                #  0    1.0    0.0    1.0    0.0    0.0
+                #  1    0.0    1.0    0.0    1.0    0.0
+                #  2    1.0    0.0    0.0    0.0    1.0
+                #  3    1.0    0.0    0.0    0.0    1.0,
+                #  'target': None}
 
-        model_matrix(df, formula = ['a','b'], penalty_factor=[1,2], return_sparse = True)
-        # {'model_matrix_columns_names': ['a[a1]', 'a[a2]', 'b[b1]', 'b[b2]', 'b[b3]'],
-        #  'penalty_factor': array([1, 1, 2, 2, 2]),
-        #  'sample': <4x5 sparse matrix of type '<class 'numpy.float64'>'
-        #  	with 8 stored elements in Compressed Sparse Column format>,
-        #  'target': None}
+            model_matrix(df, formula = ['a','b'], penalty_factor=[1,2], one_hot_encoding=True)
+                # {'model_matrix_columns_names': ['C(a, one_hot_encoding_greater_2)[a2]',
+                #   'C(b, one_hot_encoding_greater_2)[b1]',
+                #   'C(b, one_hot_encoding_greater_2)[b2]',
+                #   'C(b, one_hot_encoding_greater_2)[b3]'],
+                #  'penalty_factor': array([1, 2, 2, 2]),
+                #  'sample':    C(a, one_hot_encoding_greater_2)[a2]  ...  C(b, one_hot_encoding_greater_2)[b3]
+                #  0                                0.0  ...                                0.0
+                #  1                                1.0  ...                                0.0
+                #  2                                0.0  ...                                1.0
+                #  3                                0.0  ...                                1.0
+                # [4 rows x 4 columns],
+                # 'target': None}
 
-        model_matrix(df, target = df)
-        # {'model_matrix_columns_names': ['b[b1]', 'b[b2]', 'b[b3]', 'a[T.a2]'],
-        #  'penalty_factor': array([1, 1, 1, 1]),
-        #  'sample':    b[b1]  b[b2]  b[b3]  a[T.a2]
-        #  0    1.0    0.0    0.0      0.0
-        #  1    0.0    1.0    0.0      1.0
-        #  2    0.0    0.0    1.0      0.0
-        #  3    0.0    0.0    1.0      0.0,
-        #  'target':    b[b1]  b[b2]  b[b3]  a[T.a2]
-        #  0    1.0    0.0    0.0      0.0
-        #  1    0.0    1.0    0.0      1.0
-        #  2    0.0    0.0    1.0      0.0
-        #  3    0.0    0.0    1.0      0.0}
+            model_matrix(df, formula = ['a','b'], penalty_factor=[1,2], return_sparse = True)
+                # {'model_matrix_columns_names': ['a[a1]', 'a[a2]', 'b[b1]', 'b[b2]', 'b[b3]'],
+                #  'penalty_factor': array([1, 1, 2, 2, 2]),
+                #  'sample': <4x5 sparse matrix of type '<class 'numpy.float64'>'
+                #  	with 8 stored elements in Compressed Sparse Column format>,
+                #  'target': None}
 
-        model_matrix(df, target = df, return_type = "one")
-        # {'model_matrix_columns_names': ['b[b1]', 'b[b2]', 'b[b3]', 'a[T.a2]'],
-        #  'penalty_factor': array([1, 1, 1, 1]),
-        #  'model_matrix':    b[b1]  b[b2]  b[b3]  a[T.a2]
-        #  0    1.0    0.0    0.0      0.0
-        #  1    0.0    1.0    0.0      1.0
-        #  2    0.0    0.0    1.0      0.0
-        #  3    0.0    0.0    1.0      0.0
-        #  0    1.0    0.0    0.0      0.0
-        #  1    0.0    1.0    0.0      1.0
-        #  2    0.0    0.0    1.0      0.0
-        #  3    0.0    0.0    1.0      0.0}
+            model_matrix(df, target = df)
+                # {'model_matrix_columns_names': ['b[b1]', 'b[b2]', 'b[b3]', 'a[T.a2]'],
+                #  'penalty_factor': array([1, 1, 1, 1]),
+                #  'sample':    b[b1]  b[b2]  b[b3]  a[T.a2]
+                #  0    1.0    0.0    0.0      0.0
+                #  1    0.0    1.0    0.0      1.0
+                #  2    0.0    0.0    1.0      0.0
+                #  3    0.0    0.0    1.0      0.0,
+                #  'target':    b[b1]  b[b2]  b[b3]  a[T.a2]
+                #  0    1.0    0.0    0.0      0.0
+                #  1    0.0    1.0    0.0      1.0
+                #  2    0.0    0.0    1.0      0.0
+                #  3    0.0    0.0    1.0      0.0}
 
-        model_matrix(df, target = df, formula=['a','b'],return_type = "one")
-        # {'model_matrix_columns_names': ['a[a1]', 'a[a2]', 'b[b1]', 'b[b2]', 'b[b3]'],
-        #  'penalty_factor': array([1, 1, 1, 1, 1]),
-        #  'model_matrix':    a[a1]  a[a2]  b[b1]  b[b2]  b[b3]
-        #  0    1.0    0.0    1.0    0.0    0.0
-        #  1    0.0    1.0    0.0    1.0    0.0
-        #  2    1.0    0.0    0.0    0.0    1.0
-        #  3    1.0    0.0    0.0    0.0    1.0
-        #  0    1.0    0.0    1.0    0.0    0.0
-        #  1    0.0    1.0    0.0    1.0    0.0
-        #  2    1.0    0.0    0.0    0.0    1.0
-        #  3    1.0    0.0    0.0    0.0    1.0}
+            model_matrix(df, target = df, return_type = "one")
+                # {'model_matrix_columns_names': ['b[b1]', 'b[b2]', 'b[b3]', 'a[T.a2]'],
+                #  'penalty_factor': array([1, 1, 1, 1]),
+                #  'model_matrix':    b[b1]  b[b2]  b[b3]  a[T.a2]
+                #  0    1.0    0.0    0.0      0.0
+                #  1    0.0    1.0    0.0      1.0
+                #  2    0.0    0.0    1.0      0.0
+                #  3    0.0    0.0    1.0      0.0
+                #  0    1.0    0.0    0.0      0.0
+                #  1    0.0    1.0    0.0      1.0
+                #  2    0.0    0.0    1.0      0.0
+                #  3    0.0    0.0    1.0      0.0}
+
+            model_matrix(df, target = df, formula=['a','b'],return_type = "one")
+                # {'model_matrix_columns_names': ['a[a1]', 'a[a2]', 'b[b1]', 'b[b2]', 'b[b3]'],
+                #  'penalty_factor': array([1, 1, 1, 1, 1]),
+                #  'model_matrix':    a[a1]  a[a2]  b[b1]  b[b2]  b[b3]
+                #  0    1.0    0.0    1.0    0.0    0.0
+                #  1    0.0    1.0    0.0    1.0    0.0
+                #  2    1.0    0.0    0.0    0.0    1.0
+                #  3    1.0    0.0    0.0    0.0    1.0
+                #  0    1.0    0.0    1.0    0.0    0.0
+                #  1    0.0    1.0    0.0    1.0    0.0
+                #  2    1.0    0.0    0.0    0.0    1.0
+                #  3    1.0    0.0    0.0    0.0    1.0}
     """
     logger.debug("Starting building the model matrix")
     input_data = _prepare_input_model_matrix(sample, target, variables, add_na)
@@ -932,16 +944,18 @@ def row_pairwise_diffs(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: DataFrame with differences between all combinations of rows
 
-    Example:
-        d = pd.DataFrame({"a": (1, 2, 3), "b": (-42, 8, 2)})
-        row_pairwise_diffs(d)
-        #        a   b
-        # 0      1 -42
-        # 1      2   8
-        # 2      3   2
-        # 1 - 0  1  50
-        # 2 - 0  2  44
-        # 2 - 1  1  -6
+    Examples:
+        ::
+
+            d = pd.DataFrame({"a": (1, 2, 3), "b": (-42, 8, 2)})
+            row_pairwise_diffs(d)
+                #        a   b
+                # 0      1 -42
+                # 1      2   8
+                # 2      3   2
+                # 1 - 0  1  50
+                # 2 - 0  2  44
+                # 2 - 1  1  -6
     """
     c = combinations(sorted(df.index), 2)
     diffs = []
@@ -992,58 +1006,59 @@ def rm_mutual_nas(*args) -> List:
             any of the other arrays.
 
     Examples:
+        ::
 
-        import pandas as pd
-        import numpy as np
+            import pandas as pd
+            import numpy as np
 
-        x1 = pd.array([1,2, None, np.nan, pd.NA, 3])
-        x2 = pd.array([1.1,2,3, None, np.nan, pd.NA])
-        x3 = pd.array([1.1,2,3, 4,5,6])
-        x4 = pd.array(["1.1",2,3, None, np.nan, pd.NA])
-        x5 = pd.array(["1.1","2","3", None, np.nan, pd.NA], dtype = "string")
-        x6 = np.array([1,2,3.3,4,5,6])
-        x7 = np.array([1,2,3.3,4,"5","6"])
-        x8 = [1,2,3.3,4,"5","6"]
-        (x1,x2, x3, x4, x5, x6, x7, x8)
-            # (<IntegerArray>
-            # [1, 2, <NA>, <NA>, <NA>, 3]
-            # Length: 6, dtype: Int64,
-            # <PandasArray>
-            # [1.1, 2, 3, None, nan, <NA>]
-            # Length: 6, dtype: object,
-            # <PandasArray>
-            # [1.1, 2.0, 3.0, 4.0, 5.0, 6.0]
-            # Length: 6, dtype: float64,
-            # <PandasArray>
-            # ['1.1', 2, 3, None, nan, <NA>]
-            # Length: 6, dtype: object,
-            # <StringArray>
-            # ['1.1', '2', '3', <NA>, <NA>, <NA>]
-            # Length: 6, dtype: string,
-            # array([1. , 2. , 3.3, 4. , 5. , 6. ]),
-            # array(['1', '2', '3.3', '4', '5', '6'], dtype='<U32'),
-            # [1, 2, 3.3, 4, '5', '6'])
+            x1 = pd.array([1,2, None, np.nan, pd.NA, 3])
+            x2 = pd.array([1.1,2,3, None, np.nan, pd.NA])
+            x3 = pd.array([1.1,2,3, 4,5,6])
+            x4 = pd.array(["1.1",2,3, None, np.nan, pd.NA])
+            x5 = pd.array(["1.1","2","3", None, np.nan, pd.NA], dtype = "string")
+            x6 = np.array([1,2,3.3,4,5,6])
+            x7 = np.array([1,2,3.3,4,"5","6"])
+            x8 = [1,2,3.3,4,"5","6"]
+            (x1,x2, x3, x4, x5, x6, x7, x8)
+                # (<IntegerArray>
+                # [1, 2, <NA>, <NA>, <NA>, 3]
+                # Length: 6, dtype: Int64,
+                # <PandasArray>
+                # [1.1, 2, 3, None, nan, <NA>]
+                # Length: 6, dtype: object,
+                # <PandasArray>
+                # [1.1, 2.0, 3.0, 4.0, 5.0, 6.0]
+                # Length: 6, dtype: float64,
+                # <PandasArray>
+                # ['1.1', 2, 3, None, nan, <NA>]
+                # Length: 6, dtype: object,
+                # <StringArray>
+                # ['1.1', '2', '3', <NA>, <NA>, <NA>]
+                # Length: 6, dtype: string,
+                # array([1. , 2. , 3.3, 4. , 5. , 6. ]),
+                # array(['1', '2', '3.3', '4', '5', '6'], dtype='<U32'),
+                # [1, 2, 3.3, 4, '5', '6'])
 
-        from balance.util import rm_mutual_nas
-        rm_mutual_nas(x1,x2, x3, x4, x5,x6,x7,x8)
-            # [<IntegerArray>
-            #  [1, 2]
-            #  Length: 2, dtype: Int64,
-            #  <PandasArray>
-            #  [1.1, 2]
-            #  Length: 2, dtype: object,
-            #  <PandasArray>
-            #  [1.1, 2.0]
-            #  Length: 2, dtype: float64,
-            #  <PandasArray>
-            #  ['1.1', 2]
-            #  Length: 2, dtype: object,
-            #  <StringArray>
-            #  ['1.1', '2']
-            #  Length: 2, dtype: string,
-            #  array([1., 2.]),
-            #  array(['1', '2'], dtype='<U32'),
-            #  [1, 2]]
+            from balance.util import rm_mutual_nas
+            rm_mutual_nas(x1,x2, x3, x4, x5,x6,x7,x8)
+                # [<IntegerArray>
+                #  [1, 2]
+                #  Length: 2, dtype: Int64,
+                #  <PandasArray>
+                #  [1.1, 2]
+                #  Length: 2, dtype: object,
+                #  <PandasArray>
+                #  [1.1, 2.0]
+                #  Length: 2, dtype: float64,
+                #  <PandasArray>
+                #  ['1.1', 2]
+                #  Length: 2, dtype: object,
+                #  <StringArray>
+                #  ['1.1', '2']
+                #  Length: 2, dtype: string,
+                #  array([1., 2.]),
+                #  array(['1', '2'], dtype='<U32'),
+                #  [1, 2]]
     """
     if any(not (a is None or _is_arraylike(a)) for a in args):
         raise ValueError("All arguments must be arraylike")
@@ -1250,20 +1265,22 @@ def fct_lump(s: pd.Series, prop: float = 0.05) -> pd.Series:
     Returns:
         pd.Series: pd.series (with category dtype converted to object, if applicable)
 
-    Example:
-        from balance.util import fct_lump
-        import pandas as pd
+    Examples:
+        ::
 
-        s = pd.Series(['a','a','b','b','c','a','b'], dtype = 'category')
-        fct_lump(s, 0.25)
-            # 0                a
-            # 1                a
-            # 2                b
-            # 3                b
-            # 4    _lumped_other
-            # 5                a
-            # 6                b
-            # dtype: object
+            from balance.util import fct_lump
+            import pandas as pd
+
+            s = pd.Series(['a','a','b','b','c','a','b'], dtype = 'category')
+            fct_lump(s, 0.25)
+                # 0                a
+                # 1                a
+                # 2                b
+                # 3                b
+                # 4    _lumped_other
+                # 5                a
+                # 6                b
+                # dtype: object
     """
     props = s.value_counts() / s.shape[0]
 
@@ -1294,18 +1311,20 @@ def fct_lump_by(s: pd.Series, by: pd.Series, prop: float = 0.05) -> pd.Series:
     Returns:
         pd.Series: pd.series, we keep the index of s as the index of the result.
 
-    Example:
-        s = pd.Series([1,1,1,2,3,1,2])
-        by = pd.Series(['a','a','a','a','a','b','b'])
-        fct_lump_by(s, by, 0.5)
-        # 0                1
-        # 1                1
-        # 2                1
-        # 3    _lumped_other
-        # 4    _lumped_other
-        # 5                1
-        # 6                2
-        # dtype: object
+    Examples:
+        ::
+
+            s = pd.Series([1,1,1,2,3,1,2])
+            by = pd.Series(['a','a','a','a','a','b','b'])
+            fct_lump_by(s, by, 0.5)
+                # 0                1
+                # 1                1
+                # 2                1
+                # 3    _lumped_other
+                # 4    _lumped_other
+                # 5                1
+                # 6                2
+                # dtype: object
     """
     # The reindexing is required in order to overcome bug before pandas 1.2
     # https://github.com/pandas-dev/pandas/issues/16646
@@ -1337,27 +1356,29 @@ def _pd_convert_all_types(
         pd.DataFrame: Output df with columns converted from input_type to output_type.
 
     Examples:
-        import numpy as np
-        import pandas as pd
-        df = pd.DataFrame({"a": pd.array([1,2], dtype = pd.Int64Dtype()), "a2": pd.array([1,2], dtype = np.int64)})
+        ::
 
-        df.dtypes
-            # a     Int64
-            # a2    int64
-            # dtype: object
-        df.dtypes.to_numpy()
-            # array([Int64Dtype(), dtype('int64')], dtype=object)
+            import numpy as np
+            import pandas as pd
+            df = pd.DataFrame({"a": pd.array([1,2], dtype = pd.Int64Dtype()), "a2": pd.array([1,2], dtype = np.int64)})
 
-        df2 =_pd_convert_all_types(df, "Int64", "int64")
+            df.dtypes
+                # a     Int64
+                # a2    int64
+                # dtype: object
+            df.dtypes.to_numpy()
+                # array([Int64Dtype(), dtype('int64')], dtype=object)
 
-        df2.dtypes.to_numpy()
-            # array([dtype('int64'), dtype('int64')], dtype=object)
+            df2 =_pd_convert_all_types(df, "Int64", "int64")
 
-        # Might be requires some casting to float64 so that it will handle missing values
-        # For details, see: https://stackoverflow.com/a/53853351
-        df3 =_pd_convert_all_types(df, "Int64", "float64")
-        df3.dtypes.to_numpy()
-            # array([dtype('float64'), dtype('float64')], dtype=object)
+            df2.dtypes.to_numpy()
+                # array([dtype('int64'), dtype('int64')], dtype=object)
+
+            # Might be requires some casting to float64 so that it will handle missing values
+            # For details, see: https://stackoverflow.com/a/53853351
+            df3 =_pd_convert_all_types(df, "Int64", "float64")
+            df3.dtypes.to_numpy()
+                # array([dtype('float64'), dtype('float64')], dtype=object)
     """
     df = copy.deepcopy(df)
     # source: https://stackoverflow.com/a/56944992/256662

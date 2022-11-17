@@ -140,121 +140,121 @@ class BalanceDF:
                 First item is self, and it just returns it without using method on it.
                 The other items are based on the objects in _links. E.g.: it can be 'target'
                 and 'unadjusted', and it will return them after running the same BalanceDF child creation method on them.
-
         Examples:
-            from balance.sample_class import Sample
-            import pandas as pd
+            ::
+                from balance.sample_class import Sample
+                import pandas as pd
 
-            s1 = Sample.from_frame(
-                pd.DataFrame(
-                    {
-                        "a": (1, 2, 3, 1),
-                        "b": (-42, 8, 2, -42),
-                        "o": (7, 8, 9, 10),
-                        "c": ("x", "y", "z", "v"),
-                        "id": (1, 2, 3, 4),
-                        "w": (0.5, 2, 1, 1),
-                    }
-                ),
-                id_column="id",
-                weight_column="w",
-                outcome_columns="o",
-            )
+                s1 = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "a": (1, 2, 3, 1),
+                            "b": (-42, 8, 2, -42),
+                            "o": (7, 8, 9, 10),
+                            "c": ("x", "y", "z", "v"),
+                            "id": (1, 2, 3, 4),
+                            "w": (0.5, 2, 1, 1),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                    outcome_columns="o",
+                )
 
-            s2 = Sample.from_frame(
-                pd.DataFrame(
-                    {
-                        "a": (1, 2, 3),
-                        "b": (4, 6, 8),
-                        "id": (1, 2, 3),
-                        "w": (0.5, 1, 2),
-                        "c": ("x", "y", "z"),
-                    }
-                ),
-                id_column="id",
-                weight_column="w",
-            )
+                s2 = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "a": (1, 2, 3),
+                            "b": (4, 6, 8),
+                            "id": (1, 2, 3),
+                            "w": (0.5, 1, 2),
+                            "c": ("x", "y", "z"),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                )
 
-            s3 = s1.set_target(s2)
-            s3_null = s3.adjust(method="null")
-
-
-            # keys depends on which samples are linked to the object:
-            list(s1.covars()._BalanceDF_child_from_linked_samples().keys())  # ['self']
-            list(s3.covars()._BalanceDF_child_from_linked_samples().keys())  # ['self', 'target']
-            list(s3_null.covars()._BalanceDF_child_from_linked_samples().keys())  # ['self', 'target', 'unadjusted']
-
-            # Indeed, all are of the same BalanceDF child type:
-            s3.covars()._BalanceDF_child_from_linked_samples()
-            # {'self': (balance.balancedf_class.BalanceCovarsDF)
-            # covars from <balance.sample_class.Sample object at 0x7f4392ea61c0>:
-            #     a   b  c
-            # 0  1 -42  x
-            # 1  2   8  y
-            # 2  3   2  z
-            # 3  1 -42  v,
-            # 'target': (balance.balancedf_class.BalanceCovarsDF)
-            # covars from <balance.sample_class.Sample object at 0x7f43958fbd90>:
-            #     a  b  c
-            # 0  1  4  x
-            # 1  2  6  y
-            # 2  3  8  z}
-
-            s3_null.covars()._BalanceDF_child_from_linked_samples()
-            # {'self': (balance.balancedf_class.BalanceCovarsDF)
-            # covars from <balance.sample_class.Sample object at 0x7f4392ea60d0>:
-            #     a   b  c
-            # 0  1 -42  x
-            # 1  2   8  y
-            # 2  3   2  z
-            # 3  1 -42  v,
-            # 'target': (balance.balancedf_class.BalanceCovarsDF)
-            # covars from <balance.sample_class.Sample object at 0x7f43958fbd90>:
-            #     a  b  c
-            # 0  1  4  x
-            # 1  2  6  y
-            # 2  3  8  z,
-            # 'unadjusted': (balance.balancedf_class.BalanceCovarsDF)
-            # covars from <balance.sample_class.Sample object at 0x7f4392ea61c0>:
-            #     a   b  c
-            # 0  1 -42  x
-            # 1  2   8  y
-            # 2  3   2  z
-            # 3  1 -42  v}
-
-            the_dict = s3_null.covars()._BalanceDF_child_from_linked_samples()
-            [v.__class__ for (k,v) in the_dict.items()]
-            [balance.balancedf_class.BalanceCovarsDF,
-            balance.balancedf_class.BalanceCovarsDF,
-            balance.balancedf_class.BalanceCovarsDF]
+                s3 = s1.set_target(s2)
+                s3_null = s3.adjust(method="null")
 
 
-            # This also works for outcomes (returns None if there is none):
-            s3.outcomes()._BalanceDF_child_from_linked_samples()
-            # {'self': (balance.balancedf_class.BalanceOutcomesDF)
-            #  outcomes from <balance.sample_class.Sample object at 0x7f4392ea61c0>:
-            #      o
-            #  0   7
-            #  1   8
-            #  2   9
-            #  3  10,
-            #  'target': None}
+                # keys depends on which samples are linked to the object:
+                list(s1.covars()._BalanceDF_child_from_linked_samples().keys())  # ['self']
+                list(s3.covars()._BalanceDF_child_from_linked_samples().keys())  # ['self', 'target']
+                list(s3_null.covars()._BalanceDF_child_from_linked_samples().keys())  # ['self', 'target', 'unadjusted']
 
-            # And also works for weights:
-            s3.weights()._BalanceDF_child_from_linked_samples()
-            # {'self': (balance.balancedf_class.BalanceWeightsDF)
-            #  weights from <balance.sample_class.Sample object at 0x7f4392ea61c0>:
-            #       w
-            #  0  0.5
-            #  1  2.0
-            #  2  1.0
-            #  3  1.0,
-            #  'target': (balance.balancedf_class.BalanceWeightsDF)
-            #  weights from <balance.sample_class.Sample object at 0x7f43958fbd90>:
-            #       w
-            #  0  0.5
-            #  1  1.0
-            #  2  2.0}
+                # Indeed, all are of the same BalanceDF child type:
+                s3.covars()._BalanceDF_child_from_linked_samples()
+                # {'self': (balance.balancedf_class.BalanceCovarsDF)
+                # covars from <balance.sample_class.Sample object at 0x7f4392ea61c0>:
+                #     a   b  c
+                # 0  1 -42  x
+                # 1  2   8  y
+                # 2  3   2  z
+                # 3  1 -42  v,
+                # 'target': (balance.balancedf_class.BalanceCovarsDF)
+                # covars from <balance.sample_class.Sample object at 0x7f43958fbd90>:
+                #     a  b  c
+                # 0  1  4  x
+                # 1  2  6  y
+                # 2  3  8  z}
+
+                s3_null.covars()._BalanceDF_child_from_linked_samples()
+                # {'self': (balance.balancedf_class.BalanceCovarsDF)
+                # covars from <balance.sample_class.Sample object at 0x7f4392ea60d0>:
+                #     a   b  c
+                # 0  1 -42  x
+                # 1  2   8  y
+                # 2  3   2  z
+                # 3  1 -42  v,
+                # 'target': (balance.balancedf_class.BalanceCovarsDF)
+                # covars from <balance.sample_class.Sample object at 0x7f43958fbd90>:
+                #     a  b  c
+                # 0  1  4  x
+                # 1  2  6  y
+                # 2  3  8  z,
+                # 'unadjusted': (balance.balancedf_class.BalanceCovarsDF)
+                # covars from <balance.sample_class.Sample object at 0x7f4392ea61c0>:
+                #     a   b  c
+                # 0  1 -42  x
+                # 1  2   8  y
+                # 2  3   2  z
+                # 3  1 -42  v}
+
+                the_dict = s3_null.covars()._BalanceDF_child_from_linked_samples()
+                [v.__class__ for (k,v) in the_dict.items()]
+                [balance.balancedf_class.BalanceCovarsDF,
+                balance.balancedf_class.BalanceCovarsDF,
+                balance.balancedf_class.BalanceCovarsDF]
+
+
+                # This also works for outcomes (returns None if there is none):
+                s3.outcomes()._BalanceDF_child_from_linked_samples()
+                # {'self': (balance.balancedf_class.BalanceOutcomesDF)
+                #  outcomes from <balance.sample_class.Sample object at 0x7f4392ea61c0>:
+                #      o
+                #  0   7
+                #  1   8
+                #  2   9
+                #  3  10,
+                #  'target': None}
+
+                # And also works for weights:
+                s3.weights()._BalanceDF_child_from_linked_samples()
+                # {'self': (balance.balancedf_class.BalanceWeightsDF)
+                #  weights from <balance.sample_class.Sample object at 0x7f4392ea61c0>:
+                #       w
+                #  0  0.5
+                #  1  2.0
+                #  2  1.0
+                #  3  1.0,
+                #  'target': (balance.balancedf_class.BalanceWeightsDF)
+                #  weights from <balance.sample_class.Sample object at 0x7f43958fbd90>:
+                #       w
+                #  0  0.5
+                #  1  1.0
+                #  2  2.0}
         """
         # NOTE: this assumes that the .__name is the same as the creation method (i.e.: .covars(), .weights(), .outcomes())
         BalanceDF_child_method = self.__name
@@ -292,58 +292,59 @@ class BalanceDF:
                 per column mean, after applying `model_matrix` to the df from each object.
 
         Examples:
+            ::
 
-            from balance.sample_class import Sample
-            import pandas as pd
+                from balance.sample_class import Sample
+                import pandas as pd
 
-            s1 = Sample.from_frame(
-                pd.DataFrame(
-                    {
-                        "a": (1, 2, 3, 1),
-                        "b": (-42, 8, 2, -42),
-                        "o": (7, 8, 9, 10),
-                        "c": ("x", "y", "z", "v"),
-                        "id": (1, 2, 3, 4),
-                        "w": (0.5, 2, 1, 1),
-                    }
-                ),
-                id_column="id",
-                weight_column="w",
-                outcome_columns="o",
-            )
+                s1 = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "a": (1, 2, 3, 1),
+                            "b": (-42, 8, 2, -42),
+                            "o": (7, 8, 9, 10),
+                            "c": ("x", "y", "z", "v"),
+                            "id": (1, 2, 3, 4),
+                            "w": (0.5, 2, 1, 1),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                    outcome_columns="o",
+                )
 
-            s2 = Sample.from_frame(
-                pd.DataFrame(
-                    {
-                        "a": (1, 2, 3),
-                        "b": (4, 6, 8),
-                        "id": (1, 2, 3),
-                        "w": (0.5, 1, 2),
-                        "c": ("x", "y", "z"),
-                    }
-                ),
-                id_column="id",
-                weight_column="w",
-            )
+                s2 = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "a": (1, 2, 3),
+                            "b": (4, 6, 8),
+                            "id": (1, 2, 3),
+                            "w": (0.5, 1, 2),
+                            "c": ("x", "y", "z"),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                )
 
-            s3 = s1.set_target(s2)
+                s3 = s1.set_target(s2)
 
-            print(s3.covars()._call_on_linked("mean").round(3))
-                #             a       b   c[v]   c[x]   c[y]   c[z]
-                # source
-                # self    1.889 -10.000  0.222  0.111  0.444  0.222
-                # target  2.429   6.857    NaN  0.143  0.286  0.571
+                print(s3.covars()._call_on_linked("mean").round(3))
+                    #             a       b   c[v]   c[x]   c[y]   c[z]
+                    # source
+                    # self    1.889 -10.000  0.222  0.111  0.444  0.222
+                    # target  2.429   6.857    NaN  0.143  0.286  0.571
 
-            print(s3.covars()._call_on_linked("df").round(3))
-                #         a   b  c
-                # source
-                # self    1 -42  x
-                # self    2   8  y
-                # self    3   2  z
-                # self    1 -42  v
-                # target  1   4  x
-                # target  2   6  y
-                # target  3   8  z
+                print(s3.covars()._call_on_linked("df").round(3))
+                    #         a   b  c
+                    # source
+                    # self    1 -42  x
+                    # self    2   8  y
+                    # self    3   2  z
+                    # self    1 -42  v
+                    # target  1   4  x
+                    # target  2   6  y
+                    # target  3   8  z
         """
         output = []
         for k, v in self._BalanceDF_child_from_linked_samples().items():
@@ -386,39 +387,40 @@ class BalanceDF:
             pd.DataFrame: The output from :func:`balance_util.model_matrix`
 
         Examples:
+            ::
 
-            import pandas as pd
-            from balance.sample_class import Sample
+                import pandas as pd
+                from balance.sample_class import Sample
 
-            s1 = Sample.from_frame(
-                pd.DataFrame(
-                    {
-                        "a": (1, 2, 3, 1),
-                        "b": (-42, 8, 2, -42),
-                        "o": (7, 8, 9, 10),
-                        "c": ("x", "y", "z", "v"),
-                        "id": (1, 2, 3, 4),
-                        "w": (0.5, 2, 1, 1),
-                    }
-                ),
-                id_column="id",
-                weight_column="w",
-                outcome_columns="o",
-            )
+                s1 = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "a": (1, 2, 3, 1),
+                            "b": (-42, 8, 2, -42),
+                            "o": (7, 8, 9, 10),
+                            "c": ("x", "y", "z", "v"),
+                            "id": (1, 2, 3, 4),
+                            "w": (0.5, 2, 1, 1),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                    outcome_columns="o",
+                )
 
-            print(s1.covars().df)
-                # a   b  c
-                # 0  1 -42  x
-                # 1  2   8  y
-                # 2  3   2  z
-                # 3  1 -42  v
+                print(s1.covars().df)
+                    # a   b  c
+                    # 0  1 -42  x
+                    # 1  2   8  y
+                    # 2  3   2  z
+                    # 3  1 -42  v
 
-            print(s1.covars().model_matrix())
-                #      a     b  c[v]  c[x]  c[y]  c[z]
-                # 0  1.0 -42.0   0.0   1.0   0.0   0.0
-                # 1  2.0   8.0   0.0   0.0   1.0   0.0
-                # 2  3.0   2.0   0.0   0.0   0.0   1.0
-                # 3  1.0 -42.0   1.0   0.0   0.0   0.0
+                print(s1.covars().model_matrix())
+                    #      a     b  c[v]  c[x]  c[y]  c[z]
+                    # 0  1.0 -42.0   0.0   1.0   0.0   0.0
+                    # 1  2.0   8.0   0.0   0.0   1.0   0.0
+                    # 2  3.0   2.0   0.0   0.0   0.0   1.0
+                    # 3  1.0 -42.0   1.0   0.0   0.0   0.0
         """
         if not hasattr(self, "_model_matrix") or self._model_matrix is None:
             self._model_matrix = balance_util.model_matrix(
@@ -509,28 +511,30 @@ class BalanceDF:
             List: Of column names.
 
         Examples:
-            s1 = Sample.from_frame(
-                pd.DataFrame(
-                    {
-                        "a": (1, 2, 3, 1),
-                        "b": (-42, 8, 2, -42),
-                        "o": (7, 8, 9, 10),
-                        "c": ("x", "y", "z", "v"),
-                        "id": (1, 2, 3, 4),
-                        "w": (0.5, 2, 1, 1),
-                    }
-                ),
-                id_column="id",
-                weight_column="w",
-                outcome_columns="o",
-            )
+            ::
 
-            s1.covars().names()
-            # ['a', 'b', 'c']
-            s1.weights().names()
-            # ['w']
-            s1.outcomes().names()
-            # ['o']
+                s1 = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "a": (1, 2, 3, 1),
+                            "b": (-42, 8, 2, -42),
+                            "o": (7, 8, 9, 10),
+                            "c": ("x", "y", "z", "v"),
+                            "id": (1, 2, 3, 4),
+                            "w": (0.5, 2, 1, 1),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                    outcome_columns="o",
+                )
+
+                s1.covars().names()
+                # ['a', 'b', 'c']
+                s1.weights().names()
+                # ['w']
+                s1.outcomes().names()
+                # ['o']
         """
         return list(self.df.columns.values)
 
@@ -556,38 +560,40 @@ class BalanceDF:
                 If library="seaborn" then returns either a list or an np.array of matplotlib axis.
 
         Examples:
-            import numpy as np
-            import pandas as pd
-            from numpy import random
-            from balance.sample_class import Sample
+            ::
 
-            random.seed(96483)
+                import numpy as np
+                import pandas as pd
+                from numpy import random
+                from balance.sample_class import Sample
 
-            df = pd.DataFrame({
-                "id": range(100),
-                'v1': random.random_integers(11111, 11114, size=100).astype(str),
-                'v2': random.normal(size = 100),
-                'v3': random.uniform(size = 100),
-                "w": pd.Series(np.ones(99).tolist() + [1000]),
-            }).sort_values(by=['v2'])
+                random.seed(96483)
 
-            s1 = Sample.from_frame(df,
-                id_column="id",
-                weight_column="w",
-            )
+                df = pd.DataFrame({
+                    "id": range(100),
+                    'v1': random.random_integers(11111, 11114, size=100).astype(str),
+                    'v2': random.normal(size = 100),
+                    'v3': random.uniform(size = 100),
+                    "w": pd.Series(np.ones(99).tolist() + [1000]),
+                }).sort_values(by=['v2'])
 
-            s2 = Sample.from_frame(
-                df.assign(w = pd.Series(np.ones(100))),
-                id_column="id",
-                weight_column="w",
-            )
+                s1 = Sample.from_frame(df,
+                    id_column="id",
+                    weight_column="w",
+                )
 
-            s3 = s1.set_target(s2)
-            s3_null = s3.adjust(method="null")
-            s3_null.set_weights(random.random(size = 100) + 0.5)
+                s2 = Sample.from_frame(
+                    df.assign(w = pd.Series(np.ones(100))),
+                    id_column="id",
+                    weight_column="w",
+                )
 
-            s3_null.covars().plot()
-            s3_null.covars().plot(library = "seaborn")
+                s3 = s1.set_target(s2)
+                s3_null = s3.adjust(method="null")
+                s3_null.set_weights(random.random(size = 100) + 0.5)
+
+                s3_null.covars().plot()
+                s3_null.covars().plot(library = "seaborn")
         """
         if on_linked_samples:
             dfs_to_add = self._BalanceDF_child_from_linked_samples()
@@ -632,50 +638,51 @@ class BalanceDF:
                 Columns are for each of the columns in the relevant df (after applying :func:`model_matrix`)
 
         Examples:
+            ::
 
-            import pandas as pd
-            from balance.sample_class import Sample
+                import pandas as pd
+                from balance.sample_class import Sample
 
-            s1 = Sample.from_frame(
-                pd.DataFrame(
-                    {
-                        "a": (1, 2, 3, 1),
-                        "b": (-42, 8, 2, -42),
-                        "o": (7, 8, 9, 10),
-                        "c": ("x", "y", "z", "v"),
-                        "id": (1, 2, 3, 4),
-                        "w": (0.5, 2, 1, 1),
-                    }
-                ),
-                id_column="id",
-                weight_column="w",
-                outcome_columns="o",
-            )
+                s1 = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "a": (1, 2, 3, 1),
+                            "b": (-42, 8, 2, -42),
+                            "o": (7, 8, 9, 10),
+                            "c": ("x", "y", "z", "v"),
+                            "id": (1, 2, 3, 4),
+                            "w": (0.5, 2, 1, 1),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                    outcome_columns="o",
+                )
 
-            s2 = Sample.from_frame(
-                pd.DataFrame(
-                    {
-                        "a": (1, 2, 3),
-                        "b": (4, 6, 8),
-                        "id": (1, 2, 3),
-                        "w": (0.5, 1, 2),
-                        "c": ("x", "y", "z"),
-                    }
-                ),
-                id_column="id",
-                weight_column="w",
-            )
+                s2 = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "a": (1, 2, 3),
+                            "b": (4, 6, 8),
+                            "id": (1, 2, 3),
+                            "w": (0.5, 1, 2),
+                            "c": ("x", "y", "z"),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                )
 
-            s3 = s1.set_target(s2)
-            s3_null = s3.adjust(method="null")
+                s3 = s1.set_target(s2)
+                s3_null = s3.adjust(method="null")
 
-            print(s3_null.covars().mean())
+                print(s3_null.covars().mean())
 
-            #                 a          b      c[v]      c[x]      c[y]      c[z]
-            # source
-            # self        1.888889 -10.000000  0.222222  0.111111  0.444444  0.222222
-            # target      2.428571   6.857143       NaN  0.142857  0.285714  0.571429
-            # unadjusted  1.888889 -10.000000  0.222222  0.111111  0.444444  0.222222
+                #                 a          b      c[v]      c[x]      c[y]      c[z]
+                # source
+                # self        1.888889 -10.000000  0.222222  0.111111  0.444444  0.222222
+                # target      2.428571   6.857143       NaN  0.142857  0.285714  0.571429
+                # unadjusted  1.888889 -10.000000  0.222222  0.111111  0.444444  0.222222
         """
         if on_linked_samples:
             return self._call_on_linked("mean", **kwargs)
@@ -699,50 +706,51 @@ class BalanceDF:
                 Columns are for each of the columns in the relevant df (after applying :func:`model_matrix`)
 
         Examples:
+            ::
 
-            import pandas as pd
-            from balance.sample_class import Sample
+                import pandas as pd
+                from balance.sample_class import Sample
 
-            s1 = Sample.from_frame(
-                pd.DataFrame(
-                    {
-                        "a": (1, 2, 3, 1),
-                        "b": (-42, 8, 2, -42),
-                        "o": (7, 8, 9, 10),
-                        "c": ("x", "y", "z", "v"),
-                        "id": (1, 2, 3, 4),
-                        "w": (0.5, 2, 1, 1),
-                    }
-                ),
-                id_column="id",
-                weight_column="w",
-                outcome_columns="o",
-            )
+                s1 = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "a": (1, 2, 3, 1),
+                            "b": (-42, 8, 2, -42),
+                            "o": (7, 8, 9, 10),
+                            "c": ("x", "y", "z", "v"),
+                            "id": (1, 2, 3, 4),
+                            "w": (0.5, 2, 1, 1),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                    outcome_columns="o",
+                )
 
-            s2 = Sample.from_frame(
-                pd.DataFrame(
-                    {
-                        "a": (1, 2, 3),
-                        "b": (4, 6, 8),
-                        "id": (1, 2, 3),
-                        "w": (0.5, 1, 2),
-                        "c": ("x", "y", "z"),
-                    }
-                ),
-                id_column="id",
-                weight_column="w",
-            )
+                s2 = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "a": (1, 2, 3),
+                            "b": (4, 6, 8),
+                            "id": (1, 2, 3),
+                            "w": (0.5, 1, 2),
+                            "c": ("x", "y", "z"),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                )
 
-            s3 = s1.set_target(s2)
-            s3_null = s3.adjust(method="null")
+                s3 = s1.set_target(s2)
+                s3_null = s3.adjust(method="null")
 
-            print(s3_null.covars().std())
+                print(s3_null.covars().std())
 
-            #                 a          b  c[v]      c[x]      c[y]      c[z]
-            # source
-            # self        0.886405  27.354812   0.5  0.377964  0.597614  0.500000
-            # target      0.963624   1.927248   NaN  0.462910  0.597614  0.654654
-            # unadjusted  0.886405  27.354812   0.5  0.377964  0.597614  0.500000
+                    #                 a          b  c[v]      c[x]      c[y]      c[z]
+                    # source
+                    # self        0.886405  27.354812   0.5  0.377964  0.597614  0.500000
+                    # target      0.963624   1.927248   NaN  0.462910  0.597614  0.654654
+                    # unadjusted  0.886405  27.354812   0.5  0.377964  0.597614  0.500000
         """
         if on_linked_samples:
             return self._call_on_linked("std", **kwargs)
@@ -814,26 +822,27 @@ class BalanceDF:
             pd.Series: See :func:`weighted_comparisons_stats.asmd`
 
         Examples:
+            ::
 
-            from balance.balancedf_class import BalanceDF
+                from balance.balancedf_class import BalanceDF
 
-            BalanceDF._asmd_BalanceDF(
-                Sample.from_frame(
-                    pd.DataFrame(
-                        {"id": (1, 2), "a": (1, 2), "b": (-1, 12), "weight": (1, 2)}
-                    )
-                ).covars(),
-                Sample.from_frame(
-                    pd.DataFrame(
-                        {"id": (1, 2), "a": (3, 4), "b": (0, 42), "weight": (1, 2)}
-                    )
-                ).covars(),
-            )
+                BalanceDF._asmd_BalanceDF(
+                    Sample.from_frame(
+                        pd.DataFrame(
+                            {"id": (1, 2), "a": (1, 2), "b": (-1, 12), "weight": (1, 2)}
+                        )
+                    ).covars(),
+                    Sample.from_frame(
+                        pd.DataFrame(
+                            {"id": (1, 2), "a": (3, 4), "b": (0, 42), "weight": (1, 2)}
+                        )
+                    ).covars(),
+                )
 
-                # a             2.828427
-                # b             0.684659
-                # mean(asmd)    1.756543
-                # dtype: float64
+                    # a             2.828427
+                    # b             0.684659
+                    # mean(asmd)    1.756543
+                    # dtype: float64
         """
         BalanceDF._check_if_not_BalanceDF(sample_BalanceDF, "sample_BalanceDF")
         BalanceDF._check_if_not_BalanceDF(sample_BalanceDF, "target_BalanceDF")
@@ -883,68 +892,70 @@ class BalanceDF:
                 If on_linked_samples is True, then two rows per source (self, unadjusted), each with the asmd compared to target, and a third row for the difference (self-unadjusted).
 
         Examples:
-            import pandas as pd
-            from balance.sample_class import Sample
+            ::
 
-            from copy import deepcopy
+                import pandas as pd
+                from balance.sample_class import Sample
+
+                from copy import deepcopy
 
 
-            s1 = Sample.from_frame(
-                pd.DataFrame(
-                    {
-                        "a": (1, 2, 3, 1),
-                        "b": (-42, 8, 2, -42),
-                        "o": (7, 8, 9, 10),
-                        "c": ("x", "y", "z", "v"),
-                        "id": (1, 2, 3, 4),
-                        "w": (0.5, 2, 1, 1),
-                    }
-                ),
-                id_column="id",
-                weight_column="w",
-                outcome_columns="o",
-            )
+                s1 = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "a": (1, 2, 3, 1),
+                            "b": (-42, 8, 2, -42),
+                            "o": (7, 8, 9, 10),
+                            "c": ("x", "y", "z", "v"),
+                            "id": (1, 2, 3, 4),
+                            "w": (0.5, 2, 1, 1),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                    outcome_columns="o",
+                )
 
-            s2 = Sample.from_frame(
-                pd.DataFrame(
-                    {
-                        "a": (1, 2, 3),
-                        "b": (4, 6, 8),
-                        "id": (1, 2, 3),
-                        "w": (0.5, 1, 2),
-                        "c": ("x", "y", "z"),
-                    }
-                ),
-                id_column="id",
-                weight_column="w",
-            )
+                s2 = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "a": (1, 2, 3),
+                            "b": (4, 6, 8),
+                            "id": (1, 2, 3),
+                            "w": (0.5, 1, 2),
+                            "c": ("x", "y", "z"),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                )
 
-            s3 = s1.set_target(s2)
-            s3_null = s3.adjust(method="null")
+                s3 = s1.set_target(s2)
+                s3_null = s3.adjust(method="null")
 
-            s3_null_madeup_weights = deepcopy(s3_null)
-            s3_null_madeup_weights.set_weights((1, 2, 3, 1))
+                s3_null_madeup_weights = deepcopy(s3_null)
+                s3_null_madeup_weights.set_weights((1, 2, 3, 1))
 
-            print(s3_null.covars().asmd().round(3))
-                #                     a      b  c[v]   c[x]   c[y]   c[z]  mean(asmd)
-                # source
-                # self               0.56  8.747   NaN  0.069  0.266  0.533       3.175
-                # unadjusted         0.56  8.747   NaN  0.069  0.266  0.533       3.175
-                # unadjusted - self  0.00  0.000   NaN  0.000  0.000  0.000       0.000
+                print(s3_null.covars().asmd().round(3))
+                    #                     a      b  c[v]   c[x]   c[y]   c[z]  mean(asmd)
+                    # source
+                    # self               0.56  8.747   NaN  0.069  0.266  0.533       3.175
+                    # unadjusted         0.56  8.747   NaN  0.069  0.266  0.533       3.175
+                    # unadjusted - self  0.00  0.000   NaN  0.000  0.000  0.000       0.000
 
-            # show that on_linked_samples = False works:
-            print(s3_null.covars().asmd(on_linked_samples = False).round(3))
-                #            a      b  c[v]   c[x]   c[y]   c[z]  mean(asmd)
-                # index
-                # covars  0.56  8.747   NaN  0.069  0.266  0.533       3.175
+                # show that on_linked_samples = False works:
+                print(s3_null.covars().asmd(on_linked_samples = False).round(3))
+                    #            a      b  c[v]   c[x]   c[y]   c[z]  mean(asmd)
+                    # index
+                    # covars  0.56  8.747   NaN  0.069  0.266  0.533       3.175
 
-            # verify this also works when we have some weights
-            print(s3_null_madeup_weights.covars().asmd())
-                #                           a         b  c[v]  ...      c[y]      c[z]  mean(asmd)
-                # source                                       ...
-                # self               0.296500  8.153742   NaN  ...  0.000000  0.218218    2.834932
-                # unadjusted         0.560055  8.746742   NaN  ...  0.265606  0.533422    3.174566
-                # unadjusted - self  0.263555  0.592999   NaN  ...  0.265606  0.315204    0.33963
+                # verify this also works when we have some weights
+                print(s3_null_madeup_weights.covars().asmd())
+                    #                           a         b  c[v]  ...      c[y]      c[z]  mean(asmd)
+                    # source                                       ...
+                    # self               0.296500  8.153742   NaN  ...  0.000000  0.218218    2.834932
+                    # unadjusted         0.560055  8.746742   NaN  ...  0.265606  0.533422    3.174566
+                    # unadjusted - self  0.263555  0.592999   NaN  ...  0.265606  0.315204    0.33963
         """
         target_from_self = self._BalanceDF_child_from_linked_samples().get("target")
 
@@ -999,60 +1010,62 @@ class BalanceDF:
                 The asmd is calculated using :func:`asmd`.
 
         Examples:
-            import pandas as pd
-            from balance.sample_class import Sample
+            ::
 
-            from copy import deepcopy
+                import pandas as pd
+                from balance.sample_class import Sample
+
+                from copy import deepcopy
 
 
-            s1 = Sample.from_frame(
-                pd.DataFrame(
-                    {
-                        "a": (1, 2, 3, 1),
-                        "b": (-42, 8, 2, -42),
-                        "o": (7, 8, 9, 10),
-                        "c": ("x", "y", "z", "v"),
-                        "id": (1, 2, 3, 4),
-                        "w": (0.5, 2, 1, 1),
-                    }
-                ),
-                id_column="id",
-                weight_column="w",
-                outcome_columns="o",
-            )
+                s1 = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "a": (1, 2, 3, 1),
+                            "b": (-42, 8, 2, -42),
+                            "o": (7, 8, 9, 10),
+                            "c": ("x", "y", "z", "v"),
+                            "id": (1, 2, 3, 4),
+                            "w": (0.5, 2, 1, 1),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                    outcome_columns="o",
+                )
 
-            s2 = Sample.from_frame(
-                pd.DataFrame(
-                    {
-                        "a": (1, 2, 3),
-                        "b": (4, 6, 8),
-                        "id": (1, 2, 3),
-                        "w": (0.5, 1, 2),
-                        "c": ("x", "y", "z"),
-                    }
-                ),
-                id_column="id",
-                weight_column="w",
-            )
+                s2 = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "a": (1, 2, 3),
+                            "b": (4, 6, 8),
+                            "id": (1, 2, 3),
+                            "w": (0.5, 1, 2),
+                            "c": ("x", "y", "z"),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                )
 
-            s3 = s1.set_target(s2)
-            s3_null = s3.adjust(method="null")
+                s3 = s1.set_target(s2)
+                s3_null = s3.adjust(method="null")
 
-            s3_null_madeup_weights = deepcopy(s3_null)
-            s3_null_madeup_weights.set_weights((1, 2, 3, 1))
+                s3_null_madeup_weights = deepcopy(s3_null)
+                s3_null_madeup_weights.set_weights((1, 2, 3, 1))
 
-            s3_null.covars().asmd_improvement() # 0. since unadjusted is just a copy of self
-            s3_null_madeup_weights.covars().asmd_improvement() # 0.10698596233975825
+                s3_null.covars().asmd_improvement() # 0. since unadjusted is just a copy of self
+                s3_null_madeup_weights.covars().asmd_improvement() # 0.10698596233975825
 
-            asmd_df = s3_null_madeup_weights.covars().asmd()
-            print(asmd_df["mean(asmd)"])
-                # source
-                # self                 2.834932
-                # unadjusted           3.174566
-                # unadjusted - self    0.339634
-                # Name: mean(asmd), dtype: float64
-            (asmd_df["mean(asmd)"][1] - asmd_df["mean(asmd)"][0]) / asmd_df["mean(asmd)"][1]  # 0.10698596233975825
-            # just like asmd_improvement
+                asmd_df = s3_null_madeup_weights.covars().asmd()
+                print(asmd_df["mean(asmd)"])
+                    # source
+                    # self                 2.834932
+                    # unadjusted           3.174566
+                    # unadjusted - self    0.339634
+                    # Name: mean(asmd), dtype: float64
+                (asmd_df["mean(asmd)"][1] - asmd_df["mean(asmd)"][0]) / asmd_df["mean(asmd)"][1]  # 0.10698596233975825
+                # just like asmd_improvement
         """
         if unadjusted is None:
             unadjusted = self._BalanceDF_child_from_linked_samples().get("unadjusted")
@@ -1171,57 +1184,59 @@ class BalanceOutcomesDF(BalanceDF):
                 If 'target' is set to True but there is no target, the function returns None.
 
         Examples:
-            import numpy as np
-            import pandas as pd
+            ::
 
-            from balance.sample_class import Sample
+                import numpy as np
+                import pandas as pd
+
+                from balance.sample_class import Sample
 
 
-            s_o = Sample.from_frame(
-                pd.DataFrame({"o1": (7, 8, 9, 10), "o2": (7, 8, 9, np.nan), "id": (1, 2, 3, 4)}),
-                id_column="id",
-                outcome_columns=("o1", "o2"),
-            )
-
-            print(s_o.outcomes().relative_response_rates())
-                #       o1    o2
-                # n    4.0   3.0
-                # %  100.0  75.0
-
-            s_o.outcomes().relative_response_rates(target = True)
-            # None
-
-            # compared with a larget target
-
-            t_o = Sample.from_frame(
-                pd.DataFrame(
-                    {
-                        "o1": (7, 8, 9, 10, 11, 12, 13, 14),
-                        "o2": (7, 8, 9, np.nan, np.nan, 12, 13, 14),
-                        "id": (1, 2, 3, 4, 5, 6, 7, 8),
-                    }
-                ),
-                id_column="id",
-                outcome_columns=("o1", "o2"),
-            )
-            s_o2 = s_o.set_target(t_o)
-
-            print(s_o2.outcomes().relative_response_rates(True, per_column = True))
-                #     o1    o2
-                # n   4.0   3.0
-                # %  50.0  50.0
-
-            df_target = pd.DataFrame(
-                    {
-                        "o1": (7, 8, 9, 10, 11, 12, 13, 14),
-                        "o2": (7, 8, 9, np.nan, np.nan, 12, 13, 14),
-                    }
+                s_o = Sample.from_frame(
+                    pd.DataFrame({"o1": (7, 8, 9, 10), "o2": (7, 8, 9, np.nan), "id": (1, 2, 3, 4)}),
+                    id_column="id",
+                    outcome_columns=("o1", "o2"),
                 )
 
-            print(s_o2.outcomes().relative_response_rates(target = df_target, per_column = True))
-                #     o1    o2
-                # n   4.0   3.0
-                # %  50.0  50.0
+                print(s_o.outcomes().relative_response_rates())
+                    #       o1    o2
+                    # n    4.0   3.0
+                    # %  100.0  75.0
+
+                s_o.outcomes().relative_response_rates(target = True)
+                # None
+
+                # compared with a larget target
+
+                t_o = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "o1": (7, 8, 9, 10, 11, 12, 13, 14),
+                            "o2": (7, 8, 9, np.nan, np.nan, 12, 13, 14),
+                            "id": (1, 2, 3, 4, 5, 6, 7, 8),
+                        }
+                    ),
+                    id_column="id",
+                    outcome_columns=("o1", "o2"),
+                )
+                s_o2 = s_o.set_target(t_o)
+
+                print(s_o2.outcomes().relative_response_rates(True, per_column = True))
+                    #     o1    o2
+                    # n   4.0   3.0
+                    # %  50.0  50.0
+
+                df_target = pd.DataFrame(
+                        {
+                            "o1": (7, 8, 9, 10, 11, 12, 13, 14),
+                            "o2": (7, 8, 9, np.nan, np.nan, 12, 13, 14),
+                        }
+                    )
+
+                print(s_o2.outcomes().relative_response_rates(target = df_target, per_column = True))
+                    #     o1    o2
+                    # n   4.0   3.0
+                    # %  50.0  50.0
         """
         if type(target) is bool:
             # Then: get target from self:
@@ -1254,35 +1269,37 @@ class BalanceOutcomesDF(BalanceDF):
                 If the object has a target, it returns the output of :func:`general_stats.relative_response_rates`.
 
         Examples:
-            import numpy as np
-            import pandas as pd
+            ::
 
-            from balance.sample_class import Sample
+                import numpy as np
+                import pandas as pd
+
+                from balance.sample_class import Sample
 
 
-            s_o = Sample.from_frame(
-                pd.DataFrame({"o1": (7, 8, 9, 10), "o2": (7, 8, 9, np.nan), "id": (1, 2, 3, 4)}),
-                id_column="id",
-                outcome_columns=("o1", "o2"),
-            )
+                s_o = Sample.from_frame(
+                    pd.DataFrame({"o1": (7, 8, 9, 10), "o2": (7, 8, 9, np.nan), "id": (1, 2, 3, 4)}),
+                    id_column="id",
+                    outcome_columns=("o1", "o2"),
+                )
 
-            t_o = Sample.from_frame(
-                pd.DataFrame(
-                    {
-                        "o1": (7, 8, 9, 10, 11, 12, 13, 14),
-                        "o2": (7, 8, 9, np.nan, 11, 12, 13, 14),
-                        "id": (1, 2, 3, 4, 5, 6, 7, 8),
-                    }
-                ),
-                id_column="id",
-                outcome_columns=("o1", "o2"),
-            )
-            s_o = s_o.set_target(t_o)
+                t_o = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "o1": (7, 8, 9, 10, 11, 12, 13, 14),
+                            "o2": (7, 8, 9, np.nan, 11, 12, 13, 14),
+                            "id": (1, 2, 3, 4, 5, 6, 7, 8),
+                        }
+                    ),
+                    id_column="id",
+                    outcome_columns=("o1", "o2"),
+                )
+                s_o = s_o.set_target(t_o)
 
-            print(s_o.outcomes().target_response_rates())
-                #       o1    o2
-                # n    8.0   7.0
-                # %  100.0  87.5
+                print(s_o.outcomes().target_response_rates())
+                    #       o1    o2
+                    # n    8.0   7.0
+                    # %  100.0  87.5
         """
         self_target = self._BalanceDF_child_from_linked_samples().get("target")
         if self_target is None:
@@ -1307,66 +1324,67 @@ class BalanceOutcomesDF(BalanceDF):
             str: A printable string, with mean of outcome variables and reponse rates.
 
         Examples:
+            ::
 
-            import numpy as np
-            import pandas as pd
+                import numpy as np
+                import pandas as pd
 
-            from balance.sample_class import Sample
+                from balance.sample_class import Sample
 
-            s_o = Sample.from_frame(
-                pd.DataFrame({"o1": (7, 8, 9, 10), "o2": (7, 8, 9, np.nan), "id": (1, 2, 3, 4)}),
-                id_column="id",
-                outcome_columns=("o1", "o2"),
-            )
+                s_o = Sample.from_frame(
+                    pd.DataFrame({"o1": (7, 8, 9, 10), "o2": (7, 8, 9, np.nan), "id": (1, 2, 3, 4)}),
+                    id_column="id",
+                    outcome_columns=("o1", "o2"),
+                )
 
-            t_o = Sample.from_frame(
-                pd.DataFrame(
-                    {
-                        "o1": (7, 8, 9, 10, 11, 12, 13, 14),
-                        "o2": (7, 8, 9, np.nan, np.nan, 12, 13, 14),
-                        "id": (1, 2, 3, 4, 5, 6, 7, 8),
-                    }
-                ),
-                id_column="id",
-                outcome_columns=("o1", "o2"),
-            )
-            s_o2 = s_o.set_target(t_o)
+                t_o = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "o1": (7, 8, 9, 10, 11, 12, 13, 14),
+                            "o2": (7, 8, 9, np.nan, np.nan, 12, 13, 14),
+                            "id": (1, 2, 3, 4, 5, 6, 7, 8),
+                        }
+                    ),
+                    id_column="id",
+                    outcome_columns=("o1", "o2"),
+                )
+                s_o2 = s_o.set_target(t_o)
 
-            print(s_o.outcomes().summary())
+                print(s_o.outcomes().summary())
 
-            # 2 outcomes: ['o1' 'o2']
-            # Mean outcomes:
-            #         _is_na_o2[False]  _is_na_o2[True]   o1   o2
-            # source
-            # self                0.75             0.25  8.5  6.0
+                # 2 outcomes: ['o1' 'o2']
+                # Mean outcomes:
+                #         _is_na_o2[False]  _is_na_o2[True]   o1   o2
+                # source
+                # self                0.75             0.25  8.5  6.0
 
-            # Response rates (relative to number of respondents in sample):
-            #       o1    o2
-            # n    4.0   3.0
-            # %  100.0  75.0
+                # Response rates (relative to number of respondents in sample):
+                #       o1    o2
+                # n    4.0   3.0
+                # %  100.0  75.0
 
 
-            print(s_o2.outcomes().summary())
+                print(s_o2.outcomes().summary())
 
-            # 2 outcomes: ['o1' 'o2']
-            # Mean outcomes:
-            #         _is_na_o2[False]  _is_na_o2[True]    o1     o2
-            # source
-            # self                0.75             0.25   8.5  6.000
-            # target              0.75             0.25  10.5  7.875
+                # 2 outcomes: ['o1' 'o2']
+                # Mean outcomes:
+                #         _is_na_o2[False]  _is_na_o2[True]    o1     o2
+                # source
+                # self                0.75             0.25   8.5  6.000
+                # target              0.75             0.25  10.5  7.875
 
-            # Response rates (relative to number of respondents in sample):
-            #       o1    o2
-            # n    4.0   3.0
-            # %  100.0  75.0
-            # Response rates (relative to notnull rows in the target):
-            #            o1    o2
-            # n   4.000000   3.0
-            # %  66.666667  50.0
-            # Response rates (in the target):
-            #        o1    o2
-            # n    8.0   6.0
-            # %  100.0  75.0
+                # Response rates (relative to number of respondents in sample):
+                #       o1    o2
+                # n    4.0   3.0
+                # %  100.0  75.0
+                # Response rates (relative to notnull rows in the target):
+                #            o1    o2
+                # n   4.000000   3.0
+                # %  66.666667  50.0
+                # Response rates (in the target):
+                #        o1    o2
+                # n    8.0   6.0
+                # %  100.0  75.0
         """
         mean_outcomes = self.mean()
         relative_response_rates = self.relative_response_rates()
@@ -1420,46 +1438,48 @@ class BalanceOutcomesDF(BalanceDF):
                 If library="seaborn" then returns either a list or an np.array of matplotlib axis.
 
         Examples:
-            import numpy as np
-            import pandas as pd
-            from numpy import random
-            from balance.sample_class import Sample
+            ::
 
-            random.seed(96483)
+                import numpy as np
+                import pandas as pd
+                from numpy import random
+                from balance.sample_class import Sample
 
-            df = pd.DataFrame({
-                "id": range(100),
-                'v1': random.random_integers(11111, 11114, size=100).astype(str),
-                'v2': random.normal(size = 100),
-                'v3': random.uniform(size = 100),
-                "w": pd.Series(np.ones(99).tolist() + [1000]),
-            }).sort_values(by=['v2'])
+                random.seed(96483)
 
-            s1 = Sample.from_frame(df,
-                id_column="id",
-                weight_column="w",
-                outcome_columns=["v1", "v2"],
-            )
+                df = pd.DataFrame({
+                    "id": range(100),
+                    'v1': random.random_integers(11111, 11114, size=100).astype(str),
+                    'v2': random.normal(size = 100),
+                    'v3': random.uniform(size = 100),
+                    "w": pd.Series(np.ones(99).tolist() + [1000]),
+                }).sort_values(by=['v2'])
 
-            s2 = Sample.from_frame(
-                df.assign(w = pd.Series(np.ones(100))),
-                id_column="id",
-                weight_column="w",
-                outcome_columns=["v1", "v2"],
-            )
+                s1 = Sample.from_frame(df,
+                    id_column="id",
+                    weight_column="w",
+                    outcome_columns=["v1", "v2"],
+                )
 
-            s3 = s1.set_target(s2)
-            s3_null = s3.adjust(method="null")
-            s3_null.set_weights(random.random(size = 100) + 0.5)
+                s2 = Sample.from_frame(
+                    df.assign(w = pd.Series(np.ones(100))),
+                    id_column="id",
+                    weight_column="w",
+                    outcome_columns=["v1", "v2"],
+                )
 
-            # default: seaborn with dist_type = "hist"
-            s3_null.outcomes().plot()
+                s3 = s1.set_target(s2)
+                s3_null = s3.adjust(method="null")
+                s3_null.set_weights(random.random(size = 100) + 0.5)
 
-            # using dist_type = "kde"
-            s3_null.outcomes().plot(dist_type = "kde")
+                # default: seaborn with dist_type = "hist"
+                s3_null.outcomes().plot()
 
-            # using plotly
-            s3_null.outcomes().plot(library = "plotly")
+                # using dist_type = "kde"
+                s3_null.outcomes().plot(dist_type = "kde")
+
+                # using plotly
+                s3_null.outcomes().plot(library = "plotly")
         """
         default_kwargs = {
             "library": "seaborn",
@@ -1541,40 +1561,42 @@ class BalanceWeightsDF(BalanceDF):
                 If library="seaborn" then returns either a list or an np.array of matplotlib axis.
 
         Examples:
-            import numpy as np
-            import pandas as pd
-            from numpy import random
-            from balance.sample_class import Sample
+            ::
 
-            random.seed(96483)
+                import numpy as np
+                import pandas as pd
+                from numpy import random
+                from balance.sample_class import Sample
 
-            df = pd.DataFrame({
-                "id": range(100),
-                'v1': random.random_integers(11111, 11114, size=100).astype(str),
-                'v2': random.normal(size = 100),
-                'v3': random.uniform(size = 100),
-                "w": pd.Series(np.ones(99).tolist() + [1000]),
-            }).sort_values(by=['v2'])
+                random.seed(96483)
 
-            s1 = Sample.from_frame(df,
-                id_column="id",
-                weight_column="w",
-                outcome_columns=["v1", "v2"],
-            )
+                df = pd.DataFrame({
+                    "id": range(100),
+                    'v1': random.random_integers(11111, 11114, size=100).astype(str),
+                    'v2': random.normal(size = 100),
+                    'v3': random.uniform(size = 100),
+                    "w": pd.Series(np.ones(99).tolist() + [1000]),
+                }).sort_values(by=['v2'])
 
-            s2 = Sample.from_frame(
-                df.assign(w = pd.Series(np.ones(100))),
-                id_column="id",
-                weight_column="w",
-                outcome_columns=["v1", "v2"],
-            )
+                s1 = Sample.from_frame(df,
+                    id_column="id",
+                    weight_column="w",
+                    outcome_columns=["v1", "v2"],
+                )
 
-            s3 = s1.set_target(s2)
-            s3_null = s3.adjust(method="null")
-            s3_null.set_weights(random.random(size = 100) + 0.5)
+                s2 = Sample.from_frame(
+                    df.assign(w = pd.Series(np.ones(100))),
+                    id_column="id",
+                    weight_column="w",
+                    outcome_columns=["v1", "v2"],
+                )
 
-            # default: seaborn with dist_type = "kde"
-            s3_null.weights().plot()
+                s3 = s1.set_target(s2)
+                s3_null = s3.adjust(method="null")
+                s3_null.set_weights(random.random(size = 100) + 0.5)
+
+                # default: seaborn with dist_type = "kde"
+                s3_null.weights().plot()
         """
         default_kwargs = {
             "weighted": False,
