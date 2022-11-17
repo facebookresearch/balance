@@ -7,7 +7,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import logging
 
-from typing import Any, cast, Dict, Optional, Union
+from typing import Any, cast, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -17,7 +17,6 @@ import statsmodels.api as sm
 
 from balance import adjustment as balance_adjustment, util as balance_util
 from balance.stats_and_plots.weights_stats import design_effect
-from numpy import ndarray
 from scipy.sparse import csc_matrix
 
 logger: logging.Logger = logging.getLogger(__package__)
@@ -26,18 +25,17 @@ logger: logging.Logger = logging.getLogger(__package__)
 def logit_truncated(
     X: Union[np.ndarray, pd.DataFrame], beta: np.ndarray, truncation_value: float = 1e-5
 ) -> np.ndarray:
-    """
-    This is a helper function for cbps.
+    """This is a helper function for cbps.
     Given an X matrx and avector of coeeficients beta, it computes the truncated
     version of the logit function.
 
-    Arguments:
-        X --- (np.ndarray) Covariate matrix
-        beta --- (np.ndarray) vector of coefficients
-        truncation_value --- (float) upper and lower bound for the computed probabilities
+    Args:
+        X (Union[np.ndarray, pd.DataFrame]): Covariate matrix
+        beta (np.ndarray): vector of coefficients
+        truncation_value (float, optional): upper and lower bound for the computed probabilities. Defaults to 1e-5.
 
     Returns:
-        np.ndarray of computed probablities
+        np.ndarray: numpy array of computed probablities
     """
     probs = 1.0 / (1 + np.exp(-1 * (np.matmul(X, beta))))
     return np.minimum(np.maximum(probs, truncation_value), 1 - truncation_value)
@@ -48,18 +46,17 @@ def compute_pseudo_weights_from_logit_probs(
     design_weights: Union[np.ndarray, pd.DataFrame],
     in_pop: Union[np.ndarray, pd.DataFrame],
 ) -> np.ndarray:
-    """
-    This is a helper function for cbps.
+    """This is a helper function for cbps.
     Given computed probs, it computes the weights: N/N_t * (in_pop - p_i)/(1 - p_i).
     (Note that these weights on sample are negative for convenience of notations)
 
-    Arguments:
-        probs --- (np.ndarray) vector of probabilities
-        design_weights --- (np.ndarray) vector of design weights of sample and target
-        in_pop --- (np.ndarray) indicator vector for target
+    Args:
+        probs (np.ndarray): vector of probabilities
+        design_weights (Union[np.ndarray, pd.DataFrame]): vector of design weights of sample and target
+        in_pop (Union[np.ndarray, pd.DataFrame]): indicator vector for target
 
     Returns:
-        np.ndarray of computed weights
+        np.ndarray: np.ndarray of computed weights
     """
     N = np.sum(design_weights)
     N_target = np.sum(design_weights[in_pop == 1.0])
@@ -73,19 +70,18 @@ def bal_loss(
     in_pop: np.ndarray,
     XtXinv: np.ndarray,
 ) -> np.float64:
-    """
-    This is a helper function for cbps.
+    """This is a helper function for cbps.
     It computes the balance loss.
 
-    Arguments:
-        beta --- (np.ndarray) vector of coefficients
-        X --- (np.ndarray) Covariate matrix
-        design_weights --- (np.ndarray) vector of design weights of sample and target
-        in_pop --- (np.ndarray) indicator vector for target
-        XtXinv --- (np.ndarray) (X.T %*% X)^(-1)
+    Args:
+        beta (np.ndarray): vector of coefficients
+        X (np.ndarray): Covariate matrix
+        design_weights (np.ndarray): vector of design weights of sample and target
+        in_pop (np.ndarray): indicator vector for target
+        XtXinv (np.ndarray): (X.T %*% X)^(-1)
 
     Returns:
-        (float) computed balance loss
+        np.float64: computed balance loss
     """
     probs = logit_truncated(X, beta)
     N = np.sum(design_weights)
@@ -106,20 +102,20 @@ def gmm_function(
     in_pop: Union[np.ndarray, pd.DataFrame],
     invV: Union[np.ndarray, None] = None,
 ) -> Dict[str, Union[float, np.ndarray]]:
-    """
-    This is a helper function for cbps.
+    """This is a helper function for cbps.
     It computes the gmm loss.
 
-    Arguments:
-        beta --- (np.ndarray) vector of coefficients
-        X --- (np.ndarray) covariates matrix
-        design_weights --- (np.ndarray) vector of design weights of sample and target
-        in_pop --- (np.ndarray) indicator vector for target
-        invV --- (np.ndarray) the inverse weighting matrix for GMM. Default is None.
+    Args:
+        beta (np.ndarray): vector of coefficients
+        X (Union[np.ndarray, pd.DataFrame]): covariates matrix
+        design_weights (Union[np.ndarray, pd.DataFrame]): vector of design weights of sample and target
+        in_pop (Union[np.ndarray, pd.DataFrame]): indicator vector for target
+        invV (Union[np.ndarray, None], optional): the inverse weighting matrix for GMM. Default is None.
 
     Returns:
-        loss --- (float) computed gmm loss
-        invV --- (np.ndarray) the weighting matrix for GMM
+        Dict[str, Union[float, np.ndarray]]: Dict with two items for loss and invV:
+            loss (float) computed gmm loss
+            invV (np.ndarray) the weighting matrix for GMM
     """
     probs = logit_truncated(X, beta)
     N = np.sum(design_weights)
@@ -165,30 +161,48 @@ def gmm_function(
 
 
 def gmm_loss(
-    beta: ndarray,
-    X: Union[ndarray, pd.DataFrame],
-    design_weights: Union[ndarray, pd.DataFrame],
-    in_pop: Union[ndarray, pd.DataFrame],
-    invV: Optional[ndarray] = None,
-) -> Union[float, ndarray]:
-    """
-    This is a helper function for cbps.
+    beta: np.ndarray,
+    X: Union[np.ndarray, pd.DataFrame],
+    design_weights: Union[np.ndarray, pd.DataFrame],
+    in_pop: Union[np.ndarray, pd.DataFrame],
+    invV: Optional[np.ndarray] = None,
+) -> Union[float, np.ndarray]:
+    """This is a helper function for cbps.
     It computes the gmm loss.
     See gmm_function for detials.
+
+    Args:
+        beta (np.ndarray): vector of coefficients
+        X (Union[np.ndarray, pd.DataFrame]): covariates matrix
+        design_weights (Union[np.ndarray, pd.DataFrame]): vector of design weights of sample and target
+        in_pop (Union[np.ndarray, pd.DataFrame]): indicator vector for target
+        invV (Union[np.ndarray, None], optional): the inverse weighting matrix for GMM. Default is None.
+
+    Returns:
+        Union[float, np.ndarray]: loss (float) computed gmm loss
     """
     return gmm_function(beta, X, design_weights, in_pop, invV)["loss"]
 
 
 def alpha_function(
-    alpha,
-    beta,
-    X: Union[ndarray, pd.DataFrame],
-    design_weights: Union[ndarray, pd.DataFrame],
-    in_pop: Union[ndarray, pd.DataFrame],
-) -> Union[float, ndarray]:
-    """
-    This is a helper function for cbps.
+    alpha: np.ndarray,
+    beta: np.ndarray,
+    X: Union[np.ndarray, pd.DataFrame],
+    design_weights: Union[np.ndarray, pd.DataFrame],
+    in_pop: Union[np.ndarray, pd.DataFrame],
+) -> Union[float, np.ndarray]:
+    """This is a helper function for cbps.
     It computes the gmm loss of alpha*beta.
+
+    Args:
+        alpha (np.ndarray): multiplication factor
+        beta (np.ndarray): vector of coefficients
+        X (Union[np.ndarray, pd.DataFrame]): covariates matrix
+        design_weights (Union[np.ndarray, pd.DataFrame]): vector of design weights of sample and target
+        in_pop (Union[np.ndarray, pd.DataFrame]): indicator vector for target
+
+    Returns:
+        Union[float, np.ndarray]: loss (float) computed gmm loss
     """
     return gmm_loss(alpha * beta, X, design_weights, in_pop)
 
@@ -196,19 +210,18 @@ def alpha_function(
 def compute_deff_from_beta(
     X: np.ndarray, beta: np.ndarray, design_weights: np.ndarray, in_pop: np.ndarray
 ) -> np.float64:
-    """
-    This is a helper function for cbps. It computes the design effect of
+    """This is a helper function for cbps. It computes the design effect of
     the estimated weights on the sample given a value of beta.
     It is used for setting a constraints on max_de.
 
-    Arguments:
-        beta --- (np.ndarray) vector of coefficients
-        X --- (np.ndarray) covariates matrix
-        design_weights --- (np.ndarray) vector of design weights of sample and target
-        in_pop --- (np.ndarray) indicator vector for target
+    Args:
+        X (np.ndarray): covariates matrix
+        beta (np.ndarray): vector of coefficients
+        design_weights (np.ndarray): vector of design weights of sample and target
+        in_pop (np.ndarray): indicator vector for target
 
     Returns:
-        (float) design effect
+        np.float64: design effect
     """
     probs = logit_truncated(X, beta)
     weights = np.absolute(
@@ -219,10 +232,22 @@ def compute_deff_from_beta(
 
 
 def _standardize_model_matrix(
-    model_matrix, model_matrix_columns_names
+    model_matrix: pd.DataFrame, model_matrix_columns_names: List[str]
 ) -> Dict[str, Any]:
-    """
-    This is a helper function for cbps. It standardizes the columns of the model matrix.
+    """This is a helper function for cbps. It standardizes the columns of the model matrix.
+
+    Args:
+        model_matrix (pd.DataFrame): the matrix of covariates
+        model_matrix_columns_names (List[str]): list of columns in the covariates matrix
+
+    Returns:
+        Dict[str, Any]: Dict of the shape
+            {
+                "model_matrix": model_matrix,
+                "model_matrix_columns_names": model_matrix_columns_names,
+                "model_matrix_mean": model_matrix_mean,
+                "model_matrix_std": model_matrix_std,
+            }
     """
     # TODO: Verify if scikit-learn have something similar
     model_matrix_std = np.asarray(np.std(model_matrix, axis=0)).reshape(
@@ -251,10 +276,21 @@ def _standardize_model_matrix(
     }
 
 
+# TODO: update docs
 def _reverse_svd_and_centralization(beta, U, s, Vh, X_matrix_mean, X_matrix_std):
-    """
-    This is a helper function for cbps. It revrse the svd and the centralization to get an estimate of beta
+    """This is a helper function for cbps. It revrse the svd and the centralization to get an estimate of beta
     Source: https://github.com/kosukeimai/CBPS/blob/master/R/CBPSMain.R#L353
+
+    Args:
+        beta (_type_): _description_
+        U (_type_): _description_
+        s (_type_): _description_
+        Vh (_type_): _description_
+        X_matrix_mean (_type_): _description_
+        X_matrix_std (_type_): _description_
+
+    Returns:
+        _type_: _description_
     """
     # TODO: update SVD and reverse SVD to the functions in scikit-learn
     # Invert s
@@ -280,23 +316,22 @@ def cbps(  # noqa
     sample_weights: pd.Series,
     target_df: pd.DataFrame,
     target_weights: pd.Series,
-    variables=None,
+    variables: Optional[List[str]] = None,
     transformations: str = "default",
     na_action: str = "add_indicator",
-    formula=None,
+    formula: Optional[Union[str, List[str]]] = None,
     balance_classes: bool = True,
     cbps_method: str = "over",  # other option: "exact"
-    max_de=None,
+    max_de: Optional[float] = None,
     opt_method: str = "COBYLA",
-    opt_opts=None,
+    opt_opts: Optional[Dict] = None,
     weight_trimming_mean_ratio: Union[None, float, int] = 20,
     weight_trimming_percentile: Optional[float] = None,
     random_seed: int = 2020,
     *args,
     **kwargs,
-):
-    """
-    Fit cbps (covariate balancing propensity score model) for the sample using the target.
+) -> Dict[str, Union[pd.Series, Dict]]:
+    """Fit cbps (covariate balancing propensity score model) for the sample using the target.
     Final weights are normalized to target size.
     We use a two-step GMM estimator (as in the default R package), unlike the suggeted continuous-updating
     estimator in the paper. The reason is that it runs much faster than the continuous one.
@@ -307,45 +342,70 @@ def cbps(  # noqa
     R code source: https://github.com/kosukeimai/CBPS
     two-step GMM: https://en.wikipedia.org/wiki/Generalized_method_of_moments
 
-    Arguments:
-    sample_df --- (pandas dataframe) a dataframe representing the sample
-    sample_weights --- (pandas series) design weights for sample
-    target_df ---  (pandas dataframe) a dataframe representing the target
-    target_weights --- (pandas series) design weights for target
-    variables ---  (list of strings) list of variables to include in the model.
-                   If None all joint variables of sample_df and target_df are used
-    transformations --- (dict) what transformations to apply to data before fitting the model. §
-                        Default is "default" (see apply_transformations function)
-    na_action --- (string) what to do with NAs. Default is "add_indicator"
-                  (see add_na_indicator function)
-    formula --- (string or list of strings) The formula according to which build the model.
-                In case of list of formula, the model matrix will be built in steps and
-                concatenated together.
-    balance_classes --- (boolean) whether to balance the sample and target size for running the model.
-                              Default is True (preferable for imbalanced cases).
-    cbps_method --- (string) method used for cbps. "over" fits an over-identified model that combines
-                    the propensity score and covariate balancing conditions; "exact" fits a model that only c
-                    ontains the covariate balancing conditions.
-    max_de --- (float) upper bound for the design effect of the computed weights.
-                Default is None.
-    opt_method --- (string) type of optimization solver. Default is "COBYLA". See scipy.optimize.minimize
-                   for other options.
-    opt_opts --- (dict) A dictionary of solver options. Default is None. See scipy.optimize.minimize
-                   for other options.
-    weight_trimming_mean_ratio ---  (float or int) indicating the ratio from above according to which
-                                    the weights are trimmed by mean(weights) * ratio.
-                                    Default is 20.
-    weight_trimming_percentile --- (float) if weight_trimming_percentile is not none, winsorization is applied.
-                                    Default is None, i.e. trimming is applied.
-    random_seed --- (int) a random seed
+    Args:
+        sample_df (pd.DataFrame): a dataframe representing the sample
+        sample_weights (pd.Series): design weights for sample
+        target_df (pd.DataFrame): a dataframe representing the target
+        target_weights (pd.Series): design weights for target
+        variables (Optional[List[str]], optional): list of variables to include in the model.
+            If None all joint variables of sample_df and target_df are used. Defaults to None.
+        transformations (str, optional): what transformations to apply to data before fitting the model.
+            Default is "default" (see apply_transformations function). Defaults to "default".
+        na_action (str, optional): what to do with NAs. (see add_na_indicator function).
+            Defaults to "add_indicator".
+        formula (Optional[Union[str, List[str]]], optional): The formula according to which build the model.
+            In case of list of formula, the model matrix will be built in steps and
+            concatenated together.. Defaults to None.
+        balance_classes (bool, optional): whether to balance the sample and target size for running the model.
+            True is preferable for imbalanced cases. Defaults to True.
+        cbps_method (str, optional): method used for cbps. "over" fits an over-identified model that combines
+            the propensity score and covariate balancing conditions; "exact" fits a model that only c
+            ontains the covariate balancing conditions. Defaults to "over".
+        max_de (Optional[float], optional): upper bound for the design effect of the computed weights.
+            Default is None.
+        opt_method (str, optional): type of optimization solver. See :func:`scipy.optimize.minimize`
+                   for other options. Defaults to "COBYLA".
+        opt_opts (Optional[Dict], optional): A dictionary of solver options. Default is None. See :func:`scipy.optimize.minimize`
+            for other options. Defaults to None.
+        weight_trimming_mean_ratio (Union[None, float, int], optional): indicating the ratio from above according to which
+            the weights are trimmed by mean(weights) * ratio. Defaults to 20.
+        weight_trimming_percentile (Optional[float], optional): if weight_trimming_percentile is not none, winsorization is applied.
+            Default is None, i.e. trimming is applied.
+        random_seed (int, optional): a random seed. Defaults to 2020.
+
+    Raises:
+        Exception: _description_
+        Exception: _description_
+        Exception: _description_
+        Exception: _description_
 
     Returns:
-    A dictionary includes:
+        Dict[str, Union[pd.Series, Dict]]: A dictionary includes:
         "weights" --- The weights for the sample.
         "model" -- dictionary with details about the fitted model:
             X_matrix_columns, deviance, beta_optimal, balance_optimize_result,
             gmm_optimize_result_glm_init, gmm_optimize_result_bal_init
+            It has the following shape:
+            "model": {
+                "method": "cbps",
+                "X_matrix_columns": X_matrix_columns_names,
+                "deviance": deviance,
+                "original_sum_weights": original_sum_weights,  # This can be used to reconstruct the propensity probablities
+                "beta_optimal": beta_opt,
+                "beta_init_glm": beta_0,  # The initial estimator by glm
+                "gmm_init": gmm_init,  # The rescaled initial estimator
+                # The following are the results of the optimizations
+                "rescale_initial_result": rescale_initial_result,
+                "balance_optimize_result": balance_optimize_result,
+                "gmm_optimize_result_glm_init": gmm_optimize_result_glm_init
+                if cbps_method == "over"
+                else None,
+                "gmm_optimize_result_bal_init": gmm_optimize_result_bal_init
+                if cbps_method == "over"
+                else None,
+            },
     """
+
     logger.info("Starting cbps function")
     np.random.seed(random_seed)  # setting random seed for cases of variations in glmnet
 
@@ -387,6 +447,7 @@ def cbps(  # noqa
         add_na=(na_action == "add_indicator"),
         return_type="one",
         return_var_type="sparse",
+        # pyre-fixme[6]: for 7th parameter `formula` expected `Optional[List[str]]` but got `Union[None, List[str], str]`.
         formula=formula,
         one_hot_encoding=False,
     )
@@ -402,7 +463,9 @@ def cbps(  # noqa
 
     # Standardize the X_matrix for SVD
     model_matrix_standardized = _standardize_model_matrix(
-        X_matrix, X_matrix_columns_names
+        X_matrix,
+        # pyre-fixme[6]: for 2nd positional only parameter expected `List[str]` but got `Union[None, List[str], ndarray, DataFrame, csc_matrix]`.
+        X_matrix_columns_names,
     )
     X_matrix = model_matrix_standardized["model_matrix"]
     X_matrix_columns_names = model_matrix_standardized["model_matrix_columns_names"]
