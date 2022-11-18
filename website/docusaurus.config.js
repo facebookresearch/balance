@@ -75,7 +75,7 @@ const katex = require('rehype-katex');
         items: [
           {
             type: 'doc',
-            docId: 'docs/getting-started',
+            docId: 'docs/overview',
             position: 'right',
             label: 'Docs',
           },
