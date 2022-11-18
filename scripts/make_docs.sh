@@ -65,6 +65,7 @@ echo "-----------------------------------"
 echo "Building static Docusaurus site"
 echo "-----------------------------------"
 NODE_OPTIONS=--openssl-legacy-provider yarn build
+cd .. || exit
 
 
 echo "--------------------------------------------"
