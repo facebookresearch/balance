@@ -4,9 +4,16 @@ title: Getting Started
 sidebar_position: 1
 ---
 
+[![balance_logo_horizontal](https://raw.githubusercontent.com/facebookresearch/balance/main/website/static/img/balance_logo/PNG/Horizontal/balance_Logo_Horizontal_FullColor_RGB.png)](https://import-balance.org/)
+
+
+# *balance*: a python package for balancing biased data samples
+
+*balance* is currently **in beta** and under active development. Follow us [on github](https://github.com/facebookresearch/balance)!
+
 ## What is *balance*?
 
-***balance* is a Python package** offering a simple workflow and methods for **dealing with biased data samples** when looking to infer from them to some population of interest.
+**[*balance*](https://import-balance.org/) is a Python package** offering a simple workflow and methods for **dealing with biased data samples** when looking to infer from them to some population of interest.
 
 Biased samples often occur in [survey statistics](https://en.wikipedia.org/wiki/Survey_methodology) when respondents present [non-response bias or survey suffers from sampling bias](https://en.wikipedia.org/wiki/Sampling_bias) (that are not [missing completely at random](https://en.wikipedia.org/wiki/Missing_data#Missing_completely_at_random)). A similar issue arises in [observational studies](https://en.wikipedia.org/wiki/Observational_study) when comparing the treated vs untreated groups, and in any data that suffers from selection bias.
 
@@ -18,7 +25,7 @@ The package is intended for researchers who are interested in balancing biased s
 # Installation
 
 ## Requirements
-You need Python 3.8 or later to run balance. balance can be built and run
+You need Python 3.8 or later to run *balance*. *balance* can be built and run
 from OSX, Linux, and Windows
 
 The required Python dependencies are:
@@ -40,16 +47,16 @@ REQUIRES = [
 
 Note that glmnet_python must be installed from the [Github source](https://github.com/bbalasub1/glmnet_python.git@1.0)
 
-See [setup.py](https://github.com/facebookresearch/balance/blob/main/setup.py) for more details. **TODO**: add details on using setup.py.
+See [setup.py](https://github.com/facebookresearch/balance/blob/main/setup.py) for more details.
 
-## Installing balance
+## Installing *balance*
 As a prerequisite, you must install glmnet_python from source:
 ```
 python -m pip install git+https://github.com/bbalasub1/glmnet_python.git@1.0
 ```
 
 ### Installing via PyPi
-We recommend installing balance from PyPi via pip for the latest stable version:
+We recommend installing *balance* from PyPi via pip for the latest stable version:
 
 ```
 python -m pip install balance
@@ -77,12 +84,12 @@ python -m pip install .
 
 ## balance’s workflow in high-level
 
-The core workflow in balance deals with fitting and evaluating weights to a sample. For each unit in the sample (such as a respondent to a survey), balance fits a weight that can be (loosely) interpreted as the number of people from the target population that this respondent represents. This aims to help mitigate the coverage and non-response biases, as illustrated in the following figure.
+The core workflow in [*balance*](https://import-balance.org/) deals with fitting and evaluating weights to a sample. For each unit in the sample (such as a respondent to a survey), balance fits a weight that can be (loosely) interpreted as the number of people from the target population that this respondent represents. This aims to help mitigate the coverage and non-response biases, as illustrated in the following figure.
 
 ![total_survey_error_img](https://raw.githubusercontent.com/facebookresearch/balance/main/website/docs/docs/img/total_survey_error_image.png?token=GHSAT0AAAAAAB25KSTWSBZGTWAJ7LJ3U3G6Y3VG4XA)
 
 
-The weighting of survey data through balance is done in the following main steps:
+The weighting of survey data through *balance* is done in the following main steps:
 
 1. Loading data of the respondents of the survey.
 2. Loading data about the target population we would like to correct for.
@@ -92,13 +99,13 @@ The weighting of survey data through balance is done in the following main steps
 6. Use the weights for producing population level estimations.
 7. Saving the output weights.
 
-**TODO**: add a simple chart that describes the flow
+You can see a step-by-step description (with code) of the above steps in the [General Framework](https://import-balance.org/docs/docs/general_framework/) page.
 
-**TODO**: link to the quick start tutorial
+## Code example of using *balance*
 
-## Code example of using balance
+You may run the following code to play with *balance*'s basic workflow (these are snippets taken from the [quickstart tutorial](https://import-balance.org/docs/tutorials/quickstart/)):
 
-You may run the following code to play with balance's basic workflow:
+We start by loading data, and adjusting it:
 
 ```python
 from balance import load_data, Sample
@@ -114,69 +121,78 @@ target = Sample.from_frame(target_df)
 sample_with_target = sample.set_target(target)
 
 # Check basic diagnostics of sample vs target before adjusting:
-sample_with_target.covars().mean().T
-sample_with_target.covars().asmd().T
-sample_with_target.covars().plot()
+# sample_with_target.covars().plot()
 
-# Using ipw to fit survey weights
-adjust = sample_with_target.adjust(max_de=None)
-
-print(adjust.summary())
-# Covar ASMD reduction: 62.3%, design effect: 2.249
-# Covar ASMD (7 variables):0.335 -> 0.126
-# Model performance: Model proportion deviance explained: 0.174
-
-
-# A detailed diagnostics is available for after the adjustment
-
-# For covars:
-adjust.covars().covars().mean().T
-adjust.covars().asmd().T
-adjust.covars().plot()  # interactive plots
-adjust.covars().plot(library = "seaborn", dist_type = "kde")  # static plots
-
-# For weights:
-adjust.weights().plot()
-adjust.weights().design_effect()
-
-# For the outcome:
-print(adjust.outcomes().summary())
-# 1 outcomes: ['happiness']
-# Mean outcomes:
-#             happiness
-# source
-# self        54.221388
-# unadjusted  48.392784
-#
-# Response rates (relative to number of respondents in sample):
-#    happiness
-# n     1000.0
-# %      100.0
-adjust.outcomes().plot()
-
-# Finally, the adjusted data can be downloded using:
-adjust.to_download()
-adjust.to_csv()
 ```
 
-To see the full output of the code above, please go over to **TODO**: add link.
+*You can read more on evaluation of the pre-adjusted data in the [Pre-Adjustment Diagnostics](https://import-balance.org/docs/docs/general_framework/pre_adjustment_diagnostics/) page.*
+
+Next, we adjust the sample to the population by fitting balancing survey weights:
+
+```python
+# Using ipw to fit survey weights
+adjusted = sample_with_target.adjust(max_de=None)
+```
+
+*You can read more on adjustment process in the [Adjusting Sample to Population](https://import-balance.org/docs/docs/general_framework/adjusting_sample_to_population/) page.*
+
+The above code gets us an `adjusted` object with weights. We can evaluate the benefit of the weights to the coveriate balance, for example by running:
+
+```python
+print(adjusted.summary())
+    # Covar ASMD reduction: 62.3%, design effect: 2.249
+    # Covar ASMD (7 variables):0.335 -> 0.126
+    # Model performance: Model proportion deviance explained: 0.174
+
+adjusted.covars().plot(library = "seaborn", dist_type = "kde")
+```
+
+And get:
+
+![](https://import-balance.org/assets/images/fig_07_seaborn_after-ac7514f6b150f431b36329bb9ebd9d0a.png)
+
+We can also check the impact of the weights on the outcome using:
+
+```python
+# For the outcome:
+print(adjusted.outcomes().summary())
+    # 1 outcomes: ['happiness']
+    # Mean outcomes:
+    #             happiness
+    # source
+    # self        54.221388
+    # unadjusted  48.392784
+    #
+    # Response rates (relative to number of respondents in sample):
+    #    happiness
+    # n     1000.0
+    # %      100.0
+adjusted.outcomes().plot()
+```
+![](https://import-balance.org/assets/images/fig_09_seaborn_outcome_kde_after-26fa9668164349253b2614335961ade9.png)
+
+*You can read more on evaluation of the post-adjusted data in the [Evaluating and using the adjustment weights](https://import-balance.org/docs/docs/general_framework/evaluation_of_results/) page.*
+
+
+Finally, the adjusted data can be downloded using:
+```python
+adjusted.to_download()  # Or:
+# adjusted.to_csv()
+```
+
+To see a more detailed step-by-step code example with code output prints and plots (both static and interactive), please go over to the [quickstart tutorial](https://import-balance.org/docs/tutorials/quickstart/).
 
 
 ## Implemented methods for adjustments
 
-balance currently implements various adjustment methods.
+*balance* currently implements various adjustment methods. Click the links to learn more about each:
 
-For weight adjustment, it uses [inverse probability/propensity weighting](https://en.wikipedia.org/wiki/Inverse_probability_weighting) (IPW) with:
-
-**TODO**: link to the website links instead of the ones we have below.
-**TODO:** Update descriptions according the adjustment page
-1. Logistic regression using L1 (LASSO) penalization.
-2. Covariate Balancing Propensity Score (CBPS).
-3. Post-stratification.
+1. [Logistic regression using L1 (LASSO) penalization.](https://import-balance.org/docs/docs/statistical_methods/ipw/)
+2. [Covariate Balancing Propensity Score (CBPS).](https://import-balance.org/docs/docs/statistical_methods/cbps/)
+3. [Post-stratification.](https://import-balance.org/docs/docs/statistical_methods/poststratify/)
 
 ## Implemented methods for diagnostics/evaluation
 
-**TODO**: link to the website links instead of the ones we have below.
 For diagnostics the main tools (comparing before, after applying weights, and the target population) are:
 
 1. Plots
@@ -190,26 +206,29 @@ For diagnostics the main tools (comparing before, after applying weights, and th
     2. Covariate distributions
         1. Absolute Standardized Mean Difference (ASMD). For continuous variables, it is [Cohen's d](https://en.wikipedia.org/wiki/Effect_size#Cohen's_d). Categorical variables are one-hot encoded, Cohen's d is calculated for each category and ASMD for a categorical variable is defined as Cohen's d, average across all categories.
 
+*You can read more on evaluation of the post-adjusted data in the [Evaluating and using the adjustment weights](https://import-balance.org/docs/docs/general_framework/evaluation_of_results/) page.*
+
 # More details
 
 ## Getting help, submitting bug reports and contributing code
 
 You are welcome to:
 
-* Ask for help in: https://stats.stackexchange.com/questions/tagged/balance
+* Learn more in the [*balance*](https://import-balance.org/) website.
+* Ask for help on: https://stats.stackexchange.com/questions/tagged/balance
 * Submit bug-reports and features' suggestions at: https://github.com/facebookresearch/balance/issues
 * Send a pull request on: https://github.com/facebookresearch/balance. See the [CONTRIBUTING](https://github.com/facebookresearch/balance/blob/main/CONTRIBUTING.md) file for how to help out. And our [CODE OF CONDUCT](https://github.com/facebookresearch/balance/blob/main/LICENSE-DOCUMENTATION) for our expectations from contributors.
 
 ## Citing *balance*
 
-**TODO**: Update.
+**TODO**: TBD.
 
 ## License
 The *balance* package is licensed under the [GPLv2 license](https://github.com/facebookresearch/balance/blob/main/LICENSE), and all the documentation on the site is under [CC-BY](https://github.com/facebookresearch/balance/blob/main/LICENSE-DOCUMENTATION).
 
 # News
 
-**TODO**: Link to the NEWS.md file
+**TODO**: TBD.
 
 ## Acknowledgements / People
 
