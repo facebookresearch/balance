@@ -21,6 +21,8 @@ from balance.weighting_methods import (
     poststratify as balance_poststratify,
 )
 
+EPSILON = 0.00001
+
 
 sample = Sample.from_frame(
     df=pd.DataFrame(
@@ -95,10 +97,9 @@ class TestAdjustment(
         random.seed(42)
         w = np.random.uniform(0, 1, 10000)
         res = trim_weights(w, weight_trimming_mean_ratio=1)
-        self.assertEqual(np.round(np.mean(w), 10), np.round(np.mean(res), 10))
-        self.assertEqual(
-            np.round(np.mean(w) / np.min(w), 10),
-            np.round(np.max(res) / np.min(res), 10),
+        self.assertAlmostEqual(np.mean(w), np.mean(res), delta=EPSILON)
+        self.assertAlmostEqual(
+            np.mean(w) / np.min(w), np.max(res) / np.min(res), delta=EPSILON
         )
 
         # Test weight_trimming_percentile
