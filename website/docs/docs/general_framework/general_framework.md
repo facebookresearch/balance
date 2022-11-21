@@ -10,7 +10,7 @@ keywords:
 
 Following the [total survey error](https://en.wikipedia.org/wiki/Total_survey_error) framework, surveys responses are often biased due to coverage error, sampling error and non-response bias [1]. Weighting is often an important step when analyzing survey data. For each unit in the sample (e.g. respondent to a survey), we attach a weight that can be understood as the approximate number of people from the target population that this respondent represents.
 
-![total_survey_error_img](../img/total_survey_error_image.png)
+![total_survey_error_img](../img/total_survey_error_flow_v02.png)
 
 The weighting of survey data through balance is done in 6 main steps:
 
