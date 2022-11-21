@@ -20,7 +20,7 @@ from balance.util import TruncationFormatter
 # TODO: verify this works.
 
 global __version__
-__version__ = "0.1.0"  # open source version
+__version__ = "0.1.1"  # open source version
 
 
 def setup_logging(

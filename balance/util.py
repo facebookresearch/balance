@@ -1388,6 +1388,72 @@ def _pd_convert_all_types(
     return df
 
 
+# TODO: add tests
+def find_items_index_in_list(a_list: List[Any], items: List[Any]) -> List[int]:
+    """Finds the index location of a given item in an array.
+
+    Helpful references:
+        - https://stackoverflow.com/a/48898363
+        - https://stackoverflow.com/a/176921
+
+    Args:
+        x (List[Any]): a list of items to find their index
+        items (List[Any]): a list of items to search for
+
+    Returns:
+        List[int]: a list of indices of the items in x that appear in the items list.
+
+    Examples:
+        ::
+
+            l = [1,2,3,4,5,6,7]
+            items = [2,7]
+            find_items_index_in_list(l, items)
+                # [1, 6]
+
+            items = [1000]
+            find_items_index_in_list(l, items)
+                # []
+
+            l = ["a", "b", "c"]
+            items = ["c", "c", "a"]
+            find_items_index_in_list(l, items)
+                # [2, 2, 0]
+
+            type(find_items_index_in_list(l, items)[0])
+                # int
+    """
+    # TODO: checking that i is in set each time is expensive -
+    #       there are probably faster ways to do it.
+    return [a_list.index(i) for i in items if i in set(a_list)]
+
+
+# TODO: add tests
+def get_items_from_list_via_indices(a_list: List[Any], indices: List[int]) -> List[Any]:
+    """Gets a subset of items from a list via indices
+
+    Source code (there doesn't seem to be a better solution): https://stackoverflow.com/a/6632209
+
+    Args:
+        a_list (List[Any]): a list of items to extract a list from
+        indices (List[int]): a list of indexes of items to get
+
+    Returns:
+        List[Any]: a list of extracted items
+
+    Examples:
+        ::
+
+            l = ["a", "b", "c", "d"]
+            get_items_from_list_via_indices(l, [2, 0])
+                # ['c', 'a']
+
+            get_items_from_list_via_indices(l, [100])
+                # IndexError
+    """
+    return [a_list[i] for i in indices]
+
+
 ################################################################################
 #  logging
 ################################################################################

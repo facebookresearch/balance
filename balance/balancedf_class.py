@@ -19,8 +19,8 @@ from balance.stats_and_plots import (
     weighted_stats,
     weights_stats,
 )
-
 from balance.typing import FilePathOrBuffer
+from balance.util import find_items_index_in_list, get_items_from_list_via_indices
 
 from IPython.lib.display import FileLink
 
@@ -599,24 +599,22 @@ class BalanceDF:
             dfs_to_add = self._BalanceDF_child_from_linked_samples()
         else:
             dfs_to_add = {"self": self}
+
         dfs = [
             {"df": v.df, "weights": v._weights}
             for k, v in dfs_to_add.items()
-            if (v is not None) and (k != "target")
+            if (v is not None)
         ]
-        names = [k for k in dfs_to_add.keys() if k != "target"]
+        names = list(dfs_to_add.keys())
 
+        # re-order dfs and names
         # NOTE: "target", if exists, is placed at the end of the dict so that comparative plotting functions,
-        # specifically :func:`plot_qq`, will deal with it properly.
-        self_target = dfs_to_add.get("target")
-        if self_target is not None:
-            dfs.append({"df": self_target.df, "weights": self_target._weights})
-            names.append("target")
+        indices_of_ordered_names = find_items_index_in_list(
+            names, ["unadjusted", "self", "adjusted", "target"]
+        )
+        dfs = get_items_from_list_via_indices(dfs, indices_of_ordered_names)
+        names = get_items_from_list_via_indices(names, indices_of_ordered_names)
 
-        # pyre-ignore[6]: there is no concern that dfs can have None instead of a DataFrame
-        #                 the only worry is if target is not available, but the function deals
-        #                 with it when dfs is first define by ignoring "target", and then only adding it if
-        #                 target is available (dfs_to_add.get("target")).
         return weighted_comparisons_plots.plot_dist(dfs, names=names, **kwargs)
 
     #  NOTE: The following functions use the _call_on_linked method
