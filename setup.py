@@ -50,6 +50,9 @@ DESCRIPTION = (
 
 def setup_package() -> None:
     """Used for building/installing the balance package."""
+    with open("README.md", "r") as fh:
+        long_description = fh.read()
+
     setup(
         name="balance",
         description=DESCRIPTION,
@@ -57,6 +60,8 @@ def setup_package() -> None:
         license="GPLv2",
         url="https://github.com/facebookresearch/balance",
         keywords=[""],
+        long_description=long_description,
+        long_description_content_type="text/markdown",
         python_requires=">=3.7",
         install_requires=REQUIRES,
         packages=find_packages(include=["balance*"]),
