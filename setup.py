@@ -41,11 +41,11 @@ DEV_REQUIRES = [
     "nbconvert",
 ]
 
-DESCRIPTION = """
-balance is a Python package offering a simple workflow and methods for
-dealing with biased data samples when looking to infer from them to
-some target population of interest.
-"""
+DESCRIPTION = (
+    "balance is a Python package offering a simple workflow and methods for "
+    "dealing with biased data samples when looking to infer from them to "
+    "some target population of interest."
+)
 
 
 def setup_package() -> None:
