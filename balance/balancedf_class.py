@@ -600,12 +600,15 @@ class BalanceDF:
         else:
             dfs_to_add = {"self": self}
 
+        # Create a list of dicts, each dict representing a dataframe and weights
+        # Notice that we skip cases in which there is no data (i.e.: v is None)
+        # None values are skipped in both dfs and names
         dfs = [
             {"df": v.df, "weights": v._weights}
             for k, v in dfs_to_add.items()
             if (v is not None)
         ]
-        names = list(dfs_to_add.keys())
+        names = [k for k, v in dfs_to_add.items() if (v is not None)]
 
         # re-order dfs and names
         # NOTE: "target", if exists, is placed at the end of the dict so that comparative plotting functions,
