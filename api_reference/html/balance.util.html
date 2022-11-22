@@ -372,6 +372,52 @@ most important interactions in a model.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="balance.util.find_items_index_in_list">
+<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">find_items_index_in_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">items</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/util.html#find_items_index_in_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.find_items_index_in_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds the index location of a given item in an array.</p>
+<dl class="simple">
+<dt>Helpful references:</dt><dd><ul class="simple">
+<li><p><a class="reference external" href="https://stackoverflow.com/a/48898363">https://stackoverflow.com/a/48898363</a></p></li>
+<li><p><a class="reference external" href="https://stackoverflow.com/a/176921">https://stackoverflow.com/a/176921</a></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>List</em><em>[</em><em>Any</em><em>]</em>) – a list of items to find their index</p></li>
+<li><p><strong>items</strong> (<em>List</em><em>[</em><em>Any</em><em>]</em>) – a list of items to search for</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a list of indices of the items in x that appear in the items list.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[int]</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">l</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">]</span>
+<span class="n">items</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">7</span><span class="p">]</span>
+<span class="n">find_items_index_in_list</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">items</span><span class="p">)</span>
+    <span class="c1"># [1, 6]</span>
+
+<span class="n">items</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1000</span><span class="p">]</span>
+<span class="n">find_items_index_in_list</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">items</span><span class="p">)</span>
+    <span class="c1"># []</span>
+
+<span class="n">l</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">]</span>
+<span class="n">items</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">]</span>
+<span class="n">find_items_index_in_list</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">items</span><span class="p">)</span>
+    <span class="c1"># [2, 2, 0]</span>
+
+<span class="nb">type</span><span class="p">(</span><span class="n">find_items_index_in_list</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">items</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="c1"># int</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="balance.util.formula_generator">
 <span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">formula_generator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">formula_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'additive'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/balance/util.html#formula_generator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.formula_generator" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="simple">
@@ -398,6 +444,36 @@ most important interactions in a model.</p>
 <p class="rubric">Examples</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">formula_generator</span><span class="p">([</span><span class="s1">&#39;a&#39;</span><span class="p">,</span><span class="s1">&#39;b&#39;</span><span class="p">,</span><span class="s1">&#39;c&#39;</span><span class="p">])</span>
 <span class="c1"># returns &#39;c + b + a&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.util.get_items_from_list_via_indices">
+<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">get_items_from_list_via_indices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/util.html#get_items_from_list_via_indices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.get_items_from_list_via_indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets a subset of items from a list via indices</p>
+<p>Source code (there doesn’t seem to be a better solution): <a class="reference external" href="https://stackoverflow.com/a/6632209">https://stackoverflow.com/a/6632209</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>a_list</strong> (<em>List</em><em>[</em><em>Any</em><em>]</em>) – a list of items to extract a list from</p></li>
+<li><p><strong>indices</strong> (<em>List</em><em>[</em><em>int</em><em>]</em>) – a list of indexes of items to get</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a list of extracted items</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[Any]</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">l</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="s2">&quot;d&quot;</span><span class="p">]</span>
+<span class="n">get_items_from_list_via_indices</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+    <span class="c1"># [&#39;c&#39;, &#39;a&#39;]</span>
+
+<span class="n">get_items_from_list_via_indices</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="p">[</span><span class="mi">100</span><span class="p">])</span>
+    <span class="c1"># IndexError</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -890,7 +966,9 @@ any of the other arrays.</p>
 <li><a class="reference internal" href="#balance.util.drop_na_rows"><code class="docutils literal notranslate"><span class="pre">drop_na_rows()</span></code></a></li>
 <li><a class="reference internal" href="#balance.util.fct_lump"><code class="docutils literal notranslate"><span class="pre">fct_lump()</span></code></a></li>
 <li><a class="reference internal" href="#balance.util.fct_lump_by"><code class="docutils literal notranslate"><span class="pre">fct_lump_by()</span></code></a></li>
+<li><a class="reference internal" href="#balance.util.find_items_index_in_list"><code class="docutils literal notranslate"><span class="pre">find_items_index_in_list()</span></code></a></li>
 <li><a class="reference internal" href="#balance.util.formula_generator"><code class="docutils literal notranslate"><span class="pre">formula_generator()</span></code></a></li>
+<li><a class="reference internal" href="#balance.util.get_items_from_list_via_indices"><code class="docutils literal notranslate"><span class="pre">get_items_from_list_via_indices()</span></code></a></li>
 <li><a class="reference internal" href="#balance.util.guess_id_column"><code class="docutils literal notranslate"><span class="pre">guess_id_column()</span></code></a></li>
 <li><a class="reference internal" href="#balance.util.model_matrix"><code class="docutils literal notranslate"><span class="pre">model_matrix()</span></code></a></li>
 <li><a class="reference internal" href="#balance.util.one_hot_encoding_greater_2"><code class="docutils literal notranslate"><span class="pre">one_hot_encoding_greater_2</span></code></a></li>

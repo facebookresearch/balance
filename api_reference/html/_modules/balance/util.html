@@ -1429,6 +1429,72 @@
     <span class="k">return</span> <span class="n">df</span>
 
 
+<span class="c1"># TODO: add tests</span>
+<div class="viewcode-block" id="find_items_index_in_list"><a class="viewcode-back" href="../../balance.util.html#balance.util.find_items_index_in_list">[docs]</a><span class="k">def</span> <span class="nf">find_items_index_in_list</span><span class="p">(</span><span class="n">a_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">items</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Finds the index location of a given item in an array.</span>
+
+<span class="sd">    Helpful references:</span>
+<span class="sd">        - https://stackoverflow.com/a/48898363</span>
+<span class="sd">        - https://stackoverflow.com/a/176921</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x (List[Any]): a list of items to find their index</span>
+<span class="sd">        items (List[Any]): a list of items to search for</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List[int]: a list of indices of the items in x that appear in the items list.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        ::</span>
+
+<span class="sd">            l = [1,2,3,4,5,6,7]</span>
+<span class="sd">            items = [2,7]</span>
+<span class="sd">            find_items_index_in_list(l, items)</span>
+<span class="sd">                # [1, 6]</span>
+
+<span class="sd">            items = [1000]</span>
+<span class="sd">            find_items_index_in_list(l, items)</span>
+<span class="sd">                # []</span>
+
+<span class="sd">            l = [&quot;a&quot;, &quot;b&quot;, &quot;c&quot;]</span>
+<span class="sd">            items = [&quot;c&quot;, &quot;c&quot;, &quot;a&quot;]</span>
+<span class="sd">            find_items_index_in_list(l, items)</span>
+<span class="sd">                # [2, 2, 0]</span>
+
+<span class="sd">            type(find_items_index_in_list(l, items)[0])</span>
+<span class="sd">                # int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TODO: checking that i is in set each time is expensive -</span>
+    <span class="c1">#       there are probably faster ways to do it.</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">a_list</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">items</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">a_list</span><span class="p">)]</span></div>
+
+
+<span class="c1"># TODO: add tests</span>
+<div class="viewcode-block" id="get_items_from_list_via_indices"><a class="viewcode-back" href="../../balance.util.html#balance.util.get_items_from_list_via_indices">[docs]</a><span class="k">def</span> <span class="nf">get_items_from_list_via_indices</span><span class="p">(</span><span class="n">a_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">indices</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Gets a subset of items from a list via indices</span>
+
+<span class="sd">    Source code (there doesn&#39;t seem to be a better solution): https://stackoverflow.com/a/6632209</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        a_list (List[Any]): a list of items to extract a list from</span>
+<span class="sd">        indices (List[int]): a list of indexes of items to get</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List[Any]: a list of extracted items</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        ::</span>
+
+<span class="sd">            l = [&quot;a&quot;, &quot;b&quot;, &quot;c&quot;, &quot;d&quot;]</span>
+<span class="sd">            get_items_from_list_via_indices(l, [2, 0])</span>
+<span class="sd">                # [&#39;c&#39;, &#39;a&#39;]</span>
+
+<span class="sd">            get_items_from_list_via_indices(l, [100])</span>
+<span class="sd">                # IndexError</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">a_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">]</span></div>
+
+
 <span class="c1">################################################################################</span>
 <span class="c1">#  logging</span>
 <span class="c1">################################################################################</span>

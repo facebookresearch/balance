@@ -60,8 +60,8 @@
     <span class="n">weighted_stats</span><span class="p">,</span>
     <span class="n">weights_stats</span><span class="p">,</span>
 <span class="p">)</span>
-
 <span class="kn">from</span> <span class="nn">balance.typing</span> <span class="kn">import</span> <span class="n">FilePathOrBuffer</span>
+<span class="kn">from</span> <span class="nn">balance.util</span> <span class="kn">import</span> <span class="n">find_items_index_in_list</span><span class="p">,</span> <span class="n">get_items_from_list_via_indices</span>
 
 <span class="kn">from</span> <span class="nn">IPython.lib.display</span> <span class="kn">import</span> <span class="n">FileLink</span>
 
@@ -640,24 +640,25 @@
             <span class="n">dfs_to_add</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_BalanceDF_child_from_linked_samples</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">dfs_to_add</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;self&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="p">}</span>
+
+        <span class="c1"># Create a list of dicts, each dict representing a dataframe and weights</span>
+        <span class="c1"># Notice that we skip cases in which there is no data (i.e.: v is None)</span>
+        <span class="c1"># None values are skipped in both dfs and names</span>
         <span class="n">dfs</span> <span class="o">=</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">_weights</span><span class="p">}</span>
             <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">dfs_to_add</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-            <span class="k">if</span> <span class="p">(</span><span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">k</span> <span class="o">!=</span> <span class="s2">&quot;target&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
         <span class="p">]</span>
-        <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">dfs_to_add</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">&quot;target&quot;</span><span class="p">]</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">dfs_to_add</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="p">(</span><span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)]</span>
 
+        <span class="c1"># re-order dfs and names</span>
         <span class="c1"># NOTE: &quot;target&quot;, if exists, is placed at the end of the dict so that comparative plotting functions,</span>
-        <span class="c1"># specifically :func:`plot_qq`, will deal with it properly.</span>
-        <span class="n">self_target</span> <span class="o">=</span> <span class="n">dfs_to_add</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">self_target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">dfs</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">self_target</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="n">self_target</span><span class="o">.</span><span class="n">_weights</span><span class="p">})</span>
-            <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
+        <span class="n">indices_of_ordered_names</span> <span class="o">=</span> <span class="n">find_items_index_in_list</span><span class="p">(</span>
+            <span class="n">names</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">,</span> <span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;adjusted&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">dfs</span> <span class="o">=</span> <span class="n">get_items_from_list_via_indices</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">indices_of_ordered_names</span><span class="p">)</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="n">get_items_from_list_via_indices</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">indices_of_ordered_names</span><span class="p">)</span>
 
-        <span class="c1"># pyre-ignore[6]: there is no concern that dfs can have None instead of a DataFrame</span>
-        <span class="c1">#                 the only worry is if target is not available, but the function deals</span>
-        <span class="c1">#                 with it when dfs is first define by ignoring &quot;target&quot;, and then only adding it if</span>
-        <span class="c1">#                 target is available (dfs_to_add.get(&quot;target&quot;)).</span>
         <span class="k">return</span> <span class="n">weighted_comparisons_plots</span><span class="o">.</span><span class="n">plot_dist</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">names</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
     <span class="c1">#  NOTE: The following functions use the _call_on_linked method</span>
