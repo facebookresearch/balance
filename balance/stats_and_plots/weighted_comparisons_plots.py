@@ -691,6 +691,10 @@ def plotly_plot_qq(
             )["col1"]
         )
 
+        # Indicate if we have only self and target (without unadjusted)
+        # since in this case the color of self should be red, since it's likely unadjusted.
+        only_self_and_target = set(dict_of_dfs.keys()) == {"self", "target"}
+
         for name in dict_of_dfs:
             if name.lower() == "target":
                 variable_specific_dict_of_plots[name] = go.Scatter(
@@ -713,7 +717,10 @@ def plotly_plot_qq(
                     ),
                     marker={
                         "color": "rgba(222,45,38,0.8)"
-                        if name.lower() in ["sample", "unadjusted"]
+                        if (
+                            (name.lower() in ["sample", "unadjusted"])
+                            or (name.lower() == "self" and only_self_and_target)
+                        )
                         else "rgba(52,165,48,0.5)"
                         if name.lower() in ["self", "adjusted"]
                         else "rgb(158,202,225,.8)"
@@ -793,6 +800,10 @@ def plotly_plot_bar(
         variable_specific_dict_of_plots = {}
         # create plot for each df using that variable
 
+        # Indicate if we have only self and target (without unadjusted)
+        # since in this case the color of self should be red, since it's likely unadjusted.
+        only_self_and_target = set(dict_of_dfs.keys()) == {"self", "target"}
+
         # filter dict_of_dfs
         for name in dict_of_dfs:
             df_plot_data = relative_frequency_table(
@@ -808,13 +819,19 @@ def plotly_plot_bar(
                 y=list(df_plot_data["prop"]),
                 marker={
                     "color": "rgba(222,45,38,0.8)"
-                    if name.lower() in ["sample", "unadjusted"]
+                    if (
+                        (name.lower() in ["sample", "unadjusted"])
+                        or (name.lower() == "self" and only_self_and_target)
+                    )
                     else "rgba(52,165,48,0.5)"
                     if name.lower() in ["self", "adjusted"]
                     else "rgb(158,202,225,.8)",
                     "line": {
                         "color": "rgba(222,45,38,1)"
-                        if name.lower() in ["sample", "unadjusted"]
+                        if (
+                            (name.lower() in ["sample", "unadjusted"])
+                            or (name.lower() == "self" and only_self_and_target)
+                        )
                         else "rgba(52,165,48,1)"
                         if name.lower() in ["self", "adjusted"]
                         else "rgb(158,202,225,1)",
