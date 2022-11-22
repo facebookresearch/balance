@@ -540,7 +540,7 @@ class BalanceDF:
 
     def plot(
         self: "BalanceDF", on_linked_samples: bool = True, **kwargs
-    ) -> Union[Union[List, np.ndarray], Dict[str, go.Figure]]:
+    ) -> Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:
         """Plots the variables in the df of the BalanceDF object.
 
         See :func:`weighted_comparisons_plots.plot_dist` for details of various arguments that can be passed.
@@ -555,9 +555,9 @@ class BalanceDF:
                 Defaluts to True.
 
         Returns:
-            Union[Union[List, np.ndarray], Dict[str, go.Figure]]:
+            Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:
                 If library="plotly" then returns a dictionary containing plots if return_dict_of_figures is True. None otherwise.
-                If library="seaborn" then returns either a list or an np.array of matplotlib axis.
+                If library="seaborn" then returns None, unless return_axes is True. Then either a list or an np.array of matplotlib axis.
 
         Examples:
             ::
@@ -1422,7 +1422,7 @@ class BalanceOutcomesDF(BalanceDF):
     # TODO: once we have hist/kde methods for plotly, consider changing the defaults here to use plotly instead of seaborn.
     def plot(
         self: "BalanceOutcomesDF", on_linked_samples: bool = True, **kwargs
-    ) -> Union[Union[List, np.ndarray], Dict[str, go.Figure]]:
+    ) -> Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:
         """Plots histogram of covariates in a BalanceOutcomesDF object using seaborn (as default).
 
         It's possible to use other plots using dist_type with arguments such as "hist" (default), "kde", "qq", and "ecdf".
@@ -1434,9 +1434,9 @@ class BalanceOutcomesDF(BalanceDF):
                 Defaluts to True.
 
         Returns:
-            Union[Union[List, np.ndarray], Dict[str, go.Figure]]:
+            Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:
                 If library="plotly" then returns a dictionary containing plots if return_dict_of_figures is True. None otherwise.
-                If library="seaborn" then returns either a list or an np.array of matplotlib axis.
+                If library="seaborn" then returns None, unless return_axes is True. Then either a list or an np.array of matplotlib axis.
 
         Examples:
             ::
@@ -1545,7 +1545,7 @@ class BalanceWeightsDF(BalanceDF):
     # TODO: maybe add better control if there are no weights for unadjusted or target (the current default shows them in the legend, but not in the figure)
     def plot(
         self: "BalanceWeightsDF", on_linked_samples: bool = True, **kwargs
-    ) -> Union[Union[List, np.ndarray], Dict[str, go.Figure]]:
+    ) -> Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:
         """Plots kde (kernal density estimation) of the weights in a BalanceWeightsDF object using seaborn (as default).
 
         It's possible to use other plots using dist_type with arguments such as "hist" (default), "kde", "qq", and "ecdf".
@@ -1557,9 +1557,9 @@ class BalanceWeightsDF(BalanceDF):
                 Defaluts to True.
 
         Returns:
-            Union[Union[List, np.ndarray], Dict[str, go.Figure]]:
+            Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:
                 If library="plotly" then returns a dictionary containing plots if return_dict_of_figures is True. None otherwise.
-                If library="seaborn" then returns either a list or an np.array of matplotlib axis.
+                If library="seaborn" then returns None, unless return_axes is True. Then either a list or an np.array of matplotlib axis.
 
         Examples:
             ::

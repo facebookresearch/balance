@@ -92,6 +92,7 @@ class Test_weighted_comparisons_plots(
                 numeric_n_values_threshold=0,
                 weighted=False,
                 library="seaborn",
+                return_axes=True,
             )[0]
         )
 
@@ -188,6 +189,7 @@ class Test_weighted_comparisons_plots(
                         (df4,),
                         names=["test"],
                         dist_type=dist_type,
+                        return_axes=True,
                     )[0]
                 )
             )

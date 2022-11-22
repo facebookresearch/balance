@@ -492,7 +492,8 @@ def seaborn_plot_dist(
     numeric_n_values_threshold: int = 15,
     weighted: bool = True,
     dist_type: Optional[Literal["qq", "hist", "kde", "ecdf"]] = None,
-) -> Union[List[plt.Axes], np.ndarray]:
+    return_axes: bool = False,
+) -> Union[List[plt.Axes], np.ndarray, None]:
     """Plots to compare the weighted distributions of an arbitrary number of variables from
     an arbitrary number of DataFrames.
 
@@ -514,9 +515,11 @@ def seaborn_plot_dist(
             Setting this value to 0 will disable this check.
         weighted (bool, optional): If to pass the weights from the dicts inside dfs. Defaults to True.
         dist_type (Optional[str], optional): can be "hist", "kde", or "qq". Defaults to None.
+        return_axes (bool, optional): if to returns axes or None. Defaults to False,
 
     Returns:
-        Union[List[plt.Axes], np.ndarray]: Either a list or an np.array of matplotlib AxesSubplot (plt.Subplot).
+        Union[List[plt.Axes], np.ndarray, None]: Returns None.
+        However, if return_axes is True then either it returns a list or an np.array of matplotlib AxesSubplot (plt.Subplot).
         NOTE: There is no AxesSubplot class until one is invoked and created on the fly.
             See details here: https://stackoverflow.com/a/11690800/256662
 
@@ -591,7 +594,9 @@ def seaborn_plot_dist(
                 # pyre-fixme[6]
                 plot_hist_kde(dfs, names, o, axes[io], weighted, dist_type)
 
-    return axes
+    if return_axes:
+        return axes
+    # else (default) will return None
 
 
 def set_xy_axes_to_use_the_same_lim(ax: plt.Axes) -> None:
@@ -1035,7 +1040,7 @@ def plot_dist(
     dist_type: Optional[Literal["qq", "hist", "kde", "ecdf"]] = None,
     library: Literal["plotly", "seaborn"] = "plotly",
     **kwargs,
-) -> Union[Union[List, np.ndarray], Dict[str, go.Figure]]:
+) -> Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:
     """Plots the variables of a DataFrame by using either seaborn or plotly.
 
     If using plotly then using qq plots for numeric variables and bar plots for categorical variables. Uses :func:`plotly_plot_dist`.
@@ -1062,9 +1067,9 @@ def plot_dist(
         ValueError: if library is not in ("plotly", "seaborn").
 
     Returns:
-        Union[Union[List, np.ndarray], Dict[str, go.Figure]]:
+        Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:
             If library="plotly" then returns a dictionary containing plots if return_dict_of_figures is True. None otherwise.
-            If library="seaborn" then returns either a list or an np.array of matplotlib axis.
+            If library="seaborn" then returns None, unless return_axes is True. Then either a list or an np.array of matplotlib axis.
 
     Examples:
         ::
@@ -1110,7 +1115,13 @@ def plot_dist(
 
     if library == "seaborn":
         return seaborn_plot_dist(
-            dfs, names, variables, numeric_n_values_threshold, weighted, dist_type
+            dfs,
+            names,
+            variables,
+            numeric_n_values_threshold,
+            weighted,
+            dist_type,
+            **kwargs,
         )
     elif library == "plotly":
         dict_of_dfs = dict(
@@ -1126,7 +1137,6 @@ def plot_dist(
         if dist_type is not None:
             logger.warning("plotly plots ignore dist_type. Consider library='seaborn'")
 
-        # pyre-ignore[7]: Incompatible return type [7]: Expected `Union[Dict[str, typing.Any], List[typing.Any], ndarray]` but got implicit return value of `None`.
         return plotly_plot_dist(
             dict_of_dfs, variables, numeric_n_values_threshold, weighted, **kwargs
         )
