@@ -581,7 +581,7 @@
 
 <div class="viewcode-block" id="BalanceDF.plot"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span> <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">]]:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Plots the variables in the df of the BalanceDF object.</span>
 
 <span class="sd">        See :func:`weighted_comparisons_plots.plot_dist` for details of various arguments that can be passed.</span>
@@ -596,9 +596,9 @@
 <span class="sd">                Defaluts to True.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Union[Union[List, np.ndarray], Dict[str, go.Figure]]:</span>
+<span class="sd">            Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:</span>
 <span class="sd">                If library=&quot;plotly&quot; then returns a dictionary containing plots if return_dict_of_figures is True. None otherwise.</span>
-<span class="sd">                If library=&quot;seaborn&quot; then returns either a list or an np.array of matplotlib axis.</span>
+<span class="sd">                If library=&quot;seaborn&quot; then returns None, unless return_axes is True. Then either a list or an np.array of matplotlib axis.</span>
 
 <span class="sd">        Examples:</span>
 <span class="sd">            ::</span>
@@ -1463,7 +1463,7 @@
     <span class="c1"># TODO: once we have hist/kde methods for plotly, consider changing the defaults here to use plotly instead of seaborn.</span>
 <div class="viewcode-block" id="BalanceOutcomesDF.plot"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceOutcomesDF.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceOutcomesDF&quot;</span><span class="p">,</span> <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">]]:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Plots histogram of covariates in a BalanceOutcomesDF object using seaborn (as default).</span>
 
 <span class="sd">        It&#39;s possible to use other plots using dist_type with arguments such as &quot;hist&quot; (default), &quot;kde&quot;, &quot;qq&quot;, and &quot;ecdf&quot;.</span>
@@ -1475,9 +1475,9 @@
 <span class="sd">                Defaluts to True.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Union[Union[List, np.ndarray], Dict[str, go.Figure]]:</span>
+<span class="sd">            Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:</span>
 <span class="sd">                If library=&quot;plotly&quot; then returns a dictionary containing plots if return_dict_of_figures is True. None otherwise.</span>
-<span class="sd">                If library=&quot;seaborn&quot; then returns either a list or an np.array of matplotlib axis.</span>
+<span class="sd">                If library=&quot;seaborn&quot; then returns None, unless return_axes is True. Then either a list or an np.array of matplotlib axis.</span>
 
 <span class="sd">        Examples:</span>
 <span class="sd">            ::</span>
@@ -1586,7 +1586,7 @@
     <span class="c1"># TODO: maybe add better control if there are no weights for unadjusted or target (the current default shows them in the legend, but not in the figure)</span>
 <div class="viewcode-block" id="BalanceWeightsDF.plot"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceWeightsDF.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceWeightsDF&quot;</span><span class="p">,</span> <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">]]:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Plots kde (kernal density estimation) of the weights in a BalanceWeightsDF object using seaborn (as default).</span>
 
 <span class="sd">        It&#39;s possible to use other plots using dist_type with arguments such as &quot;hist&quot; (default), &quot;kde&quot;, &quot;qq&quot;, and &quot;ecdf&quot;.</span>
@@ -1598,9 +1598,9 @@
 <span class="sd">                Defaluts to True.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Union[Union[List, np.ndarray], Dict[str, go.Figure]]:</span>
+<span class="sd">            Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:</span>
 <span class="sd">                If library=&quot;plotly&quot; then returns a dictionary containing plots if return_dict_of_figures is True. None otherwise.</span>
-<span class="sd">                If library=&quot;seaborn&quot; then returns either a list or an np.array of matplotlib axis.</span>
+<span class="sd">                If library=&quot;seaborn&quot; then returns None, unless return_axes is True. Then either a list or an np.array of matplotlib axis.</span>
 
 <span class="sd">        Examples:</span>
 <span class="sd">            ::</span>
