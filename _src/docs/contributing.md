@@ -53,8 +53,58 @@ We strongly recommend adding unit testing when introducing new code. To run all 
 ### Documentation
 * We require docstrings on all public functions and classes (those not prepended with `_`).
 * We use the [Google docstring style](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html) & use Sphinx to compile API reference documentation.
-* Our [website](https://import-balance.org) leverages Docusaurus 2.0 + Sphinx for generating our documentation content.
-* To rule out parsing errors, we suggesting [installing sphinx](https://www.sphinx-doc.org/en/master/usage/installation.html) and running `make html` from the balance/sphinx folder. Alternatively, you may also try running `./script/make_docs` from the root of the balance repo folder.
+* Our [website](https://import-balance.org) leverages Docusaurus 2.0 + Sphinx + Jupyter notebook for generating our documentation content.
+* To rule out parsing errors, we suggesting [installing sphinx](https://www.sphinx-doc.org/en/master/usage/installation.html) and running `make html` from the balance/sphinx folder.
+
+## Website Development
+
+### Overview
+balance's website is also open source and part of this repository. balance leverages several open source frameworks for website development.
+* [Docusaurus 2](https://docusaurus.io/): The main site is generated using Docusaurus, with the code living under the [website](https://github.com/facebookresearch/balance/tree/main/website) folder). This includes the website template (navbar, footer, sidebars), landing page, and main sections (Blog, Docs, Tutorials, API Reference).
+  * Markdown is used for the content of several sections, particularly the "Docs" section. Files are under the [docs/](https://github.com/facebookresearch/balance/tree/main/website/docs/docs) folder
+* [Jupyter notebook](https://fburl.com/55p6vvxo) is used to generate the notebook tutorials under the "Tutorials" section, based on our ipynb tutorials in our [tutorials](https://github.com/facebookresearch/balance/tree/main/tutorials) folder.
+* [Sphinx](https://www.sphinx-doc.org/en/master/index.html) is used for Python documentation generation, populated under the "API Reference" section. Files are under the [sphinx](https://github.com/facebookresearch/balance/tree/main/sphinx) folder.
+
+
+### Setup
+
+To install the necessary dependencies for website development, run the following from the repo root:
+```
+python -m pip install git+https://github.com/bbalasub1/glmnet_python.git@1.0
+python -m pip install .[dev]
+```
+
+### Adding Notebook Tutorials
+All our notebook tutorials are housed under the [tutorials](https://github.com/facebookresearch/balance/tree/main/tutorials) folder at the root of the repo. We use these notebooks as the source of truth for the "Tutorials" section of the website, executing & generating HTML pages for each notebook.
+
+To add a new tutorial:
+1. Check in your notebook (.ipynb) to our [tutorials](https://github.com/facebookresearch/balance/tree/main/tutorials) folder. We strongly suggest clearing notebook output cells.
+2. Extend the "Building tutorial HTML" section of [`scripts/make_docs.sh`](https://github.com/facebookresearch/balance/blob/main/scripts/make_docs.sh) to execute & generate HTML for the new tutorial e.g. `jupyter nbconvert tutorials/my_tutorial.ipynb --execute --to html --output-dir website/static/html/tutorials`.
+3. Introduce a new .mdx page under the [website/docs/tutorials](https://github.com/facebookresearch/balance/tree/main/website/docs/tutorials) folder for the new tutorial. Use HTMLLoader to load the generated HTML e.g. `<HTMLLoader docFile={useBaseUrl('html/tutorials/my_tutorial.html')}/>`. [quickstart.mdx](https://github.com/facebookresearch/balance/blob/main/website/docs/tutorials/quickstart.mdx) is a good reference for the setup
+
+To test the setup, see the [`Building & Testing Website Changes`](#building--testing-website-changes) section below.
+
+Note: The generated HTML should not be checked into the main repo.
+
+### Building & Testing Website Changes
+We've developed a helper script for running the full website build process:
+
+```
+./scripts/make_docs.sh
+
+# To start up the local webserver
+cd website
+yarn serve
+```
+Once the local webserver is up, you'll get a link you can follow to visit the newly-built site. See [Docusaurus docs](https://docusaurus.io/docs/deployment#testing-build-locally) for more info.
+
+## Deployment
+We rely on Github Actions to run our CI/CD. The workflow files can be found [here](https://fburl.com/5kwhksbu).
+
+In summary
+* On every pull request, we run our "Build & Test" workflow, which includes PyTest tests, Wheels package builds, flake8 linting, and website build.
+* We also run the same "Build & Test" suite nightly.
+* On every push, we deploy a new version of the website. The `make_docs.sh` script is run from the main branch and the build artifacts are published to the `gh-pages` branch, which is linked to our repo's Github Page's deployment.
 
 ## License
 By contributing to balance, you agree that your contributions will be licensed
