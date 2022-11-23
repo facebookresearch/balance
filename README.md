@@ -231,3 +231,5 @@ The *balance* package is actively maintained by people from the [Core Data Scien
 The *balance* package was (and is) developed by many people, including: [Daniel Haimovich](https://research.facebook.com/people/haimovich-daniel/), [Tal Sarig](https://research.facebook.com/people/sarig-tal/), [Tal Galili](https://research.facebook.com/people/galili-tal/), [Roee Eilat](https://research.facebook.com/people/eilat-roee/), [Steve Mandala](https://research.facebook.com/people/mandala-steve/). and others. If you worked on balance in the past, we will probably reach out to you in the near future to ask you to be added to this list. If we missed you by mistake, please email us.
 
 The *balance* package was open-sourced by [Tal Sarig](https://research.facebook.com/people/sarig-tal/), [Tal Galili](https://research.facebook.com/people/galili-tal/) and [Steve Mandala](https://research.facebook.com/people/mandala-steve/) in late 2022.
+
+Branding created by [Dana Beaty](https://www.danabeaty.com/), from the Meta AI Design and Marketing Team.
