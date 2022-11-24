@@ -166,9 +166,9 @@ If set to None, then it uses ‘lambda_1se’. Defaults to 1.5.</p></li>
 <li><p><strong>formula</strong> (<em>Union</em><em>[</em><em>str</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>None</em><em>]</em><em>, </em><em>optional</em>) – The formula according to which build the model.
 In case of list of formula, the model matrix will be built in steps and
 concatenated together. Defaults to None.</p></li>
-<li><p><strong>penalty_factor</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>float</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – the penalty used in the glment function in ipw. The penalty
+<li><p><strong>penalty_factor</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>float</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – the penalty used in the glmnet function in ipw. The penalty
 should have the same length as the formula list. If not provided,
-assume the same panelty for all variables. Defaults to None.</p></li>
+assume the same penalty for all variables. Defaults to None.</p></li>
 <li><p><strong>one_hot_encoding</strong> (<em>bool</em><em>, </em><em>optional</em>) – whether to encode all factor variables in the model matrix with
 almost_one_hot_encoding. This is recomended in case of using
 LASSO on the data (Default: False).
