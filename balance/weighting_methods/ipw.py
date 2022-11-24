@@ -371,9 +371,9 @@ def ipw(
         formula (Union[str, List[str], None], optional): The formula according to which build the model.
             In case of list of formula, the model matrix will be built in steps and
             concatenated together. Defaults to None.
-        penalty_factor (Optional[List[float]], optional): the penalty used in the glment function in ipw. The penalty
+        penalty_factor (Optional[List[float]], optional): the penalty used in the glmnet function in ipw. The penalty
             should have the same length as the formula list. If not provided,
-            assume the same panelty for all variables. Defaults to None.
+            assume the same penalty for all variables. Defaults to None.
         one_hot_encoding (bool, optional): whether to encode all factor variables in the model matrix with
             almost_one_hot_encoding. This is recomended in case of using
             LASSO on the data (Default: False).
