@@ -894,19 +894,38 @@ def qcut(s, q, duplicates: str = "drop", **kwargs):
         return pd.qcut(s, q, duplicates=duplicates, **kwargs).astype("O")
 
 
+# TODO: fix it so that the order of the returned columns is the same as the original order in the DataFrame
 def quantize(
     df: Union[pd.DataFrame, pd.Series], q: int = 10, variables=None
 ) -> pd.DataFrame:
     """Cut numeric variables of a DataFrame into quantile buckets
 
     Args:
-        df (Union[pd.DataFrame, pd.Series]): ataFrame to transform
+        df (Union[pd.DataFrame, pd.Series]): a DataFrame to transform
         q (int, optional): Number of buckets to create for each variable. Defaults to 10.
         variables (optional): variables to transform.
                     If None, all numeric variables are transformed. Defaults to None.
 
     Returns:
-        _type_: DataFrame after quantization
+        pd.DataFrame: DataFrame after quantization. numpy.nan values are kept as is.
+
+    Examples:
+        ::
+
+            from balance.util import quantize
+            import numpy as np
+
+            df = pd.DataFrame({"a": [1,1,2,20,22,23,np.nan], "b": range(7), "c": range(7), "d": [1,1,np.nan,20,5,23,np.nan]})
+            print(quantize(df, q = 3))
+
+                #             b               d              c                a
+                # 0  (-0.001, 2.0]  (0.999, 2.333]  (-0.001, 2.0]   (0.999, 1.667]
+                # 1  (-0.001, 2.0]  (0.999, 2.333]  (-0.001, 2.0]   (0.999, 1.667]
+                # 2  (-0.001, 2.0]             NaN  (-0.001, 2.0]  (1.667, 20.667]
+                # 3     (2.0, 4.0]    (15.0, 23.0]     (2.0, 4.0]  (1.667, 20.667]
+                # 4     (2.0, 4.0]   (2.333, 15.0]     (2.0, 4.0]   (20.667, 23.0]
+                # 5     (4.0, 6.0]    (15.0, 23.0]     (4.0, 6.0]   (20.667, 23.0]
+                # 6     (4.0, 6.0]             NaN     (4.0, 6.0]              NaN
     """
     if not (isinstance(df, pd.Series) or isinstance(df, pd.DataFrame)):
         # Necessary because pandas calls the function on the first item on its own
