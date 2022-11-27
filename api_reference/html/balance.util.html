@@ -816,19 +816,36 @@ Defaults to “drop”.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>df</strong> (<em>Union</em><em>[</em><em>pd.DataFrame</em><em>, </em><em>pd.Series</em><em>]</em>) – ataFrame to transform</p></li>
+<li><p><strong>df</strong> (<em>Union</em><em>[</em><em>pd.DataFrame</em><em>, </em><em>pd.Series</em><em>]</em>) – a DataFrame to transform</p></li>
 <li><p><strong>q</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of buckets to create for each variable. Defaults to 10.</p></li>
 <li><p><strong>variables</strong> (<em>optional</em>) – variables to transform.
 If None, all numeric variables are transformed. Defaults to None.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>DataFrame after quantization</p>
+<dd class="field-even"><p>DataFrame after quantization. numpy.nan values are kept as is.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>_type_</p>
+<dd class="field-odd"><p>pd.DataFrame</p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">balance.util</span> <span class="kn">import</span> <span class="n">quantize</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">22</span><span class="p">,</span><span class="mi">23</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">],</span> <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">7</span><span class="p">),</span> <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">7</span><span class="p">),</span> <span class="s2">&quot;d&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">23</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">]})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">quantize</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">q</span> <span class="o">=</span> <span class="mi">3</span><span class="p">))</span>
+
+    <span class="c1">#             b               d              c                a</span>
+    <span class="c1"># 0  (-0.001, 2.0]  (0.999, 2.333]  (-0.001, 2.0]   (0.999, 1.667]</span>
+    <span class="c1"># 1  (-0.001, 2.0]  (0.999, 2.333]  (-0.001, 2.0]   (0.999, 1.667]</span>
+    <span class="c1"># 2  (-0.001, 2.0]             NaN  (-0.001, 2.0]  (1.667, 20.667]</span>
+    <span class="c1"># 3     (2.0, 4.0]    (15.0, 23.0]     (2.0, 4.0]  (1.667, 20.667]</span>
+    <span class="c1"># 4     (2.0, 4.0]   (2.333, 15.0]     (2.0, 4.0]   (20.667, 23.0]</span>
+    <span class="c1"># 5     (4.0, 6.0]    (15.0, 23.0]     (4.0, 6.0]   (20.667, 23.0]</span>
+    <span class="c1"># 6     (4.0, 6.0]             NaN     (4.0, 6.0]              NaN</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
