@@ -372,8 +372,9 @@ def ipw(
             In case of list of formula, the model matrix will be built in steps and
             concatenated together. Defaults to None.
         penalty_factor (Optional[List[float]], optional): the penalty used in the glmnet function in ipw. The penalty
-            should have the same length as the formula list. If not provided,
-            assume the same penalty for all variables. Defaults to None.
+            should have the same length as the formula list (and applies to each element of formula).
+            Smaller penalty on some formula will lead to elements in that formula to get more adjusted, i.e. to have a higher chance to get into the model (and not zero out). A penalty of 0 will make sure the element is included in the model.
+            If not provided, assume the same penalty (1) for all variables. Defaults to None.
         one_hot_encoding (bool, optional): whether to encode all factor variables in the model matrix with
             almost_one_hot_encoding. This is recomended in case of using
             LASSO on the data (Default: False).
@@ -384,8 +385,8 @@ def ipw(
         random_seed (int, optional): Random seed to use. Defaults to 2020.
 
     Raises:
-        Exception: _description_
-        NotImplementedError: _description_
+        Exception: f"Sample indicator only has value {_n_unique}. This can happen when your sample or target are empty from unknown reason"
+        NotImplementedError: if model is not "glmnet"
 
     Returns:
         Dict[str, Any]: A dictionary includes:
