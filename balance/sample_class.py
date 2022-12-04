@@ -41,7 +41,7 @@ class Sample:
         a column representing the weights of the units in sample
     """
 
-    # The following attributes are updated when initiating Sample using Sample.fram_frame
+    # The following attributes are updated when initiating Sample using Sample.from_frame
     _df = None
     id_column = None
     _outcome_columns = None
@@ -58,12 +58,12 @@ class Sample:
             calling_functions = [x.function for x in inspect.stack()]
         except Exception:
             raise NotImplementedError(
-                "cannot construct Sample class directly... yet (only by invoking Sample.from_fram(...)"
+                "cannot construct Sample class directly... yet (only by invoking Sample.from_frame(...)"
             )
 
         if "from_frame" not in calling_functions:
             raise NotImplementedError(
-                "cannot construct Sample class directly... yet (only by invoking Sample.from_fram(...)"
+                "cannot construct Sample class directly... yet (only by invoking Sample.from_frame(...)"
             )
         pass
 
@@ -134,9 +134,9 @@ class Sample:
 
         NOTE that all integer columns will be converted by defaults into floats. This behavior can be turned off
         by setting standardize_types argument to False.
-        The reason this is done by default is because of missing value handeling combined with balance current lack of support
+        The reason this is done by default is because of missing value handling combined with balance current lack of support
         for pandas Integer types:
-            1. Native numpy integers do not support missing values (NA), while pandas Intgers do,
+            1. Native numpy integers do not support missing values (NA), while pandas Integers do,
             as well numpy floats. Also,
             2. various functions in balance do not support pandas Integers, while they do support numpy floats.
             3. Hence, since some columns might have missing values, the safest solution is to just convert all integers into numpy floats.
@@ -379,7 +379,7 @@ class Sample:
 
         Args:
             target (Optional["Sample"]): Second sample object which should be matched.
-                If None, the set traget of the object is used for matching.
+                If None, the set target of the object is used for matching.
             method (str): method for adjustment: cbps, ipw, null, poststratify
 
         Returns:
@@ -414,13 +414,13 @@ class Sample:
 
     def set_weights(self, weights: Optional[Union[pd.Series, float]]) -> None:
         """
-        Adjusteing the weights of a Sample object.
+        Adjusting the weights of a Sample object.
         This will overwrite the weight_column of the Sample.
         Note that the weights are assigned by index if weights is a pd.Series
         (of Sample.df and weights series)
 
         Args:
-            weights (Optional[Union[pd.Series, float]]): Seiers of weights to add to sample.
+            weights (Optional[Union[pd.Series, float]]): Series of weights to add to sample.
                 If None or float values, the same weight (or None) will be assigned to all units.
 
         Returns:
@@ -462,16 +462,16 @@ class Sample:
         """Check if a Sample object is adjusted and has target attached
 
         Returns:
-            bool: whetehr the Sample is adjusted or not.
+            bool: whether the Sample is adjusted or not.
         """
         return ("unadjusted" in self._links) and ("target" in self._links)
 
     def set_target(self, target: "Sample") -> "Sample":
         """
-        Used to set the tagret linked to Sample.
+        Used to set the target linked to Sample.
 
         Args:
-            target (Sample): A Sample pbject to be linked as target
+            target (Sample): A Sample object to be linked as target
 
         Returns:
             Sample: new copy of Sample with target link attached
@@ -501,7 +501,7 @@ class Sample:
 
         Args:
             self (Sample): A Sample object produces after running :func:`Sample.adjust`.
-                It should include 3 componants: "unadjusted", "adjusted", "target".
+                It should include 3 components: "unadjusted", "adjusted", "target".
 
         Returns:
             pd.DataFrame: A DataFrame with 3 columns ("unadjusted", "adjusted", "target"),
@@ -561,7 +561,7 @@ class Sample:
 
         Args:
             self (Sample): A Sample object produces after running :func:`Sample.adjust`.
-                It should include 3 componants: "unadjusted", "adjusted", "target".
+                It should include 3 components: "unadjusted", "adjusted", "target".
 
         Returns:
             np.float64: relative difference in design effect.
@@ -618,7 +618,7 @@ class Sample:
 
         Args:
             self (Sample): A Sample object produces after running :func:`Sample.adjust`.
-                It should include 3 componants: "unadjusted", "adjusted", "target".
+                It should include 3 components: "unadjusted", "adjusted", "target".
 
         Returns:
             pd.Series: (np.float64) relative difference in outcome weighted standard deviation.
@@ -639,7 +639,7 @@ class Sample:
 
         Args:
             self (Sample): A Sample object produces after running :func:`Sample.adjust`.
-                It should include 3 componants: "unadjusted", "adjusted", "target".
+                It should include 3 components: "unadjusted", "adjusted", "target".
 
         Returns:
              pd.Series: (np.float64) A series of calculated ratio of variances for each outcome.
@@ -662,7 +662,7 @@ class Sample:
         Provides a summary of covariate balance, design effect and model properties (if applicable)
         of a sample.
 
-        For more detials see: :func:`BalanceDF.asmd`, :func:`BalanceDF.asmd_improvement`
+        For more details see: :func:`BalanceDF.asmd`, :func:`BalanceDF.asmd_improvement`
         and :func:`weights_stats.design_effect`
 
         Returns:
@@ -735,7 +735,7 @@ class Sample:
         sample_obs and target_obs will NOT include them in the counting. The same is true for sample_covars and target_covars.
         In the "size" metrics we have the following 'var's:
         - sample_obs - number of respondents
-        - sample_covars -  number of covariates (main covars, before any transofrmation was used)
+        - sample_covars -  number of covariates (main covars, before any transformations were used)
         - target_obs - number of users used to represent the target pop
         - target_covars - like sample_covars, but for target.
 
@@ -1065,7 +1065,7 @@ class Sample:
             Sample: A copy of the original object. If both rows and columns to keep are None,
                 returns the copied object unchanged.
                 If some are not None, will update - first the rows - then the columns.
-                This performs the transformation on both the sameple's df and its linkes dfs (unadjusted, target).
+                This performs the transformation on both the sample's df and its linked dfs (unadjusted, target).
         """
         if (rows_to_keep is None) and (columns_to_keep is None):
             return self
@@ -1185,7 +1185,7 @@ class Sample:
     def _special_columns(self: "Sample") -> pd.DataFrame:
         """
         Returns dataframe of all special columns (id column,
-        wegiht column and outcome columns) in Sample.
+        weight column and outcome columns) in Sample.
 
         Returns:
             pd.DataFrame: special columns
