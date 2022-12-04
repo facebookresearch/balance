@@ -111,7 +111,7 @@ not specified in <cite>transformations</cite>. Defaults to True.</p></li>
 <dl class="py function">
 <dt class="sig sig-object py" id="balance.adjustment.default_transformations">
 <span class="sig-prename descclassname"><span class="pre">balance.adjustment.</span></span><span class="sig-name descname"><span class="pre">default_transformations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dfs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">DataFrame</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/adjustment.html#default_transformations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.adjustment.default_transformations" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply default transfomations to dfs, i.e.
+<dd><p>Apply default transformations to dfs, i.e.
 quantize to numeric columns and fct_lump to non-numeric and boolean</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -131,13 +131,13 @@ quantize to numeric columns and fct_lump to non-numeric and boolean</p>
 <span class="sig-prename descclassname"><span class="pre">balance.adjustment.</span></span><span class="sig-name descname"><span class="pre">trim_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_trimming_mean_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_trimming_percentile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_sum_of_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/balance/adjustment.html#trim_weights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.adjustment.trim_weights" title="Permalink to this definition">¶</a></dt>
 <dd><p>Trim extreme weights.</p>
 <p>The user cannot supply both weight_trimming_mean_ratio and weight_trimming_percentile.
-If none are supplied, the original weights are returend.</p>
+If none are supplied, the original weights are returned.</p>
 <p>If weight_trimming_mean_ratio is not none, the weights are trimmed from above by
 mean(weights) * ratio. The weights are then normalized to have the original mean.
 Note that trimmed weights aren’t actually bounded by trimming.ratio because the
 reduced weight is redistributed to arrive at the original mean</p>
 <p>Note that weight_trimming_percentile clips both sides of the distribution, unlike
-trimming that only trimms the weights from above.
+trimming that only trims the weights from above.
 For example, <cite>weight_trimming_percentile=0.1</cite> trims below the 10th percentile
 AND above the 90th. If you only want to trim the upper side, specify
 <cite>weight_trimming_percentile = (0, 0.9)</cite>.</p>
@@ -165,10 +165,31 @@ Defaults to True.</p></li>
 </ul>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Trimmed weights,</p>
+<dd class="field-odd"><p>Trimmed weights</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>pd.Series (of type float64)</p>
+<dd class="field-even"><p><p>pd.Series (of type float64)</p>
+<dl>
+<dt>Examples:</dt><dd><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">balance.adjustment</span> <span class="kn">import</span> <span class="n">trim_weights</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">trim_weights</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">40</span><span class="p">]),</span> <span class="n">weight_trimming_mean_ratio</span> <span class="o">=</span> <span class="kc">None</span><span class="p">))</span>
+   <span class="c1"># 0     1.0</span>
+   <span class="c1"># 1     2.0</span>
+   <span class="c1"># 2     3.0</span>
+   <span class="c1"># 3    40.0</span>
+   <span class="c1"># dtype: float64</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">trim_weights</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">40</span><span class="p">]),</span> <span class="n">weight_trimming_mean_ratio</span> <span class="o">=</span> <span class="mi">2</span><span class="p">))</span>
+   <span class="c1"># 0     1.586207</span>
+   <span class="c1"># 1     3.172414</span>
+   <span class="c1"># 2     4.758621</span>
+   <span class="c1"># 3    36.482759</span>
+   <span class="c1"># dtype: float64</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</p>
 </dd>
 </dl>
 </dd></dl>
