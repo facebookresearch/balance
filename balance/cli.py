@@ -184,7 +184,7 @@ class BalanceCLI:
                 max_de=max_de,
                 weight_trimming_mean_ratio=weight_trimming_mean_ratio,
             )
-            logger.info("Succeded with adjusting sample to target")
+            logger.info("Succeeded with adjusting sample to target")
             logger.info("%s adjusted object: %s" % (sample_package_name, str(adjusted)))
 
             logger.info(
@@ -574,19 +574,19 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
         help=(
             "Upper bound for the design effect of the computed weights. "
             "If not supplied it defaults to 1.5. If set to 'None', then it uses 'lambda_1se'. "
-            "Only used if method is ipw or cbps."
+            "Only used if method is ipw or CBPS."
         ),
     )
     parser.add_argument(
         "--weight_trimming_mean_ratio",
-        type=float,
+        type=_float_or_none,
         required=False,
         default=20.0,
         help=(
             "The ratio according to which weights are trimmed from above by mean(weights) * ratio. "
             "Defaults to 20. "
-            "Used only for cbps and ipw. For ipw this is only used if max_de is set to 'None',"
-            "otherwise, the trimming ratio is chosen by the algorithm."
+            "Used only for CBPS and ipw."
+            "For ipw this is only used if max_de is set to 'None',otherwise, the trimming ratio is chosen by the algorithm."
         ),
     )
     parser.add_argument(

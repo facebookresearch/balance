@@ -485,7 +485,7 @@ class TestCli(
             self.assertEqual(int(pd_diagnostics_out_file[ss]["val"]), 3000)
 
     # TODO: Add tests for max_de
-    # TODO: Add tests for weight_trimming_mean_rati
+    # TODO: Add tests for weight_trimming_mean_ratio
 
     def test_method_works(self):
         # TODO: ideally we'll have the example outside, and a different function for each of the methods (ipw, cbps, raking)
