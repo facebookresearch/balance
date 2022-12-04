@@ -98,6 +98,12 @@ class BalanceCLI:
     def max_de(self) -> Optional[float]:
         return self.args.max_de
 
+    def transformations(self) -> Optional[str]:
+        if (self.args.transformations is None) or (self.args.transformations == "None"):
+            return None
+        else:
+            return self.args.transformations
+
     def one_hot_encoding(self) -> bool:
         if self.args.one_hot_encoding.lower() == "false":
             return False
@@ -289,7 +295,7 @@ class BalanceCLI:
         Prepares all the defaults for main to use.
         """
         # TODO: future version might include conditional control over these attributes based on some input
-        transformations = "default"
+        transformations = self.transformations()
         formula = None
         penalty_factor = None
         one_hot_encoding = self.one_hot_encoding()
@@ -402,7 +408,7 @@ class BalanceCLI:
                 )
                 results.append(processed["adjusted"])
                 diagnostics.append(processed["diagnostics"])
-                logger.info("Done proccesing batch %s" % str(batch_name))
+                logger.info("Done processing batch %s" % str(batch_name))
 
             if (len(results) == 0) and len(diagnostics) == 0:
                 output_df = pd.DataFrame()
@@ -458,7 +464,7 @@ def _float_or_none(value: Union[float, int, str, None]) -> Optional[float]:
 
 def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
     # TODO: add checks for validity of input (including None as input)
-    # TODO: add arguments for transformations, formula and penalty_factor
+    # TODO: add arguments for formula and penalty_factor
     parser.add_argument(
         "--input_file",
         type=FileType("r"),
@@ -596,6 +602,18 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
         required=False,
         help=(
             "Set the value of the one_hot_encoding parameter. Accepts a string with one a value of 'True' or 'False' (treats it as a bool). Default is 'True'"
+        ),
+    )
+    # TODO: Ideally we would like transformations argument to be able to get three types of values: None (for no transformations),
+    # "default" for default transformations or a dictionary of transformations.
+    # However, as a first step I added the option for "default" (which is also the default) and None (for no transformations).
+    parser.add_argument(
+        "--transformations",
+        default="default",
+        required=False,
+        help=(
+            "Define the transformations for the covariates. Can be set to None for no transformations or"
+            "'default' for default transformations."
         ),
     )
     return parser

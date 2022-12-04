@@ -168,7 +168,7 @@ class TestCli(
             cli.update_attributes_for_main_used_by_adjust()
             cli.main()
 
-            # get the files created from cli to padnas to check them
+            # get the files created from cli to pandas to check them
             pd_in_file = pd.read_csv(in_file.name)
             pd_out_file = pd.read_csv(out_file)
             pd_diagnostics_out_file = pd.read_csv(diagnostics_out_file)
@@ -319,7 +319,7 @@ class TestCli(
             cli.update_attributes_for_main_used_by_adjust()
             cli.main()
 
-            # get the files created from cli to padnas to check them
+            # get the files created from cli to pandas to check them
             pd_in_file = pd.read_csv(in_file.name)
             pd_out_file = pd.read_csv(out_file, sep=";")
             pd_diagnostics_out_file = pd.read_csv(diagnostics_out_file, sep=";")
@@ -415,7 +415,7 @@ class TestCli(
     def test_cli_short_arg_names_works(self):
         # Some users used only partial arg names for their pipelines
         # This is not good practice, but we'd like to not break these pipelines.
-        # Hence, this test varifies new arguments would still be backward compatible
+        # Hence, this test verifies new arguments would still be backward compatible
         import os
         import tempfile
 
@@ -462,7 +462,7 @@ class TestCli(
             cli.update_attributes_for_main_used_by_adjust()
             cli.main()
 
-            # get the files created from cli to padnas to check them
+            # get the files created from cli to pandas to check them
             pd_in_file = pd.read_csv(in_file.name)
             pd_out_file = pd.read_csv(out_file, sep=";")
             pd_diagnostics_out_file = pd.read_csv(diagnostics_out_file, sep=";")
@@ -632,3 +632,154 @@ class TestCli(
                 )
                 cli3 = BalanceCLI(args3)
                 cli3.update_attributes_for_main_used_by_adjust()
+
+    def test_transformations_works(self):
+        # TODO: ideally we'll have the example outside
+        np.random.seed(2021)
+        n_sample = 1000
+        n_target = 2000
+        sample_df = pd.DataFrame(
+            {
+                "age": np.random.uniform(0, 100, n_sample),
+                "gender": np.random.choice((1, 2, 3, 4), n_sample),
+                "id": range(n_sample),
+                "weight": pd.Series((1,) * n_sample),
+            }
+        )
+        sample_df["is_respondent"] = True
+        target_df = pd.DataFrame(
+            {
+                "age": np.random.uniform(0, 100, n_target),
+                "gender": np.random.choice((1, 2, 3, 4), n_target),
+                "id": range(n_target),
+                "weight": pd.Series((1,) * n_target),
+            }
+        )
+        target_df["is_respondent"] = False
+        input_dataset = pd.concat([sample_df, target_df])
+
+        with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
+            "w", suffix=".csv", delete=False
+        ) as input_file:
+            input_dataset.to_csv(path_or_buf=input_file)
+            input_file.close()
+            output_file = os.path.join(temp_dir, "weights_out.csv")
+            diagnostics_output_file = os.path.join(temp_dir, "diagnostics_out.csv")
+            features = "age,gender"
+
+            # test transformations=None
+            parser = make_parser()
+            args = parser.parse_args(
+                [
+                    "--input_file",
+                    input_file.name,
+                    "--output_file",
+                    output_file,
+                    "--diagnostics_output_file",
+                    diagnostics_output_file,
+                    "--covariate_columns",
+                    features,
+                    "--transformations=None",
+                ]
+            )
+            # run cli
+            cli = BalanceCLI(args)
+            cli.update_attributes_for_main_used_by_adjust()
+            cli.main()
+            # get the files created from cli to pandas to check them
+            diagnostics_output = pd.read_csv(diagnostics_output_file, sep=",")
+            self.assertEqual(
+                diagnostics_output[diagnostics_output["metric"] == "model_coef"][
+                    "var"
+                ].values,
+                np.array(["intercept", "age", "gender"]),
+            )
+
+            # test transformations='default'
+            parser = make_parser()
+            args = parser.parse_args(
+                [
+                    "--input_file",
+                    input_file.name,
+                    "--output_file",
+                    output_file,
+                    "--diagnostics_output_file",
+                    diagnostics_output_file,
+                    "--covariate_columns",
+                    features,
+                    "--transformations=default",
+                ]
+            )
+            # run cli
+            cli = BalanceCLI(args)
+            cli.update_attributes_for_main_used_by_adjust()
+            cli.main()
+            # get the files created from cli to pandas to check them
+            diagnostics_output = pd.read_csv(diagnostics_output_file, sep=",")
+            self.assertEqual(
+                diagnostics_output[diagnostics_output["metric"] == "model_coef"][
+                    "var"
+                ].values,
+                np.array(
+                    [
+                        "intercept",
+                        "C(age, one_hot_encoding_greater_2)[(0.00264, 10.925]]",
+                        "C(age, one_hot_encoding_greater_2)[(10.925, 20.624]]",
+                        "C(age, one_hot_encoding_greater_2)[(20.624, 30.985]]",
+                        "C(age, one_hot_encoding_greater_2)[(30.985, 41.204]]",
+                        "C(age, one_hot_encoding_greater_2)[(41.204, 51.335]]",
+                        "C(age, one_hot_encoding_greater_2)[(51.335, 61.535]]",
+                        "C(age, one_hot_encoding_greater_2)[(61.535, 71.696]]",
+                        "C(age, one_hot_encoding_greater_2)[(71.696, 80.08]]",
+                        "C(age, one_hot_encoding_greater_2)[(80.08, 89.446]]",
+                        "C(age, one_hot_encoding_greater_2)[(89.446, 99.992]]",
+                        "C(gender, one_hot_encoding_greater_2)[(0.999, 2.0]]",
+                        "C(gender, one_hot_encoding_greater_2)[(2.0, 3.0]]",
+                        "C(gender, one_hot_encoding_greater_2)[(3.0, 4.0]]",
+                    ]
+                ),
+            )
+
+            # test default value for transformations
+            parser = make_parser()
+            args = parser.parse_args(
+                [
+                    "--input_file",
+                    input_file.name,
+                    "--output_file",
+                    output_file,
+                    "--diagnostics_output_file",
+                    diagnostics_output_file,
+                    "--covariate_columns",
+                    features,
+                ]
+            )
+            # run cli
+            cli = BalanceCLI(args)
+            cli.update_attributes_for_main_used_by_adjust()
+            cli.main()
+            # get the files created from cli to pandas to check them
+            diagnostics_output = pd.read_csv(diagnostics_output_file, sep=",")
+            self.assertEqual(
+                diagnostics_output[diagnostics_output["metric"] == "model_coef"][
+                    "var"
+                ].values,
+                np.array(
+                    [
+                        "intercept",
+                        "C(age, one_hot_encoding_greater_2)[(0.00264, 10.925]]",
+                        "C(age, one_hot_encoding_greater_2)[(10.925, 20.624]]",
+                        "C(age, one_hot_encoding_greater_2)[(20.624, 30.985]]",
+                        "C(age, one_hot_encoding_greater_2)[(30.985, 41.204]]",
+                        "C(age, one_hot_encoding_greater_2)[(41.204, 51.335]]",
+                        "C(age, one_hot_encoding_greater_2)[(51.335, 61.535]]",
+                        "C(age, one_hot_encoding_greater_2)[(61.535, 71.696]]",
+                        "C(age, one_hot_encoding_greater_2)[(71.696, 80.08]]",
+                        "C(age, one_hot_encoding_greater_2)[(80.08, 89.446]]",
+                        "C(age, one_hot_encoding_greater_2)[(89.446, 99.992]]",
+                        "C(gender, one_hot_encoding_greater_2)[(0.999, 2.0]]",
+                        "C(gender, one_hot_encoding_greater_2)[(2.0, 3.0]]",
+                        "C(gender, one_hot_encoding_greater_2)[(3.0, 4.0]]",
+                    ]
+                ),
+            )
