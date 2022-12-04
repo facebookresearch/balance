@@ -44,7 +44,7 @@ def trim_weights(
     """Trim extreme weights.
 
     The user cannot supply both weight_trimming_mean_ratio and weight_trimming_percentile.
-    If none are supplied, the original weights are returend.
+    If none are supplied, the original weights are returned.
 
     If weight_trimming_mean_ratio is not none, the weights are trimmed from above by
     mean(weights) * ratio. The weights are then normalized to have the original mean.
@@ -52,7 +52,7 @@ def trim_weights(
     reduced weight is redistributed to arrive at the original mean
 
     Note that weight_trimming_percentile clips both sides of the distribution, unlike
-    trimming that only trimms the weights from above.
+    trimming that only trims the weights from above.
     For example, `weight_trimming_percentile=0.1` trims below the 10th percentile
     AND above the 90th. If you only want to trim the upper side, specify
     `weight_trimming_percentile = (0, 0.9)`.
@@ -76,7 +76,26 @@ def trim_weights(
         ValueError: If both weight_trimming_mean_ratio and weight_trimming_percentile are set.
 
     Returns:
-        pd.Series (of type float64): Trimmed weights,
+        pd.Series (of type float64): Trimmed weights
+
+     Examples:
+        ::
+
+            import pandas as pd
+            from balance.adjustment import trim_weights
+            print(trim_weights(pd.Series([1,2,3,40]), weight_trimming_mean_ratio = None))
+               # 0     1.0
+               # 1     2.0
+               # 2     3.0
+               # 3    40.0
+               # dtype: float64
+
+            print(trim_weights(pd.Series([1,2,3,40]), weight_trimming_mean_ratio = 2))
+               # 0     1.586207
+               # 1     3.172414
+               # 2     4.758621
+               # 3    36.482759
+               # dtype: float64
     """
 
     if isinstance(weights, pd.Series):
@@ -128,7 +147,7 @@ def default_transformations(
     dfs: Union[Tuple[pd.DataFrame, ...], List[pd.DataFrame]]
 ) -> Dict[str, Callable]:
     """
-    Apply default transfomations to dfs, i.e.
+    Apply default transformations to dfs, i.e.
     quantize to numeric columns and fct_lump to non-numeric and boolean
 
     Args:
