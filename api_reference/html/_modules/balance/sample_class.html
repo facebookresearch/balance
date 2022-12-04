@@ -82,7 +82,7 @@
 <span class="sd">        a column representing the weights of the units in sample</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="c1"># The following attributes are updated when initiating Sample using Sample.fram_frame</span>
+    <span class="c1"># The following attributes are updated when initiating Sample using Sample.from_frame</span>
     <span class="n">_df</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">id_column</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">_outcome_columns</span> <span class="o">=</span> <span class="kc">None</span>
@@ -99,12 +99,12 @@
             <span class="n">calling_functions</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">function</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">stack</span><span class="p">()]</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                <span class="s2">&quot;cannot construct Sample class directly... yet (only by invoking Sample.from_fram(...)&quot;</span>
+                <span class="s2">&quot;cannot construct Sample class directly... yet (only by invoking Sample.from_frame(...)&quot;</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="s2">&quot;from_frame&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">calling_functions</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                <span class="s2">&quot;cannot construct Sample class directly... yet (only by invoking Sample.from_fram(...)&quot;</span>
+                <span class="s2">&quot;cannot construct Sample class directly... yet (only by invoking Sample.from_frame(...)&quot;</span>
             <span class="p">)</span>
         <span class="k">pass</span>
 
@@ -175,9 +175,9 @@
 
 <span class="sd">        NOTE that all integer columns will be converted by defaults into floats. This behavior can be turned off</span>
 <span class="sd">        by setting standardize_types argument to False.</span>
-<span class="sd">        The reason this is done by default is because of missing value handeling combined with balance current lack of support</span>
+<span class="sd">        The reason this is done by default is because of missing value handling combined with balance current lack of support</span>
 <span class="sd">        for pandas Integer types:</span>
-<span class="sd">            1. Native numpy integers do not support missing values (NA), while pandas Intgers do,</span>
+<span class="sd">            1. Native numpy integers do not support missing values (NA), while pandas Integers do,</span>
 <span class="sd">            as well numpy floats. Also,</span>
 <span class="sd">            2. various functions in balance do not support pandas Integers, while they do support numpy floats.</span>
 <span class="sd">            3. Hence, since some columns might have missing values, the safest solution is to just convert all integers into numpy floats.</span>
@@ -420,7 +420,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            target (Optional[&quot;Sample&quot;]): Second sample object which should be matched.</span>
-<span class="sd">                If None, the set traget of the object is used for matching.</span>
+<span class="sd">                If None, the set target of the object is used for matching.</span>
 <span class="sd">            method (str): method for adjustment: cbps, ipw, null, poststratify</span>
 
 <span class="sd">        Returns:</span>
@@ -455,13 +455,13 @@
 
 <div class="viewcode-block" id="Sample.set_weights"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.set_weights">[docs]</a>    <span class="k">def</span> <span class="nf">set_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="nb">float</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Adjusteing the weights of a Sample object.</span>
+<span class="sd">        Adjusting the weights of a Sample object.</span>
 <span class="sd">        This will overwrite the weight_column of the Sample.</span>
 <span class="sd">        Note that the weights are assigned by index if weights is a pd.Series</span>
 <span class="sd">        (of Sample.df and weights series)</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            weights (Optional[Union[pd.Series, float]]): Seiers of weights to add to sample.</span>
+<span class="sd">            weights (Optional[Union[pd.Series, float]]): Series of weights to add to sample.</span>
 <span class="sd">                If None or float values, the same weight (or None) will be assigned to all units.</span>
 
 <span class="sd">        Returns:</span>
@@ -503,16 +503,16 @@
         <span class="sd">&quot;&quot;&quot;Check if a Sample object is adjusted and has target attached</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            bool: whetehr the Sample is adjusted or not.</span>
+<span class="sd">            bool: whether the Sample is adjusted or not.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">(</span><span class="s2">&quot;unadjusted&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="s2">&quot;target&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Sample.set_target"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.set_target">[docs]</a>    <span class="k">def</span> <span class="nf">set_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Sample&quot;</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Used to set the tagret linked to Sample.</span>
+<span class="sd">        Used to set the target linked to Sample.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            target (Sample): A Sample pbject to be linked as target</span>
+<span class="sd">            target (Sample): A Sample object to be linked as target</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Sample: new copy of Sample with target link attached</span>
@@ -542,7 +542,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (Sample): A Sample object produces after running :func:`Sample.adjust`.</span>
-<span class="sd">                It should include 3 componants: &quot;unadjusted&quot;, &quot;adjusted&quot;, &quot;target&quot;.</span>
+<span class="sd">                It should include 3 components: &quot;unadjusted&quot;, &quot;adjusted&quot;, &quot;target&quot;.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            pd.DataFrame: A DataFrame with 3 columns (&quot;unadjusted&quot;, &quot;adjusted&quot;, &quot;target&quot;),</span>
@@ -602,7 +602,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (Sample): A Sample object produces after running :func:`Sample.adjust`.</span>
-<span class="sd">                It should include 3 componants: &quot;unadjusted&quot;, &quot;adjusted&quot;, &quot;target&quot;.</span>
+<span class="sd">                It should include 3 components: &quot;unadjusted&quot;, &quot;adjusted&quot;, &quot;target&quot;.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            np.float64: relative difference in design effect.</span>
@@ -659,7 +659,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (Sample): A Sample object produces after running :func:`Sample.adjust`.</span>
-<span class="sd">                It should include 3 componants: &quot;unadjusted&quot;, &quot;adjusted&quot;, &quot;target&quot;.</span>
+<span class="sd">                It should include 3 components: &quot;unadjusted&quot;, &quot;adjusted&quot;, &quot;target&quot;.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            pd.Series: (np.float64) relative difference in outcome weighted standard deviation.</span>
@@ -680,7 +680,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (Sample): A Sample object produces after running :func:`Sample.adjust`.</span>
-<span class="sd">                It should include 3 componants: &quot;unadjusted&quot;, &quot;adjusted&quot;, &quot;target&quot;.</span>
+<span class="sd">                It should include 3 components: &quot;unadjusted&quot;, &quot;adjusted&quot;, &quot;target&quot;.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">             pd.Series: (np.float64) A series of calculated ratio of variances for each outcome.</span>
@@ -703,7 +703,7 @@
 <span class="sd">        Provides a summary of covariate balance, design effect and model properties (if applicable)</span>
 <span class="sd">        of a sample.</span>
 
-<span class="sd">        For more detials see: :func:`BalanceDF.asmd`, :func:`BalanceDF.asmd_improvement`</span>
+<span class="sd">        For more details see: :func:`BalanceDF.asmd`, :func:`BalanceDF.asmd_improvement`</span>
 <span class="sd">        and :func:`weights_stats.design_effect`</span>
 
 <span class="sd">        Returns:</span>
@@ -776,7 +776,7 @@
 <span class="sd">        sample_obs and target_obs will NOT include them in the counting. The same is true for sample_covars and target_covars.</span>
 <span class="sd">        In the &quot;size&quot; metrics we have the following &#39;var&#39;s:</span>
 <span class="sd">        - sample_obs - number of respondents</span>
-<span class="sd">        - sample_covars -  number of covariates (main covars, before any transofrmation was used)</span>
+<span class="sd">        - sample_covars -  number of covariates (main covars, before any transformations were used)</span>
 <span class="sd">        - target_obs - number of users used to represent the target pop</span>
 <span class="sd">        - target_covars - like sample_covars, but for target.</span>
 
@@ -1106,7 +1106,7 @@
 <span class="sd">            Sample: A copy of the original object. If both rows and columns to keep are None,</span>
 <span class="sd">                returns the copied object unchanged.</span>
 <span class="sd">                If some are not None, will update - first the rows - then the columns.</span>
-<span class="sd">                This performs the transformation on both the sameple&#39;s df and its linkes dfs (unadjusted, target).</span>
+<span class="sd">                This performs the transformation on both the sample&#39;s df and its linked dfs (unadjusted, target).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">rows_to_keep</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">columns_to_keep</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span>
@@ -1226,7 +1226,7 @@
     <span class="k">def</span> <span class="nf">_special_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns dataframe of all special columns (id column,</span>
-<span class="sd">        wegiht column and outcome columns) in Sample.</span>
+<span class="sd">        weight column and outcome columns) in Sample.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            pd.DataFrame: special columns</span>
