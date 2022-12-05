@@ -35,7 +35,7 @@ const katex = require('rehype-katex');
           sidebarPath: require.resolve('./sidebars.js'),
           editUrl: fbContent({
             internal: 'https://www.internalfb.com/intern/diffusion/FBS/browse/master/fbcode/core_stats/balance/parent_balance/website',
-            external: 'https://github.com/facebookresearch/balance/website',
+            external: 'https://github.com/facebookresearch/balance/tree/main/website',
           }),
           remarkPlugins: [math],
           rehypePlugins: [katex],
