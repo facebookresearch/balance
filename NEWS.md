@@ -1,5 +1,9 @@
 0.1.1
 ==================
+### New Features
+- cli improvements: Add an option to set weight_trimming_mean_ratio = None for no trimming.
+- cli improvements:: Add an option to set transformations to be None (i.e. no transformations).
+
 ### Bug Fixes
 - Fix (and simplify) balanceDF.plot to organize the order of groups (now unadjusted/self is left, adjusted/self center, and target is on the right)
 - Fix plotly functions to use the red color for self when only compared to target (since in that case it is likely unadjusted): balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_qq and balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_bar
