@@ -126,8 +126,9 @@
     <span class="n">column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">axis</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Shows a (weighted) :func:`sns.barplot` using a relative frequncy table of several DataFrames.</span>
+    <span class="sd">&quot;&quot;&quot;Shows a (weighted) :func:`sns.barplot` using a relative frequency table of several DataFrames.</span>
 
 <span class="sd">    If weighted is True, then mutual NA values are removed using :func:`rm_mutual_nas`.</span>
 
@@ -144,6 +145,7 @@
 <span class="sd">        column (str): The column to be used to aggregate using :func:`relative_frequency_table`.</span>
 <span class="sd">        axis (Optional[plt.Axes], optional): matplotlib Axes object to draw the plot onto, otherwise uses the current Axes. Defaults to None.</span>
 <span class="sd">        weighted (bool, optional): If to pass the weights from the dicts inside dfs. Defaults to True.</span>
+<span class="sd">        title (str, optional): Title of the plot. Defaults to &quot;barplot of covar &#39;{column}&#39;&quot;.</span>
 
 <span class="sd">    Examples:</span>
 <span class="sd">        ::</span>
@@ -186,6 +188,8 @@
         <span class="n">plot_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df_plot_data</span><span class="p">)</span>
 
     <span class="n">sample_palette</span> <span class="o">=</span> <span class="n">_return_sample_palette</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;barplot of covar &#39;</span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
 
     <span class="n">sns</span><span class="o">.</span><span class="n">barplot</span><span class="p">(</span>
         <span class="n">x</span><span class="o">=</span><span class="n">column</span><span class="p">,</span>
@@ -196,7 +200,7 @@
         <span class="n">palette</span><span class="o">=</span><span class="n">sample_palette</span><span class="p">,</span>
         <span class="n">saturation</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span>
-    <span class="p">)</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;barplot of covar &#39;</span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span></div>
+    <span class="p">)</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="plot_hist_kde"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.plot_hist_kde">[docs]</a><span class="k">def</span> <span class="nf">plot_hist_kde</span><span class="p">(</span>
