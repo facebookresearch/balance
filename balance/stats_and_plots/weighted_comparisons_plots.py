@@ -85,8 +85,9 @@ def plot_bar(
     column: str,
     axis: Optional[plt.Axes] = None,
     weighted: bool = True,
+    title: Optional[str] = None,
 ) -> None:
-    """Shows a (weighted) :func:`sns.barplot` using a relative frequncy table of several DataFrames.
+    """Shows a (weighted) :func:`sns.barplot` using a relative frequency table of several DataFrames.
 
     If weighted is True, then mutual NA values are removed using :func:`rm_mutual_nas`.
 
@@ -103,6 +104,7 @@ def plot_bar(
         column (str): The column to be used to aggregate using :func:`relative_frequency_table`.
         axis (Optional[plt.Axes], optional): matplotlib Axes object to draw the plot onto, otherwise uses the current Axes. Defaults to None.
         weighted (bool, optional): If to pass the weights from the dicts inside dfs. Defaults to True.
+        title (str, optional): Title of the plot. Defaults to "barplot of covar '{column}'".
 
     Examples:
         ::
@@ -145,6 +147,8 @@ def plot_bar(
         plot_data.append(df_plot_data)
 
     sample_palette = _return_sample_palette(names)
+    if title is None:
+        title = f"barplot of covar '{column}'"
 
     sns.barplot(
         x=column,
@@ -155,7 +159,7 @@ def plot_bar(
         palette=sample_palette,
         saturation=1,
         alpha=0.6,
-    ).set_title(f"barplot of covar '{column}'")
+    ).set_title(title)
 
 
 def plot_hist_kde(
