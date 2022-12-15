@@ -169,6 +169,7 @@ def plot_hist_kde(
     axis: Optional[plt.Axes] = None,
     weighted: bool = True,
     dist_type: Literal["hist", "kde", "ecdf"] = "hist",
+    title: Optional[str] = None,
 ) -> None:
     """Shows a (weighted) distribution plot ():func:`sns.displot`) of data from several DataFrame objects.
 
@@ -188,6 +189,8 @@ def plot_hist_kde(
         axis (Optional[plt.Axes], optional): matplotlib Axes object to draw the plot onto, otherwise uses the current Axes. Defaults to None.
         weighted (bool, optional): If to pass the weights from the dicts inside dfs. Defaults to True.
         dist_type (Literal["hist", "kde", "ecdf"], optional): The type of plot to draw. Defaults to "hist".
+        title (str, optional): Title of the plot. Defaults to "distribution plot of covar '{column}'".
+
 
     Examples:
         ::
@@ -288,6 +291,8 @@ def plot_hist_kde(
     _w = plot_data["_w"]
 
     sample_palette = _return_sample_palette(names)
+    if title is None:
+        title = f"distribution plot of covar '{column}'"
 
     ax = dist_function(
         data=plot_data,
@@ -299,7 +304,7 @@ def plot_hist_kde(
         palette=sample_palette,
         linewidth=2,
     )
-    ax.set_title(f"distribution plot of covar '{column}'")
+    ax.set_title(title)
 
 
 def plot_qq(

@@ -4,6 +4,7 @@
 - cli improvements: Add an option to set weight_trimming_mean_ratio = None for no trimming.
 - cli improvements:: Add an option to set transformations to be None (i.e. no transformations).
 - stats_and_plots.weighted_comparison_plots.plot_bar: Add an option to adapt the title.
+- stats_and_plots.weighted_comparison_plots.plot_hist_kde: Add an option to adapt the title.
 
 ### Bug Fixes
 - Fix (and simplify) balanceDF.plot to organize the order of groups (now unadjusted/self is left, adjusted/self center, and target is on the right)
