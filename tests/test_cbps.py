@@ -80,7 +80,7 @@ class Testcbps(
         design_weights = np.array([1, 8, 3])
         in_pop = np.array([1.0, 0, 1.0])
         result = balance_cbps.gmm_function(beta, X, design_weights, in_pop)
-        self.assertEqual(round(result["loss"], 3), 91665.751)
+        self.assertEqual(round(result["loss"], 2), 91665.75)
 
         # with given invV
         X = np.array([[1, 2], [4, 5], [0, -100]])
@@ -99,7 +99,7 @@ class Testcbps(
         design_weights = np.array([1, 8, 3])
         in_pop = np.array([1.0, 0, 1.0])
         result = balance_cbps.gmm_loss(beta, X, design_weights, in_pop)
-        self.assertEqual(round(result, 3), 91665.751)
+        self.assertEqual(round(result, 2), 91665.75)
 
         # with given invV
         X = np.array([[1, 2], [4, 5], [0, -100]])
