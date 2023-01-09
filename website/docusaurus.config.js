@@ -73,6 +73,7 @@ const katex = require('rehype-katex');
           src: 'img/balance_logo/icon.svg',
         },
         items: [
+          {to: 'blog', label: 'Blog', position: 'right'},
           {
             type: 'doc',
             docId: 'docs/overview',
