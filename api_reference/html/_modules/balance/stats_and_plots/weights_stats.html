@@ -9,9 +9,6 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/basic.css" />
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-    <script src="../../../_static/jquery.js"></script>
-    <script src="../../../_static/underscore.js"></script>
-    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <script src="../../../_static/sphinx_highlight.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -69,7 +66,7 @@
         <span class="kc">None</span><span class="p">,</span>
     <span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Check weights.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check weights.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        w (Union[ List, pd.Series, np.ndarray, pd.DataFrame, None, ]): input weights.</span>
@@ -105,7 +102,7 @@
 <span class="c1"># TODO: if the input is pd.DataFrame than the output will be pd.Series.</span>
 <span class="c1">#       we could make the support of this more official in the future.</span>
 <div class="viewcode-block" id="design_effect"><a class="viewcode-back" href="../../../balance.stats_and_plots.weights_stats.html#balance.stats_and_plots.weights_stats.design_effect">[docs]</a><span class="k">def</span> <span class="nf">design_effect</span><span class="p">(</span><span class="n">w</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Kish&#39;s design effect measure.</span>
 
 <span class="sd">    For details, see:</span>
@@ -143,7 +140,7 @@
     <span class="c1">#            what is more accepted in the literature in the field and what are the advantages of each.</span>
     <span class="c1">#            Any reference to literature where this is used to analyze weights of survey?</span>
     <span class="c1">#            Add reference to some interpretation of these values?</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The nonparametric skew is the difference between the mean and the median, divided by the standard deviation.</span>
 <span class="sd">    See:</span>
 <span class="sd">    - https://en.wikipedia.org/wiki/Nonparametric_skew</span>
@@ -187,7 +184,7 @@
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
     <span class="c1"># TODO (p2): look more in the literature (are there references for using this vs another, or none at all?)</span>
     <span class="c1">#            update the doc with insights, once done.</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The proportion of weights, normalized to sample size, that are above and below some numbers (E.g. 1,2,3,5,10 and their inverse: 1, 1/2, 1/3, etc.).</span>
 <span class="sd">    This is similar to returning percentiles of the (normalized) weighted distribution. But instead of focusing on the 25th percentile, the median, etc,</span>
 <span class="sd">    We focus instead on more easily interpretable weights values.</span>
@@ -309,7 +306,7 @@
 <div class="viewcode-block" id="weighted_median_breakdown_point"><a class="viewcode-back" href="../../../balance.stats_and_plots.weights_stats.html#balance.stats_and_plots.weights_stats.weighted_median_breakdown_point">[docs]</a><span class="k">def</span> <span class="nf">weighted_median_breakdown_point</span><span class="p">(</span><span class="n">w</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
     <span class="c1"># TODO (p2): do we want to have weighted_quantile_breakdown_point</span>
     <span class="c1"># so to check for quantiles other than 50%?</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Calculates the minimal percent of users that have at least 50% of the weights.</span>
 <span class="sd">    This gives us the breakdown point of calculating the weighted median.</span>
 <span class="sd">    This can be thought of as reflecting a similar metric to the design effect.</span>

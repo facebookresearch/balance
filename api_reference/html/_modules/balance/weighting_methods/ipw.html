@@ -9,9 +9,6 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/basic.css" />
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-    <script src="../../../_static/jquery.js"></script>
-    <script src="../../../_static/underscore.js"></script>
-    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <script src="../../../_static/sphinx_highlight.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -70,7 +67,7 @@
 <span class="c1"># Allows us to control exactly where monkey patching is applied (e.g.: for better code readability and exceptions tracking).</span>
 <span class="nd">@contextmanager</span>
 <span class="k">def</span> <span class="nf">_patch_nan_in_amin_amax</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;This allows us to use nanmin and nanmax instead of amin and amax (thus removing nan from their computation)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This allows us to use nanmin and nanmax instead of amin and amax (thus removing nan from their computation)</span>
 
 <span class="sd">    This is needed in cases that the cvglmnet yields some nan values for the cross validation folds.</span>
 
@@ -91,7 +88,7 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                 <span class="s2">&quot;The scipy.amin function was replaced with scipy.nanmin.&quot;</span>
                 <span class="sa">f</span><span class="s2">&quot;While running, it removed </span><span class="si">{</span><span class="n">nan_count</span><span class="si">}</span><span class="s2"> `nan` values from an array of size </span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;(~</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="n">nan_count</span> <span class="o">/</span> <span class="n">a</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2">% of the values).&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(~</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">nan_count</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">a</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2">% of the values).&quot;</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">scipy</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span>  <span class="c1"># pyre-ignore[16]</span>
 
@@ -101,7 +98,7 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                 <span class="s2">&quot;The scipy.amax function was replaced with scipy.nanmax. &quot;</span>
                 <span class="sa">f</span><span class="s2">&quot;While running, it removed </span><span class="si">{</span><span class="n">nan_count</span><span class="si">}</span><span class="s2"> `nan` values from an array of size </span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;(~</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="n">nan_count</span> <span class="o">/</span> <span class="n">a</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2">% of the values).&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(~</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">nan_count</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">a</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2">% of the values).&quot;</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">scipy</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span>  <span class="c1"># pyre-ignore[16]</span>
 
@@ -117,7 +114,7 @@
 <div class="viewcode-block" id="cv_glmnet_performance"><a class="viewcode-back" href="../../../balance.weighting_methods.ipw.html#balance.weighting_methods.ipw.cv_glmnet_performance">[docs]</a><span class="k">def</span> <span class="nf">cv_glmnet_performance</span><span class="p">(</span>
     <span class="n">fit</span><span class="p">,</span> <span class="n">feature_names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;lambda_1se&quot;</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-    <span class="sd">&quot;&quot;&quot;Extract elements from cvglmnet to describe the fitness quality.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract elements from cvglmnet to describe the fitness quality.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        fit (_type_): output of cvglmnet</span>
@@ -176,7 +173,7 @@
     <span class="n">weight_trimming_percentile</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">keep_sum_of_weights</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Transform output of cvglmnetPredict(..., type=&#39;link&#39;) into weights, by</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Transform output of cvglmnetPredict(..., type=&#39;link&#39;) into weights, by</span>
 <span class="sd">    exponentiating them, and optionally balancing the classes and trimming</span>
 <span class="sd">    the weights, then normalize the weights to have sum equal to the sum of the target weights.</span>
 
@@ -222,7 +219,7 @@
     <span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">,</span> <span class="mf">1.25</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.125</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">),</span>
     <span class="n">n_asmd_candidates</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-    <span class="sd">&quot;&quot;&quot;Searches through the regularisation parameters of the model and weight</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Searches through the regularisation parameters of the model and weight</span>
 <span class="sd">    trimming levels to find the combination with the highest covariate</span>
 <span class="sd">    ASMD reduction (in sample_df and target_df, NOT in the model matrix used for modeling</span>
 <span class="sd">    the response) subject to the design effect being lower than max_de (deafults to 1.5).</span>
@@ -381,7 +378,7 @@
     <span class="o">*</span><span class="n">args</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-    <span class="sd">&quot;&quot;&quot;Fit an ipw (inverse propensity score weighting) for the sample using the target.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fit an ipw (inverse propensity score weighting) for the sample using the target.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        sample_df (pd.DataFrame): a dataframe representing the sample</span>
@@ -535,7 +532,7 @@
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;X_matrix shape: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;y input shape: </span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;penalty_factor frequency table </span><span class="si">{</span><span class="n">pd</span><span class="o">.</span><span class="n">crosstab</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">penalty_factor</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;penalty_factor frequency table </span><span class="si">{</span><span class="n">pd</span><span class="o">.</span><span class="n">crosstab</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">penalty_factor</span><span class="p">,</span><span class="w"> </span><span class="n">columns</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="sa">f</span><span class="s2">&quot;Note that these are normalized by cvglmnet&quot;</span>
     <span class="p">)</span>
 
@@ -546,7 +543,7 @@
             <span class="n">foldid</span>
         <span class="p">)</span>  <span class="c1"># shuffels the values of foldid - note that we set the seed in the beginning of the function, so this order is fixed</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;foldid frequency table </span><span class="si">{</span><span class="n">pd</span><span class="o">.</span><span class="n">crosstab</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">foldid</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;foldid frequency table </span><span class="si">{</span><span class="n">pd</span><span class="o">.</span><span class="n">crosstab</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">foldid</span><span class="p">,</span><span class="w"> </span><span class="n">columns</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;first 10 elements of foldid: </span><span class="si">{</span><span class="n">foldid</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">9</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">with</span> <span class="n">_patch_nan_in_amin_amax</span><span class="p">():</span>

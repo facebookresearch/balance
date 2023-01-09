@@ -9,9 +9,6 @@
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/basic.css" />
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/jquery.js"></script>
-    <script src="../../_static/underscore.js"></script>
-    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <script src="../../_static/sphinx_highlight.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -75,7 +72,7 @@
     <span class="n">weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="n">object_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is a helper function fo weighting methods functions.</span>
 <span class="sd">    It checks the inputs are of the correct type and shapes.</span>
 
@@ -119,7 +116,7 @@
 
 
 <div class="viewcode-block" id="guess_id_column"><a class="viewcode-back" href="../../balance.util.html#balance.util.guess_id_column">[docs]</a><span class="k">def</span> <span class="nf">guess_id_column</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">column_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Guess the id column of a given dataset.</span>
 <span class="sd">    Possible values for guess: &#39;id&#39;.</span>
 
@@ -156,7 +153,7 @@
 <div class="viewcode-block" id="add_na_indicator"><a class="viewcode-back" href="../../balance.util.html#balance.util.add_na_indicator">[docs]</a><span class="k">def</span> <span class="nf">add_na_indicator</span><span class="p">(</span>
     <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">replace_val_obj</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;_NA&quot;</span><span class="p">,</span> <span class="n">replace_val_num</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;If a column in the DataFrame contains NAs, replace these with 0 for</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;If a column in the DataFrame contains NAs, replace these with 0 for</span>
 <span class="sd">    numerical columns or &quot;_NA&quot; for non-numerical columns,</span>
 <span class="sd">    and add another column of an indicator variable for which rows were NA.</span>
 
@@ -210,7 +207,7 @@
 <div class="viewcode-block" id="drop_na_rows"><a class="viewcode-back" href="../../balance.util.html#balance.util.drop_na_rows">[docs]</a><span class="k">def</span> <span class="nf">drop_na_rows</span><span class="p">(</span>
     <span class="n">sample_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;sample object&quot;</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Drop rows with missing values in sample_df and their corresponding weights, and the same in target_df.</span>
 
 <span class="sd">    Args:</span>
@@ -229,7 +226,7 @@
     <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">sample_weights</span><span class="p">[</span><span class="n">sample_df</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
     <span class="n">sample_n_after</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
-    <span class="n">_sample_rate</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sample_n</span> <span class="o">-</span> <span class="n">sample_n_after</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">sample_n</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">_sample_rate</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sample_n</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sample_n_after</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">sample_n</span><span class="si">}</span><span class="s2">&quot;</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dropped </span><span class="si">{</span><span class="n">_sample_rate</span><span class="si">}</span><span class="s2"> rows of </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">sample_n_after</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -239,7 +236,7 @@
 
 
 <div class="viewcode-block" id="formula_generator"><a class="viewcode-back" href="../../balance.util.html#balance.util.formula_generator">[docs]</a><span class="k">def</span> <span class="nf">formula_generator</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">formula_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;additive&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Create formula to build the model matrix</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create formula to build the model matrix</span>
 <span class="sd">        Default is additive formula.</span>
 <span class="sd">    Args:</span>
 <span class="sd">        variables: list with names of variables (as strings) to combine into a formula</span>
@@ -270,7 +267,7 @@
 
 
 <div class="viewcode-block" id="dot_expansion"><a class="viewcode-back" href="../../balance.util.html#balance.util.dot_expansion">[docs]</a><span class="k">def</span> <span class="nf">dot_expansion</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="n">variables</span><span class="p">:</span> <span class="n">List</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Build a formula string by replacing &quot;.&quot; with &quot;summing&quot; all the variables,</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a formula string by replacing &quot;.&quot; with &quot;summing&quot; all the variables,</span>
 <span class="sd">    If no dot appears, returns the formula as is.</span>
 
 <span class="sd">    This function is named for the &#39;dot&#39; operators in R, where a formula given</span>
@@ -325,7 +322,7 @@
 
 
 <div class="viewcode-block" id="one_hot_encoding_greater_2"><a class="viewcode-back" href="../../balance.util.html#balance.util.one_hot_encoding_greater_2">[docs]</a><span class="k">class</span> <span class="nc">one_hot_encoding_greater_2</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This class creates a special encoding for factor variable to be used in a LASSO model.</span>
 <span class="sd">    For variables with exactly two levels using this in dmatrix will only keep one level, i.e.</span>
 <span class="sd">    will create one column with a 0 or 1 indicator for one of the levels. The level kept will</span>
@@ -435,7 +432,7 @@
 
 
 <div class="viewcode-block" id="process_formula"><a class="viewcode-back" href="../../balance.util.html#balance.util.process_formula">[docs]</a><span class="k">def</span> <span class="nf">process_formula</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="n">variables</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span> <span class="n">factor_variables</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Process a formula string:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Process a formula string:</span>
 <span class="sd">        1. Expand .  notation using dot_expansion function</span>
 <span class="sd">        2. Remove intercept (if using ipw, it will be added automatically by cvglment)</span>
 <span class="sd">        3. If factor_variables is not None, one_hot_encoding_greater_2 is applied</span>
@@ -507,7 +504,7 @@
     <span class="n">factor_variables</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">return_sparse</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-    <span class="sd">&quot;&quot;&quot;Build a model matrix from a formula (using patsy.dmatrix)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a model matrix from a formula (using patsy.dmatrix)</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        df (pd.DataFrame): The data from which to create the model matrix (pandas dataframe)</span>
@@ -618,7 +615,7 @@
     <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">add_na</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-    <span class="sd">&quot;&quot;&quot;Helper function to model_matrix. Prepare and check input of sample and target:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to model_matrix. Prepare and check input of sample and target:</span>
 <span class="sd">        - Choose joint variables to sample and target (or by given vairables)</span>
 <span class="sd">        - Extract sample and target dataframes</span>
 <span class="sd">        - Concat dataframes together</span>
@@ -683,7 +680,7 @@
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span>
     <span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">csc_matrix</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span>
 <span class="p">]:</span>
-    <span class="sd">&quot;&quot;&quot;Create a model matrix from a sample (and target).</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a model matrix from a sample (and target).</span>
 <span class="sd">    The default is to use an additive formula for all variables (or the ones specified).</span>
 <span class="sd">    Can also create a custom model matrix if a formula is provided.</span>
 
@@ -916,7 +913,7 @@
 
 <span class="c1"># TODO: add type hinting</span>
 <div class="viewcode-block" id="qcut"><a class="viewcode-back" href="../../balance.util.html#balance.util.qcut">[docs]</a><span class="k">def</span> <span class="nf">qcut</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">duplicates</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;drop&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Discretize variable into equal-sized buckets based quantiles.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Discretize variable into equal-sized buckets based quantiles.</span>
 <span class="sd">    This is a wrapper to pandas qcut function.</span>
 
 <span class="sd">    Args:</span>
@@ -939,7 +936,7 @@
 <div class="viewcode-block" id="quantize"><a class="viewcode-back" href="../../balance.util.html#balance.util.quantize">[docs]</a><span class="k">def</span> <span class="nf">quantize</span><span class="p">(</span>
     <span class="n">df</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">],</span> <span class="n">q</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Cut numeric variables of a DataFrame into quantile buckets</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Cut numeric variables of a DataFrame into quantile buckets</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        df (Union[pd.DataFrame, pd.Series]): a DataFrame to transform</span>
@@ -996,7 +993,7 @@
 
 
 <div class="viewcode-block" id="row_pairwise_diffs"><a class="viewcode-back" href="../../balance.util.html#balance.util.row_pairwise_diffs">[docs]</a><span class="k">def</span> <span class="nf">row_pairwise_diffs</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Produce the differences between every pair of rows of df</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Produce the differences between every pair of rows of df</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        df (pd.DataFrame): DataFrame</span>
@@ -1027,7 +1024,7 @@
 
 
 <span class="k">def</span> <span class="nf">_is_arraylike</span><span class="p">(</span><span class="n">o</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Test (returns True) if an object is an array-ish type (a numpy array, or</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test (returns True) if an object is an array-ish type (a numpy array, or</span>
 <span class="sd">    a sequence, but not a string). Not the same as numpy&#39;s arraylike,</span>
 <span class="sd">    which also applies to scalars which can be turned into arrays.</span>
 
@@ -1050,7 +1047,7 @@
 
 
 <div class="viewcode-block" id="rm_mutual_nas"><a class="viewcode-back" href="../../balance.util.html#balance.util.rm_mutual_nas">[docs]</a><span class="k">def</span> <span class="nf">rm_mutual_nas</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Remove entries in a position which is na or infinite in any of the arguments</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove entries in a position which is na or infinite in any of the arguments</span>
 
 <span class="sd">    Ignores args which are None</span>
 
@@ -1162,7 +1159,7 @@
 <span class="c1"># TODO: make sure the function returns the variables names in a pre-decided order (alphabetical or by sample order)</span>
 <span class="c1"># TODO: what is this returning?  -&gt; Optional[Tuple] ?!</span>
 <div class="viewcode-block" id="choose_variables"><a class="viewcode-back" href="../../balance.util.html#balance.util.choose_variables">[docs]</a><span class="k">def</span> <span class="nf">choose_variables</span><span class="p">(</span><span class="o">*</span><span class="n">dfs</span><span class="p">,</span> <span class="n">variables</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Return covars which are present in all dfs and also in `variables`</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return covars which are present in all dfs and also in `variables`</span>
 <span class="sd">    if passed</span>
 
 <span class="sd">    Args:</span>
@@ -1223,7 +1220,7 @@
 <div class="viewcode-block" id="auto_spread"><a class="viewcode-back" href="../../balance.util.html#balance.util.auto_spread">[docs]</a><span class="k">def</span> <span class="nf">auto_spread</span><span class="p">(</span>
     <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">features</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">id_</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;id&quot;</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Automatically transform a &#39;long&#39; DataFrame into a &#39;wide&#39; DataFrame</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Automatically transform a &#39;long&#39; DataFrame into a &#39;wide&#39; DataFrame</span>
 <span class="sd">    by guessing which column should be used as a key, treating all</span>
 <span class="sd">    other columns as values. At the moment, this will only find a single key column</span>
 
@@ -1315,7 +1312,7 @@
 
 
 <div class="viewcode-block" id="fct_lump"><a class="viewcode-back" href="../../balance.util.html#balance.util.fct_lump">[docs]</a><span class="k">def</span> <span class="nf">fct_lump</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">prop</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Lumps infrequent levels into &#39;_lumped_other&#39;.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Lumps infrequent levels into &#39;_lumped_other&#39;.</span>
 <span class="sd">    Note that all values with proprtion less than prop output the same value &#39;_lumped_other&#39;.</span>
 
 <span class="sd">    Args:</span>
@@ -1359,7 +1356,7 @@
 
 
 <div class="viewcode-block" id="fct_lump_by"><a class="viewcode-back" href="../../balance.util.html#balance.util.fct_lump_by">[docs]</a><span class="k">def</span> <span class="nf">fct_lump_by</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">by</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">prop</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Lumps infrequent levels into &#39;_lumped_other, only does so per</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Lumps infrequent levels into &#39;_lumped_other, only does so per</span>
 <span class="sd">    value of the grouping variable `by`. Useful, for example, for keeping the</span>
 <span class="sd">    most important interactions in a model.</span>
 
@@ -1405,7 +1402,7 @@
 <span class="k">def</span> <span class="nf">_pd_convert_all_types</span><span class="p">(</span>
     <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">input_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">output_type</span><span class="p">:</span> <span class="nb">str</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Converts columns in the input dataframe to a specified type.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts columns in the input dataframe to a specified type.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        df (pd.DataFrame): Input df</span>
@@ -1450,7 +1447,7 @@
 
 <span class="c1"># TODO: add tests</span>
 <div class="viewcode-block" id="find_items_index_in_list"><a class="viewcode-back" href="../../balance.util.html#balance.util.find_items_index_in_list">[docs]</a><span class="k">def</span> <span class="nf">find_items_index_in_list</span><span class="p">(</span><span class="n">a_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">items</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
-    <span class="sd">&quot;&quot;&quot;Finds the index location of a given item in an array.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Finds the index location of a given item in an array.</span>
 
 <span class="sd">    Helpful references:</span>
 <span class="sd">        - https://stackoverflow.com/a/48898363</span>
@@ -1490,7 +1487,7 @@
 
 <span class="c1"># TODO: add tests</span>
 <div class="viewcode-block" id="get_items_from_list_via_indices"><a class="viewcode-back" href="../../balance.util.html#balance.util.get_items_from_list_via_indices">[docs]</a><span class="k">def</span> <span class="nf">get_items_from_list_via_indices</span><span class="p">(</span><span class="n">a_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">indices</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
-    <span class="sd">&quot;&quot;&quot;Gets a subset of items from a list via indices</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gets a subset of items from a list via indices</span>
 
 <span class="sd">    Source code (there doesn&#39;t seem to be a better solution): https://stackoverflow.com/a/6632209</span>
 
@@ -1520,7 +1517,7 @@
 
 
 <span class="k">def</span> <span class="nf">_truncate_text</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">length</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Truncate string s to be of length &#39;length&#39;. If the length of s is larger than &#39;length&#39;, then the</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Truncate string s to be of length &#39;length&#39;. If the length of s is larger than &#39;length&#39;, then the</span>
 <span class="sd">    function will add &#39;...&#39; at the end of the truncated text.</span>
 
 <span class="sd">    Args:</span>
@@ -1535,7 +1532,7 @@
 
 
 <div class="viewcode-block" id="TruncationFormatter"><a class="viewcode-back" href="../../balance.util.html#balance.util.TruncationFormatter">[docs]</a><span class="k">class</span> <span class="nc">TruncationFormatter</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Logging formatter which truncates the logged message to 500 characters.</span>
 
 <span class="sd">    This is useful in the cases where the logging message includes objects</span>
@@ -1557,7 +1554,7 @@
     <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">tempdir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FileLink</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Creates a downloadable link of the DataFrame (df).</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a downloadable link of the DataFrame (df).</span>
 
 <span class="sd">    File name starts with tmp_balance_out_, and some random file name (using :func:`uuid.uuid4`).</span>
 

@@ -9,9 +9,6 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/basic.css" />
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-    <script src="../../../_static/jquery.js"></script>
-    <script src="../../../_static/underscore.js"></script>
-    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <script src="../../../_static/sphinx_highlight.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -66,7 +63,7 @@
 <div class="viewcode-block" id="logit_truncated"><a class="viewcode-back" href="../../../balance.weighting_methods.cbps.html#balance.weighting_methods.cbps.logit_truncated">[docs]</a><span class="k">def</span> <span class="nf">logit_truncated</span><span class="p">(</span>
     <span class="n">X</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span> <span class="n">beta</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">truncation_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-5</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;This is a helper function for cbps.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a helper function for cbps.</span>
 <span class="sd">    Given an X matrx and avector of coeeficients beta, it computes the truncated</span>
 <span class="sd">    version of the logit function.</span>
 
@@ -87,7 +84,7 @@
     <span class="n">design_weights</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
     <span class="n">in_pop</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;This is a helper function for cbps.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a helper function for cbps.</span>
 <span class="sd">    Given computed probs, it computes the weights: N/N_t * (in_pop - p_i)/(1 - p_i).</span>
 <span class="sd">    (Note that these weights on sample are negative for convenience of notations)</span>
 
@@ -111,7 +108,7 @@
     <span class="n">in_pop</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">XtXinv</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;This is a helper function for cbps.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a helper function for cbps.</span>
 <span class="sd">    It computes the balance loss.</span>
 
 <span class="sd">    Args:</span>
@@ -143,7 +140,7 @@
     <span class="n">in_pop</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
     <span class="n">invV</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]:</span>
-    <span class="sd">&quot;&quot;&quot;This is a helper function for cbps.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a helper function for cbps.</span>
 <span class="sd">    It computes the gmm loss.</span>
 
 <span class="sd">    Args:</span>
@@ -208,7 +205,7 @@
     <span class="n">in_pop</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
     <span class="n">invV</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-    <span class="sd">&quot;&quot;&quot;This is a helper function for cbps.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a helper function for cbps.</span>
 <span class="sd">    It computes the gmm loss.</span>
 <span class="sd">    See gmm_function for detials.</span>
 
@@ -232,7 +229,7 @@
     <span class="n">design_weights</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
     <span class="n">in_pop</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-    <span class="sd">&quot;&quot;&quot;This is a helper function for cbps.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a helper function for cbps.</span>
 <span class="sd">    It computes the gmm loss of alpha*beta.</span>
 
 <span class="sd">    Args:</span>
@@ -251,7 +248,7 @@
 <div class="viewcode-block" id="compute_deff_from_beta"><a class="viewcode-back" href="../../../balance.weighting_methods.cbps.html#balance.weighting_methods.cbps.compute_deff_from_beta">[docs]</a><span class="k">def</span> <span class="nf">compute_deff_from_beta</span><span class="p">(</span>
     <span class="n">X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">beta</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">design_weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">in_pop</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;This is a helper function for cbps. It computes the design effect of</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a helper function for cbps. It computes the design effect of</span>
 <span class="sd">    the estimated weights on the sample given a value of beta.</span>
 <span class="sd">    It is used for setting a constraints on max_de.</span>
 
@@ -275,7 +272,7 @@
 <span class="k">def</span> <span class="nf">_standardize_model_matrix</span><span class="p">(</span>
     <span class="n">model_matrix</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">model_matrix_columns_names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-    <span class="sd">&quot;&quot;&quot;This is a helper function for cbps. It standardizes the columns of the model matrix.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a helper function for cbps. It standardizes the columns of the model matrix.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        model_matrix (pd.DataFrame): the matrix of covariates</span>
@@ -319,7 +316,7 @@
 
 <span class="c1"># TODO: update docs</span>
 <span class="k">def</span> <span class="nf">_reverse_svd_and_centralization</span><span class="p">(</span><span class="n">beta</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">Vh</span><span class="p">,</span> <span class="n">X_matrix_mean</span><span class="p">,</span> <span class="n">X_matrix_std</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;This is a helper function for cbps. It revrse the svd and the centralization to get an estimate of beta</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a helper function for cbps. It revrse the svd and the centralization to get an estimate of beta</span>
 <span class="sd">    Source: https://github.com/kosukeimai/CBPS/blob/master/R/CBPSMain.R#L353</span>
 
 <span class="sd">    Args:</span>
@@ -372,7 +369,7 @@
     <span class="o">*</span><span class="n">args</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]]:</span>
-    <span class="sd">&quot;&quot;&quot;Fit cbps (covariate balancing propensity score model) for the sample using the target.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fit cbps (covariate balancing propensity score model) for the sample using the target.</span>
 <span class="sd">    Final weights are normalized to target size.</span>
 <span class="sd">    We use a two-step GMM estimator (as in the default R package), unlike the suggeted continuous-updating</span>
 <span class="sd">    estimator in the paper. The reason is that it runs much faster than the continuous one.</span>
@@ -698,13 +695,13 @@
 
     <span class="c1"># Compute final probs and weights with beta_opt</span>
     <span class="n">probs</span> <span class="o">=</span> <span class="n">logit_truncated</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">beta_opt</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Minimum probs for sample: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">probs</span><span class="p">[</span><span class="n">in_sample</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Maximum probs for sample: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">probs</span><span class="p">[</span><span class="n">in_sample</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Minimum probs for sample: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">probs</span><span class="p">[</span><span class="n">in_sample</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mf">1.0</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Maximum probs for sample: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">probs</span><span class="p">[</span><span class="n">in_sample</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mf">1.0</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span>
         <span class="n">compute_pseudo_weights_from_logit_probs</span><span class="p">(</span><span class="n">probs</span><span class="p">,</span> <span class="n">design_weights</span><span class="p">,</span> <span class="n">in_pop</span><span class="p">)</span>
     <span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Minimum weight for sample: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">weights</span><span class="p">[</span><span class="n">in_sample</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Maximum weight for sample: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">weights</span><span class="p">[</span><span class="n">in_sample</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Minimum weight for sample: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">weights</span><span class="p">[</span><span class="n">in_sample</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mf">1.0</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Maximum weight for sample: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">weights</span><span class="p">[</span><span class="n">in_sample</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mf">1.0</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">design_weights</span><span class="p">[</span><span class="n">in_sample</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">]</span> <span class="o">*</span> <span class="n">weights</span><span class="p">[</span><span class="n">in_sample</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">]</span>
 
     <span class="c1"># Compute deviance (Minus twice the log-likelihood of the CBPS fit)</span>
