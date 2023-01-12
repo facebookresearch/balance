@@ -107,7 +107,7 @@ from balance import load_data, Sample
 # load simulated example data
 target_df, sample_df = load_data()
 
-# Import dample and target data into a Sample object
+# Import sample and target data into a Sample object
 sample = Sample.from_frame(sample_df, outcome_columns=["happiness"])
 target = Sample.from_frame(target_df)
 
