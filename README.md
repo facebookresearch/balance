@@ -9,7 +9,7 @@
 
 **[*balance*](https://import-balance.org/) is a Python package** offering a simple workflow and methods for **dealing with biased data samples** when looking to infer from them to some population of interest.
 
-Biased samples often occur in [survey statistics](https://en.wikipedia.org/wiki/Survey_methodology) when respondents present [non-response bias or survey suffers from sampling bias](https://en.wikipedia.org/wiki/Sampling_bias) (that are not [missing completely at random](https://en.wikipedia.org/wiki/Missing_data#Missing_completely_at_random)). A similar issue arises in [observational studies](https://en.wikipedia.org/wiki/Observational_study) when comparing the treated vs untreated groups, and in any data that suffers from selection bias.
+Biased samples often occur in [survey statistics](https://en.wikipedia.org/wiki/Survey_methodology) when respondents present [non-response bias](https://en.wikipedia.org/wiki/Participation_bias) or survey suffers from [sampling bias](https://en.wikipedia.org/wiki/Sampling_bias) (that are not [missing completely at random](https://en.wikipedia.org/wiki/Missing_data#Missing_completely_at_random)). A similar issue arises in [observational studies](https://en.wikipedia.org/wiki/Observational_study) when comparing the treated vs untreated groups, and in any data that suffers from selection bias.
 
 Under the missing at random assumption ([MAR](https://en.wikipedia.org/wiki/Missing_data#Missing_at_random)), bias in samples could sometimes be (at least partially) mitigated by relying on auxiliary information (a.k.a.: “covariates” or “features”) that is present for all items in the sample, as well as present in a sample of items from the population. For example, if we want to infer from a sample of respondents to some survey, we may wish to adjust for non-response using demographic information such as age, gender, education, etc. This can be done by weighing the sample to the population using auxiliary information.
 
@@ -39,7 +39,7 @@ REQUIRES = [
 ]
 ```
 
-Note that glmnet_python must be installed from the [Github source](https://github.com/bbalasub1/glmnet_python.git@1.0)
+Note that glmnet_python must be installed from the [Github source](https://github.com/bbalasub1/glmnet_python)
 
 See [setup.py](https://github.com/facebookresearch/balance/blob/main/setup.py) for more details.
 
