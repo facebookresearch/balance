@@ -1,23 +1,18 @@
-**WORK-IN-PROGRESS. FILL IN BEFORE PUBLIC RELEASE!**
+0.1.1
+==================
+### New Features
+- cli improvements: Add an option to set weight_trimming_mean_ratio = None for no trimming.
+- cli improvements:: Add an option to set transformations to be None (i.e. no transformations).
+- stats_and_plots.weighted_comparison_plots.plot_bar: Add an option to adapt the title.
+- stats_and_plots.weighted_comparison_plots.plot_hist_kde: Add an option to adapt the title.
 
-16.5.2 (September 18, 2018)
+### Bug Fixes
+- Fix (and simplify) balanceDF.plot to organize the order of groups (now unadjusted/self is left, adjusted/self center, and target is on the right)
+- Fix plotly functions to use the red color for self when only compared to target (since in that case it is likely unadjusted): balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_qq and balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_bar
+- Fix seaborn_plot_dist: output None by default (instead of axis object). Added a return_Axes argument to control this behavior.
 
-### React DOM
 
-* Fixed a recent `<iframe>` regression ([@JSteunou](https://github.com/JSteunou) in [#13650](https://github.com/facebook/react/pull/13650))
-* Fix `updateWrapper` so that `<textarea>`s no longer re-render when data is unchanged ([@joelbarbosa](https://github.com/joelbarbosa) in [#13643](https://github.com/facebook/react/pull/13643))
-
-### Schedule (Experimental)
-
-* Renaming "tracking" API to "tracing" ([@bvaughn](https://github.com/bvaughn) in [#13641](https://github.com/facebook/react/pull/13641))
-* Add UMD production+profiling entry points ([@bvaughn](https://github.com/bvaughn) in [#13642](https://github.com/facebook/react/pull/13642))
-
-16.5.1 (September 13, 2018)
-
-### React
-
-* Improve the warning when `React.forwardRef` receives an unexpected number of arguments. ([@andresroberto](https://github.com/andresroberto) in [#13636](https://github.com/facebook/react/issues/13636))
-
-### React DOM
-
-* Fix a regression in unstable exports used by React Native Web. ([@aweary](https://github.com/aweary) in [#13598](https://github.com/facebook/react/issues/13598))
+0.1.0 (2022-11-20)
+==================
+### Summary
+- balance released to the world!
