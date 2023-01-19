@@ -232,7 +232,9 @@ The *balance* package is licensed under the [GPLv2 license](https://github.com/f
 
 # News
 
-**TODO**: TBD.
+You can follow updates on our:
+* [Blog](https://import-balance.org/blog/)
+* [Changelog](https://github.com/facebookresearch/balance/blob/main/CHANGELOG.md)
 
 ## Acknowledgements / People
 
