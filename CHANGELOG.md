@@ -28,8 +28,12 @@
     - logo
     - with contributors
     - typo fixes (props to @zbraiterman and @luca-martial).
+- Added section about "Releasing a new version" to CONTRIBUTING.md
+    - Available under ["Docs/Contributing"](https://import-balance.org/docs/docs/contributing/#releasing-a-new-version) section of website
 
-
+## Misc
+- Added automated Github Action package builds & deployment to PyPi on release.
+  - See [release.yml](https://github.com/facebookresearch/balance/blob/main/.github/workflows/release.yml)
 
 0.1.0 (2022-11-20)
 ==================
