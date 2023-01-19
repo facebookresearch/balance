@@ -106,6 +106,15 @@ In summary
 * We also run the same "Build & Test" suite nightly.
 * On every push, we deploy a new version of the website. The `make_docs.sh` script is run from the main branch and the build artifacts are published to the `gh-pages` branch, which is linked to our repo's Github Page's deployment.
 
+### Releasing a new version
+To create a new release, simply navigate to the ["Release" page](https://github.com/facebookresearch/balance/releases) of the repo, draft a new release, and publish. The Github Action workflow should be triggered on publish and you should see a new version of the package live on PyPi in ~10 mins. You can check the status of the job via the [GH Actions tab](https://github.com/facebookresearch/balance/actions).
+
+Guidelines when drafting a new release:
+* Follow semantic versioning conventions when chosing the next version.
+* The release's tag should only be the version itself (e.g. "0.1.0"). Do not add any prefixes like "v" or "version". The build process relies on proper formatting of this tag.
+
+The Github Actions job is configured at [release.yml](https://github.com/facebookresearch/balance/blob/main/.github/workflows/release.yml).
+
 ## License
 By contributing to balance, you agree that your contributions will be licensed
 under the LICENSE file in the root directory of this source tree.
