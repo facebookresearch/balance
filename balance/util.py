@@ -667,7 +667,7 @@ def model_matrix(
             Default is None, which will create an additive formula from the aviliable variables. Defaults to None.
         penalty_factor (Optional[List[float]], optional): the penalty used in the glment function in ipw. The penalty
             should have the same length as the formula list. If not provided,
-            assume the same panelty for all variables. Defaults to None.
+            assume the same penalty for all variables. Defaults to None.
         one_hot_encoding (bool, optional): whether to encode all factor variables in the model matrix with
             one_hot_encoding_greater_2. This is recomended in case of using
             LASSO on the data (Default: False).
