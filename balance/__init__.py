@@ -14,7 +14,7 @@ from balance.balancedf_class import (  # noqa
 )
 from balance.datasets import load_data  # noqa
 from balance.sample_class import Sample  # noqa
-from balance.util import TruncationFormatter
+from balance.util import TruncationFormatter  # noqa
 
 # TODO: which objects do we want to explicitly externalize?
 # TODO: verify this works.

@@ -5,6 +5,8 @@
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+from unittest.mock import patch
+
 import balance.testutil
 
 import glmnet_python  # noqa  # Required so that cvglmnet import works
@@ -134,7 +136,8 @@ class Testipw(
         x = np.random.rand(100, 10)
         y = np.random.rand(100, 1)
         y = (y > 0.5) * 1.0
-        fit = cvglmnet(x=x, y=y, family="binomial", ptype="class")
+        with balance_ipw._patch_scipy_random():
+            fit = cvglmnet(x=x, y=y, family="binomial", ptype="class")
 
         #  Test default args with feature names
         c = cvglmnetCoef(fit)
@@ -378,3 +381,10 @@ class Testipw(
         self.assertEqual(np.around(res["model"]["perf"]["mean_cv_error"], 5), 0.36291)
         self.assertEqual(np.around(res["model"]["lambda"], 5), 0.00064)
         self.assertEqual(res["model"]["regularisation_perf"]["best"]["trim"], 0.05)
+
+    @patch("balance.weighting_methods.ipw.scipy")
+    def test_patch_scipy_random(self, mock_scipy):
+        mock_scipy.random = None
+        with balance_ipw._patch_scipy_random():
+            self.assertEqual(mock_scipy.random, np.random)
+        self.assertEqual(mock_scipy.random, None)
