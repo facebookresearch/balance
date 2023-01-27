@@ -14,6 +14,7 @@ import glmnet_python  # noqa  # Required so that cvglmnet import works
 
 import numpy as np
 import pandas as pd
+import scipy
 
 from balance import adjustment as balance_adjustment, util as balance_util
 from balance.stats_and_plots.weighted_comparisons_stats import asmd
@@ -36,7 +37,6 @@ def _patch_nan_in_amin_amax(*args, **kwds) -> Generator:
     Returns:
         Generator: replaces amin and amax, and once done, turns them back to their original version.
     """
-    import scipy
 
     # swap amin and amax with nanmin and nanmax
     # so that they won't return nan when their input has some nan values
@@ -71,6 +71,25 @@ def _patch_nan_in_amin_amax(*args, **kwds) -> Generator:
     finally:
         # undo the function swap
         scipy.amin, scipy.amax = tmp_amin, tmp_amax
+
+
+@contextmanager
+def _patch_scipy_random(*args, **kwds) -> Generator:
+    """Monkey-patch scipy.random(), used by glmnet_python
+    but removed in scipy 1.9.0"""
+
+    tmp_scipy_random_func = (
+        # pyre-ignore[16]
+        scipy.random
+        if hasattr(scipy, "random")
+        else None
+    )
+    scipy.random = np.random
+    try:
+        yield
+    finally:
+        # undo the function swap
+        scipy.random = tmp_scipy_random_func
 
 
 def cv_glmnet_performance(
@@ -514,25 +533,25 @@ def ipw(
             # produce nan. In which case, the lambda search returns nan
             # instead of a value from the cross-validated options that successfully computed a lambda
             # The current monkey-patch solves this problem and makes the function fail less.
-
             with np.errstate(
                 divide="ignore"
             ):  # ignoring np warning "divide by zero encountered in log"
-                fit = cvglmnet(
-                    x=X_matrix,
-                    y=y,
-                    family="binomial",
-                    ptype="deviance",
-                    alpha=1,
-                    penalty_factor=penalty_factor,
-                    nlambda=250,
-                    lambda_min=np.array([1e-6]),
-                    nfolds=10,
-                    foldid=foldid,
-                    maxit=5000,
-                    *args,
-                    **kwargs,
-                )
+                with _patch_scipy_random():
+                    fit = cvglmnet(
+                        x=X_matrix,
+                        y=y,
+                        family="binomial",
+                        ptype="deviance",
+                        alpha=1,
+                        penalty_factor=penalty_factor,
+                        nlambda=250,
+                        lambda_min=np.array([1e-6]),
+                        nfolds=10,
+                        foldid=foldid,
+                        maxit=5000,
+                        *args,
+                        **kwargs,
+                    )
         logger.debug("Done with cvglmnet")
     else:
         raise NotImplementedError()
