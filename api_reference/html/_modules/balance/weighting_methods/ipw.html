@@ -52,6 +52,7 @@
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">scipy</span>
 
 <span class="kn">from</span> <span class="nn">balance</span> <span class="kn">import</span> <span class="n">adjustment</span> <span class="k">as</span> <span class="n">balance_adjustment</span><span class="p">,</span> <span class="n">util</span> <span class="k">as</span> <span class="n">balance_util</span>
 <span class="kn">from</span> <span class="nn">balance.stats_and_plots.weighted_comparisons_stats</span> <span class="kn">import</span> <span class="n">asmd</span>
@@ -74,7 +75,6 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        Generator: replaces amin and amax, and once done, turns them back to their original version.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="kn">import</span> <span class="nn">scipy</span>
 
     <span class="c1"># swap amin and amax with nanmin and nanmax</span>
     <span class="c1"># so that they won&#39;t return nan when their input has some nan values</span>
@@ -109,6 +109,25 @@
     <span class="k">finally</span><span class="p">:</span>
         <span class="c1"># undo the function swap</span>
         <span class="n">scipy</span><span class="o">.</span><span class="n">amin</span><span class="p">,</span> <span class="n">scipy</span><span class="o">.</span><span class="n">amax</span> <span class="o">=</span> <span class="n">tmp_amin</span><span class="p">,</span> <span class="n">tmp_amax</span>
+
+
+<span class="nd">@contextmanager</span>
+<span class="k">def</span> <span class="nf">_patch_scipy_random</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Monkey-patch scipy.random(), used by glmnet_python</span>
+<span class="sd">    but removed in scipy 1.9.0&quot;&quot;&quot;</span>
+
+    <span class="n">tmp_scipy_random_func</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="c1"># pyre-ignore[16]</span>
+        <span class="n">scipy</span><span class="o">.</span><span class="n">random</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">scipy</span><span class="p">,</span> <span class="s2">&quot;random&quot;</span><span class="p">)</span>
+        <span class="k">else</span> <span class="kc">None</span>
+    <span class="p">)</span>
+    <span class="n">scipy</span><span class="o">.</span><span class="n">random</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">yield</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="c1"># undo the function swap</span>
+        <span class="n">scipy</span><span class="o">.</span><span class="n">random</span> <span class="o">=</span> <span class="n">tmp_scipy_random_func</span>
 
 
 <div class="viewcode-block" id="cv_glmnet_performance"><a class="viewcode-back" href="../../../balance.weighting_methods.ipw.html#balance.weighting_methods.ipw.cv_glmnet_performance">[docs]</a><span class="k">def</span> <span class="nf">cv_glmnet_performance</span><span class="p">(</span>
@@ -552,25 +571,25 @@
             <span class="c1"># produce nan. In which case, the lambda search returns nan</span>
             <span class="c1"># instead of a value from the cross-validated options that successfully computed a lambda</span>
             <span class="c1"># The current monkey-patch solves this problem and makes the function fail less.</span>
-
             <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span>
                 <span class="n">divide</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span>
             <span class="p">):</span>  <span class="c1"># ignoring np warning &quot;divide by zero encountered in log&quot;</span>
-                <span class="n">fit</span> <span class="o">=</span> <span class="n">cvglmnet</span><span class="p">(</span>
-                    <span class="n">x</span><span class="o">=</span><span class="n">X_matrix</span><span class="p">,</span>
-                    <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
-                    <span class="n">family</span><span class="o">=</span><span class="s2">&quot;binomial&quot;</span><span class="p">,</span>
-                    <span class="n">ptype</span><span class="o">=</span><span class="s2">&quot;deviance&quot;</span><span class="p">,</span>
-                    <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                    <span class="n">penalty_factor</span><span class="o">=</span><span class="n">penalty_factor</span><span class="p">,</span>
-                    <span class="n">nlambda</span><span class="o">=</span><span class="mi">250</span><span class="p">,</span>
-                    <span class="n">lambda_min</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1e-6</span><span class="p">]),</span>
-                    <span class="n">nfolds</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
-                    <span class="n">foldid</span><span class="o">=</span><span class="n">foldid</span><span class="p">,</span>
-                    <span class="n">maxit</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span>
-                    <span class="o">*</span><span class="n">args</span><span class="p">,</span>
-                    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-                <span class="p">)</span>
+                <span class="k">with</span> <span class="n">_patch_scipy_random</span><span class="p">():</span>
+                    <span class="n">fit</span> <span class="o">=</span> <span class="n">cvglmnet</span><span class="p">(</span>
+                        <span class="n">x</span><span class="o">=</span><span class="n">X_matrix</span><span class="p">,</span>
+                        <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
+                        <span class="n">family</span><span class="o">=</span><span class="s2">&quot;binomial&quot;</span><span class="p">,</span>
+                        <span class="n">ptype</span><span class="o">=</span><span class="s2">&quot;deviance&quot;</span><span class="p">,</span>
+                        <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                        <span class="n">penalty_factor</span><span class="o">=</span><span class="n">penalty_factor</span><span class="p">,</span>
+                        <span class="n">nlambda</span><span class="o">=</span><span class="mi">250</span><span class="p">,</span>
+                        <span class="n">lambda_min</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1e-6</span><span class="p">]),</span>
+                        <span class="n">nfolds</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                        <span class="n">foldid</span><span class="o">=</span><span class="n">foldid</span><span class="p">,</span>
+                        <span class="n">maxit</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span>
+                        <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+                        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+                    <span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Done with cvglmnet&quot;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
