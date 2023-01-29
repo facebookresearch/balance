@@ -28,6 +28,7 @@ REQUIRES = [
     "statsmodels",
     "scikit-learn",
     "ipfn",
+    "session-info",
 ]
 
 # Development deps (e.g. pytest, builds)
