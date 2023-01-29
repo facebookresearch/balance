@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10']
+        python-version: ['3.8', '3.9', '3.10', '3.11']
       fail-fast: false
     steps:
       - name: Checkout
@@ -23,6 +23,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install Pkg + Dependencies
         run: |
+          sudo apt-get install -y libopenblas-dev
           python -m pip install git+https://github.com/bbalasub1/glmnet_python.git@1.0
           python -m pip install .[dev]
       - name: Test with pytest
