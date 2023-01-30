@@ -28,7 +28,7 @@ REQUIRES = [
     "numpy",
     "pandas<=1.4.3",
     "ipython",
-    "scipy<=1.9.0",
+    "scipy<=1.9.2",
     "patsy",
     "seaborn<=0.11.1",
     "plotly",
