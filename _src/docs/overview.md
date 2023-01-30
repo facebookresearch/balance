@@ -38,7 +38,7 @@ REQUIRES = [
     "numpy",
     "pandas<=1.4.3",
     "ipython",
-    "scipy<=1.8.1",
+    "scipy<=1.9.0",
     "patsy",
     "seaborn<=0.11.1",
     "plotly",
@@ -46,6 +46,7 @@ REQUIRES = [
     "statsmodels",
     "scikit-learn",
     "ipfn",
+    "session-info",
 ]
 ```
 
