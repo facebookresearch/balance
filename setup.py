@@ -9,11 +9,11 @@ from setuptools import find_packages, setup
 Core library deps
 
 Version requirements
-* scipy<=1.8.1: Required by glmnet-python
+* scipy<=1.9.2: Required by glmnet-python
 * pandas<=1.4.3: 1.5.0 moved UndefinedVariableError into pandas.errors
 
 Other requirements:
-* glmnet-python@1.0, from https://github.com/bbalasub1/glmnet_python.git@1.0
+* glmnet-python@1.0, from https://github.com/bbalasub1/glmnet_python.git
 
 """
 REQUIRES = [
@@ -81,6 +81,8 @@ def setup_package() -> None:
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
+            "Programming Language :: Python :: 3.10",
+            "Programming Language :: Python :: 3.11",
             "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
         ],
     )

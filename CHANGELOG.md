@@ -1,10 +1,16 @@
-[Unreleased]
+0.3.0 (2023-01-30)
 ==================
 ### New Features
-- Added compatibility for SciPy 1.9.2 and Python 3.11
+- Added compatibility for Python 3.11 (by supporting SciPy 1.9.2) (props to @tomwagstaff-opml for flagging this issue).
+- Added the `session-info` package as a dependency.
 
 ### Bug Fixes
-- Fixed pip install from source on Windows machines
+- Fixed pip install from source on Windows machines (props to @tomwagstaff-opml for the bug report).
+
+### Documentation
+- Added `session_info.show()` outputs to the end of the three tutorials (at: https://import-balance.org/docs/tutorials/)
+- Misc updates to the README.
+
 
 0.2.0 (2023-01-19)
 ==================
@@ -42,6 +48,7 @@
 ## Misc
 - Added automated Github Action package builds & deployment to PyPi on release.
   - See [release.yml](https://github.com/facebookresearch/balance/blob/main/.github/workflows/release.yml)
+
 
 0.1.0 (2022-11-20)
 ==================
