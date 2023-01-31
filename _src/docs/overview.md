@@ -23,14 +23,13 @@ Biased samples often occur in [survey statistics](https://en.wikipedia.org/wiki/
 
 Under the missing at random assumption ([MAR](https://en.wikipedia.org/wiki/Missing_data#Missing_at_random)), bias in samples could sometimes be (at least partially) mitigated by relying on auxiliary information (a.k.a.: “covariates” or “features”) that is present for all items in the sample, as well as present in a sample of items from the population. For example, if we want to infer from a sample of respondents to some survey, we may wish to adjust for non-response using demographic information such as age, gender, education, etc. This can be done by weighing the sample to the population using auxiliary information.
 
-The package is intended for researchers who are interested in balancing biased samples, such as the ones coming from surveys, using a Python package. This need may arise by survey methodologists, demographers, UX researchers, market researchers, and generally data scientists, statisticiains, and machine learners.
+The package is intended for researchers who are interested in balancing biased samples, such as the ones coming from surveys, using a Python package. This need may arise by survey methodologists, demographers, UX researchers, market researchers, and generally data scientists, statisticians, and machine learners.
 
 
 # Installation
 
 ## Requirements
-You need Python 3.8 or later to run *balance*. *balance* can be built and run
-from OSX, Linux, and Windows
+You need Python 3.8 or later to run *balance*. *balance* can be built and run from Linux, OSX, and Windows (NOTE: `method="ipw"` is currently not supported on Windows).
 
 The required Python dependencies are:
 ```python
@@ -141,7 +140,7 @@ adjusted = sample_with_target.adjust(max_de=None)
 
 *You can read more on adjustment process in the [Adjusting Sample to Population](https://import-balance.org/docs/docs/general_framework/adjusting_sample_to_population/) page.*
 
-The above code gets us an `adjusted` object with weights. We can evaluate the benefit of the weights to the coveriate balance, for example by running:
+The above code gets us an `adjusted` object with weights. We can evaluate the benefit of the weights to the covariate balance, for example by running:
 
 ```python
 print(adjusted.summary())
@@ -179,7 +178,7 @@ adjusted.outcomes().plot()
 *You can read more on evaluation of the post-adjusted data in the [Evaluating and using the adjustment weights](https://import-balance.org/docs/docs/general_framework/evaluation_of_results/) page.*
 
 
-Finally, the adjusted data can be downloded using:
+Finally, the adjusted data can be downloaded using:
 ```python
 adjusted.to_download()  # Or:
 # adjusted.to_csv()
