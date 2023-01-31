@@ -3,6 +3,9 @@
 ### New Features
 - Added compatibility for SciPy 1.9.2 and Python 3.11
 
+### Bug Fixes
+- Fixed pip install from source on Windows machines
+
 0.2.0 (2023-01-19)
 ==================
 ### New Features
