@@ -169,6 +169,12 @@ class TestSample(
         df = pd.DataFrame({"id": (1, 2), "a": (1, 2)}, dtype=np.int32)
         self.assertEqual(df.a.dtype.type, np.int32)
         self.assertEqual(Sample.from_frame(df).df.a.dtype.type, np.float32)
+        df = pd.DataFrame({"id": (1, 2), "a": (1, 2)}, dtype=np.int16)
+        self.assertEqual(df.a.dtype.type, np.int16)
+        self.assertEqual(Sample.from_frame(df).df.a.dtype.type, np.float16)
+        df = pd.DataFrame({"id": (1, 2), "a": (1, 2)}, dtype=np.int8)
+        self.assertEqual(df.a.dtype.type, np.int8)
+        self.assertEqual(Sample.from_frame(df).df.a.dtype.type, np.float16)
         # TODO: add tests for other types of conversions
 
     def test_Sample_adjust(self):

@@ -207,8 +207,16 @@ class Sample:
             #           for x in df.columns:
             #               if (is_numeric_dtype(df[x])) and (not is_bool_dtype(df[x])):
             #                   df[x] = df[x].astype("float64")
-            input_type = ["Int64", "Int32", "int64", "int32", "string"]
-            output_type = ["float64", "float32", "float64", "float32", "object"]
+            input_type = ["Int64", "Int32", "int64", "int32", "int16", "int8", "string"]
+            output_type = [
+                "float64",
+                "float32",  # This changes Int32Dtype() into dtype('int32') (from pandas to numpy)
+                "float64",
+                "float32",
+                "float16",
+                "float16",  # Using float16 since float8 doesn't exist, see: https://stackoverflow.com/a/40507235/256662
+                "object",
+            ]
             for i_input, i_output in zip(input_type, output_type):
                 sample._df = balance_util._pd_convert_all_types(
                     sample._df, i_input, i_output

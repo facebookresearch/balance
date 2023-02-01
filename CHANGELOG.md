@@ -1,5 +1,8 @@
-0.4.0 (the future)
+0.3.1 (2023-02-01)
 ==================
+### Bug Fixes
+- Sample.from_frame now also converts int16 and in8 to float16 and float16. Thus helping to avoid `TypeError: Cannot interpret 'Int16Dtype()' as a data type` style errors.
+
 ### Documentation
 - Added ISSUE_TEMPLATE
 
