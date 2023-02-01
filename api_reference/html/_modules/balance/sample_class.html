@@ -245,8 +245,16 @@
             <span class="c1">#           for x in df.columns:</span>
             <span class="c1">#               if (is_numeric_dtype(df[x])) and (not is_bool_dtype(df[x])):</span>
             <span class="c1">#                   df[x] = df[x].astype(&quot;float64&quot;)</span>
-            <span class="n">input_type</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Int64&quot;</span><span class="p">,</span> <span class="s2">&quot;Int32&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">,</span> <span class="s2">&quot;int32&quot;</span><span class="p">,</span> <span class="s2">&quot;string&quot;</span><span class="p">]</span>
-            <span class="n">output_type</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">,</span> <span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">,</span> <span class="s2">&quot;object&quot;</span><span class="p">]</span>
+            <span class="n">input_type</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Int64&quot;</span><span class="p">,</span> <span class="s2">&quot;Int32&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">,</span> <span class="s2">&quot;int32&quot;</span><span class="p">,</span> <span class="s2">&quot;int16&quot;</span><span class="p">,</span> <span class="s2">&quot;int8&quot;</span><span class="p">,</span> <span class="s2">&quot;string&quot;</span><span class="p">]</span>
+            <span class="n">output_type</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="s2">&quot;float64&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;float32&quot;</span><span class="p">,</span>  <span class="c1"># This changes Int32Dtype() into dtype(&#39;int32&#39;) (from pandas to numpy)</span>
+                <span class="s2">&quot;float64&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;float32&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;float16&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;float16&quot;</span><span class="p">,</span>  <span class="c1"># Using float16 since float8 doesn&#39;t exist, see: https://stackoverflow.com/a/40507235/256662</span>
+                <span class="s2">&quot;object&quot;</span><span class="p">,</span>
+            <span class="p">]</span>
             <span class="k">for</span> <span class="n">i_input</span><span class="p">,</span> <span class="n">i_output</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">input_type</span><span class="p">,</span> <span class="n">output_type</span><span class="p">):</span>
                 <span class="n">sample</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">_pd_convert_all_types</span><span class="p">(</span>
                     <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">,</span> <span class="n">i_input</span><span class="p">,</span> <span class="n">i_output</span>
