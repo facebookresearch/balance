@@ -100,6 +100,11 @@ class TestSample(
         self.assertWarnsRegexp(
             "Guessed id column name id for the data", Sample.from_frame, df
         )
+        # TODO: add tests for the two other warnings:
+        # self.assertWarnsRegexp("Casting id column to string", Sample.from_frame, df)
+        # self.assertWarnsRegexp("No weights passed, setting all weights to 1", Sample.from_frame, df)
+        # Using the above would fail since the warnings are sent sequentially and using self.assertWarnsRegexp
+        # only catches the first warning.
         self.assertEqual(
             Sample.from_frame(df).id_column, pd.Series((1, 2), name="id").astype(str)
         )
@@ -156,6 +161,15 @@ class TestSample(
         self.assertEqual(
             Sample.from_frame(df).weight_column, pd.Series((1, 1), name="weight")
         )
+
+        # Test type conversion
+        df = pd.DataFrame({"id": (1, 2), "a": (1, 2)})
+        self.assertEqual(df.a.dtype.type, np.int64)
+        self.assertEqual(Sample.from_frame(df).df.a.dtype.type, np.float64)
+        df = pd.DataFrame({"id": (1, 2), "a": (1, 2)}, dtype=np.int32)
+        self.assertEqual(df.a.dtype.type, np.int32)
+        self.assertEqual(Sample.from_frame(df).df.a.dtype.type, np.float32)
+        # TODO: add tests for other types of conversions
 
     def test_Sample_adjust(self):
         from balance.weighting_methods.adjust_null import adjust_null
