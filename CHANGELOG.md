@@ -1,3 +1,9 @@
+0.4.0 (the future)
+==================
+### Documentation
+- Added ISSUE_TEMPLATE
+
+
 0.3.0 (2023-01-30)
 ==================
 ### New Features
