@@ -111,6 +111,7 @@
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
 
+    <span class="c1"># pyre-fixme[14]: `__str__` overrides method defined in `object` inconsistently.</span>
     <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span> <span class="n">pkg_source</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">__package__</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">is_adjusted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">()</span> <span class="o">*</span> <span class="s2">&quot;Adjusted &quot;</span>
         <span class="n">n_rows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
