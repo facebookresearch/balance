@@ -176,7 +176,7 @@ class Sample:
             str
         }:
             logger.warning("Casting id column to string")
-            sample._df[id_column] = sample._df[id_column].astype(str)
+            sample._df.loc[:, id_column] = sample._df.loc[:, id_column].astype(str)
 
         if (check_id_uniqueness) and (
             sample._df[id_column].nunique() != len(sample._df[id_column])
@@ -232,7 +232,7 @@ class Sample:
                 logger.warning(f"Guessing weight column '{'weight'}'")
             else:
                 logger.warning("No weights passed, setting all weights to 1")
-                sample._df["weight"] = 1
+                sample._df.loc[:, "weight"] = 1
             sample.weight_column = sample._df["weight"]
         else:
             sample.weight_column = sample._df[weight_column]
@@ -432,7 +432,7 @@ class Sample:
                     """Note that not all Sample units will be assigned weights,
                     since weights are missing some of the indices in Sample.df"""
                 )
-        self._df[self.weight_column.name] = weights
+        self._df.loc[:, self.weight_column.name] = weights
         self.weight_column = self._df[self.weight_column.name]
 
     ####################################
