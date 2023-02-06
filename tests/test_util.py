@@ -1196,7 +1196,7 @@ class TestUtil(
         d2 = {"c": 3, "b": 2222}
         self.assertEqual(balance_util._dict_intersect(d1, d2), {"b": 2})
 
-    def test__astype_in_df_from_df_orig(self):
+    def test__astype_in_df_from_dtypes(self):
         df = pd.DataFrame({"id": ("1", "2"), "a": (1.0, 2.0), "weight": (1.0, 2.0)})
         df_orig = pd.DataFrame(
             {"id": (1, 2), "a": (1, 2), "forest": ("tree", "banana")}
@@ -1211,7 +1211,7 @@ class TestUtil(
             {"id": dtype("int64"), "a": dtype("int64"), "forest": dtype("O")},
         )
 
-        df_fixed = balance_util._astype_in_df_from_df_orig(df, df_orig)
+        df_fixed = balance_util._astype_in_df_from_dtypes(df, df_orig.dtypes)
         self.assertEqual(
             df_fixed.dtypes.to_dict(),
             {"id": dtype("int64"), "a": dtype("int64"), "weight": dtype("float64")},

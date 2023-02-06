@@ -1561,16 +1561,18 @@ def _dict_intersect(d: Dict, d_for_keys: Dict) -> Dict:
     return {k: d[k] for k in intersect_keys}
 
 
-def _astype_in_df_from_df_orig(df: pd.DataFrame, df_orig: pd.DataFrame) -> pd.DataFrame:
+def _astype_in_df_from_dtypes(
+    df: pd.DataFrame, target_dtypes: pd.Series
+) -> pd.DataFrame:
     """Returns df with dtypes cast as specified in df_orig.
        Columns that were not in the original dataframe are kept the same.
 
     Args:
         df (pd.DataFrame): df to convert
-        df_orig (pd.DataFrame): df to use as source of truth of dtypes
+        target_dtypes (Union[pd.Series, np.dtypes]): dtypes to use as target dtypes for conversion
 
     Returns:
-        pd.DataFrame: df with dtypes cast as specified in df_orig
+        pd.DataFrame: df with dtypes cast as specified in target_dtypes
 
     Examples:
         ::
@@ -1582,9 +1584,14 @@ def _astype_in_df_from_df_orig(df: pd.DataFrame, df_orig: pd.DataFrame) -> pd.Da
             df_orig.dtypes.to_dict()
                 # {'id': dtype('int64'), 'a': dtype('int64'), 'forest': dtype('O')}
 
-            _astype_in_df_from_df_orig(df, df_orig).dtypes.to_dict()
+            target_dtypes = df_orig.dtypes
+            _astype_in_df_from_dtypes(df, target_dtypes).dtypes.to_dict()
                 # {'id': dtype('int64'), 'a': dtype('int64'), 'weight': dtype('float64')}
     """
-    dict_of_types = _dict_intersect(df_orig.dtypes.to_dict(), df.dtypes.to_dict())
+    dict_of_target_dtypes = _dict_intersect(
+        # pyre-ignore[6]: using to_dict on np.dtypes or pd.Series will work fine:
+        target_dtypes.to_dict(),
+        df.dtypes.to_dict(),
+    )
     # pyre-ignore[7]: we expect the input and output to be df (and not pd.Series)
-    return df.astype(dict_of_types)
+    return df.astype(dict_of_target_dtypes)
