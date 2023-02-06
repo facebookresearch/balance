@@ -1571,6 +1571,61 @@
 
     <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">path_or_buf</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">FileLink</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">result_html_prefix</span><span class="o">=</span><span class="s2">&quot;Click here to download: &quot;</span><span class="p">)</span>
+
+
+<span class="c1">################################################################################</span>
+<span class="c1">#  pandas utils</span>
+<span class="c1">################################################################################</span>
+
+
+<span class="k">def</span> <span class="nf">_dict_intersect</span><span class="p">(</span><span class="n">d</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">d_for_keys</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns dict 1, but only with the keys that are also in d2</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        d1 (Dict): First dictionary.</span>
+<span class="sd">        d2 (Dict): Second dictionary.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict: Intersection of d1 and d2 (with values from d1)</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        ::</span>
+<span class="sd">            d1 = {&quot;a&quot;: 1, &quot;b&quot;: 2}</span>
+<span class="sd">            d2 = {&quot;c&quot;: 3, &quot;b&quot;: 2}</span>
+<span class="sd">            _dict_intersect(d1, d2)</span>
+<span class="sd">            # {&#39;b&#39;: 2}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">intersect_keys</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">&amp;</span> <span class="n">d_for_keys</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">intersect_keys</span><span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">_astype_in_df_from_df_orig</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">df_orig</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns df with dtypes cast as specified in df_orig.</span>
+<span class="sd">       Columns that were not in the original dataframe are kept the same.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df (pd.DataFrame): df to convert</span>
+<span class="sd">        df_orig (pd.DataFrame): df to use as source of truth of dtypes</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.DataFrame: df with dtypes cast as specified in df_orig</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        ::</span>
+<span class="sd">            df = pd.DataFrame({&quot;id&quot;: (&quot;1&quot;, &quot;2&quot;), &quot;a&quot;: (1.0, 2.0), &quot;weight&quot;: (1.0,2.0)})</span>
+<span class="sd">            df_orig = pd.DataFrame({&quot;id&quot;: (1, 2), &quot;a&quot;: (1, 2), &quot;forest&quot;: (&quot;tree&quot;, &quot;banana&quot;)})</span>
+
+<span class="sd">            df.dtypes.to_dict()</span>
+<span class="sd">                # {&#39;id&#39;: dtype(&#39;O&#39;), &#39;a&#39;: dtype(&#39;float64&#39;), &#39;weight&#39;: dtype(&#39;float64&#39;)}</span>
+<span class="sd">            df_orig.dtypes.to_dict()</span>
+<span class="sd">                # {&#39;id&#39;: dtype(&#39;int64&#39;), &#39;a&#39;: dtype(&#39;int64&#39;), &#39;forest&#39;: dtype(&#39;O&#39;)}</span>
+
+<span class="sd">            _astype_in_df_from_df_orig(df, df_orig).dtypes.to_dict()</span>
+<span class="sd">                # {&#39;id&#39;: dtype(&#39;int64&#39;), &#39;a&#39;: dtype(&#39;int64&#39;), &#39;weight&#39;: dtype(&#39;float64&#39;)}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dict_of_types</span> <span class="o">=</span> <span class="n">_dict_intersect</span><span class="p">(</span><span class="n">df_orig</span><span class="o">.</span><span class="n">dtypes</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span> <span class="n">df</span><span class="o">.</span><span class="n">dtypes</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+    <span class="c1"># pyre-ignore[7]: we expect the input and output to be df (and not pd.Series)</span>
+    <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dict_of_types</span><span class="p">)</span>
 </pre></div>
 
             <div class="clearer"></div>
