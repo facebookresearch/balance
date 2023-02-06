@@ -12,6 +12,8 @@ import pandas as pd
 from balance import util as balance_util
 from balance.sample_class import Sample
 
+from numpy import dtype
+
 from patsy import dmatrix  # pyre-ignore[21]: this module exists
 from scipy.sparse import csc_matrix
 
@@ -1188,3 +1190,29 @@ class TestUtil(
         )
         self.assertEqual(balance_util._truncate_text("a" * 4, length=5), "a" * 4)
         self.assertEqual(balance_util._truncate_text("a" * 5, length=5), "a" * 5)
+
+    def test__dict_intersect(self):
+        d1 = {"a": 1, "b": 2}
+        d2 = {"c": 3, "b": 2222}
+        self.assertEqual(balance_util._dict_intersect(d1, d2), {"b": 2})
+
+    def test__astype_in_df_from_df_orig(self):
+        df = pd.DataFrame({"id": ("1", "2"), "a": (1.0, 2.0), "weight": (1.0, 2.0)})
+        df_orig = pd.DataFrame(
+            {"id": (1, 2), "a": (1, 2), "forest": ("tree", "banana")}
+        )
+
+        self.assertEqual(
+            df.dtypes.to_dict(),
+            {"id": dtype("O"), "a": dtype("float64"), "weight": dtype("float64")},
+        )
+        self.assertEqual(
+            df_orig.dtypes.to_dict(),
+            {"id": dtype("int64"), "a": dtype("int64"), "forest": dtype("O")},
+        )
+
+        df_fixed = balance_util._astype_in_df_from_df_orig(df, df_orig)
+        self.assertEqual(
+            df_fixed.dtypes.to_dict(),
+            {"id": dtype("int64"), "a": dtype("int64"), "weight": dtype("float64")},
+        )

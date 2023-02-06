@@ -1533,3 +1533,58 @@ def _to_download(
 
     df.to_csv(path_or_buf=path, index=False)
     return FileLink(path, result_html_prefix="Click here to download: ")
+
+
+################################################################################
+#  pandas utils
+################################################################################
+
+
+def _dict_intersect(d: Dict, d_for_keys: Dict) -> Dict:
+    """Returns dict 1, but only with the keys that are also in d2
+
+    Args:
+        d1 (Dict): First dictionary.
+        d2 (Dict): Second dictionary.
+
+    Returns:
+        Dict: Intersection of d1 and d2 (with values from d1)
+
+    Examples:
+        ::
+            d1 = {"a": 1, "b": 2}
+            d2 = {"c": 3, "b": 2}
+            _dict_intersect(d1, d2)
+            # {'b': 2}
+    """
+    intersect_keys = d.keys() & d_for_keys.keys()
+    return {k: d[k] for k in intersect_keys}
+
+
+def _astype_in_df_from_df_orig(df: pd.DataFrame, df_orig: pd.DataFrame) -> pd.DataFrame:
+    """Returns df with dtypes cast as specified in df_orig.
+       Columns that were not in the original dataframe are kept the same.
+
+    Args:
+        df (pd.DataFrame): df to convert
+        df_orig (pd.DataFrame): df to use as source of truth of dtypes
+
+    Returns:
+        pd.DataFrame: df with dtypes cast as specified in df_orig
+
+    Examples:
+        ::
+            df = pd.DataFrame({"id": ("1", "2"), "a": (1.0, 2.0), "weight": (1.0,2.0)})
+            df_orig = pd.DataFrame({"id": (1, 2), "a": (1, 2), "forest": ("tree", "banana")})
+
+            df.dtypes.to_dict()
+                # {'id': dtype('O'), 'a': dtype('float64'), 'weight': dtype('float64')}
+            df_orig.dtypes.to_dict()
+                # {'id': dtype('int64'), 'a': dtype('int64'), 'forest': dtype('O')}
+
+            _astype_in_df_from_df_orig(df, df_orig).dtypes.to_dict()
+                # {'id': dtype('int64'), 'a': dtype('int64'), 'weight': dtype('float64')}
+    """
+    dict_of_types = _dict_intersect(df_orig.dtypes.to_dict(), df.dtypes.to_dict())
+    # pyre-ignore[7]: we expect the input and output to be df (and not pd.Series)
+    return df.astype(dict_of_types)
