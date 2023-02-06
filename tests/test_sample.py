@@ -177,6 +177,22 @@ class TestSample(
         self.assertEqual(Sample.from_frame(df).df.a.dtype.type, np.float16)
         # TODO: add tests for other types of conversions
 
+        # Test use_deepcopy
+        # after we invoked Sample.from_frame with use_deepcopy=False, we expact the dtype of id to be np.object_
+        #   in BOTH the df inside sample and the ORIGINAL df:
+        df = pd.DataFrame({"id": (1, 2), "a": (1, 2)})
+        self.assertEqual(df.id.dtype.type, np.int64)
+        self.assertEqual(
+            Sample.from_frame(df, use_deepcopy=False).df.id.dtype.type, np.object_
+        )
+        self.assertEqual(df.id.dtype.type, np.object_)
+        # after we invoked Sample.from_frame with use_deepcopy=True (default), we expact the dtype of id to be object_
+        #   in the df inside sample, but id in the ORIGINAL df to remain int64:
+        df = pd.DataFrame({"id": (1, 2), "a": (1, 2)})
+        self.assertEqual(df.id.dtype.type, np.int64)
+        self.assertEqual(Sample.from_frame(df).df.id.dtype.type, np.object_)
+        self.assertEqual(df.id.dtype.type, np.int64)
+
     def test_Sample_adjust(self):
         from balance.weighting_methods.adjust_null import adjust_null
 

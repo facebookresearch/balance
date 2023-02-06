@@ -130,6 +130,7 @@ class Sample:
         weight_column: Optional[str] = None,
         check_id_uniqueness: bool = True,
         standardize_types: bool = True,
+        use_deepcopy: bool = True,
     ) -> "Sample":
         """Create a new Sample object.
 
@@ -159,6 +160,9 @@ class Sample:
                 pandas.NA -> numpy.nan (within each cell)
                 This is slightly memory intensive (since it copies the data twice),
                 but helps keep various functions working for both Int64 and Int32 input columns.
+            use_deepcopy (Optional, bool): Whether to have a new df copy inside the sample object.
+                If False, then when the sample methods update the internal df then the original df will also be updated.
+                Defaults to True.
 
         Returns:
             Sample: a sample object
@@ -166,7 +170,10 @@ class Sample:
         # Inititate a Sample() class, inside a from_frame constructor
         sample = cls()
 
-        sample._df = df
+        if use_deepcopy:
+            sample._df = deepcopy(df)
+        else:
+            sample._df = df
 
         # id column
         id_column = balance_util.guess_id_column(df, id_column)

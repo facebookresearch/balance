@@ -1,3 +1,10 @@
+0.3.2 (the future)
+==================
+### Bug Fixes
+- Fix pandas warning: SettingWithCopyWarning in from_frame (and other places in sample_class.py)
+- sample.from_frame has a new argument `use_deepcopy` to decide if changes made to the df inside the sample object would also change the original df that was provided to the sample object. The default is `True` since it's more likely that we'd like to keep the changes inside the sample object to the df contained in it, and not have them spill into the original df. Also added tests to verify this works.
+
+
 0.3.1 (2023-02-01)
 ==================
 ### Bug Fixes
