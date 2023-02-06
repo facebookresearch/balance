@@ -1506,7 +1506,7 @@ class TruncationFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord):
         result = super(TruncationFormatter, self).format(record)
-        return _truncate_text(result, 500)
+        return _truncate_text(result, 2000)
 
 
 ################################################################################
