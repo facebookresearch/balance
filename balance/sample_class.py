@@ -73,7 +73,6 @@ class Sample:
             f"{self.__str__()}"
         )
 
-    # pyre-fixme[14]: `__str__` overrides method defined in `object` inconsistently.
     def __str__(self: "Sample", pkg_source: str = __package__) -> str:
         is_adjusted = self.is_adjusted() * "Adjusted "
         n_rows = self._df.shape[0]
