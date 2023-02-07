@@ -215,6 +215,13 @@ class BalanceCLI:
                 df_to_return = balance.util._astype_in_df_from_dtypes(
                     adjusted.df, adjusted._df_dtypes
                 )
+                balance.util._warn_of_df_dtypes_change(
+                    adjusted.df.dtypes,
+                    df_to_return.dtypes,
+                    "df_after_adjust",
+                    "df_returned_by_the_cli",
+                )
+
             else:
                 df_to_return = adjusted.df
             rval = {"adjusted": df_to_return, "diagnostics": diagnostics}
@@ -232,6 +239,12 @@ class BalanceCLI:
                 if self.args.return_df_with_original_dtypes:
                     df_to_return = balance.util._astype_in_df_from_dtypes(
                         sample.df, sample._df_dtypes
+                    )
+                    balance.util._warn_of_df_dtypes_change(
+                        sample.df.dtypes,
+                        df_to_return.dtypes,
+                        "df_without_adjusting",
+                        "df_returned_by_the_cli",
                     )
                 else:
                     df_to_return = sample.df

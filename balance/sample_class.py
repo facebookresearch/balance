@@ -235,7 +235,12 @@ class Sample:
             # Replace any pandas.NA with numpy.nan:
             sample._df = sample._df.fillna(np.nan)
 
-            # TODO: add warnings of which dtypes were changed (can use sample._df_dtypes to compare against the new sample._df.dtypes)
+            balance_util._warn_of_df_dtypes_change(
+                sample._df_dtypes,
+                sample._df.dtypes,
+                "df",
+                "sample._df",
+            )
 
         # weight column
         if weight_column is None:

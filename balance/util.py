@@ -1672,4 +1672,65 @@ def _are_dtypes_equal(
     }
 
 
-# _compare_dtypes
+def _warn_of_df_dtypes_change(
+    original_df_dtypes: pd.Series,
+    new_df_dtypes: pd.Series,
+    original_str: str = "df",
+    new_str: str = "new_df",
+) -> None:
+    """Prints a warning if the dtypes of some original df and some modified df differs.
+
+    Args:
+        original_df_dtypes (pd.Series): dtypes of original dataframe
+        new_df_dtypes (pd.Series): dtypes of modified dataframe
+        original_str (str, optional): string to use for warnings when referring to the original. Defaults to "df".
+        new_str (str, optional): string to use for warnings when referring to the modified df. Defaults to "new_df".
+
+    Examples:
+        ::
+
+            import numpy as np
+            import pandas as pd
+            from copy import deepcopy
+            import balance
+
+            df = pd.DataFrame({"int": np.arange(5), "flt": np.random.randn(5)})
+            new_df = deepcopy(df)
+            new_df.int = new_df.int.astype(float)
+            new_df.flt = new_df.flt.astype(int)
+
+            balance.util._warn_of_df_dtypes_change(df.dtypes, new_df.dtypes)
+
+                # WARNING (2023-02-07 08:01:19,961) [util/_warn_of_df_dtypes_change (line 1696)]: The dtypes of new_df were changed from the original dtypes of the input df, here are the differences -
+                # WARNING (2023-02-07 08:01:19,963) [util/_warn_of_df_dtypes_change (line 1707)]: The (old) dtypes that changed for df (before the change):
+                # WARNING (2023-02-07 08:01:19,966) [util/_warn_of_df_dtypes_change (line 1710)]:
+                # flt    float64
+                # int      int64
+                # dtype: object
+                # WARNING (2023-02-07 08:01:19,971) [util/_warn_of_df_dtypes_change (line 1711)]: The (new) dtypes saved in df (after the change):
+                # WARNING (2023-02-07 08:01:19,975) [util/_warn_of_df_dtypes_change (line 1712)]:
+                # flt      int64
+                # int    float64
+                # dtype: object
+    """
+    compare_df_dtypes_before_and_after = _are_dtypes_equal(
+        original_df_dtypes, new_df_dtypes
+    )
+    if not compare_df_dtypes_before_and_after["is_equal"]:
+        logger.warning(
+            f"The dtypes of {new_str} were changed from the original dtypes of the input {original_str}, here are the differences - "
+        )
+        compared_dtypes = compare_df_dtypes_before_and_after["comparison_of_dtypes"]
+        dtypes_that_changed = (
+            # pyre-ignore[16]: we're only using the pd.Series, so no worries
+            compared_dtypes[np.bitwise_not(compared_dtypes.values)]
+            .keys()
+            .to_list()
+        )
+        logger.debug(compare_df_dtypes_before_and_after)
+        logger.warning(
+            f"The (old) dtypes that changed for {original_str} (before the change):"
+        )
+        logger.warning("\n" + str(original_df_dtypes[dtypes_that_changed]))
+        logger.warning(f"The (new) dtypes saved in {original_str} (after the change):")
+        logger.warning("\n" + str(new_df_dtypes[dtypes_that_changed]))

@@ -3,6 +3,8 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2.
 
+from copy import deepcopy
+
 import balance.testutil
 
 import numpy as np
@@ -1242,4 +1244,17 @@ class TestUtil(
         )
         self.assertFalse(
             balance_util._are_dtypes_equal(df11.dtypes, df2.dtypes)["is_equal"]
+        )
+
+    def test__warn_of_df_dtypes_change(self):
+        df = pd.DataFrame({"int": np.arange(5), "flt": np.random.randn(5)})
+        new_df = deepcopy(df)
+        new_df.int = new_df.int.astype(float)
+        new_df.flt = new_df.flt.astype(int)
+
+        self.assertWarnsRegexp(
+            "The dtypes of new_df were changed from the original dtypes of the input df, here are the differences - ",
+            balance_util._warn_of_df_dtypes_change,
+            df.dtypes,
+            new_df.dtypes,
         )
