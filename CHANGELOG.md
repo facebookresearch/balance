@@ -1,8 +1,19 @@
-0.3.2 (the future)
+0.4.0 (2023-02-08)
 ==================
+### New Features
+- Added two new flags to the cli:
+    - `--standardize_types`: This gives cli users the ability to set the `standardize_types` parameter in Sample.from_frame
+        to True or False. To learn more about this parameter, see:
+        https://import-balance.org/api_reference/html/balance.sample_class.html#balance.sample_class.Sample.from_frame
+    - `--return_df_with_original_dtypes`: the Sample object now stores the dtypes of the original df that was read using Sample.from_frame. This can be used to restore the original dtypes of the file output from the cli. This is relevant in cases in which we want to convert back the dtypes of columns from how they are stored in Sample, to their original types (e.g.: if something was Int32 it would be turned in float32 in balance.Sample, and using the new flag will return that column, when using the cli, to be back in the Int32 type). This feature may not be robust to various edge cases. So use with caution.
+- In the logging:
+    - Added warnings about dtypes changes. E.g.: if using Sample.from_frame with a column that has Int32, it will be turned into float32 in the internal storage of sample. Now there will be a warning message indicating of this change.
+    - Increase the default length of logger printing (from 500 to 2000)
+
+
 ### Bug Fixes
 - Fix pandas warning: SettingWithCopyWarning in from_frame (and other places in sample_class.py)
-- sample.from_frame has a new argument `use_deepcopy` to decide if changes made to the df inside the sample object would also change the original df that was provided to the sample object. The default is `True` since it's more likely that we'd like to keep the changes inside the sample object to the df contained in it, and not have them spill into the original df. Also added tests to verify this works.
+- sample.from_frame has a new argument `use_deepcopy` to decide if changes made to the df inside the sample object would also change the original df that was provided to the sample object. The default is now set to `True` since it's more likely that we'd like to keep the changes inside the sample object to the df contained in it, and not have them spill into the original df.
 
 
 0.3.1 (2023-02-01)
