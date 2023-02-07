@@ -106,15 +106,11 @@ class BalanceCLI:
         else:
             return self.args.transformations
 
-    def one_hot_encoding(self) -> bool:
-        if self.args.one_hot_encoding.lower() == "false":
-            return False
-        elif self.args.one_hot_encoding.lower() == "true":
-            return True
-        else:
-            raise ValueError(
-                f"{self.args.one_hot_encoding} is not an accepted value, please pass either 'True' or 'False' (lower/upper case is ignored)"
-            )
+    def one_hot_encoding(self) -> Optional[bool]:
+        return balance.util._true_false_str_to_bool(self.args.one_hot_encoding)
+
+    def standardize_types(self) -> bool:
+        return balance.util._true_false_str_to_bool(self.args.standardize_types)
 
     def weight_trimming_mean_ratio(self) -> float:
         return self.args.weight_trimming_mean_ratio
@@ -170,6 +166,7 @@ class BalanceCLI:
             weight_column=self.weight_column(),
             outcome_columns=outcome_columns,
             check_id_uniqueness=False,
+            standardize_types=self.standardize_types(),
         )
         logger.info("%s sample object: %s" % (sample_package_name, str(sample)))
 
@@ -179,6 +176,7 @@ class BalanceCLI:
             weight_column=self.weight_column(),
             outcome_columns=outcome_columns,
             check_id_uniqueness=False,
+            standardize_types=self.standardize_types(),
         )
         logger.info("%s target object: %s" % (sample_package_name, str(target)))
 
@@ -643,6 +641,22 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
             "For example, dealing with missing values could lead to many issues (e.g.: there is np.nan and pd.NA, and these do not play nicely with type conversions)"
         ),
     )
+    parser.add_argument(
+        "--standardize_types",
+        type=str,
+        default="True",
+        required=False,
+        help=(
+            "Control the standardize_types argument in Sample.from_frame (which is used on the files read by the cli)"
+            "The default is True. It is generally not advised to use False since this step is needed to deal with converting input types that are not supported by various functions."
+            "For example, if a column of Int64 has pandas.NA, it could fail on various functions. Current default (True) will turn that column into float64"
+            "(the pandas.NA will be converted into numpy.nan)."
+            "Setting the current flag to 'False' might lead to failures. The advantage is that it would keep most columns dtype as is"
+            " (which might be helpful for some downstream operations that assume the output dtypes are the same as the input dtypes)."
+            "NOTE: regardless if this flag is set to true or false, the weight column will be turned into a float64 type anyway."
+        ),
+    )
+
     return parser
 
 

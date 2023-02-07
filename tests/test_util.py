@@ -1216,3 +1216,12 @@ class TestUtil(
             df_fixed.dtypes.to_dict(),
             {"id": dtype("int64"), "a": dtype("int64"), "weight": dtype("float64")},
         )
+
+    def test__true_false_str_to_bool(self):
+        self.assertFalse(balance_util._true_false_str_to_bool("falsE"))
+        self.assertTrue(balance_util._true_false_str_to_bool("TrUe"))
+        with self.assertRaisesRegex(
+            ValueError,
+            "Banana is not an accepted value, please pass either 'True' or 'False'*",
+        ):
+            balance_util._true_false_str_to_bool("Banana")

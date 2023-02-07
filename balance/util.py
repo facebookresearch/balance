@@ -1598,3 +1598,33 @@ def _astype_in_df_from_dtypes(
     )
     # pyre-ignore[7]: we expect the input and output to be df (and not pd.Series)
     return df.astype(dict_of_target_dtypes)
+
+
+def _true_false_str_to_bool(x: str) -> bool:
+    """Changes strings such as 'false' to False and 'true' to True.
+
+    Args:
+        x (str): String to be converted (ideally 'true' or 'false' - case is ignored).
+
+    Raises:
+        ValueError: If x is not 'true' or 'false'.
+
+    Returns:
+        bool: True if x is 'true', False if x is 'false'.
+
+    Examples:
+        ::
+            _true_false_str_to_bool('falsE')  # False
+            _true_false_str_to_bool('TrUe')  # True
+
+            _true_false_str_to_bool('Banana')
+            # ValueError: Banana is not an accepted value, please pass either 'True' or 'False' (lower/upper case is ignored)
+    """
+    if x.lower() == "false":
+        return False
+    elif x.lower() == "true":
+        return True
+    else:
+        raise ValueError(
+            f"{x} is not an accepted value, please pass either 'True' or 'False' (lower/upper case is ignored)"
+        )
