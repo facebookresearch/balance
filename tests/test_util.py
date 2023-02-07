@@ -9,6 +9,7 @@ import numpy as np
 import numpy.testing
 import pandas as pd
 
+# TODO: remove the use of balance_util in most cases, and just import the functions to be tested directly
 from balance import util as balance_util
 from balance.sample_class import Sample
 
@@ -1225,3 +1226,20 @@ class TestUtil(
             "Banana is not an accepted value, please pass either 'True' or 'False'*",
         ):
             balance_util._true_false_str_to_bool("Banana")
+
+    def test__are_dtypes_equal(self):
+        df1 = pd.DataFrame({"int": np.arange(5), "flt": np.random.randn(5)})
+        df2 = pd.DataFrame({"flt": np.random.randn(5), "int": np.random.randn(5)})
+        df11 = pd.DataFrame(
+            {"int": np.arange(5), "flt": np.random.randn(5), "miao": np.random.randn(5)}
+        )
+
+        self.assertTrue(
+            balance_util._are_dtypes_equal(df1.dtypes, df1.dtypes)["is_equal"]
+        )
+        self.assertFalse(
+            balance_util._are_dtypes_equal(df1.dtypes, df2.dtypes)["is_equal"]
+        )
+        self.assertFalse(
+            balance_util._are_dtypes_equal(df11.dtypes, df2.dtypes)["is_equal"]
+        )

@@ -1563,7 +1563,6 @@ def _dict_intersect(d: Dict, d_for_keys: Dict) -> Dict:
 
 # TODO: using _astype_in_df_from_dtypes to turn sample.df to original df dtypes may not be a good long term solution.
 #       A better solution might require a redesign of some core features.
-# NOTE: target_dtypes is Union[pd.Series, np.dtypes], but np.dtypes is not yet recognized as a type, so omitting it from the type hint.
 def _astype_in_df_from_dtypes(
     df: pd.DataFrame, target_dtypes: pd.Series
 ) -> pd.DataFrame:
@@ -1572,7 +1571,7 @@ def _astype_in_df_from_dtypes(
 
     Args:
         df (pd.DataFrame): df to convert
-        target_dtypes (Union[pd.Series, np.dtypes]): dtypes to use as target dtypes for conversion
+        target_dtypes (pd.Series): DataFrame.dtypes to use as target dtypes for conversion
 
     Returns:
         pd.DataFrame: df with dtypes cast as specified in target_dtypes
@@ -1592,7 +1591,7 @@ def _astype_in_df_from_dtypes(
                 # {'id': dtype('int64'), 'a': dtype('int64'), 'weight': dtype('float64')}
     """
     dict_of_target_dtypes = _dict_intersect(
-        # pyre-ignore[6]: using to_dict on np.dtypes or pd.Series will work fine:
+        # pyre-ignore[6]: using to_dict on pd.Series will work fine:
         target_dtypes.to_dict(),
         df.dtypes.to_dict(),
     )
@@ -1628,3 +1627,49 @@ def _true_false_str_to_bool(x: str) -> bool:
         raise ValueError(
             f"{x} is not an accepted value, please pass either 'True' or 'False' (lower/upper case is ignored)"
         )
+
+
+def _are_dtypes_equal(
+    dt1: pd.Series, dt2: pd.Series
+) -> Dict[str, Union[bool, pd.Series, set]]:
+    """Returns True if both dtypes are the same and False otherwise.
+
+    If dtypes have an unequal set of items, the comparison will only be about the same set of keys.
+    If there are no shared keys, then return False.
+
+    Args:
+        dt1 (pd.Series): first dtype (output from DataFrame.dtypes)
+        dt2 (pd.Series): second dtype (output from DataFrame.dtypes)
+
+    Returns:
+        Dict[str, Union[bool, pd.Series, set]]: a dict of the following structure
+            {
+                'is_equal': False,
+                'comparison_of_dtypes':
+                                    flt    True
+                                    int    False
+                                    dtype: bool,
+                'shared_keys': {'flt', 'int'}
+            }
+
+    Examples:
+        ::
+            df1 = pd.DataFrame({'int':np.arange(5), 'flt':np.random.randn(5)})
+            df2 = pd.DataFrame({'flt':np.random.randn(5), 'int':np.random.randn(5)})
+            df11 = pd.DataFrame({'int':np.arange(5), 'flt':np.random.randn(5), 'miao':np.random.randn(5)})
+
+            _are_dtypes_equal(df1.dtypes, df1.dtypes)['is_equal']  # True
+            _are_dtypes_equal(df1.dtypes, df2.dtypes)['is_equal']  # False
+            _are_dtypes_equal(df11.dtypes, df2.dtypes)['is_equal'] # False
+    """
+    shared_keys = set.intersection(set(dt1.keys()), set(dt2.keys()))
+    comparison_of_dtypes = dt1[shared_keys] == dt2[shared_keys]
+    is_equal = np.all(comparison_of_dtypes)
+    return {
+        "is_equal": is_equal,
+        "comparison_of_dtypes": comparison_of_dtypes,
+        "shared_keys": shared_keys,
+    }
+
+
+# _compare_dtypes
