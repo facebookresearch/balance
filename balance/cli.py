@@ -12,6 +12,8 @@ from argparse import ArgumentParser, FileType, Namespace
 
 from typing import Dict, List, Optional, Tuple, Type, Union
 
+import balance
+
 import pandas as pd
 
 from balance import __version__  # @manual
@@ -210,7 +212,14 @@ class BalanceCLI:
                 "%s diagnostics object: %s" % (sample_package_name, str(diagnostics))
             )
 
-            rval = {"adjusted": adjusted.df, "diagnostics": diagnostics}
+            # Update dtypes
+            if self.args.return_df_with_original_dtypes:
+                df_to_return = balance.util._astype_in_df_from_dtypes(
+                    adjusted.df, adjusted._df_dtypes
+                )
+            else:
+                df_to_return = adjusted.df
+            rval = {"adjusted": df_to_return, "diagnostics": diagnostics}
         except Exception as e:
             if self.args.succeed_on_weighting_failure:
                 logger.error(
@@ -221,8 +230,15 @@ class BalanceCLI:
                 module_name = module.__name__ if module is not None else None
                 error_message = f"{module_name}: {e}"
                 logger.exception("The error message is: " + error_message)
+                # Update dtypes
+                if self.args.return_df_with_original_dtypes:
+                    df_to_return = balance.util._astype_in_df_from_dtypes(
+                        sample.df, sample._df_dtypes
+                    )
+                else:
+                    df_to_return = sample.df
                 rval = {
-                    "adjusted": sample.df,
+                    "adjusted": df_to_return,
                     "diagnostics": pd.DataFrame(
                         {
                             "metric": (
@@ -614,6 +630,17 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
         help=(
             "Define the transformations for the covariates. Can be set to None for no transformations or"
             "'default' for default transformations."
+        ),
+    )
+    parser.add_argument(
+        "--return_df_with_original_dtypes",
+        action="store_true",
+        help=(
+            "If the input table has unsupported column types (e.g.: int32), then when using Sample.from_frame it will be changed (e.g.: float32). "
+            "The returned df from the cli will use the transformed DataFrame. If this flag is used, then the cli will attempt to restore the original dtypes of the input table"
+            "before returning it."
+            "WARNING: sometimes the pd.astype command might lead to odd behaviors, so it is generally safer to NOT use this flag but to manually specify the desired dtypes in the input/output tables."
+            "For example, dealing with missing values could lead to many issues (e.g.: there is np.nan and pd.NA, and these do not play nicely with type conversions)"
         ),
     )
     return parser

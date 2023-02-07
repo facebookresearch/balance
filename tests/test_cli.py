@@ -11,8 +11,8 @@ import balance.testutil
 
 import numpy as np
 import pandas as pd
-
 from balance.cli import _float_or_none, BalanceCLI, make_parser
+from numpy import dtype
 
 
 class TestCli(
@@ -783,3 +783,81 @@ class TestCli(
                     ]
                 ),
             )
+
+    def test_cli_return_df_with_original_dtypes(self):
+        def check_return_df_with_original_dtypes(flag=True):
+            with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
+                "w", suffix=".csv", delete=False
+            ) as in_file:
+
+                in_contents = (
+                    "x,y,is_respondent,id,weight\n"
+                    + ("1.0,50,1,1,1\n" * 1000)
+                    + ("2.0,60,0,1,1\n" * 1000)
+                )
+                in_file.write(in_contents)
+                in_file.close()
+                out_file = os.path.join(temp_dir, "out.csv")
+
+                parser = make_parser()
+
+                args_to_parse = [
+                    "--input_file",
+                    in_file.name,
+                    "--output_file",
+                    out_file,
+                    "--covariate_columns",
+                    "x,y",
+                ]
+                if flag:
+                    args_to_parse.append("--return_df_with_original_dtypes")
+                args = parser.parse_args(args_to_parse)
+                cli = BalanceCLI(args)
+                cli.update_attributes_for_main_used_by_adjust()
+                cli.main()
+
+                pd_in = pd.read_csv(in_file.name)
+                pd_out = pd.read_csv(out_file)
+            return {"pd_in": pd_in, "pd_out": pd_out}
+
+        out_True = check_return_df_with_original_dtypes(True)
+        out_False = check_return_df_with_original_dtypes(False)
+
+        # IF the flag 'return_df_with_original_dtypes' is not passed, then the dtypes of the output dataframes are different
+        self.assertEqual(
+            out_False["pd_in"].dtypes.to_dict(),
+            {
+                "x": dtype("float64"),
+                "y": dtype("int64"),
+                "is_respondent": dtype("int64"),
+                "id": dtype("int64"),
+                "weight": dtype("int64"),
+            },
+        )
+        self.assertEqual(
+            out_False["pd_out"].dtypes.to_dict(),
+            {
+                "id": dtype("int64"),
+                "x": dtype("float64"),
+                "y": dtype("float64"),
+                "is_respondent": dtype("float64"),
+                "weight": dtype("float64"),
+            },
+        )
+
+        # IF the flag 'return_df_with_original_dtypes' IS passed, then the dtypes of the output dataframes are the SAME:
+        # The input df dtypes are the same
+        self.assertEqual(
+            out_True["pd_in"].dtypes.to_dict(), out_False["pd_in"].dtypes.to_dict()
+        )
+        # But now the output df dtypes are also the same (the order of the columns is different though)
+        self.assertEqual(
+            out_True["pd_out"].dtypes.to_dict(),
+            {
+                "id": dtype("int64"),
+                "x": dtype("float64"),
+                "y": dtype("int64"),
+                "is_respondent": dtype("int64"),
+                "weight": dtype("int64"),
+            },
+        )

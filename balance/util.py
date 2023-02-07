@@ -1561,6 +1561,9 @@ def _dict_intersect(d: Dict, d_for_keys: Dict) -> Dict:
     return {k: d[k] for k in intersect_keys}
 
 
+# TODO: using _astype_in_df_from_dtypes to turn sample.df to original df dtypes may not be a good long term solution.
+#       A better solution might require a redesign of some core features.
+# NOTE: target_dtypes is Union[pd.Series, np.dtypes], but np.dtypes is not yet recognized as a type, so omitting it from the type hint.
 def _astype_in_df_from_dtypes(
     df: pd.DataFrame, target_dtypes: pd.Series
 ) -> pd.DataFrame:

@@ -48,6 +48,7 @@ class Sample:
     weight_column = None
     _links = None
     _adjustment_model = None
+    _df_dtypes = None
 
     def __init__(self) -> None:
         # The following checks if the call to Sample() was initiated inside the class itself using from_frame, or outside of it
@@ -169,6 +170,8 @@ class Sample:
         # Inititate a Sample() class, inside a from_frame constructor
         sample = cls()
 
+        sample._df_dtypes = df.dtypes
+
         if use_deepcopy:
             sample._df = deepcopy(df)
         else:
@@ -231,6 +234,8 @@ class Sample:
 
             # Replace any pandas.NA with numpy.nan:
             sample._df = sample._df.fillna(np.nan)
+
+            # TODO: add warnings of which dtypes were changed (can use sample._df_dtypes to compare against the new sample._df.dtypes)
 
         # weight column
         if weight_column is None:
