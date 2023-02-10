@@ -5,6 +5,8 @@
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import balance
+
 import balance.testutil
 
 import numpy as np
@@ -490,4 +492,28 @@ class Testcbps(
             sample.adjust,
             method="cbps",
             transformations=None,
+        )
+
+    def test_cbps_in_balance_vs_r(self):
+        # TODO: add reference to the tutorial here (once it's online)
+        # Get data
+        target_df, sample_df = balance.datasets.load_data("sim_data_cbps")
+        # Place it into Sample objects
+        sample = Sample.from_frame(sample_df, outcome_columns=["y", "cbps_weights"])
+        target = Sample.from_frame(target_df, outcome_columns=["y", "cbps_weights"])
+        sample_target = sample.set_target(target)
+        # adjust:
+        adjust = sample_target.adjust(method="cbps", transformations=None)
+
+        # Verify balnce's CBPS gives VERY similar results to R's CBPS weights
+        self.assertTrue(
+            adjust.df[["cbps_weights", "weight"]].corr(method="pearson").iloc[0, 1]
+            > 0.98
+        )
+        self.assertTrue(
+            adjust.df[["cbps_weights", "weight"]]
+            .apply(lambda x: np.log10(x))
+            .corr(method="pearson")
+            .iloc[0, 1]
+            > 0.99
         )
