@@ -7,14 +7,20 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import random
 
+import balance
+
 import balance.testutil
 
 import numpy as np
 import pandas as pd
 
-from balance import adjustment as balance_adjustment, util as balance_util
-
+from balance.adjustment import (
+    apply_transformations,
+    default_transformations,
+    trim_weights,
+)
 from balance.sample_class import Sample
+from balance.util import fct_lump, quantize
 from balance.weighting_methods import (
     cbps as balance_cbps,
     ipw as balance_ipw,
@@ -59,7 +65,6 @@ class TestAdjustment(
     balance.testutil.BalanceTestCase,
 ):
     def test_trim_weights(self):
-        from balance.adjustment import trim_weights
 
         # Test no trimming
         # Notice how it changes the dtype of int64 to float64~
@@ -131,25 +136,25 @@ class TestAdjustment(
             pd.DataFrame({"a": (1, 2), "b": ("a", "b")}),
             pd.DataFrame({"c": (1, 2), "d": ("a", "b")}),
         )
-        r = balance_adjustment.default_transformations(input)
+        r = default_transformations(input)
         self.assertEqual(
             r,
             {
-                "a": balance_util.quantize,
-                "b": balance_util.fct_lump,
-                "c": balance_util.quantize,
-                "d": balance_util.fct_lump,
+                "a": quantize,
+                "b": fct_lump,
+                "c": quantize,
+                "d": fct_lump,
             },
         )
 
         # For one dataframe
         input = pd.DataFrame({"a": (1, 2), "b": ("a", "b")})
-        r = balance_adjustment.default_transformations([input])
+        r = default_transformations([input])
         self.assertEqual(
             r,
             {
-                "a": balance_util.quantize,
-                "b": balance_util.fct_lump,
+                "a": quantize,
+                "b": fct_lump,
             },
         )
 
@@ -161,12 +166,12 @@ class TestAdjustment(
                 "b": "boolean",
             }
         )
-        r = balance_adjustment.default_transformations([input])
+        r = default_transformations([input])
         self.assertEqual(
             r,
             {
-                "a": balance_util.quantize,
-                "b": balance_util.fct_lump,
+                "a": quantize,
+                "b": fct_lump,
             },
         )
 
@@ -175,8 +180,8 @@ class TestAdjustment(
 
         numpy_int = nullable_int.astype(np.int64)
 
-        test = balance_adjustment.default_transformations([nullable_int])
-        truth = balance_adjustment.default_transformations([numpy_int])
+        test = default_transformations([nullable_int])
+        truth = default_transformations([numpy_int])
 
         self.assertEqual(test, truth)
 
@@ -185,7 +190,7 @@ class TestAdjustment(
         t = pd.DataFrame({"d": [4, 5, 6, 7], "e": [1, 2, 3, 4]})
 
         transformations = {"d": lambda x: x * 2, "f": lambda x: x.d + 1}
-        r = balance_adjustment.apply_transformations((s, t), transformations)
+        r = apply_transformations((s, t), transformations)
 
         e = (
             pd.DataFrame({"d": [2, 4, 6], "f": [2, 3, 4]}),
@@ -196,16 +201,16 @@ class TestAdjustment(
         self.assertEqual(r[1], e[1], lazy=True)
 
         # No transformations or additions
-        self.assertEqual(balance_adjustment.apply_transformations((s, t), None), (s, t))
+        self.assertEqual(apply_transformations((s, t), None), (s, t))
 
         # Only transformations
-        r = balance_adjustment.apply_transformations((s, t), {"d": lambda x: x * 2})
+        r = apply_transformations((s, t), {"d": lambda x: x * 2})
         e = (pd.DataFrame({"d": [2, 4, 6]}), pd.DataFrame({"d": [8, 10, 12, 14]}))
         self.assertEqual(r[0], e[0])
         self.assertEqual(r[1], e[1])
 
         # Only additions
-        r = balance_adjustment.apply_transformations((s, t), {"f": lambda x: x.d + 1})
+        r = apply_transformations((s, t), {"f": lambda x: x.d + 1})
         e = (pd.DataFrame({"f": [2, 3, 4]}), pd.DataFrame({"f": [5, 6, 7, 8]}))
         self.assertEqual(r[0], e[0])
         self.assertEqual(r[1], e[1])
@@ -213,15 +218,13 @@ class TestAdjustment(
         # Warns about dropping variable
         self.assertWarnsRegexp(
             r"Dropping the variables: \['e'\]",
-            balance_adjustment.apply_transformations,
+            apply_transformations,
             (s, t),
             transformations,
         )
 
         # Does not drop
-        r = balance_adjustment.apply_transformations(
-            (s, t), transformations, drop=False
-        )
+        r = apply_transformations((s, t), transformations, drop=False)
         e = (
             pd.DataFrame({"d": [2, 4, 6], "e": [1, 2, 3], "f": [2, 3, 4]}),
             pd.DataFrame({"d": [8, 10, 12, 14], "e": [1, 2, 3, 4], "f": [5, 6, 7, 8]}),
@@ -231,7 +234,7 @@ class TestAdjustment(
 
         # Works on three dfs
         q = pd.DataFrame({"d": [8, 9], "g": [1, 2]})
-        r = balance_adjustment.apply_transformations((s, t, q), transformations)
+        r = apply_transformations((s, t, q), transformations)
         e = (
             pd.DataFrame({"d": [2, 4, 6], "f": [2, 3, 4]}),
             pd.DataFrame({"d": [8, 10, 12, 14], "f": [5, 6, 7, 8]}),
@@ -243,7 +246,7 @@ class TestAdjustment(
 
         # Test that functions are computed over all dfs passed, not each individually
         transformations = {"d": lambda x: x / max(x)}
-        r = balance_adjustment.apply_transformations((s, t), transformations)
+        r = apply_transformations((s, t), transformations)
         e = (
             pd.DataFrame({"d": [2 / 14, 4 / 14, 6 / 14]}),
             pd.DataFrame({"d": [8 / 14, 10 / 14, 12 / 14, 14 / 14]}),
@@ -255,7 +258,7 @@ class TestAdjustment(
         s = pd.DataFrame({"d": [1, 2, 3], "e": [1, 2, 3]})
         t = pd.DataFrame({"d": [4, 5, 6, 7]})
         transformations = {"e": lambda x: x * 2}
-        r = balance_adjustment.apply_transformations((s, t), transformations)
+        r = apply_transformations((s, t), transformations)
         e = (
             pd.DataFrame({"e": [2.0, 4.0, 6.0]}),
             pd.DataFrame({"e": [np.nan, np.nan, np.nan, np.nan]}),
@@ -265,7 +268,7 @@ class TestAdjustment(
 
         # Additon of a column based on one which does not exist in one of the dataframes
         transformations = {"f": lambda x: x.e * 2}
-        r = balance_adjustment.apply_transformations((s, t), transformations)
+        r = apply_transformations((s, t), transformations)
         e = (
             pd.DataFrame({"f": [2.0, 4.0, 6.0]}),
             pd.DataFrame({"f": [np.nan, np.nan, np.nan, np.nan]}),
@@ -278,7 +281,7 @@ class TestAdjustment(
         s = pd.DataFrame({"d": [1, 2, 3], "e": [0, 0, 0]})
         t = pd.DataFrame({"d": [4, 5, 6, 7]})
         transformations = {"e": lambda x: x + 1}
-        r = balance_adjustment.apply_transformations((s, t), transformations)
+        r = apply_transformations((s, t), transformations)
         e = (
             pd.DataFrame({"e": [1.0, 1.0, 1.0]}),
             pd.DataFrame({"e": [np.nan, np.nan, np.nan, np.nan]}),
@@ -290,7 +293,7 @@ class TestAdjustment(
         s = pd.DataFrame({"d": [1, 2, 3]}, index=(5, 6, 7))
         t = pd.DataFrame({"d": [4, 5, 6, 7]}, index=(0, 1, 2, 3))
         transformations = {"d": lambda x: x}
-        r = balance_adjustment.apply_transformations((s, t), transformations)
+        r = apply_transformations((s, t), transformations)
         e = (s, t)
         self.assertEqual(r[0], e[0])
         self.assertEqual(r[1], e[1])
@@ -298,7 +301,7 @@ class TestAdjustment(
         # Test indices are handeled okay (this example reuired reset_index of all_data)
         s = pd.DataFrame({"a": (0, 0, 0, 0, 0, 0, 0, 0)})
         t = pd.DataFrame({"a": (1, 1, 1, 1)})
-        r = balance_adjustment.apply_transformations((s, t), "default")
+        r = apply_transformations((s, t), "default")
         e = (
             pd.DataFrame({"a": ["(-0.001, 0.7]"] * 8}),
             pd.DataFrame({"a": ["(0.7, 1.0]"] * 4}),
@@ -309,7 +312,7 @@ class TestAdjustment(
         #  Test default transformations
         s = pd.DataFrame({"d": range(0, 100), "e": ["a"] * 96 + ["b"] * 4})
         t = pd.DataFrame({"d": range(0, 100), "e": ["a"] * 96 + ["b"] * 4})
-        r_s, r_t = balance_adjustment.apply_transformations((s, t), "default")
+        r_s, r_t = apply_transformations((s, t), "default")
 
         self.assertEqual(r_s["d"].drop_duplicates().values.shape[0], 10)
         self.assertEqual(r_t["d"].drop_duplicates().values.shape[0], 10)
@@ -322,7 +325,7 @@ class TestAdjustment(
         self.assertRaisesRegex(
             NotImplementedError,
             "Unknown transformations",
-            balance_adjustment.apply_transformations,
+            apply_transformations,
             (sample.df,),
             "foobar",
         )
@@ -331,7 +334,7 @@ class TestAdjustment(
         self.assertRaisesRegex(
             AssertionError,
             "'dfs' must contain DataFrames",
-            balance_adjustment.apply_transformations,
+            apply_transformations,
             (sample,),
             "foobar",
         )
@@ -340,21 +343,21 @@ class TestAdjustment(
         self.assertRaisesRegex(
             AssertionError,
             "'dfs' argument must be a tuple of DataFrames",
-            balance_adjustment.apply_transformations,
+            apply_transformations,
             sample.df,
             "foobar",
         )
 
     def test__find_adjustment_method(self):
         self.assertTrue(
-            balance_adjustment._find_adjustment_method("ipw") is balance_ipw.ipw
+            balance.adjustment._find_adjustment_method("ipw") is balance_ipw.ipw
         )
         self.assertTrue(
-            balance_adjustment._find_adjustment_method("cbps") is balance_cbps.cbps
+            balance.adjustment._find_adjustment_method("cbps") is balance_cbps.cbps
         )
         self.assertTrue(
-            balance_adjustment._find_adjustment_method("poststratify")
+            balance.adjustment._find_adjustment_method("poststratify")
             is balance_poststratify.poststratify
         )
         with self.assertRaisesRegex(ValueError, "Unknown adjustment method*"):
-            balance_adjustment._find_adjustment_method("some_other_value")
+            balance.adjustment._find_adjustment_method("some_other_value")

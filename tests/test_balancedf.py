@@ -9,7 +9,6 @@ import tempfile
 
 from copy import deepcopy
 
-import balance.testutil
 import IPython.display
 
 import numpy as np
@@ -17,10 +16,12 @@ import pandas as pd
 
 from balance.balancedf_class import (  # noqa
     BalanceCovarsDF,  # noqa
+    BalanceDF,
     BalanceOutcomesDF,  # noqa
     BalanceWeightsDF,  # noqa
 )
 from balance.sample_class import Sample
+from balance.testutil import BalanceTestCase
 
 # TODO: verify all the objects below are used
 s1 = Sample.from_frame(
@@ -93,7 +94,7 @@ c = s1.covars()
 w = s1.weights()
 
 
-class TestBalanceOutcomesDF(balance.testutil.BalanceTestCase):
+class TestBalanceOutcomesDF(BalanceTestCase):
     def test_Sample_outcomes(self):
         self.assertTrue(isinstance(s4.outcomes(), BalanceOutcomesDF))
         self.assertEqual(
@@ -124,8 +125,6 @@ class TestBalanceOutcomesDF(balance.testutil.BalanceTestCase):
         self.assertEqual(o.df, pd.DataFrame({"o": (7.0, 8.0, 9.0, 10.0)}))
 
     def test__get_df_and_weights(self):
-        from balance.balancedf_class import BalanceDF
-
         df, w = BalanceDF._get_df_and_weights(o)
         # Check types
         self.assertEqual(type(df), pd.DataFrame)
@@ -262,7 +261,7 @@ class TestBalanceOutcomesDF(balance.testutil.BalanceTestCase):
         )
 
 
-class TestBalanceCovarsDF(balance.testutil.BalanceTestCase):
+class TestBalanceCovarsDF(BalanceTestCase):
     def test_BalanceCovarsDF_df(self):
         # Verify that the @property decorator works properly.
         self.assertTrue(isinstance(BalanceCovarsDF.df, property))
@@ -296,7 +295,7 @@ class TestBalanceCovarsDF(balance.testutil.BalanceTestCase):
         )
 
 
-class TestBalanceWeightsDF(balance.testutil.BalanceTestCase):
+class TestBalanceWeightsDF(BalanceTestCase):
     def test_BalanceWeightsDF_df(self):
         # Verify that the @property decorator works properly.
         self.assertTrue(isinstance(BalanceWeightsDF.df, property))
@@ -338,9 +337,7 @@ class TestBalanceWeightsDF(balance.testutil.BalanceTestCase):
         self.assertTrue(max(s.weights().df.iloc[:, 0]) < 0.9)
 
 
-class TestBalanceDF__BalanceDF_child_from_linked_samples(
-    balance.testutil.BalanceTestCase
-):
+class TestBalanceDF__BalanceDF_child_from_linked_samples(BalanceTestCase):
     def test__BalanceDF_child_from_linked_samples_keys(self):
         self.assertEqual(
             list(s1.covars()._BalanceDF_child_from_linked_samples().keys()), ["self"]
@@ -380,32 +377,32 @@ class TestBalanceDF__BalanceDF_child_from_linked_samples(
 
     def test__BalanceDF_child_from_linked_samples_values(self):
         # We can get a calss using .__class__
-        self.assertEqual(s1.covars().__class__, balance.balancedf_class.BalanceCovarsDF)
+        self.assertEqual(s1.covars().__class__, BalanceCovarsDF)
 
         # We get a different number of classes based on the number of linked items:
         the_dict = s1.covars()._BalanceDF_child_from_linked_samples()
-        exp = [balance.balancedf_class.BalanceCovarsDF]
+        exp = [BalanceCovarsDF]
         self.assertEqual([v.__class__ for (k, v) in the_dict.items()], exp)
 
         the_dict = s3.covars()._BalanceDF_child_from_linked_samples()
-        exp = 2 * [balance.balancedf_class.BalanceCovarsDF]
+        exp = 2 * [BalanceCovarsDF]
         self.assertEqual([v.__class__ for (k, v) in the_dict.items()], exp)
 
         the_dict = s3_null.covars()._BalanceDF_child_from_linked_samples()
-        exp = 3 * [balance.balancedf_class.BalanceCovarsDF]
+        exp = 3 * [BalanceCovarsDF]
         self.assertEqual([v.__class__ for (k, v) in the_dict.items()], exp)
 
         # This also works for things other than BalanceCovarsDF:
         the_dict = s3_null.weights()._BalanceDF_child_from_linked_samples()
-        exp = 3 * [balance.balancedf_class.BalanceWeightsDF]
+        exp = 3 * [BalanceWeightsDF]
         self.assertEqual([v.__class__ for (k, v) in the_dict.items()], exp)
 
         # Notice that with something like outcomes, we might get a None in return!
         the_dict = s3_null.outcomes()._BalanceDF_child_from_linked_samples()
         exp = [
-            balance.balancedf_class.BalanceOutcomesDF,
+            BalanceOutcomesDF,
             type(None),
-            balance.balancedf_class.BalanceOutcomesDF,
+            BalanceOutcomesDF,
         ]
         self.assertEqual([v.__class__ for (k, v) in the_dict.items()], exp)
 
@@ -449,7 +446,7 @@ class TestBalanceDF__BalanceDF_child_from_linked_samples(
         self.assertEqual([v.df.to_dict() for (k, v) in the_dict.items()], exp)
 
 
-class TestBalanceDF__call_on_linked(balance.testutil.BalanceTestCase):
+class TestBalanceDF__call_on_linked(BalanceTestCase):
     def test_BalanceDF__call_on_linked(self):
         self.assertEqual(
             s1.weights()._call_on_linked("mean").values[0][0], (0.5 + 2 + 1 + 1) / 4
@@ -521,7 +518,7 @@ class TestBalanceDF__call_on_linked(balance.testutil.BalanceTestCase):
         )
 
 
-class TestBalanceDF__descriptive_stats(balance.testutil.BalanceTestCase):
+class TestBalanceDF__descriptive_stats(BalanceTestCase):
     def test_BalanceDF__descriptive_stats(self):
         self.assertEqual(
             s1.weights()._descriptive_stats("mean", weighted=False).values[0][0], 1.125
@@ -643,7 +640,7 @@ class TestBalanceDF__descriptive_stats(balance.testutil.BalanceTestCase):
         self.assertEqual(s1.covars().std(numeric_only=False).columns, e_all, lazy=True)
 
 
-class TestBalanceDF_mean(balance.testutil.BalanceTestCase):
+class TestBalanceDF_mean(BalanceTestCase):
     def test_BalanceDF_mean(self):
         self.assertEqual(
             s1.weights().mean(),
@@ -663,7 +660,7 @@ class TestBalanceDF_mean(balance.testutil.BalanceTestCase):
         )
 
 
-class TestBalanceDF_std(balance.testutil.BalanceTestCase):
+class TestBalanceDF_std(BalanceTestCase):
     def test_BalanceDF_std(self):
         self.assertEqual(
             s1.weights().std(),
@@ -683,10 +680,9 @@ class TestBalanceDF_std(balance.testutil.BalanceTestCase):
         )
 
 
-class TestBalanceDF_asmd(balance.testutil.BalanceTestCase):
+class TestBalanceDF_asmd(BalanceTestCase):
     def test_BalanceDF_asmd(self):
         # Test with BalanceDF
-        from balance.balancedf_class import BalanceDF
 
         r = BalanceDF._asmd_BalanceDF(
             Sample.from_frame(
@@ -894,13 +890,13 @@ class TestBalanceDF_asmd(balance.testutil.BalanceTestCase):
         self.assertEqual(outcome_main_covar, expected_main_covar)
 
 
-class TestBalanceDF_to_download(balance.testutil.BalanceTestCase):
+class TestBalanceDF_to_download(BalanceTestCase):
     def test_BalanceDF_to_download(self):
         r = s1.covars().to_download()
         self.assertIsInstance(r, IPython.display.FileLink)
 
 
-class TestBalanceDF_to_csv(balance.testutil.BalanceTestCase):
+class TestBalanceDF_to_csv(BalanceTestCase):
     def test_BalanceDF_to_csv(self):
         with tempfile.NamedTemporaryFile() as tf:
             s1.weights().to_csv(path_or_buf=tf.name)
@@ -926,7 +922,7 @@ class TestBalanceDF_to_csv(balance.testutil.BalanceTestCase):
         self.assertEqual(out, None)
 
 
-class TestBalanceDF__df_with_ids(balance.testutil.BalanceTestCase):
+class TestBalanceDF__df_with_ids(BalanceTestCase):
     def test_BalanceDF__df_with_ids(self):
         # Test it has an id column:
         self.assertTrue("id" in s1.weights()._df_with_ids().columns)
@@ -941,7 +937,7 @@ class TestBalanceDF__df_with_ids(balance.testutil.BalanceTestCase):
         self.assertEqual((4, 4), s1.covars()._df_with_ids().shape)
 
 
-class TestBalanceDF_summary(balance.testutil.BalanceTestCase):
+class TestBalanceDF_summary(BalanceTestCase):
     def testBalanceDF_summary(self):
         covar_means = pd.DataFrame(
             {
@@ -987,7 +983,7 @@ class TestBalanceDF_summary(balance.testutil.BalanceTestCase):
         )
 
 
-class TestBalanceDF__str__(balance.testutil.BalanceTestCase):
+class TestBalanceDF__str__(BalanceTestCase):
     def testBalanceDF__str__(self):
         self.assertTrue(s1.outcomes().df.__str__() in s1.outcomes().__str__())
 
@@ -998,7 +994,7 @@ class TestBalanceDF__str__(balance.testutil.BalanceTestCase):
         )
 
 
-class TestBalanceDF__repr__(balance.testutil.BalanceTestCase):
+class TestBalanceDF__repr__(BalanceTestCase):
     def test_BalanceWeightsDF___repr__(self):
         repr = w.__repr__()
         self.assertTrue("weights from" in repr)
@@ -1015,7 +1011,7 @@ class TestBalanceDF__repr__(balance.testutil.BalanceTestCase):
         self.assertTrue(object.__repr__(s1) in repr)
 
 
-class TestBalanceDF(balance.testutil.BalanceTestCase):
+class TestBalanceDF(BalanceTestCase):
     def testBalanceDF_model_matrix(self):
         self.assertEqual(
             s1.covars().model_matrix().sort_index(axis=1).columns.values,
@@ -1034,8 +1030,6 @@ class TestBalanceDF(balance.testutil.BalanceTestCase):
         )
 
     def test_check_if_not_BalanceDF(self):
-        from balance.balancedf_class import BalanceDF
-
         with self.assertRaisesRegex(ValueError, "number must be balancedf_class"):
             BalanceDF._check_if_not_BalanceDF(5, "number")
 

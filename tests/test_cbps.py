@@ -5,14 +5,13 @@
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-import balance
-
 import balance.testutil
 
 import numpy as np
 import pandas as pd
 import scipy
 
+from balance.datasets import load_data
 from balance.sample_class import Sample
 from balance.stats_and_plots.weights_stats import design_effect
 from balance.weighting_methods import cbps as balance_cbps
@@ -497,7 +496,7 @@ class Testcbps(
     def test_cbps_in_balance_vs_r(self):
         # TODO: add reference to the tutorial here (once it's online)
         # Get data
-        target_df, sample_df = balance.datasets.load_data("sim_data_cbps")
+        target_df, sample_df = load_data("sim_data_cbps")
         # Place it into Sample objects
         sample = Sample.from_frame(sample_df, outcome_columns=["y", "cbps_weights"])
         target = Sample.from_frame(target_df, outcome_columns=["y", "cbps_weights"])

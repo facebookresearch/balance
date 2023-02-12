@@ -6,13 +6,13 @@
 import balance.testutil
 import numpy as np
 
+from balance.datasets import load_data
+
 
 class TestDatasets(
     balance.testutil.BalanceTestCase,
 ):
     def test_load_data(self):
-        from balance.datasets import load_data
-
         target_df, sample_df = load_data()
 
         self.assertEqual(sample_df.shape, (1000, 5))
@@ -48,7 +48,6 @@ class TestDatasets(
         self.assertEqual(o.__str__(), e.__str__())
 
     def test_load_data_cbps(self):
-        from balance.datasets import load_data
 
         target_df, sample_df = load_data("sim_data_cbps")
 
