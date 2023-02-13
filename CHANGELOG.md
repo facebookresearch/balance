@@ -4,8 +4,8 @@
 - The `datasets.load_data` function now also supports the input "sim_data_cbps", which loads the simulated data used in the CBPS R vs Python tutorial. It is also used in unit-testing to compare the CBPS weights produced from Python (i.e.: balance) with R (i.e.: the CBPS package). The testing shows how the correlation of the weights from the two implementations (both Pearson and Spearman) produce a correlation of >0.98.
 
 ### Documentation
-- New tutorial:
-    - TBD (BCPS comparison to R)
+- New notebook (in the tutorial section):
+    - Comparing results of fitting CBPS between R's `CBPS` package and Python's `balance` package (using simulated data). [link](https://import-balance.org/docs/tutorials/comparing_cbps_in_r_vs_python_using_sim_data/)
 
 
 0.4.0 (2023-02-08)
