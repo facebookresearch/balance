@@ -66,6 +66,8 @@ def setup_package() -> None:
         python_requires=">=3.7",
         install_requires=REQUIRES,
         packages=find_packages(include=["balance*"]),
+        # Include all csv files
+        package_data={"": ["*.csv"]},
         extras_require={
             "dev": DEV_REQUIRES,
         },
