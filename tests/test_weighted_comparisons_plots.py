@@ -99,7 +99,6 @@ class Test_weighted_comparisons_plots(
         # NOTE: There is no AxesSubplot class until one is invoked and created on the fly.
         #     See details here: https://stackoverflow.com/a/11690800/256662
         self.assertTrue(issubclass(plot_dist_type, plt.Axes))
-        self.assertTrue(issubclass(plot_dist_type, matplotlib.axes.SubplotBase))
 
     def test_relative_frequency_table(self):
         df = pd.DataFrame({"a": list("abcd"), "b": list("bbcd")})
@@ -196,10 +195,10 @@ class Test_weighted_comparisons_plots(
 
         # NOTE: There is no AxesSubplot class until one is invoked and created on the fly.
         #     See details here: https://stackoverflow.com/a/11690800/256662
-        self.assertTrue(issubclass(out[0], matplotlib.axes.SubplotBase))
-        self.assertTrue(issubclass(out[1], matplotlib.axes.SubplotBase))
-        self.assertTrue(issubclass(out[2], matplotlib.axes.SubplotBase))
-        self.assertTrue(issubclass(out[3], matplotlib.axes.SubplotBase))
+        self.assertTrue(issubclass(out[0], matplotlib.axes.Axes))
+        self.assertTrue(issubclass(out[1], matplotlib.axes.Axes))
+        self.assertTrue(issubclass(out[2], matplotlib.axes.Axes))
+        self.assertTrue(issubclass(out[3], matplotlib.axes.Axes))
 
     def test_plot_dist(self):
 
