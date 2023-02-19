@@ -821,6 +821,97 @@ class TestCli(
                 ),
             )
 
+    def test_formula_works(self):
+        # TODO: ideally we'll have the example outside
+        np.random.seed(2021)
+        n_sample = 1000
+        n_target = 2000
+        sample_df = pd.DataFrame(
+            {
+                "age": np.random.uniform(0, 100, n_sample),
+                "gender": np.random.choice((1, 2, 3, 4), n_sample),
+                "id": range(n_sample),
+                "weight": pd.Series((1,) * n_sample),
+            }
+        )
+        sample_df["is_respondent"] = True
+        target_df = pd.DataFrame(
+            {
+                "age": np.random.uniform(0, 100, n_target),
+                "gender": np.random.choice((1, 2, 3, 4), n_target),
+                "id": range(n_target),
+                "weight": pd.Series((1,) * n_target),
+            }
+        )
+        target_df["is_respondent"] = False
+        input_dataset = pd.concat([sample_df, target_df])
+
+        with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
+            "w", suffix=".csv", delete=False
+        ) as input_file:
+            input_dataset.to_csv(path_or_buf=input_file)
+            input_file.close()
+            output_file = os.path.join(temp_dir, "weights_out.csv")
+            diagnostics_output_file = os.path.join(temp_dir, "diagnostics_out.csv")
+            features = "age,gender"
+
+            # test no formula
+            parser = make_parser()
+            args = parser.parse_args(
+                [
+                    "--input_file",
+                    input_file.name,
+                    "--output_file",
+                    output_file,
+                    "--diagnostics_output_file",
+                    diagnostics_output_file,
+                    "--covariate_columns",
+                    features,
+                    "--transformations=None",
+                ]
+            )
+            # run cli
+            cli = BalanceCLI(args)
+            cli.update_attributes_for_main_used_by_adjust()
+            cli.main()
+            # get the files created from cli to pandas to check them
+            diagnostics_output = pd.read_csv(diagnostics_output_file, sep=",")
+            self.assertEqual(
+                diagnostics_output[diagnostics_output["metric"] == "model_coef"][
+                    "var"
+                ].values,
+                np.array(["intercept", "age", "gender"]),
+            )
+
+            # test transformations=age*gender
+            parser = make_parser()
+            args = parser.parse_args(
+                [
+                    "--input_file",
+                    input_file.name,
+                    "--output_file",
+                    output_file,
+                    "--diagnostics_output_file",
+                    diagnostics_output_file,
+                    "--covariate_columns",
+                    features,
+                    "--transformations=None",
+                    "--formula=age*gender",
+                ]
+            )
+            # run cli
+            cli = BalanceCLI(args)
+            cli.update_attributes_for_main_used_by_adjust()
+            cli.main()
+            # get the files created from cli to pandas to check them
+            diagnostics_output = pd.read_csv(diagnostics_output_file, sep=",")
+            self.assertEqual(
+                diagnostics_output[diagnostics_output["metric"] == "model_coef"][
+                    "var"
+                ].values,
+                np.array(["intercept", "age", "age:gender", "gender"]),
+            )
+
     def test_cli_return_df_with_original_dtypes(self):
         out_True = check_some_flags(True, "--return_df_with_original_dtypes")
         out_False = check_some_flags(False, "--return_df_with_original_dtypes")

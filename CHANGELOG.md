@@ -2,6 +2,8 @@
 ==================
 ### New Features
 - The `datasets.load_data` function now also supports the input "sim_data_cbps", which loads the simulated data used in the CBPS R vs Python tutorial. It is also used in unit-testing to compare the CBPS weights produced from Python (i.e.: balance) with R (i.e.: the CBPS package). The testing shows how the correlation of the weights from the two implementations (both Pearson and Spearman) produce a correlation of >0.98.
+- cli improvements:
+    - Add an option to set formula (as string) in the cli.
 
 ### Documentation
 - New notebook (in the tutorial section):

@@ -106,6 +106,9 @@ class BalanceCLI:
         else:
             return self.args.transformations
 
+    def formula(self) -> Optional[str]:
+        return self.args.formula
+
     def one_hot_encoding(self) -> Optional[bool]:
         return balance.util._true_false_str_to_bool(self.args.one_hot_encoding)
 
@@ -323,7 +326,7 @@ class BalanceCLI:
         """
         # TODO: future version might include conditional control over these attributes based on some input
         transformations = self.transformations()
-        formula = None
+        formula = self.formula()
         penalty_factor = None
         one_hot_encoding = self.one_hot_encoding()
         max_de = self.max_de()
@@ -491,7 +494,7 @@ def _float_or_none(value: Union[float, int, str, None]) -> Optional[float]:
 
 def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
     # TODO: add checks for validity of input (including None as input)
-    # TODO: add arguments for formula and penalty_factor
+    # TODO: add arguments for formula when used as a list and for penalty_factor
     parser.add_argument(
         "--input_file",
         type=FileType("r"),
@@ -641,6 +644,15 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
         help=(
             "Define the transformations for the covariates. Can be set to None for no transformations or"
             "'default' for default transformations."
+        ),
+    ),
+    # TODO: we currently support only the option of a string formula (or None), not a list of formulas.
+    parser.add_argument(
+        "--formula",
+        default=None,
+        required=False,
+        help=(
+            "The formula of the model matrix (in ipw or cbps). If None (default), the formula will be setted to an additive formula using all the covariates."
         ),
     )
     parser.add_argument(
