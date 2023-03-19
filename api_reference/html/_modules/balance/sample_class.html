@@ -760,12 +760,17 @@
 
         <span class="n">out</span> <span class="o">=</span> <span class="p">(</span>
             <span class="p">(</span>
+                <span class="c1"># pyre-fixme[61]: `asmd_improvement` is undefined, or not always</span>
+                <span class="c1">#  defined.</span>
                 <span class="sa">f</span><span class="s2">&quot;Covar ASMD reduction: </span><span class="si">{</span><span class="n">asmd_improvement</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%, design effect: </span><span class="si">{</span><span class="n">design_effect</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">()</span>
                 <span class="k">else</span> <span class="s2">&quot;&quot;</span>
             <span class="p">)</span>
+            <span class="c1"># pyre-fixme[61]: `n_asmd_covars` is undefined, or not always defined.</span>
             <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Covar ASMD (</span><span class="si">{</span><span class="n">n_asmd_covars</span><span class="si">}</span><span class="s2"> variables): &quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_target</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="c1"># pyre-fixme[61]: `asmd_before` is undefined, or not always defined.</span>
             <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">asmd_before</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> -&gt; &quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="c1"># pyre-fixme[61]: `asmd_now` is undefined, or not always defined.</span>
             <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">asmd_now</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_target</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
             <span class="o">+</span> <span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Model performance: </span><span class="si">{</span><span class="n">model_summary</span><span class="si">}</span><span class="s2">&quot;</span>
