@@ -722,12 +722,17 @@ class Sample:
 
         out = (
             (
+                # pyre-fixme[61]: `asmd_improvement` is undefined, or not always
+                #  defined.
                 f"Covar ASMD reduction: {asmd_improvement:.1f}%, design effect: {design_effect:.3f}\n"
                 if self.is_adjusted()
                 else ""
             )
+            # pyre-fixme[61]: `n_asmd_covars` is undefined, or not always defined.
             + (f"Covar ASMD ({n_asmd_covars} variables): " if self.has_target() else "")
+            # pyre-fixme[61]: `asmd_before` is undefined, or not always defined.
             + (f"{asmd_before:.3f} -> " if self.is_adjusted() else "")
+            # pyre-fixme[61]: `asmd_now` is undefined, or not always defined.
             + (f"{asmd_now:.3f}\n" if self.has_target() else "")
             + (
                 f"Model performance: {model_summary}"
