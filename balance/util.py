@@ -572,9 +572,9 @@ def build_model_matrix(
 
 
 def _prepare_input_model_matrix(
-    sample,
-    target=None,
-    variables=None,
+    sample: Union[pd.DataFrame, Any],
+    target: Union[pd.DataFrame, Any, None] = None,
+    variables: Optional[List] = None,
     add_na: bool = True,
 ) -> Dict[str, Any]:
     """Helper function to model_matrix. Prepare and check input of sample and target:
@@ -584,16 +584,39 @@ def _prepare_input_model_matrix(
         - Add na indicator if required.
 
     Args:
-        sample (_type_): TODO
-        target (_type_, optional): TODO. Defaults to None.
-        variables (_type_, optional): TODO. Defaults to None.
-        add_na (bool, optional): TODO. Defaults to True.
+        sample (Union[pd.DataFrame, Any]): This can either be a DataFrame or a Sample object. TODO: add text.
+        target (Union[pd.DataFrame, Any, None], optional): This can either be a DataFrame or a Sample object.. Defaults to None.
+        variables (Optional[List], optional): Defaults to None. TODO: add text.
+        add_na (bool, optional): Defaults to True. TODO: add text.
 
     Raises:
         Exception: "Variable names cannot contain characters '[' or ']'"
 
     Returns:
-        Dict[str, Any]: TODO
+        Dict[str, Any]: returns a dictionary containing two keys: 'all_data' and 'sample_n'.
+            The 'all_data' is a pd.DataFrame with all the rows of 'sample' (including 'target', if supplied)
+            The'sample_n' is the number of rows in the first input DataFrame ('sample').
+
+    Examples:
+        ::
+
+            import pandas as pd
+            import balance.util
+
+            df = pd.DataFrame(
+                {"a": ["a1", "a2", "a1", "a1"], "b": ["b1", "b2", "b3", "b3"]}
+            )
+
+            print(balance.util._prepare_input_model_matrix(df, df))
+                # {'all_data':     a   b
+                # 0  a1  b1
+                # 1  a2  b2
+                # 2  a1  b3
+                # 3  a1  b3
+                # 0  a1  b1
+                # 1  a2  b2
+                # 2  a1  b3
+                # 3  a1  b3, 'sample_n': 4}
     """
     variables = choose_variables(sample, target, variables=variables)
 
@@ -630,9 +653,9 @@ def _prepare_input_model_matrix(
 
 
 def model_matrix(
-    sample,
-    target=None,
-    variables=None,
+    sample: Union[pd.DataFrame, Any],
+    target: Union[pd.DataFrame, Any, None] = None,
+    variables: Optional[List] = None,
     add_na: bool = True,
     return_type: str = "two",
     return_var_type: str = "dataframe",
@@ -647,9 +670,9 @@ def model_matrix(
     Can also create a custom model matrix if a formula is provided.
 
     Args:
-        sample (Sample): The Samples from which to create the model matrix
-        target (Sample, optional): See sample. Defaults to None.
-        variables (_type_, optional): the names of the variables to include (when 'None' then
+        sample (Union[pd.DataFrame, Any]): The Samples from which to create the model matrix. This can either be a DataFrame or a Sample object.
+        target (Union[pd.DataFrame, Any, None], optional): See sample. Defaults to None. This can either be a DataFrame or a Sample object.
+        variables (Optional[List]): the names of the variables to include (when 'None' then
             all joint variables to target and sample are used). Defaults to None.
         add_na (bool, optional): whether to call add_na_indicator on the data before constructing
             the matrix.If add_na = True, then the function add_na_indicator is applied,
