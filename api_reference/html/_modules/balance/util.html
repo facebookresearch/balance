@@ -610,9 +610,9 @@
 
 
 <span class="k">def</span> <span class="nf">_prepare_input_model_matrix</span><span class="p">(</span>
-    <span class="n">sample</span><span class="p">,</span>
-    <span class="n">target</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">sample</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">target</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">variables</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">add_na</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to model_matrix. Prepare and check input of sample and target:</span>
@@ -622,16 +622,39 @@
 <span class="sd">        - Add na indicator if required.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        sample (_type_): TODO</span>
-<span class="sd">        target (_type_, optional): TODO. Defaults to None.</span>
-<span class="sd">        variables (_type_, optional): TODO. Defaults to None.</span>
-<span class="sd">        add_na (bool, optional): TODO. Defaults to True.</span>
+<span class="sd">        sample (Union[pd.DataFrame, Any]): This can either be a DataFrame or a Sample object. TODO: add text.</span>
+<span class="sd">        target (Union[pd.DataFrame, Any, None], optional): This can either be a DataFrame or a Sample object.. Defaults to None.</span>
+<span class="sd">        variables (Optional[List], optional): Defaults to None. TODO: add text.</span>
+<span class="sd">        add_na (bool, optional): Defaults to True. TODO: add text.</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        Exception: &quot;Variable names cannot contain characters &#39;[&#39; or &#39;]&#39;&quot;</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Dict[str, Any]: TODO</span>
+<span class="sd">        Dict[str, Any]: returns a dictionary containing two keys: &#39;all_data&#39; and &#39;sample_n&#39;.</span>
+<span class="sd">            The &#39;all_data&#39; is a pd.DataFrame with all the rows of &#39;sample&#39; (including &#39;target&#39;, if supplied)</span>
+<span class="sd">            The&#39;sample_n&#39; is the number of rows in the first input DataFrame (&#39;sample&#39;).</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        ::</span>
+
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            import balance.util</span>
+
+<span class="sd">            df = pd.DataFrame(</span>
+<span class="sd">                {&quot;a&quot;: [&quot;a1&quot;, &quot;a2&quot;, &quot;a1&quot;, &quot;a1&quot;], &quot;b&quot;: [&quot;b1&quot;, &quot;b2&quot;, &quot;b3&quot;, &quot;b3&quot;]}</span>
+<span class="sd">            )</span>
+
+<span class="sd">            print(balance.util._prepare_input_model_matrix(df, df))</span>
+<span class="sd">                # {&#39;all_data&#39;:     a   b</span>
+<span class="sd">                # 0  a1  b1</span>
+<span class="sd">                # 1  a2  b2</span>
+<span class="sd">                # 2  a1  b3</span>
+<span class="sd">                # 3  a1  b3</span>
+<span class="sd">                # 0  a1  b1</span>
+<span class="sd">                # 1  a2  b2</span>
+<span class="sd">                # 2  a1  b3</span>
+<span class="sd">                # 3  a1  b3, &#39;sample_n&#39;: 4}</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">variables</span> <span class="o">=</span> <span class="n">choose_variables</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">)</span>
 
@@ -668,9 +691,9 @@
 
 
 <div class="viewcode-block" id="model_matrix"><a class="viewcode-back" href="../../balance.util.html#balance.util.model_matrix">[docs]</a><span class="k">def</span> <span class="nf">model_matrix</span><span class="p">(</span>
-    <span class="n">sample</span><span class="p">,</span>
-    <span class="n">target</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">sample</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">target</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">variables</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">add_na</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">return_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;two&quot;</span><span class="p">,</span>
     <span class="n">return_var_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;dataframe&quot;</span><span class="p">,</span>
@@ -685,9 +708,9 @@
 <span class="sd">    Can also create a custom model matrix if a formula is provided.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        sample (Sample): The Samples from which to create the model matrix</span>
-<span class="sd">        target (Sample, optional): See sample. Defaults to None.</span>
-<span class="sd">        variables (_type_, optional): the names of the variables to include (when &#39;None&#39; then</span>
+<span class="sd">        sample (Union[pd.DataFrame, Any]): The Samples from which to create the model matrix. This can either be a DataFrame or a Sample object.</span>
+<span class="sd">        target (Union[pd.DataFrame, Any, None], optional): See sample. Defaults to None. This can either be a DataFrame or a Sample object.</span>
+<span class="sd">        variables (Optional[List]): the names of the variables to include (when &#39;None&#39; then</span>
 <span class="sd">            all joint variables to target and sample are used). Defaults to None.</span>
 <span class="sd">        add_na (bool, optional): whether to call add_na_indicator on the data before constructing</span>
 <span class="sd">            the matrix.If add_na = True, then the function add_na_indicator is applied,</span>
