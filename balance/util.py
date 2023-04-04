@@ -121,8 +121,8 @@ def add_na_indicator(
 
     Args:
         df (pd.DataFrame): The input DataFrame
-        replace_val_obj (str, optional): The value to put insteasd of nulls for object columns. Defaults to "_NA".
-        replace_val_num (int, optional): The value to put insteasd of nulls for numeric columns. Defaults to 0.
+        replace_val_obj (str, optional): The value to put instead of nulls for object columns. Defaults to "_NA".
+        replace_val_num (int, optional): The value to put instead of nulls for numeric columns. Defaults to 0.
 
     Raises:
         Exception: Can't add NA indicator to DataFrame which contains columns which start with '_is_na_'
@@ -202,13 +202,13 @@ def formula_generator(variables, formula_type: str = "additive") -> str:
         Default is additive formula.
     Args:
         variables: list with names of variables (as strings) to combine into a formula
-        formula_type (str, optional): how to construct the formula. Currently only "additive" is supported.. Defaults to "additive".
+        formula_type (str, optional): how to construct the formula. Currently only "additive" is supported. Defaults to "additive".
 
     Raises:
-        Exception: "This formula type is not supported.'" "Please provide a string formula"tion_
+        Exception: "This formula type is not supported.'" "Please provide a string formula"
 
     Returns:
-        str: A string representing the fomula
+        str: A string representing the formula
 
     Examples:
         ::
@@ -382,12 +382,12 @@ class one_hot_encoding_greater_2:
                 f"[{level}]"
                 for level in levels[: self.reference] + levels[self.reference + 1 :]
             ]
-            contasts_mat = ContrastMatrix(contrasts, suffixes)
+            contrasts_mat = ContrastMatrix(contrasts, suffixes)
         else:
-            contasts_mat = ContrastMatrix(
+            contrasts_mat = ContrastMatrix(
                 np.eye(len(levels)), [f"[{level}]" for level in levels]
             )
-        return contasts_mat
+        return contrasts_mat
 
     def code_without_intercept(self, levels):
         return self.code_with_intercept(levels)
@@ -448,7 +448,7 @@ def process_formula(formula, variables: List, factor_variables=None):
 
     if factor_variables is not None:
         # We use one_hot_encoding_greater_2 for building the model matrix for factor_variables
-        # Refernece: https://patsy.readthedocs.io/en/latest/categorical-coding.html
+        # Reference: https://patsy.readthedocs.io/en/latest/categorical-coding.html
         for i, term_i in enumerate(desc.rhs_termlist):
             for j, factor_j in enumerate(term_i.factors):
                 if factor_j.code in factor_variables:
@@ -576,9 +576,10 @@ def _prepare_input_model_matrix(
     target: Union[pd.DataFrame, Any, None] = None,
     variables: Optional[List] = None,
     add_na: bool = True,
+    fix_columns_names: bool = True,
 ) -> Dict[str, Any]:
     """Helper function to model_matrix. Prepare and check input of sample and target:
-        - Choose joint variables to sample and target (or by given vairables)
+        - Choose joint variables to sample and target (or by given variables)
         - Extract sample and target dataframes
         - Concat dataframes together
         - Add na indicator if required.
@@ -588,6 +589,7 @@ def _prepare_input_model_matrix(
         target (Union[pd.DataFrame, Any, None], optional): This can either be a DataFrame or a Sample object.. Defaults to None.
         variables (Optional[List], optional): Defaults to None. TODO: add text.
         add_na (bool, optional): Defaults to True. TODO: add text.
+        fix_columns_names (bool, optional): Defaults to True. If to fix the column names of the DataFrame by changing special characters to '_'.
 
     Raises:
         Exception: "Variable names cannot contain characters '[' or ']'"
@@ -617,6 +619,23 @@ def _prepare_input_model_matrix(
                 # 1  a2  b2
                 # 2  a1  b3
                 # 3  a1  b3, 'sample_n': 4}
+
+
+            # It automatically fixes the column names for you from special characters
+            df = pd.DataFrame(
+                {"a": ["a1", "a2", "a1", "a1"], "b./ * b": ["b1", "b2", "b3", "b3"]}
+            )
+
+            print(balance.util._prepare_input_model_matrix(df, df))
+                # {'all_data':     a b_____b
+                # 0  a1      b1
+                # 1  a2      b2
+                # 2  a1      b3
+                # 3  a1      b3
+                # 0  a1      b1
+                # 1  a2      b2
+                # 2  a1      b3
+                # 3  a1      b3, 'sample_n': 4}
     """
     variables = choose_variables(sample, target, variables=variables)
 
@@ -648,6 +667,10 @@ def _prepare_input_model_matrix(
         all_data = add_na_indicator(all_data)
     else:
         logger.warning("Dropping all rows with NAs")
+
+    if fix_columns_names:
+        all_data.columns = all_data.columns.str.replace(r"[^\w]", "_", regex=True)
+        all_data = _make_df_column_names_unique(all_data)
 
     return {"all_data": all_data, "sample_n": sample_n}
 
@@ -687,12 +710,12 @@ def model_matrix(
         formula (Optional[List[str]], optional): according to what formula to construct the matrix. If no formula is provided an
             additive formula is applied. This may be a string or a list of strings
             representing different parts of the formula that will be concated together.
-            Default is None, which will create an additive formula from the aviliable variables. Defaults to None.
-        penalty_factor (Optional[List[float]], optional): the penalty used in the glment function in ipw. The penalty
+            Default is None, which will create an additive formula from the available variables. Defaults to None.
+        penalty_factor (Optional[List[float]], optional): the penalty used in the glmnet function in ipw. The penalty
             should have the same length as the formula list. If not provided,
             assume the same penalty for all variables. Defaults to None.
         one_hot_encoding (bool, optional): whether to encode all factor variables in the model matrix with
-            one_hot_encoding_greater_2. This is recomended in case of using
+            one_hot_encoding_greater_2. This is recommended in case of using
             LASSO on the data (Default: False).
             one_hot_encoding_greater_2 creates one-hot-encoding for all
             categorical variables with more than 2 categories (i.e. the
@@ -816,7 +839,7 @@ def model_matrix(
     all_data = input_data["all_data"]
     sample_n = input_data["sample_n"]
 
-    # Arange formula
+    # Arrange formula
     if formula is None:
         # if no formula is provided, we create an additive formula from aviliable columns
         formula = formula_generator(list(all_data.columns), formula_type="additive")
@@ -825,14 +848,14 @@ def model_matrix(
     logger.debug(f"The formula used to build the model matrix: {formula}")
     # If formula is given we rely on patsy formula checker to check it.
 
-    # Arange penalty factor
+    # Arrange penalty factor
     if penalty_factor is None:
         penalty_factor = [1] * len(formula)
     assert len(formula) == len(
         penalty_factor
     ), "penalty factor and formula must have the same length"
 
-    # Arange factor variables
+    # Arrange factor variables
     if one_hot_encoding:
         factor_variables = list(
             all_data.select_dtypes(["category", "string", "boolean", "object"]).columns
@@ -904,7 +927,7 @@ def qcut(s, q, duplicates: str = "drop", **kwargs):
     Args:
         s (_type_): 1d ndarray or Series.
         q (_type_): Number of quantiles (int or float).
-        duplicates (str, optional): whther to drop non unique bin edges or raise error ("raise" or "drop").
+        duplicates (str, optional): whether to drop non unique bin edges or raise error ("raise" or "drop").
             Defaults to "drop".
 
     Returns:
@@ -921,7 +944,7 @@ def qcut(s, q, duplicates: str = "drop", **kwargs):
 def quantize(
     df: Union[pd.DataFrame, pd.Series], q: int = 10, variables=None
 ) -> pd.DataFrame:
-    """Cut numeric variables of a DataFrame into quantile buckets
+    """Cut numeric variables of a DataFrame into quantiles buckets
 
     Args:
         df (Union[pd.DataFrame, pd.Series]): a DataFrame to transform
@@ -1803,3 +1826,71 @@ def _warn_of_df_dtypes_change(
         logger.warning("\n" + str(original_df_dtypes[dtypes_that_changed]))
         logger.warning(f"The (new) dtypes saved in {original_str} (after the change):")
         logger.warning("\n" + str(new_df_dtypes[dtypes_that_changed]))
+
+
+def _make_df_column_names_unique(df: pd.DataFrame) -> pd.DataFrame:
+    """Make DataFrame column names unique by adding suffixes to duplicates.
+
+    This function iterates through the column names of the input DataFrame
+    and appends a suffix to duplicate column names to make them distinct.
+    The suffix is an underscore followed by an integer value representing
+    the number of occurrences of the column name.
+
+    Args:
+        df (pd.DataFrame): The input DataFrame with potentially duplicate
+            column names.
+
+    Returns:
+        pd.DataFrame: A DataFrame with unique column names where any
+            duplicate column names have been renamed with a suffix.
+
+    Examples:
+        ::
+            import pandas as pd
+
+            # Sample DataFrame with duplicate column names
+            data = {
+                "A": [1, 2, 3],
+                "B": [4, 5, 6],
+                "A2": [7, 8, 9],
+                "C": [10, 11, 12],
+            }
+
+            df1 = pd.DataFrame(data)
+            df1.columns = ["A", "B", "A", "C"]
+
+            _make_df_column_names_unique(df1).to_dict()
+            # {'A': {0: 1, 1: 2, 2: 3},
+            #  'B': {0: 4, 1: 5, 2: 6},
+            #  'A_1': {0: 7, 1: 8, 2: 9},
+            #  'C': {0: 10, 1: 11, 2: 12}}
+    """
+    # Check if all column names are unique
+    unique_columns = set(df.columns)
+    if len(unique_columns) == len(df.columns):
+        return df
+
+    # Else: fix duplicate column names
+    logger.warning(
+        """Duplicate column names exists in the DataFrame.
+                    A suffix will be added to them but their order might change from one iteration to another.
+                    To avoid issues, make sure to change your original column names to be unique (and without special characters)."""
+    )
+    col_counts = {}
+    new_columns = []
+
+    for col in df.columns:
+        if col in col_counts:
+            col_counts[col] += 1
+            new_col_name = f"{col}_{col_counts[col]}"
+            logger.warning(
+                f"Column {col} already exists in the DataFrame, renaming it to be {new_col_name}"
+            )
+        else:
+            col_counts[col] = 0
+            new_col_name = col
+        new_columns.append(new_col_name)
+
+    df.columns = new_columns
+
+    return df

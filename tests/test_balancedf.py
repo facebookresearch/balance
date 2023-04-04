@@ -93,6 +93,22 @@ c = s1.covars()
 
 w = s1.weights()
 
+s1_bad_columns = Sample.from_frame(
+    pd.DataFrame(
+        {
+            "a$": (1, 2, 3, 1),
+            "a%": (-42, 8, 2, -42),
+            "o*": (7, 8, 9, 10),
+            "c@": ("x", "y", "z", "v"),
+            "id": (1, 2, 3, 4),
+            "w": (0.5, 2, 1, 1),
+        }
+    ),
+    id_column="id",
+    weight_column="w",
+    outcome_columns="o*",
+)
+
 
 class TestBalanceOutcomesDF(BalanceTestCase):
     def test_Sample_outcomes(self):
@@ -656,6 +672,19 @@ class TestBalanceDF_mean(BalanceTestCase):
                 "c[x]": {"self": 0.111, "target": 0.143, "unadjusted": 0.111},
                 "c[y]": {"self": 0.444, "target": 0.286, "unadjusted": 0.444},
                 "c[z]": {"self": 0.222, "target": 0.571, "unadjusted": 0.222},
+            },
+        )
+
+        # test it works when we have columns with special characters
+        self.assertEqual(
+            s1_bad_columns.covars().mean().round(2).to_dict(),
+            {
+                "a_": {"self": 1.89},
+                "a__1": {"self": -10.0},
+                "c_[v]": {"self": 0.22},
+                "c_[x]": {"self": 0.11},
+                "c_[y]": {"self": 0.44},
+                "c_[z]": {"self": 0.22},
             },
         )
 

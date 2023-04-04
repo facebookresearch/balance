@@ -213,7 +213,7 @@ class TestUtil(
             "This formula type is not supported",
             balance_util.formula_generator,
             ["a", "b"],
-            "intercation",
+            "interaction",
         )
 
     def test_dot_expansion(self):
@@ -452,6 +452,63 @@ class TestUtil(
             balance_util.model_matrix,
             pd.DataFrame(),
         )
+
+        # Tests on a single DataFrame with bad column names
+        s_df_bad_col_names = pd.DataFrame(
+            {
+                "a * / |a": (0, 1, 2),
+                "b  b": (0, None, 2),
+                "c._$c": ("a", "b", "a"),
+                "id": (1, 2, 3),
+            }
+        )
+        r = balance_util.model_matrix(s_df_bad_col_names)
+        exp = ["_is_na_b__b[T.True]", "a______a", "b__b", "c___c[a]", "c___c[b]", "id"]
+        self.assertEqual(r["model_matrix_columns_names"], exp)
+        exp = {
+            "_is_na_b__b[T.True]": {0: 0.0, 1: 1.0, 2: 0.0},
+            "a______a": {0: 0.0, 1: 1.0, 2: 2.0},
+            "b__b": {0: 0.0, 1: 0.0, 2: 2.0},
+            "c___c[a]": {0: 1.0, 1: 0.0, 2: 1.0},
+            "c___c[b]": {0: 0.0, 1: 1.0, 2: 0.0},
+            "id": {0: 1.0, 1: 2.0, 2: 3.0},
+        }
+        self.assertEqual(r["sample"].to_dict(), exp)
+
+        # Tests that we can handle multiple columns what would be turned to have the same column name
+        s_df_bad_col_names = pd.DataFrame(
+            {
+                "b1 ": (0, 1, 2),
+                "b1*": (0, None, 2000),
+                "b1_": (3, 30, 300),
+                "b1$": ["a", "b", "c"],
+                "id": (1, 2, 3),
+            }
+        )
+        r = balance_util.model_matrix(s_df_bad_col_names)
+        exp = [
+            "_is_na_b1_[T.True]",
+            "b1_",
+            "b1__1",
+            "b1__2",
+            "b1__3[a]",
+            "b1__3[b]",
+            "b1__3[c]",
+            "id",
+        ]
+        self.assertEqual(r["model_matrix_columns_names"], exp)
+        # r["sample"].to_dict()
+        exp = {
+            "_is_na_b1_[T.True]": {0: 0.0, 1: 1.0, 2: 0.0},
+            "b1_": {0: 0.0, 1: 1.0, 2: 2.0},
+            "b1__1": {0: 0.0, 1: 0.0, 2: 2000.0},
+            "b1__2": {0: 3.0, 1: 30.0, 2: 300.0},
+            "b1__3[a]": {0: 1.0, 1: 0.0, 2: 0.0},
+            "b1__3[b]": {0: 0.0, 1: 1.0, 2: 0.0},
+            "b1__3[c]": {0: 0.0, 1: 0.0, 2: 1.0},
+            "id": {0: 1.0, 1: 2.0, 2: 3.0},
+        }
+        self.assertEqual(r["sample"].to_dict(), exp)
 
     def test_model_matrix_arguments(self):
         s_df = pd.DataFrame(
@@ -739,7 +796,7 @@ class TestUtil(
         for i, j in zip(r, e):
             numpy.testing.assert_array_equal(i, j)
 
-        # Single arraylikes
+        # Single arraylike
         d = np.array((0, 1, 2, None))
         numpy.testing.assert_array_equal(rm_mutual_nas(d), (0, 1, 2))
         d = np.array((0, 1, 2, np.nan))
@@ -1281,4 +1338,28 @@ class TestUtil(
             balance_util._warn_of_df_dtypes_change,
             df.dtypes,
             new_df.dtypes,
+        )
+
+    def test__make_df_column_names_unique(self):
+        # Sample DataFrame with duplicate column names
+        data = {
+            "A": [1, 2, 3],
+            "B": [4, 5, 6],
+            "A2": [7, 8, 9],
+            "C": [10, 11, 12],
+        }
+
+        df1 = pd.DataFrame(data)
+        df1.columns = ["A", "B", "A", "A"]
+
+        # TODO: understand in the future why the names here appear to be consistent while when using the function in
+        # `model_matrix` it does not appear to work.
+        self.assertEqual(
+            balance_util._make_df_column_names_unique(df1).to_dict(),
+            {
+                "A": {0: 1, 1: 2, 2: 3},
+                "B": {0: 4, 1: 5, 2: 6},
+                "A_1": {0: 7, 1: 8, 2: 9},
+                "A_2": {0: 10, 1: 11, 2: 12},
+            },
         )
