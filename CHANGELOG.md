@@ -1,6 +1,8 @@
 0.6.0 (The future)
 ==================
 ### New Features
+- Add the `var_of_weighted_mean` function (from balance.stats_and_plots.weighted_stats import var_of_weighted_mean):
+    Computes the variance of the weighted average (pi estimator for ratio-mean) of a list of values and their corresponding weights.
 - Improve choose_variables to control the order of the returned variables
     - The return type is now a list (and not a Tuple)
     - The order of the returned list is based on the variables argument. If it is not supplied, it is based on column names in the DataFrames. The df_for_var_order arg controls which df to use.

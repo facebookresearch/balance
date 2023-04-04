@@ -318,6 +318,22 @@ class TestBalance_weighted_stats(
             pd.Series((-1 * 1 + 2 * 2 + 1 * 3 + 2 * 4) / (1 + 2 + 3 + 4)),
         )
 
+    def var_of_weighted_mean(self):
+        from balance.stats_and_plots.weighted_stats import var_of_weighted_mean
+
+        # Test no weights assigned
+        #  In R: sum((1:4 - mean(1:4))^2 / 4) / (4)
+        #  [1] 0.3125
+        self.assertEqual(
+            var_of_weighted_mean(pd.Series((1, 2, 3, 4))), pd.Series(0.3125)
+        )
+
+        #  For a reproducible R example, see: https://gist.github.com/talgalili/b92cd8cdcbfc287e331a8f27db265c00
+        self.assertEqual(
+            var_of_weighted_mean(pd.Series((1, 2, 3, 4)), pd.Series((1, 2, 3, 4))),
+            pd.Series(0.24),
+        )
+
     def test_weighted_var(self):
         from balance.stats_and_plots.weighted_stats import weighted_var
 

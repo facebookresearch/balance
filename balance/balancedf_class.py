@@ -140,6 +140,7 @@ class BalanceDF:
                 First item is self, and it just returns it without using method on it.
                 The other items are based on the objects in _links. E.g.: it can be 'target'
                 and 'unadjusted', and it will return them after running the same BalanceDF child creation method on them.
+
         Examples:
             ::
                 from balance.sample_class import Sample

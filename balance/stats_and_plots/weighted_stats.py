@@ -143,9 +143,69 @@ def weighted_mean(
         If inf_rm=False then:
             If v has Inf then the output will be Inf.
             If w has Inf then the output will be np.nan.
+
+    Examples:
+        ::
+            from balance.stats_and_plots.weighted_stats import weighted_mean
+
+            weighted_mean(pd.Series((1, 2, 3, 4)))
+                # 0    2.5
+                # dtype: float64
+
+            weighted_mean(pd.Series((1, 2, 3, 4)), pd.Series((1, 2, 3, 4)))
+                # 0    3.0
+                # dtype: float64
     """
     v, w = _prepare_weighted_stat_args(v, w, inf_rm)
     return v.multiply(w, axis="index").sum() / w.sum()
+
+
+def var_of_weighted_mean(
+    v: Union[List, pd.Series, pd.DataFrame, np.matrix],
+    w: Optional[Union[List, pd.Series, np.ndarray]] = None,
+    inf_rm: bool = False,
+) -> pd.Series:
+    """
+    Computes the variance of the weighted average (pi estimator for ratio-mean) of a list of values and their corresponding weights.
+
+    If no weights are supplied, it assumes that all values have equal weights of 1.0.
+
+    See: https://en.wikipedia.org/wiki/Weighted_arithmetic_mean#Variance_of_the_weighted_mean_(%CF%80-estimator_for_ratio-mean)
+
+    Uses :func:`_prepare_weighted_stat_args`.
+
+    v (Union[List, pd.Series, pd.DataFrame, np.matrix]): A series of values. If v is a DataFrame, the weighted variance will be calculated for each column using the same set of weights from `w`.
+    w (Optional[Union[List, pd.Series, np.ndarray]]): A series of weights to be used with `v`. If None, all values will be weighted equally.
+    inf_rm (bool, optional): Whether to remove infinite (from weights or values) from the computation. Defaults to False.
+
+    Returns:
+        pd.Series: The variance of the weighted mean. If `v` is a DataFrame with several columns, the pd.Series will have a value for the weighted variance of each column. The values are of data type `np.float64`.
+        If `inf_rm` is False:
+            If `v` has infinite values, the output will be `Inf`.
+            If `w` has infinite values, the output will be `np.nan`.
+
+
+    Examples:
+        ::
+            from balance.stats_and_plots.weighted_stats import var_of_weighted_mean
+
+            #  In R: sum((1:4 - mean(1:4))^2 / 4) / (4)
+            #  [1] 0.3125
+            var_of_weighted_mean(pd.Series((1, 2, 3, 4)))
+                # pd.Series(0.3125)
+
+            #  For a reproducible R example, see: https://gist.github.com/talgalili/b92cd8cdcbfc287e331a8f27db265c00
+            var_of_weighted_mean(pd.Series((1, 2, 3, 4)), pd.Series((1, 2, 3, 4)))
+                # pd.Series(0.24)
+    """
+    v, w = _prepare_weighted_stat_args(v, w, inf_rm)
+    weighed_mean_of_v = weighted_mean(v, w, inf_rm)  # This is a pd.DataFrame
+    # NOTE: the multiply needs to be called from the pd.DataFrame. Unfortunately this makes the code less readable.
+    sum_of_squared_weighted_diffs = (
+        ((v - weighed_mean_of_v).multiply(w, axis="index")).pow(2).sum()
+    )
+    squared_sum_of_w = w.sum() ** 2  # This is a pd.series
+    return sum_of_squared_weighted_diffs / squared_sum_of_w
 
 
 def weighted_var(
