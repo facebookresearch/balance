@@ -178,6 +178,7 @@
 <span class="sd">                First item is self, and it just returns it without using method on it.</span>
 <span class="sd">                The other items are based on the objects in _links. E.g.: it can be &#39;target&#39;</span>
 <span class="sd">                and &#39;unadjusted&#39;, and it will return them after running the same BalanceDF child creation method on them.</span>
+
 <span class="sd">        Examples:</span>
 <span class="sd">            ::</span>
 <span class="sd">                from balance.sample_class import Sample</span>
@@ -468,7 +469,7 @@
 
     <span class="k">def</span> <span class="nf">_descriptive_stats</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
-        <span class="n">stat</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">,</span> <span class="s2">&quot;...&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
+        <span class="n">stat</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">,</span> <span class="s2">&quot;var_of_mean&quot;</span><span class="p">,</span> <span class="s2">&quot;...&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
         <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">numeric_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">add_na</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -479,7 +480,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (BalanceDF): An object to run stats on.</span>
-<span class="sd">            stat (Literal[&quot;mean&quot;, &quot;std&quot;, &quot;...&quot;], optional): Defaults to &quot;mean&quot;.</span>
+<span class="sd">            stat (Literal[&quot;mean&quot;, &quot;std&quot;, &quot;var_of_mean&quot;, &quot;...&quot;], optional): Defaults to &quot;mean&quot;.</span>
 <span class="sd">            weighted (bool, optional): Defaults to True.</span>
 <span class="sd">            numeric_only (bool, optional): Defaults to False.</span>
 <span class="sd">            add_na (bool, optional): Defaults to True.</span>
@@ -590,7 +591,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            self (BalanceDF): Object (used in the plots as &quot;sample&quot; or &quot;self&quot;)</span>
 <span class="sd">            on_linked_samples (bool, optional): Determines if the linked samples should be included in the plot.</span>
-<span class="sd">                Defaluts to True.</span>
+<span class="sd">                Defaults to True.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:</span>
@@ -796,6 +797,78 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_descriptive_stats</span><span class="p">(</span><span class="s2">&quot;std&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
+<div class="viewcode-block" id="BalanceDF.var_of_mean"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.var_of_mean">[docs]</a>    <span class="k">def</span> <span class="nf">var_of_mean</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span> <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculates a variance of the weighted mean on the df of the BalanceDF object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (BalanceDF): Object.</span>
+<span class="sd">            on_linked_samples (bool, optional): Should the calculation be on self AND the linked samples objects? Defaults to True.</span>
+<span class="sd">                If True, then uses :func:`_call_on_linked` with method &quot;var_of_mean&quot;.</span>
+<span class="sd">                If False, then uses :func:`_descriptive_stats` with method &quot;var_of_mean&quot;.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame:</span>
+<span class="sd">                With row per object: self if on_linked_samples=False, and self and others (e.g.: target and unadjusted) if True.</span>
+<span class="sd">                Columns are for each of the columns in the relevant df (after applying :func:`model_matrix`)</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            ::</span>
+<span class="sd">                import pandas as pd</span>
+<span class="sd">                from balance.sample_class import Sample</span>
+<span class="sd">                from balance.stats_and_plots.weighted_stats import var_of_weighted_mean</span>
+
+<span class="sd">                var_of_weighted_mean(pd.Series((1, 2, 3, 1)), pd.Series((0.5, 2, 1, 1)))</span>
+<span class="sd">                    # 0    0.112178</span>
+<span class="sd">                    # dtype: float64</span>
+<span class="sd">                # This shows we got the first cell of &#39;a&#39; as expected.</span>
+
+<span class="sd">                s1 = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;a&quot;: (1, 2, 3, 1),</span>
+<span class="sd">                            &quot;b&quot;: (-42, 8, 2, -42),</span>
+<span class="sd">                            &quot;o&quot;: (7, 8, 9, 10),</span>
+<span class="sd">                            &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;, &quot;v&quot;),</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3, 4),</span>
+<span class="sd">                            &quot;w&quot;: (0.5, 2, 1, 1),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                    outcome_columns=&quot;o&quot;,</span>
+<span class="sd">                )</span>
+
+<span class="sd">                s2 = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;a&quot;: (1, 2, 3),</span>
+<span class="sd">                            &quot;b&quot;: (4, 6, 8),</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3),</span>
+<span class="sd">                            &quot;w&quot;: (0.5, 1, 2),</span>
+<span class="sd">                            &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                )</span>
+
+<span class="sd">                s3 = s1.set_target(s2)</span>
+<span class="sd">                s3_null = s3.adjust(method=&quot;null&quot;)</span>
+
+<span class="sd">                print(s3_null.covars().var_of_mean())</span>
+<span class="sd">                    #                    a           b      c[v]      c[x]      c[y]      c[z]</span>
+<span class="sd">                    # source</span>
+<span class="sd">                    # self        0.112178  134.320988  0.042676  0.013413  0.082914  0.042676</span>
+<span class="sd">                    # target      0.163265    0.653061       NaN  0.023324  0.069971  0.093294</span>
+<span class="sd">                    # unadjusted  0.112178  134.320988  0.042676  0.013413  0.082914  0.042676</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">on_linked_samples</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_on_linked</span><span class="p">(</span><span class="s2">&quot;var_of_mean&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_descriptive_stats</span><span class="p">(</span><span class="s2">&quot;var_of_mean&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
     <span class="c1"># NOTE: Summary could return also an str in case it is overridden in other children&#39;s methods.</span>
 <div class="viewcode-block" id="BalanceDF.summary"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.summary">[docs]</a>    <span class="k">def</span> <span class="nf">summary</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span> <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
@@ -812,7 +885,7 @@
 <span class="sd">            Union[pd.DataFrame, str]: :func:`BalanceDF.mean`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># TODO model matrix means to include categorical columns, fix model_matrix to accept DataFrame</span>
-        <span class="c1"># TODO: inlcude min/max/std/etc. show min/mean/max if there&#39;s a single column, just means if multiple (covars and outcomes)</span>
+        <span class="c1"># TODO: include min/max/std/etc. show min/mean/max if there&#39;s a single column, just means if multiple (covars and outcomes)</span>
         <span class="c1">#       Doing so would either require to implement a min/max etc methods in BalanceDF and use them with _call_on_linked.</span>
         <span class="c1">#       Or, update _call_on_linked to deal with non functions, get &#39;df&#39; from it, and apply the needed functions on it.</span>
         <span class="c1"># TODO add outcome variance ratio</span>
@@ -828,14 +901,14 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Tuple[pd.DataFrame, Optional[np.ndarray]]:</span>
-<span class="sd">                A pd.DataFrame output from running :func:`model_metrix`, and</span>
+<span class="sd">                A pd.DataFrame output from running :func:`model_matrix`, and</span>
 <span class="sd">                A np.ndarray of weights from :func:`_weights`, or just None (if there are no weights).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># get df values (like in BalanceDF._descriptive_stats)</span>
-        <span class="n">df_model_metrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_matrix</span><span class="p">()</span>
+        <span class="n">df_model_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_matrix</span><span class="p">()</span>
         <span class="c1"># get weights (like in BalanceDF._descriptive_stats)</span>
         <span class="n">weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="o">.</span><span class="n">values</span> <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
-        <span class="k">return</span> <span class="n">df_model_metrix</span><span class="p">,</span> <span class="n">weights</span>
+        <span class="k">return</span> <span class="n">df_model_matrix</span><span class="p">,</span> <span class="n">weights</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_asmd_BalanceDF</span><span class="p">(</span>
@@ -913,7 +986,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (BalanceDF): Object from sample (with/without adjustment, but it needs some target)</span>
-<span class="sd">            on_linked_samples (bool, optional): If to comapre also to linked sample objects (specifically: unadjusted), or not. Defaults to True.</span>
+<span class="sd">            on_linked_samples (bool, optional): If to compare also to linked sample objects (specifically: unadjusted), or not. Defaults to True.</span>
 <span class="sd">            target (Optional[&quot;BalanceDF&quot;], optional): A BalanceDF (of the same type as the one used in self) to compare against.</span>
 <span class="sd">                If None then it looks for a target in the self linked objects. Defaults to None.</span>
 <span class="sd">            aggregate_by_main_covar (bool, optional): Defaults to False.</span>
@@ -1183,7 +1256,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A factory function to create BalanceOutcomesDF</span>
 
 <span class="sd">        This is used through :func:`Sample.outcomes`.</span>
-<span class="sd">        It initates a BalanceOutcomesDF object by passing the relevant arguments to</span>
+<span class="sd">        It initiates a BalanceOutcomesDF object by passing the relevant arguments to</span>
 <span class="sd">        :func:`BalanceDF.__init__`.</span>
 
 <span class="sd">        Args:</span>
@@ -1245,7 +1318,7 @@
 <span class="sd">                s_o.outcomes().relative_response_rates(target = True)</span>
 <span class="sd">                # None</span>
 
-<span class="sd">                # compared with a larget target</span>
+<span class="sd">                # compared with a larger target</span>
 
 <span class="sd">                t_o = Sample.from_frame(</span>
 <span class="sd">                    pd.DataFrame(</span>
@@ -1296,7 +1369,7 @@
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="BalanceOutcomesDF.target_response_rates"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceOutcomesDF.target_response_rates">[docs]</a>    <span class="k">def</span> <span class="nf">target_response_rates</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceOutcomesDF&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Caclulates relative_response_rates for the target in a Sample object.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculates relative_response_rates for the target in a Sample object.</span>
 
 <span class="sd">        See :func:`general_stats.relative_response_rates`.</span>
 
@@ -1360,7 +1433,7 @@
 <span class="sd">            on_linked_samples (Optional[bool]): Ignored. Only here since summary overrides BalanceDF.summary.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            str: A printable string, with mean of outcome variables and reponse rates.</span>
+<span class="sd">            str: A printable string, with mean of outcome variables and response rates.</span>
 
 <span class="sd">        Examples:</span>
 <span class="sd">            ::</span>
@@ -1469,7 +1542,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            self (BalanceOutcomesDF): a BalanceOutcomesDF object, with a set of variables.</span>
 <span class="sd">            on_linked_samples (bool, optional): Determines if the linked samples should be included in the plot.</span>
-<span class="sd">                Defaluts to True.</span>
+<span class="sd">                Defaults to True.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:</span>
@@ -1592,7 +1665,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            self (BalanceWeightsDF): a BalanceOutcomesDF object, with a set of variables.</span>
 <span class="sd">            on_linked_samples (bool, optional): Determines if the linked samples should be included in the plot.</span>
-<span class="sd">                Defaluts to True.</span>
+<span class="sd">                Defaults to True.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:</span>

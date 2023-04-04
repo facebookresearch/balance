@@ -181,9 +181,69 @@
 <span class="sd">        If inf_rm=False then:</span>
 <span class="sd">            If v has Inf then the output will be Inf.</span>
 <span class="sd">            If w has Inf then the output will be np.nan.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        ::</span>
+<span class="sd">            from balance.stats_and_plots.weighted_stats import weighted_mean</span>
+
+<span class="sd">            weighted_mean(pd.Series((1, 2, 3, 4)))</span>
+<span class="sd">                # 0    2.5</span>
+<span class="sd">                # dtype: float64</span>
+
+<span class="sd">            weighted_mean(pd.Series((1, 2, 3, 4)), pd.Series((1, 2, 3, 4)))</span>
+<span class="sd">                # 0    3.0</span>
+<span class="sd">                # dtype: float64</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">v</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">_prepare_weighted_stat_args</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">inf_rm</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="s2">&quot;index&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">w</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="var_of_weighted_mean"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.var_of_weighted_mean">[docs]</a><span class="k">def</span> <span class="nf">var_of_weighted_mean</span><span class="p">(</span>
+    <span class="n">v</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">],</span>
+    <span class="n">w</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">inf_rm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes the variance of the weighted average (pi estimator for ratio-mean) of a list of values and their corresponding weights.</span>
+
+<span class="sd">    If no weights are supplied, it assumes that all values have equal weights of 1.0.</span>
+
+<span class="sd">    See: https://en.wikipedia.org/wiki/Weighted_arithmetic_mean#Variance_of_the_weighted_mean_(%CF%80-estimator_for_ratio-mean)</span>
+
+<span class="sd">    Uses :func:`_prepare_weighted_stat_args`.</span>
+
+<span class="sd">    v (Union[List, pd.Series, pd.DataFrame, np.matrix]): A series of values. If v is a DataFrame, the weighted variance will be calculated for each column using the same set of weights from `w`.</span>
+<span class="sd">    w (Optional[Union[List, pd.Series, np.ndarray]]): A series of weights to be used with `v`. If None, all values will be weighted equally.</span>
+<span class="sd">    inf_rm (bool, optional): Whether to remove infinite (from weights or values) from the computation. Defaults to False.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.Series: The variance of the weighted mean. If `v` is a DataFrame with several columns, the pd.Series will have a value for the weighted variance of each column. The values are of data type `np.float64`.</span>
+<span class="sd">        If `inf_rm` is False:</span>
+<span class="sd">            If `v` has infinite values, the output will be `Inf`.</span>
+<span class="sd">            If `w` has infinite values, the output will be `np.nan`.</span>
+
+
+<span class="sd">    Examples:</span>
+<span class="sd">        ::</span>
+<span class="sd">            from balance.stats_and_plots.weighted_stats import var_of_weighted_mean</span>
+
+<span class="sd">            #  In R: sum((1:4 - mean(1:4))^2 / 4) / (4)</span>
+<span class="sd">            #  [1] 0.3125</span>
+<span class="sd">            var_of_weighted_mean(pd.Series((1, 2, 3, 4)))</span>
+<span class="sd">                # pd.Series(0.3125)</span>
+
+<span class="sd">            #  For a reproducible R example, see: https://gist.github.com/talgalili/b92cd8cdcbfc287e331a8f27db265c00</span>
+<span class="sd">            var_of_weighted_mean(pd.Series((1, 2, 3, 4)), pd.Series((1, 2, 3, 4)))</span>
+<span class="sd">                # pd.Series(0.24)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">v</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">_prepare_weighted_stat_args</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">inf_rm</span><span class="p">)</span>
+    <span class="n">weighed_mean_of_v</span> <span class="o">=</span> <span class="n">weighted_mean</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">inf_rm</span><span class="p">)</span>  <span class="c1"># This is a pd.DataFrame</span>
+    <span class="c1"># NOTE: the multiply needs to be called from the pd.DataFrame. Unfortunately this makes the code less readable.</span>
+    <span class="n">sum_of_squared_weighted_diffs</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">((</span><span class="n">v</span> <span class="o">-</span> <span class="n">weighed_mean_of_v</span><span class="p">)</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="s2">&quot;index&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="p">)</span>
+    <span class="n">squared_sum_of_w</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">**</span> <span class="mi">2</span>  <span class="c1"># This is a pd.series</span>
+    <span class="k">return</span> <span class="n">sum_of_squared_weighted_diffs</span> <span class="o">/</span> <span class="n">squared_sum_of_w</span></div>
 
 
 <div class="viewcode-block" id="weighted_var"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.weighted_var">[docs]</a><span class="k">def</span> <span class="nf">weighted_var</span><span class="p">(</span>
@@ -320,7 +380,7 @@
         <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="kc">None</span><span class="p">,</span>
     <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">stat</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">,</span> <span class="s2">&quot;...&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
+    <span class="n">stat</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">,</span> <span class="s2">&quot;var_of_mean&quot;</span><span class="p">,</span> <span class="s2">&quot;...&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
     <span class="c1"># relevant only if stat is None</span>
     <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="c1"># relevant only if we have non-numeric columns and we want to use model_matrix on them</span>
@@ -336,9 +396,10 @@
 <span class="sd">    Args:</span>
 <span class="sd">        df (pd.DataFrame): Some DataFrame to get stats (mean, std, etc.) for.</span>
 <span class="sd">        weights (Union[ List, pd.Series, np.ndarray, ], optional): Weights to apply for the computation. Defaults to None.</span>
-<span class="sd">        stat (Literal[&quot;mean&quot;, &quot;std&quot;, ...], optional): Which statistic to calculate on the data.</span>
+<span class="sd">        stat (Literal[&quot;mean&quot;, &quot;std&quot;, &quot;var_of_mean&quot;, ...], optional): Which statistic to calculate on the data.</span>
 <span class="sd">            If mean - uses :func:`weighted_mean` (with inf_rm=True)</span>
 <span class="sd">            If std - uses :func:`weighted_sd` (with inf_rm=True)</span>
+<span class="sd">            If var_of_mean - uses :func:`var_of_weighted_mean` (with inf_rm=True)</span>
 <span class="sd">            If something else - tries to use :func:`statsmodels.stats.weightstats.DescrStatsW`.</span>
 <span class="sd">                This supports stat such as: std_mean, sum_weights, nobs, etc. See function documentation to see more.</span>
 <span class="sd">                (while removing mutual nan using :func:`rm_mutual_nas`)</span>
@@ -374,6 +435,10 @@
 <span class="sd">                # 0    2.5</span>
 <span class="sd">                # dtype: float64</span>
 
+<span class="sd">            print(descriptive_stats(pd.DataFrame(x), stat=&quot;var_of_mean&quot;))</span>
+<span class="sd">                #         0</span>
+<span class="sd">                # 0  0.3125</span>
+
 <span class="sd">            print(descriptive_stats(pd.DataFrame(x), stat=&quot;std&quot;))</span>
 <span class="sd">            print(weighted_sd(x))</span>
 <span class="sd">            x2 = pd.Series(x)</span>
@@ -402,12 +467,15 @@
 <span class="sd">            print(descriptive_stats(pd.DataFrame(x), w, stat=&quot;mean&quot;))</span>
 <span class="sd">            print(descriptive_stats(pd.DataFrame(x), w, stat=&quot;std&quot;))</span>
 <span class="sd">            print(descriptive_stats(pd.DataFrame(x), w, stat=&quot;std_mean&quot;))</span>
+<span class="sd">            print(descriptive_stats(pd.DataFrame(x), w, stat=&quot;var_of_mean&quot;))</span>
 <span class="sd">                #      0</span>
 <span class="sd">                # 0  3.0</span>
 <span class="sd">                #           0</span>
 <span class="sd">                # 0  1.195229</span>
 <span class="sd">                #           0</span>
 <span class="sd">                # 0  0.333333</span>
+<span class="sd">                #       0</span>
+<span class="sd">                # 0  0.24</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">)</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
         <span class="c1"># If we have non-numeric columns, and want faster results,</span>
@@ -428,6 +496,8 @@
         <span class="k">return</span> <span class="n">weighted_mean</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">inf_rm</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
     <span class="k">elif</span> <span class="n">stat</span> <span class="o">==</span> <span class="s2">&quot;std&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">weighted_sd</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">inf_rm</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">stat</span> <span class="o">==</span> <span class="s2">&quot;var_of_mean&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">var_of_weighted_mean</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">inf_rm</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
 
     <span class="c1"># TODO: (p2) check which input DescrStatsW takes, not sure we need to run the next two lines.</span>
     <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -502,7 +572,7 @@
     <span class="k">if</span> <span class="n">w</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">w</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
 
-    <span class="c1"># pyre-ignore[6]: this is a pyre bug. str inherts from hashable, and .rename works fine.</span>
+    <span class="c1"># pyre-ignore[6]: this is a pyre bug. str inherits from hashable, and .rename works fine.</span>
     <span class="n">w</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;Freq&quot;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">column</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>

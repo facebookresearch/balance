@@ -159,8 +159,8 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        df (pd.DataFrame): The input DataFrame</span>
-<span class="sd">        replace_val_obj (str, optional): The value to put insteasd of nulls for object columns. Defaults to &quot;_NA&quot;.</span>
-<span class="sd">        replace_val_num (int, optional): The value to put insteasd of nulls for numeric columns. Defaults to 0.</span>
+<span class="sd">        replace_val_obj (str, optional): The value to put instead of nulls for object columns. Defaults to &quot;_NA&quot;.</span>
+<span class="sd">        replace_val_num (int, optional): The value to put instead of nulls for numeric columns. Defaults to 0.</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        Exception: Can&#39;t add NA indicator to DataFrame which contains columns which start with &#39;_is_na_&#39;</span>
@@ -240,13 +240,13 @@
 <span class="sd">        Default is additive formula.</span>
 <span class="sd">    Args:</span>
 <span class="sd">        variables: list with names of variables (as strings) to combine into a formula</span>
-<span class="sd">        formula_type (str, optional): how to construct the formula. Currently only &quot;additive&quot; is supported.. Defaults to &quot;additive&quot;.</span>
+<span class="sd">        formula_type (str, optional): how to construct the formula. Currently only &quot;additive&quot; is supported. Defaults to &quot;additive&quot;.</span>
 
 <span class="sd">    Raises:</span>
-<span class="sd">        Exception: &quot;This formula type is not supported.&#39;&quot; &quot;Please provide a string formula&quot;tion_</span>
+<span class="sd">        Exception: &quot;This formula type is not supported.&#39;&quot; &quot;Please provide a string formula&quot;</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        str: A string representing the fomula</span>
+<span class="sd">        str: A string representing the formula</span>
 
 <span class="sd">    Examples:</span>
 <span class="sd">        ::</span>
@@ -420,12 +420,12 @@
                 <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">level</span><span class="si">}</span><span class="s2">]&quot;</span>
                 <span class="k">for</span> <span class="n">level</span> <span class="ow">in</span> <span class="n">levels</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference</span><span class="p">]</span> <span class="o">+</span> <span class="n">levels</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">reference</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]</span>
             <span class="p">]</span>
-            <span class="n">contasts_mat</span> <span class="o">=</span> <span class="n">ContrastMatrix</span><span class="p">(</span><span class="n">contrasts</span><span class="p">,</span> <span class="n">suffixes</span><span class="p">)</span>
+            <span class="n">contrasts_mat</span> <span class="o">=</span> <span class="n">ContrastMatrix</span><span class="p">(</span><span class="n">contrasts</span><span class="p">,</span> <span class="n">suffixes</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">contasts_mat</span> <span class="o">=</span> <span class="n">ContrastMatrix</span><span class="p">(</span>
+            <span class="n">contrasts_mat</span> <span class="o">=</span> <span class="n">ContrastMatrix</span><span class="p">(</span>
                 <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">levels</span><span class="p">)),</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">level</span><span class="si">}</span><span class="s2">]&quot;</span> <span class="k">for</span> <span class="n">level</span> <span class="ow">in</span> <span class="n">levels</span><span class="p">]</span>
             <span class="p">)</span>
-        <span class="k">return</span> <span class="n">contasts_mat</span>
+        <span class="k">return</span> <span class="n">contrasts_mat</span>
 
     <span class="k">def</span> <span class="nf">code_without_intercept</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">levels</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">code_with_intercept</span><span class="p">(</span><span class="n">levels</span><span class="p">)</span></div>
@@ -434,7 +434,7 @@
 <div class="viewcode-block" id="process_formula"><a class="viewcode-back" href="../../balance.util.html#balance.util.process_formula">[docs]</a><span class="k">def</span> <span class="nf">process_formula</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="n">variables</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span> <span class="n">factor_variables</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Process a formula string:</span>
 <span class="sd">        1. Expand .  notation using dot_expansion function</span>
-<span class="sd">        2. Remove intercept (if using ipw, it will be added automatically by cvglment)</span>
+<span class="sd">        2. Remove intercept (if using ipw, it will be added automatically by cvglmnet)</span>
 <span class="sd">        3. If factor_variables is not None, one_hot_encoding_greater_2 is applied</span>
 <span class="sd">        to factor_variables</span>
 
@@ -486,7 +486,7 @@
 
     <span class="k">if</span> <span class="n">factor_variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># We use one_hot_encoding_greater_2 for building the model matrix for factor_variables</span>
-        <span class="c1"># Refernece: https://patsy.readthedocs.io/en/latest/categorical-coding.html</span>
+        <span class="c1"># Reference: https://patsy.readthedocs.io/en/latest/categorical-coding.html</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">term_i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">desc</span><span class="o">.</span><span class="n">rhs_termlist</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">factor_j</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">term_i</span><span class="o">.</span><span class="n">factors</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">factor_j</span><span class="o">.</span><span class="n">code</span> <span class="ow">in</span> <span class="n">factor_variables</span><span class="p">:</span>
@@ -518,7 +518,7 @@
 <span class="sd">                         categorical variables with more than 2 categories (i.e. the</span>
 <span class="sd">                         number of columns will be equal to the number of categories), and only 1</span>
 <span class="sd">                         column for variables with 2 levels (treatment contrast).</span>
-<span class="sd">        return_sparse (bool, optional): whether to return a sprse matrix using scipy.sparse.csc_matrix. Defaults to False.</span>
+<span class="sd">        return_sparse (bool, optional): whether to return a sparse matrix using scipy.sparse.csc_matrix. Defaults to False.</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        Exception: &quot;Variable names cannot contain characters &#39;[&#39; or &#39;]&#39;&quot;</span>
@@ -599,7 +599,7 @@
             <span class="n">df</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">x</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
 
     <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">dmatrix</span><span class="p">(</span><span class="n">model_desc</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">df</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;dataframe&quot;</span><span class="p">)</span>
-    <span class="c1"># Sorting the output in order to elimnate edge cases that cause column order to be stochastic</span>
+    <span class="c1"># Sorting the output in order to eliminate edge cases that cause column order to be stochastic</span>
     <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">X_matrix</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;X_matrix shape: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="n">X_matrix_columns</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
@@ -614,9 +614,10 @@
     <span class="n">target</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">variables</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">add_na</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">fix_columns_names</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to model_matrix. Prepare and check input of sample and target:</span>
-<span class="sd">        - Choose joint variables to sample and target (or by given vairables)</span>
+<span class="sd">        - Choose joint variables to sample and target (or by given variables)</span>
 <span class="sd">        - Extract sample and target dataframes</span>
 <span class="sd">        - Concat dataframes together</span>
 <span class="sd">        - Add na indicator if required.</span>
@@ -626,6 +627,7 @@
 <span class="sd">        target (Union[pd.DataFrame, Any, None], optional): This can either be a DataFrame or a Sample object.. Defaults to None.</span>
 <span class="sd">        variables (Optional[List], optional): Defaults to None. TODO: add text.</span>
 <span class="sd">        add_na (bool, optional): Defaults to True. TODO: add text.</span>
+<span class="sd">        fix_columns_names (bool, optional): Defaults to True. If to fix the column names of the DataFrame by changing special characters to &#39;_&#39;.</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        Exception: &quot;Variable names cannot contain characters &#39;[&#39; or &#39;]&#39;&quot;</span>
@@ -655,6 +657,23 @@
 <span class="sd">                # 1  a2  b2</span>
 <span class="sd">                # 2  a1  b3</span>
 <span class="sd">                # 3  a1  b3, &#39;sample_n&#39;: 4}</span>
+
+
+<span class="sd">            # It automatically fixes the column names for you from special characters</span>
+<span class="sd">            df = pd.DataFrame(</span>
+<span class="sd">                {&quot;a&quot;: [&quot;a1&quot;, &quot;a2&quot;, &quot;a1&quot;, &quot;a1&quot;], &quot;b./ * b&quot;: [&quot;b1&quot;, &quot;b2&quot;, &quot;b3&quot;, &quot;b3&quot;]}</span>
+<span class="sd">            )</span>
+
+<span class="sd">            print(balance.util._prepare_input_model_matrix(df, df))</span>
+<span class="sd">                # {&#39;all_data&#39;:     a b_____b</span>
+<span class="sd">                # 0  a1      b1</span>
+<span class="sd">                # 1  a2      b2</span>
+<span class="sd">                # 2  a1      b3</span>
+<span class="sd">                # 3  a1      b3</span>
+<span class="sd">                # 0  a1      b1</span>
+<span class="sd">                # 1  a2      b2</span>
+<span class="sd">                # 2  a1      b3</span>
+<span class="sd">                # 3  a1      b3, &#39;sample_n&#39;: 4}</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">variables</span> <span class="o">=</span> <span class="n">choose_variables</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">)</span>
 
@@ -686,6 +705,10 @@
         <span class="n">all_data</span> <span class="o">=</span> <span class="n">add_na_indicator</span><span class="p">(</span><span class="n">all_data</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Dropping all rows with NAs&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">fix_columns_names</span><span class="p">:</span>
+        <span class="n">all_data</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">all_data</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;[^\w]&quot;</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">all_data</span> <span class="o">=</span> <span class="n">_make_df_column_names_unique</span><span class="p">(</span><span class="n">all_data</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;all_data&quot;</span><span class="p">:</span> <span class="n">all_data</span><span class="p">,</span> <span class="s2">&quot;sample_n&quot;</span><span class="p">:</span> <span class="n">sample_n</span><span class="p">}</span>
 
@@ -725,12 +748,12 @@
 <span class="sd">        formula (Optional[List[str]], optional): according to what formula to construct the matrix. If no formula is provided an</span>
 <span class="sd">            additive formula is applied. This may be a string or a list of strings</span>
 <span class="sd">            representing different parts of the formula that will be concated together.</span>
-<span class="sd">            Default is None, which will create an additive formula from the aviliable variables. Defaults to None.</span>
-<span class="sd">        penalty_factor (Optional[List[float]], optional): the penalty used in the glment function in ipw. The penalty</span>
+<span class="sd">            Default is None, which will create an additive formula from the available variables. Defaults to None.</span>
+<span class="sd">        penalty_factor (Optional[List[float]], optional): the penalty used in the glmnet function in ipw. The penalty</span>
 <span class="sd">            should have the same length as the formula list. If not provided,</span>
 <span class="sd">            assume the same penalty for all variables. Defaults to None.</span>
 <span class="sd">        one_hot_encoding (bool, optional): whether to encode all factor variables in the model matrix with</span>
-<span class="sd">            one_hot_encoding_greater_2. This is recomended in case of using</span>
+<span class="sd">            one_hot_encoding_greater_2. This is recommended in case of using</span>
 <span class="sd">            LASSO on the data (Default: False).</span>
 <span class="sd">            one_hot_encoding_greater_2 creates one-hot-encoding for all</span>
 <span class="sd">            categorical variables with more than 2 categories (i.e. the</span>
@@ -854,23 +877,23 @@
     <span class="n">all_data</span> <span class="o">=</span> <span class="n">input_data</span><span class="p">[</span><span class="s2">&quot;all_data&quot;</span><span class="p">]</span>
     <span class="n">sample_n</span> <span class="o">=</span> <span class="n">input_data</span><span class="p">[</span><span class="s2">&quot;sample_n&quot;</span><span class="p">]</span>
 
-    <span class="c1"># Arange formula</span>
+    <span class="c1"># Arrange formula</span>
     <span class="k">if</span> <span class="n">formula</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="c1"># if no formula is provided, we create an additive formula from aviliable columns</span>
+        <span class="c1"># if no formula is provided, we create an additive formula from available columns</span>
         <span class="n">formula</span> <span class="o">=</span> <span class="n">formula_generator</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">all_data</span><span class="o">.</span><span class="n">columns</span><span class="p">),</span> <span class="n">formula_type</span><span class="o">=</span><span class="s2">&quot;additive&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
         <span class="n">formula</span> <span class="o">=</span> <span class="p">[</span><span class="n">formula</span><span class="p">]</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The formula used to build the model matrix: </span><span class="si">{</span><span class="n">formula</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="c1"># If formula is given we rely on patsy formula checker to check it.</span>
 
-    <span class="c1"># Arange penalty factor</span>
+    <span class="c1"># Arrange penalty factor</span>
     <span class="k">if</span> <span class="n">penalty_factor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">penalty_factor</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">formula</span><span class="p">)</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">formula</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span>
         <span class="n">penalty_factor</span>
     <span class="p">),</span> <span class="s2">&quot;penalty factor and formula must have the same length&quot;</span>
 
-    <span class="c1"># Arange factor variables</span>
+    <span class="c1"># Arrange factor variables</span>
     <span class="k">if</span> <span class="n">one_hot_encoding</span><span class="p">:</span>
         <span class="n">factor_variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
             <span class="n">all_data</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">([</span><span class="s2">&quot;category&quot;</span><span class="p">,</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="s2">&quot;boolean&quot;</span><span class="p">,</span> <span class="s2">&quot;object&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span>
@@ -942,7 +965,7 @@
 <span class="sd">    Args:</span>
 <span class="sd">        s (_type_): 1d ndarray or Series.</span>
 <span class="sd">        q (_type_): Number of quantiles (int or float).</span>
-<span class="sd">        duplicates (str, optional): whther to drop non unique bin edges or raise error (&quot;raise&quot; or &quot;drop&quot;).</span>
+<span class="sd">        duplicates (str, optional): whether to drop non unique bin edges or raise error (&quot;raise&quot; or &quot;drop&quot;).</span>
 <span class="sd">            Defaults to &quot;drop&quot;.</span>
 
 <span class="sd">    Returns:</span>
@@ -959,7 +982,7 @@
 <div class="viewcode-block" id="quantize"><a class="viewcode-back" href="../../balance.util.html#balance.util.quantize">[docs]</a><span class="k">def</span> <span class="nf">quantize</span><span class="p">(</span>
     <span class="n">df</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">],</span> <span class="n">q</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Cut numeric variables of a DataFrame into quantile buckets</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Cut numeric variables of a DataFrame into quantiles buckets</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        df (Union[pd.DataFrame, pd.Series]): a DataFrame to transform</span>
@@ -1143,7 +1166,7 @@
     <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="ow">not</span> <span class="p">(</span><span class="n">a</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">_is_arraylike</span><span class="p">(</span><span class="n">a</span><span class="p">))</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;All arguments must be arraylike&quot;</span><span class="p">)</span>
     <span class="c1"># create a set of lengths of all arrays, and see if there are is more than</span>
-    <span class="c1"># one array length: (we shouldn&#39;t, since we exapct all arrays to have the same length)</span>
+    <span class="c1"># one array length: (we shouldn&#39;t, since we expect all arrays to have the same length)</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">({</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span> <span class="k">if</span> <span class="n">a</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">})</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;All arrays must be of same length&quot;</span><span class="p">)</span>
 
@@ -1179,65 +1202,111 @@
     <span class="k">return</span> <span class="n">r</span></div>
 
 
-<span class="c1"># TODO: make sure the function returns the variables names in a pre-decided order (alphabetical or by sample order)</span>
-<span class="c1"># TODO: what is this returning?  -&gt; Optional[Tuple] ?!</span>
-<div class="viewcode-block" id="choose_variables"><a class="viewcode-back" href="../../balance.util.html#balance.util.choose_variables">[docs]</a><span class="k">def</span> <span class="nf">choose_variables</span><span class="p">(</span><span class="o">*</span><span class="n">dfs</span><span class="p">,</span> <span class="n">variables</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return covars which are present in all dfs and also in `variables`</span>
-<span class="sd">    if passed</span>
+<span class="c1"># TODO: (p2) create choose_variables_df that only works with pd.DataFrames as input, and wrap it with something that deals with Sample.</span>
+<span class="c1">#       This would help clarify the logic of each function.</span>
+<div class="viewcode-block" id="choose_variables"><a class="viewcode-back" href="../../balance.util.html#balance.util.choose_variables">[docs]</a><span class="k">def</span> <span class="nf">choose_variables</span><span class="p">(</span>
+    <span class="o">*</span><span class="n">dfs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">variables</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="nb">set</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">df_for_var_order</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Returns a list of joint (intersection of) variables present in all the input dataframes and also in the `variables` set or list</span>
+<span class="sd">     if provided. The order of the returned variables is conditional on the input:</span>
+<span class="sd">         - If a `variables` argument is supplied as a list - the order will be based on the order in the variables list.</span>
+<span class="sd">         - If a `variables` is not a list (e.g.: set or None), the order is determined by the order of the columns in the dataframes</span>
+<span class="sd">             supplied. The dataframe chosen for the order is determined by the `df_for_var_order` argument. 0 means the order from the first df,</span>
+<span class="sd">             1 means the order from the second df, etc.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        *dfs: balance.Samples or pd.DataFrames</span>
-<span class="sd">        variables (Optional[List], optional): which variables to choose. If None, chooses all joint variables in the dfs.. Defaults to None.</span>
+<span class="sd">         *dfs (Union[pd.DataFrame, Any]): One or more pandas.DataFrames or balance.Samples.</span>
+<span class="sd">         variables (Optional[Union[List, set]]): The variables to choose from. If None, returns all joint variables found</span>
+<span class="sd">             in the input dataframes. Defaults to None.</span>
+<span class="sd">         df_for_var_order (int): Index of the dataframe used to determine the order of the variables in the output list.</span>
+<span class="sd">             Defaults to 0. This is used only if the `variables` argument is not a list (e.g.: a set or None).</span>
 
-<span class="sd">    Raises:</span>
-<span class="sd">        Exception: _description_</span>
+<span class="sd">     Raises:</span>
+<span class="sd">         ValueError: If one or more requested variables are not present in all dataframes.</span>
 
-<span class="sd">    Returns:</span>
-<span class="sd">        Tuple: Tuple of joint variables</span>
+<span class="sd">     Returns:</span>
+<span class="sd">         List[str]: A list of the joint variables present in all dataframes and in the `variables` set or list, ordered</span>
+<span class="sd">             based on the input conditions specified.</span>
+
+<span class="sd">     Examples:</span>
+<span class="sd">        ::</span>
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from balance.util import choose_variables</span>
+
+<span class="sd">            df1 = pd.DataFrame({&#39;A&#39;: [1, 2], &#39;B&#39;: [3, 4], &#39;C&#39;: [5, 6], &#39;E&#39;: [1,1], &#39;F&#39;: [1,1]})</span>
+<span class="sd">            df2 = pd.DataFrame({&#39;C&#39;: [7, 8], &#39;J&#39;: [9, 10], &#39;B&#39;: [11, 12], &#39;K&#39;: [1,1], &#39;A&#39;: [1,1]})</span>
+
+<span class="sd">            print(choose_variables(df1, df2))</span>
+<span class="sd">            print(choose_variables(df1, df2,df_for_var_order = 1))</span>
+<span class="sd">            print(choose_variables(df1, df2,variables=[&quot;B&quot;, &quot;A&quot;]))</span>
+
+<span class="sd">                # WARNING (2023-04-02 10:12:01,337) [util/choose_variables (line 1206)]: Ignoring variables not present in all Samples: {&#39;K&#39;, &#39;F&#39;, &#39;E&#39;, &#39;J&#39;}</span>
+<span class="sd">                # WARNING (2023-04-02 10:12:01,338) [util/choose_variables (line 1206)]: Ignoring variables not present in all Samples: {&#39;K&#39;, &#39;F&#39;, &#39;E&#39;, &#39;J&#39;}</span>
+<span class="sd">                # WARNING (2023-04-02 10:12:01,340) [util/choose_variables (line 1206)]: Ignoring variables not present in all Samples: {&#39;K&#39;, &#39;F&#39;, &#39;E&#39;, &#39;J&#39;}</span>
+<span class="sd">                # [&#39;A&#39;, &#39;B&#39;, &#39;C&#39;]</span>
+<span class="sd">                # [&#39;C&#39;, &#39;B&#39;, &#39;A&#39;]</span>
+<span class="sd">                # [&#39;B&#39;, &#39;A&#39;]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="n">variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
         <span class="n">variables</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="n">df_variables</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">d</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">names</span><span class="p">()</span> <span class="k">if</span> <span class="n">_isinstance_sample</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">else</span> <span class="n">d</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span>
+    <span class="c1"># This is a list of lists with the variable names of the input dataframes</span>
+    <span class="n">dfs_variables</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">d</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">names</span><span class="p">()</span> <span class="k">if</span> <span class="n">_isinstance_sample</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">else</span> <span class="n">d</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dfs</span>
         <span class="k">if</span> <span class="n">d</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
     <span class="p">]</span>
 
-    <span class="n">intersection_variables</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span>
-        <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">set</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">y</span><span class="p">)),</span> <span class="n">df_variables</span><span class="p">)</span>
+    <span class="n">var_list_for_order</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">variables</span> <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="nb">list</span><span class="p">))</span> <span class="k">else</span> <span class="n">dfs_variables</span><span class="p">[</span><span class="n">df_for_var_order</span><span class="p">]</span>
     <span class="p">)</span>
 
-    <span class="n">union_variables</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">set</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">y</span><span class="p">)),</span> <span class="n">df_variables</span><span class="p">)</span>
+    <span class="n">intersection_variables</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span>
+        <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">set</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">y</span><span class="p">)),</span> <span class="n">dfs_variables</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">union_variables</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">set</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">y</span><span class="p">)),</span> <span class="n">dfs_variables</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">union_variables</span><span class="p">)</span><span class="o">.</span><span class="n">symmetric_difference</span><span class="p">(</span><span class="n">intersection_variables</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;Ignoring variables not present in all Samples: </span><span class="si">{</span><span class="n">union_variables</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">intersection_variables</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">variables_not_in_df</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">intersection_variables</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">variables</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="n">intersection_variables</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
+        <span class="n">variables_not_in_df</span> <span class="o">=</span> <span class="n">variables</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">intersection_variables</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">variables_not_in_df</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                 <span class="s2">&quot;These variables are not included in the dataframes: </span><span class="si">{variables_not_in_df}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">variables_not_in_df</span><span class="p">)</span><span class="si">}</span><span class="s2"> requested variables are not in all Samples: &quot;</span>
                 <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">variables_not_in_df</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
-        <span class="c1"># pyre-fixme[9] Incompatible variable type [9]: variables is declared to have type `Optional[List[typing.Any]]` but is used as type `Set[typing.Any]`.</span>
-        <span class="n">variables</span> <span class="o">=</span> <span class="n">intersection_variables</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">variables</span><span class="p">))</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">variables</span> <span class="o">=</span> <span class="n">intersection_variables</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="n">intersection_variables</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Joint variables in all dataframes: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="n">variables</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Sample and target have no variables in common&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="p">()</span>
+        <span class="k">return</span> <span class="p">[]</span>
 
-    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span></div>
+    <span class="n">ordered_variables</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">var_list_for_order</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">variables</span> <span class="ow">and</span> <span class="n">val</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ordered_variables</span><span class="p">:</span>
+            <span class="n">ordered_variables</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+    <span class="c1"># NOTE: the above is just like:</span>
+    <span class="c1"># seen = set()</span>
+    <span class="c1"># ordered_variables = [val for val in dfs_variables[df_for_var_order] if val in variables and val not in seen and not seen.add(val)]</span>
+
+    <span class="c1"># TODO: consider changing the return form list to a tuple. But doing so would require to deal with various edge cases around the codebase.</span>
+    <span class="k">return</span> <span class="n">ordered_variables</span></div>
 
 
 <div class="viewcode-block" id="auto_spread"><a class="viewcode-back" href="../../balance.util.html#balance.util.auto_spread">[docs]</a><span class="k">def</span> <span class="nf">auto_spread</span><span class="p">(</span>
@@ -1294,7 +1363,7 @@
     <span class="c1"># Thus, using str is important so to keep our function idempotent.</span>
     <span class="n">aggfunc</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;sum&quot;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-    <span class="c1"># The default aggregaion function is a lambda around sum(x), because as of</span>
+    <span class="c1"># The default aggregation function is a lambda around sum(x), because as of</span>
     <span class="c1"># Pandas 0.22.0, Series.sum of an all-na Series is 0, not nan</span>
 
     <span class="k">if</span> <span class="n">features</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1336,7 +1405,7 @@
 
 <div class="viewcode-block" id="fct_lump"><a class="viewcode-back" href="../../balance.util.html#balance.util.fct_lump">[docs]</a><span class="k">def</span> <span class="nf">fct_lump</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">prop</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Lumps infrequent levels into &#39;_lumped_other&#39;.</span>
-<span class="sd">    Note that all values with proprtion less than prop output the same value &#39;_lumped_other&#39;.</span>
+<span class="sd">    Note that all values with proportion less than prop output the same value &#39;_lumped_other&#39;.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        s (pd.Series): pd.series to lump, with dtype of integer, numeric, object, or category (category will be converted to object)</span>
@@ -1795,6 +1864,74 @@
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">original_df_dtypes</span><span class="p">[</span><span class="n">dtypes_that_changed</span><span class="p">]))</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The (new) dtypes saved in </span><span class="si">{</span><span class="n">original_str</span><span class="si">}</span><span class="s2"> (after the change):&quot;</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">new_df_dtypes</span><span class="p">[</span><span class="n">dtypes_that_changed</span><span class="p">]))</span>
+
+
+<span class="k">def</span> <span class="nf">_make_df_column_names_unique</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Make DataFrame column names unique by adding suffixes to duplicates.</span>
+
+<span class="sd">    This function iterates through the column names of the input DataFrame</span>
+<span class="sd">    and appends a suffix to duplicate column names to make them distinct.</span>
+<span class="sd">    The suffix is an underscore followed by an integer value representing</span>
+<span class="sd">    the number of occurrences of the column name.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df (pd.DataFrame): The input DataFrame with potentially duplicate</span>
+<span class="sd">            column names.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.DataFrame: A DataFrame with unique column names where any</span>
+<span class="sd">            duplicate column names have been renamed with a suffix.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        ::</span>
+<span class="sd">            import pandas as pd</span>
+
+<span class="sd">            # Sample DataFrame with duplicate column names</span>
+<span class="sd">            data = {</span>
+<span class="sd">                &quot;A&quot;: [1, 2, 3],</span>
+<span class="sd">                &quot;B&quot;: [4, 5, 6],</span>
+<span class="sd">                &quot;A2&quot;: [7, 8, 9],</span>
+<span class="sd">                &quot;C&quot;: [10, 11, 12],</span>
+<span class="sd">            }</span>
+
+<span class="sd">            df1 = pd.DataFrame(data)</span>
+<span class="sd">            df1.columns = [&quot;A&quot;, &quot;B&quot;, &quot;A&quot;, &quot;C&quot;]</span>
+
+<span class="sd">            _make_df_column_names_unique(df1).to_dict()</span>
+<span class="sd">            # {&#39;A&#39;: {0: 1, 1: 2, 2: 3},</span>
+<span class="sd">            #  &#39;B&#39;: {0: 4, 1: 5, 2: 6},</span>
+<span class="sd">            #  &#39;A_1&#39;: {0: 7, 1: 8, 2: 9},</span>
+<span class="sd">            #  &#39;C&#39;: {0: 10, 1: 11, 2: 12}}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check if all column names are unique</span>
+    <span class="n">unique_columns</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_columns</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">df</span>
+
+    <span class="c1"># Else: fix duplicate column names</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Duplicate column names exists in the DataFrame.</span>
+<span class="sd">                    A suffix will be added to them but their order might change from one iteration to another.</span>
+<span class="sd">                    To avoid issues, make sure to change your original column names to be unique (and without special characters).&quot;&quot;&quot;</span>
+    <span class="p">)</span>
+    <span class="n">col_counts</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">new_columns</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">col_counts</span><span class="p">:</span>
+            <span class="n">col_counts</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">new_col_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">col_counts</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Column </span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2"> already exists in the DataFrame, renaming it to be </span><span class="si">{</span><span class="n">new_col_name</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">col_counts</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">new_col_name</span> <span class="o">=</span> <span class="n">col</span>
+        <span class="n">new_columns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_col_name</span><span class="p">)</span>
+
+    <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">new_columns</span>
+
+    <span class="k">return</span> <span class="n">df</span>
 </pre></div>
 
             <div class="clearer"></div>
