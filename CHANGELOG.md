@@ -6,7 +6,16 @@
 - Improve choose_variables to control the order of the returned variables
     - The return type is now a list (and not a Tuple)
     - The order of the returned list is based on the variables argument. If it is not supplied, it is based on column names in the DataFrames. The df_for_var_order arg controls which df to use.
-- The `_prepare_input_model_matrix` and downstream functions (e.g.: `model_matrix`, `sample.outcomes().mean()`, etc) can now handle DataFrame with special characters in the column names, by replacing special caracters with '_' (or '_i', if we end up with columns with duplicate names). It also handles cases in which the column names have duplicates (using the new `_make_df_column_names_unique` function).
+- Variance of the weighted mean
+    - Add the `var_of_weighted_mean` function (from balance.stats_and_plots.weighted_stats import var_of_weighted_mean):
+        Computes the variance of the weighted average (pi estimator for ratio-mean) of a list of values and their corresponding weights.
+    - Added the `var_of_mean` option to stat in the `descriptive_stats` function (based on `var_of_weighted_mean`)
+- Misc
+    - The `_prepare_input_model_matrix` and downstream functions (e.g.: `model_matrix`, `sample.outcomes().mean()`, etc) can now handle DataFrame with special characters in the column names, by replacing special characters with '_' (or '_i', if we end up with columns with duplicate names). It also handles cases in which the column names have duplicates (using the new `_make_df_column_names_unique` function).
+    - Improve choose_variables to control the order of the returned variables
+        - The return type is now a list (and not a Tuple)
+        - The order of the returned list is based on the variables argument. If it is not supplied, it is based on column names in the DataFrames. The df_for_var_order arg controls which df to use.
+
 
 0.5.0 (2023-03-06)
 ==================

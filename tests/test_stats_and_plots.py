@@ -456,6 +456,12 @@ class TestBalance_weighted_stats(
             descriptive_stats(pd.DataFrame(x), stat="std"), weighted_sd(x).to_frame().T
         )
 
+        x = [1, 2, 3, 4]
+        self.assertEqual(
+            descriptive_stats(pd.DataFrame(x), stat="var_of_mean").to_dict(),
+            {0: {0: 0.3125}},
+        )
+
         # with weights
         x, w = pd.Series([-1, 2, 1, 2]), pd.Series([1, 2, 3, 4])
         self.assertEqual(
@@ -498,6 +504,12 @@ class TestBalance_weighted_stats(
         self.assertEqual(
             DescrStatsW([1, 2, 3], weights=None).mean,
             2.0,
+        )
+
+        x, w = [1, 2, 3, 4], [1, 2, 3, 4]
+        self.assertEqual(
+            descriptive_stats(pd.DataFrame(x), w, stat="var_of_mean").to_dict(),
+            {0: {0: 0.24}},
         )
 
 

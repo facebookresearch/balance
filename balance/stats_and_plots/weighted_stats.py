@@ -342,7 +342,7 @@ def descriptive_stats(
         np.ndarray,
         None,
     ] = None,
-    stat: Literal["mean", "std", "..."] = "mean",
+    stat: Literal["mean", "std", "var_of_mean", "..."] = "mean",
     # relevant only if stat is None
     weighted: bool = True,
     # relevant only if we have non-numeric columns and we want to use model_matrix on them
@@ -358,9 +358,10 @@ def descriptive_stats(
     Args:
         df (pd.DataFrame): Some DataFrame to get stats (mean, std, etc.) for.
         weights (Union[ List, pd.Series, np.ndarray, ], optional): Weights to apply for the computation. Defaults to None.
-        stat (Literal["mean", "std", ...], optional): Which statistic to calculate on the data.
+        stat (Literal["mean", "std", "var_of_mean", ...], optional): Which statistic to calculate on the data.
             If mean - uses :func:`weighted_mean` (with inf_rm=True)
             If std - uses :func:`weighted_sd` (with inf_rm=True)
+            If var_of_mean - uses :func:`var_of_weighted_mean` (with inf_rm=True)
             If something else - tries to use :func:`statsmodels.stats.weightstats.DescrStatsW`.
                 This supports stat such as: std_mean, sum_weights, nobs, etc. See function documentation to see more.
                 (while removing mutual nan using :func:`rm_mutual_nas`)
@@ -396,6 +397,10 @@ def descriptive_stats(
                 # 0    2.5
                 # dtype: float64
 
+            print(descriptive_stats(pd.DataFrame(x), stat="var_of_mean"))
+                #         0
+                # 0  0.3125
+
             print(descriptive_stats(pd.DataFrame(x), stat="std"))
             print(weighted_sd(x))
             x2 = pd.Series(x)
@@ -424,12 +429,15 @@ def descriptive_stats(
             print(descriptive_stats(pd.DataFrame(x), w, stat="mean"))
             print(descriptive_stats(pd.DataFrame(x), w, stat="std"))
             print(descriptive_stats(pd.DataFrame(x), w, stat="std_mean"))
+            print(descriptive_stats(pd.DataFrame(x), w, stat="var_of_mean"))
                 #      0
                 # 0  3.0
                 #           0
                 # 0  1.195229
                 #           0
                 # 0  0.333333
+                #       0
+                # 0  0.24
     """
     if len(df.select_dtypes(np.number).columns) != len(df.columns):
         # If we have non-numeric columns, and want faster results,
@@ -450,6 +458,8 @@ def descriptive_stats(
         return weighted_mean(df, weights, inf_rm=True).to_frame().transpose()
     elif stat == "std":
         return weighted_sd(df, weights, inf_rm=True).to_frame().transpose()
+    elif stat == "var_of_mean":
+        return var_of_weighted_mean(df, weights, inf_rm=True).to_frame().transpose()
 
     # TODO: (p2) check which input DescrStatsW takes, not sure we need to run the next two lines.
     if weights is not None:
@@ -524,7 +534,7 @@ def relative_frequency_table(
     if w is None:
         w = pd.Series(np.ones(df.shape[0]))
 
-    # pyre-ignore[6]: this is a pyre bug. str inherts from hashable, and .rename works fine.
+    # pyre-ignore[6]: this is a pyre bug. str inherits from hashable, and .rename works fine.
     w = w.rename("Freq")
 
     if column is None:

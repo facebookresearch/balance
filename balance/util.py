@@ -396,7 +396,7 @@ class one_hot_encoding_greater_2:
 def process_formula(formula, variables: List, factor_variables=None):
     """Process a formula string:
         1. Expand .  notation using dot_expansion function
-        2. Remove intercept (if using ipw, it will be added automatically by cvglment)
+        2. Remove intercept (if using ipw, it will be added automatically by cvglmnet)
         3. If factor_variables is not None, one_hot_encoding_greater_2 is applied
         to factor_variables
 
@@ -480,7 +480,7 @@ def build_model_matrix(
                          categorical variables with more than 2 categories (i.e. the
                          number of columns will be equal to the number of categories), and only 1
                          column for variables with 2 levels (treatment contrast).
-        return_sparse (bool, optional): whether to return a sprse matrix using scipy.sparse.csc_matrix. Defaults to False.
+        return_sparse (bool, optional): whether to return a sparse matrix using scipy.sparse.csc_matrix. Defaults to False.
 
     Raises:
         Exception: "Variable names cannot contain characters '[' or ']'"
@@ -561,7 +561,7 @@ def build_model_matrix(
             df[x] = df[x].astype("float64")
 
     X_matrix = dmatrix(model_desc, data=df, return_type="dataframe")
-    # Sorting the output in order to elimnate edge cases that cause column order to be stochastic
+    # Sorting the output in order to eliminate edge cases that cause column order to be stochastic
     X_matrix = X_matrix.sort_index(axis=1)
     logger.debug(f"X_matrix shape: {X_matrix.shape}")
     X_matrix_columns = list(X_matrix.columns)
@@ -841,7 +841,7 @@ def model_matrix(
 
     # Arrange formula
     if formula is None:
-        # if no formula is provided, we create an additive formula from aviliable columns
+        # if no formula is provided, we create an additive formula from available columns
         formula = formula_generator(list(all_data.columns), formula_type="additive")
     if not isinstance(formula, list):
         formula = [formula]
@@ -1128,7 +1128,7 @@ def rm_mutual_nas(*args) -> List:
     if any(not (a is None or _is_arraylike(a)) for a in args):
         raise ValueError("All arguments must be arraylike")
     # create a set of lengths of all arrays, and see if there are is more than
-    # one array length: (we shouldn't, since we exapct all arrays to have the same length)
+    # one array length: (we shouldn't, since we expect all arrays to have the same length)
     if len({len(a) for a in args if a is not None}) > 1:
         raise ValueError("All arrays must be of same length")
 
@@ -1325,7 +1325,7 @@ def auto_aggregate(
     # Thus, using str is important so to keep our function idempotent.
     aggfunc: Union[str, Callable] = "sum",
 ) -> pd.DataFrame:
-    # The default aggregaion function is a lambda around sum(x), because as of
+    # The default aggregation function is a lambda around sum(x), because as of
     # Pandas 0.22.0, Series.sum of an all-na Series is 0, not nan
 
     if features is not None:
@@ -1367,7 +1367,7 @@ def auto_aggregate(
 
 def fct_lump(s: pd.Series, prop: float = 0.05) -> pd.Series:
     """Lumps infrequent levels into '_lumped_other'.
-    Note that all values with proprtion less than prop output the same value '_lumped_other'.
+    Note that all values with proportion less than prop output the same value '_lumped_other'.
 
     Args:
         s (pd.Series): pd.series to lump, with dtype of integer, numeric, object, or category (category will be converted to object)

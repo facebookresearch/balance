@@ -848,7 +848,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
 
     def test_BalanceDF_asmd_aggregate_by_main_covar(self):
         # TODO: re-use this example across tests
-        # TODO: bugfix - adjust failes with apply_transform when inputing a df with categorical column :(
+        # TODO: bugfix - adjust fails with apply_transform when inputting a df with categorical column :(
 
         # Prepare dummy data
         np.random.seed(112358)

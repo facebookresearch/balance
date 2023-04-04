@@ -553,7 +553,7 @@ class BalanceDF:
         Args:
             self (BalanceDF): Object (used in the plots as "sample" or "self")
             on_linked_samples (bool, optional): Determines if the linked samples should be included in the plot.
-                Defaluts to True.
+                Defaults to True.
 
         Returns:
             Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:
@@ -775,7 +775,7 @@ class BalanceDF:
             Union[pd.DataFrame, str]: :func:`BalanceDF.mean`.
         """
         # TODO model matrix means to include categorical columns, fix model_matrix to accept DataFrame
-        # TODO: inlcude min/max/std/etc. show min/mean/max if there's a single column, just means if multiple (covars and outcomes)
+        # TODO: include min/max/std/etc. show min/mean/max if there's a single column, just means if multiple (covars and outcomes)
         #       Doing so would either require to implement a min/max etc methods in BalanceDF and use them with _call_on_linked.
         #       Or, update _call_on_linked to deal with non functions, get 'df' from it, and apply the needed functions on it.
         # TODO add outcome variance ratio
@@ -791,14 +791,14 @@ class BalanceDF:
 
         Returns:
             Tuple[pd.DataFrame, Optional[np.ndarray]]:
-                A pd.DataFrame output from running :func:`model_metrix`, and
+                A pd.DataFrame output from running :func:`model_matrix`, and
                 A np.ndarray of weights from :func:`_weights`, or just None (if there are no weights).
         """
         # get df values (like in BalanceDF._descriptive_stats)
-        df_model_metrix = self.model_matrix()
+        df_model_matrix = self.model_matrix()
         # get weights (like in BalanceDF._descriptive_stats)
         weights = self._weights.values if (self._weights is not None) else None
-        return df_model_metrix, weights
+        return df_model_matrix, weights
 
     @staticmethod
     def _asmd_BalanceDF(
@@ -876,7 +876,7 @@ class BalanceDF:
 
         Args:
             self (BalanceDF): Object from sample (with/without adjustment, but it needs some target)
-            on_linked_samples (bool, optional): If to comapre also to linked sample objects (specifically: unadjusted), or not. Defaults to True.
+            on_linked_samples (bool, optional): If to compare also to linked sample objects (specifically: unadjusted), or not. Defaults to True.
             target (Optional["BalanceDF"], optional): A BalanceDF (of the same type as the one used in self) to compare against.
                 If None then it looks for a target in the self linked objects. Defaults to None.
             aggregate_by_main_covar (bool, optional): Defaults to False.
@@ -1146,7 +1146,7 @@ class BalanceOutcomesDF(BalanceDF):
         """A factory function to create BalanceOutcomesDF
 
         This is used through :func:`Sample.outcomes`.
-        It initates a BalanceOutcomesDF object by passing the relevant arguments to
+        It initiates a BalanceOutcomesDF object by passing the relevant arguments to
         :func:`BalanceDF.__init__`.
 
         Args:
@@ -1208,7 +1208,7 @@ class BalanceOutcomesDF(BalanceDF):
                 s_o.outcomes().relative_response_rates(target = True)
                 # None
 
-                # compared with a larget target
+                # compared with a larger target
 
                 t_o = Sample.from_frame(
                     pd.DataFrame(
@@ -1259,7 +1259,7 @@ class BalanceOutcomesDF(BalanceDF):
         )
 
     def target_response_rates(self: "BalanceOutcomesDF") -> Optional[pd.DataFrame]:
-        """Caclulates relative_response_rates for the target in a Sample object.
+        """Calculates relative_response_rates for the target in a Sample object.
 
         See :func:`general_stats.relative_response_rates`.
 
@@ -1323,7 +1323,7 @@ class BalanceOutcomesDF(BalanceDF):
             on_linked_samples (Optional[bool]): Ignored. Only here since summary overrides BalanceDF.summary.
 
         Returns:
-            str: A printable string, with mean of outcome variables and reponse rates.
+            str: A printable string, with mean of outcome variables and response rates.
 
         Examples:
             ::
@@ -1432,7 +1432,7 @@ class BalanceOutcomesDF(BalanceDF):
         Args:
             self (BalanceOutcomesDF): a BalanceOutcomesDF object, with a set of variables.
             on_linked_samples (bool, optional): Determines if the linked samples should be included in the plot.
-                Defaluts to True.
+                Defaults to True.
 
         Returns:
             Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:
@@ -1555,7 +1555,7 @@ class BalanceWeightsDF(BalanceDF):
         Args:
             self (BalanceWeightsDF): a BalanceOutcomesDF object, with a set of variables.
             on_linked_samples (bool, optional): Determines if the linked samples should be included in the plot.
-                Defaluts to True.
+                Defaults to True.
 
         Returns:
             Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:
