@@ -1,3 +1,11 @@
+0.6.0 (The future)
+==================
+### New Features
+- Improve choose_variables to control the order of the returned variables
+    - The return type is now a list (and not a Tuple)
+    - The order of the returned list is based on the variables argument. If it is not supplied, it is based on column names in the DataFrames. The df_for_var_order arg controls which df to use.
+
+
 0.5.0 (2023-03-06)
 ==================
 ### New Features

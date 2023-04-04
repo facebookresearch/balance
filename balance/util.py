@@ -1141,65 +1141,111 @@ def rm_mutual_nas(*args) -> List:
     return r
 
 
-# TODO: make sure the function returns the variables names in a pre-decided order (alphabetical or by sample order)
-# TODO: what is this returning?  -> Optional[Tuple] ?!
-def choose_variables(*dfs, variables: Optional[List] = None):
-    """Return covars which are present in all dfs and also in `variables`
-    if passed
+# TODO: (p2) create choose_variables_df that only works with pd.DataFrames as input, and wrap it with something that deals with Sample.
+#       This would help clarify the logic of each function.
+def choose_variables(
+    *dfs: Union[pd.DataFrame, Any],
+    variables: Optional[Union[List, set]] = None,
+    df_for_var_order: int = 0,
+) -> List[str]:
+    """
+     Returns a list of joint (intersection of) variables present in all the input dataframes and also in the `variables` set or list
+     if provided. The order of the returned variables is conditional on the input:
+         - If a `variables` argument is supplied as a list - the order will be based on the order in the variables list.
+         - If a `variables` is not a list (e.g.: set or None), the order is determined by the order of the columns in the dataframes
+             supplied. The dataframe chosen for the order is determined by the `df_for_var_order` argument. 0 means the order from the first df,
+             1 means the order from the second df, etc.
 
     Args:
-        *dfs: balance.Samples or pd.DataFrames
-        variables (Optional[List], optional): which variables to choose. If None, chooses all joint variables in the dfs.. Defaults to None.
+         *dfs (Union[pd.DataFrame, Any]): One or more pandas.DataFrames or balance.Samples.
+         variables (Optional[Union[List, set]]): The variables to choose from. If None, returns all joint variables found
+             in the input dataframes. Defaults to None.
+         df_for_var_order (int): Index of the dataframe used to determine the order of the variables in the output list.
+             Defaults to 0. This is used only if the `variables` argument is not a list (e.g.: a set or None).
 
-    Raises:
-        Exception: _description_
+     Raises:
+         ValueError: If one or more requested variables are not present in all dataframes.
 
-    Returns:
-        Tuple: Tuple of joint variables
+     Returns:
+         List[str]: A list of the joint variables present in all dataframes and in the `variables` set or list, ordered
+             based on the input conditions specified.
+
+     Examples:
+        ::
+            import pandas as pd
+            from balance.util import choose_variables
+
+            df1 = pd.DataFrame({'A': [1, 2], 'B': [3, 4], 'C': [5, 6], 'E': [1,1], 'F': [1,1]})
+            df2 = pd.DataFrame({'C': [7, 8], 'J': [9, 10], 'B': [11, 12], 'K': [1,1], 'A': [1,1]})
+
+            print(choose_variables(df1, df2))
+            print(choose_variables(df1, df2,df_for_var_order = 1))
+            print(choose_variables(df1, df2,variables=["B", "A"]))
+
+                # WARNING (2023-04-02 10:12:01,337) [util/choose_variables (line 1206)]: Ignoring variables not present in all Samples: {'K', 'F', 'E', 'J'}
+                # WARNING (2023-04-02 10:12:01,338) [util/choose_variables (line 1206)]: Ignoring variables not present in all Samples: {'K', 'F', 'E', 'J'}
+                # WARNING (2023-04-02 10:12:01,340) [util/choose_variables (line 1206)]: Ignoring variables not present in all Samples: {'K', 'F', 'E', 'J'}
+                # ['A', 'B', 'C']
+                # ['C', 'B', 'A']
+                # ['B', 'A']
     """
 
     if (variables is not None) and (len(variables) == 0):
         variables = None
 
-    df_variables = [
-        d.covars().names() if _isinstance_sample(d) else d.columns.values
+    # This is a list of lists with the variable names of the input dataframes
+    dfs_variables = [
+        d.covars().names() if _isinstance_sample(d) else d.columns.values.tolist()
         for d in dfs
         if d is not None
     ]
 
-    intersection_variables = set(
-        reduce(lambda x, y: set(x).intersection(set(y)), df_variables)
+    var_list_for_order = (
+        variables if (isinstance(variables, list)) else dfs_variables[df_for_var_order]
     )
 
-    union_variables = reduce(lambda x, y: set(x).union(set(y)), df_variables)
+    intersection_variables = set(
+        reduce(lambda x, y: set(x).intersection(set(y)), dfs_variables)
+    )
+
+    union_variables = reduce(lambda x, y: set(x).union(set(y)), dfs_variables)
 
     if len(set(union_variables).symmetric_difference(intersection_variables)) > 0:
         logger.warning(
             f"Ignoring variables not present in all Samples: {union_variables.difference(intersection_variables)}"
         )
 
-    if variables is not None:
-        variables_not_in_df = set(variables).difference(intersection_variables)
+    if variables is None:
+        variables = intersection_variables
+    else:
+        variables = set(variables)
+        variables_not_in_df = variables.difference(intersection_variables)
 
         if len(variables_not_in_df) > 0:
             logger.warning(
                 "These variables are not included in the dataframes: {variables_not_in_df}"
             )
-            raise Exception(
+            raise ValueError(
                 f"{len(variables_not_in_df)} requested variables are not in all Samples: "
                 f"{variables_not_in_df}"
             )
-        # pyre-fixme[9] Incompatible variable type [9]: variables is declared to have type `Optional[List[typing.Any]]` but is used as type `Set[typing.Any]`.
-        variables = intersection_variables.intersection(set(variables))
-    else:
-        variables = intersection_variables
+        variables = intersection_variables.intersection(variables)
     logger.debug(f"Joint variables in all dataframes: {list(variables)}")
 
     if (variables is None) or (len(variables) == 0):
         logger.warning("Sample and target have no variables in common")
-        return ()
+        return []
 
-    return tuple(variables)
+    ordered_variables = []
+    for val in var_list_for_order:
+        if val in variables and val not in ordered_variables:
+            ordered_variables.append(val)
+    # NOTE: the above is just like:
+    # seen = set()
+    # ordered_variables = [val for val in dfs_variables[df_for_var_order] if val in variables and val not in seen and not seen.add(val)]
+
+    # TODO: consider changing the return form list to a tuple. But doing so would require to deal with various edge cases around the codebase.
+    return ordered_variables
 
 
 def auto_spread(

@@ -837,72 +837,96 @@ class TestUtil(
         #  dtype('<U32')]
 
     def test_choose_variables(self):
+        from balance.util import choose_variables
+
         # For one dataframe
         self.assertEqual(
-            sorted(balance_util.choose_variables(pd.DataFrame({"a": [1], "b": [2]}))),
+            choose_variables(pd.DataFrame({"a": [1], "b": [2]})),
             ["a", "b"],
         )
         # For two dataframes
         # Not providing variables
         self.assertEqual(
-            balance_util.choose_variables(
+            choose_variables(
                 pd.DataFrame({"a": [1], "b": [2]}),
                 pd.DataFrame({"c": [1], "b": [2]}),
                 variables="",
             ),
-            ("b",),
+            ["b"],
         )
         self.assertEqual(
-            balance_util.choose_variables(
+            choose_variables(
                 pd.DataFrame({"a": [1], "b": [2]}), pd.DataFrame({"c": [1], "b": [2]})
             ),
-            ("b",),
+            ["b"],
         )
+
         self.assertWarnsRegexp(
             "Ignoring variables not present in all Samples",
-            balance_util.choose_variables,
+            choose_variables,
             pd.DataFrame({"a": [1], "b": [2]}),
             pd.DataFrame({"c": [1], "d": [2]}),
         )
         self.assertWarnsRegexp(
             "Sample and target have no variables in common",
-            balance_util.choose_variables,
+            choose_variables,
             pd.DataFrame({"a": [1], "b": [2]}),
             pd.DataFrame({"c": [1], "d": [2]}),
         )
+
         self.assertEqual(
-            balance_util.choose_variables(
+            choose_variables(
                 pd.DataFrame({"a": [1], "b": [2]}), pd.DataFrame({"c": [1], "d": [2]})
             ),
-            (),
+            [],
         )
 
-        self.assertRaisesRegex(
-            Exception,
-            "requested variables are not in all Samples",
-            balance_util.choose_variables,
-            pd.DataFrame({"a": [1], "b": [2]}),
-            pd.DataFrame({"c": [1], "b": [2]}),
-            variables="a",
-        )
+        with self.assertRaisesRegex(
+            ValueError, "requested variables are not in all Samples"
+        ):
+            choose_variables(
+                pd.DataFrame({"a": [1], "b": [2]}),
+                pd.DataFrame({"c": [1], "b": [2]}),
+                variables="a",
+            )
 
         #  Three dataframes
         self.assertEqual(
-            balance_util.choose_variables(
+            choose_variables(
                 pd.DataFrame({"a": [1], "b": [2], "c": [2]}),
                 pd.DataFrame({"c": [1], "b": [2]}),
                 pd.DataFrame({"a": [1], "b": [2]}),
             ),
-            ("b",),
+            ["b"],
         )
 
-        self.assertRaisesRegex(
-            Exception,
-            "requested variables are not in all Samples: {'a'}",
-            balance_util.choose_variables,
-            pd.DataFrame({"a": [1], "b": [2], "c": [2]}),
-            pd.DataFrame({"c": [1], "b": [2]}),
-            variables=("a", "b", "c"),
+        df1 = pd.DataFrame({"a": [1], "b": [2], "c": [2]})
+        df2 = pd.DataFrame({"c": [1], "b": [2]})
+
+        with self.assertRaisesRegex(
+            ValueError, "requested variables are not in all Samples: {'a'}"
+        ):
+            choose_variables(df1, df2, variables=("a", "b", "c"))
+
+        # Control order
+        df1 = pd.DataFrame(
+            {"A": [1, 2], "B": [3, 4], "C": [5, 6], "E": [1, 1], "F": [1, 1]}
+        )
+        df2 = pd.DataFrame(
+            {"C": [7, 8], "J": [9, 10], "B": [11, 12], "K": [1, 1], "A": [1, 1]}
+        )
+
+        self.assertEqual(
+            choose_variables(df1, df2),
+            ["A", "B", "C"],
+        )
+        self.assertEqual(
+            choose_variables(df1, df2, df_for_var_order=1),
+            ["C", "B", "A"],
+        )
+        self.assertEqual(
+            choose_variables(df1, df2, variables=["B", "A"]),
+            ["B", "A"],
         )
 
     def test_auto_spread(self):
