@@ -431,7 +431,7 @@ class BalanceDF:
 
     def _descriptive_stats(
         self: "BalanceDF",
-        stat: Literal["mean", "std", "..."] = "mean",
+        stat: Literal["mean", "std", "var_of_mean", "..."] = "mean",
         weighted: bool = True,
         numeric_only: bool = False,
         add_na: bool = True,
@@ -442,7 +442,7 @@ class BalanceDF:
 
         Args:
             self (BalanceDF): An object to run stats on.
-            stat (Literal["mean", "std", "..."], optional): Defaults to "mean".
+            stat (Literal["mean", "std", "var_of_mean", "..."], optional): Defaults to "mean".
             weighted (bool, optional): Defaults to True.
             numeric_only (bool, optional): Defaults to False.
             add_na (bool, optional): Defaults to True.
@@ -758,6 +758,78 @@ class BalanceDF:
             return self._call_on_linked("std", **kwargs)
         else:
             return self._descriptive_stats("std", **kwargs)
+
+    def var_of_mean(
+        self: "BalanceDF", on_linked_samples: bool = True, **kwargs
+    ) -> pd.DataFrame:
+        """Calculates a variance of the weighted mean on the df of the BalanceDF object.
+
+        Args:
+            self (BalanceDF): Object.
+            on_linked_samples (bool, optional): Should the calculation be on self AND the linked samples objects? Defaults to True.
+                If True, then uses :func:`_call_on_linked` with method "var_of_mean".
+                If False, then uses :func:`_descriptive_stats` with method "var_of_mean".
+
+        Returns:
+            pd.DataFrame:
+                With row per object: self if on_linked_samples=False, and self and others (e.g.: target and unadjusted) if True.
+                Columns are for each of the columns in the relevant df (after applying :func:`model_matrix`)
+
+        Examples:
+            ::
+                import pandas as pd
+                from balance.sample_class import Sample
+                from balance.stats_and_plots.weighted_stats import var_of_weighted_mean
+
+                var_of_weighted_mean(pd.Series((1, 2, 3, 1)), pd.Series((0.5, 2, 1, 1)))
+                    # 0    0.112178
+                    # dtype: float64
+                # This shows we got the first cell of 'a' as expected.
+
+                s1 = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "a": (1, 2, 3, 1),
+                            "b": (-42, 8, 2, -42),
+                            "o": (7, 8, 9, 10),
+                            "c": ("x", "y", "z", "v"),
+                            "id": (1, 2, 3, 4),
+                            "w": (0.5, 2, 1, 1),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                    outcome_columns="o",
+                )
+
+                s2 = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "a": (1, 2, 3),
+                            "b": (4, 6, 8),
+                            "id": (1, 2, 3),
+                            "w": (0.5, 1, 2),
+                            "c": ("x", "y", "z"),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                )
+
+                s3 = s1.set_target(s2)
+                s3_null = s3.adjust(method="null")
+
+                print(s3_null.covars().var_of_mean())
+                    #                    a           b      c[v]      c[x]      c[y]      c[z]
+                    # source
+                    # self        0.112178  134.320988  0.042676  0.013413  0.082914  0.042676
+                    # target      0.163265    0.653061       NaN  0.023324  0.069971  0.093294
+                    # unadjusted  0.112178  134.320988  0.042676  0.013413  0.082914  0.042676
+        """
+        if on_linked_samples:
+            return self._call_on_linked("var_of_mean", **kwargs)
+        else:
+            return self._descriptive_stats("var_of_mean", **kwargs)
 
     # NOTE: Summary could return also an str in case it is overridden in other children's methods.
     def summary(

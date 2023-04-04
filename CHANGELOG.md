@@ -10,6 +10,7 @@
     - Add the `var_of_weighted_mean` function (from balance.stats_and_plots.weighted_stats import var_of_weighted_mean):
         Computes the variance of the weighted average (pi estimator for ratio-mean) of a list of values and their corresponding weights.
     - Added the `var_of_mean` option to stat in the `descriptive_stats` function (based on `var_of_weighted_mean`)
+    - Added the `.var_of_mean()` method to BalanceDF.
 - Misc
     - The `_prepare_input_model_matrix` and downstream functions (e.g.: `model_matrix`, `sample.outcomes().mean()`, etc) can now handle DataFrame with special characters in the column names, by replacing special characters with '_' (or '_i', if we end up with columns with duplicate names). It also handles cases in which the column names have duplicates (using the new `_make_df_column_names_unique` function).
     - Improve choose_variables to control the order of the returned variables
