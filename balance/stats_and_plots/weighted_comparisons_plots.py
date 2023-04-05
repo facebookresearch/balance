@@ -9,7 +9,7 @@ import logging
 
 import random
 
-from typing import Dict, List, Literal, Optional, Union
+from typing import Dict, List, Literal, Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
 
@@ -86,8 +86,10 @@ def plot_bar(
     axis: Optional[plt.Axes] = None,
     weighted: bool = True,
     title: Optional[str] = None,
+    ylim: Optional[Tuple[float, float]] = None,
 ) -> None:
-    """Shows a (weighted) :func:`sns.barplot` using a relative frequency table of several DataFrames.
+    """
+    Shows a (weighted) sns.barplot using a relative frequency table of several DataFrames (with optional control over the y-axis limits).
 
     If weighted is True, then mutual NA values are removed using :func:`rm_mutual_nas`.
 
@@ -105,6 +107,8 @@ def plot_bar(
         axis (Optional[plt.Axes], optional): matplotlib Axes object to draw the plot onto, otherwise uses the current Axes. Defaults to None.
         weighted (bool, optional): If to pass the weights from the dicts inside dfs. Defaults to True.
         title (str, optional): Title of the plot. Defaults to "barplot of covar '{column}'".
+        ylim (Optional[Tuple[float, float]], optional): A tuple with two float values representing the lower and upper limits of the y-axis.
+            If not provided, the y-axis range is determined automatically. Defaults to None.
 
     Examples:
         ::
@@ -124,6 +128,15 @@ def plot_bar(
                 column = "group",
                 axis = None,
                 weighted = True)
+
+            # The same as above just with ylim set to (0, 1).
+            plot_bar(
+                [{"df": df, "weights": pd.Series((1, 1, 1, 1))}, {"df": df, "weights": pd.Series((2, 1, 1, 1))}],
+                names = ["self", "target"],
+                column = "group",
+                axis = None,
+                weighted = True,
+                ylim = (0, 1))
 
             # Also deals with np.nan weights
             a = plot_bar(
@@ -150,7 +163,7 @@ def plot_bar(
     if title is None:
         title = f"barplot of covar '{column}'"
 
-    sns.barplot(
+    ax = sns.barplot(
         x=column,
         y="prop",
         hue="dataset",
@@ -159,7 +172,12 @@ def plot_bar(
         palette=sample_palette,
         saturation=1,
         alpha=0.6,
-    ).set_title(title)
+    )
+
+    if ylim is not None:
+        ax.set_ylim(ylim)
+
+    ax.set_title(title)
 
 
 def plot_hist_kde(
@@ -502,6 +520,7 @@ def seaborn_plot_dist(
     weighted: bool = True,
     dist_type: Optional[Literal["qq", "hist", "kde", "ecdf"]] = None,
     return_axes: bool = False,
+    ylim: Optional[Tuple[float, float]] = None,
 ) -> Union[List[plt.Axes], np.ndarray, None]:
     """Plots to compare the weighted distributions of an arbitrary number of variables from
     an arbitrary number of DataFrames.
@@ -525,6 +544,10 @@ def seaborn_plot_dist(
         weighted (bool, optional): If to pass the weights from the dicts inside dfs. Defaults to True.
         dist_type (Optional[str], optional): can be "hist", "kde", or "qq". Defaults to None.
         return_axes (bool, optional): if to returns axes or None. Defaults to False,
+        ylim (Optional[Tuple[float, float]], optional): A tuple with two float values representing the lower and upper limits of the y-axis.
+            If not provided, the y-axis range is determined automatically. Defaults to None.
+            Passed only for categorical variables and when dist_type is not 'qq' (i.e.: for bar plots).
+
 
     Returns:
         Union[List[plt.Axes], np.ndarray, None]: Returns None.
@@ -556,6 +579,9 @@ def seaborn_plot_dist(
             seaborn_plot_dist(dfs1, names=["self", "unadjusted", "target"], dist_type = "hist")
             seaborn_plot_dist(dfs1, names=["self", "unadjusted", "target"], dist_type = "kde")
             seaborn_plot_dist(dfs1, names=["self", "unadjusted", "target"], dist_type = "ecdf")
+
+            # With limiting the y axis range to (0,1)
+            seaborn_plot_dist(dfs1, names=["self", "unadjusted", "target"], dist_type = "kde", ylim = (0,1))
     """
     if dist_type is None:
         if len(dfs) == 1:
@@ -594,7 +620,7 @@ def seaborn_plot_dist(
                 plot_qq_categorical(dfs, names, o, axes[io], weighted)
             else:
                 # pyre-fixme[6]
-                plot_bar(dfs, names, o, axes[io], weighted)
+                plot_bar(dfs, names, o, axes[io], weighted, ylim=ylim)
         else:
             if dist_type == "qq":
                 # pyre-fixme[6]
@@ -770,15 +796,19 @@ def plotly_plot_bar(
     variables: List[str],
     plot_it: bool = True,
     return_dict_of_figures: bool = False,
+    ylim: Optional[Tuple[float, float]] = None,
 ) -> Optional[Dict[str, go.Figure]]:
-    """Plots interactive bar plot of the given variables.
+    """
+    Plots interactive bar plots of the given variables (with optional control over the y-axis limits).
 
     Args:
-        dict_of_dfs (Dict[str, pd.DataFrame]): The key is the name of the DataFrame (E.g.: self, unadjusted, target),
-            and the value is the DataFrame that contains the variables that we want to plot.
-        variables (List[str]): a list of variables to use for plotting.
-        plot_it (bool, optional): If to plot the plots interactively instead of returning a dictionary. Defaults to True.
-        return_dict_of_figures (bool, optional): If to return the dictionary containing the plots rather than just returning None. Defaults to False.
+        dict_of_dfs (Dict[str, pd.DataFrame]): A dictionary with keys as names of the DataFrame (e.g., 'self', 'unadjusted', 'target'),
+            and values as the DataFrames containing the variables to plot.
+        variables (List[str]): A list of variables to use for plotting.
+        plot_it (bool, optional): If True, plots the graphs interactively instead of returning a dictionary. Defaults to True.
+        return_dict_of_figures (bool, optional): If True, returns the dictionary containing the plots rather than just returning None. Defaults to False.
+        ylim (Optional[Tuple[float, float]], optional): A tuple with two float values representing the lower and upper limits of the y-axis.
+            If not provided, the y-axis range is determined automatically. Defaults to None.
 
     Returns:
         Optional[Dict[str, go.Figure]]: Dictionary containing plots if return_dict_of_figures is True. None otherwise.
@@ -807,6 +837,9 @@ def plotly_plot_bar(
 
             # It can work with "v2" and "v3", but it would be very sparse
             plotly_plot_bar(dict_of_dfs, variables= ["v1"])
+
+            # Plots the same as above, but this time the range of the yaxis is from 0 to 1.
+            plotly_plot_bar(dict_of_dfs, variables= ["v1"], ylim = (0,1))
     """
     dict_of_bars = {}
     for variable in variables:
@@ -863,7 +896,10 @@ def plotly_plot_bar(
             paper_bgcolor="rgb(255, 255, 255)",
             plot_bgcolor="rgb(255, 255, 255)",
             xaxis={"title": variable},
-            yaxis={"title": "Proportion of Total"},
+            yaxis={
+                "title": "Proportion of Total",
+                "range": ylim if ylim is not None else None,
+            },
         )
 
         fig = go.Figure(data=data, layout=layout)
@@ -883,6 +919,7 @@ def plotly_plot_dist(
     weighted: bool = True,
     plot_it: bool = True,
     return_dict_of_figures: bool = False,
+    ylim: Optional[Tuple[float, float]] = None,
 ) -> Optional[Dict[str, go.Figure]]:
     """Plots interactive distribution plots (qq and bar plots) of the given variables.
 
@@ -905,6 +942,9 @@ def plotly_plot_dist(
                 offline.iplot(dict_of_all_plots['age'])
             Or simply:
                 dict_of_all_plots['age']
+        ylim (Optional[Tuple[float, float]], optional): A tuple with two float values representing the lower and upper limits of the y-axis.
+            If not provided, the y-axis range is determined automatically. Defaults to None.
+            passed to bar plots only.
 
     Returns:
         Optional[Dict[str, go.Figure]]: Dictionary containing plots if return_dict_of_figures is True. None otherwise.
@@ -932,6 +972,9 @@ def plotly_plot_dist(
             }
 
             plotly_plot_dist(dict_of_dfs)
+
+            # Make sure the bar plot is plotted with y in the range of 0 to 1.
+            plotly_plot_dist(dict_of_dfs, ylim = (0,1))
     """
     dict_of_all_plots = {}
     #  Choose set of variables to plot
@@ -983,7 +1026,7 @@ def plotly_plot_dist(
         # the below functions will create plotly plots
         if categorical:
             dict_of_plot = plotly_plot_bar(
-                dict_of_dfs, [o], plot_it, return_dict_of_figures
+                dict_of_dfs, [o], plot_it, return_dict_of_figures, ylim=ylim
             )
         else:
             dict_of_plot = plotly_plot_qq(
@@ -1048,6 +1091,7 @@ def plot_dist(
     weighted: bool = True,
     dist_type: Optional[Literal["qq", "hist", "kde", "ecdf"]] = None,
     library: Literal["plotly", "seaborn"] = "plotly",
+    ylim: Optional[Tuple[float, float]] = None,
     **kwargs,
 ) -> Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:
     """Plots the variables of a DataFrame by using either seaborn or plotly.
@@ -1071,6 +1115,9 @@ def plot_dist(
         weighted (bool, optional): If to use the weights with the plots. Defaults to True.
         dist_type (Literal["qq", "hist", "kde", "ecdf"], optional): The type of plot to draw. Relevant only if using library="seaborn". Defaults to "hist".
         library (Literal["plotly", "seaborn"], optional): Whichever library to use for the plot. Defaults to "plotly".
+        ylim (Optional[Tuple[float, float]], optional): A tuple with two float values representing the lower and upper limits of the y-axis.
+            If not provided, the y-axis range is determined automatically. Defaults to None.
+            passed to bar plots only.
 
     Raises:
         ValueError: if library is not in ("plotly", "seaborn").
@@ -1113,6 +1160,9 @@ def plot_dist(
             plot_dist(dfs1, names=["self", "unadjusted", "target"], library="seaborn", dist_type = "hist")
             plot_dist(dfs1, names=["self", "unadjusted", "target"], library="seaborn", dist_type = "kde")
             plot_dist(dfs1, names=["self", "unadjusted", "target"], library="seaborn", dist_type = "ecdf")
+
+            plot_dist(dfs1, names=["self", "unadjusted", "target"], ylim = (0,1))
+            plot_dist(dfs1, names=["self", "unadjusted", "target"], library="seaborn", dist_type = "kde", ylim = (0,1))
     """
     if library not in ("plotly", "seaborn"):
         raise ValueError(f"library must be either 'plotly' or 'seaborn', is {library}")
@@ -1130,6 +1180,7 @@ def plot_dist(
             numeric_n_values_threshold,
             weighted,
             dist_type,
+            ylim=ylim,
             **kwargs,
         )
     elif library == "plotly":
@@ -1147,7 +1198,12 @@ def plot_dist(
             logger.warning("plotly plots ignore dist_type. Consider library='seaborn'")
 
         return plotly_plot_dist(
-            dict_of_dfs, variables, numeric_n_values_threshold, weighted, **kwargs
+            dict_of_dfs,
+            variables,
+            numeric_n_values_threshold,
+            weighted,
+            ylim=ylim,
+            **kwargs,
         )
 
 

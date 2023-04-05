@@ -1,4 +1,4 @@
-0.6.0 (2023-04-04)
+0.6.0 (2023-04-05)
 ==================
 ### New Features
 - Variance of the weighted mean
@@ -12,6 +12,9 @@
         - Added the `.ci_of_mean()` method to BalanceDF.
         - Added the `.mean_with_ci()` method to BalanceDF.
         - Updated `.summary()` methods to include the output of `ci_of_mean`.
+- All bar plots now have an added ylim argument to control the limits of the y axis.
+    For example use: `plot_dist(dfs1, names=["self", "unadjusted", "target"], ylim = (0,1))`
+    Or this: `s3_null.covars().plot(ylim = (0,1))`
 - Improve 'choose_variables' function to control the order of the returned variables
     - The return type is now a list (and not a Tuple)
     - The order of the returned list is based on the variables argument. If it is not supplied, it is based on the order of the column names in the DataFrames. The df_for_var_order arg controls which df to use.

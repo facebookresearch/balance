@@ -557,6 +557,7 @@ class BalanceDF:
             self (BalanceDF): Object (used in the plots as "sample" or "self")
             on_linked_samples (bool, optional): Determines if the linked samples should be included in the plot.
                 Defaults to True.
+            **kwargs: passed to :func:`weighted_comparisons_plots.plot_dist`.
 
         Returns:
             Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:
@@ -598,6 +599,10 @@ class BalanceDF:
 
                 s3_null.covars().plot()
                 s3_null.covars().plot(library = "seaborn")
+
+                # Controlling the limits of the y axis using lim:
+                s3_null.covars().plot(ylim = (0,1))
+                s3_null.covars().plot(library = "seaborn",ylim = (0,1), dist_type = "hist")
         """
         if on_linked_samples:
             dfs_to_add = self._BalanceDF_child_from_linked_samples()
@@ -1723,7 +1728,7 @@ class BalanceCovarsDF(BalanceDF):
         """A factory function to create BalanceCovarsDF
 
         This is used through :func:`Sample.covars`.
-        It initates a BalanceCovarsDF object by passing the relevant arguments to
+        It initiates a BalanceCovarsDF object by passing the relevant arguments to
         :func:`BalanceDF.__init__`.
 
         Args:
@@ -1761,7 +1766,7 @@ class BalanceWeightsDF(BalanceDF):
         """A factory function to create BalanceWeightsDF
 
         This is used through :func:`Sample.weights`.
-        It initates a BalanceWeightsDF object by passing the relevant arguments to
+        It initiates a BalanceWeightsDF object by passing the relevant arguments to
         :func:`BalanceDF.__init__`.
 
         Args:
