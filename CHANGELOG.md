@@ -9,6 +9,7 @@
     - Add the `ci_of_weighted_mean` function (from balance.stats_and_plots.weighted_stats import ci_of_weighted_mean):
         Computes the confidence intervals of the weighted mean using the (just added) variance of the weighted mean.
         - Added the `ci_of_mean` option to stat in the `descriptive_stats` function (based on `ci_of_weighted_mean`). Also added kwargs support.
+        - Added the `.ci_of_mean()` method to BalanceDF.
 - Improve 'choose_variables' function to control the order of the returned variables
     - The return type is now a list (and not a Tuple)
     - The order of the returned list is based on the variables argument. If it is not supplied, it is based on the order of the column names in the DataFrames. The df_for_var_order arg controls which df to use.

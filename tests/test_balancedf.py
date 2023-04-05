@@ -725,6 +725,46 @@ class TestBalanceDF_var_of_mean(BalanceTestCase):
         )
 
 
+class TestBalanceDF_ci_of_mean(BalanceTestCase):
+    def test_BalanceDF_ci_of_mean(self):
+
+        self.assertEqual(
+            s3_null.covars().ci_of_mean(round_ndigits=3).fillna(0).to_dict(),
+            {
+                "a": {
+                    "self": (1.232, 2.545),
+                    "target": (1.637, 3.221),
+                    "unadjusted": (1.232, 2.545),
+                },
+                "b": {
+                    "self": (-32.715, 12.715),
+                    "target": (5.273, 8.441),
+                    "unadjusted": (-32.715, 12.715),
+                },
+                "c[v]": {
+                    "self": (-0.183, 0.627),
+                    "target": 0,
+                    "unadjusted": (-0.183, 0.627),
+                },
+                "c[x]": {
+                    "self": (-0.116, 0.338),
+                    "target": (-0.156, 0.442),
+                    "unadjusted": (-0.116, 0.338),
+                },
+                "c[y]": {
+                    "self": (-0.12, 1.009),
+                    "target": (-0.233, 0.804),
+                    "unadjusted": (-0.12, 1.009),
+                },
+                "c[z]": {
+                    "self": (-0.183, 0.627),
+                    "target": (-0.027, 1.17),
+                    "unadjusted": (-0.183, 0.627),
+                },
+            },
+        )
+
+
 class TestBalanceDF_asmd(BalanceTestCase):
     def test_BalanceDF_asmd(self):
         # Test with BalanceDF

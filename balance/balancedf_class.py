@@ -431,10 +431,11 @@ class BalanceDF:
 
     def _descriptive_stats(
         self: "BalanceDF",
-        stat: Literal["mean", "std", "var_of_mean", "..."] = "mean",
+        stat: Literal["mean", "std", "var_of_mean", "ci_of_mean", "..."] = "mean",
         weighted: bool = True,
         numeric_only: bool = False,
         add_na: bool = True,
+        **kwargs,
     ) -> pd.DataFrame:
         """
         Calls a given method from :func:`weighted_stats.descriptive_stats` on 'self'.
@@ -442,10 +443,11 @@ class BalanceDF:
 
         Args:
             self (BalanceDF): An object to run stats on.
-            stat (Literal["mean", "std", "var_of_mean", "..."], optional): Defaults to "mean".
+            stat (Literal["mean", "std", "var_of_mean", "ci_of_mean", "..."], optional): Defaults to "mean".
             weighted (bool, optional): Defaults to True.
             numeric_only (bool, optional): Defaults to False.
             add_na (bool, optional): Defaults to True.
+            **kwargs: extra args to pass to descriptive_stats
 
         Returns:
             pd.DataFrame: Returns pd.DataFrame of the output (based on stat argument), for each of the columns in df.
@@ -468,6 +470,7 @@ class BalanceDF:
             # running model_matrix again.
             numeric_only=True,
             add_na=add_na,
+            **kwargs,
         )
         return wdf
 
@@ -830,6 +833,89 @@ class BalanceDF:
             return self._call_on_linked("var_of_mean", **kwargs)
         else:
             return self._descriptive_stats("var_of_mean", **kwargs)
+
+    def ci_of_mean(
+        self: "BalanceDF", on_linked_samples: bool = True, **kwargs
+    ) -> pd.DataFrame:
+        """Calculates a confidence intervals of the weighted mean on the df of the BalanceDF object.
+
+        Args:
+            self (BalanceDF): Object.
+            on_linked_samples (bool, optional): Should the calculation be on self AND the linked samples objects? Defaults to True.
+                If True, then uses :func:`_call_on_linked` with method "ci_of_mean".
+                If False, then uses :func:`_descriptive_stats` with method "ci_of_mean".
+            kwargs: we can pass ci_of_mean arguments. E.g.: conf_level and round_ndigits.
+
+        Returns:
+            pd.DataFrame:
+                With row per object: self if on_linked_samples=False, and self and others (e.g.: target and unadjusted) if True.
+                Columns are for each of the columns in the relevant df (after applying :func:`model_matrix`)
+
+        Examples:
+            ::
+                import pandas as pd
+                from balance.sample_class import Sample
+                from balance.stats_and_plots.weighted_stats import ci_of_weighted_mean
+
+                ci_of_weighted_mean(pd.Series((1, 2, 3, 1)), pd.Series((0.5, 2, 1, 1)), round_ndigits = 3)
+                # 0    (1.232, 2.545)
+                # dtype: object
+                # This shows we got the first cell of 'a' as expected.
+
+                s1 = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "a": (1, 2, 3, 1),
+                            "b": (-42, 8, 2, -42),
+                            "o": (7, 8, 9, 10),
+                            "c": ("x", "y", "z", "v"),
+                            "id": (1, 2, 3, 4),
+                            "w": (0.5, 2, 1, 1),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                    outcome_columns="o",
+                )
+
+                s2 = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "a": (1, 2, 3),
+                            "b": (4, 6, 8),
+                            "id": (1, 2, 3),
+                            "w": (0.5, 1, 2),
+                            "c": ("x", "y", "z"),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                )
+
+                s3 = s1.set_target(s2)
+                s3_null = s3.adjust(method="null")
+
+                print(s3_null.covars().ci_of_mean(round_ndigits = 3).T)
+                    # source               self           target         unadjusted
+                    # a          (1.232, 2.545)   (1.637, 3.221)     (1.232, 2.545)
+                    # b       (-32.715, 12.715)   (5.273, 8.441)  (-32.715, 12.715)
+                    # c[v]      (-0.183, 0.627)              NaN    (-0.183, 0.627)
+                    # c[x]      (-0.116, 0.338)  (-0.156, 0.442)    (-0.116, 0.338)
+                    # c[y]       (-0.12, 1.009)  (-0.233, 0.804)     (-0.12, 1.009)
+                    # c[z]      (-0.183, 0.627)   (-0.027, 1.17)    (-0.183, 0.627)
+
+                s3_2 = s1.set_target(s2)
+                s3_null_2 = s3_2.adjust(method="null")
+                print(s3_null_2.outcomes().ci_of_mean(round_ndigits = 3))
+                    #                         o
+                    # source
+                    # self        (7.671, 9.44)
+                    # unadjusted  (7.671, 9.44)
+        """
+        if on_linked_samples:
+            return self._call_on_linked("ci_of_mean", **kwargs)
+        else:
+            return self._descriptive_stats("ci_of_mean", **kwargs)
 
     # NOTE: Summary could return also an str in case it is overridden in other children's methods.
     def summary(
