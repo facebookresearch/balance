@@ -469,10 +469,11 @@
 
     <span class="k">def</span> <span class="nf">_descriptive_stats</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
-        <span class="n">stat</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">,</span> <span class="s2">&quot;var_of_mean&quot;</span><span class="p">,</span> <span class="s2">&quot;...&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
+        <span class="n">stat</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">,</span> <span class="s2">&quot;var_of_mean&quot;</span><span class="p">,</span> <span class="s2">&quot;ci_of_mean&quot;</span><span class="p">,</span> <span class="s2">&quot;...&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
         <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">numeric_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">add_na</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Calls a given method from :func:`weighted_stats.descriptive_stats` on &#39;self&#39;.</span>
@@ -480,10 +481,11 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (BalanceDF): An object to run stats on.</span>
-<span class="sd">            stat (Literal[&quot;mean&quot;, &quot;std&quot;, &quot;var_of_mean&quot;, &quot;...&quot;], optional): Defaults to &quot;mean&quot;.</span>
+<span class="sd">            stat (Literal[&quot;mean&quot;, &quot;std&quot;, &quot;var_of_mean&quot;, &quot;ci_of_mean&quot;, &quot;...&quot;], optional): Defaults to &quot;mean&quot;.</span>
 <span class="sd">            weighted (bool, optional): Defaults to True.</span>
 <span class="sd">            numeric_only (bool, optional): Defaults to False.</span>
 <span class="sd">            add_na (bool, optional): Defaults to True.</span>
+<span class="sd">            **kwargs: extra args to pass to descriptive_stats</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            pd.DataFrame: Returns pd.DataFrame of the output (based on stat argument), for each of the columns in df.</span>
@@ -506,6 +508,7 @@
             <span class="c1"># running model_matrix again.</span>
             <span class="n">numeric_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">add_na</span><span class="o">=</span><span class="n">add_na</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">wdf</span>
 
@@ -592,6 +595,7 @@
 <span class="sd">            self (BalanceDF): Object (used in the plots as &quot;sample&quot; or &quot;self&quot;)</span>
 <span class="sd">            on_linked_samples (bool, optional): Determines if the linked samples should be included in the plot.</span>
 <span class="sd">                Defaults to True.</span>
+<span class="sd">            **kwargs: passed to :func:`weighted_comparisons_plots.plot_dist`.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:</span>
@@ -633,6 +637,10 @@
 
 <span class="sd">                s3_null.covars().plot()</span>
 <span class="sd">                s3_null.covars().plot(library = &quot;seaborn&quot;)</span>
+
+<span class="sd">                # Controlling the limits of the y axis using lim:</span>
+<span class="sd">                s3_null.covars().plot(ylim = (0,1))</span>
+<span class="sd">                s3_null.covars().plot(library = &quot;seaborn&quot;,ylim = (0,1), dist_type = &quot;hist&quot;)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">on_linked_samples</span><span class="p">:</span>
             <span class="n">dfs_to_add</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_BalanceDF_child_from_linked_samples</span><span class="p">()</span>
@@ -869,27 +877,178 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_descriptive_stats</span><span class="p">(</span><span class="s2">&quot;var_of_mean&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
+<div class="viewcode-block" id="BalanceDF.ci_of_mean"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.ci_of_mean">[docs]</a>    <span class="k">def</span> <span class="nf">ci_of_mean</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span> <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculates a confidence intervals of the weighted mean on the df of the BalanceDF object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (BalanceDF): Object.</span>
+<span class="sd">            on_linked_samples (bool, optional): Should the calculation be on self AND the linked samples objects? Defaults to True.</span>
+<span class="sd">                If True, then uses :func:`_call_on_linked` with method &quot;ci_of_mean&quot;.</span>
+<span class="sd">                If False, then uses :func:`_descriptive_stats` with method &quot;ci_of_mean&quot;.</span>
+<span class="sd">            kwargs: we can pass ci_of_mean arguments. E.g.: conf_level and round_ndigits.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame:</span>
+<span class="sd">                With row per object: self if on_linked_samples=False, and self and others (e.g.: target and unadjusted) if True.</span>
+<span class="sd">                Columns are for each of the columns in the relevant df (after applying :func:`model_matrix`)</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            ::</span>
+<span class="sd">                import pandas as pd</span>
+<span class="sd">                from balance.sample_class import Sample</span>
+<span class="sd">                from balance.stats_and_plots.weighted_stats import ci_of_weighted_mean</span>
+
+<span class="sd">                ci_of_weighted_mean(pd.Series((1, 2, 3, 1)), pd.Series((0.5, 2, 1, 1)), round_ndigits = 3)</span>
+<span class="sd">                # 0    (1.232, 2.545)</span>
+<span class="sd">                # dtype: object</span>
+<span class="sd">                # This shows we got the first cell of &#39;a&#39; as expected.</span>
+
+<span class="sd">                s1 = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;a&quot;: (1, 2, 3, 1),</span>
+<span class="sd">                            &quot;b&quot;: (-42, 8, 2, -42),</span>
+<span class="sd">                            &quot;o&quot;: (7, 8, 9, 10),</span>
+<span class="sd">                            &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;, &quot;v&quot;),</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3, 4),</span>
+<span class="sd">                            &quot;w&quot;: (0.5, 2, 1, 1),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                    outcome_columns=&quot;o&quot;,</span>
+<span class="sd">                )</span>
+
+<span class="sd">                s2 = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;a&quot;: (1, 2, 3),</span>
+<span class="sd">                            &quot;b&quot;: (4, 6, 8),</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3),</span>
+<span class="sd">                            &quot;w&quot;: (0.5, 1, 2),</span>
+<span class="sd">                            &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                )</span>
+
+<span class="sd">                s3 = s1.set_target(s2)</span>
+<span class="sd">                s3_null = s3.adjust(method=&quot;null&quot;)</span>
+
+<span class="sd">                print(s3_null.covars().ci_of_mean(round_ndigits = 3).T)</span>
+<span class="sd">                    # source               self           target         unadjusted</span>
+<span class="sd">                    # a          (1.232, 2.545)   (1.637, 3.221)     (1.232, 2.545)</span>
+<span class="sd">                    # b       (-32.715, 12.715)   (5.273, 8.441)  (-32.715, 12.715)</span>
+<span class="sd">                    # c[v]      (-0.183, 0.627)              NaN    (-0.183, 0.627)</span>
+<span class="sd">                    # c[x]      (-0.116, 0.338)  (-0.156, 0.442)    (-0.116, 0.338)</span>
+<span class="sd">                    # c[y]       (-0.12, 1.009)  (-0.233, 0.804)     (-0.12, 1.009)</span>
+<span class="sd">                    # c[z]      (-0.183, 0.627)   (-0.027, 1.17)    (-0.183, 0.627)</span>
+
+<span class="sd">                s3_2 = s1.set_target(s2)</span>
+<span class="sd">                s3_null_2 = s3_2.adjust(method=&quot;null&quot;)</span>
+<span class="sd">                print(s3_null_2.outcomes().ci_of_mean(round_ndigits = 3))</span>
+<span class="sd">                    #                         o</span>
+<span class="sd">                    # source</span>
+<span class="sd">                    # self        (7.671, 9.44)</span>
+<span class="sd">                    # unadjusted  (7.671, 9.44)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">on_linked_samples</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_on_linked</span><span class="p">(</span><span class="s2">&quot;ci_of_mean&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_descriptive_stats</span><span class="p">(</span><span class="s2">&quot;ci_of_mean&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BalanceDF.mean_with_ci"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.mean_with_ci">[docs]</a>    <span class="k">def</span> <span class="nf">mean_with_ci</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span> <span class="n">round_ndigits</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a table with means and confidence intervals (CIs) for all elements in the BalanceDF object.</span>
+
+<span class="sd">        This method calculates the mean and CI for each column of the BalanceDF object using the BalanceDF.mean()</span>
+<span class="sd">        and BalanceDF.ci_of_mean() methods, respectively. The resulting table contains (for each element such as self, target and adjust) two columns for each input</span>
+<span class="sd">        column: one for the mean and one for the CI.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (BalanceDF): The BalanceDF object.</span>
+<span class="sd">            round_ndigits (int, optional): The number of decimal places to round the mean and CI to.</span>
+<span class="sd">                Defaults to 3.</span>
+<span class="sd">            on_linked_samples (bool, optional): A boolean indicating whether to include linked samples</span>
+<span class="sd">                when calculating the mean. Defaults to True.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame: A table with two rows for each input column: one for the mean and one for the CI.</span>
+<span class="sd">                The columns of the table are labeled with the names of the input columns.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            ::</span>
+<span class="sd">                import numpy as np</span>
+<span class="sd">                import pandas as pd</span>
+
+<span class="sd">                from balance.sample_class import Sample</span>
+
+<span class="sd">                s_o = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame({&quot;o1&quot;: (7, 8, 9, 10), &quot;o2&quot;: (7, 8, 9, np.nan), &quot;id&quot;: (1, 2, 3, 4)}),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    outcome_columns=(&quot;o1&quot;, &quot;o2&quot;),</span>
+<span class="sd">                )</span>
+
+<span class="sd">                t_o = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;o1&quot;: (7, 8, 9, 10, 11, 12, 13, 14),</span>
+<span class="sd">                            &quot;o2&quot;: (7, 8, 9, np.nan, np.nan, 12, 13, 14),</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3, 4, 5, 6, 7, 8),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    outcome_columns=(&quot;o1&quot;, &quot;o2&quot;),</span>
+<span class="sd">                )</span>
+<span class="sd">                s_o2 = s_o.set_target(t_o)</span>
+
+<span class="sd">                print(s_o2.outcomes().mean_with_ci())</span>
+<span class="sd">                    # source            self  target             self           target</span>
+<span class="sd">                    # _is_na_o2[False]  0.75   0.750   (0.326, 1.174)     (0.45, 1.05)</span>
+<span class="sd">                    # _is_na_o2[True]   0.25   0.250  (-0.174, 0.674)    (-0.05, 0.55)</span>
+<span class="sd">                    # o1                8.50  10.500   (7.404, 9.596)  (8.912, 12.088)</span>
+<span class="sd">                    # o2                6.00   7.875   (2.535, 9.465)  (4.351, 11.399)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">the_means</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">on_linked_samples</span><span class="o">=</span><span class="n">on_linked_samples</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">round_ndigits</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+        <span class="p">)</span>
+        <span class="n">the_cis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ci_of_mean</span><span class="p">(</span>
+            <span class="n">on_linked_samples</span><span class="o">=</span><span class="n">on_linked_samples</span><span class="p">,</span> <span class="n">round_ndigits</span><span class="o">=</span><span class="n">round_ndigits</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">the_cis</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">the_cis</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;_ci&quot;</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">the_means</span><span class="p">,</span> <span class="n">the_cis</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+
     <span class="c1"># NOTE: Summary could return also an str in case it is overridden in other children&#39;s methods.</span>
 <div class="viewcode-block" id="BalanceDF.summary"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.summary">[docs]</a>    <span class="k">def</span> <span class="nf">summary</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span> <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a summary of BalanceDF class.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a summary of the BalanceDF object.</span>
 
-<span class="sd">        Currently just uses :func:`BalanceDF.mean`. In the future this may be extended.</span>
+<span class="sd">        This method currently calculates the mean and confidence interval (CI) for each column of the object</span>
+<span class="sd">        using the :func:`BalanceDF.mean_with_ci()` method. In the future, this method may be extended to include additional</span>
+<span class="sd">        summary statistics.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            self (BalanceDF): Object.</span>
-<span class="sd">            on_linked_samples (bool, optional): Passed to :func:`BalanceDF.mean`. Defaults to True.</span>
+<span class="sd">            self (BalanceDF): The BalanceDF object.</span>
+<span class="sd">            on_linked_samples (bool, optional): A boolean indicating whether to include linked samples</span>
+<span class="sd">                when calculating the mean and CI. Defaults to True.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Union[pd.DataFrame, str]: :func:`BalanceDF.mean`.</span>
+<span class="sd">            Union[pd.DataFrame, str]: A table with two rows for each input column: one for the mean and one for the CI.</span>
+<span class="sd">                The columns of the table are labeled with the names of the input columns.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># TODO model matrix means to include categorical columns, fix model_matrix to accept DataFrame</span>
         <span class="c1"># TODO: include min/max/std/etc. show min/mean/max if there&#39;s a single column, just means if multiple (covars and outcomes)</span>
         <span class="c1">#       Doing so would either require to implement a min/max etc methods in BalanceDF and use them with _call_on_linked.</span>
         <span class="c1">#       Or, update _call_on_linked to deal with non functions, get &#39;df&#39; from it, and apply the needed functions on it.</span>
         <span class="c1"># TODO add outcome variance ratio</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">on_linked_samples</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_with_ci</span><span class="p">(</span><span class="n">on_linked_samples</span><span class="o">=</span><span class="n">on_linked_samples</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_get_df_and_weights</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
@@ -1463,42 +1622,43 @@
 <span class="sd">                s_o2 = s_o.set_target(t_o)</span>
 
 <span class="sd">                print(s_o.outcomes().summary())</span>
+<span class="sd">                    # 2 outcomes: [&#39;o1&#39; &#39;o2&#39;]</span>
+<span class="sd">                    # Mean outcomes (with 95% confidence intervals):</span>
+<span class="sd">                    # source            self             self</span>
+<span class="sd">                    # _is_na_o2[False]  0.75   (0.326, 1.174)</span>
+<span class="sd">                    # _is_na_o2[True]   0.25  (-0.174, 0.674)</span>
+<span class="sd">                    # o1                8.50   (7.404, 9.596)</span>
+<span class="sd">                    # o2                6.00   (2.535, 9.465)</span>
 
-<span class="sd">                # 2 outcomes: [&#39;o1&#39; &#39;o2&#39;]</span>
-<span class="sd">                # Mean outcomes:</span>
-<span class="sd">                #         _is_na_o2[False]  _is_na_o2[True]   o1   o2</span>
-<span class="sd">                # source</span>
-<span class="sd">                # self                0.75             0.25  8.5  6.0</span>
-
-<span class="sd">                # Response rates (relative to number of respondents in sample):</span>
-<span class="sd">                #       o1    o2</span>
-<span class="sd">                # n    4.0   3.0</span>
-<span class="sd">                # %  100.0  75.0</span>
-
+<span class="sd">                    # Response rates (relative to number of respondents in sample):</span>
+<span class="sd">                    #       o1    o2</span>
+<span class="sd">                    # n    4.0   3.0</span>
+<span class="sd">                    # %  100.0  75.0</span>
 
 <span class="sd">                print(s_o2.outcomes().summary())</span>
+<span class="sd">                    # 2 outcomes: [&#39;o1&#39; &#39;o2&#39;]</span>
+<span class="sd">                    # Mean outcomes (with 95% confidence intervals):</span>
+<span class="sd">                    # source            self  target             self           target</span>
+<span class="sd">                    # _is_na_o2[False]  0.75   0.750   (0.326, 1.174)     (0.45, 1.05)</span>
+<span class="sd">                    # _is_na_o2[True]   0.25   0.250  (-0.174, 0.674)    (-0.05, 0.55)</span>
+<span class="sd">                    # o1                8.50  10.500   (7.404, 9.596)  (8.912, 12.088)</span>
+<span class="sd">                    # o2                6.00   7.875   (2.535, 9.465)  (4.351, 11.399)</span>
 
-<span class="sd">                # 2 outcomes: [&#39;o1&#39; &#39;o2&#39;]</span>
-<span class="sd">                # Mean outcomes:</span>
-<span class="sd">                #         _is_na_o2[False]  _is_na_o2[True]    o1     o2</span>
-<span class="sd">                # source</span>
-<span class="sd">                # self                0.75             0.25   8.5  6.000</span>
-<span class="sd">                # target              0.75             0.25  10.5  7.875</span>
-
-<span class="sd">                # Response rates (relative to number of respondents in sample):</span>
-<span class="sd">                #       o1    o2</span>
-<span class="sd">                # n    4.0   3.0</span>
-<span class="sd">                # %  100.0  75.0</span>
-<span class="sd">                # Response rates (relative to notnull rows in the target):</span>
-<span class="sd">                #            o1    o2</span>
-<span class="sd">                # n   4.000000   3.0</span>
-<span class="sd">                # %  66.666667  50.0</span>
-<span class="sd">                # Response rates (in the target):</span>
-<span class="sd">                #        o1    o2</span>
-<span class="sd">                # n    8.0   6.0</span>
-<span class="sd">                # %  100.0  75.0</span>
+<span class="sd">                    # Response rates (relative to number of respondents in sample):</span>
+<span class="sd">                    #       o1    o2</span>
+<span class="sd">                    # n    4.0   3.0</span>
+<span class="sd">                    # %  100.0  75.0</span>
+<span class="sd">                    # Response rates (relative to notnull rows in the target):</span>
+<span class="sd">                    #            o1    o2</span>
+<span class="sd">                    # n   4.000000   3.0</span>
+<span class="sd">                    # %  66.666667  50.0</span>
+<span class="sd">                    # Response rates (in the target):</span>
+<span class="sd">                    #        o1    o2</span>
+<span class="sd">                    # n    8.0   6.0</span>
+<span class="sd">                    # %  100.0  75.0</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">mean_outcomes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+        <span class="n">mean_outcomes_with_ci</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_with_ci</span><span class="p">()</span>
         <span class="n">relative_response_rates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relative_response_rates</span><span class="p">()</span>
         <span class="n">target_response_rates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_response_rates</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">target_response_rates</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1514,14 +1674,14 @@
 
         <span class="n">n_outcomes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">list_outcomes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span>
-        <span class="n">mean_outcomes</span> <span class="o">=</span> <span class="n">mean_outcomes</span>
+        <span class="n">mean_outcomes_with_ci</span> <span class="o">=</span> <span class="n">mean_outcomes_with_ci</span>
         <span class="n">relative_response_rates</span> <span class="o">=</span> <span class="n">relative_response_rates</span>
         <span class="n">target_clause</span> <span class="o">=</span> <span class="n">target_clause</span>
 
         <span class="n">out</span> <span class="o">=</span> <span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">n_outcomes</span><span class="si">}</span><span class="s2"> outcomes: </span><span class="si">{</span><span class="n">list_outcomes</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="s2">&quot;Mean outcomes:</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mean_outcomes</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Mean outcomes (with 95% confidence intervals):</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mean_outcomes_with_ci</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span>
             <span class="s2">&quot;Response rates (relative to number of respondents in sample):</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">relative_response_rates</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">relative_to_target_clause</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
@@ -1606,7 +1766,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A factory function to create BalanceCovarsDF</span>
 
 <span class="sd">        This is used through :func:`Sample.covars`.</span>
-<span class="sd">        It initates a BalanceCovarsDF object by passing the relevant arguments to</span>
+<span class="sd">        It initiates a BalanceCovarsDF object by passing the relevant arguments to</span>
 <span class="sd">        :func:`BalanceDF.__init__`.</span>
 
 <span class="sd">        Args:</span>
@@ -1644,7 +1804,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A factory function to create BalanceWeightsDF</span>
 
 <span class="sd">        This is used through :func:`Sample.weights`.</span>
-<span class="sd">        It initates a BalanceWeightsDF object by passing the relevant arguments to</span>
+<span class="sd">        It initiates a BalanceWeightsDF object by passing the relevant arguments to</span>
 <span class="sd">        :func:`BalanceDF.__init__`.</span>
 
 <span class="sd">        Args:</span>

@@ -47,8 +47,65 @@
   <section id="module-balance.stats_and_plots.weighted_stats">
 <span id="balance-stats-and-plots-weighted-stats"></span><h1>balance.stats_and_plots.weighted_stats<a class="headerlink" href="#module-balance.stats_and_plots.weighted_stats" title="Permalink to this heading">¶</a></h1>
 <dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_stats.ci_of_weighted_mean">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_stats.</span></span><span class="sig-name descname"><span class="pre">ci_of_weighted_mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.95</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">round_ndigits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inf_rm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_stats.html#ci_of_weighted_mean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_stats.ci_of_weighted_mean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the confidence interval of the weighted mean of a list of values and their corresponding weights.</p>
+<p>If no weights are supplied, it assumes that all values have equal weights of 1.0.</p>
+<p>v (Union[List[float], pd.Series, pd.DataFrame, np.ndarray]): A series of values. If v is a DataFrame, the weighted mean and its confidence interval will be calculated for each column using the same set of weights from <cite>w</cite>.
+w (Optional[Union[List[float], pd.Series, np.ndarray]]): A series of weights to be used with <cite>v</cite>. If None, all values will be weighted equally.
+conf_level (float, optional): Confidence level for the interval, between 0 and 1. Defaults to 0.95.
+round_ndigits (Optional[int], optional): Number of decimal places to round the confidence interval. If None, the values will not be rounded. Defaults to None.
+inf_rm (bool, optional): Whether to remove infinite (from weights or values) from the computation. Defaults to False.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><p>The confidence interval of the weighted mean. If <cite>v</cite> is a DataFrame with several columns, the pd.Series will have a value for the confidence interval of each column. The values are of data type Tuple[np.float64, np.float64].
+If <cite>inf_rm</cite> is False:</p>
+<blockquote>
+<div><p>If <cite>v</cite> has infinite values, the output will be <cite>Inf</cite>.
+If <cite>w</cite> has infinite values, the output will be <cite>np.nan</cite>.</p>
+</div></blockquote>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.Series</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<dl>
+<dt>::</dt><dd><p>from balance.stats_and_plots.weighted_stats import ci_of_weighted_mean</p>
+<dl class="simple">
+<dt>ci_of_weighted_mean(pd.Series((1, 2, 3, 4)))</dt><dd><p># 0    (1.404346824279273, 3.5956531757207273)
+# dtype: object</p>
+</dd>
+<dt>ci_of_weighted_mean(pd.Series((1, 2, 3, 4)), round_ndigits = 3).to_list()</dt><dd><p># [(1.404, 3.596)]</p>
+</dd>
+<dt>ci_of_weighted_mean(pd.Series((1, 2, 3, 4)), pd.Series((1, 2, 3, 4)))</dt><dd><p># 0    (2.039817664728938, 3.960182335271062)
+# dtype: object</p>
+</dd>
+<dt>ci_of_weighted_mean(pd.Series((1, 2, 3, 4)), pd.Series((1, 2, 3, 4)), round_ndigits = 3).to_list()</dt><dd><p># [(2.04, 3.96)]</p>
+</dd>
+<dt>df = pd.DataFrame(</dt><dd><p>{“a”: [1,2,3,4], “b”: [1,1,1,1]}</p>
+</dd>
+</dl>
+<p>)
+w = pd.Series((1, 2, 3, 4))
+ci_of_weighted_mean(df, w, conf_level = 0.99, round_ndigits = 3)</p>
+<blockquote>
+<div><p># a    (1.738, 4.262)
+# b        (1.0, 1.0)
+# dtype: object</p>
+</div></blockquote>
+<dl class="simple">
+<dt>ci_of_weighted_mean(df, w, conf_level = 0.99, round_ndigits = 3).to_dict()</dt><dd><p># {‘a’: (1.738, 4.262), ‘b’: (1.0, 1.0)}</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="balance.stats_and_plots.weighted_stats.descriptive_stats">
-<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_stats.</span></span><span class="sig-name descname"><span class="pre">descriptive_stats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stat</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'mean'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'std'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'var_of_mean'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'...'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mean'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighted</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numeric_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_na</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_stats.html#descriptive_stats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_stats.descriptive_stats" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_stats.</span></span><span class="sig-name descname"><span class="pre">descriptive_stats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stat</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'mean'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'std'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'var_of_mean'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'ci_of_mean'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'...'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mean'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighted</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numeric_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_na</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_stats.html#descriptive_stats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_stats.descriptive_stats" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes weighted statistics (e.g.: mean, std) on a DataFrame</p>
 <p>This function gets a DataFrame + weights and apply some weighted aggregation function (mean, std, or DescrStatsW).
 The main benefit of the function is that if the DataFrame includes non-numeric columns, then descriptive_stats will first
@@ -62,6 +119,7 @@ run <code class="xref py py-func docutils literal notranslate"><span class="pre"
 If mean - uses <a class="reference internal" href="#balance.stats_and_plots.weighted_stats.weighted_mean" title="balance.stats_and_plots.weighted_stats.weighted_mean"><code class="xref py py-func docutils literal notranslate"><span class="pre">weighted_mean()</span></code></a> (with inf_rm=True)
 If std - uses <a class="reference internal" href="#balance.stats_and_plots.weighted_stats.weighted_sd" title="balance.stats_and_plots.weighted_stats.weighted_sd"><code class="xref py py-func docutils literal notranslate"><span class="pre">weighted_sd()</span></code></a> (with inf_rm=True)
 If var_of_mean - uses <a class="reference internal" href="#balance.stats_and_plots.weighted_stats.var_of_weighted_mean" title="balance.stats_and_plots.weighted_stats.var_of_weighted_mean"><code class="xref py py-func docutils literal notranslate"><span class="pre">var_of_weighted_mean()</span></code></a> (with inf_rm=True)
+If ci_of_mean - uses <a class="reference internal" href="#balance.stats_and_plots.weighted_stats.ci_of_weighted_mean" title="balance.stats_and_plots.weighted_stats.ci_of_weighted_mean"><code class="xref py py-func docutils literal notranslate"><span class="pre">ci_of_weighted_mean()</span></code></a> (with inf_rm=True)
 If something else - tries to use <code class="xref py py-func docutils literal notranslate"><span class="pre">statsmodels.stats.weightstats.DescrStatsW()</span></code>.</p>
 <blockquote>
 <div><p>This supports stat such as: std_mean, sum_weights, nobs, etc. See function documentation to see more.
@@ -78,6 +136,7 @@ Defaults to False.</p></li>
 <li><p><strong>add_na</strong> (<em>bool</em><em>, </em><em>optional</em>) – Passed to <code class="xref py py-func docutils literal notranslate"><span class="pre">model_matrix()</span></code>.
 Relevant only if numeric_only == False and df has non-numeric columns.
 Defaults to True.</p></li>
+<li><p><strong>**kwargs</strong> – extra args to be passed to functions (e.g.: ci_of_weighted_mean)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -133,17 +192,20 @@ Defaults to True.</p></li>
 <span class="c1"># Weighted results</span>
 <span class="n">x</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">descriptive_stats</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">w</span><span class="p">,</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">descriptive_stats</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">w</span><span class="p">,</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;std&quot;</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">descriptive_stats</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">w</span><span class="p">,</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;std_mean&quot;</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">descriptive_stats</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">w</span><span class="p">,</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;var_of_mean&quot;</span><span class="p">))</span>
     <span class="c1">#      0</span>
     <span class="c1"># 0  3.0</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">descriptive_stats</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">w</span><span class="p">,</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;std&quot;</span><span class="p">))</span>
     <span class="c1">#           0</span>
     <span class="c1"># 0  1.195229</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">descriptive_stats</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">w</span><span class="p">,</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;std_mean&quot;</span><span class="p">))</span>
     <span class="c1">#           0</span>
     <span class="c1"># 0  0.333333</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">descriptive_stats</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">w</span><span class="p">,</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;var_of_mean&quot;</span><span class="p">))</span>
     <span class="c1">#       0</span>
     <span class="c1"># 0  0.24</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">descriptive_stats</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">w</span><span class="p">,</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;ci_of_mean&quot;</span><span class="p">,</span> <span class="n">conf_level</span> <span class="o">=</span> <span class="mf">0.99</span><span class="p">,</span> <span class="n">round_ndigits</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
+    <span class="c1">#                 0</span>
+    <span class="c1"># 0  (1.738, 4.262)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -247,6 +309,18 @@ var_of_weighted_mean(pd.Series((1, 2, 3, 4)), pd.Series((1, 2, 3, 4)))</p>
 <blockquote>
 <div><p># pd.Series(0.24)</p>
 </div></blockquote>
+<dl class="simple">
+<dt>df = pd.DataFrame(</dt><dd><p>{“a”: [1,2,3,4], “b”: [1,1,1,1]}</p>
+</dd>
+</dl>
+<p>)
+w = pd.Series((1, 2, 3, 4))
+var_of_weighted_mean(df, w)</p>
+<blockquote>
+<div><p># a    0.24
+# b    0.00
+# dtype: float64</p>
+</div></blockquote>
 </dd>
 </dl>
 </dd></dl>
@@ -293,7 +367,17 @@ If w has Inf then the output will be np.nan.</p>
 <dt>weighted_mean(pd.Series((1, 2, 3, 4)), pd.Series((1, 2, 3, 4)))</dt><dd><p># 0    3.0
 # dtype: float64</p>
 </dd>
+<dt>df = pd.DataFrame(</dt><dd><p>{“a”: [1,2,3,4], “b”: [1,1,1,1]}</p>
+</dd>
 </dl>
+<p>)
+w = pd.Series((1, 2, 3, 4))
+weighted_mean(df, w)</p>
+<blockquote>
+<div><p># a    3.0
+# b    1.0
+# dtype: float64</p>
+</div></blockquote>
 </dd>
 </dl>
 </dd></dl>
@@ -397,6 +481,7 @@ If w has Inf then the output will be np.nan.</p>
     <h3><a href="index.html">Table of Contents</a></h3>
     <ul>
 <li><a class="reference internal" href="#">balance.stats_and_plots.weighted_stats</a><ul>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_stats.ci_of_weighted_mean"><code class="docutils literal notranslate"><span class="pre">ci_of_weighted_mean()</span></code></a></li>
 <li><a class="reference internal" href="#balance.stats_and_plots.weighted_stats.descriptive_stats"><code class="docutils literal notranslate"><span class="pre">descriptive_stats()</span></code></a></li>
 <li><a class="reference internal" href="#balance.stats_and_plots.weighted_stats.relative_frequency_table"><code class="docutils literal notranslate"><span class="pre">relative_frequency_table()</span></code></a></li>
 <li><a class="reference internal" href="#balance.stats_and_plots.weighted_stats.var_of_weighted_mean"><code class="docutils literal notranslate"><span class="pre">var_of_weighted_mean()</span></code></a></li>

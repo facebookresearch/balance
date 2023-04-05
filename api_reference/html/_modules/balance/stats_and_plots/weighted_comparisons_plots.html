@@ -47,7 +47,7 @@
 
 <span class="kn">import</span> <span class="nn">random</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 
@@ -124,8 +124,10 @@
     <span class="n">axis</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">ylim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Shows a (weighted) :func:`sns.barplot` using a relative frequency table of several DataFrames.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Shows a (weighted) sns.barplot using a relative frequency table of several DataFrames (with optional control over the y-axis limits).</span>
 
 <span class="sd">    If weighted is True, then mutual NA values are removed using :func:`rm_mutual_nas`.</span>
 
@@ -143,6 +145,8 @@
 <span class="sd">        axis (Optional[plt.Axes], optional): matplotlib Axes object to draw the plot onto, otherwise uses the current Axes. Defaults to None.</span>
 <span class="sd">        weighted (bool, optional): If to pass the weights from the dicts inside dfs. Defaults to True.</span>
 <span class="sd">        title (str, optional): Title of the plot. Defaults to &quot;barplot of covar &#39;{column}&#39;&quot;.</span>
+<span class="sd">        ylim (Optional[Tuple[float, float]], optional): A tuple with two float values representing the lower and upper limits of the y-axis.</span>
+<span class="sd">            If not provided, the y-axis range is determined automatically. Defaults to None.</span>
 
 <span class="sd">    Examples:</span>
 <span class="sd">        ::</span>
@@ -162,6 +166,15 @@
 <span class="sd">                column = &quot;group&quot;,</span>
 <span class="sd">                axis = None,</span>
 <span class="sd">                weighted = True)</span>
+
+<span class="sd">            # The same as above just with ylim set to (0, 1).</span>
+<span class="sd">            plot_bar(</span>
+<span class="sd">                [{&quot;df&quot;: df, &quot;weights&quot;: pd.Series((1, 1, 1, 1))}, {&quot;df&quot;: df, &quot;weights&quot;: pd.Series((2, 1, 1, 1))}],</span>
+<span class="sd">                names = [&quot;self&quot;, &quot;target&quot;],</span>
+<span class="sd">                column = &quot;group&quot;,</span>
+<span class="sd">                axis = None,</span>
+<span class="sd">                weighted = True,</span>
+<span class="sd">                ylim = (0, 1))</span>
 
 <span class="sd">            # Also deals with np.nan weights</span>
 <span class="sd">            a = plot_bar(</span>
@@ -188,7 +201,7 @@
     <span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;barplot of covar &#39;</span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
 
-    <span class="n">sns</span><span class="o">.</span><span class="n">barplot</span><span class="p">(</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">barplot</span><span class="p">(</span>
         <span class="n">x</span><span class="o">=</span><span class="n">column</span><span class="p">,</span>
         <span class="n">y</span><span class="o">=</span><span class="s2">&quot;prop&quot;</span><span class="p">,</span>
         <span class="n">hue</span><span class="o">=</span><span class="s2">&quot;dataset&quot;</span><span class="p">,</span>
@@ -197,7 +210,12 @@
         <span class="n">palette</span><span class="o">=</span><span class="n">sample_palette</span><span class="p">,</span>
         <span class="n">saturation</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span>
-    <span class="p">)</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span></div>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">ylim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">ylim</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="plot_hist_kde"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.plot_hist_kde">[docs]</a><span class="k">def</span> <span class="nf">plot_hist_kde</span><span class="p">(</span>
@@ -540,6 +558,7 @@
     <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">dist_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;qq&quot;</span><span class="p">,</span> <span class="s2">&quot;hist&quot;</span><span class="p">,</span> <span class="s2">&quot;kde&quot;</span><span class="p">,</span> <span class="s2">&quot;ecdf&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">return_axes</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">ylim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Plots to compare the weighted distributions of an arbitrary number of variables from</span>
 <span class="sd">    an arbitrary number of DataFrames.</span>
@@ -563,6 +582,10 @@
 <span class="sd">        weighted (bool, optional): If to pass the weights from the dicts inside dfs. Defaults to True.</span>
 <span class="sd">        dist_type (Optional[str], optional): can be &quot;hist&quot;, &quot;kde&quot;, or &quot;qq&quot;. Defaults to None.</span>
 <span class="sd">        return_axes (bool, optional): if to returns axes or None. Defaults to False,</span>
+<span class="sd">        ylim (Optional[Tuple[float, float]], optional): A tuple with two float values representing the lower and upper limits of the y-axis.</span>
+<span class="sd">            If not provided, the y-axis range is determined automatically. Defaults to None.</span>
+<span class="sd">            Passed only for categorical variables and when dist_type is not &#39;qq&#39; (i.e.: for bar plots).</span>
+
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Union[List[plt.Axes], np.ndarray, None]: Returns None.</span>
@@ -594,6 +617,9 @@
 <span class="sd">            seaborn_plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], dist_type = &quot;hist&quot;)</span>
 <span class="sd">            seaborn_plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], dist_type = &quot;kde&quot;)</span>
 <span class="sd">            seaborn_plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], dist_type = &quot;ecdf&quot;)</span>
+
+<span class="sd">            # With limiting the y axis range to (0,1)</span>
+<span class="sd">            seaborn_plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], dist_type = &quot;kde&quot;, ylim = (0,1))</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">dist_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dfs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -632,7 +658,7 @@
                 <span class="n">plot_qq_categorical</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">o</span><span class="p">,</span> <span class="n">axes</span><span class="p">[</span><span class="n">io</span><span class="p">],</span> <span class="n">weighted</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># pyre-fixme[6]</span>
-                <span class="n">plot_bar</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">o</span><span class="p">,</span> <span class="n">axes</span><span class="p">[</span><span class="n">io</span><span class="p">],</span> <span class="n">weighted</span><span class="p">)</span>
+                <span class="n">plot_bar</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">o</span><span class="p">,</span> <span class="n">axes</span><span class="p">[</span><span class="n">io</span><span class="p">],</span> <span class="n">weighted</span><span class="p">,</span> <span class="n">ylim</span><span class="o">=</span><span class="n">ylim</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">dist_type</span> <span class="o">==</span> <span class="s2">&quot;qq&quot;</span><span class="p">:</span>
                 <span class="c1"># pyre-fixme[6]</span>
@@ -808,15 +834,19 @@
     <span class="n">variables</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="n">plot_it</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">return_dict_of_figures</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">ylim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plots interactive bar plot of the given variables.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plots interactive bar plots of the given variables (with optional control over the y-axis limits).</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        dict_of_dfs (Dict[str, pd.DataFrame]): The key is the name of the DataFrame (E.g.: self, unadjusted, target),</span>
-<span class="sd">            and the value is the DataFrame that contains the variables that we want to plot.</span>
-<span class="sd">        variables (List[str]): a list of variables to use for plotting.</span>
-<span class="sd">        plot_it (bool, optional): If to plot the plots interactively instead of returning a dictionary. Defaults to True.</span>
-<span class="sd">        return_dict_of_figures (bool, optional): If to return the dictionary containing the plots rather than just returning None. Defaults to False.</span>
+<span class="sd">        dict_of_dfs (Dict[str, pd.DataFrame]): A dictionary with keys as names of the DataFrame (e.g., &#39;self&#39;, &#39;unadjusted&#39;, &#39;target&#39;),</span>
+<span class="sd">            and values as the DataFrames containing the variables to plot.</span>
+<span class="sd">        variables (List[str]): A list of variables to use for plotting.</span>
+<span class="sd">        plot_it (bool, optional): If True, plots the graphs interactively instead of returning a dictionary. Defaults to True.</span>
+<span class="sd">        return_dict_of_figures (bool, optional): If True, returns the dictionary containing the plots rather than just returning None. Defaults to False.</span>
+<span class="sd">        ylim (Optional[Tuple[float, float]], optional): A tuple with two float values representing the lower and upper limits of the y-axis.</span>
+<span class="sd">            If not provided, the y-axis range is determined automatically. Defaults to None.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Optional[Dict[str, go.Figure]]: Dictionary containing plots if return_dict_of_figures is True. None otherwise.</span>
@@ -845,6 +875,9 @@
 
 <span class="sd">            # It can work with &quot;v2&quot; and &quot;v3&quot;, but it would be very sparse</span>
 <span class="sd">            plotly_plot_bar(dict_of_dfs, variables= [&quot;v1&quot;])</span>
+
+<span class="sd">            # Plots the same as above, but this time the range of the yaxis is from 0 to 1.</span>
+<span class="sd">            plotly_plot_bar(dict_of_dfs, variables= [&quot;v1&quot;], ylim = (0,1))</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">dict_of_bars</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">variable</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
@@ -901,7 +934,10 @@
             <span class="n">paper_bgcolor</span><span class="o">=</span><span class="s2">&quot;rgb(255, 255, 255)&quot;</span><span class="p">,</span>
             <span class="n">plot_bgcolor</span><span class="o">=</span><span class="s2">&quot;rgb(255, 255, 255)&quot;</span><span class="p">,</span>
             <span class="n">xaxis</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">variable</span><span class="p">},</span>
-            <span class="n">yaxis</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Proportion of Total&quot;</span><span class="p">},</span>
+            <span class="n">yaxis</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Proportion of Total&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;range&quot;</span><span class="p">:</span> <span class="n">ylim</span> <span class="k">if</span> <span class="n">ylim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="p">},</span>
         <span class="p">)</span>
 
         <span class="n">fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">layout</span><span class="o">=</span><span class="n">layout</span><span class="p">)</span>
@@ -921,6 +957,7 @@
     <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">plot_it</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">return_dict_of_figures</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">ylim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Plots interactive distribution plots (qq and bar plots) of the given variables.</span>
 
@@ -943,6 +980,9 @@
 <span class="sd">                offline.iplot(dict_of_all_plots[&#39;age&#39;])</span>
 <span class="sd">            Or simply:</span>
 <span class="sd">                dict_of_all_plots[&#39;age&#39;]</span>
+<span class="sd">        ylim (Optional[Tuple[float, float]], optional): A tuple with two float values representing the lower and upper limits of the y-axis.</span>
+<span class="sd">            If not provided, the y-axis range is determined automatically. Defaults to None.</span>
+<span class="sd">            passed to bar plots only.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Optional[Dict[str, go.Figure]]: Dictionary containing plots if return_dict_of_figures is True. None otherwise.</span>
@@ -970,6 +1010,9 @@
 <span class="sd">            }</span>
 
 <span class="sd">            plotly_plot_dist(dict_of_dfs)</span>
+
+<span class="sd">            # Make sure the bar plot is plotted with y in the range of 0 to 1.</span>
+<span class="sd">            plotly_plot_dist(dict_of_dfs, ylim = (0,1))</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">dict_of_all_plots</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="c1">#  Choose set of variables to plot</span>
@@ -1021,7 +1064,7 @@
         <span class="c1"># the below functions will create plotly plots</span>
         <span class="k">if</span> <span class="n">categorical</span><span class="p">:</span>
             <span class="n">dict_of_plot</span> <span class="o">=</span> <span class="n">plotly_plot_bar</span><span class="p">(</span>
-                <span class="n">dict_of_dfs</span><span class="p">,</span> <span class="p">[</span><span class="n">o</span><span class="p">],</span> <span class="n">plot_it</span><span class="p">,</span> <span class="n">return_dict_of_figures</span>
+                <span class="n">dict_of_dfs</span><span class="p">,</span> <span class="p">[</span><span class="n">o</span><span class="p">],</span> <span class="n">plot_it</span><span class="p">,</span> <span class="n">return_dict_of_figures</span><span class="p">,</span> <span class="n">ylim</span><span class="o">=</span><span class="n">ylim</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">dict_of_plot</span> <span class="o">=</span> <span class="n">plotly_plot_qq</span><span class="p">(</span>
@@ -1086,6 +1129,7 @@
     <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">dist_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;qq&quot;</span><span class="p">,</span> <span class="s2">&quot;hist&quot;</span><span class="p">,</span> <span class="s2">&quot;kde&quot;</span><span class="p">,</span> <span class="s2">&quot;ecdf&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">library</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;plotly&quot;</span><span class="p">,</span> <span class="s2">&quot;seaborn&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;plotly&quot;</span><span class="p">,</span>
+    <span class="n">ylim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Plots the variables of a DataFrame by using either seaborn or plotly.</span>
@@ -1109,6 +1153,9 @@
 <span class="sd">        weighted (bool, optional): If to use the weights with the plots. Defaults to True.</span>
 <span class="sd">        dist_type (Literal[&quot;qq&quot;, &quot;hist&quot;, &quot;kde&quot;, &quot;ecdf&quot;], optional): The type of plot to draw. Relevant only if using library=&quot;seaborn&quot;. Defaults to &quot;hist&quot;.</span>
 <span class="sd">        library (Literal[&quot;plotly&quot;, &quot;seaborn&quot;], optional): Whichever library to use for the plot. Defaults to &quot;plotly&quot;.</span>
+<span class="sd">        ylim (Optional[Tuple[float, float]], optional): A tuple with two float values representing the lower and upper limits of the y-axis.</span>
+<span class="sd">            If not provided, the y-axis range is determined automatically. Defaults to None.</span>
+<span class="sd">            passed to bar plots only.</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: if library is not in (&quot;plotly&quot;, &quot;seaborn&quot;).</span>
@@ -1151,6 +1198,9 @@
 <span class="sd">            plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], library=&quot;seaborn&quot;, dist_type = &quot;hist&quot;)</span>
 <span class="sd">            plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], library=&quot;seaborn&quot;, dist_type = &quot;kde&quot;)</span>
 <span class="sd">            plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], library=&quot;seaborn&quot;, dist_type = &quot;ecdf&quot;)</span>
+
+<span class="sd">            plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], ylim = (0,1))</span>
+<span class="sd">            plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], library=&quot;seaborn&quot;, dist_type = &quot;kde&quot;, ylim = (0,1))</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">library</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;plotly&quot;</span><span class="p">,</span> <span class="s2">&quot;seaborn&quot;</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;library must be either &#39;plotly&#39; or &#39;seaborn&#39;, is </span><span class="si">{</span><span class="n">library</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -1168,6 +1218,7 @@
             <span class="n">numeric_n_values_threshold</span><span class="p">,</span>
             <span class="n">weighted</span><span class="p">,</span>
             <span class="n">dist_type</span><span class="p">,</span>
+            <span class="n">ylim</span><span class="o">=</span><span class="n">ylim</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">elif</span> <span class="n">library</span> <span class="o">==</span> <span class="s2">&quot;plotly&quot;</span><span class="p">:</span>
@@ -1185,7 +1236,12 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;plotly plots ignore dist_type. Consider library=&#39;seaborn&#39;&quot;</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">plotly_plot_dist</span><span class="p">(</span>
-            <span class="n">dict_of_dfs</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">numeric_n_values_threshold</span><span class="p">,</span> <span class="n">weighted</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+            <span class="n">dict_of_dfs</span><span class="p">,</span>
+            <span class="n">variables</span><span class="p">,</span>
+            <span class="n">numeric_n_values_threshold</span><span class="p">,</span>
+            <span class="n">weighted</span><span class="p">,</span>
+            <span class="n">ylim</span><span class="o">=</span><span class="n">ylim</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 

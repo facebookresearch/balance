@@ -51,6 +51,7 @@
 
 <span class="kn">from</span> <span class="nn">balance.stats_and_plots.weights_stats</span> <span class="kn">import</span> <span class="n">_check_weights_are_valid</span>
 <span class="kn">from</span> <span class="nn">balance.util</span> <span class="kn">import</span> <span class="n">model_matrix</span><span class="p">,</span> <span class="n">rm_mutual_nas</span>
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">norm</span>
 
 <span class="kn">from</span> <span class="nn">statsmodels.stats.weightstats</span> <span class="kn">import</span> <span class="n">DescrStatsW</span>
 
@@ -193,6 +194,15 @@
 <span class="sd">            weighted_mean(pd.Series((1, 2, 3, 4)), pd.Series((1, 2, 3, 4)))</span>
 <span class="sd">                # 0    3.0</span>
 <span class="sd">                # dtype: float64</span>
+
+<span class="sd">            df = pd.DataFrame(</span>
+<span class="sd">                {&quot;a&quot;: [1,2,3,4], &quot;b&quot;: [1,1,1,1]}</span>
+<span class="sd">            )</span>
+<span class="sd">            w = pd.Series((1, 2, 3, 4))</span>
+<span class="sd">            weighted_mean(df, w)</span>
+<span class="sd">                # a    3.0</span>
+<span class="sd">                # b    1.0</span>
+<span class="sd">                # dtype: float64</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">v</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">_prepare_weighted_stat_args</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">inf_rm</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="s2">&quot;index&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">w</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span></div>
@@ -235,15 +245,109 @@
 <span class="sd">            #  For a reproducible R example, see: https://gist.github.com/talgalili/b92cd8cdcbfc287e331a8f27db265c00</span>
 <span class="sd">            var_of_weighted_mean(pd.Series((1, 2, 3, 4)), pd.Series((1, 2, 3, 4)))</span>
 <span class="sd">                # pd.Series(0.24)</span>
+
+<span class="sd">            df = pd.DataFrame(</span>
+<span class="sd">                {&quot;a&quot;: [1,2,3,4], &quot;b&quot;: [1,1,1,1]}</span>
+<span class="sd">            )</span>
+<span class="sd">            w = pd.Series((1, 2, 3, 4))</span>
+<span class="sd">            var_of_weighted_mean(df, w)</span>
+
+<span class="sd">                # a    0.24</span>
+<span class="sd">                # b    0.00</span>
+<span class="sd">                # dtype: float64</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">v</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">_prepare_weighted_stat_args</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">inf_rm</span><span class="p">)</span>
-    <span class="n">weighed_mean_of_v</span> <span class="o">=</span> <span class="n">weighted_mean</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">inf_rm</span><span class="p">)</span>  <span class="c1"># This is a pd.DataFrame</span>
-    <span class="c1"># NOTE: the multiply needs to be called from the pd.DataFrame. Unfortunately this makes the code less readable.</span>
+    <span class="n">weighed_mean_of_v</span> <span class="o">=</span> <span class="n">weighted_mean</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">inf_rm</span><span class="p">)</span>  <span class="c1"># This is a pd.Series</span>
+    <span class="c1"># NOTE: the multiply needs to be called from the pd.Series. Unfortunately this makes the code less readable.</span>
     <span class="n">sum_of_squared_weighted_diffs</span> <span class="o">=</span> <span class="p">(</span>
         <span class="p">((</span><span class="n">v</span> <span class="o">-</span> <span class="n">weighed_mean_of_v</span><span class="p">)</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="s2">&quot;index&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
     <span class="p">)</span>
     <span class="n">squared_sum_of_w</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">**</span> <span class="mi">2</span>  <span class="c1"># This is a pd.series</span>
     <span class="k">return</span> <span class="n">sum_of_squared_weighted_diffs</span> <span class="o">/</span> <span class="n">squared_sum_of_w</span></div>
+
+
+<div class="viewcode-block" id="ci_of_weighted_mean"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.ci_of_weighted_mean">[docs]</a><span class="k">def</span> <span class="nf">ci_of_weighted_mean</span><span class="p">(</span>
+    <span class="n">v</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+    <span class="n">w</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">conf_level</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.95</span><span class="p">,</span>
+    <span class="n">round_ndigits</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">inf_rm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes the confidence interval of the weighted mean of a list of values and their corresponding weights.</span>
+
+<span class="sd">    If no weights are supplied, it assumes that all values have equal weights of 1.0.</span>
+
+<span class="sd">    v (Union[List[float], pd.Series, pd.DataFrame, np.ndarray]): A series of values. If v is a DataFrame, the weighted mean and its confidence interval will be calculated for each column using the same set of weights from `w`.</span>
+<span class="sd">    w (Optional[Union[List[float], pd.Series, np.ndarray]]): A series of weights to be used with `v`. If None, all values will be weighted equally.</span>
+<span class="sd">    conf_level (float, optional): Confidence level for the interval, between 0 and 1. Defaults to 0.95.</span>
+<span class="sd">    round_ndigits (Optional[int], optional): Number of decimal places to round the confidence interval. If None, the values will not be rounded. Defaults to None.</span>
+<span class="sd">    inf_rm (bool, optional): Whether to remove infinite (from weights or values) from the computation. Defaults to False.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.Series: The confidence interval of the weighted mean. If `v` is a DataFrame with several columns, the pd.Series will have a value for the confidence interval of each column. The values are of data type Tuple[np.float64, np.float64].</span>
+<span class="sd">        If `inf_rm` is False:</span>
+<span class="sd">            If `v` has infinite values, the output will be `Inf`.</span>
+<span class="sd">            If `w` has infinite values, the output will be `np.nan`.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        ::</span>
+<span class="sd">            from balance.stats_and_plots.weighted_stats import ci_of_weighted_mean</span>
+
+<span class="sd">            ci_of_weighted_mean(pd.Series((1, 2, 3, 4)))</span>
+<span class="sd">                # 0    (1.404346824279273, 3.5956531757207273)</span>
+<span class="sd">                # dtype: object</span>
+
+<span class="sd">            ci_of_weighted_mean(pd.Series((1, 2, 3, 4)), round_ndigits = 3).to_list()</span>
+<span class="sd">                # [(1.404, 3.596)]</span>
+
+<span class="sd">            ci_of_weighted_mean(pd.Series((1, 2, 3, 4)), pd.Series((1, 2, 3, 4)))</span>
+<span class="sd">                # 0    (2.039817664728938, 3.960182335271062)</span>
+<span class="sd">                # dtype: object</span>
+
+<span class="sd">            ci_of_weighted_mean(pd.Series((1, 2, 3, 4)), pd.Series((1, 2, 3, 4)), round_ndigits = 3).to_list()</span>
+<span class="sd">                # [(2.04, 3.96)]</span>
+
+<span class="sd">            df = pd.DataFrame(</span>
+<span class="sd">                {&quot;a&quot;: [1,2,3,4], &quot;b&quot;: [1,1,1,1]}</span>
+<span class="sd">            )</span>
+<span class="sd">            w = pd.Series((1, 2, 3, 4))</span>
+<span class="sd">            ci_of_weighted_mean(df, w, conf_level = 0.99, round_ndigits = 3)</span>
+<span class="sd">                # a    (1.738, 4.262)</span>
+<span class="sd">                # b        (1.0, 1.0)</span>
+<span class="sd">                # dtype: object</span>
+<span class="sd">            ci_of_weighted_mean(df, w, conf_level = 0.99, round_ndigits = 3).to_dict()</span>
+<span class="sd">                # {&#39;a&#39;: (1.738, 4.262), &#39;b&#39;: (1.0, 1.0)}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">v</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">_prepare_weighted_stat_args</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">inf_rm</span><span class="p">)</span>
+    <span class="n">weighed_mean_of_v</span> <span class="o">=</span> <span class="n">weighted_mean</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">inf_rm</span><span class="p">)</span>
+    <span class="n">var_weighed_mean_of_v</span> <span class="o">=</span> <span class="n">var_of_weighted_mean</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">inf_rm</span><span class="p">)</span>
+    <span class="n">z_value</span> <span class="o">=</span> <span class="n">norm</span><span class="o">.</span><span class="n">ppf</span><span class="p">((</span><span class="mi">1</span> <span class="o">+</span> <span class="n">conf_level</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+        <span class="n">ci_index</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">index</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="n">ci_index</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">columns</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ci_index</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">ci</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="p">(</span>
+                <span class="n">weighed_mean_of_v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">z_value</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">var_weighed_mean_of_v</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span>
+                <span class="n">weighed_mean_of_v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">z_value</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">var_weighed_mean_of_v</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">weighed_mean_of_v</span><span class="p">))</span>
+        <span class="p">],</span>
+        <span class="n">index</span><span class="o">=</span><span class="n">ci_index</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">round_ndigits</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Apply a lambda function to round a pd.Series of tuples to x decimal places</span>
+        <span class="n">ci</span> <span class="o">=</span> <span class="n">ci</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">round_ndigits</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">t</span><span class="p">))</span>
+
+    <span class="c1"># pyre-ignore[7]: pyre thinks this function could return a DataFrame because of ci = ci.apply(round_tuple). It&#39;s wrong.</span>
+    <span class="k">return</span> <span class="n">ci</span></div>
 
 
 <div class="viewcode-block" id="weighted_var"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.weighted_var">[docs]</a><span class="k">def</span> <span class="nf">weighted_var</span><span class="p">(</span>
@@ -380,12 +484,13 @@
         <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="kc">None</span><span class="p">,</span>
     <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">stat</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">,</span> <span class="s2">&quot;var_of_mean&quot;</span><span class="p">,</span> <span class="s2">&quot;...&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
+    <span class="n">stat</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">,</span> <span class="s2">&quot;var_of_mean&quot;</span><span class="p">,</span> <span class="s2">&quot;ci_of_mean&quot;</span><span class="p">,</span> <span class="s2">&quot;...&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
     <span class="c1"># relevant only if stat is None</span>
     <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="c1"># relevant only if we have non-numeric columns and we want to use model_matrix on them</span>
     <span class="n">numeric_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">add_na</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes weighted statistics (e.g.: mean, std) on a DataFrame</span>
 
@@ -400,6 +505,7 @@
 <span class="sd">            If mean - uses :func:`weighted_mean` (with inf_rm=True)</span>
 <span class="sd">            If std - uses :func:`weighted_sd` (with inf_rm=True)</span>
 <span class="sd">            If var_of_mean - uses :func:`var_of_weighted_mean` (with inf_rm=True)</span>
+<span class="sd">            If ci_of_mean - uses :func:`ci_of_weighted_mean` (with inf_rm=True)</span>
 <span class="sd">            If something else - tries to use :func:`statsmodels.stats.weightstats.DescrStatsW`.</span>
 <span class="sd">                This supports stat such as: std_mean, sum_weights, nobs, etc. See function documentation to see more.</span>
 <span class="sd">                (while removing mutual nan using :func:`rm_mutual_nas`)</span>
@@ -413,6 +519,7 @@
 <span class="sd">        add_na (bool, optional): Passed to :func:`model_matrix`.</span>
 <span class="sd">            Relevant only if numeric_only == False and df has non-numeric columns.</span>
 <span class="sd">            Defaults to True.</span>
+<span class="sd">        **kwargs: extra args to be passed to functions (e.g.: ci_of_weighted_mean)</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        pd.DataFrame: Returns pd.DataFrame of the output (based on stat argument), for each of the columns in df.</span>
@@ -465,17 +572,21 @@
 <span class="sd">            # Weighted results</span>
 <span class="sd">            x, w = [1, 2, 3, 4], [1, 2, 3, 4]</span>
 <span class="sd">            print(descriptive_stats(pd.DataFrame(x), w, stat=&quot;mean&quot;))</span>
-<span class="sd">            print(descriptive_stats(pd.DataFrame(x), w, stat=&quot;std&quot;))</span>
-<span class="sd">            print(descriptive_stats(pd.DataFrame(x), w, stat=&quot;std_mean&quot;))</span>
-<span class="sd">            print(descriptive_stats(pd.DataFrame(x), w, stat=&quot;var_of_mean&quot;))</span>
 <span class="sd">                #      0</span>
 <span class="sd">                # 0  3.0</span>
+<span class="sd">            print(descriptive_stats(pd.DataFrame(x), w, stat=&quot;std&quot;))</span>
 <span class="sd">                #           0</span>
 <span class="sd">                # 0  1.195229</span>
+<span class="sd">            print(descriptive_stats(pd.DataFrame(x), w, stat=&quot;std_mean&quot;))</span>
 <span class="sd">                #           0</span>
 <span class="sd">                # 0  0.333333</span>
+<span class="sd">            print(descriptive_stats(pd.DataFrame(x), w, stat=&quot;var_of_mean&quot;))</span>
 <span class="sd">                #       0</span>
 <span class="sd">                # 0  0.24</span>
+<span class="sd">            print(descriptive_stats(pd.DataFrame(x), w, stat=&quot;ci_of_mean&quot;, conf_level = 0.99, round_ndigits=3))</span>
+<span class="sd">                #                 0</span>
+<span class="sd">                # 0  (1.738, 4.262)</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">)</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
         <span class="c1"># If we have non-numeric columns, and want faster results,</span>
@@ -498,6 +609,20 @@
         <span class="k">return</span> <span class="n">weighted_sd</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">inf_rm</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
     <span class="k">elif</span> <span class="n">stat</span> <span class="o">==</span> <span class="s2">&quot;var_of_mean&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">var_of_weighted_mean</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">inf_rm</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">stat</span> <span class="o">==</span> <span class="s2">&quot;ci_of_mean&quot;</span><span class="p">:</span>
+        <span class="n">conf_level</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;conf_level&quot;</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">)</span>
+        <span class="n">round_ndigits</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;round_ndigits&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">ci_of_weighted_mean</span><span class="p">(</span>
+                <span class="n">df</span><span class="p">,</span>
+                <span class="n">weights</span><span class="p">,</span>
+                <span class="n">inf_rm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">conf_level</span><span class="o">=</span><span class="n">conf_level</span><span class="p">,</span>
+                <span class="n">round_ndigits</span><span class="o">=</span><span class="n">round_ndigits</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
+            <span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+        <span class="p">)</span>
 
     <span class="c1"># TODO: (p2) check which input DescrStatsW takes, not sure we need to run the next two lines.</span>
     <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
