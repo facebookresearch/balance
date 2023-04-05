@@ -917,27 +917,95 @@ class BalanceDF:
         else:
             return self._descriptive_stats("ci_of_mean", **kwargs)
 
+    def mean_with_ci(
+        self: "BalanceDF", round_ndigits: int = 3, on_linked_samples: bool = True
+    ) -> pd.DataFrame:
+        """
+        Returns a table with means and confidence intervals (CIs) for all elements in the BalanceDF object.
+
+        This method calculates the mean and CI for each column of the BalanceDF object using the BalanceDF.mean()
+        and BalanceDF.ci_of_mean() methods, respectively. The resulting table contains (for each element such as self, target and adjust) two columns for each input
+        column: one for the mean and one for the CI.
+
+        Args:
+            self (BalanceDF): The BalanceDF object.
+            round_ndigits (int, optional): The number of decimal places to round the mean and CI to.
+                Defaults to 3.
+            on_linked_samples (bool, optional): A boolean indicating whether to include linked samples
+                when calculating the mean. Defaults to True.
+
+        Returns:
+            pd.DataFrame: A table with two rows for each input column: one for the mean and one for the CI.
+                The columns of the table are labeled with the names of the input columns.
+
+        Examples:
+            ::
+                import numpy as np
+                import pandas as pd
+
+                from balance.sample_class import Sample
+
+                s_o = Sample.from_frame(
+                    pd.DataFrame({"o1": (7, 8, 9, 10), "o2": (7, 8, 9, np.nan), "id": (1, 2, 3, 4)}),
+                    id_column="id",
+                    outcome_columns=("o1", "o2"),
+                )
+
+                t_o = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "o1": (7, 8, 9, 10, 11, 12, 13, 14),
+                            "o2": (7, 8, 9, np.nan, np.nan, 12, 13, 14),
+                            "id": (1, 2, 3, 4, 5, 6, 7, 8),
+                        }
+                    ),
+                    id_column="id",
+                    outcome_columns=("o1", "o2"),
+                )
+                s_o2 = s_o.set_target(t_o)
+
+                print(s_o2.outcomes().mean_with_ci())
+                    # source            self  target             self           target
+                    # _is_na_o2[False]  0.75   0.750   (0.326, 1.174)     (0.45, 1.05)
+                    # _is_na_o2[True]   0.25   0.250  (-0.174, 0.674)    (-0.05, 0.55)
+                    # o1                8.50  10.500   (7.404, 9.596)  (8.912, 12.088)
+                    # o2                6.00   7.875   (2.535, 9.465)  (4.351, 11.399)
+        """
+        the_means = (
+            self.mean(on_linked_samples=on_linked_samples).round(round_ndigits).T
+        )
+        the_cis = self.ci_of_mean(
+            on_linked_samples=on_linked_samples, round_ndigits=round_ndigits
+        ).T
+        the_cis.columns = the_cis.columns.astype(str) + "_ci"
+        return pd.concat([the_means, the_cis], axis=1)
+
     # NOTE: Summary could return also an str in case it is overridden in other children's methods.
     def summary(
         self: "BalanceDF", on_linked_samples: bool = True
     ) -> Union[pd.DataFrame, str]:
-        """Returns a summary of BalanceDF class.
+        """
+        Returns a summary of the BalanceDF object.
 
-        Currently just uses :func:`BalanceDF.mean`. In the future this may be extended.
+        This method currently calculates the mean and confidence interval (CI) for each column of the object
+        using the :func:`BalanceDF.mean_with_ci()` method. In the future, this method may be extended to include additional
+        summary statistics.
 
         Args:
-            self (BalanceDF): Object.
-            on_linked_samples (bool, optional): Passed to :func:`BalanceDF.mean`. Defaults to True.
+            self (BalanceDF): The BalanceDF object.
+            on_linked_samples (bool, optional): A boolean indicating whether to include linked samples
+                when calculating the mean and CI. Defaults to True.
 
         Returns:
-            Union[pd.DataFrame, str]: :func:`BalanceDF.mean`.
+            Union[pd.DataFrame, str]: A table with two rows for each input column: one for the mean and one for the CI.
+                The columns of the table are labeled with the names of the input columns.
         """
         # TODO model matrix means to include categorical columns, fix model_matrix to accept DataFrame
         # TODO: include min/max/std/etc. show min/mean/max if there's a single column, just means if multiple (covars and outcomes)
         #       Doing so would either require to implement a min/max etc methods in BalanceDF and use them with _call_on_linked.
         #       Or, update _call_on_linked to deal with non functions, get 'df' from it, and apply the needed functions on it.
         # TODO add outcome variance ratio
-        return self.mean(on_linked_samples)
+        return self.mean_with_ci(on_linked_samples=on_linked_samples)
 
     def _get_df_and_weights(
         self: "BalanceDF",
@@ -1511,42 +1579,43 @@ class BalanceOutcomesDF(BalanceDF):
                 s_o2 = s_o.set_target(t_o)
 
                 print(s_o.outcomes().summary())
+                    # 2 outcomes: ['o1' 'o2']
+                    # Mean outcomes (with 95% confidence intervals):
+                    # source            self             self
+                    # _is_na_o2[False]  0.75   (0.326, 1.174)
+                    # _is_na_o2[True]   0.25  (-0.174, 0.674)
+                    # o1                8.50   (7.404, 9.596)
+                    # o2                6.00   (2.535, 9.465)
 
-                # 2 outcomes: ['o1' 'o2']
-                # Mean outcomes:
-                #         _is_na_o2[False]  _is_na_o2[True]   o1   o2
-                # source
-                # self                0.75             0.25  8.5  6.0
-
-                # Response rates (relative to number of respondents in sample):
-                #       o1    o2
-                # n    4.0   3.0
-                # %  100.0  75.0
-
+                    # Response rates (relative to number of respondents in sample):
+                    #       o1    o2
+                    # n    4.0   3.0
+                    # %  100.0  75.0
 
                 print(s_o2.outcomes().summary())
+                    # 2 outcomes: ['o1' 'o2']
+                    # Mean outcomes (with 95% confidence intervals):
+                    # source            self  target             self           target
+                    # _is_na_o2[False]  0.75   0.750   (0.326, 1.174)     (0.45, 1.05)
+                    # _is_na_o2[True]   0.25   0.250  (-0.174, 0.674)    (-0.05, 0.55)
+                    # o1                8.50  10.500   (7.404, 9.596)  (8.912, 12.088)
+                    # o2                6.00   7.875   (2.535, 9.465)  (4.351, 11.399)
 
-                # 2 outcomes: ['o1' 'o2']
-                # Mean outcomes:
-                #         _is_na_o2[False]  _is_na_o2[True]    o1     o2
-                # source
-                # self                0.75             0.25   8.5  6.000
-                # target              0.75             0.25  10.5  7.875
-
-                # Response rates (relative to number of respondents in sample):
-                #       o1    o2
-                # n    4.0   3.0
-                # %  100.0  75.0
-                # Response rates (relative to notnull rows in the target):
-                #            o1    o2
-                # n   4.000000   3.0
-                # %  66.666667  50.0
-                # Response rates (in the target):
-                #        o1    o2
-                # n    8.0   6.0
-                # %  100.0  75.0
+                    # Response rates (relative to number of respondents in sample):
+                    #       o1    o2
+                    # n    4.0   3.0
+                    # %  100.0  75.0
+                    # Response rates (relative to notnull rows in the target):
+                    #            o1    o2
+                    # n   4.000000   3.0
+                    # %  66.666667  50.0
+                    # Response rates (in the target):
+                    #        o1    o2
+                    # n    8.0   6.0
+                    # %  100.0  75.0
         """
-        mean_outcomes = self.mean()
+
+        mean_outcomes_with_ci = self.mean_with_ci()
         relative_response_rates = self.relative_response_rates()
         target_response_rates = self.target_response_rates()
         if target_response_rates is None:
@@ -1562,14 +1631,14 @@ class BalanceOutcomesDF(BalanceDF):
 
         n_outcomes = self.df.shape[1]
         list_outcomes = self.df.columns.values
-        mean_outcomes = mean_outcomes
+        mean_outcomes_with_ci = mean_outcomes_with_ci
         relative_response_rates = relative_response_rates
         target_clause = target_clause
 
         out = (
             f"{n_outcomes} outcomes: {list_outcomes}\n"
-            "Mean outcomes:\n"
-            f"{mean_outcomes}\n\n"
+            f"Mean outcomes (with 95% confidence intervals):\n"
+            f"{mean_outcomes_with_ci}\n\n"
             "Response rates (relative to number of respondents in sample):\n"
             f"{relative_response_rates}\n"
             f"{relative_to_target_clause}\n"

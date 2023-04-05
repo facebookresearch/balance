@@ -541,11 +541,10 @@ class TestSample_metrics_methods(
 
     def test_Sample_weights_summary(self):
         self.assertEqual(
-            s1.weights().summary(),
-            pd.DataFrame({"w": [(0.5 + 2 + 1 + 1) / 4], "source": "self"}).set_index(
-                "source"
-            ),
+            s1.weights().summary().to_dict(),
+            {"self": {"w": 1.125}, "self_ci": {"w": (0.591, 1.659)}},
         )
+        self.assertEqual(s1.weights().summary().iloc[0, 0], (0.5 + 2 + 1 + 1) / 4)
 
     def test_Sample_summary(self):
         s1_summ = s1.summary()

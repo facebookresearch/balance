@@ -234,16 +234,18 @@ class TestBalanceOutcomesDF(BalanceTestCase):
             return " ".join(s.split())
 
         e_str = """\
-            2 outcomes: ['o1' 'o2']
-            Mean outcomes:
-                    _is_na_o2[False]  _is_na_o2[True]   o1   o2
-            source
-            self                0.75             0.25  8.5  6.0
+                2 outcomes: ['o1' 'o2']
+                Mean outcomes (with 95% confidence intervals):
+                source            self          self_ci
+                _is_na_o2[False]  0.75   (0.326, 1.174)
+                _is_na_o2[True]   0.25  (-0.174, 0.674)
+                o1                8.50   (7.404, 9.596)
+                o2                6.00   (2.535, 9.465)
 
-            Response rates (relative to number of respondents in sample):
-                o1    o2
-            n    4.0   3.0
-            %  100.0  75.0
+                Response rates (relative to number of respondents in sample):
+                    o1    o2
+                n    4.0   3.0
+                %  100.0  75.0
             """
         self.assertEqual(
             _remove_whitespace_and_newlines(s_o.outcomes().summary()),
@@ -251,25 +253,26 @@ class TestBalanceOutcomesDF(BalanceTestCase):
         )
 
         e_str = """\
-            2 outcomes: ['o1' 'o2']
-            Mean outcomes:
-                    _is_na_o2[False]  _is_na_o2[True]    o1     o2
-            source
-            self                0.75             0.25   8.5  6.000
-            target              0.75             0.25  10.5  7.875
+                2 outcomes: ['o1' 'o2']
+                Mean outcomes (with 95% confidence intervals):
+                source            self  target          self_ci        target_ci
+                _is_na_o2[False]  0.75   0.750   (0.326, 1.174)     (0.45, 1.05)
+                _is_na_o2[True]   0.25   0.250  (-0.174, 0.674)    (-0.05, 0.55)
+                o1                8.50  10.500   (7.404, 9.596)  (8.912, 12.088)
+                o2                6.00   7.875   (2.535, 9.465)  (4.351, 11.399)
 
-            Response rates (relative to number of respondents in sample):
-                o1    o2
-            n    4.0   3.0
-            %  100.0  75.0
-            Response rates (relative to notnull rows in the target):
+                Response rates (relative to number of respondents in sample):
                     o1    o2
-            n   4.000000   3.0
-            %  66.666667  50.0
-            Response rates (in the target):
-                o1    o2
-            n    8.0   6.0
-            %  100.0  75.0
+                n    4.0   3.0
+                %  100.0  75.0
+                Response rates (relative to notnull rows in the target):
+                        o1    o2
+                n   4.000000   3.0
+                %  66.666667  50.0
+                Response rates (in the target):
+                    o1    o2
+                n    8.0   6.0
+                %  100.0  75.0
             """
         self.assertEqual(
             _remove_whitespace_and_newlines(s_o2.outcomes().summary()),
@@ -725,7 +728,7 @@ class TestBalanceDF_var_of_mean(BalanceTestCase):
         )
 
 
-class TestBalanceDF_ci_of_mean(BalanceTestCase):
+class TestBalanceDF_ci(BalanceTestCase):
     def test_BalanceDF_ci_of_mean(self):
 
         self.assertEqual(
@@ -760,6 +763,38 @@ class TestBalanceDF_ci_of_mean(BalanceTestCase):
                     "self": (-0.183, 0.627),
                     "target": (-0.027, 1.17),
                     "unadjusted": (-0.183, 0.627),
+                },
+            },
+        )
+
+    def test_BalanceDF_mean_with_ci(self):
+
+        self.assertEqual(
+            s_o2.outcomes().mean_with_ci().to_dict(),
+            {
+                "self": {
+                    "_is_na_o2[False]": 0.75,
+                    "_is_na_o2[True]": 0.25,
+                    "o1": 8.5,
+                    "o2": 6.0,
+                },
+                "target": {
+                    "_is_na_o2[False]": 0.75,
+                    "_is_na_o2[True]": 0.25,
+                    "o1": 10.5,
+                    "o2": 7.875,
+                },
+                "self_ci": {
+                    "_is_na_o2[False]": (0.326, 1.174),
+                    "_is_na_o2[True]": (-0.174, 0.674),
+                    "o1": (7.404, 9.596),
+                    "o2": (2.535, 9.465),
+                },
+                "target_ci": {
+                    "_is_na_o2[False]": (0.45, 1.05),
+                    "_is_na_o2[True]": (-0.05, 0.55),
+                    "o1": (8.912, 12.088),
+                    "o2": (4.351, 11.399),
                 },
             },
         )
@@ -1024,47 +1059,104 @@ class TestBalanceDF__df_with_ids(BalanceTestCase):
 
 class TestBalanceDF_summary(BalanceTestCase):
     def testBalanceDF_summary(self):
-        covar_means = pd.DataFrame(
-            {
-                "a": [(0.5 * 1 + 2 * 2 + 3 * 1 + 1 * 1) / (0.5 + 2 + 1 + 1)],
-                "b": [(-42 * 0.5 + 8 * 2 + 2 * 1 + -42 * 1) / (0.5 + 2 + 1 + 1)],
-                "c[x]": [(1 * 0.5) / (0.5 + 2 + 1 + 1)],
-                "c[y]": [(1 * 2) / (0.5 + 2 + 1 + 1)],
-                "c[z]": [(1 * 1) / (0.5 + 2 + 1 + 1)],
-                "c[v]": [(1 * 1) / (0.5 + 2 + 1 + 1)],
-            }
-        )
+
         self.assertEqual(
-            s1.covars().summary(),
-            covar_means.assign(source="self").set_index("source"),
-            lazy=True,
+            s1.covars().summary().to_dict(),
+            {
+                "self": {
+                    "a": 1.889,
+                    "b": -10.0,
+                    "c[v]": 0.222,
+                    "c[x]": 0.111,
+                    "c[y]": 0.444,
+                    "c[z]": 0.222,
+                },
+                "self_ci": {
+                    "a": (1.232, 2.545),
+                    "b": (-32.715, 12.715),
+                    "c[v]": (-0.183, 0.627),
+                    "c[x]": (-0.116, 0.338),
+                    "c[y]": (-0.12, 1.009),
+                    "c[z]": (-0.183, 0.627),
+                },
+            },
         )
 
         s3_2 = s1.adjust(s2, method="null")
-        e = pd.concat((covar_means,) * 2, sort=True).assign(
-            source=("self", "unadjusted")
+        self.assertEqual(
+            s3_2.covars().summary().sort_index(axis=1).fillna(0).to_dict(),
+            {
+                "self": {
+                    "a": 1.889,
+                    "b": -10.0,
+                    "c[v]": 0.222,
+                    "c[x]": 0.111,
+                    "c[y]": 0.444,
+                    "c[z]": 0.222,
+                },
+                "self_ci": {
+                    "a": (1.232, 2.545),
+                    "b": (-32.715, 12.715),
+                    "c[v]": (-0.183, 0.627),
+                    "c[x]": (-0.116, 0.338),
+                    "c[y]": (-0.12, 1.009),
+                    "c[z]": (-0.183, 0.627),
+                },
+                "target": {
+                    "a": 2.429,
+                    "b": 6.857,
+                    "c[v]": 0.0,
+                    "c[x]": 0.143,
+                    "c[y]": 0.286,
+                    "c[z]": 0.571,
+                },
+                "target_ci": {
+                    "a": (1.637, 3.221),
+                    "b": (5.273, 8.441),
+                    "c[v]": 0,
+                    "c[x]": (-0.156, 0.442),
+                    "c[y]": (-0.233, 0.804),
+                    "c[z]": (-0.027, 1.17),
+                },
+                "unadjusted": {
+                    "a": 1.889,
+                    "b": -10.0,
+                    "c[v]": 0.222,
+                    "c[x]": 0.111,
+                    "c[y]": 0.444,
+                    "c[z]": 0.222,
+                },
+                "unadjusted_ci": {
+                    "a": (1.232, 2.545),
+                    "b": (-32.715, 12.715),
+                    "c[v]": (-0.183, 0.627),
+                    "c[x]": (-0.116, 0.338),
+                    "c[y]": (-0.12, 1.009),
+                    "c[z]": (-0.183, 0.627),
+                },
+            },
         )
-        e = pd.concat(
-            (
-                e,
-                pd.DataFrame(
-                    {
-                        "a": [(1 * 0.5 + 2 * 1 + 3 * 2) / (0.5 + 1 + 2)],
-                        "b": [(4 * 0.5 + 6 * 1 + 8 * 2) / (0.5 + 1 + 2)],
-                        "c[x]": [(1 * 0.5) / (0.5 + 1 + 2)],
-                        "c[y]": [(1 * 1) / (0.5 + 1 + 2)],
-                        "c[z]": [(1 * 2) / (0.5 + 1 + 2)],
-                        "source": "target",
-                    }
-                ),
-            ),
-            sort=True,
-        )
-        e = e.set_index("source")
-        self.assertEqual(s3_2.covars().summary().sort_index(axis=1), e)
 
         self.assertEqual(
-            s3_2.covars().summary(on_linked_samples=False), covar_means, lazy=True
+            s3_2.covars().summary(on_linked_samples=False).to_dict(),
+            {
+                0: {
+                    "a": 1.889,
+                    "b": -10.0,
+                    "c[v]": 0.222,
+                    "c[x]": 0.111,
+                    "c[y]": 0.444,
+                    "c[z]": 0.222,
+                },
+                "0_ci": {
+                    "a": (1.232, 2.545),
+                    "b": (-32.715, 12.715),
+                    "c[v]": (-0.183, 0.627),
+                    "c[x]": (-0.116, 0.338),
+                    "c[y]": (-0.12, 1.009),
+                    "c[z]": (-0.183, 0.627),
+                },
+            },
         )
 
 
