@@ -446,12 +446,13 @@ def descriptive_stats(
         np.ndarray,
         None,
     ] = None,
-    stat: Literal["mean", "std", "var_of_mean", "..."] = "mean",
+    stat: Literal["mean", "std", "var_of_mean", "ci_of_mean", "..."] = "mean",
     # relevant only if stat is None
     weighted: bool = True,
     # relevant only if we have non-numeric columns and we want to use model_matrix on them
     numeric_only: bool = False,
     add_na: bool = True,
+    **kwargs,
 ) -> pd.DataFrame:
     """Computes weighted statistics (e.g.: mean, std) on a DataFrame
 
@@ -466,6 +467,7 @@ def descriptive_stats(
             If mean - uses :func:`weighted_mean` (with inf_rm=True)
             If std - uses :func:`weighted_sd` (with inf_rm=True)
             If var_of_mean - uses :func:`var_of_weighted_mean` (with inf_rm=True)
+            If ci_of_mean - uses :func:`ci_of_weighted_mean` (with inf_rm=True)
             If something else - tries to use :func:`statsmodels.stats.weightstats.DescrStatsW`.
                 This supports stat such as: std_mean, sum_weights, nobs, etc. See function documentation to see more.
                 (while removing mutual nan using :func:`rm_mutual_nas`)
@@ -479,6 +481,7 @@ def descriptive_stats(
         add_na (bool, optional): Passed to :func:`model_matrix`.
             Relevant only if numeric_only == False and df has non-numeric columns.
             Defaults to True.
+        **kwargs: extra args to be passed to functions (e.g.: ci_of_weighted_mean)
 
     Returns:
         pd.DataFrame: Returns pd.DataFrame of the output (based on stat argument), for each of the columns in df.
@@ -531,17 +534,21 @@ def descriptive_stats(
             # Weighted results
             x, w = [1, 2, 3, 4], [1, 2, 3, 4]
             print(descriptive_stats(pd.DataFrame(x), w, stat="mean"))
-            print(descriptive_stats(pd.DataFrame(x), w, stat="std"))
-            print(descriptive_stats(pd.DataFrame(x), w, stat="std_mean"))
-            print(descriptive_stats(pd.DataFrame(x), w, stat="var_of_mean"))
                 #      0
                 # 0  3.0
+            print(descriptive_stats(pd.DataFrame(x), w, stat="std"))
                 #           0
                 # 0  1.195229
+            print(descriptive_stats(pd.DataFrame(x), w, stat="std_mean"))
                 #           0
                 # 0  0.333333
+            print(descriptive_stats(pd.DataFrame(x), w, stat="var_of_mean"))
                 #       0
                 # 0  0.24
+            print(descriptive_stats(pd.DataFrame(x), w, stat="ci_of_mean", conf_level = 0.99, round_ndigits=3))
+                #                 0
+                # 0  (1.738, 4.262)
+
     """
     if len(df.select_dtypes(np.number).columns) != len(df.columns):
         # If we have non-numeric columns, and want faster results,
@@ -564,6 +571,20 @@ def descriptive_stats(
         return weighted_sd(df, weights, inf_rm=True).to_frame().transpose()
     elif stat == "var_of_mean":
         return var_of_weighted_mean(df, weights, inf_rm=True).to_frame().transpose()
+    elif stat == "ci_of_mean":
+        conf_level = kwargs.get("conf_level", 0.95)
+        round_ndigits = kwargs.get("round_ndigits", None)
+        return (
+            ci_of_weighted_mean(
+                df,
+                weights,
+                inf_rm=True,
+                conf_level=conf_level,
+                round_ndigits=round_ndigits,
+            )
+            .to_frame()
+            .transpose()
+        )
 
     # TODO: (p2) check which input DescrStatsW takes, not sure we need to run the next two lines.
     if weights is not None:

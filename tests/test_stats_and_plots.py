@@ -533,6 +533,12 @@ class TestBalance_weighted_stats(
             descriptive_stats(pd.DataFrame(x), w, stat="var_of_mean").to_dict(),
             {0: {0: 0.24}},
         )
+        self.assertEqual(
+            descriptive_stats(
+                pd.DataFrame(x), w, stat="ci_of_mean", conf_level=0.99, round_ndigits=3
+            ).to_dict(),
+            {0: {0: (1.738, 4.262)}},
+        )
 
 
 class TestBalance_weighted_comparisons_stats(
