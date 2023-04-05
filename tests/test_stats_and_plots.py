@@ -334,6 +334,28 @@ class TestBalance_weighted_stats(
             pd.Series(0.24),
         )
 
+    def ci_of_weighted_mean(self):
+        from balance.stats_and_plots.weighted_stats import ci_of_weighted_mean
+
+        self.assertEqual(
+            ci_of_weighted_mean(pd.Series((1, 2, 3, 4)), round_ndigits=3).to_list(),
+            [(1.404, 3.596)],
+        )
+
+        self.assertEqual(
+            ci_of_weighted_mean(
+                pd.Series((1, 2, 3, 4)), pd.Series((1, 2, 3, 4)), round_ndigits=3
+            ).to_list(),
+            [(2.04, 3.96)],
+        )
+
+        df = pd.DataFrame({"a": [1, 2, 3, 4], "b": [1, 1, 1, 1]})
+        w = pd.Series((1, 2, 3, 4))
+        self.assertEqual(
+            ci_of_weighted_mean(df, w, conf_level=0.99, round_ndigits=3).to_dict(),
+            {"a": (1.738, 4.262), "b": (1.0, 1.0)},
+        )
+
     def test_weighted_var(self):
         from balance.stats_and_plots.weighted_stats import weighted_var
 

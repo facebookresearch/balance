@@ -13,6 +13,7 @@ import pandas as pd
 
 from balance.stats_and_plots.weights_stats import _check_weights_are_valid
 from balance.util import model_matrix, rm_mutual_nas
+from scipy.stats import norm
 
 from statsmodels.stats.weightstats import DescrStatsW
 
@@ -155,6 +156,15 @@ def weighted_mean(
             weighted_mean(pd.Series((1, 2, 3, 4)), pd.Series((1, 2, 3, 4)))
                 # 0    3.0
                 # dtype: float64
+
+            df = pd.DataFrame(
+                {"a": [1,2,3,4], "b": [1,1,1,1]}
+            )
+            w = pd.Series((1, 2, 3, 4))
+            weighted_mean(df, w)
+                # a    3.0
+                # b    1.0
+                # dtype: float64
     """
     v, w = _prepare_weighted_stat_args(v, w, inf_rm)
     return v.multiply(w, axis="index").sum() / w.sum()
@@ -197,15 +207,109 @@ def var_of_weighted_mean(
             #  For a reproducible R example, see: https://gist.github.com/talgalili/b92cd8cdcbfc287e331a8f27db265c00
             var_of_weighted_mean(pd.Series((1, 2, 3, 4)), pd.Series((1, 2, 3, 4)))
                 # pd.Series(0.24)
+
+            df = pd.DataFrame(
+                {"a": [1,2,3,4], "b": [1,1,1,1]}
+            )
+            w = pd.Series((1, 2, 3, 4))
+            var_of_weighted_mean(df, w)
+
+                # a    0.24
+                # b    0.00
+                # dtype: float64
     """
     v, w = _prepare_weighted_stat_args(v, w, inf_rm)
-    weighed_mean_of_v = weighted_mean(v, w, inf_rm)  # This is a pd.DataFrame
-    # NOTE: the multiply needs to be called from the pd.DataFrame. Unfortunately this makes the code less readable.
+    weighed_mean_of_v = weighted_mean(v, w, inf_rm)  # This is a pd.Series
+    # NOTE: the multiply needs to be called from the pd.Series. Unfortunately this makes the code less readable.
     sum_of_squared_weighted_diffs = (
         ((v - weighed_mean_of_v).multiply(w, axis="index")).pow(2).sum()
     )
     squared_sum_of_w = w.sum() ** 2  # This is a pd.series
     return sum_of_squared_weighted_diffs / squared_sum_of_w
+
+
+def ci_of_weighted_mean(
+    v: Union[List[float], pd.Series, pd.DataFrame, np.ndarray],
+    w: Optional[Union[List[float], pd.Series, np.ndarray]] = None,
+    conf_level: float = 0.95,
+    round_ndigits: Optional[int] = None,
+    inf_rm: bool = False,
+) -> pd.Series:
+    """
+    Computes the confidence interval of the weighted mean of a list of values and their corresponding weights.
+
+    If no weights are supplied, it assumes that all values have equal weights of 1.0.
+
+    v (Union[List[float], pd.Series, pd.DataFrame, np.ndarray]): A series of values. If v is a DataFrame, the weighted mean and its confidence interval will be calculated for each column using the same set of weights from `w`.
+    w (Optional[Union[List[float], pd.Series, np.ndarray]]): A series of weights to be used with `v`. If None, all values will be weighted equally.
+    conf_level (float, optional): Confidence level for the interval, between 0 and 1. Defaults to 0.95.
+    round_ndigits (Optional[int], optional): Number of decimal places to round the confidence interval. If None, the values will not be rounded. Defaults to None.
+    inf_rm (bool, optional): Whether to remove infinite (from weights or values) from the computation. Defaults to False.
+
+    Returns:
+        pd.Series: The confidence interval of the weighted mean. If `v` is a DataFrame with several columns, the pd.Series will have a value for the confidence interval of each column. The values are of data type Tuple[np.float64, np.float64].
+        If `inf_rm` is False:
+            If `v` has infinite values, the output will be `Inf`.
+            If `w` has infinite values, the output will be `np.nan`.
+
+    Examples:
+        ::
+            from balance.stats_and_plots.weighted_stats import ci_of_weighted_mean
+
+            ci_of_weighted_mean(pd.Series((1, 2, 3, 4)))
+                # 0    (1.404346824279273, 3.5956531757207273)
+                # dtype: object
+
+            ci_of_weighted_mean(pd.Series((1, 2, 3, 4)), round_ndigits = 3).to_list()
+                # [(1.404, 3.596)]
+
+            ci_of_weighted_mean(pd.Series((1, 2, 3, 4)), pd.Series((1, 2, 3, 4)))
+                # 0    (2.039817664728938, 3.960182335271062)
+                # dtype: object
+
+            ci_of_weighted_mean(pd.Series((1, 2, 3, 4)), pd.Series((1, 2, 3, 4)), round_ndigits = 3).to_list()
+                # [(2.04, 3.96)]
+
+            df = pd.DataFrame(
+                {"a": [1,2,3,4], "b": [1,1,1,1]}
+            )
+            w = pd.Series((1, 2, 3, 4))
+            ci_of_weighted_mean(df, w, conf_level = 0.99, round_ndigits = 3)
+                # a    (1.738, 4.262)
+                # b        (1.0, 1.0)
+                # dtype: object
+            ci_of_weighted_mean(df, w, conf_level = 0.99, round_ndigits = 3).to_dict()
+                # {'a': (1.738, 4.262), 'b': (1.0, 1.0)}
+    """
+    v, w = _prepare_weighted_stat_args(v, w, inf_rm)
+    weighed_mean_of_v = weighted_mean(v, w, inf_rm)
+    var_weighed_mean_of_v = var_of_weighted_mean(v, w, inf_rm)
+    z_value = norm.ppf((1 + conf_level) / 2)
+
+    if isinstance(v, pd.Series):
+        ci_index = v.index
+    elif isinstance(v, pd.DataFrame):
+        ci_index = v.columns
+    else:
+        ci_index = None
+
+    ci = pd.Series(
+        [
+            (
+                weighed_mean_of_v[i] - z_value * np.sqrt(var_weighed_mean_of_v[i]),
+                weighed_mean_of_v[i] + z_value * np.sqrt(var_weighed_mean_of_v[i]),
+            )
+            for i in range(len(weighed_mean_of_v))
+        ],
+        index=ci_index,
+    )
+
+    if round_ndigits is not None:
+        # Apply a lambda function to round a pd.Series of tuples to x decimal places
+        ci = ci.apply(lambda t: tuple(round(x, round_ndigits) for x in t))
+
+    # pyre-ignore[7]: pyre thinks this function could return a DataFrame because of ci = ci.apply(round_tuple). It's wrong.
+    return ci
 
 
 def weighted_var(

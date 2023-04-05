@@ -1,16 +1,16 @@
 0.6.0 (The future)
 ==================
 ### New Features
-- Add the `var_of_weighted_mean` function (from balance.stats_and_plots.weighted_stats import var_of_weighted_mean):
-    Computes the variance of the weighted average (pi estimator for ratio-mean) of a list of values and their corresponding weights.
-- Improve choose_variables to control the order of the returned variables
-    - The return type is now a list (and not a Tuple)
-    - The order of the returned list is based on the variables argument. If it is not supplied, it is based on column names in the DataFrames. The df_for_var_order arg controls which df to use.
 - Variance of the weighted mean
     - Add the `var_of_weighted_mean` function (from balance.stats_and_plots.weighted_stats import var_of_weighted_mean):
         Computes the variance of the weighted average (pi estimator for ratio-mean) of a list of values and their corresponding weights.
-    - Added the `var_of_mean` option to stat in the `descriptive_stats` function (based on `var_of_weighted_mean`)
-    - Added the `.var_of_mean()` method to BalanceDF.
+        - Added the `var_of_mean` option to stat in the `descriptive_stats` function (based on `var_of_weighted_mean`)
+        - Added the `.var_of_mean()` method to BalanceDF.
+    - Add the `ci_of_weighted_mean` function (from balance.stats_and_plots.weighted_stats import ci_of_weighted_mean):
+        Computes the confidence intervals of the weighted mean using the (just added) variance of the weighted mean.
+- Improve 'choose_variables' function to control the order of the returned variables
+    - The return type is now a list (and not a Tuple)
+    - The order of the returned list is based on the variables argument. If it is not supplied, it is based on the order of the column names in the DataFrames. The df_for_var_order arg controls which df to use.
 - Misc
     - The `_prepare_input_model_matrix` and downstream functions (e.g.: `model_matrix`, `sample.outcomes().mean()`, etc) can now handle DataFrame with special characters in the column names, by replacing special characters with '_' (or '_i', if we end up with columns with duplicate names). It also handles cases in which the column names have duplicates (using the new `_make_df_column_names_unique` function).
     - Improve choose_variables to control the order of the returned variables
