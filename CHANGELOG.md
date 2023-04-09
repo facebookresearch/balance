@@ -1,3 +1,10 @@
+0.7.0 (the future)
+==================
+
+### Bug Fixes
+- Fix `rm_mutual_nas`: it now remembers the index of pandas.Series that were used as input. This fixed erroneous plots produced by seaborn functions which uses rm_mutual_nas.
+
+
 0.6.0 (2023-04-05)
 ==================
 ### New Features

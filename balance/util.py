@@ -1055,20 +1055,19 @@ def _is_arraylike(o) -> bool:
 
 
 def rm_mutual_nas(*args) -> List:
-    """Remove entries in a position which is na or infinite in any of the arguments
+    """
+    Remove entries in a position which is na or infinite in any of the arguments.
 
-    Ignores args which are None
+    Ignores args which are None.
 
-    can accept array-like or single arraylike argument. Including pandas and numpy arrays.
+    Can accept multiple array-like arguments or a single array-like argument. Handles pandas and numpy arrays.
 
     Raises:
-        ValueError: If args are not array like (see: :func:`_is_arraylike`)
-        ValueError: If args include arrays of different lengths.
+        ValueError: If any argument is not array-like. (see: :func:`_is_arraylike`)
+        ValueError: If arguments include arrays of different lengths.
 
     Returns:
-        List: A list with all the original vectors, after removing from them the
-            elements for which there was a missing value in the same position as
-            any of the other arrays.
+        List: A list containing the original input arrays, after removing elements that have a missing or infinite value in the same position as any of the other arrays.
 
     Examples:
         ::
@@ -1124,6 +1123,27 @@ def rm_mutual_nas(*args) -> List:
                 #  array([1., 2.]),
                 #  array(['1', '2'], dtype='<U32'),
                 #  [1, 2]]
+
+                # Preserve the index values in the resulting pd.Series:
+                x1 = pd.Series([1, 2, 3, 4])
+                x2 = pd.Series([np.nan, 2, 3, 4])
+                x3 = np.array([1, 2, 3, 4])
+                print(rm_mutual_nas(x1, x2)[0])
+                print(rm_mutual_nas(x1.sort_values(ascending=False), x2)[0])
+                print(rm_mutual_nas(x1, x3)[0])
+                    # 1    2
+                    # 2    3
+                    # 3    4
+                    # dtype: int64
+                    # 3    4
+                    # 2    3
+                    # 1    2
+                    # dtype: int64
+                    # 0    1
+                    # 1    2
+                    # 2    3
+                    # 3    4
+                    # dtype: int64
     """
     if any(not (a is None or _is_arraylike(a)) for a in args):
         raise ValueError("All arguments must be arraylike")
@@ -1157,6 +1177,15 @@ def rm_mutual_nas(*args) -> List:
     #  convert back
     original_types = [_return_type_creation_function(x) for x in args]
     r = [pd.Series(x)[nonmissing_mask].tolist() if x is not None else x for x in args]
+
+    # Reapply the index for pd.Series
+    r = [
+        pd.Series(data, index=pd.Series(orig_data)[nonmissing_mask].index)
+        if isinstance(orig_data, pd.Series)
+        else data
+        for data, orig_data in zip(r, args)
+    ]
+
     # reproduce the type of each array in the result
     r = [(t(x) if x is not None else x) for t, x in zip(original_types, r)]
     if len(args) == 1:

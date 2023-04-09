@@ -893,6 +893,24 @@ class TestUtil(
         #  dtype('float64'),
         #  dtype('<U32')]
 
+        # Preserve index in pd.Series input
+        x1 = pd.Series([1, 2, 3, 4])
+        x2 = pd.Series([np.nan, 2, 3, 4])
+        x3 = np.array([1, 2, 3, 4])
+        # When there is nothing to remove, the original pd.Series will be returned with proper index:
+        self.assertEqual(rm_mutual_nas(x1, x3)[0].to_dict(), {0: 1, 1: 2, 2: 3, 3: 4})
+        self.assertEqual(
+            rm_mutual_nas(x1.sort_values(ascending=False), x3)[0].to_dict(),
+            {3: 4, 2: 3, 1: 2, 0: 1},
+        )
+        # Index is not changed also when na values are omitted:
+        self.assertEqual(rm_mutual_nas(x1, x2)[0].to_dict(), {1: 2, 2: 3, 3: 4})
+        # The order of the Series can be is changed, but the indexes remain the same
+        self.assertEqual(
+            rm_mutual_nas(x1.sort_values(ascending=False), x2)[0].to_dict(),
+            {3: 4, 2: 3, 1: 2},
+        )
+
     def test_choose_variables(self):
         from balance.util import choose_variables
 
