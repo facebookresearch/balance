@@ -917,14 +917,13 @@ def plotly_plot_density(
 
     """
     dict_of_density_plots = {}
-    colors = {
-        "self": "rgba(52,165,48,0.5)",
-        "unadjusted": "rgba(222,45,38,0.8)",
-        "target": "rgba(158,202,225,.8)",
-    }
 
     for variable in variables:
         data = []
+
+        # Indicate if we have only self and target (without unadjusted)
+        # since in this case the color of self should be red, since it's likely unadjusted.
+        only_self_and_target = set(dict_of_dfs.keys()) == {"self", "target"}
 
         for name, df in dict_of_dfs.items():
             if "weight" in df.columns:
@@ -954,8 +953,12 @@ def plotly_plot_density(
                 x=x,
                 y=y,
                 mode="lines",
-                name=name,
-                line={"color": colors.get(name, "rgba(0,0,0,0.8)")},
+                name=naming_legend(name, list(dict_of_dfs.keys())),
+                line={
+                    # pyre-ignore[6]: it cannot get to this point if name=="target".
+                    "color": _plotly_marker_color(name, only_self_and_target, "line"),
+                    "width": 1.5,
+                },
             )
             data.append(trace)
 
