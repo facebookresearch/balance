@@ -2,6 +2,7 @@
 ==================
 ### New Features
 - Add `plotly_plot_density` function: Plots interactive density plots of the given variables using kernel density estimation.
+- Modified `plotly_plot_dist` and `plot_dist` to also support 'kde' plots. Also, these are now the default options. This automatically percolates to `BalanceDF.plot()` methods.
 
 ### Bug Fixes
 - Fix `rm_mutual_nas`: it now remembers the index of pandas.Series that were used as input. This fixed erroneous plots produced by seaborn functions which uses rm_mutual_nas.

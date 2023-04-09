@@ -1063,22 +1063,26 @@ def plotly_plot_bar(
         return dict_of_bars
 
 
-# TODO: add more plots other than qq for numeric (e.g.: density/kde, hist, ecdf,)
+# TODO: add more plots other than qq for numeric (e.g.: hist, ecdf,)
 # see https://plotly.com/python/distplot/
+# Notice that these plots do not support the 'weight' column, so it requires a different approach.
+# See the plotly_plot_density solution that uses seaborn's output
 def plotly_plot_dist(
     dict_of_dfs: Dict[str, pd.DataFrame],
     variables: Optional[List[str]] = None,
     numeric_n_values_threshold: int = 15,
     weighted: bool = True,
+    dist_type: Optional[Literal["kde", "qq"]] = None,
     plot_it: bool = True,
     return_dict_of_figures: bool = False,
     ylim: Optional[Tuple[float, float]] = None,
 ) -> Optional[Dict[str, go.Figure]]:
-    """Plots interactive distribution plots (qq and bar plots) of the given variables.
+    """
+    Plots interactive distribution plots (qq and bar plots) of the given variables.
 
     The plots compare the weighted distributions of an arbitrary number
     of variables from an arbitrary number of DataFrames.
-    Numeric variables are plotted as qq's using :func:`plotly_plot_qq`,
+    Numeric variables are plotted as either qq's using :func:`plotly_plot_qq`, or as kde desnity plots using :func:`plotly_plot_density`.
     categorical variables as barplots using :func:`plotly_plot_bar`.
 
     Args:
@@ -1087,6 +1091,7 @@ def plotly_plot_dist(
         variables (Optional[List[str]], optional): a list of variables to use for plotting. Defaults (i.e.: if None) is to use the list of all variables.
         numeric_n_values_threshold (int, optional): How many numbers should be in a column so that it is considered to be a "category"? Defaults to 15.
         weighted (bool, optional): If to use the weights with the plots. Defaults to True.
+        dist_type (Optional[Literal["kde", "qq"]], optional): The type of plot to draw (relevant only for numerical variables). Defaults to None (which fallbacks to "kde").
         plot_it (bool, optional): If to plot the plots interactively instead of returning a dictionary. Defaults to True.
         return_dict_of_figures (bool, optional): If to return the dictionary containing the plots rather than just returning None. Defaults to False.
             If returned - the dictionary is of plots.
@@ -1128,6 +1133,9 @@ def plotly_plot_dist(
 
             # Make sure the bar plot is plotted with y in the range of 0 to 1.
             plotly_plot_dist(dict_of_dfs, ylim = (0,1))
+
+            # See the qqplots version
+            plotly_plot_dist(dict_of_dfs, dist_type="qq")
     """
     dict_of_all_plots = {}
     #  Choose set of variables to plot
@@ -1176,13 +1184,24 @@ def plotly_plot_dist(
         categorical = (o not in numeric_variables) or (
             n_values < numeric_n_values_threshold
         )
+
+        if (dist_type is None) or dist_type == "kde":
+            plotly_numeric_plot = plotly_plot_density
+        elif dist_type == "qq":
+            plotly_numeric_plot = plotly_plot_qq
+        else:
+            raise NotImplementedError(
+                f"dist_type of type {dist_type} is not implemented."
+            )
+
         # the below functions will create plotly plots
         if categorical:
             dict_of_plot = plotly_plot_bar(
                 dict_of_dfs, [o], plot_it, return_dict_of_figures, ylim=ylim
             )
         else:
-            dict_of_plot = plotly_plot_qq(
+            # plotly_plot_density
+            dict_of_plot = plotly_numeric_plot(
                 dict_of_dfs, [o], plot_it, return_dict_of_figures
             )
         # the below functions will add the plotly dict outputs
@@ -1242,14 +1261,14 @@ def plot_dist(
     variables: Optional[List[str]] = None,
     numeric_n_values_threshold: int = 15,
     weighted: bool = True,
-    dist_type: Optional[Literal["qq", "hist", "kde", "ecdf"]] = None,
+    dist_type: Optional[Literal["kde", "hist", "qq", "ecdf"]] = None,
     library: Literal["plotly", "seaborn"] = "plotly",
     ylim: Optional[Tuple[float, float]] = None,
     **kwargs,
 ) -> Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:
     """Plots the variables of a DataFrame by using either seaborn or plotly.
 
-    If using plotly then using qq plots for numeric variables and bar plots for categorical variables. Uses :func:`plotly_plot_dist`.
+    If using plotly then using kde (or qq) plots for numeric variables and bar plots for categorical variables. Uses :func:`plotly_plot_dist`.
     If using seaborn then various types of plots are possible for the variables (see dist_type for details). Uses :func:`seaborn_plot_dist`
 
     Args:
@@ -1266,7 +1285,8 @@ def plot_dist(
         variables (Optional[List[str]], optional): a list of variables to use for plotting. Default (i.e.: if None) is to use the list of all variables.
         numeric_n_values_threshold (int, optional): How many numbers should be in a column so that it is considered to be a "category"? Defaults to 15.
         weighted (bool, optional): If to use the weights with the plots. Defaults to True.
-        dist_type (Literal["qq", "hist", "kde", "ecdf"], optional): The type of plot to draw. Relevant only if using library="seaborn". Defaults to "hist".
+        dist_type (Literal["kde", "hist", "qq", "ecdf"], optional): The type of plot to draw. The 'qq' and 'kde' options are available for library="plotly",
+            While all options are available if using library="seaborn". Defaults to "kde".
         library (Literal["plotly", "seaborn"], optional): Whichever library to use for the plot. Defaults to "plotly".
         ylim (Optional[Tuple[float, float]], optional): A tuple with two float values representing the lower and upper limits of the y-axis.
             If not provided, the y-axis range is determined automatically. Defaults to None.
@@ -1308,14 +1328,14 @@ def plot_dist(
             # defaults to plotly with bar and qq plots. Returns None.
             plot_dist(dfs1, names=["self", "unadjusted", "target"])
 
-            # Using seaborn, deafults to qq plots
-            plot_dist(dfs1, names=["self", "unadjusted", "target"], library="seaborn") # like using dist_type = "qq"
+            # Using seaborn, deafults to kde plots
+            plot_dist(dfs1, names=["self", "unadjusted", "target"], library="seaborn") # like using dist_type = "kde"
             plot_dist(dfs1, names=["self", "unadjusted", "target"], library="seaborn", dist_type = "hist")
-            plot_dist(dfs1, names=["self", "unadjusted", "target"], library="seaborn", dist_type = "kde")
+            plot_dist(dfs1, names=["self", "unadjusted", "target"], library="seaborn", dist_type = "qq")
             plot_dist(dfs1, names=["self", "unadjusted", "target"], library="seaborn", dist_type = "ecdf")
 
             plot_dist(dfs1, names=["self", "unadjusted", "target"], ylim = (0,1))
-            plot_dist(dfs1, names=["self", "unadjusted", "target"], library="seaborn", dist_type = "kde", ylim = (0,1))
+            plot_dist(dfs1, names=["self", "unadjusted", "target"], library="seaborn", dist_type = "qq", ylim = (0,1))
     """
     if library not in ("plotly", "seaborn"):
         raise ValueError(f"library must be either 'plotly' or 'seaborn', is {library}")
@@ -1355,6 +1375,8 @@ def plot_dist(
             variables,
             numeric_n_values_threshold,
             weighted,
+            # pyre-ignore[6]: plotly_plot_dist will raise a NotImplemented error if dist_type is not None, 'kde', or 'qq'
+            dist_type=dist_type,
             ylim=ylim,
             **kwargs,
         )

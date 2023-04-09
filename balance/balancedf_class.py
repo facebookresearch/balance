@@ -603,6 +603,9 @@ class BalanceDF:
                 # Controlling the limits of the y axis using lim:
                 s3_null.covars().plot(ylim = (0,1))
                 s3_null.covars().plot(library = "seaborn",ylim = (0,1), dist_type = "hist")
+
+                # Returning plotly qq plots:
+                s3_null.covars().plot(dist_type = "qq")
         """
         if on_linked_samples:
             dfs_to_add = self._BalanceDF_child_from_linked_samples()
@@ -1658,7 +1661,7 @@ class BalanceOutcomesDF(BalanceDF):
     ) -> Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:
         """Plots histogram of covariates in a BalanceOutcomesDF object using seaborn (as default).
 
-        It's possible to use other plots using dist_type with arguments such as "hist" (default), "kde", "qq", and "ecdf".
+        It's possible to use other plots using dist_type with arguments such as "hist", "kde" (default), "qq", and "ecdf".
         Look at :func:`plot_dist` for more details.
 
         Args:
@@ -1781,7 +1784,7 @@ class BalanceWeightsDF(BalanceDF):
     ) -> Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:
         """Plots kde (kernal density estimation) of the weights in a BalanceWeightsDF object using seaborn (as default).
 
-        It's possible to use other plots using dist_type with arguments such as "hist" (default), "kde", "qq", and "ecdf".
+        It's possible to use other plots using dist_type with arguments such as "hist", "kde" (default), "qq", and "ecdf".
         Look at :func:`plot_dist` for more details.
 
         Args:
