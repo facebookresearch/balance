@@ -28,7 +28,7 @@ class Testpoststratify(
         t_weights = pd.Series([4, 2, 2, 8])
         result = poststratify(
             sample_df=s, sample_weights=s_weights, target_df=t, target_weights=t_weights
-        )["weights"]
+        )["weight"]
         self.assertEqual(result, t_weights.astype("float64"))
 
         # same example when dataframe of elements are all related to weights of one
@@ -41,7 +41,7 @@ class Testpoststratify(
         s_weights = pd.Series([1, 1, 1, 1, 1, 1, 1, 1])
         result = poststratify(
             sample_df=s, sample_weights=s_weights, target_df=t, target_weights=t_weights
-        )["weights"]
+        )["weight"]
         self.assertEqual(result, pd.Series((1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 8.0)))
 
         # same example with normalized weights
@@ -54,7 +54,7 @@ class Testpoststratify(
         s_weights = pd.Series([1 / 2, 1 / 4, 1 / 8, 1 / 8])
         result = poststratify(
             sample_df=s, sample_weights=s_weights, target_df=t, target_weights=t_weights
-        )["weights"]
+        )["weight"]
         self.assertEqual(result, t_weights.astype("float64"))
 
         # test through adjustment
@@ -114,7 +114,7 @@ class Testpoststratify(
             target_df=t,
             target_weights=t_weights,
             variables=["a"],
-        )["weights"]
+        )["weight"]
         self.assertEqual(result, pd.Series([4.0, 4.0, 2.0, 6.0]))
 
     def test_poststratify_transformations(self):
@@ -137,7 +137,7 @@ class Testpoststratify(
             sample_weights=pd.Series([1] * size),
             target_df=t,
             target_weights=pd.Series([1] * size),
-        )["weights"]
+        )["weight"]
 
         # age>0.4 has 4 times as many people than age <0.4 in the target
         # Check that the weights come out as 0.2 and 0.8
@@ -158,7 +158,7 @@ class Testpoststratify(
             sample_weights=pd.Series([1] * size),
             target_df=t,
             target_weights=pd.Series([1] * size),
-        )["weights"]
+        )["weight"]
 
         # Output weights should ignore the difference between values 'b' and 'c'
         # since these are combined in default transformations (into '_lumped_other').

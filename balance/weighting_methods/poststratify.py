@@ -49,12 +49,12 @@ def poststratify(
 
     Returns:
         Dict[str, Union[pd.Series, Dict[str, str]]]:
-            weights (pd.Series): final weights (sum up to target's sum of weights)
+            weight (pd.Series): final weights (sum up to target's sum of weights)
             model (dict): method of adjustment
 
             Dict shape:
             {
-                "weights": w,
+                "weight": w,
                 "model": {"method": "poststratify"},
             }
     """
@@ -103,6 +103,6 @@ def poststratify(
     w = sample_df.weight * sample_df.design_weight
 
     return {
-        "weights": w,
+        "weight": w,
         "model": {"method": "poststratify"},
     }

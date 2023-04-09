@@ -3,10 +3,15 @@
 ### New Features
 - Add `plotly_plot_density` function: Plots interactive density plots of the given variables using kernel density estimation.
 - Modified `plotly_plot_dist` and `plot_dist` to also support 'kde' plots. Also, these are now the default options. This automatically percolates to `BalanceDF.plot()` methods.
+- `Sample.from_frame` can now guess that a column called "weights" is a weight column (instead of only guessing so if the column is called "weight").
 
 ### Bug Fixes
 - Fix `rm_mutual_nas`: it now remembers the index of pandas.Series that were used as input. This fixed erroneous plots produced by seaborn functions which uses rm_mutual_nas.
 - Fix `plot_hist_kde` to work when dist_type = "ecdf"
+
+## Misc
+- All plotting functions moved internally to expect weight column to be called `weight`, instead of `weights`.
+- All adjust (ipw, cbps, poststratify, null) functions now export a dict with a key called `weight` instead of `weights`.
 
 
 0.6.0 (2023-04-05)

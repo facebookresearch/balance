@@ -97,11 +97,11 @@ def plot_bar(
         dfs (List[Dict[str, Union[pd.DataFrame, pd.Series]]]): a list (of length 1 or more) of dictionaries which describe the DataFrames and weights
             The structure is as follows:
             [
-                {'df': pd.DataFrame(...), 'weights': pd.Series(...)},
+                {'df': pd.DataFrame(...), "weight": pd.Series(...)},
                 ...
             ]
             The 'df' is a DataFrame which includes the column name that was supplied through 'column'.
-            The 'weights' is a pd.Series of weights that are used when aggregating the variable using :func:`relative_frequency_table`.
+            The "weight" is a pd.Series of weights that are used when aggregating the variable using :func:`relative_frequency_table`.
         names (List[str]): a list of the names of the DataFrames that are plotted. E.g.: ['adjusted', 'unadjusted', 'target']
         column (str): The column to be used to aggregate using :func:`relative_frequency_table`.
         axis (Optional[plt.Axes], optional): matplotlib Axes object to draw the plot onto, otherwise uses the current Axes. Defaults to None.
@@ -123,7 +123,7 @@ def plot_bar(
             })
 
             plot_bar(
-                [{"df": df, "weights": pd.Series((1, 1, 1, 1))}, {"df": df, "weights": pd.Series((2, 1, 1, 1))}],
+                [{"df": df, "weight": pd.Series((1, 1, 1, 1))}, {"df": df, "weight": pd.Series((2, 1, 1, 1))}],
                 names = ["self", "target"],
                 column = "group",
                 axis = None,
@@ -131,7 +131,7 @@ def plot_bar(
 
             # The same as above just with ylim set to (0, 1).
             plot_bar(
-                [{"df": df, "weights": pd.Series((1, 1, 1, 1))}, {"df": df, "weights": pd.Series((2, 1, 1, 1))}],
+                [{"df": df, "weight": pd.Series((1, 1, 1, 1))}, {"df": df, "weight": pd.Series((2, 1, 1, 1))}],
                 names = ["self", "target"],
                 column = "group",
                 axis = None,
@@ -140,7 +140,7 @@ def plot_bar(
 
             # Also deals with np.nan weights
             a = plot_bar(
-                [{"df": df, "weights": pd.Series((1, 1, 1, np.nan))}, {"df": df, "weights": pd.Series((2, 1, 1, np.nan))}],
+                [{"df": df, "weight": pd.Series((1, 1, 1, np.nan))}, {"df": df, "weight": pd.Series((2, 1, 1, np.nan))}],
                 names = ["self", "target"],
                 column = "group",
                 axis = None,
@@ -149,7 +149,7 @@ def plot_bar(
     plot_data = []
     for ii, i in enumerate(dfs):
         a_series = i["df"][column]
-        _w = i["weights"]
+        _w = i["weight"]
         if weighted:
             a_series, _w = rm_mutual_nas(a_series, _w)
             a_series.name = column  # rm_mutual_nas removes name, so we set it back
@@ -197,11 +197,11 @@ def plot_hist_kde(
         dfs (List[Dict[str, Union[pd.DataFrame, pd.Series]]]): a list (of length 1 or more) of dictionaries which describe the DataFrames and weights
             The structure is as follows:
             [
-                {'df': pd.DataFrame(...), 'weights': pd.Series(...)},
+                {'df': pd.DataFrame(...), "weight": pd.Series(...)},
                 ...
             ]
             The 'df' is a DataFrame which includes the column name that was supplied through 'column'.
-            The 'weights' is a pd.Series of weights that are used when aggregating the variable using :func:`relative_frequency_table`.
+            The "weight" is a pd.Series of weights that are used when aggregating the variable using :func:`relative_frequency_table`.
         names (List[str]): a list of the names of the DataFrames that are plotted. E.g.: ['adjusted', 'unadjusted', 'target']
         column (str): The column to be used to aggregate using :func:`relative_frequency_table`.
         axis (Optional[plt.Axes], optional): matplotlib Axes object to draw the plot onto, otherwise uses the current Axes. Defaults to None.
@@ -223,7 +223,7 @@ def plot_hist_kde(
                 'v1': (1, 2, 3, 4),
             })
 
-            dfs1 = [{"df": pd.DataFrame(pd.Series([1,2,2,2,3,4,5,5,7,8,9,9,9,9,5,2,5,4,4,4], name = "v1")), "weights": None}, {"df": df, "weights": pd.Series((200, 1, 0, 20))}]
+            dfs1 = [{"df": pd.DataFrame(pd.Series([1,2,2,2,3,4,5,5,7,8,9,9,9,9,5,2,5,4,4,4], name = "v1")), "weight": None}, {"df": df, "weight": pd.Series((200, 1, 0, 20))}]
 
             plt.figure(1)
 
@@ -293,7 +293,7 @@ def plot_hist_kde(
     plot_data = []
     for ii, i in enumerate(dfs):
         a_series = i["df"][column]
-        _w = i["weights"]
+        _w = i["weight"]
         if _w is None:
             _w = pd.Series(np.ones(len(a_series)), index=a_series.index)
         if weighted:
@@ -343,11 +343,11 @@ def plot_qq(
         dfs (List[Dict[str, Union[pd.DataFrame, pd.Series]]]): a list (of length 1 or more) of dictionaries which describe the DataFrames and weights
             The structure is as follows:
             [
-                {'df': pd.DataFrame(...), 'weights': pd.Series(...)},
+                {'df': pd.DataFrame(...), "weight": pd.Series(...)},
                 ...
             ]
             The 'df' is a DataFrame which includes the column name that was supplied through 'column'.
-            The 'weights' is a pd.Series of weights that are used when aggregating the variable using :func:`weighted_quantile`.
+            The "weight" is a pd.Series of weights that are used when aggregating the variable using :func:`weighted_quantile`.
             Uses the last df item in the list as the target.
         names (List[str]): a list of the names of the DataFrames that are plotted. E.g.: ['adjusted', 'unadjusted', 'target']
         column (str): The column to be used to aggregate using :func:`weighted_quantile`.
@@ -367,9 +367,9 @@ def plot_qq(
             }).sort_values(by=['v1'])
 
             dfs1 = [
-                {"df": df, "weights": pd.Series(np.ones(100))},
-                {"df": df, "weights": pd.Series(range(100))},
-                {"df": df, "weights": pd.Series(np.ones(100))},
+                {"df": df, "weight": pd.Series(np.ones(100))},
+                {"df": df, "weight": pd.Series(range(100))},
+                {"df": df, "weight": pd.Series(np.ones(100))},
             ]
 
             # plot_qq(dfs1, names=["self", "unadjusted", "target"], column="v1", axis=None, weighted=False)
@@ -380,7 +380,7 @@ def plot_qq(
 
     for ii, i in enumerate(dfs):
         d = i["df"]
-        _w = i["weights"]
+        _w = i["weight"]
 
         target_q = weighted_quantile(
             target["df"][column],
@@ -389,9 +389,9 @@ def plot_qq(
             # This is because of using:
             # dfs: List[Dict[str, Union[pd.DataFrame, pd.Series]]],
             # When in fact we want to be clear that the first element is called
-            # "df" and the second "weights", and that the first is a pd.DataFrame and
+            # "df" and the second "weight", and that the first is a pd.DataFrame and
             # the second pd.Series. Until this is not clear - the following line will raise an error.
-            target["weights"] if weighted else None,
+            target["weight"] if weighted else None,
         )
         sample_q = weighted_quantile(
             d.loc[:, column],
@@ -431,11 +431,11 @@ def plot_qq_categorical(
         dfs (List[Dict[str, Union[pd.DataFrame, pd.Series]]]): a list (of length 1 or more) of dictionaries which describe the DataFrames and weights
             The structure is as follows:
             [
-                {'df': pd.DataFrame(...), 'weights': pd.Series(...)},
+                {'df': pd.DataFrame(...), "weight": pd.Series(...)},
                 ...
             ]
             The 'df' is a DataFrame which includes the column name that was supplied through 'column'.
-            The 'weights' is a pd.Series of weights that are used when aggregating the variable using :func:`weighted_quantile`.
+            The "weight" is a pd.Series of weights that are used when aggregating the variable using :func:`weighted_quantile`.
             Uses the last df item in the list as the target.
         names (List[str]): a list of the names of the DataFrames that are plotted. E.g.: ['adjusted', 'unadjusted', 'target']
         column (str): The column to be used to aggregate using :func:`relative_frequency_table`.
@@ -456,9 +456,9 @@ def plot_qq_categorical(
             }).sort_values(by=['v1'])
 
             dfs1 = [
-                {"df": df, "weights": pd.Series(np.ones(100))},
-                {"df": df, "weights": pd.Series(np.ones(99).tolist() + [1000])},
-                {"df": df, "weights": pd.Series(np.ones(100))},
+                {"df": df, "weight": pd.Series(np.ones(100))},
+                {"df": df, "weight": pd.Series(np.ones(99).tolist() + [1000])},
+                {"df": df, "weight": pd.Series(np.ones(100))},
             ]
 
             import matplotlib.pyplot as plt
@@ -475,7 +475,7 @@ def plot_qq_categorical(
             plot_qq_categorical(dfs1, names=["self", "unadjusted", "target"], column="v1", axis=axs[2], weighted=True, label_threshold=3)
     """
     target = dfs[-1]["df"]
-    target_weights = dfs[-1]["weights"]
+    target_weights = dfs[-1]["weight"]
     dfs = dfs[:-1]
 
     # pyre-fixme[6]
@@ -483,7 +483,7 @@ def plot_qq_categorical(
 
     for ii, i in enumerate(dfs):
         d = i["df"]
-        _w = i["weights"] if weighted else None
+        _w = i["weight"] if weighted else None
 
         # pyre-fixme[6]
         sample_plot_data = relative_frequency_table(d, column, _w)
@@ -534,11 +534,11 @@ def seaborn_plot_dist(
         dfs (List[Dict[str, Union[pd.DataFrame, pd.Series]]]): a list (of length 1 or more) of dictionaries which describe the DataFrames and weights
             The structure is as follows:
             [
-                {'df': pd.DataFrame(...), 'weights': pd.Series(...)},
+                {'df': pd.DataFrame(...), "weight": pd.Series(...)},
                 ...
             ]
             The 'df' is a DataFrame which includes the column name that was supplied through 'column'.
-            The 'weights' is a pd.Series of weights that are used when aggregating by the column variable.
+            The "weight" is a pd.Series of weights that are used when aggregating by the column variable.
         names (List[str]): a list of the names of the DataFrames that are plotted. E.g.: ['adjusted', 'unadjusted', 'target']
         variables (Optional[List], optional): The list of variables to use, by default (None) will plot all of them.
         numeric_n_values_threshold (int, optional): How many unique values (or less) should be in a column so that it is considered to be a "category"? Defaults to 15.
@@ -573,9 +573,9 @@ def seaborn_plot_dist(
             }).sort_values(by=['v2'])
 
             dfs1 = [
-                {"df": df, "weights": pd.Series(np.ones(100))},
-                {"df": df, "weights": pd.Series(np.ones(99).tolist() + [1000])},
-                {"df": df, "weights": pd.Series(np.random.uniform(size=100))},
+                {"df": df, "weight": pd.Series(np.ones(100))},
+                {"df": df, "weight": pd.Series(np.ones(99).tolist() + [1000])},
+                {"df": df, "weight": pd.Series(np.random.uniform(size=100))},
             ]
 
             seaborn_plot_dist(dfs1, names=["self", "unadjusted", "target"], dist_type = "qq")  # default
@@ -840,9 +840,9 @@ def plotly_plot_density(
             }).sort_values(by=['v2'])
 
             dict_of_dfs = {
-                "self": pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = "weights")], axis = 1),
-                "unadjusted": pd.concat([df, pd.Series(np.ones(99).tolist() + [1000], name = "weights")], axis = 1),
-                "target": pd.concat([df, pd.Series(np.ones(100), name = "weights")], axis = 1),
+                "self": pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = "weight")], axis = 1),
+                "unadjusted": pd.concat([df, pd.Series(np.ones(99).tolist() + [1000], name = "weight")], axis = 1),
+                "target": pd.concat([df, pd.Series(np.ones(100), name = "weight")], axis = 1),
             }
 
             # It won't work with "v1" since it is not numeric.
@@ -851,25 +851,25 @@ def plotly_plot_density(
 
             # The above gives the same results as:
             dfs1 = [
-                {"df": df, "weights": dict_of_dfs['self']['weights']},
-                {"df": df, "weights": dict_of_dfs['unadjusted']['weights']},
-                {"df": df, "weights": dict_of_dfs['target']['weights']},
+                {"df": df, "weight": dict_of_dfs['self']["weight"]},
+                {"df": df, "weight": dict_of_dfs['unadjusted']["weight"]},
+                {"df": df, "weight": dict_of_dfs['target']["weight"]},
             ]
             plot_dist(dfs1, names=["self", "unadjusted", "target"], library="seaborn", dist_type = "kde", variables= ["v2", "v3"])
 
 
-            # This gives the same shape of plots (notice how we must have the column "weights" for the plots to work)
+            # This gives the same shape of plots (notice how we must have the column "weight" for the plots to work)
             df = pd.DataFrame({
                 'group': ('a', 'b', 'c', 'c'),
                 'v1': (1, 2, 3, 4),
             })
 
-            dfs1 = [{"df": pd.DataFrame(pd.Series([1,2,2,2,3,4,5,5,7,8,9,9,9,9,5,2,5,4,4,4], name = "v1")), "weights": None}, {"df": df, "weights": pd.Series((200, 1, 0, 200000))}]
+            dfs1 = [{"df": pd.DataFrame(pd.Series([1,2,2,2,3,4,5,5,7,8,9,9,9,9,5,2,5,4,4,4], name = "v1")), "weight": None}, {"df": df, "weight": pd.Series((200, 1, 0, 200000))}]
             # dfs1[1]{'df'}
 
             dict_of_dfs = {
                 "self": dfs1[0]['df'], # pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = "weight")], axis = 1),
-                "target": pd.concat([dfs1[1]['df'], pd.Series(dfs1[1]['weights'], name = "weights")], axis = 1),
+                "target": pd.concat([dfs1[1]['df'], pd.Series(dfs1[1]["weight"], name = "weight")], axis = 1),
             }
 
             plotly_plot_density(dict_of_dfs, variables= ["v1"], plot_width = 550)
@@ -888,20 +888,20 @@ def plotly_plot_density(
         data = []
 
         for name, df in dict_of_dfs.items():
-            if "weights" in df.columns:
-                weights = df["weights"]
+            if "weight" in df.columns:
+                weights = df["weight"]
                 weights = weights / weights.sum()  # normalize weights by sum of weights
             else:
                 weights = np.ones(len(df))
 
             # Convert the data to long format
-            long_df = pd.DataFrame({"value": df[variable], "weights": weights})
+            long_df = pd.DataFrame({"value": df[variable], "weight": weights})
 
             # Replace KDE calculation with sns.kdeplot
             with plt.xkcd():
                 plt.figure()
                 ax = sns.kdeplot(
-                    data=long_df, x="value", weights="weights", common_norm=False
+                    data=long_df, x="value", weights="weight", common_norm=False
                 )
                 x = ax.get_lines()[-1].get_xdata()
                 y = ax.get_lines()[-1].get_ydata()
@@ -1278,11 +1278,11 @@ def plot_dist(
         dfs (List[Dict[str, Union[pd.DataFrame, pd.Series]]]): a list (of length 1 or more) of dictionaries which describe the DataFrames and weights
             The structure is as follows:
             [
-                {'df': pd.DataFrame(...), 'weights': pd.Series(...)},
+                {'df': pd.DataFrame(...), "weight": pd.Series(...)},
                 ...
             ]
             The 'df' is a DataFrame which includes the column name that was supplied through 'column'.
-            The 'weights' is a pd.Series of weights that are used when aggregating the variable using :func:`relative_frequency_table`.
+            The "weight" is a pd.Series of weights that are used when aggregating the variable using :func:`relative_frequency_table`.
         names (List[str]): a list of the names of the DataFrames that are plotted. E.g.: ['adjusted', 'unadjusted', 'target']
             If None, then all DataFrames will be plotted, but only if library == "seaborn". (TODO: to remove this restriction)
         variables (Optional[List[str]], optional): a list of variables to use for plotting. Default (i.e.: if None) is to use the list of all variables.
@@ -1320,9 +1320,9 @@ def plot_dist(
             }).sort_values(by=['v2'])
 
             dfs1 = [
-                {"df": df, "weights": pd.Series(random.random(size = 100) + 0.5)},
-                {"df": df, "weights": pd.Series(np.ones(99).tolist() + [1000])},
-                {"df": df, "weights": pd.Series(np.ones(100))},
+                {"df": df, "weight": pd.Series(random.random(size = 100) + 0.5)},
+                {"df": df, "weight": pd.Series(np.ones(99).tolist() + [1000])},
+                {"df": df, "weight": pd.Series(np.ones(100))},
             ]
 
 
@@ -1364,7 +1364,7 @@ def plot_dist(
             zip(
                 names,
                 (
-                    pd.concat((d["df"], pd.Series(d["weights"], name="weight")), axis=1)
+                    pd.concat((d["df"], pd.Series(d["weight"], name="weight")), axis=1)
                     for d in dfs
                 ),
             )

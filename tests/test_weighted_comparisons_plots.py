@@ -66,8 +66,8 @@ class Test_weighted_comparisons_plots(
 
         plot_bar(
             [
-                {"df": df, "weights": pd.Series((1, 1, 1, 1))},
-                {"df": df, "weights": pd.Series((2, 1, 1, 1))},
+                {"df": df, "weight": pd.Series((1, 1, 1, 1))},
+                {"df": df, "weight": pd.Series((2, 1, 1, 1))},
             ],
             names=["self", "target"],
             column="group",
@@ -82,7 +82,7 @@ class Test_weighted_comparisons_plots(
             "df": pd.DataFrame(
                 {"numeric_5": pd.Series([0, 0, 0, 0, 0, 1, 1, 2, 3, 4])}
             ),
-            "weights": pd.Series([0, 0, 0, 0, 0, 0, 0, 0, 0, 5]),
+            "weight": pd.Series([0, 0, 0, 0, 0, 0, 0, 0, 0, 5]),
         }
 
         plot_dist_type = type(
@@ -176,7 +176,7 @@ class Test_weighted_comparisons_plots(
             "df": pd.DataFrame(
                 {"numeric_5": pd.Series([0, 0, 0, 0, 0, 1, 1, 2, 3, 4])}
             ),
-            "weights": pd.Series([0, 0, 0, 0, 0, 0, 0, 0, 0, 5]),
+            "weight": pd.Series([0, 0, 0, 0, 0, 0, 0, 0, 0, 5]),
         }
 
         # Check that we get a list of matplotlib axes
@@ -217,9 +217,9 @@ class Test_weighted_comparisons_plots(
         ).sort_values(by=["v2"])
 
         dfs1 = [
-            {"df": df, "weights": pd.Series(np.ones(100))},
-            {"df": df, "weights": pd.Series(np.ones(99).tolist() + [1000])},
-            {"df": df, "weights": pd.Series(np.ones(100))},
+            {"df": df, "weight": pd.Series(np.ones(100))},
+            {"df": df, "weight": pd.Series(np.ones(99).tolist() + [1000])},
+            {"df": df, "weight": pd.Series(np.ones(100))},
         ]
 
         # If plot_it=False and

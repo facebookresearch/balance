@@ -381,7 +381,7 @@ def cbps(  # noqa
 
     Returns:
         Dict[str, Union[pd.Series, Dict]]: A dictionary includes:
-        "weights" --- The weights for the sample.
+        "weight" --- The weights for the sample.
         "model" -- dictionary with details about the fitted model:
             X_matrix_columns, deviance, beta_optimal, balance_optimize_result,
             gmm_optimize_result_glm_init, gmm_optimize_result_bal_init
@@ -682,7 +682,7 @@ def cbps(  # noqa
     weights = weights / original_sum_weights * np.sum(target_weights)
 
     # set index to sample_df
-    weights = pd.DataFrame({"weights": weights}).set_index(sample_index)["weights"]
+    weights = pd.DataFrame({"weight": weights}).set_index(sample_index)["weight"]
 
     if np.unique(weights).shape[0] == 1 or weights.describe()["std"] < 1e-4:
         # All weights are the same
@@ -701,7 +701,7 @@ def cbps(  # noqa
     )
 
     out = {
-        "weights": weights,
+        "weight": weights,
         "model": {
             "method": "cbps",
             "X_matrix_columns": X_matrix_columns_names,

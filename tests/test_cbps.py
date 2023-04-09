@@ -38,7 +38,7 @@ class Testcbps(
             sample_df, sample_weights, target_df, target_weights, transformations=None
         )
         self.assertEqual(
-            result_adjust.df["weight"], result_cbps["weights"].rename("weight")
+            result_adjust.df["weight"], result_cbps["weight"].rename("weight")
         )
 
     def test_logit_truncated(self):
@@ -269,13 +269,13 @@ class Testcbps(
         # TODO: The results are not 100% reproducible due to rounding issues in SVD that produce slightly different U:
         # http://numpy-discussion.10968.n7.nabble.com/strange-behavior-of-numpy-random-multivariate-normal-ticket-1842-td31547.html
         # This results in slightly different optimizations solutions (that might have some randomness in them too).
-        # self.assertEqual(round(res["weights"][4],4), 4.3932)
-        # self.assertEqual(round(res["weights"][997],4), 0.7617)
-        # self.assertEqual(np.around(res["weights"].describe().values,4),
+        # self.assertEqual(round(res["weight"][4],4), 4.3932)
+        # self.assertEqual(round(res["weight"][997],4), 0.7617)
+        # self.assertEqual(np.around(res["weight"].describe().values,4),
         #                np.array([1.0000e+03, 1.0167e+00, 1.1340e+00, 3.0000e-04,
         #                          3.3410e-01, 6.8400e-01, 1.2317e+00, 7.4006e+00]))
         self.assertTrue(
-            res["weights"][995] < res["weights"][999]
+            res["weight"][995] < res["weight"][999]
         )  # these are obs with different a value
 
     # Test cbps constraints
@@ -296,7 +296,7 @@ class Testcbps(
         )
 
         # Ensure that example df would produce DE > 1.5 if unconstrained
-        self.assertTrue(design_effect(unconconstrained_result["weights"]) > 1.5)
+        self.assertTrue(design_effect(unconconstrained_result["weight"]) > 1.5)
 
         # Same data but now with constraint produces desired design effect - for cbps_method = "over"
         de_constrained_result = balance_cbps.cbps(
@@ -308,9 +308,7 @@ class Testcbps(
             max_de=1.5,
             weight_trimming_mean_ratio=None,
         )
-        self.assertTrue(
-            round(design_effect(de_constrained_result["weights"]), 5) <= 1.5
-        )
+        self.assertTrue(round(design_effect(de_constrained_result["weight"]), 5) <= 1.5)
         # Same data but now with constraint produces desired design effect - for cbps_method = "exact"
         de_constrained_result = balance_cbps.cbps(
             sample_df,
@@ -322,9 +320,7 @@ class Testcbps(
             weight_trimming_mean_ratio=None,
             cbps_method="exact",
         )
-        self.assertTrue(
-            round(design_effect(de_constrained_result["weights"]), 5) <= 1.5
-        )
+        self.assertTrue(round(design_effect(de_constrained_result["weight"]), 5) <= 1.5)
 
     def test_cbps_weights_order(self):
         sample = pd.DataFrame({"a": (1, 2, 3, 4, 5, 6, 7, 9, 1)})
@@ -338,7 +334,7 @@ class Testcbps(
             transformations=None,
         )
 
-        w = result["weights"].values
+        w = result["weight"].values
         self.assertEqual(round(w[0], 10), round(w[8], 10))
         self.assertTrue(w[0] < w[1])
         self.assertTrue(w[0] < w[7])
@@ -354,7 +350,7 @@ class Testcbps(
         result = balance_cbps.cbps(
             sample_df, sample_weights, target_df, target_weights, transformations=None
         )
-        self.assertTrue(np.var(result["weights"]) < 1e-10)
+        self.assertTrue(np.var(result["weight"]) < 1e-10)
 
         sample = Sample.from_frame(
             df=pd.DataFrame(

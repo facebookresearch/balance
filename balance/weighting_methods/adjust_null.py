@@ -36,7 +36,7 @@ def adjust_null(
     """
 
     return {
-        "weights": sample_weights,
+        "weight": sample_weights,
         "model": {
             "method": "null_adjustment",
         },

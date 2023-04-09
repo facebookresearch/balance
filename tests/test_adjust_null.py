@@ -53,7 +53,7 @@ class TestAdjustmentNull(
             pd.DataFrame({"a": [7, 8, 9]}),
             pd.Series([10, 11, 12]),
         )
-        self.assertEqual(res["weights"], pd.Series([4, 5, 6]))
+        self.assertEqual(res["weight"], pd.Series([4, 5, 6]))
         self.assertEqual(res["model"]["method"], "null_adjustment")
 
         result = sample.adjust(target, method="null")

@@ -409,12 +409,12 @@ def ipw(
 
     Returns:
         Dict[str, Any]: A dictionary includes:
-            "weights" --- The weights for the sample.
+            "weight" --- The weights for the sample.
             "model" --- parameters of the model:fit, performance, X_matrix_columns, lambda,
                         weight_trimming_mean_ratio
             Shape of the Dict:
             {
-                "weights": weights,
+                "weight": weights,
                 "model": {
                     "method": "ipw",
                     "X_matrix_columns": X_matrix_columns_names,
@@ -621,7 +621,7 @@ def ipw(
         )
 
     out = {
-        "weights": weights,
+        "weight": weights,
         "model": {
             "method": "ipw",
             "X_matrix_columns": X_matrix_columns_names,

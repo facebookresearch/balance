@@ -616,7 +616,7 @@ class BalanceDF:
         # Notice that we skip cases in which there is no data (i.e.: v is None)
         # None values are skipped in both dfs and names
         dfs = [
-            {"df": v.df, "weights": v._weights}
+            {"df": v.df, "weight": v._weights}
             for k, v in dfs_to_add.items()
             if (v is not None)
         ]

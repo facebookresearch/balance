@@ -35,7 +35,7 @@ class Testipw(
             transformations=None,
         )
 
-        w = result["weights"].values
+        w = result["weight"].values
 
         self.assertEqual(w[0], w[8])
         self.assertTrue(w[0] < w[1])
@@ -366,10 +366,10 @@ class Testipw(
         res = balance_ipw.ipw(sample_df, sample_weights, target_df, target_weights)
 
         # Compare output weights (examples and distribution)
-        self.assertEqual(round(res["weights"][15], 4), 0.0886)
-        self.assertEqual(round(res["weights"][995], 4), 0.2363)
+        self.assertEqual(round(res["weight"][15], 4), 0.0886)
+        self.assertEqual(round(res["weight"][995], 4), 0.2363)
         self.assertEqual(
-            np.around(res["weights"].describe().values, 4),
+            np.around(res["weight"].describe().values, 4),
             np.array([1000, 1.0167, 0.7108, 0.0001, 0.2349, 1.2151, 1.7077, 1.7077]),
         )
 

@@ -132,7 +132,8 @@ class Sample:
         standardize_types: bool = True,
         use_deepcopy: bool = True,
     ) -> "Sample":
-        """Create a new Sample object.
+        """
+        Create a new Sample object.
 
         NOTE that all integer columns will be converted by defaults into floats. This behavior can be turned off
         by setting standardize_types argument to False.
@@ -151,7 +152,7 @@ class Sample:
             (should be unique). Defaults to None.
             outcome_columns (Optional, Optional[Union[list, tuple, str]]): names of columns to treat as outcome
             weight_column (Optional, Optional[str]): name of column to treat as weight. If not specified, will
-                be guessed. If not found, will be filled with 1.0.
+                be guessed (either "weight" or "weights"). If not found, a new column will be created ("weight") and filled with 1.0.
             check_id_uniqueness (Optional, bool): Whether to check if ids are unique. Defaults to True.
             standardize_types (Optional, bool): Whether to standardize types. Defaults to True.
                 Int64/int64 -> float64
@@ -245,13 +246,23 @@ class Sample:
         # weight column
         if weight_column is None:
             if "weight" in sample._df.columns:
-                logger.warning(f"Guessing weight column '{'weight'}'")
+                logger.warning("Guessing weight column is 'weight'")
+                weight_column = "weight"
+            elif "weights" in sample._df.columns:
+                logger.warning("Guessing weight column is 'weights'")
+                weight_column = "weights"
             else:
-                logger.warning("No weights passed, setting all weights to 1")
-                sample._df.loc[:, "weight"] = 1
-            sample.weight_column = sample._df["weight"]
-        else:
-            sample.weight_column = sample._df[weight_column]
+                # TODO: The current default when weights are not available is "weight", while the method in balanceDF is called "weights",
+                #       and the subclass is called BalanceWeightsDF (with and 's' at the end)
+                #       In the future, it would be better to be more consistent and use the same name for all variations (e.g.: "weight").
+                #       Unless, we move to use more weights columns, and this method could be used to get all of them.
+                logger.warning(
+                    "No weights passed. Adding a 'weight' column and setting all values to 1"
+                )
+                weight_column = "weight"
+                sample._df.loc[:, weight_column] = 1
+
+        sample.weight_column = sample._df[weight_column]
 
         # outcome columns
         if outcome_columns is None:
@@ -421,7 +432,7 @@ class Sample:
             *args,
             **kwargs,
         )
-        new_sample.set_weights(adjusted["weights"])
+        new_sample.set_weights(adjusted["weight"])
         new_sample._adjustment_model = adjusted["model"]
         new_sample._links["unadjusted"] = self
         new_sample._links["target"] = target
