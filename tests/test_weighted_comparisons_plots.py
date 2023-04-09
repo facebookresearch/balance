@@ -50,6 +50,44 @@ s2 = Sample.from_frame(
 class Test_weighted_comparisons_plots(
     balance.testutil.BalanceTestCase,
 ):
+    def test_plot__plotly_marker_color(self):
+        from balance.stats_and_plots.weighted_comparisons_plots import (
+            _plotly_marker_color,
+        )
+
+        self.assertEqual(
+            _plotly_marker_color("self", True, "color"), "rgba(222,45,38,0.8)"
+        )
+        self.assertEqual(
+            _plotly_marker_color("self", False, "color"), "rgba(52,165,48,0.5)"
+        )
+        self.assertEqual(
+            _plotly_marker_color("self", True, "line"), "rgba(222,45,38,1)"
+        )
+        self.assertEqual(
+            _plotly_marker_color("self", False, "line"), "rgba(52,165,48,1)"
+        )
+
+        self.assertEqual(
+            _plotly_marker_color("target", True, "color"), "rgb(158,202,225,0.8)"
+        )
+        self.assertEqual(
+            _plotly_marker_color("target", False, "color"), "rgb(158,202,225,0.8)"
+        )
+        self.assertEqual(
+            _plotly_marker_color("target", True, "line"), "rgb(158,202,225,1)"
+        )
+        self.assertEqual(
+            _plotly_marker_color("target", False, "line"), "rgb(158,202,225,1)"
+        )
+
+        self.assertEqual(
+            _plotly_marker_color("adjusted", False, "color"), "rgba(52,165,48,0.5)"
+        )
+        self.assertEqual(
+            _plotly_marker_color("adjusted", False, "line"), "rgba(52,165,48,1)"
+        )
+
     def test_plot_bar(self):
         import matplotlib.pyplot as plt
         from balance.stats_and_plots.weighted_comparisons_plots import plot_bar

@@ -79,6 +79,46 @@ def _return_sample_palette(
     return sample_palette
 
 
+def _plotly_marker_color(
+    name: Literal["sample", "unadjusted", "self", "adjusted"],
+    only_self_and_target: bool,
+    color_type: Literal["color", "line"],
+) -> str:
+    """
+    Returns a color string for a marker in a plotly plot based on the given parameters.
+
+    Args:
+        name (Literal["sample", "unadjusted", "self", "adjusted"]): Name of the marker.
+        only_self_and_target (bool): Determines if only self and target groups are available, or if it's self, unadjusted and target.
+        color_type (Literal["color", "line"]): The type of color, either "color" or "line".
+
+    Returns:
+        str: A string representing the color in RGBA format.
+
+    Raises:
+        ValueError: If the color_type is not one of the accepted options.
+    """
+    if color_type == "color":
+        col1 = 0.8
+        col2 = 0.5
+    elif color_type == "line":
+        col1 = 1
+        col2 = 1
+    else:
+        raise ValueError(
+            "Invalid value for 'tycolor_typepe'. Must be either 'color' or 'line'."
+        )
+
+    if name.lower() in ["sample", "unadjusted"] or (
+        name.lower() == "self" and only_self_and_target
+    ):
+        return f"rgba(222,45,38,{col1})"
+    elif name.lower() in ["self", "adjusted"]:
+        return f"rgba(52,165,48,{col2})"
+    else:
+        return f"rgb(158,202,225,{col1})"
+
+
 def plot_bar(
     dfs: List[Dict[str, Union[pd.DataFrame, pd.Series]]],
     names: List[str],
@@ -299,6 +339,7 @@ def plot_hist_kde(
         if weighted:
             a_series, _w = rm_mutual_nas(a_series, _w)
             a_series.name = column  # rm_mutual_nas removes name, so we set it back
+            # TODO: verify if this normalization to sum to 1 is needed (if so, how come we don't do it when _w is None)?
             _w = _w / np.sum(_w)
 
         df_plot_data = pd.DataFrame({column: a_series, "_w": _w})
@@ -760,14 +801,12 @@ def plotly_plot_qq(
                         )["col1"]
                     ),
                     marker={
-                        "color": "rgba(222,45,38,0.8)"
-                        if (
-                            (name.lower() in ["sample", "unadjusted"])
-                            or (name.lower() == "self" and only_self_and_target)
+                        "color": _plotly_marker_color(
+                            # pyre-ignore[6]: it cannot get to this point if name=="target".
+                            name,
+                            only_self_and_target,
+                            "color",
                         )
-                        else "rgba(52,165,48,0.5)"
-                        if name.lower() in ["self", "adjusted"]
-                        else "rgb(158,202,225,.8)"
                     },
                     mode="markers",
                     name=naming_legend(name, list(dict_of_dfs.keys())),
@@ -890,6 +929,7 @@ def plotly_plot_density(
         for name, df in dict_of_dfs.items():
             if "weight" in df.columns:
                 weights = df["weight"]
+                # TODO: verify if this normalization to sum to 1 is needed (if so, how come we don't do it when _w is None)?
                 weights = weights / weights.sum()  # normalize weights by sum of weights
             else:
                 weights = np.ones(len(df))
@@ -1021,23 +1061,15 @@ def plotly_plot_bar(
                 x=list(df_plot_data[variable]),
                 y=list(df_plot_data["prop"]),
                 marker={
-                    "color": "rgba(222,45,38,0.8)"
-                    if (
-                        (name.lower() in ["sample", "unadjusted"])
-                        or (name.lower() == "self" and only_self_and_target)
-                    )
-                    else "rgba(52,165,48,0.5)"
-                    if name.lower() in ["self", "adjusted"]
-                    else "rgb(158,202,225,.8)",
+                    # pyre-ignore[6]: it cannot get to this point if name=="target".
+                    "color": _plotly_marker_color(name, only_self_and_target, "color"),
                     "line": {
-                        "color": "rgba(222,45,38,1)"
-                        if (
-                            (name.lower() in ["sample", "unadjusted"])
-                            or (name.lower() == "self" and only_self_and_target)
-                        )
-                        else "rgba(52,165,48,1)"
-                        if name.lower() in ["self", "adjusted"]
-                        else "rgb(158,202,225,1)",
+                        "color": _plotly_marker_color(
+                            # pyre-ignore[6]: it cannot get to this point if name=="target".
+                            name,
+                            only_self_and_target,
+                            "line",
+                        ),
                         "width": 1.5,
                     },
                 },
