@@ -671,7 +671,8 @@ def plotly_plot_qq(
     plot_it: bool = True,
     return_dict_of_figures: bool = False,
 ) -> Optional[Dict[str, go.Figure]]:
-    """Plots interactive QQ plot of the given variables.
+    """
+    Plots interactive QQ plot of the given variables.
 
     Creates a plotly qq plot of the given variables from multiple DataFrames.
     This ASSUMES there is a df with key 'target'.
@@ -789,6 +790,158 @@ def plotly_plot_qq(
             offline.iplot(fig)
     if return_dict_of_figures:
         return dict_of_qqs
+
+
+def plotly_plot_density(
+    dict_of_dfs: Dict[str, pd.DataFrame],
+    variables: List[str],
+    plot_it: bool = True,
+    return_dict_of_figures: bool = False,
+    plot_width: int = 800,
+) -> Optional[Dict[str, go.Figure]]:
+    """
+    Plots interactive density plots of the given variables using kernel density estimation.
+
+    Creates a plotly plot of the kernel density estimate for each variable in the given list
+    across multiple DataFrames. The function assumes there is a DataFrame with the key 'target'.
+    The density plot shows the distribution of the variable for each DataFrame in the dictionary.
+    It looks for a `weights` column and uses it to normalize the data. If no weight column is found, it assumes all weights are equal to 1.
+    It relies on the seaborn library to create the KDE (`sns.kdeplot`).
+
+    Args:
+        dict_of_dfs (Dict[str, pd.DataFrame]): A dictionary where each key is a name for the DataFrame
+            and the value is the DataFrame that contains the variables to plot.
+        variables (List[str]): A list of variables to plot.
+        plot_it (bool, optional): Whether to plot the figures interactively using plotly. Defaults to True.
+        return_dict_of_figures (bool, optional): Whether to return a dictionary of plotly figures.
+            Defaults to False.
+        plot_width (int, optional): The width of the plot in pixels. Defaults to 800.
+
+    Returns:
+        Optional[Dict[str, go.Figure]]: A dictionary containing plotly figures for each variable
+        in the given list if `return_dict_of_figures` is True. Otherwise, returns None.
+
+    Examples:
+        ::
+            import numpy as np
+            import pandas as pd
+            from numpy import random
+            from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_density, plot_dist
+
+            random.seed(96483)
+
+            df = pd.DataFrame({
+                'v1': random.random_integers(11111, 11114, size=100).astype(str),
+                'v2': random.normal(size = 100),
+                'v3': random.uniform(size = 100),
+            }).sort_values(by=['v2'])
+
+            dict_of_dfs = {
+                "self": pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = "weights")], axis = 1),
+                "unadjusted": pd.concat([df, pd.Series(np.ones(99).tolist() + [1000], name = "weights")], axis = 1),
+                "target": pd.concat([df, pd.Series(np.ones(100), name = "weights")], axis = 1),
+            }
+
+            # It won't work with "v1" since it is not numeric.
+            plotly_plot_density(dict_of_dfs, variables= ["v2", "v3"], plot_width = 550)
+
+
+            # The above gives the same results as:
+            dfs1 = [
+                {"df": df, "weights": dict_of_dfs['self']['weights']},
+                {"df": df, "weights": dict_of_dfs['unadjusted']['weights']},
+                {"df": df, "weights": dict_of_dfs['target']['weights']},
+            ]
+            plot_dist(dfs1, names=["self", "unadjusted", "target"], library="seaborn", dist_type = "kde", variables= ["v2", "v3"])
+
+
+            # This gives the same shape of plots (notice how we must have the column "weights" for the plots to work)
+            df = pd.DataFrame({
+                'group': ('a', 'b', 'c', 'c'),
+                'v1': (1, 2, 3, 4),
+            })
+
+            dfs1 = [{"df": pd.DataFrame(pd.Series([1,2,2,2,3,4,5,5,7,8,9,9,9,9,5,2,5,4,4,4], name = "v1")), "weights": None}, {"df": df, "weights": pd.Series((200, 1, 0, 200000))}]
+            # dfs1[1]{'df'}
+
+            dict_of_dfs = {
+                "self": dfs1[0]['df'], # pd.concat([df, pd.Series(random.random(size = 100) + 0.5, name = "weight")], axis = 1),
+                "target": pd.concat([dfs1[1]['df'], pd.Series(dfs1[1]['weights'], name = "weights")], axis = 1),
+            }
+
+            plotly_plot_density(dict_of_dfs, variables= ["v1"], plot_width = 550)
+
+            plot_dist(dfs1, names=["self", "target"], library="seaborn", dist_type = "kde", variables= ["v1"],numeric_n_values_threshold = 1)
+
+    """
+    dict_of_density_plots = {}
+    colors = {
+        "self": "rgba(52,165,48,0.5)",
+        "unadjusted": "rgba(222,45,38,0.8)",
+        "target": "rgba(158,202,225,.8)",
+    }
+
+    for variable in variables:
+        data = []
+
+        for name, df in dict_of_dfs.items():
+            if "weights" in df.columns:
+                weights = df["weights"]
+                weights = weights / weights.sum()  # normalize weights by sum of weights
+            else:
+                weights = np.ones(len(df))
+
+            # Convert the data to long format
+            long_df = pd.DataFrame({"value": df[variable], "weights": weights})
+
+            # Replace KDE calculation with sns.kdeplot
+            with plt.xkcd():
+                plt.figure()
+                ax = sns.kdeplot(
+                    data=long_df, x="value", weights="weights", common_norm=False
+                )
+                x = ax.get_lines()[-1].get_xdata()
+                y = ax.get_lines()[-1].get_ydata()
+                # print(name)
+                # print(x)
+                # print(y)
+                plt.close()
+
+            trace = go.Scatter(
+                x=x,
+                y=y,
+                mode="lines",
+                name=name,
+                line={"color": colors.get(name, "rgba(0,0,0,0.8)")},
+            )
+            data.append(trace)
+
+        layout = {
+            "title": f"Density Plots of '{variable}'",
+            "paper_bgcolor": "rgb(255, 255, 255)",
+            "plot_bgcolor": "rgb(255, 255, 255)",
+            "width": plot_width,
+            "xaxis": {
+                "title": variable,
+                "gridcolor": "rgba(128, 128, 128, 0.5)",
+                "gridwidth": 1,
+                "showgrid": True,
+            },
+            "yaxis": {
+                "title": "Density",
+                "gridcolor": "rgba(128, 128, 128, 0.5)",
+                "gridwidth": 1,
+                "showgrid": True,
+            },
+        }
+        fig = go.Figure(data=data, layout=layout)
+        dict_of_density_plots[variable] = fig
+
+        if plot_it:
+            offline.iplot(fig)
+
+    if return_dict_of_figures:
+        return dict_of_density_plots
 
 
 def plotly_plot_bar(
