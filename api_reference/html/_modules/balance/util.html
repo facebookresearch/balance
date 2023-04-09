@@ -1093,20 +1093,19 @@
 
 
 <div class="viewcode-block" id="rm_mutual_nas"><a class="viewcode-back" href="../../balance.util.html#balance.util.rm_mutual_nas">[docs]</a><span class="k">def</span> <span class="nf">rm_mutual_nas</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove entries in a position which is na or infinite in any of the arguments</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Remove entries in a position which is na or infinite in any of the arguments.</span>
 
-<span class="sd">    Ignores args which are None</span>
+<span class="sd">    Ignores args which are None.</span>
 
-<span class="sd">    can accept array-like or single arraylike argument. Including pandas and numpy arrays.</span>
+<span class="sd">    Can accept multiple array-like arguments or a single array-like argument. Handles pandas and numpy arrays.</span>
 
 <span class="sd">    Raises:</span>
-<span class="sd">        ValueError: If args are not array like (see: :func:`_is_arraylike`)</span>
-<span class="sd">        ValueError: If args include arrays of different lengths.</span>
+<span class="sd">        ValueError: If any argument is not array-like. (see: :func:`_is_arraylike`)</span>
+<span class="sd">        ValueError: If arguments include arrays of different lengths.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        List: A list with all the original vectors, after removing from them the</span>
-<span class="sd">            elements for which there was a missing value in the same position as</span>
-<span class="sd">            any of the other arrays.</span>
+<span class="sd">        List: A list containing the original input arrays, after removing elements that have a missing or infinite value in the same position as any of the other arrays.</span>
 
 <span class="sd">    Examples:</span>
 <span class="sd">        ::</span>
@@ -1162,6 +1161,27 @@
 <span class="sd">                #  array([1., 2.]),</span>
 <span class="sd">                #  array([&#39;1&#39;, &#39;2&#39;], dtype=&#39;&lt;U32&#39;),</span>
 <span class="sd">                #  [1, 2]]</span>
+
+<span class="sd">                # Preserve the index values in the resulting pd.Series:</span>
+<span class="sd">                x1 = pd.Series([1, 2, 3, 4])</span>
+<span class="sd">                x2 = pd.Series([np.nan, 2, 3, 4])</span>
+<span class="sd">                x3 = np.array([1, 2, 3, 4])</span>
+<span class="sd">                print(rm_mutual_nas(x1, x2)[0])</span>
+<span class="sd">                print(rm_mutual_nas(x1.sort_values(ascending=False), x2)[0])</span>
+<span class="sd">                print(rm_mutual_nas(x1, x3)[0])</span>
+<span class="sd">                    # 1    2</span>
+<span class="sd">                    # 2    3</span>
+<span class="sd">                    # 3    4</span>
+<span class="sd">                    # dtype: int64</span>
+<span class="sd">                    # 3    4</span>
+<span class="sd">                    # 2    3</span>
+<span class="sd">                    # 1    2</span>
+<span class="sd">                    # dtype: int64</span>
+<span class="sd">                    # 0    1</span>
+<span class="sd">                    # 1    2</span>
+<span class="sd">                    # 2    3</span>
+<span class="sd">                    # 3    4</span>
+<span class="sd">                    # dtype: int64</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="ow">not</span> <span class="p">(</span><span class="n">a</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">_is_arraylike</span><span class="p">(</span><span class="n">a</span><span class="p">))</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;All arguments must be arraylike&quot;</span><span class="p">)</span>
@@ -1195,6 +1215,15 @@
     <span class="c1">#  convert back</span>
     <span class="n">original_types</span> <span class="o">=</span> <span class="p">[</span><span class="n">_return_type_creation_function</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">args</span><span class="p">]</span>
     <span class="n">r</span> <span class="o">=</span> <span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">x</span><span class="p">)[</span><span class="n">nonmissing_mask</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">args</span><span class="p">]</span>
+
+    <span class="c1"># Reapply the index for pd.Series</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">orig_data</span><span class="p">)[</span><span class="n">nonmissing_mask</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">orig_data</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span>
+        <span class="k">else</span> <span class="n">data</span>
+        <span class="k">for</span> <span class="n">data</span><span class="p">,</span> <span class="n">orig_data</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+    <span class="p">]</span>
+
     <span class="c1"># reproduce the type of each array in the result</span>
     <span class="n">r</span> <span class="o">=</span> <span class="p">[(</span><span class="n">t</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">original_types</span><span class="p">,</span> <span class="n">r</span><span class="p">)]</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>

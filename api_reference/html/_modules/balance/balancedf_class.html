@@ -641,6 +641,9 @@
 <span class="sd">                # Controlling the limits of the y axis using lim:</span>
 <span class="sd">                s3_null.covars().plot(ylim = (0,1))</span>
 <span class="sd">                s3_null.covars().plot(library = &quot;seaborn&quot;,ylim = (0,1), dist_type = &quot;hist&quot;)</span>
+
+<span class="sd">                # Returning plotly qq plots:</span>
+<span class="sd">                s3_null.covars().plot(dist_type = &quot;qq&quot;)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">on_linked_samples</span><span class="p">:</span>
             <span class="n">dfs_to_add</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_BalanceDF_child_from_linked_samples</span><span class="p">()</span>
@@ -651,7 +654,7 @@
         <span class="c1"># Notice that we skip cases in which there is no data (i.e.: v is None)</span>
         <span class="c1"># None values are skipped in both dfs and names</span>
         <span class="n">dfs</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="p">{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">_weights</span><span class="p">}</span>
+            <span class="p">{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">_weights</span><span class="p">}</span>
             <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">dfs_to_add</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
             <span class="k">if</span> <span class="p">(</span><span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
         <span class="p">]</span>
@@ -1696,7 +1699,7 @@
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Plots histogram of covariates in a BalanceOutcomesDF object using seaborn (as default).</span>
 
-<span class="sd">        It&#39;s possible to use other plots using dist_type with arguments such as &quot;hist&quot; (default), &quot;kde&quot;, &quot;qq&quot;, and &quot;ecdf&quot;.</span>
+<span class="sd">        It&#39;s possible to use other plots using dist_type with arguments such as &quot;hist&quot;, &quot;kde&quot; (default), &quot;qq&quot;, and &quot;ecdf&quot;.</span>
 <span class="sd">        Look at :func:`plot_dist` for more details.</span>
 
 <span class="sd">        Args:</span>
@@ -1819,7 +1822,7 @@
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Plots kde (kernal density estimation) of the weights in a BalanceWeightsDF object using seaborn (as default).</span>
 
-<span class="sd">        It&#39;s possible to use other plots using dist_type with arguments such as &quot;hist&quot; (default), &quot;kde&quot;, &quot;qq&quot;, and &quot;ecdf&quot;.</span>
+<span class="sd">        It&#39;s possible to use other plots using dist_type with arguments such as &quot;hist&quot;, &quot;kde&quot; (default), &quot;qq&quot;, and &quot;ecdf&quot;.</span>
 <span class="sd">        Look at :func:`plot_dist` for more details.</span>
 
 <span class="sd">        Args:</span>

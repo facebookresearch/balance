@@ -170,7 +170,8 @@
         <span class="n">standardize_types</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">use_deepcopy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Sample&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new Sample object.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new Sample object.</span>
 
 <span class="sd">        NOTE that all integer columns will be converted by defaults into floats. This behavior can be turned off</span>
 <span class="sd">        by setting standardize_types argument to False.</span>
@@ -189,7 +190,7 @@
 <span class="sd">            (should be unique). Defaults to None.</span>
 <span class="sd">            outcome_columns (Optional, Optional[Union[list, tuple, str]]): names of columns to treat as outcome</span>
 <span class="sd">            weight_column (Optional, Optional[str]): name of column to treat as weight. If not specified, will</span>
-<span class="sd">                be guessed. If not found, will be filled with 1.0.</span>
+<span class="sd">                be guessed (either &quot;weight&quot; or &quot;weights&quot;). If not found, a new column will be created (&quot;weight&quot;) and filled with 1.0.</span>
 <span class="sd">            check_id_uniqueness (Optional, bool): Whether to check if ids are unique. Defaults to True.</span>
 <span class="sd">            standardize_types (Optional, bool): Whether to standardize types. Defaults to True.</span>
 <span class="sd">                Int64/int64 -&gt; float64</span>
@@ -283,13 +284,23 @@
         <span class="c1"># weight column</span>
         <span class="k">if</span> <span class="n">weight_column</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="s2">&quot;weight&quot;</span> <span class="ow">in</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Guessing weight column &#39;</span><span class="si">{</span><span class="s1">&#39;weight&#39;</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Guessing weight column is &#39;weight&#39;&quot;</span><span class="p">)</span>
+                <span class="n">weight_column</span> <span class="o">=</span> <span class="s2">&quot;weight&quot;</span>
+            <span class="k">elif</span> <span class="s2">&quot;weights&quot;</span> <span class="ow">in</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Guessing weight column is &#39;weights&#39;&quot;</span><span class="p">)</span>
+                <span class="n">weight_column</span> <span class="o">=</span> <span class="s2">&quot;weights&quot;</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No weights passed, setting all weights to 1&quot;</span><span class="p">)</span>
-                <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="s2">&quot;weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="n">sample</span><span class="o">.</span><span class="n">weight_column</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">sample</span><span class="o">.</span><span class="n">weight_column</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">weight_column</span><span class="p">]</span>
+                <span class="c1"># TODO: The current default when weights are not available is &quot;weight&quot;, while the method in balanceDF is called &quot;weights&quot;,</span>
+                <span class="c1">#       and the subclass is called BalanceWeightsDF (with and &#39;s&#39; at the end)</span>
+                <span class="c1">#       In the future, it would be better to be more consistent and use the same name for all variations (e.g.: &quot;weight&quot;).</span>
+                <span class="c1">#       Unless, we move to use more weights columns, and this method could be used to get all of them.</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;No weights passed. Adding a &#39;weight&#39; column and setting all values to 1&quot;</span>
+                <span class="p">)</span>
+                <span class="n">weight_column</span> <span class="o">=</span> <span class="s2">&quot;weight&quot;</span>
+                <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">weight_column</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">sample</span><span class="o">.</span><span class="n">weight_column</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">weight_column</span><span class="p">]</span>
 
         <span class="c1"># outcome columns</span>
         <span class="k">if</span> <span class="n">outcome_columns</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -459,7 +470,7 @@
             <span class="o">*</span><span class="n">args</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">new_sample</span><span class="o">.</span><span class="n">set_weights</span><span class="p">(</span><span class="n">adjusted</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">])</span>
+        <span class="n">new_sample</span><span class="o">.</span><span class="n">set_weights</span><span class="p">(</span><span class="n">adjusted</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">])</span>
         <span class="n">new_sample</span><span class="o">.</span><span class="n">_adjustment_model</span> <span class="o">=</span> <span class="n">adjusted</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span>
         <span class="n">new_sample</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span>
         <span class="n">new_sample</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">target</span>
