@@ -299,6 +299,7 @@ def plot_hist_kde(
         if weighted:
             a_series, _w = rm_mutual_nas(a_series, _w)
             a_series.name = column  # rm_mutual_nas removes name, so we set it back
+            _w = _w / np.sum(_w)
 
         df_plot_data = pd.DataFrame({column: a_series, "_w": _w})
         df_plot_data["dataset"] = names[ii]  # a recycled column for barplot's hue.
@@ -306,22 +307,24 @@ def plot_hist_kde(
         plot_data.append(df_plot_data)
 
     plot_data = pd.concat(plot_data)
-    _w = plot_data["_w"]
 
     sample_palette = _return_sample_palette(names)
     if title is None:
         title = f"distribution plot of covar '{column}'"
 
-    ax = dist_function(
-        data=plot_data,
-        x=column,
-        hue="dataset",
-        ax=axis,
-        weights=_w / np.sum(_w) if weighted else None,
-        common_norm=False,
-        palette=sample_palette,
-        linewidth=2,
-    )
+    kwargs_for_dist_function = {
+        "data": plot_data,
+        "x": column,
+        "hue": "dataset",
+        "ax": axis,
+        "weights": plot_data["_w"] if weighted else None,
+        # common_norm:False,
+        "palette": sample_palette,
+        "linewidth": 2,
+    }
+    if dist_type != "ecdf":
+        kwargs_for_dist_function["common_norm"] = False
+    ax = dist_function(**kwargs_for_dist_function)
     ax.set_title(title)
 
 
@@ -1347,12 +1350,12 @@ def plot_dist(
 
     if library == "seaborn":
         return seaborn_plot_dist(
-            dfs,
-            names,
-            variables,
-            numeric_n_values_threshold,
-            weighted,
-            dist_type,
+            dfs=dfs,
+            names=names,
+            variables=variables,
+            numeric_n_values_threshold=numeric_n_values_threshold,
+            weighted=weighted,
+            dist_type=dist_type,
             ylim=ylim,
             **kwargs,
         )

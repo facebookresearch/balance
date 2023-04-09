@@ -6,6 +6,7 @@
 
 ### Bug Fixes
 - Fix `rm_mutual_nas`: it now remembers the index of pandas.Series that were used as input. This fixed erroneous plots produced by seaborn functions which uses rm_mutual_nas.
+- Fix `plot_hist_kde` to work when dist_type = "ecdf"
 
 
 0.6.0 (2023-04-05)
