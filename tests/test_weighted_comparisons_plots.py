@@ -50,6 +50,29 @@ s2 = Sample.from_frame(
 class Test_weighted_comparisons_plots(
     balance.testutil.BalanceTestCase,
 ):
+    def test_plot__return_sample_palette(self):
+        from balance.stats_and_plots.weighted_comparisons_plots import (
+            _return_sample_palette,
+        )
+
+        self.assertEqual(
+            _return_sample_palette(["self", "target"]),
+            {"self": "#de2d26cc", "target": "#9ecae1cc"},
+        )
+        self.assertEqual(
+            _return_sample_palette(["self", "unadjusted"]),
+            {"self": "#34a53080", "unadjusted": "#de2d26cc"},
+        )
+        self.assertEqual(
+            _return_sample_palette(["self", "unadjusted", "target"]),
+            {"self": "#34a53080", "unadjusted": "#de2d26cc", "target": "#9ecae1cc"},
+        )
+        self.assertEqual(
+            _return_sample_palette(["adjusted", "unadjusted", "target"]),
+            {"adjusted": "#34a53080", "unadjusted": "#de2d26cc", "target": "#9ecae1cc"},
+        )
+        self.assertEqual(_return_sample_palette(["cat", "dog"]), "muted")
+
     def test_plot__plotly_marker_color(self):
         from balance.stats_and_plots.weighted_comparisons_plots import (
             _plotly_marker_color,

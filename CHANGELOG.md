@@ -1,4 +1,4 @@
-0.7.0 (the future)
+0.7.0 (2023-04-10)
 ==================
 ### New Features
 - Add `plotly_plot_density` function: Plots interactive density plots of the given variables using kernel density estimation.
@@ -8,6 +8,7 @@
 ### Bug Fixes
 - Fix `rm_mutual_nas`: it now remembers the index of pandas.Series that were used as input. This fixed erroneous plots produced by seaborn functions which uses rm_mutual_nas.
 - Fix `plot_hist_kde` to work when dist_type = "ecdf"
+- Fix `plot_hist_kde` and `plot_bar` when having an input only with "self" and "target", by fixing `_return_sample_palette`.
 
 ## Misc
 - All plotting functions moved internally to expect weight column to be called `weight`, instead of `weights`.

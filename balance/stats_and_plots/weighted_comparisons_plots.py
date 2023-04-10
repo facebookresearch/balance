@@ -57,7 +57,7 @@ def _return_sample_palette(
             "self": col_unadjusted,
             "target": col_target,
         }
-    if set(names) == {"self", "unadjusted"}:
+    elif set(names) == {"self", "unadjusted"}:
         sample_palette = {
             "self": col_adjusted,
             "unadjusted": col_unadjusted,
