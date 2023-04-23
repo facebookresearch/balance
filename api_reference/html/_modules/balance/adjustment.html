@@ -57,6 +57,7 @@
     <span class="n">cbps</span> <span class="k">as</span> <span class="n">balance_cbps</span><span class="p">,</span>
     <span class="n">ipw</span> <span class="k">as</span> <span class="n">balance_ipw</span><span class="p">,</span>
     <span class="n">poststratify</span> <span class="k">as</span> <span class="n">balance_poststratify</span><span class="p">,</span>
+    <span class="n">rake</span> <span class="k">as</span> <span class="n">balance_rake</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">pandas.api.types</span> <span class="kn">import</span> <span class="n">is_bool_dtype</span><span class="p">,</span> <span class="n">is_numeric_dtype</span>
 
@@ -68,6 +69,7 @@
     <span class="s2">&quot;cbps&quot;</span><span class="p">:</span> <span class="n">balance_cbps</span><span class="o">.</span><span class="n">cbps</span><span class="p">,</span>
     <span class="s2">&quot;null&quot;</span><span class="p">:</span> <span class="n">balance_adjust_null</span><span class="o">.</span><span class="n">adjust_null</span><span class="p">,</span>
     <span class="s2">&quot;poststratify&quot;</span><span class="p">:</span> <span class="n">balance_poststratify</span><span class="o">.</span><span class="n">poststratify</span><span class="p">,</span>
+    <span class="s2">&quot;rake&quot;</span><span class="p">:</span> <span class="n">balance_rake</span><span class="o">.</span><span class="n">rake</span><span class="p">,</span>
 <span class="p">}</span>
 
 
@@ -345,13 +347,13 @@
 
 
 <span class="k">def</span> <span class="nf">_find_adjustment_method</span><span class="p">(</span>
-    <span class="n">method</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;cbps&quot;</span><span class="p">,</span> <span class="s2">&quot;ipw&quot;</span><span class="p">,</span> <span class="s2">&quot;null&quot;</span><span class="p">,</span> <span class="s2">&quot;poststratify&quot;</span><span class="p">],</span>
+    <span class="n">method</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;cbps&quot;</span><span class="p">,</span> <span class="s2">&quot;ipw&quot;</span><span class="p">,</span> <span class="s2">&quot;null&quot;</span><span class="p">,</span> <span class="s2">&quot;poststratify&quot;</span><span class="p">,</span> <span class="s2">&quot;rake&quot;</span><span class="p">],</span>
     <span class="n">WEIGHTING_METHODS</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="n">BALANCE_WEIGHTING_METHODS</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;This function translates a string method argument to the function itself.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        method (Literal[&quot;cbps&quot;, &quot;ipw&quot;, &quot;null&quot;, &quot;poststratify&quot;]): method for adjustment: cbps, ipw, null, poststratify</span>
+<span class="sd">        method (Literal[&quot;cbps&quot;, &quot;ipw&quot;, &quot;null&quot;, &quot;poststratify&quot;, &quot;rake&quot;]): method for adjustment: cbps, ipw, null, poststratify</span>
 <span class="sd">        WEIGHTING_METHODS (Dict[str, Callable]): A dict where keys are strings of function names, and the values are</span>
 <span class="sd">            the functions themselves.</span>
 

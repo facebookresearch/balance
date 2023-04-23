@@ -434,7 +434,9 @@
 <div class="viewcode-block" id="Sample.adjust"><a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.adjust">[docs]</a>    <span class="k">def</span> <span class="nf">adjust</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
         <span class="n">target</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;Sample&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">method</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;cbps&quot;</span><span class="p">,</span> <span class="s2">&quot;ipw&quot;</span><span class="p">,</span> <span class="s2">&quot;null&quot;</span><span class="p">,</span> <span class="s2">&quot;poststratify&quot;</span><span class="p">],</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;ipw&quot;</span><span class="p">,</span>
+        <span class="n">method</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
+            <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;cbps&quot;</span><span class="p">,</span> <span class="s2">&quot;ipw&quot;</span><span class="p">,</span> <span class="s2">&quot;null&quot;</span><span class="p">,</span> <span class="s2">&quot;poststratify&quot;</span><span class="p">,</span> <span class="s2">&quot;rake&quot;</span><span class="p">],</span> <span class="n">Callable</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;ipw&quot;</span><span class="p">,</span>
         <span class="o">*</span><span class="n">args</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Sample&quot;</span><span class="p">:</span>
@@ -445,7 +447,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            target (Optional[&quot;Sample&quot;]): Second sample object which should be matched.</span>
 <span class="sd">                If None, the set target of the object is used for matching.</span>
-<span class="sd">            method (str): method for adjustment: cbps, ipw, null, poststratify</span>
+<span class="sd">            method (str): method for adjustment: cbps, ipw, null, poststratify, rake</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Sample: an adjusted Sample object</span>

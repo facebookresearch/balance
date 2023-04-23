@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>balance.weighting_methods.rake &#8212; balance  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="balance.weighting_methods.poststratify" href="balance.weighting_methods.poststratify.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.weighting_methods.poststratify.html" title="balance.weighting_methods.poststratify"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" >balance</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="balance.weighting_methods.html" accesskey="U">balance.weighting_methods</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.weighting_methods.rake</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-balance.weighting_methods.rake">
+<span id="balance-weighting-methods-rake"></span><h1>balance.weighting_methods.rake<a class="headerlink" href="#module-balance.weighting_methods.rake" title="Permalink to this heading">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.weighting_methods.rake.rake">
+<span class="sig-prename descclassname"><span class="pre">balance.weighting_methods.rake.</span></span><span class="sig-name descname"><span class="pre">rake</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">na_action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'add_indicator'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iteration</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convergence_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0005</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rate_tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1e-08</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="_modules/balance/weighting_methods/rake.html#rake"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.weighting_methods.rake.rake" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform raking (using the iterative proportional fitting algorithm).
+See: <a class="reference external" href="https://en.wikipedia.org/wiki/Iterative_proportional_fitting">https://en.wikipedia.org/wiki/Iterative_proportional_fitting</a></p>
+<p>Returns weights normalised to sum of target weights</p>
+<p>Arguments:
+sample_df — (pandas dataframe) a dataframe representing the sample.
+sample_weights — (pandas series) design weights for sample.
+target_df —  (pandas dataframe) a dataframe representing the target.
+target_weights — (pandas series) design weights for target.
+variables —  (list of strings) list of variables to include in the model.</p>
+<blockquote>
+<div><p>If None all joint variables of sample_df and target_df are used.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>transformations — (dict) what transformations to apply to data before fitting the model.</dt><dd><p>Default is “default” (see apply_transformations function).</p>
+</dd>
+<dt>na_action — (string) what to do with NAs. Default is “add_indicator”, which adds NaN as a</dt><dd><p>group (called “__NaN__”) for each weighting variable (post-transformation);
+“drop” removes rows with any missing values on any variable from both sample
+and target.</p>
+</dd>
+</dl>
+<p>max_iteration — (int) maximum number of iterations for iterative proportional fitting algorithm
+convergence_rate — (float) convergence criteria; the maximum difference in proportions between</p>
+<blockquote>
+<div><p>sample and target marginal distribution on any covariate in order
+for algorithm to converge.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>rate_tolerance — (float) convergence criteria; if convergence rate does not move more</dt><dd><p>than this amount than the algorithm is also considered to
+have converged.</p>
+</dd>
+</dl>
+<p>Returns:
+A dictionary including:
+“weight” — The weights for the sample.
+“model” — parameters of the model: iterations (dataframe with iteration numbers and</p>
+<blockquote>
+<div><p>convergence rate information at all steps), converged (Flag with the output
+status: 0 for failure and 1 for success).</p>
+</div></blockquote>
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">balance.weighting_methods.rake</a><ul>
+<li><a class="reference internal" href="#balance.weighting_methods.rake.rake"><code class="docutils literal notranslate"><span class="pre">rake()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="balance.weighting_methods.poststratify.html"
+                          title="previous chapter">balance.weighting_methods.poststratify</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/balance.weighting_methods.rake.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.weighting_methods.poststratify.html" title="balance.weighting_methods.poststratify"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" >balance</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="balance.weighting_methods.html" >balance.weighting_methods</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.weighting_methods.rake</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

@@ -40,10 +40,11 @@ Note that the `adjust` method in balance is performing three main steps:
 
 ## Optional arguments
 
-* **`method`**: `ipw`, `poststratify`, or `cbps`.  Default is `ipw`.
+* **`method`**: `ipw`, `poststratify`, `rake`, or `cbps`.  Default is `ipw`.
     * `ipw`: stands for [Inverse Propensity Weighting](https://en.wikipedia.org/wiki/Inverse_probability_weighting). The propensity scores are calculated with [LASSO](https://en.wikipedia.org/wiki/Lasso_(statistics)) [logistic regression](https://en.wikipedia.org/wiki/Logistic_regression).  Details about the implementation can be found [here](../../statistical_methods/ipw/).
    * `cbps`: stands for [Covariate Balancing Propensity Score](https://imai.fas.harvard.edu/software/CBPS.html). The CBPS algorithm estimates the propensity score in a way that optimizes prediction of the probability of sample inclusion as well as the covariates balance. Its main advantage is in cases when the researcher wants better balance on the covariates than traditional propensity score methods - because one believes the assignment model might be misspecified and would like to avoid an iterative procedure of balancing the covariates. Details about the implementation can be found [here](../../statistical_methods/cbps/).
    * `poststratify`: stands for post-stratification. Details about the implementation can be found [here](../../statistical_methods/poststratify/).
+   * `rake`: TODO: add details.
 
 * **`variables`**: allows user to pass a list of the covariates that they want to adjust for; if variables argument is not specified, all joint variables in sample and target are used.
 

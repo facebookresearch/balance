@@ -68,36 +68,6 @@ or unittest.TestCase.assertEqual otherwise.</p>
 </dl>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="balance.testutil.BalanceTestCase.assertWarns">
-<span class="sig-name descname"><span class="pre">assertWarns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/balance/testutil.html#BalanceTestCase.assertWarns"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.testutil.BalanceTestCase.assertWarns" title="Permalink to this definition">¶</a></dt>
-<dd><p>Fail unless a warning of class warnClass is triggered
-by the callable when invoked with specified positional and
-keyword arguments.  If a different type of warning is
-triggered, it will not be handled: depending on the other
-warning filtering rules in effect, it might be silenced, printed
-out, or raised as an exception.</p>
-<p>If called with the callable and arguments omitted, will return a
-context object used like this:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertWarns</span><span class="p">(</span><span class="n">SomeWarning</span><span class="p">):</span>
-    <span class="n">do_something</span><span class="p">()</span>
-</pre></div>
-</div>
-<p>An optional keyword argument ‘msg’ can be provided when assertWarns
-is used as a context object.</p>
-<p>The context manager keeps a reference to the first matching
-warning as the ‘warning’ attribute; similarly, the ‘filename’
-and ‘lineno’ attributes give you information about the line
-of Python code from which the warning was triggered.
-This allows you to inspect the warning after the assertion:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertWarns</span><span class="p">(</span><span class="n">SomeWarning</span><span class="p">)</span> <span class="k">as</span> <span class="n">cm</span><span class="p">:</span>
-    <span class="n">do_something</span><span class="p">()</span>
-<span class="n">the_warning</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">warning</span>
-<span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">the_warning</span><span class="o">.</span><span class="n">some_attribute</span><span class="p">,</span> <span class="mi">147</span><span class="p">)</span>
-</pre></div>
-</div>
-</dd></dl>
-
 </dd></dl>
 
 </section>
@@ -115,7 +85,6 @@ This allows you to inspect the warning after the assertion:</p>
 <li><a class="reference internal" href="#">balance.testutil</a><ul>
 <li><a class="reference internal" href="#balance.testutil.BalanceTestCase"><code class="docutils literal notranslate"><span class="pre">BalanceTestCase</span></code></a><ul>
 <li><a class="reference internal" href="#balance.testutil.BalanceTestCase.assertEqual"><code class="docutils literal notranslate"><span class="pre">BalanceTestCase.assertEqual()</span></code></a></li>
-<li><a class="reference internal" href="#balance.testutil.BalanceTestCase.assertWarns"><code class="docutils literal notranslate"><span class="pre">BalanceTestCase.assertWarns()</span></code></a></li>
 </ul>
 </li>
 </ul>
