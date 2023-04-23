@@ -1,3 +1,8 @@
+0.8.0 (The future)
+==================
+### New Features
+- Add `rake` method to .adjust (currently in beta, given that it doesn't handles marginal target as input).
+
 0.7.0 (2023-04-10)
 ==================
 ### New Features

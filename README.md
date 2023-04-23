@@ -184,6 +184,7 @@ To see a more detailed step-by-step code example with code output prints and plo
 1. [Logistic regression using L1 (LASSO) penalization.](https://import-balance.org/docs/docs/statistical_methods/ipw/)
 2. [Covariate Balancing Propensity Score (CBPS).](https://import-balance.org/docs/docs/statistical_methods/cbps/)
 3. [Post-stratification.](https://import-balance.org/docs/docs/statistical_methods/poststratify/)
+4. Raking (TODO: add docs)
 
 ## Implemented methods for diagnostics/evaluation
 

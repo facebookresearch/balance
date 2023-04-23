@@ -115,7 +115,7 @@ class TestTestUtil_BalanceTestCase_Warns(
     def test_unit_test_warning_mixin(self):
         logger = logging.getLogger(__package__)
 
-        self.assertWarns(lambda: logger.warning("test"))
+        self.assertIfWarns(lambda: logger.warning("test"))
         self.assertNotWarns(lambda: "x")
 
         self.assertWarnsRegexp("abc", lambda: logger.warning("abcde"))

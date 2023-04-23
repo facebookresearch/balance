@@ -71,9 +71,7 @@ def _capture_output():
 
 class BalanceTestCase(unittest.TestCase):
     # Some Warns
-    # pyre-fixme[14]: `assertWarns` overrides method defined in `TestCase`
-    #  inconsistently.
-    def assertWarns(self, callable, *args, **kwargs) -> None:
+    def assertIfWarns(self, callable, *args, **kwargs) -> None:
         with self.assertLogs(level="NOTSET") as cm:
             callable(*args, **kwargs)
             self.assertTrue(len(cm.output) > 0, "No warning produced.")

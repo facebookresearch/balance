@@ -19,6 +19,7 @@ from balance.weighting_methods import (
     cbps as balance_cbps,
     ipw as balance_ipw,
     poststratify as balance_poststratify,
+    rake as balance_rake,
 )
 from pandas.api.types import is_bool_dtype, is_numeric_dtype
 
@@ -30,6 +31,7 @@ BALANCE_WEIGHTING_METHODS = {
     "cbps": balance_cbps.cbps,
     "null": balance_adjust_null.adjust_null,
     "poststratify": balance_poststratify.poststratify,
+    "rake": balance_rake.rake,
 }
 
 
@@ -307,13 +309,13 @@ def apply_transformations(
 
 
 def _find_adjustment_method(
-    method: Literal["cbps", "ipw", "null", "poststratify"],
+    method: Literal["cbps", "ipw", "null", "poststratify", "rake"],
     WEIGHTING_METHODS: Dict[str, Callable] = BALANCE_WEIGHTING_METHODS,
 ) -> Callable:
     """This function translates a string method argument to the function itself.
 
     Args:
-        method (Literal["cbps", "ipw", "null", "poststratify"]): method for adjustment: cbps, ipw, null, poststratify
+        method (Literal["cbps", "ipw", "null", "poststratify", "rake"]): method for adjustment: cbps, ipw, null, poststratify
         WEIGHTING_METHODS (Dict[str, Callable]): A dict where keys are strings of function names, and the values are
             the functions themselves.
 

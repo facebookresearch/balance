@@ -396,7 +396,9 @@ class Sample:
     def adjust(
         self: "Sample",
         target: Optional["Sample"] = None,
-        method: Union[Literal["cbps", "ipw", "null", "poststratify"], Callable] = "ipw",
+        method: Union[
+            Literal["cbps", "ipw", "null", "poststratify", "rake"], Callable
+        ] = "ipw",
         *args,
         **kwargs,
     ) -> "Sample":
@@ -407,7 +409,7 @@ class Sample:
         Args:
             target (Optional["Sample"]): Second sample object which should be matched.
                 If None, the set target of the object is used for matching.
-            method (str): method for adjustment: cbps, ipw, null, poststratify
+            method (str): method for adjustment: cbps, ipw, null, poststratify, rake
 
         Returns:
             Sample: an adjusted Sample object
