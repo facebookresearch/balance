@@ -44,6 +44,11 @@
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
 
 <span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">from</span> <span class="nn">fractions</span> <span class="kn">import</span> <span class="n">Fraction</span>
+
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">reduce</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -287,6 +292,236 @@
             <span class="c1"># TODO: fix functions that use the perf and remove it from here</span>
         <span class="p">},</span>
     <span class="p">}</span></div>
+
+
+<span class="k">def</span> <span class="nf">_lcm</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates the least common multiple (LCM) of two integers.</span>
+
+<span class="sd">    The least common multiple (LCM) of two or more numbers is the smallest positive integer that is divisible by each of the given numbers.</span>
+<span class="sd">    In other words, it is the smallest multiple that the numbers have in common.</span>
+<span class="sd">    The LCM is useful when you need to find a common denominator for fractions or synchronize repeating events with different intervals.</span>
+
+<span class="sd">    For example, let&#39;s find the LCM of 4 and 6:</span>
+
+<span class="sd">    The multiples of 4 are: 4, 8, 12, 16, 20, ...</span>
+<span class="sd">    The multiples of 6 are: 6, 12, 18, 24, 30, ...</span>
+<span class="sd">    The smallest multiple that both numbers have in common is 12, so the LCM of 4 and 6 is 12.</span>
+
+<span class="sd">    The calculation is based on the property that the product of two numbers is equal to the product of their LCM and GCD: a * b = LCM(a, b) * GCD(a, b).</span>
+<span class="sd">    (proof: https://math.stackexchange.com/a/589299/1406)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        a: The first integer.</span>
+<span class="sd">        b: The second integer.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The least common multiple of the two integers.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># NOTE: this function uses math.gcd which calculates the greatest common divisor (GCD) of two integers.</span>
+    <span class="c1"># The greatest common divisor (GCD) of two or more integers is the largest positive integer that divides each of the given integers without leaving a remainder.</span>
+    <span class="c1"># In other words, it is the largest common factor of the given integers.</span>
+    <span class="c1"># For example, the GCD of 12 and 18 is 6, since 6 is the largest integer that divides both 12 and 18 without leaving a remainder.</span>
+    <span class="c1"># Similarly, the GCD of 24, 36, and 48 is 12, since 12 is the largest integer that divides all three of these numbers without leaving a remainder.</span>
+    <span class="k">return</span> <span class="nb">abs</span><span class="p">(</span><span class="n">a</span> <span class="o">*</span> <span class="n">b</span><span class="p">)</span> <span class="o">//</span> <span class="n">math</span><span class="o">.</span><span class="n">gcd</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_proportional_array_from_dict</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates a proportional array based on the input dictionary.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_dict (Dict[str, float]): A dictionary where keys are strings and values are their proportions (float).</span>
+<span class="sd">        max_length (int): check if the length of the output exceeds the max_length. If it does, it will be scaled down to that length. Default is 10k.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A list of strings where each key is repeated according to its proportion.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        ::</span>
+<span class="sd">            _proportional_array_from_dict({&quot;a&quot;:0.2, &quot;b&quot;:0.8})</span>
+<span class="sd">                # [&#39;a&#39;, &#39;b&#39;, &#39;b&#39;, &#39;b&#39;, &#39;b&#39;]</span>
+<span class="sd">            _proportional_array_from_dict({&quot;a&quot;:0.5, &quot;b&quot;:0.5})</span>
+<span class="sd">                # [&#39;a&#39;, &#39;b&#39;]</span>
+<span class="sd">            _proportional_array_from_dict({&quot;a&quot;:1/3, &quot;b&quot;:1/3, &quot;c&quot;: 1/3})</span>
+<span class="sd">                # [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]</span>
+<span class="sd">            _proportional_array_from_dict({&quot;a&quot;: 3/8, &quot;b&quot;: 5/8})</span>
+<span class="sd">                # [&#39;a&#39;, &#39;a&#39;, &#39;a&#39;, &#39;b&#39;, &#39;b&#39;, &#39;b&#39;, &#39;b&#39;, &#39;b&#39;]</span>
+<span class="sd">            _proportional_array_from_dict({&quot;a&quot;:3/5, &quot;b&quot;:1/5, &quot;c&quot;: 2/10})</span>
+<span class="sd">                # [&#39;a&#39;, &#39;a&#39;, &#39;a&#39;, &#39;b&#39;, &#39;c&#39;]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Filter out items with zero value</span>
+    <span class="n">filtered_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">input_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">}</span>
+
+    <span class="c1"># Normalize the values if they don&#39;t sum to 1</span>
+    <span class="n">sum_values</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">filtered_dict</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">sum_values</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">filtered_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="o">/</span> <span class="n">sum_values</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">filtered_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="c1"># Convert the proportions to fractions</span>
+    <span class="n">fraction_dict</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">k</span><span class="p">:</span> <span class="n">Fraction</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="n">limit_denominator</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">filtered_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Find the least common denominator (LCD) of the fractions</span>
+    <span class="n">lcd</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">for</span> <span class="n">fraction</span> <span class="ow">in</span> <span class="n">fraction_dict</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="n">lcd</span> <span class="o">*=</span> <span class="n">fraction</span><span class="o">.</span><span class="n">denominator</span> <span class="o">//</span> <span class="n">math</span><span class="o">.</span><span class="n">gcd</span><span class="p">(</span><span class="n">lcd</span><span class="p">,</span> <span class="n">fraction</span><span class="o">.</span><span class="n">denominator</span><span class="p">)</span>
+
+    <span class="c1"># Calculate the scaling factor based on max_length</span>
+    <span class="n">scaling_factor</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_length</span> <span class="o">/</span> <span class="n">lcd</span><span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">fraction</span> <span class="ow">in</span> <span class="n">fraction_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># Calculate the count for each key based on its proportion and scaling_factor</span>
+        <span class="n">k_count</span> <span class="o">=</span> <span class="nb">round</span><span class="p">((</span><span class="n">fraction</span> <span class="o">*</span> <span class="n">lcd</span><span class="p">)</span><span class="o">.</span><span class="n">numerator</span> <span class="o">*</span> <span class="n">scaling_factor</span><span class="p">)</span>
+        <span class="c1"># Extend the result array with the key repeated according to its count</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">key</span><span class="p">]</span> <span class="o">*</span> <span class="n">k_count</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span>
+
+
+<span class="k">def</span> <span class="nf">_find_lcm_of_array_lengths</span><span class="p">(</span><span class="n">arrays</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Finds the least common multiple (LCM) of the lengths of arrays in the input dictionary.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arrays: A dictionary where keys are strings and values are lists of strings.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The LCM of the lengths of the arrays in the input dictionary.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        ::</span>
+<span class="sd">            arrays = {</span>
+<span class="sd">                        &quot;v1&quot;: [&quot;a&quot;, &quot;b&quot;, &quot;b&quot;, &quot;c&quot;],</span>
+<span class="sd">                        &quot;v2&quot;: [&quot;aa&quot;, &quot;bb&quot;]</span>
+<span class="sd">                    }</span>
+<span class="sd">            _find_lcm_of_array_lengths(arrays)</span>
+<span class="sd">                # 4</span>
+
+<span class="sd">            arrays = {</span>
+<span class="sd">                        &quot;v1&quot;: [&quot;a&quot;, &quot;b&quot;, &quot;b&quot;, &quot;c&quot;],</span>
+<span class="sd">                        &quot;v2&quot;: [&quot;aa&quot;, &quot;bb&quot;],</span>
+<span class="sd">                        &quot;v3&quot;: [&quot;a1&quot;, &quot;a2&quot;, &quot;a3&quot;]</span>
+<span class="sd">                    }</span>
+<span class="sd">            _find_lcm_of_array_lengths(arrays)</span>
+<span class="sd">                # 12</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">array_lengths</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span> <span class="k">for</span> <span class="n">arr</span> <span class="ow">in</span> <span class="n">arrays</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+    <span class="n">lcm_length</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">_lcm</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span> <span class="n">array_lengths</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">lcm_length</span>
+
+
+<span class="k">def</span> <span class="nf">_realize_dicts_of_proportions</span><span class="p">(</span>
+    <span class="n">dict_of_dicts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates proportional arrays of equal length for each input dictionary.</span>
+
+<span class="sd">    This can be used to get an input dict of proportions of values, and produce a dict with arrays that realizes these proportions.</span>
+<span class="sd">    It can be used as input to the Sample object so it could be used for running raking.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dict_of_dicts: A dictionary of dictionaries, where each key is a string and</span>
+<span class="sd">                   each value is a dictionary with keys as strings and values as their proportions (float).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A dictionary with the same keys as the input and equal length arrays as values.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        ::</span>
+<span class="sd">            dict_of_dicts = {</span>
+<span class="sd">                &quot;v1&quot;: {&quot;a&quot;: 0.2, &quot;b&quot;: 0.6, &quot;c&quot;: 0.2},</span>
+<span class="sd">                &quot;v2&quot;: {&quot;aa&quot;: 0.5, &quot;bb&quot;: 0.5}</span>
+<span class="sd">            }</span>
+
+<span class="sd">            realize_dicts_of_proportions(dict_of_dicts)</span>
+<span class="sd">            # {&#39;v1&#39;: [&#39;a&#39;, &#39;b&#39;, &#39;b&#39;, &#39;b&#39;, &#39;c&#39;, &#39;a&#39;, &#39;b&#39;, &#39;b&#39;, &#39;b&#39;, &#39;c&#39;], &#39;v2&#39;: [&#39;aa&#39;, &#39;bb&#39;, &#39;aa&#39;, &#39;bb&#39;, &#39;aa&#39;, &#39;bb&#39;, &#39;aa&#39;, &#39;bb&#39;, &#39;aa&#39;, &#39;bb&#39;]}</span>
+
+
+<span class="sd">            dict_of_dicts = {</span>
+<span class="sd">                &quot;v1&quot;: {&quot;a&quot;: 0.2, &quot;b&quot;: 0.6, &quot;c&quot;: 0.2},</span>
+<span class="sd">                &quot;v2&quot;: {&quot;aa&quot;: 0.5, &quot;bb&quot;: 0.5},</span>
+<span class="sd">                &quot;v3&quot;: {&quot;A&quot;: 0.2, &quot;B&quot;: 0.8},</span>
+<span class="sd">            }</span>
+<span class="sd">            realize_dicts_of_proportions(dict_of_dicts)</span>
+<span class="sd">                # {&#39;v1&#39;: [&#39;a&#39;, &#39;b&#39;, &#39;b&#39;, &#39;b&#39;, &#39;c&#39;, &#39;a&#39;, &#39;b&#39;, &#39;b&#39;, &#39;b&#39;, &#39;c&#39;],</span>
+<span class="sd">                #  &#39;v2&#39;: [&#39;aa&#39;, &#39;bb&#39;, &#39;aa&#39;, &#39;bb&#39;, &#39;aa&#39;, &#39;bb&#39;, &#39;aa&#39;, &#39;bb&#39;, &#39;aa&#39;, &#39;bb&#39;],</span>
+<span class="sd">                #  &#39;v3&#39;: [&#39;A&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;, &#39;A&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;]}</span>
+<span class="sd">            # The above example could have been made shorter. But that&#39;s a limitation of the function.</span>
+
+<span class="sd">            dict_of_dicts = {</span>
+<span class="sd">                &quot;v1&quot;: {&quot;a&quot;: 0.2, &quot;b&quot;: 0.6, &quot;c&quot;: 0.2},</span>
+<span class="sd">                &quot;v2&quot;: {&quot;aa&quot;: 0.5, &quot;bb&quot;: 0.5},</span>
+<span class="sd">                &quot;v3&quot;: {&quot;A&quot;: 0.2, &quot;B&quot;: 0.8},</span>
+<span class="sd">                &quot;v4&quot;: {&quot;A&quot;: 0.1, &quot;B&quot;: 0.9},</span>
+<span class="sd">            }</span>
+<span class="sd">            realize_dicts_of_proportions(dict_of_dicts)</span>
+<span class="sd">                # {&#39;v1&#39;: [&#39;a&#39;, &#39;b&#39;, &#39;b&#39;, &#39;b&#39;, &#39;c&#39;, &#39;a&#39;, &#39;b&#39;, &#39;b&#39;, &#39;b&#39;, &#39;c&#39;],</span>
+<span class="sd">                #  &#39;v2&#39;: [&#39;aa&#39;, &#39;bb&#39;, &#39;aa&#39;, &#39;bb&#39;, &#39;aa&#39;, &#39;bb&#39;, &#39;aa&#39;, &#39;bb&#39;, &#39;aa&#39;, &#39;bb&#39;],</span>
+<span class="sd">                #  &#39;v3&#39;: [&#39;A&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;, &#39;A&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;],</span>
+<span class="sd">                #  &#39;v4&#39;: [&#39;A&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;]}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Generate proportional arrays for each dictionary</span>
+    <span class="n">arrays</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">_proportional_array_from_dict</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">dict_of_dicts</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="c1"># Find the LCM over the lengths of all the arrays</span>
+    <span class="n">lcm_length</span> <span class="o">=</span> <span class="n">_find_lcm_of_array_lengths</span><span class="p">(</span><span class="n">arrays</span><span class="p">)</span>
+
+    <span class="c1"># Extend each array to have the same LCM length while maintaining proportions</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">arr</span> <span class="ow">in</span> <span class="n">arrays</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">factor</span> <span class="o">=</span> <span class="n">lcm_length</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span>
+        <span class="n">extended_arr</span> <span class="o">=</span> <span class="n">arr</span> <span class="o">*</span> <span class="n">factor</span>
+        <span class="n">result</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">extended_arr</span>
+
+    <span class="k">return</span> <span class="n">result</span>
+
+
+<div class="viewcode-block" id="prepare_marginal_dist_for_raking"><a class="viewcode-back" href="../../../balance.weighting_methods.rake.html#balance.weighting_methods.rake.prepare_marginal_dist_for_raking">[docs]</a><span class="k">def</span> <span class="nf">prepare_marginal_dist_for_raking</span><span class="p">(</span>
+    <span class="n">dict_of_dicts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Realizes a nested dictionary of proportions into a DataFrame.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dict_of_dicts: A nested dictionary where the outer keys are column names</span>
+<span class="sd">                   and the inner dictionaries have keys as category labels</span>
+<span class="sd">                   and values as their proportions (float).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A DataFrame with columns specified by the outer keys of the input dictionary</span>
+<span class="sd">        and rows containing the category labels according to their proportions.</span>
+<span class="sd">        An additional &quot;id&quot; column is added with integer values as row identifiers.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        ::</span>
+<span class="sd">            print(prepare_marginal_dist_for_raking({</span>
+<span class="sd">                            &quot;A&quot;: {&quot;a&quot;: 0.5, &quot;b&quot;: 0.5},</span>
+<span class="sd">                            &quot;B&quot;: {&quot;x&quot;: 0.2, &quot;y&quot;: 0.8}</span>
+<span class="sd">                        }))</span>
+<span class="sd">            # Returns a DataFrame with columns A, B, and id</span>
+<span class="sd">                #    A  B  id</span>
+<span class="sd">                # 0  a  x   0</span>
+<span class="sd">                # 1  b  y   1</span>
+<span class="sd">                # 2  a  y   2</span>
+<span class="sd">                # 3  b  y   3</span>
+<span class="sd">                # 4  a  y   4</span>
+<span class="sd">                # 5  b  x   5</span>
+<span class="sd">                # 6  a  y   6</span>
+<span class="sd">                # 7  b  y   7</span>
+<span class="sd">                # 8  a  y   8</span>
+<span class="sd">                # 9  b  y   9</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">target_dict_from_marginals</span> <span class="o">=</span> <span class="n">_realize_dicts_of_proportions</span><span class="p">(</span><span class="n">dict_of_dicts</span><span class="p">)</span>
+    <span class="n">target_df_from_marginals</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">target_dict_from_marginals</span><span class="p">)</span>
+    <span class="c1"># Add an id column:</span>
+    <span class="n">target_df_from_marginals</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">target_df_from_marginals</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">target_df_from_marginals</span></div>
 </pre></div>
 
             <div class="clearer"></div>

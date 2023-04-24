@@ -43,6 +43,48 @@
   <section id="module-balance.weighting_methods.rake">
 <span id="balance-weighting-methods-rake"></span><h1>balance.weighting_methods.rake<a class="headerlink" href="#module-balance.weighting_methods.rake" title="Permalink to this heading">¶</a></h1>
 <dl class="py function">
+<dt class="sig sig-object py" id="balance.weighting_methods.rake.prepare_marginal_dist_for_raking">
+<span class="sig-prename descclassname"><span class="pre">balance.weighting_methods.rake.</span></span><span class="sig-name descname"><span class="pre">prepare_marginal_dist_for_raking</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dict_of_dicts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/balance/weighting_methods/rake.html#prepare_marginal_dist_for_raking"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.weighting_methods.rake.prepare_marginal_dist_for_raking" title="Permalink to this definition">¶</a></dt>
+<dd><p>Realizes a nested dictionary of proportions into a DataFrame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dict_of_dicts</strong> – A nested dictionary where the outer keys are column names
+and the inner dictionaries have keys as category labels
+and values as their proportions (float).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A DataFrame with columns specified by the outer keys of the input dictionary
+and rows containing the category labels according to their proportions.
+An additional “id” column is added with integer values as row identifiers.</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<dl>
+<dt>::</dt><dd><dl>
+<dt>print(prepare_marginal_dist_for_raking({</dt><dd><blockquote>
+<div><p>“A”: {“a”: 0.5, “b”: 0.5},
+“B”: {“x”: 0.2, “y”: 0.8}</p>
+</div></blockquote>
+<p>}))</p>
+</dd>
+<dt># Returns a DataFrame with columns A, B, and id</dt><dd><p>#    A  B  id
+# 0  a  x   0
+# 1  b  y   1
+# 2  a  y   2
+# 3  b  y   3
+# 4  a  y   4
+# 5  b  x   5
+# 6  a  y   6
+# 7  b  y   7
+# 8  a  y   8
+# 9  b  y   9</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="balance.weighting_methods.rake.rake">
 <span class="sig-prename descclassname"><span class="pre">balance.weighting_methods.rake.</span></span><span class="sig-name descname"><span class="pre">rake</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">na_action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'add_indicator'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iteration</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convergence_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0005</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rate_tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1e-08</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="_modules/balance/weighting_methods/rake.html#rake"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.weighting_methods.rake.rake" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perform raking (using the iterative proportional fitting algorithm).
@@ -99,6 +141,7 @@ status: 0 for failure and 1 for success).</p>
     <h3><a href="index.html">Table of Contents</a></h3>
     <ul>
 <li><a class="reference internal" href="#">balance.weighting_methods.rake</a><ul>
+<li><a class="reference internal" href="#balance.weighting_methods.rake.prepare_marginal_dist_for_raking"><code class="docutils literal notranslate"><span class="pre">prepare_marginal_dist_for_raking()</span></code></a></li>
 <li><a class="reference internal" href="#balance.weighting_methods.rake.rake"><code class="docutils literal notranslate"><span class="pre">rake()</span></code></a></li>
 </ul>
 </li>
