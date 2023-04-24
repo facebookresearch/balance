@@ -11,7 +11,12 @@ import numpy as np
 import pandas as pd
 
 from balance.sample_class import Sample
-from balance.weighting_methods.rake import rake
+from balance.weighting_methods.rake import (
+    _proportional_array_from_dict,
+    _realize_dicts_of_proportions,
+    prepare_marginal_dist_for_raking,
+    rake,
+)
 
 
 class Testrake(
@@ -470,6 +475,113 @@ class Testrake(
             sample.weight_column,
             target_excess_levels.covars().df,
             target_excess_levels.weight_column,
+        )
+
+    def test__proportional_array_from_dict(self):
+        self.assertEqual(
+            _proportional_array_from_dict({"a": 0.2, "b": 0.8}),
+            ["a", "b", "b", "b", "b"],
+        )
+        self.assertEqual(
+            _proportional_array_from_dict({"a": 0.5, "b": 0.5}), ["a", "b"]
+        )
+        self.assertEqual(
+            _proportional_array_from_dict({"a": 1 / 3, "b": 1 / 3, "c": 1 / 3}),
+            ["a", "b", "c"],
+        )
+        self.assertEqual(
+            _proportional_array_from_dict({"a": 3 / 8, "b": 5 / 8}),
+            ["a", "a", "a", "b", "b", "b", "b", "b"],
+        )
+        self.assertEqual(
+            _proportional_array_from_dict({"a": 3 / 5, "b": 1 / 5, "c": 2 / 10}),
+            ["a", "a", "a", "b", "c"],
+        )
+        self.assertEqual(
+            _proportional_array_from_dict({"a": 3 / 8, "b": 5 / 8}, max_length=5),
+            ["a", "a", "b", "b", "b"],
+        )
+        self.assertEqual(
+            _proportional_array_from_dict({"a": 3 / 8, "b": 5 / 8}, max_length=50),
+            ["a", "a", "a", "b", "b", "b", "b", "b"],
+        )
+
+    def test__realize_dicts_of_proportions(self):
+        dict_of_dicts = {
+            "v1": {"a": 0.2, "b": 0.6, "c": 0.2},
+            "v2": {"aa": 0.5, "bb": 0.5},
+        }
+
+        self.assertEqual(
+            _realize_dicts_of_proportions(dict_of_dicts),
+            {
+                "v1": ["a", "b", "b", "b", "c", "a", "b", "b", "b", "c"],
+                "v2": ["aa", "bb", "aa", "bb", "aa", "bb", "aa", "bb", "aa", "bb"],
+            },
+        )
+
+        dict_of_dicts = {
+            "v1": {"a": 0.2, "b": 0.6, "c": 0.2},
+            "v2": {"aa": 0.5, "bb": 0.5},
+            "v3": {"A": 0.2, "B": 0.8},
+        }
+        self.assertEqual(
+            _realize_dicts_of_proportions(dict_of_dicts),
+            {
+                "v1": ["a", "b", "b", "b", "c", "a", "b", "b", "b", "c"],
+                "v2": ["aa", "bb", "aa", "bb", "aa", "bb", "aa", "bb", "aa", "bb"],
+                "v3": ["A", "B", "B", "B", "B", "A", "B", "B", "B", "B"],
+            },
+        )
+
+        dict_of_dicts = {
+            "v1": {"a": 0.2, "b": 0.6, "c": 0.2},
+            "v2": {"aa": 0.5, "bb": 0.5},
+            "v3": {"A": 0.2, "B": 0.8},
+            "v4": {"A": 0.1, "B": 0.9},
+        }
+        self.assertEqual(
+            _realize_dicts_of_proportions(dict_of_dicts),
+            {
+                "v1": ["a", "b", "b", "b", "c", "a", "b", "b", "b", "c"],
+                "v2": ["aa", "bb", "aa", "bb", "aa", "bb", "aa", "bb", "aa", "bb"],
+                "v3": ["A", "B", "B", "B", "B", "A", "B", "B", "B", "B"],
+                "v4": ["A", "B", "B", "B", "B", "B", "B", "B", "B", "B"],
+            },
+        )
+
+    def test_prepare_marginal_dist_for_raking(self):
+        self.assertEqual(
+            prepare_marginal_dist_for_raking(
+                {"A": {"a": 0.5, "b": 0.5}, "B": {"x": 0.2, "y": 0.8}}
+            ).to_dict(),
+            {
+                "A": {
+                    0: "a",
+                    1: "b",
+                    2: "a",
+                    3: "b",
+                    4: "a",
+                    5: "b",
+                    6: "a",
+                    7: "b",
+                    8: "a",
+                    9: "b",
+                },
+                "B": {
+                    0: "x",
+                    1: "y",
+                    2: "y",
+                    3: "y",
+                    4: "y",
+                    5: "x",
+                    6: "y",
+                    7: "y",
+                    8: "y",
+                    9: "y",
+                },
+                "id": {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9},
+            },
         )
 
     # TODO: test convergence rate
