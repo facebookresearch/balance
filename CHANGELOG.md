@@ -6,7 +6,7 @@
 
 ## Misc
 - The `ipw` function now gets max_de=None as default (instead of 1.5). This version is faster, and the user can still choose a threshold as desired.
-
+- Adding hex stickers graphics files
 
 0.7.0 (2023-04-10)
 ==================

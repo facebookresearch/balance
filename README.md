@@ -235,4 +235,4 @@ The *balance* package was (and is) developed by many people, including: [Roee Ei
 
 The *balance* package was open-sourced by [Tal Sarig](https://research.facebook.com/people/sarig-tal/), [Tal Galili](https://research.facebook.com/people/galili-tal/) and [Steve Mandala](https://research.facebook.com/people/mandala-steve/) in late 2022.
 
-Branding created by [Dana Beaty](https://www.danabeaty.com/), from the Meta AI Design and Marketing Team.
+Branding created by [Dana Beaty](https://www.danabeaty.com/), from the Meta AI Design and Marketing Team. For logo files, see [here](https://github.com/facebookresearch/balance/tree/main/website/static/img/).
