@@ -965,7 +965,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
         st = s.set_target(t)
 
         # Fit IPW
-        a = st.adjust()
+        a = st.adjust(max_de=1.5)
 
         # Check ASMD
         tmp_asmd_default = a.covars().asmd()

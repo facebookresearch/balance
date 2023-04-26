@@ -4,6 +4,9 @@
 - Add `rake` method to .adjust (currently in beta, given that it doesn't handles marginal target as input).
 - Add a new function `prepare_marginal_dist_for_raking` - to take in a dict of marginal proportions and turn them into a pandas DataFrame. This can serve as an input target population for raking.
 
+## Misc
+- The `ipw` function now gets max_de=None as default (instead of 1.5). This version is faster, and the user can still choose a threshold as desired.
+
 
 0.7.0 (2023-04-10)
 ==================

@@ -505,7 +505,7 @@ class TestSample_metrics_methods(
         d["b"] = np.sqrt(d["b"])
 
         a_with_outcome = Sample.from_frame(d, outcome_columns=["k"])
-        a_with_outcome_adjusted = a_with_outcome.adjust(t)
+        a_with_outcome_adjusted = a_with_outcome.adjust(t, max_de=1.5)
 
         # verifying this does what we expact it does:
         self.assertEqual(
@@ -686,7 +686,7 @@ class TestSample_metrics_methods(
         d = d.rename(columns={i: "abcdefghij"[i] for i in range(0, 10)})
         t = Sample.from_frame(d)
 
-        a = s.adjust(t)
+        a = s.adjust(t, max_de=1.5)
 
         # if both rows_to_keep = None, columns_to_keep = None - then keep_only_some_rows_columns returns the same object
         self.assertTrue(
@@ -813,7 +813,7 @@ class TestSample_metrics_methods(
         d = d.rename(columns={i: "abcdefghijk"[i] for i in range(0, 11)})
         d["b"] = np.sqrt(d["b"])
         a_with_outcome = Sample.from_frame(d, outcome_columns=["k"])
-        a_with_outcome_adjusted = a_with_outcome.adjust(t)
+        a_with_outcome_adjusted = a_with_outcome.adjust(t, max_de=1.5)
 
         # We can also filter using an outcome variable (althought this would NOT filter on target)
         # a proper logger warning is issued

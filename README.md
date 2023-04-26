@@ -125,7 +125,7 @@ Next, we adjust the sample to the population by fitting balancing survey weights
 
 ```python
 # Using ipw to fit survey weights
-adjusted = sample_with_target.adjust(max_de=None)
+adjusted = sample_with_target.adjust()
 ```
 
 *You can read more on adjustment process in the [Adjusting Sample to Population](https://import-balance.org/docs/docs/general_framework/adjusting_sample_to_population/) page.*

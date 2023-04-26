@@ -597,6 +597,7 @@ class TestCli(
                     "--covariate_columns",
                     features,
                     "--method=ipw",
+                    "--max_de=1.5",
                 ]
             )
             # run cli

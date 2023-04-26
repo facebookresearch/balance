@@ -186,6 +186,7 @@ def weights_from_link(
     return weights
 
 
+# TODO: Update choose_regularization function to be based on mse (instead of grid search)
 def choose_regularization(
     fit,
     sample_df: pd.DataFrame,
@@ -348,8 +349,7 @@ def ipw(
     balance_classes: bool = True,
     transformations: str = "default",
     na_action: str = "add_indicator",
-    # TODO: set max_de to None as default
-    max_de: Optional[float] = 1.5,
+    max_de: Optional[float] = None,
     formula: Union[str, List[str], None] = None,
     penalty_factor: Optional[List[float]] = None,
     one_hot_encoding: bool = False,
@@ -561,6 +561,7 @@ def ipw(
         :sample_n,
     ].toarray()
 
+    logger.info(f"max_de: {max_de}")
     if max_de is not None:
         regularisation_perf = choose_regularization(
             fit,

@@ -33,6 +33,7 @@ class Testipw(
             target_df=target,
             target_weights=pd.Series((1,) * 9),
             transformations=None,
+            max_de=1.5,
         )
 
         w = result["weight"].values
@@ -363,7 +364,9 @@ class Testipw(
         sample_weights = pd.Series(np.random.uniform(0, 1, size=n_sample))
         target_weights = pd.Series(np.random.uniform(0, 1, size=n_target))
 
-        res = balance_ipw.ipw(sample_df, sample_weights, target_df, target_weights)
+        res = balance_ipw.ipw(
+            sample_df, sample_weights, target_df, target_weights, max_de=1.5
+        )
 
         # Compare output weights (examples and distribution)
         self.assertEqual(round(res["weight"][15], 4), 0.0886)
