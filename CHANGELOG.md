@@ -1,4 +1,4 @@
-0.8.0 (The future)
+0.8.0 (2023-04-26)
 ==================
 ### New Features
 - Add `rake` method to .adjust (currently in beta, given that it doesn't handles marginal target as input).
@@ -7,6 +7,12 @@
 ## Misc
 - The `ipw` function now gets max_de=None as default (instead of 1.5). This version is faster, and the user can still choose a threshold as desired.
 - Adding hex stickers graphics files
+
+### Documentation
+- New section on [raking.](https://import-balance.org/docs/docs/statistical_methods/rake/)
+- New notebook (in the tutorial section):
+    - [**quickstart_rake**](https://import-balance.org/docs/tutorials/quickstart_rake/) - like the [**quickstart**](https://import-balance.org/docs/tutorials/quickstart/) tutorial, but shows how to use the rake (raking) algorithm and compares the results to IPW (logistic regression with LASSO).
+
 
 0.7.0 (2023-04-10)
 ==================

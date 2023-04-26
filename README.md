@@ -174,7 +174,7 @@ adjusted.to_download()  # Or:
 # adjusted.to_csv()
 ```
 
-To see a more detailed step-by-step code example with code output prints and plots (both static and interactive), please go over to the [quickstart tutorial](https://import-balance.org/docs/tutorials/quickstart/).
+To see a more detailed step-by-step code example with code output prints and plots (both static and interactive), please go over to the [tutorials section](https://import-balance.org/docs/tutorials/).
 
 
 ## Implemented methods for adjustments
@@ -184,7 +184,7 @@ To see a more detailed step-by-step code example with code output prints and plo
 1. [Logistic regression using L1 (LASSO) penalization.](https://import-balance.org/docs/docs/statistical_methods/ipw/)
 2. [Covariate Balancing Propensity Score (CBPS).](https://import-balance.org/docs/docs/statistical_methods/cbps/)
 3. [Post-stratification.](https://import-balance.org/docs/docs/statistical_methods/poststratify/)
-4. Raking (TODO: add docs)
+4. [Raking.](https://import-balance.org/docs/docs/statistical_methods/rake/)
 
 ## Implemented methods for diagnostics/evaluation
 
