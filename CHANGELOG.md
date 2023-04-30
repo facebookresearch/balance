@@ -1,3 +1,10 @@
+0.9.0 (the future)
+==================
+### Documentation
+- Fix text based on updated from version 0.7.0 and 0.8.0.
+    - https://import-balance.org/docs/docs/general_framework/adjusting_sample_to_population/
+
+
 0.8.0 (2023-04-26)
 ==================
 ### New Features
