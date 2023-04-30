@@ -714,6 +714,7 @@ def plotly_plot_qq(
     variables: List[str],
     plot_it: bool = True,
     return_dict_of_figures: bool = False,
+    **kwargs,
 ) -> Optional[Dict[str, go.Figure]]:
     """
     Plots interactive QQ plot of the given variables.
@@ -728,6 +729,7 @@ def plotly_plot_qq(
         variables (List[str]): a list of variables to use for plotting.
         plot_it (bool, optional): If to plot the plots interactively instead of returning a dictionary. Defaults to True.
         return_dict_of_figures (bool, optional): If to return the dictionary containing the plots rather than just returning None. Defaults to False.
+        **kwargs: Additional keyword arguments to pass to the update_layout method of the plotly figure object. (e.g.: width and height are 700 and 450, and could be set using the kwargs).
 
     Returns:
         Optional[Dict[str, go.Figure]]: Dictionary containing plots if return_dict_of_figures is True. None otherwise.
@@ -827,6 +829,9 @@ def plotly_plot_qq(
             "yaxis": {"zeroline": False, "linewidth": 1, "mirror": True},
         }
         fig = go.Figure(data=data, layout=layout)
+        # Set the default PNG image size to 1400 x 1000 for when downloading the image
+        # pyre-ignore[16] update_layout IS defined.
+        fig.update_layout(**kwargs)
         dict_of_qqs[variable] = fig
         if plot_it:
             offline.iplot(fig)
@@ -840,6 +845,7 @@ def plotly_plot_density(
     plot_it: bool = True,
     return_dict_of_figures: bool = False,
     plot_width: int = 800,
+    **kwargs,
 ) -> Optional[Dict[str, go.Figure]]:
     """
     Plots interactive density plots of the given variables using kernel density estimation.
@@ -858,6 +864,7 @@ def plotly_plot_density(
         return_dict_of_figures (bool, optional): Whether to return a dictionary of plotly figures.
             Defaults to False.
         plot_width (int, optional): The width of the plot in pixels. Defaults to 800.
+        **kwargs: Additional keyword arguments to pass to the update_layout method of the plotly figure object. (e.g.: width and height are 700 and 450, and could be set using the kwargs).
 
     Returns:
         Optional[Dict[str, go.Figure]]: A dictionary containing plotly figures for each variable
@@ -983,6 +990,9 @@ def plotly_plot_density(
         fig = go.Figure(data=data, layout=layout)
         dict_of_density_plots[variable] = fig
 
+        # pyre-ignore[16]: the update_layout exists
+        fig.update_layout(**kwargs)
+
         if plot_it:
             offline.iplot(fig)
 
@@ -996,6 +1006,7 @@ def plotly_plot_bar(
     plot_it: bool = True,
     return_dict_of_figures: bool = False,
     ylim: Optional[Tuple[float, float]] = None,
+    **kwargs,
 ) -> Optional[Dict[str, go.Figure]]:
     """
     Plots interactive bar plots of the given variables (with optional control over the y-axis limits).
@@ -1008,6 +1019,7 @@ def plotly_plot_bar(
         return_dict_of_figures (bool, optional): If True, returns the dictionary containing the plots rather than just returning None. Defaults to False.
         ylim (Optional[Tuple[float, float]], optional): A tuple with two float values representing the lower and upper limits of the y-axis.
             If not provided, the y-axis range is determined automatically. Defaults to None.
+        **kwargs: Additional keyword arguments to pass to the update_layout method of the plotly figure object. (e.g.: width and height are 700 and 450, and could be set using the kwargs).
 
     Returns:
         Optional[Dict[str, go.Figure]]: Dictionary containing plots if return_dict_of_figures is True. None otherwise.
@@ -1094,6 +1106,10 @@ def plotly_plot_bar(
         )
 
         fig = go.Figure(data=data, layout=layout)
+
+        # pyre-ignore[16]: the update_layout exists
+        fig.update_layout(**kwargs)
+
         dict_of_bars[variable] = fig
         if plot_it:
             offline.iplot(fig)
@@ -1114,6 +1130,7 @@ def plotly_plot_dist(
     plot_it: bool = True,
     return_dict_of_figures: bool = False,
     ylim: Optional[Tuple[float, float]] = None,
+    **kwargs,
 ) -> Optional[Dict[str, go.Figure]]:
     """
     Plots interactive distribution plots (qq and bar plots) of the given variables.
@@ -1141,6 +1158,7 @@ def plotly_plot_dist(
         ylim (Optional[Tuple[float, float]], optional): A tuple with two float values representing the lower and upper limits of the y-axis.
             If not provided, the y-axis range is determined automatically. Defaults to None.
             passed to bar plots only.
+        **kwargs: Additional keyword arguments to pass to the update_layout method of the plotly figure object. (e.g.: width and height are 700 and 450, and could be set using the kwargs).
 
     Returns:
         Optional[Dict[str, go.Figure]]: Dictionary containing plots if return_dict_of_figures is True. None otherwise.
@@ -1235,12 +1253,12 @@ def plotly_plot_dist(
         # the below functions will create plotly plots
         if categorical:
             dict_of_plot = plotly_plot_bar(
-                dict_of_dfs, [o], plot_it, return_dict_of_figures, ylim=ylim
+                dict_of_dfs, [o], plot_it, return_dict_of_figures, ylim=ylim, **kwargs
             )
         else:
             # plotly_plot_density
             dict_of_plot = plotly_numeric_plot(
-                dict_of_dfs, [o], plot_it, return_dict_of_figures
+                dict_of_dfs, [o], plot_it, return_dict_of_figures, **kwargs
             )
         # the below functions will add the plotly dict outputs
         # to the dictionary 'dict_of_all_plots' (if return_dict_of_figures is True).
@@ -1329,6 +1347,7 @@ def plot_dist(
         ylim (Optional[Tuple[float, float]], optional): A tuple with two float values representing the lower and upper limits of the y-axis.
             If not provided, the y-axis range is determined automatically. Defaults to None.
             passed to bar plots only.
+        **kwargs: Additional keyword arguments to pass to plotly_plot_dist or seaborn_plot_dist.
 
     Raises:
         ValueError: if library is not in ("plotly", "seaborn").

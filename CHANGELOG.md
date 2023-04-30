@@ -1,5 +1,8 @@
 0.9.0 (the future)
 ==================
+### New Features
+- All plotly functions: add kwargs to pass arguments to update_layout in all plotly figures. This is useful to control width and height of the plot. For example, when wanting to save a high resolution of the image.
+
 ### Documentation
 - Fix text based on updated from version 0.7.0 and 0.8.0.
     - https://import-balance.org/docs/docs/general_framework/adjusting_sample_to_population/
