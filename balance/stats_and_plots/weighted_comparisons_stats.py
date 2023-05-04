@@ -133,9 +133,7 @@ def asmd(
     aggregate_by_main_covar: bool = False,
 ) -> pd.Series:
     """
-    Calculate the Absolute Standardized Mean Deviation (ASMD, a.k.a
-    absolute standardized mean difference) between the columns of two DataFrames
-    (or BalanceDFs).
+    Calculate the Absolute Standardized Mean Deviation (ASMD) between the columns of two DataFrames (or BalanceDFs).
     It uses weighted average and std for the calculations.
     This is the same as taking the absolute value of Cohen's d statistic,
     with a specific choice of the standard deviation (std).
