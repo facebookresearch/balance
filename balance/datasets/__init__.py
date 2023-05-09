@@ -45,7 +45,9 @@ def load_sim_data(
         target_df = pd.DataFrame(
             {
                 "id": (np.array(range(n_target)) + 100000).astype(str),
-                "gender": np.random.choice(["Male", "Female"], size=n_target, replace=True, p=[0.5, 0.5]),
+                "gender": np.random.choice(
+                    ["Male", "Female"], size=n_target, replace=True, p=[0.5, 0.5]
+                ),
                 "age_group": np.random.choice(
                     ["18-24", "25-34", "35-44", "45+"],
                     size=n_target,
@@ -64,7 +66,9 @@ def load_sim_data(
         sample_df = pd.DataFrame(
             {
                 "id": (np.array(range(n_sample))).astype(str),
-                "gender": np.random.choice(["Male", "Female"], size=n_sample, replace=True, p=[0.7, 0.3]),
+                "gender": np.random.choice(
+                    ["Male", "Female"], size=n_sample, replace=True, p=[0.7, 0.3]
+                ),
                 "age_group": np.random.choice(
                     ["18-24", "25-34", "35-44", "45+"],
                     size=n_sample,
@@ -81,13 +85,20 @@ def load_sim_data(
         # people with higher income are happeir
         sample_df["happiness"] = (
             np.random.normal(40, 10, size=n_sample)
-            + np.where(sample_df.gender == "Female", 1, 0) * np.random.normal(20, 1, size=n_sample)
-            + np.where(sample_df.age_group == "35-44", 1, 0) * np.random.normal(5, 1, size=n_sample)
-            + np.where(sample_df.age_group == "45+", 1, 0) * np.random.normal(20, 1, size=n_sample)
-            + np.random.normal((np.random.normal(3, 2, size=n_sample) ** 2) / 20, 1, size=n_sample)
+            + np.where(sample_df.gender == "Female", 1, 0)
+            * np.random.normal(20, 1, size=n_sample)
+            + np.where(sample_df.age_group == "35-44", 1, 0)
+            * np.random.normal(5, 1, size=n_sample)
+            + np.where(sample_df.age_group == "45+", 1, 0)
+            * np.random.normal(20, 1, size=n_sample)
+            + np.random.normal(
+                (np.random.normal(3, 2, size=n_sample) ** 2) / 20, 1, size=n_sample
+            )
         )
         # Truncate for max to be 100
-        sample_df["happiness"] = np.where(sample_df["happiness"] < 100, sample_df["happiness"], 100)
+        sample_df["happiness"] = np.where(
+            sample_df["happiness"] < 100, sample_df["happiness"], 100
+        )
 
         # We also have missing values in gender
         sample_df.loc[3:90, "gender"] = np.nan
