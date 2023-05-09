@@ -2,6 +2,7 @@
 ==================
 ### New Features
 - All plotly functions: add kwargs to pass arguments to update_layout in all plotly figures. This is useful to control width and height of the plot. For example, when wanting to save a high resolution of the image.
+- Remove a no-op in `load_data` and accomodate deprecation of pandas syntax by using a list rather than a set when selecting df columns 
 
 ### Documentation
 - Fix text based on updated from version 0.7.0 and 0.8.0.
