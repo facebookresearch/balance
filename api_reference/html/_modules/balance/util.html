@@ -1821,7 +1821,8 @@
 <span class="sd">            _are_dtypes_equal(df11.dtypes, df2.dtypes)[&#39;is_equal&#39;] # False</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">shared_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">dt1</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="nb">set</span><span class="p">(</span><span class="n">dt2</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
-    <span class="n">comparison_of_dtypes</span> <span class="o">=</span> <span class="n">dt1</span><span class="p">[</span><span class="n">shared_keys</span><span class="p">]</span> <span class="o">==</span> <span class="n">dt2</span><span class="p">[</span><span class="n">shared_keys</span><span class="p">]</span>
+    <span class="n">shared_keys_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">shared_keys</span><span class="p">)</span>
+    <span class="n">comparison_of_dtypes</span> <span class="o">=</span> <span class="n">dt1</span><span class="p">[</span><span class="n">shared_keys_list</span><span class="p">]</span> <span class="o">==</span> <span class="n">dt2</span><span class="p">[</span><span class="n">shared_keys_list</span><span class="p">]</span>
     <span class="n">is_equal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">comparison_of_dtypes</span><span class="p">)</span>
     <span class="k">return</span> <span class="p">{</span>
         <span class="s2">&quot;is_equal&quot;</span><span class="p">:</span> <span class="n">is_equal</span><span class="p">,</span>
