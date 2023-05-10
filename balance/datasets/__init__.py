@@ -59,7 +59,7 @@ def load_sim_data(
                 # "weight": np.random.uniform(size = n_target) + 0.5,
             }
         )
-        target_df.happiness = np.random.normal(50, 10, size=n_target) + np.where(
+        target_df["happiness"] = np.random.normal(50, 10, size=n_target) + np.where(
             target_df.gender == "Female", 1, 0
         ) * np.random.normal(5, 2, size=n_target)
         # We also have missing values in gender

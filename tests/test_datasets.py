@@ -16,11 +16,11 @@ class TestDatasets(
         target_df, sample_df = load_data()
 
         self.assertEqual(sample_df.shape, (1000, 5))
-        self.assertEqual(target_df.shape, (10000, 4))
+        self.assertEqual(target_df.shape, (10000, 5))
 
         self.assertEqual(
             target_df.columns.to_numpy().tolist(),
-            ["id", "gender", "age_group", "income"],
+            ["id", "gender", "age_group", "income", "happiness"],
         )
         self.assertEqual(
             sample_df.columns.to_numpy().tolist(),
@@ -44,6 +44,7 @@ class TestDatasets(
             "gender": {0: "Male", 1: "Male", 2: "Male", 3: np.nan, 4: np.nan},
             "age_group": {0: "45+", 1: "45+", 2: "35-44", 3: "45+", 4: "25-34"},
             "income": {0: 10.18, 1: 6.04, 2: 5.23, 3: 5.75, 4: 4.84},
+            "happiness": {0: 50.15, 1: 68.59, 2: 48.02, 3: 71.73, 4: 44.07},
         }
         self.assertEqual(o.__str__(), e.__str__())
 

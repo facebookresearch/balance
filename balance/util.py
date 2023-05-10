@@ -1784,7 +1784,8 @@ def _are_dtypes_equal(
             _are_dtypes_equal(df11.dtypes, df2.dtypes)['is_equal'] # False
     """
     shared_keys = set.intersection(set(dt1.keys()), set(dt2.keys()))
-    comparison_of_dtypes = dt1[shared_keys] == dt2[shared_keys]
+    shared_keys_list = list(shared_keys)
+    comparison_of_dtypes = dt1[shared_keys_list] == dt2[shared_keys_list]
     is_equal = np.all(comparison_of_dtypes)
     return {
         "is_equal": is_equal,
