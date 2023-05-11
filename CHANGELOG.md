@@ -6,6 +6,7 @@
 
 ### Bug Fixes
 - Remove a no-op in `load_data` and accomodate deprecation of pandas syntax by using a list rather than a set when selecting df columns (thanks @ahakso for the PR).
+- Fix `Sample.outcomes().summary()` so it will output the ci columns without truncating them.
 
 ### Documentation
 - Fix text based on updated from version 0.7.0 and 0.8.0.

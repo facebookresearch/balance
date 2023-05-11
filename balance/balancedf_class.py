@@ -1646,7 +1646,8 @@ class BalanceOutcomesDF(BalanceDF):
         out = (
             f"{n_outcomes} outcomes: {list_outcomes}\n"
             f"Mean outcomes (with 95% confidence intervals):\n"
-            f"{mean_outcomes_with_ci}\n\n"
+            # TODO: in the future consider if to add an argument to transpose (.T) the output, in case there are multiple outcomes.
+            f"{mean_outcomes_with_ci.to_string(max_cols=None)}\n\n"
             "Response rates (relative to number of respondents in sample):\n"
             f"{relative_response_rates}\n"
             f"{relative_to_target_clause}\n"
