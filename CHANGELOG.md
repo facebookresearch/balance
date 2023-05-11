@@ -3,6 +3,7 @@
 ### New Features
 - All plotly functions: add kwargs to pass arguments to update_layout in all plotly figures. This is useful to control width and height of the plot. For example, when wanting to save a high resolution of the image.
 - Add a `summary` methods to `BalanceWeightsDF` (i.e.: `Sample.weights().summary()`) to easily get access to summary statistics of the survey weights. Also, it means that `Sample.diagnostics()` now uses this new summary method in its internal implementation.
+- `BalanceWeightsDF.plot` method now relies on the default `BalanceDF.plot` method. This means that instead of a static seaborn kde plot we'll get an interactive plotly version.
 
 ### Bug Fixes
 - Remove a no-op in `load_data` and accomodate deprecation of pandas syntax by using a list rather than a set when selecting df columns (thanks @ahakso for the PR).
