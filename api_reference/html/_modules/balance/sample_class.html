@@ -892,51 +892,7 @@
         <span class="c1"># ----------------------------------------------------</span>
         <span class="c1"># Diagnostics on the weights</span>
         <span class="c1"># ----------------------------------------------------</span>
-        <span class="n">the_weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span>
-            <span class="p">:,</span> <span class="mi">0</span>
-        <span class="p">]</span>  <span class="c1"># should be [&#39;weight&#39;], but this is more robust in case a user uses other names</span>
-        <span class="n">weights_diag_var</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">weights_diag_value</span> <span class="o">=</span> <span class="p">[]</span>
-
-        <span class="c1"># adding design_effect and variations</span>
-        <span class="n">the_weights_de</span> <span class="o">=</span> <span class="n">weights_stats</span><span class="o">.</span><span class="n">design_effect</span><span class="p">(</span><span class="n">the_weights</span><span class="p">)</span>
-        <span class="n">weights_diag_var</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
-            <span class="p">[</span><span class="s2">&quot;design_effect&quot;</span><span class="p">,</span> <span class="s2">&quot;effective_sample_ratio&quot;</span><span class="p">,</span> <span class="s2">&quot;effective_sample_size&quot;</span><span class="p">]</span>
-        <span class="p">)</span>
-        <span class="n">weights_diag_value</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">the_weights_de</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">the_weights_de</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">the_weights</span><span class="p">)</span> <span class="o">/</span> <span class="n">the_weights_de</span><span class="p">]</span>
-        <span class="p">)</span>
-
-        <span class="c1"># adding sum of weights, and then normalizing them to n (sample size)</span>
-        <span class="n">weights_diag_var</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
-        <span class="n">weights_diag_value</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">the_weights</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-
-        <span class="n">the_weights</span> <span class="o">=</span> <span class="n">the_weights</span> <span class="o">/</span> <span class="n">the_weights</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>  <span class="c1"># normalize weights to sum to n.</span>
-
-        <span class="c1"># adding basic summary statistics from describe:</span>
-        <span class="n">tmp_describe</span> <span class="o">=</span> <span class="n">the_weights</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span>
-        <span class="n">weights_diag_var</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;describe_&quot;</span> <span class="o">+</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tmp_describe</span><span class="o">.</span><span class="n">index</span><span class="p">])</span>
-        <span class="n">weights_diag_value</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">tmp_describe</span><span class="o">.</span><span class="n">to_list</span><span class="p">())</span>
-        <span class="c1"># TODO: decide if we want more quantiles of the weights.</span>
-
-        <span class="c1"># adding prop_above_and_below</span>
-        <span class="n">tmp_props</span> <span class="o">=</span> <span class="n">weights_stats</span><span class="o">.</span><span class="n">prop_above_and_below</span><span class="p">(</span><span class="n">the_weights</span><span class="p">)</span>
-        <span class="n">weights_diag_var</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
-            <span class="n">tmp_props</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>  <span class="c1"># pyre-ignore[16]: existing defaults make sure this output is pd.Series with relevant methods.</span>
-        <span class="p">)</span>
-        <span class="n">weights_diag_value</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
-            <span class="n">tmp_props</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>  <span class="c1"># pyre-ignore[16]: existing defaults make sure this output is pd.Series with relevant methods.</span>
-        <span class="p">)</span>
-        <span class="c1"># TODO: decide if we want more numbers (e.g.: 2/3 and 3/2)</span>
-
-        <span class="c1"># adding nonparametric_skew and weighted_median_breakdown_point</span>
-        <span class="n">weights_diag_var</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;nonparametric_skew&quot;</span><span class="p">)</span>
-        <span class="n">weights_diag_value</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">weights_stats</span><span class="o">.</span><span class="n">nonparametric_skew</span><span class="p">(</span><span class="n">the_weights</span><span class="p">))</span>
-
-        <span class="n">weights_diag_var</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;weighted_median_breakdown_point&quot;</span><span class="p">)</span>
-        <span class="n">weights_diag_value</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-            <span class="n">weights_stats</span><span class="o">.</span><span class="n">weighted_median_breakdown_point</span><span class="p">(</span><span class="n">the_weights</span><span class="p">)</span>
-        <span class="p">)</span>
+        <span class="n">the_weights_summary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">()</span><span class="o">.</span><span class="n">summary</span><span class="p">()</span>
 
         <span class="c1"># Add all the weights_diagnostics to diagnostics</span>
         <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
@@ -945,8 +901,8 @@
                 <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
                     <span class="p">{</span>
                         <span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;weights_diagnostics&quot;</span><span class="p">,</span>
-                        <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="n">weights_diag_value</span><span class="p">,</span>
-                        <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">weights_diag_var</span><span class="p">,</span>
+                        <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="n">the_weights_summary</span><span class="p">[</span><span class="s2">&quot;val&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">the_weights_summary</span><span class="p">[</span><span class="s2">&quot;var&quot;</span><span class="p">],</span>
                     <span class="p">}</span>
                 <span class="p">),</span>
             <span class="p">)</span>

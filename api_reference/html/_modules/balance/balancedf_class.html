@@ -1683,84 +1683,15 @@
         <span class="n">out</span> <span class="o">=</span> <span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">n_outcomes</span><span class="si">}</span><span class="s2"> outcomes: </span><span class="si">{</span><span class="n">list_outcomes</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;Mean outcomes (with 95% confidence intervals):</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mean_outcomes_with_ci</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+            <span class="c1"># TODO: in the future consider if to add an argument to transpose (.T) the output, in case there are multiple outcomes.</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mean_outcomes_with_ci</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">max_cols</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span>
             <span class="s2">&quot;Response rates (relative to number of respondents in sample):</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">relative_response_rates</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">relative_to_target_clause</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">target_clause</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
         <span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">out</span></div>
-
-    <span class="c1"># TODO: once we have hist/kde methods for plotly, consider changing the defaults here to use plotly instead of seaborn.</span>
-<div class="viewcode-block" id="BalanceOutcomesDF.plot"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceOutcomesDF.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceOutcomesDF&quot;</span><span class="p">,</span> <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plots histogram of covariates in a BalanceOutcomesDF object using seaborn (as default).</span>
-
-<span class="sd">        It&#39;s possible to use other plots using dist_type with arguments such as &quot;hist&quot;, &quot;kde&quot; (default), &quot;qq&quot;, and &quot;ecdf&quot;.</span>
-<span class="sd">        Look at :func:`plot_dist` for more details.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            self (BalanceOutcomesDF): a BalanceOutcomesDF object, with a set of variables.</span>
-<span class="sd">            on_linked_samples (bool, optional): Determines if the linked samples should be included in the plot.</span>
-<span class="sd">                Defaults to True.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:</span>
-<span class="sd">                If library=&quot;plotly&quot; then returns a dictionary containing plots if return_dict_of_figures is True. None otherwise.</span>
-<span class="sd">                If library=&quot;seaborn&quot; then returns None, unless return_axes is True. Then either a list or an np.array of matplotlib axis.</span>
-
-<span class="sd">        Examples:</span>
-<span class="sd">            ::</span>
-
-<span class="sd">                import numpy as np</span>
-<span class="sd">                import pandas as pd</span>
-<span class="sd">                from numpy import random</span>
-<span class="sd">                from balance.sample_class import Sample</span>
-
-<span class="sd">                random.seed(96483)</span>
-
-<span class="sd">                df = pd.DataFrame({</span>
-<span class="sd">                    &quot;id&quot;: range(100),</span>
-<span class="sd">                    &#39;v1&#39;: random.random_integers(11111, 11114, size=100).astype(str),</span>
-<span class="sd">                    &#39;v2&#39;: random.normal(size = 100),</span>
-<span class="sd">                    &#39;v3&#39;: random.uniform(size = 100),</span>
-<span class="sd">                    &quot;w&quot;: pd.Series(np.ones(99).tolist() + [1000]),</span>
-<span class="sd">                }).sort_values(by=[&#39;v2&#39;])</span>
-
-<span class="sd">                s1 = Sample.from_frame(df,</span>
-<span class="sd">                    id_column=&quot;id&quot;,</span>
-<span class="sd">                    weight_column=&quot;w&quot;,</span>
-<span class="sd">                    outcome_columns=[&quot;v1&quot;, &quot;v2&quot;],</span>
-<span class="sd">                )</span>
-
-<span class="sd">                s2 = Sample.from_frame(</span>
-<span class="sd">                    df.assign(w = pd.Series(np.ones(100))),</span>
-<span class="sd">                    id_column=&quot;id&quot;,</span>
-<span class="sd">                    weight_column=&quot;w&quot;,</span>
-<span class="sd">                    outcome_columns=[&quot;v1&quot;, &quot;v2&quot;],</span>
-<span class="sd">                )</span>
-
-<span class="sd">                s3 = s1.set_target(s2)</span>
-<span class="sd">                s3_null = s3.adjust(method=&quot;null&quot;)</span>
-<span class="sd">                s3_null.set_weights(random.random(size = 100) + 0.5)</span>
-
-<span class="sd">                # default: seaborn with dist_type = &quot;hist&quot;</span>
-<span class="sd">                s3_null.outcomes().plot()</span>
-
-<span class="sd">                # using dist_type = &quot;kde&quot;</span>
-<span class="sd">                s3_null.outcomes().plot(dist_type = &quot;kde&quot;)</span>
-
-<span class="sd">                # using plotly</span>
-<span class="sd">                s3_null.outcomes().plot(library = &quot;plotly&quot;)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">default_kwargs</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;library&quot;</span><span class="p">:</span> <span class="s2">&quot;seaborn&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;dist_type&quot;</span><span class="p">:</span> <span class="s2">&quot;kde&quot;</span><span class="p">,</span>
-        <span class="p">}</span>
-        <span class="n">default_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">on_linked_samples</span><span class="o">=</span><span class="n">on_linked_samples</span><span class="p">,</span> <span class="o">**</span><span class="n">default_kwargs</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="n">out</span></div></div>
 
 
 <div class="viewcode-block" id="BalanceCovarsDF"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceCovarsDF">[docs]</a><span class="k">class</span> <span class="nc">BalanceCovarsDF</span><span class="p">(</span><span class="n">BalanceDF</span><span class="p">):</span>
@@ -1937,6 +1868,134 @@
                 <span class="n">weight_trimming_percentile</span><span class="o">=</span><span class="n">percentile</span><span class="p">,</span>
                 <span class="n">keep_sum_of_weights</span><span class="o">=</span><span class="n">keep_sum_of_weights</span><span class="p">,</span>
             <span class="p">)</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="BalanceWeightsDF.summary"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceWeightsDF.summary">[docs]</a>    <span class="k">def</span> <span class="nf">summary</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceWeightsDF&quot;</span><span class="p">,</span> <span class="n">on_linked_samples</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generates a summary of a BalanceWeightsDF object.</span>
+
+<span class="sd">        This function provides a comprehensive overview of the BalanceWeightsDF object</span>
+<span class="sd">        by calculating and returning a range of weight diagnostics.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (BalanceWeightsDF): The BalanceWeightsDF object to be summarized.</span>
+<span class="sd">            on_linked_samples (Optional[bool], optional): This parameter is ignored. It is only included</span>
+<span class="sd">                because summary overrides BalanceDF.summary. Defaults to None.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame: A DataFrame containing various weight diagnostics such as &#39;design_effect&#39;,</span>
+<span class="sd">                &#39;effective_sample_proportion&#39;, &#39;effective_sample_size&#39;, sum of weights, and basic summary statistics</span>
+<span class="sd">                from describe, &#39;nonparametric_skew&#39;, and &#39;weighted_median_breakdown_point&#39; among others.</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            The weights are normalized to sum to the sample size, n.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            ::</span>
+
+<span class="sd">                import pandas as pd</span>
+<span class="sd">                from balance.sample_class import Sample</span>
+
+<span class="sd">                s1 = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;a&quot;: (1, 2, 3, 1),</span>
+<span class="sd">                            &quot;b&quot;: (-42, 8, 2, -42),</span>
+<span class="sd">                            &quot;o&quot;: (7, 8, 9, 10),</span>
+<span class="sd">                            &quot;c&quot;: (&quot;x&quot;, &quot;y&quot;, &quot;z&quot;, &quot;v&quot;),</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3, 4),</span>
+<span class="sd">                            &quot;w&quot;: (0.5, 2, 1, 1),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                    outcome_columns=&quot;o&quot;,</span>
+<span class="sd">                )</span>
+
+<span class="sd">                print(s1.weights().summary().round(2))</span>
+<span class="sd">                    #                                 var   val</span>
+<span class="sd">                    # 0                     design_effect  1.23</span>
+<span class="sd">                    # 1       effective_sample_proportion  0.81</span>
+<span class="sd">                    # 2             effective_sample_size  3.24</span>
+<span class="sd">                    # 3                               sum  4.50</span>
+<span class="sd">                    # 4                    describe_count  4.00</span>
+<span class="sd">                    # 5                     describe_mean  1.00</span>
+<span class="sd">                    # 6                      describe_std  0.56</span>
+<span class="sd">                    # 7                      describe_min  0.44</span>
+<span class="sd">                    # 8                      describe_25%  0.78</span>
+<span class="sd">                    # 9                      describe_50%  0.89</span>
+<span class="sd">                    # 10                     describe_75%  1.11</span>
+<span class="sd">                    # 11                     describe_max  1.78</span>
+<span class="sd">                    # 12                    prop(w &lt; 0.1)  0.00</span>
+<span class="sd">                    # 13                    prop(w &lt; 0.2)  0.00</span>
+<span class="sd">                    # 14                  prop(w &lt; 0.333)  0.00</span>
+<span class="sd">                    # 15                    prop(w &lt; 0.5)  0.25</span>
+<span class="sd">                    # 16                      prop(w &lt; 1)  0.75</span>
+<span class="sd">                    # 17                     prop(w &gt;= 1)  0.25</span>
+<span class="sd">                    # 18                     prop(w &gt;= 2)  0.00</span>
+<span class="sd">                    # 19                     prop(w &gt;= 3)  0.00</span>
+<span class="sd">                    # 20                     prop(w &gt;= 5)  0.00</span>
+<span class="sd">                    # 21                    prop(w &gt;= 10)  0.00</span>
+<span class="sd">                    # 22               nonparametric_skew  0.20</span>
+<span class="sd">                    # 23  weighted_median_breakdown_point  0.25</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># ----------------------------------------------------</span>
+        <span class="c1"># Diagnostics on the weights</span>
+        <span class="c1"># ----------------------------------------------------</span>
+        <span class="n">the_weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span>
+            <span class="p">:,</span> <span class="mi">0</span>
+        <span class="p">]</span>  <span class="c1"># should be [&#39;weight&#39;], but this is more robust in case a user uses other names</span>
+        <span class="n">weights_diag_var</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">weights_diag_value</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># adding design_effect and variations</span>
+        <span class="n">the_weights_de</span> <span class="o">=</span> <span class="n">weights_stats</span><span class="o">.</span><span class="n">design_effect</span><span class="p">(</span><span class="n">the_weights</span><span class="p">)</span>
+        <span class="n">weights_diag_var</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+            <span class="p">[</span><span class="s2">&quot;design_effect&quot;</span><span class="p">,</span> <span class="s2">&quot;effective_sample_proportion&quot;</span><span class="p">,</span> <span class="s2">&quot;effective_sample_size&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">weights_diag_value</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">the_weights_de</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">the_weights_de</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">the_weights</span><span class="p">)</span> <span class="o">/</span> <span class="n">the_weights_de</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="c1"># adding sum of weights, and then normalizing them to n (sample size)</span>
+        <span class="n">weights_diag_var</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
+        <span class="n">weights_diag_value</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">the_weights</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+
+        <span class="n">the_weights</span> <span class="o">=</span> <span class="n">the_weights</span> <span class="o">/</span> <span class="n">the_weights</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>  <span class="c1"># normalize weights to sum to n.</span>
+
+        <span class="c1"># adding basic summary statistics from describe:</span>
+        <span class="n">tmp_describe</span> <span class="o">=</span> <span class="n">the_weights</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span>
+        <span class="n">weights_diag_var</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;describe_&quot;</span> <span class="o">+</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tmp_describe</span><span class="o">.</span><span class="n">index</span><span class="p">])</span>
+        <span class="n">weights_diag_value</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">tmp_describe</span><span class="o">.</span><span class="n">to_list</span><span class="p">())</span>
+        <span class="c1"># TODO: decide if we want more quantiles of the weights.</span>
+
+        <span class="c1"># adding prop_above_and_below</span>
+        <span class="n">tmp_props</span> <span class="o">=</span> <span class="n">weights_stats</span><span class="o">.</span><span class="n">prop_above_and_below</span><span class="p">(</span><span class="n">the_weights</span><span class="p">)</span>
+        <span class="n">weights_diag_var</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+            <span class="n">tmp_props</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>  <span class="c1"># pyre-ignore[16]: existing defaults make sure this output is pd.Series with relevant methods.</span>
+        <span class="p">)</span>
+        <span class="n">weights_diag_value</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+            <span class="n">tmp_props</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>  <span class="c1"># pyre-ignore[16]: existing defaults make sure this output is pd.Series with relevant methods.</span>
+        <span class="p">)</span>
+        <span class="c1"># TODO: decide if we want more numbers (e.g.: 2/3 and 3/2)</span>
+
+        <span class="c1"># adding nonparametric_skew and weighted_median_breakdown_point</span>
+        <span class="n">weights_diag_var</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;nonparametric_skew&quot;</span><span class="p">)</span>
+        <span class="n">weights_diag_value</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">weights_stats</span><span class="o">.</span><span class="n">nonparametric_skew</span><span class="p">(</span><span class="n">the_weights</span><span class="p">))</span>
+
+        <span class="n">weights_diag_var</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;weighted_median_breakdown_point&quot;</span><span class="p">)</span>
+        <span class="n">weights_diag_value</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">weights_stats</span><span class="o">.</span><span class="n">weighted_median_breakdown_point</span><span class="p">(</span><span class="n">the_weights</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="c1"># &quot;metric&quot;: &quot;weights_diagnostics&quot;,</span>
+                <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">weights_diag_var</span><span class="p">,</span>
+                <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="n">weights_diag_value</span><span class="p">,</span>
+            <span class="p">}</span>
         <span class="p">)</span></div></div>
 </pre></div>
 
