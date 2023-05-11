@@ -355,6 +355,63 @@ class TestBalanceWeightsDF(BalanceTestCase):
         print(max(s.weights().df.iloc[:, 0]))
         self.assertTrue(max(s.weights().df.iloc[:, 0]) < 0.9)
 
+    def test_BalanceWeightsDF_summary(self):
+        exp = {
+            "var": {
+                0: "design_effect",
+                1: "effective_sample_proportion",
+                2: "effective_sample_size",
+                3: "sum",
+                4: "describe_count",
+                5: "describe_mean",
+                6: "describe_std",
+                7: "describe_min",
+                8: "describe_25%",
+                9: "describe_50%",
+                10: "describe_75%",
+                11: "describe_max",
+                12: "prop(w < 0.1)",
+                13: "prop(w < 0.2)",
+                14: "prop(w < 0.333)",
+                15: "prop(w < 0.5)",
+                16: "prop(w < 1)",
+                17: "prop(w >= 1)",
+                18: "prop(w >= 2)",
+                19: "prop(w >= 3)",
+                20: "prop(w >= 5)",
+                21: "prop(w >= 10)",
+                22: "nonparametric_skew",
+                23: "weighted_median_breakdown_point",
+            },
+            "val": {
+                0: 1.23,
+                1: 0.81,
+                2: 3.24,
+                3: 4.5,
+                4: 4.0,
+                5: 1.0,
+                6: 0.56,
+                7: 0.44,
+                8: 0.78,
+                9: 0.89,
+                10: 1.11,
+                11: 1.78,
+                12: 0.0,
+                13: 0.0,
+                14: 0.0,
+                15: 0.25,
+                16: 0.75,
+                17: 0.25,
+                18: 0.0,
+                19: 0.0,
+                20: 0.0,
+                21: 0.0,
+                22: 0.2,
+                23: 0.25,
+            },
+        }
+        self.assertEqual(w.summary().round(2).to_dict(), exp)
+
 
 class TestBalanceDF__BalanceDF_child_from_linked_samples(BalanceTestCase):
     def test__BalanceDF_child_from_linked_samples_keys(self):

@@ -855,51 +855,7 @@ class Sample:
         # ----------------------------------------------------
         # Diagnostics on the weights
         # ----------------------------------------------------
-        the_weights = self.weights().df.iloc[
-            :, 0
-        ]  # should be ['weight'], but this is more robust in case a user uses other names
-        weights_diag_var = []
-        weights_diag_value = []
-
-        # adding design_effect and variations
-        the_weights_de = weights_stats.design_effect(the_weights)
-        weights_diag_var.extend(
-            ["design_effect", "effective_sample_ratio", "effective_sample_size"]
-        )
-        weights_diag_value.extend(
-            [the_weights_de, 1 / the_weights_de, len(the_weights) / the_weights_de]
-        )
-
-        # adding sum of weights, and then normalizing them to n (sample size)
-        weights_diag_var.append("sum")
-        weights_diag_value.append(the_weights.sum())
-
-        the_weights = the_weights / the_weights.mean()  # normalize weights to sum to n.
-
-        # adding basic summary statistics from describe:
-        tmp_describe = the_weights.describe()
-        weights_diag_var.extend(["describe_" + i for i in tmp_describe.index])
-        weights_diag_value.extend(tmp_describe.to_list())
-        # TODO: decide if we want more quantiles of the weights.
-
-        # adding prop_above_and_below
-        tmp_props = weights_stats.prop_above_and_below(the_weights)
-        weights_diag_var.extend(
-            tmp_props.index.to_list()  # pyre-ignore[16]: existing defaults make sure this output is pd.Series with relevant methods.
-        )
-        weights_diag_value.extend(
-            tmp_props.to_list()  # pyre-ignore[16]: existing defaults make sure this output is pd.Series with relevant methods.
-        )
-        # TODO: decide if we want more numbers (e.g.: 2/3 and 3/2)
-
-        # adding nonparametric_skew and weighted_median_breakdown_point
-        weights_diag_var.append("nonparametric_skew")
-        weights_diag_value.append(weights_stats.nonparametric_skew(the_weights))
-
-        weights_diag_var.append("weighted_median_breakdown_point")
-        weights_diag_value.append(
-            weights_stats.weighted_median_breakdown_point(the_weights)
-        )
+        the_weights_summary = self.weights().summary()
 
         # Add all the weights_diagnostics to diagnostics
         diagnostics = pd.concat(
@@ -908,8 +864,8 @@ class Sample:
                 pd.DataFrame(
                     {
                         "metric": "weights_diagnostics",
-                        "val": weights_diag_value,
-                        "var": weights_diag_var,
+                        "val": the_weights_summary["val"],
+                        "var": the_weights_summary["var"],
                     }
                 ),
             )

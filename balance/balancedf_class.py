@@ -1901,3 +1901,131 @@ class BalanceWeightsDF(BalanceDF):
                 keep_sum_of_weights=keep_sum_of_weights,
             )
         )
+
+    def summary(
+        self: "BalanceWeightsDF", on_linked_samples: Optional[bool] = None
+    ) -> pd.DataFrame:
+        """
+        Generates a summary of a BalanceWeightsDF object.
+
+        This function provides a comprehensive overview of the BalanceWeightsDF object
+        by calculating and returning a range of weight diagnostics.
+
+        Args:
+            self (BalanceWeightsDF): The BalanceWeightsDF object to be summarized.
+            on_linked_samples (Optional[bool], optional): This parameter is ignored. It is only included
+                because summary overrides BalanceDF.summary. Defaults to None.
+
+        Returns:
+            pd.DataFrame: A DataFrame containing various weight diagnostics such as 'design_effect',
+                'effective_sample_proportion', 'effective_sample_size', sum of weights, and basic summary statistics
+                from describe, 'nonparametric_skew', and 'weighted_median_breakdown_point' among others.
+
+        Note:
+            The weights are normalized to sum to the sample size, n.
+
+        Examples:
+            ::
+
+                import pandas as pd
+                from balance.sample_class import Sample
+
+                s1 = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "a": (1, 2, 3, 1),
+                            "b": (-42, 8, 2, -42),
+                            "o": (7, 8, 9, 10),
+                            "c": ("x", "y", "z", "v"),
+                            "id": (1, 2, 3, 4),
+                            "w": (0.5, 2, 1, 1),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                    outcome_columns="o",
+                )
+
+                print(s1.weights().summary().round(2))
+                    #                                 var   val
+                    # 0                     design_effect  1.23
+                    # 1       effective_sample_proportion  0.81
+                    # 2             effective_sample_size  3.24
+                    # 3                               sum  4.50
+                    # 4                    describe_count  4.00
+                    # 5                     describe_mean  1.00
+                    # 6                      describe_std  0.56
+                    # 7                      describe_min  0.44
+                    # 8                      describe_25%  0.78
+                    # 9                      describe_50%  0.89
+                    # 10                     describe_75%  1.11
+                    # 11                     describe_max  1.78
+                    # 12                    prop(w < 0.1)  0.00
+                    # 13                    prop(w < 0.2)  0.00
+                    # 14                  prop(w < 0.333)  0.00
+                    # 15                    prop(w < 0.5)  0.25
+                    # 16                      prop(w < 1)  0.75
+                    # 17                     prop(w >= 1)  0.25
+                    # 18                     prop(w >= 2)  0.00
+                    # 19                     prop(w >= 3)  0.00
+                    # 20                     prop(w >= 5)  0.00
+                    # 21                    prop(w >= 10)  0.00
+                    # 22               nonparametric_skew  0.20
+                    # 23  weighted_median_breakdown_point  0.25
+        """
+        # ----------------------------------------------------
+        # Diagnostics on the weights
+        # ----------------------------------------------------
+        the_weights = self.df.iloc[
+            :, 0
+        ]  # should be ['weight'], but this is more robust in case a user uses other names
+        weights_diag_var = []
+        weights_diag_value = []
+
+        # adding design_effect and variations
+        the_weights_de = weights_stats.design_effect(the_weights)
+        weights_diag_var.extend(
+            ["design_effect", "effective_sample_proportion", "effective_sample_size"]
+        )
+        weights_diag_value.extend(
+            [the_weights_de, 1 / the_weights_de, len(the_weights) / the_weights_de]
+        )
+
+        # adding sum of weights, and then normalizing them to n (sample size)
+        weights_diag_var.append("sum")
+        weights_diag_value.append(the_weights.sum())
+
+        the_weights = the_weights / the_weights.mean()  # normalize weights to sum to n.
+
+        # adding basic summary statistics from describe:
+        tmp_describe = the_weights.describe()
+        weights_diag_var.extend(["describe_" + i for i in tmp_describe.index])
+        weights_diag_value.extend(tmp_describe.to_list())
+        # TODO: decide if we want more quantiles of the weights.
+
+        # adding prop_above_and_below
+        tmp_props = weights_stats.prop_above_and_below(the_weights)
+        weights_diag_var.extend(
+            tmp_props.index.to_list()  # pyre-ignore[16]: existing defaults make sure this output is pd.Series with relevant methods.
+        )
+        weights_diag_value.extend(
+            tmp_props.to_list()  # pyre-ignore[16]: existing defaults make sure this output is pd.Series with relevant methods.
+        )
+        # TODO: decide if we want more numbers (e.g.: 2/3 and 3/2)
+
+        # adding nonparametric_skew and weighted_median_breakdown_point
+        weights_diag_var.append("nonparametric_skew")
+        weights_diag_value.append(weights_stats.nonparametric_skew(the_weights))
+
+        weights_diag_var.append("weighted_median_breakdown_point")
+        weights_diag_value.append(
+            weights_stats.weighted_median_breakdown_point(the_weights)
+        )
+
+        return pd.DataFrame(
+            {
+                # "metric": "weights_diagnostics",
+                "var": weights_diag_var,
+                "val": weights_diag_value,
+            }
+        )
