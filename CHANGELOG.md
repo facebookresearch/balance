@@ -6,7 +6,9 @@
 - `BalanceWeightsDF.plot` method now relies on the default `BalanceDF.plot` method. This means that instead of a static seaborn kde plot we'll get an interactive plotly version.
 
 ### Bug Fixes
-- Remove a no-op in `load_data` and accomodate deprecation of pandas syntax by using a list rather than a set when selecting df columns (thanks @ahakso for the PR).
+- datasets
+    - Remove a no-op in `load_data` and accommodate deprecation of pandas syntax by using a list rather than a set when selecting df columns (thanks @ahakso for the PR).
+    - Make the outcome variable (`happiness`) be properly displayed in the tutorials (so we can see the benefit of the weighting process). This included fixing the simulation code in the target.
 - Fix `Sample.outcomes().summary()` so it will output the ci columns without truncating them.
 
 ### Documentation

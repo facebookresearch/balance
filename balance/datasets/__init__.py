@@ -39,6 +39,21 @@ def load_sim_data(
         Tuple[pd.DataFrame, pd.DataFrame]: Two DataFrames containing simulated data for the target and sample of interest.
     """
 
+    def _create_outcome_happiness(df, n):
+        # females are happier
+        # older people are happier
+        # people with higher income are happier
+        out = (
+            np.random.normal(40, 10, size=n)
+            + np.where(df.gender == "Female", 1, 0) * np.random.normal(20, 1, size=n)
+            + np.where(df.age_group == "35-44", 1, 0) * np.random.normal(5, 1, size=n)
+            + np.where(df.age_group == "45+", 1, 0) * np.random.normal(20, 1, size=n)
+            + np.random.normal((np.random.normal(3, 2, size=n) ** 2) / 20, 1, size=n)
+        )
+        # Truncate for max to be 100
+        out = np.where(out < 100, out, 100)
+        return out
+
     if version == "01":
         np.random.seed(2022 - 11 - 8)  # for reproducibility
         n_target = 10000
@@ -59,12 +74,11 @@ def load_sim_data(
                 # "weight": np.random.uniform(size = n_target) + 0.5,
             }
         )
-        target_df["happiness"] = np.random.normal(50, 10, size=n_target) + np.where(
-            target_df.gender == "Female", 1, 0
-        ) * np.random.normal(5, 2, size=n_target)
+        target_df["happiness"] = _create_outcome_happiness(target_df, n_target)
         # We also have missing values in gender
         target_df.loc[3:900, "gender"] = np.nan
 
+        np.random.seed(2023 - 5 - 14)  # for reproducibility
         n_sample = 1000
         sample_df = pd.DataFrame(
             {
@@ -83,25 +97,7 @@ def load_sim_data(
                 # "weight": np.random.uniform(size = n_sample) + 0.5,
             }
         )
-        # females are happier
-        # older people are happier
-        # people with higher income are happeir
-        sample_df["happiness"] = (
-            np.random.normal(40, 10, size=n_sample)
-            + np.where(sample_df.gender == "Female", 1, 0)
-            * np.random.normal(20, 1, size=n_sample)
-            + np.where(sample_df.age_group == "35-44", 1, 0)
-            * np.random.normal(5, 1, size=n_sample)
-            + np.where(sample_df.age_group == "45+", 1, 0)
-            * np.random.normal(20, 1, size=n_sample)
-            + np.random.normal(
-                (np.random.normal(3, 2, size=n_sample) ** 2) / 20, 1, size=n_sample
-            )
-        )
-        # Truncate for max to be 100
-        sample_df["happiness"] = np.where(
-            sample_df["happiness"] < 100, sample_df["happiness"], 100
-        )
+        sample_df["happiness"] = _create_outcome_happiness(sample_df, n_sample)
 
         # We also have missing values in gender
         sample_df.loc[3:90, "gender"] = np.nan

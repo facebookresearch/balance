@@ -17,7 +17,7 @@ import pandas as pd
 
 from balance.sample_class import Sample
 
-# TODO: move s3 and other definitions of sample outsie of classes (from example from TestSamplePrivateAPI)
+# TODO: move s3 and other definitions of sample outside of classes (from example from TestSamplePrivateAPI)
 
 s1 = Sample.from_frame(
     pd.DataFrame(
@@ -178,7 +178,7 @@ class TestSample(
         # TODO: add tests for other types of conversions
 
         # Test use_deepcopy
-        # after we invoked Sample.from_frame with use_deepcopy=False, we expact the dtype of id to be np.object_
+        # after we invoked Sample.from_frame with use_deepcopy=False, we expect the dtype of id to be np.object_
         #   in BOTH the df inside sample and the ORIGINAL df:
         df = pd.DataFrame({"id": (1, 2), "a": (1, 2)})
         self.assertEqual(df.id.dtype.type, np.int64)
@@ -186,7 +186,7 @@ class TestSample(
             Sample.from_frame(df, use_deepcopy=False).df.id.dtype.type, np.object_
         )
         self.assertEqual(df.id.dtype.type, np.object_)
-        # after we invoked Sample.from_frame with use_deepcopy=True (default), we expact the dtype of id to be object_
+        # after we invoked Sample.from_frame with use_deepcopy=True (default), we expect the dtype of id to be object_
         #   in the df inside sample, but id in the ORIGINAL df to remain int64:
         df = pd.DataFrame({"id": (1, 2), "a": (1, 2)})
         self.assertEqual(df.id.dtype.type, np.int64)
@@ -365,7 +365,7 @@ class TestSample_base_and_adjust_methods(
     def test_Sample_set_unadjusted(self):
         s5 = s1.set_unadjusted(s2)
         self.assertTrue(s5._links["unadjusted"] is s2)
-        # test exceptions when there is no asecond sample
+        # test exceptions when there is no a second sample
         with self.assertRaisesRegex(
             TypeError,
             "set_unadjusted must be called with second_sample argument of type Sample",
@@ -449,7 +449,7 @@ class TestSample_metrics_methods(
         s3_null = s1.adjust(s2, method="null")
         self.assertEqual(s3_null.design_effect_prop(), 0.0)
 
-        # tetst exceptions when there is no adjusted
+        # test exceptions when there is no adjusted
         with self.assertRaisesRegex(
             ValueError,
             "This is not an adjusted Sample. Use sample.adjust to adjust the sample to target",
@@ -481,7 +481,7 @@ class TestSample_metrics_methods(
             s3_null.outcome_sd_prop(), pd.Series((0.0, 0.0), index=["o1", "o2"])
         )
 
-        # tetst exceptions when there is no adjusted
+        # test exceptions when there is no adjusted
         with self.assertRaisesRegex(
             ValueError,
             "This Sample does not have outcome columns specified",
@@ -507,7 +507,7 @@ class TestSample_metrics_methods(
         a_with_outcome = Sample.from_frame(d, outcome_columns=["k"])
         a_with_outcome_adjusted = a_with_outcome.adjust(t, max_de=1.5)
 
-        # verifying this does what we expact it does:
+        # verifying this does what we expect it does:
         self.assertEqual(
             round(a_with_outcome_adjusted.outcome_variance_ratio()[0], 5),
             round(
@@ -867,7 +867,7 @@ class TestSample_metrics_methods(
         a_with_outcome = Sample.from_frame(d, outcome_columns=["k"])
         a_with_outcome_adjusted = a_with_outcome.adjust(t, max_de=1.5)
 
-        # We can also filter using an outcome variable (althought this would NOT filter on target)
+        # We can also filter using an outcome variable (although this would NOT filter on target)
         # a proper logger warning is issued
         self.assertEqual(
             a_with_outcome_adjusted.keep_only_some_rows_columns(
@@ -887,7 +887,7 @@ class TestSample_metrics_methods(
 
         # TODO (p2): possibly add checks for columns_to_keep = None while doing something with rows_to_keep
 
-        # test if only some columns exsists
+        # test if only some columns exists
         self.assertWarnsRegexp(
             "Note that not all columns_to_keep are in Sample",
             s1.keep_only_some_rows_columns,
@@ -987,7 +987,7 @@ class TestSamplePrivateAPI(balance.testutil.BalanceTestCase):
         )  # Does not raise an error
 
     def test_Sample__no_target_error(self):
-        # test exception when the is no taret
+        # test exception when the is no target
         with self.assertRaisesRegex(
             ValueError,
             "This Sample does not have a target set. Use sample.set_target to add target",
