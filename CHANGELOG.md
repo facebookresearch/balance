@@ -1,5 +1,8 @@
 0.9.0 (2023-05-21)
 ==================
+## News
+- Remove support for python 3.11 due to new test failures. This will be the case until glmnet will be replaced by sklearn. hopefully before end of year.
+
 ## New Features
 - All plotly functions: add kwargs to pass arguments to update_layout in all plotly figures. This is useful to control width and height of the plot. For example, when wanting to save a high resolution of the image.
 - Add a `summary` methods to `BalanceWeightsDF` (i.e.: `Sample.weights().summary()`) to easily get access to summary statistics of the survey weights. Also, it means that `Sample.diagnostics()` now uses this new summary method in its internal implementation.
