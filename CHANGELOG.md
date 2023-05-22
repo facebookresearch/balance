@@ -1,5 +1,8 @@
-0.9.0 (2023-05-21)
+0.9.0 (2023-05-22)
 ==================
+## News
+- Remove support for python 3.11 due to new test failures. This will be the case until glmnet will be replaced by sklearn. hopefully before end of year.
+
 ## New Features
 - All plotly functions: add kwargs to pass arguments to update_layout in all plotly figures. This is useful to control width and height of the plot. For example, when wanting to save a high resolution of the image.
 - Add a `summary` methods to `BalanceWeightsDF` (i.e.: `Sample.weights().summary()`) to easily get access to summary statistics of the survey weights. Also, it means that `Sample.diagnostics()` now uses this new summary method in its internal implementation.
@@ -15,6 +18,9 @@
 - Fix text based on updated from version 0.7.0 and 0.8.0.
     - https://import-balance.org/docs/docs/general_framework/adjusting_sample_to_population/
 - Fix tutorials to include the outcome in the target.
+
+## Contributors
+@talgalili, @SarigT, @ahakso
 
 
 0.8.0 (2023-04-26)
@@ -32,6 +38,9 @@
 - New notebook (in the tutorial section):
     - [**quickstart_rake**](https://import-balance.org/docs/tutorials/quickstart_rake/) - like the [**quickstart**](https://import-balance.org/docs/tutorials/quickstart/) tutorial, but shows how to use the rake (raking) algorithm and compares the results to IPW (logistic regression with LASSO).
 
+## Contributors
+@talgalili, @SarigT
+
 
 0.7.0 (2023-04-10)
 ==================
@@ -48,6 +57,9 @@
 ## Misc
 - All plotting functions moved internally to expect weight column to be called `weight`, instead of `weights`.
 - All adjust (ipw, cbps, poststratify, null) functions now export a dict with a key called `weight` instead of `weights`.
+
+## Contributors
+@talgalili, @SarigT
 
 
 0.6.0 (2023-04-05)
@@ -76,6 +88,9 @@
         - The return type is now a list (and not a Tuple)
         - The order of the returned list is based on the variables argument. If it is not supplied, it is based on column names in the DataFrames. The df_for_var_order arg controls which df to use.
 
+## Contributors
+@talgalili, @SarigT
+
 
 0.5.0 (2023-03-06)
 ==================
@@ -87,6 +102,9 @@
 ## Documentation
 - New notebook (in the tutorial section):
     - Comparing results of fitting CBPS between R's `CBPS` package and Python's `balance` package (using simulated data). [link](https://import-balance.org/docs/tutorials/comparing_cbps_in_r_vs_python_using_sim_data/)
+
+## Contributors
+@stevemandala, @talgalili, @SarigT
 
 
 0.4.0 (2023-02-08)
@@ -106,6 +124,9 @@
 - Fix pandas warning: SettingWithCopyWarning in from_frame (and other places in sample_class.py)
 - sample.from_frame has a new argument `use_deepcopy` to decide if changes made to the df inside the sample object would also change the original df that was provided to the sample object. The default is now set to `True` since it's more likely that we'd like to keep the changes inside the sample object to the df contained in it, and not have them spill into the original df.
 
+## Contributors
+@SarigT, @talgalili
+
 
 0.3.1 (2023-02-01)
 ==================
@@ -114,6 +135,9 @@
 
 ## Documentation
 - Added ISSUE_TEMPLATE
+
+## Contributors
+@talgalili, @stevemandala, @SarigT
 
 
 0.3.0 (2023-01-30)
@@ -128,6 +152,9 @@
 ## Documentation
 - Added `session_info.show()` outputs to the end of the three tutorials (at: https://import-balance.org/docs/tutorials/)
 - Misc updates to the README.
+
+## Contributors
+@stevemandala, @SarigT, @talgalili
 
 
 0.2.0 (2023-01-19)
@@ -167,8 +194,14 @@
 - Added automated Github Action package builds & deployment to PyPi on release.
   - See [release.yml](https://github.com/facebookresearch/balance/blob/main/.github/workflows/release.yml)
 
+## Contributors
+@stevemandala, @SarigT, @talgalili
+
 
 0.1.0 (2022-11-20)
 ==================
 ## Summary
 - balance released to the world!
+
+## Contributors
+@SarigT, @talgalili, @stevemandala
