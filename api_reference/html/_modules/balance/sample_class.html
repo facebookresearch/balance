@@ -239,7 +239,7 @@
             <span class="c1">#       Furthermore, other functions in the package don&#39;t handle pandas Integer objects well, so</span>
             <span class="c1">#       they must be converted to numpy integers (if they have no missing values).</span>
             <span class="c1">#       But since we can&#39;t be sure that none of the various objects with the same column will not have NAs,</span>
-            <span class="c1">#       we just convert them all to np.float (either 32 or 64).</span>
+            <span class="c1">#       we just convert them all to float (either 32 or 64).</span>
             <span class="c1">#       For more details, see: https://stackoverflow.com/a/53853351</span>
             <span class="c1"># This line is after the id_column is set, so to make sure that the conversion happens after it is stored as a string.</span>
             <span class="c1"># Move from Int64Dtype() to dtype(&#39;int64&#39;):</span>
