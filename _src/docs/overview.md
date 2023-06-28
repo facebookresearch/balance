@@ -213,6 +213,11 @@ For diagnostics the main tools (comparing before, after applying weights, and th
 
 *You can read more on evaluation of the post-adjusted data in the [Evaluating and using the adjustment weights](https://import-balance.org/docs/docs/general_framework/evaluation_of_results/) page.*
 
+
+## Other resources
+* Presentation: ["Balancing biased data samples with the 'balance' Python package"](https://github.com/facebookresearch/balance/blob/main/website/static/docs/Balancing_biased_data_samples_with_the_balance_Python_package_-_ISA_conference_2023-06-01.pdf) - presented in the Israeli Statistical Association (ISA) conference on June 1st 2023.
+
+
 # More details
 
 ## Getting help, submitting bug reports and contributing code
