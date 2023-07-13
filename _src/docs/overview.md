@@ -25,6 +25,8 @@ Under the missing at random assumption ([MAR](https://en.wikipedia.org/wiki/Miss
 
 The package is intended for researchers who are interested in balancing biased samples, such as the ones coming from surveys, using a Python package. This need may arise by survey methodologists, demographers, UX researchers, market researchers, and generally data scientists, statisticians, and machine learners.
 
+More about the methodological background can be found in [Sarig, T., Galili, T., & Eilat, R. (2023). balance – a Python package for balancing biased data samples](https://arxiv.org/abs/2307.06024).
+
 
 # Installation
 
@@ -230,8 +232,18 @@ You are welcome to:
 * Send a pull request on: https://github.com/facebookresearch/balance. See the [CONTRIBUTING](https://github.com/facebookresearch/balance/blob/main/CONTRIBUTING.md) file for how to help out. And our [CODE OF CONDUCT](https://github.com/facebookresearch/balance/blob/main/LICENSE-DOCUMENTATION) for our expectations from contributors.
 
 ## Citing *balance*
+Sarig, T., Galili, T., & Eilat, R. (2023). balance – a Python package for balancing biased data samples. [https://arxiv.org/abs/2307.06024](https://arxiv.org/abs/2307.06024)
 
-**TODO**: TBD.
+
+BibTeX:
+@misc{sarig2023balance,
+      title={balance - a Python package for balancing biased data samples},
+      author={Tal Sarig and Tal Galili and Roee Eilat},
+      year={2023},
+      eprint={2307.06024},
+      archivePrefix={arXiv},
+      primaryClass={stat.CO}
+}
 
 ## License
 The *balance* package is licensed under the [GPLv2 license](https://github.com/facebookresearch/balance/blob/main/LICENSE), and all the documentation on the site is under [CC-BY](https://github.com/facebookresearch/balance/blob/main/LICENSE-DOCUMENTATION).
