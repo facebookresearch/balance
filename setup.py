@@ -22,7 +22,7 @@ REQUIRES = [
     "ipython",
     "scipy<=1.9.2",
     "patsy",
-    "seaborn<=0.11.1",
+    "seaborn<=0.13",
     "plotly",
     "matplotlib",
     "statsmodels",
