@@ -1,3 +1,14 @@
+0.9.1 (2023-07-30)
+==================
+## Bug Fixes
+- Fix E721 flake8 issue (see: https://github.com/facebookresearch/balance/actions/runs/5704381365/job/15457952704)
+- Remove support for python 3.11 from release.yml
+
+## Documentation
+- Added links to presentation given at ISA 2023.
+- Fixed misc typos.
+
+
 0.9.0 (2023-05-22)
 ==================
 ## News

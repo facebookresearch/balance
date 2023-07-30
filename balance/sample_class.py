@@ -419,7 +419,7 @@ class Sample:
             target = self._links["target"]
 
         new_sample = deepcopy(self)
-        if type(method) == str:
+        if isinstance(method, str):
             adjustment_function = balance_adjustment._find_adjustment_method(method)
         elif callable(method):
             adjustment_function = method

@@ -49,7 +49,7 @@ def _check_weighting_methods_input(
         ValueError: {object_name}_weights must be the same length as {object_name}_df
         ValueError: {object_name}_df index must be the same as {object_name}_weights index
     """
-    if type(df) != pd.DataFrame:
+    if not isinstance(df, pd.DataFrame):
         raise TypeError(f"{object_name}_df must be a pandas DataFrame, is {type(df)}")
     if not isinstance(weights, pd.Series):
         raise TypeError(
