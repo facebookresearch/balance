@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>balance.stats_and_plots.weighted_comparisons_stats &#8212; balance  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=2a422f08" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=b3ba4146"></script>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=eeb27264" />
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -151,7 +151,9 @@
 
 
 <span class="c1"># TODO: add memoization</span>
-<div class="viewcode-block" id="asmd"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_stats.html#balance.stats_and_plots.weighted_comparisons_stats.asmd">[docs]</a><span class="k">def</span> <span class="nf">asmd</span><span class="p">(</span>
+<div class="viewcode-block" id="asmd">
+<a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_stats.html#balance.stats_and_plots.weighted_comparisons_stats.asmd">[docs]</a>
+<span class="k">def</span> <span class="nf">asmd</span><span class="p">(</span>
     <span class="n">sample_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">target_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">sample_weights</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
@@ -341,6 +343,7 @@
     <span class="k">return</span> <span class="n">out</span></div>
 
 
+
 <span class="k">def</span> <span class="nf">_aggregate_asmd_by_main_covar</span><span class="p">(</span><span class="n">asmd_series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This function helps to aggregate the ASMD, which is broken down per level for a category variable, into one value per covariate.</span>
@@ -397,7 +400,9 @@
 <span class="c1">#           before and after are supplied directly.</span>
 <span class="c1">#           In the future, we can either omit sample_after, or change the names to</span>
 <span class="c1">#           reflect a support a comparison of two panels to some target populations.</span>
-<div class="viewcode-block" id="asmd_improvement"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_stats.html#balance.stats_and_plots.weighted_comparisons_stats.asmd_improvement">[docs]</a><span class="k">def</span> <span class="nf">asmd_improvement</span><span class="p">(</span>
+<div class="viewcode-block" id="asmd_improvement">
+<a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_stats.html#balance.stats_and_plots.weighted_comparisons_stats.asmd_improvement">[docs]</a>
+<span class="k">def</span> <span class="nf">asmd_improvement</span><span class="p">(</span>
     <span class="n">sample_before</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">sample_after</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">target</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
@@ -444,7 +449,10 @@
     <span class="k">return</span> <span class="p">(</span><span class="n">asmd_mean_before</span> <span class="o">-</span> <span class="n">asmd_mean_after</span><span class="p">)</span> <span class="o">/</span> <span class="n">asmd_mean_before</span></div>
 
 
-<div class="viewcode-block" id="outcome_variance_ratio"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_stats.html#balance.stats_and_plots.weighted_comparisons_stats.outcome_variance_ratio">[docs]</a><span class="k">def</span> <span class="nf">outcome_variance_ratio</span><span class="p">(</span>
+
+<div class="viewcode-block" id="outcome_variance_ratio">
+<a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_stats.html#balance.stats_and_plots.weighted_comparisons_stats.outcome_variance_ratio">[docs]</a>
+<span class="k">def</span> <span class="nf">outcome_variance_ratio</span><span class="p">(</span>
     <span class="n">df_numerator</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">df_denominator</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">w_numerator</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
@@ -479,6 +487,7 @@
     <span class="n">numerator_w_var</span> <span class="o">=</span> <span class="n">weighted_var</span><span class="p">(</span><span class="n">df_numerator</span><span class="p">,</span> <span class="n">w_numerator</span><span class="p">)</span>
     <span class="n">denominator_w_var</span> <span class="o">=</span> <span class="n">weighted_var</span><span class="p">(</span><span class="n">df_denominator</span><span class="p">,</span> <span class="n">w_denominator</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">numerator_w_var</span> <span class="o">/</span> <span class="n">denominator_w_var</span></div>
+
 </pre></div>
 
             <div class="clearer"></div>

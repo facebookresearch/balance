@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>balance.balancedf_class &#8212; balance  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=2a422f08" />
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=b3ba4146"></script>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=eeb27264" />
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head><body>
@@ -64,7 +64,9 @@
 <span class="n">logger</span><span class="p">:</span> <span class="s2">&quot;logging.Logger&quot;</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="BalanceDF"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF">[docs]</a><span class="k">class</span> <span class="nc">BalanceDF</span><span class="p">:</span>
+<div class="viewcode-block" id="BalanceDF">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF">[docs]</a>
+<span class="k">class</span> <span class="nc">BalanceDF</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Wrapper class around a Sample which provides additional balance-specific functionality</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -413,7 +415,9 @@
     <span class="c1">#       which object is stored in _model_matrix (and to run it over)</span>
     <span class="c1">#       Also, the output may sometimes no longer only be pd.DataFrame</span>
     <span class="c1">#       so such work will require update the type hinting here.</span>
-<div class="viewcode-block" id="BalanceDF.model_matrix"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.model_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">model_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<div class="viewcode-block" id="BalanceDF.model_matrix">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.model_matrix">[docs]</a>
+    <span class="k">def</span> <span class="nf">model_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a model_matrix version of the df inside the BalanceDF object using balance_util.model_matrix</span>
 
 <span class="sd">        This can be used to turn all character columns into a one hot encoding columns.</span>
@@ -466,6 +470,7 @@
             <span class="p">)[</span><span class="s2">&quot;model_matrix&quot;</span><span class="p">]</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model_matrix</span></div>
 
+
     <span class="k">def</span> <span class="nf">_descriptive_stats</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
         <span class="n">stat</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">,</span> <span class="s2">&quot;var_of_mean&quot;</span><span class="p">,</span> <span class="s2">&quot;ci_of_mean&quot;</span><span class="p">,</span> <span class="s2">&quot;...&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
@@ -511,7 +516,9 @@
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">wdf</span>
 
-<div class="viewcode-block" id="BalanceDF.to_download"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.to_download">[docs]</a>    <span class="k">def</span> <span class="nf">to_download</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span> <span class="n">tempdir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FileLink</span><span class="p">:</span>
+<div class="viewcode-block" id="BalanceDF.to_download">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.to_download">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_download</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span> <span class="n">tempdir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FileLink</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a downloadable link of the DataFrame, with ids, of the BalanceDF object.</span>
 
 <span class="sd">        File name starts with tmp_balance_out_, and some random file name (using :func:`uuid.uuid4`).</span>
@@ -524,6 +531,7 @@
 <span class="sd">            FileLink: Embedding a local file link in an IPython session, based on path. Using :func:FileLink.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">_to_download</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df_with_ids</span><span class="p">(),</span> <span class="n">tempdir</span><span class="p">)</span></div>
+
 
     <span class="c1">#  Public API</span>
     <span class="c1">#  All these functions operate on multiple samples</span>
@@ -542,7 +550,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__df</span>
 
-<div class="viewcode-block" id="BalanceDF.names"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.names">[docs]</a>    <span class="k">def</span> <span class="nf">names</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+<div class="viewcode-block" id="BalanceDF.names">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.names">[docs]</a>
+    <span class="k">def</span> <span class="nf">names</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the column names of the DataFrame (df) inside a BalanceDF object.</span>
 
 <span class="sd">        Args:</span>
@@ -579,7 +589,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="BalanceDF.plot"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span>
+
+<div class="viewcode-block" id="BalanceDF.plot">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.plot">[docs]</a>
+    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span> <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Plots the variables in the df of the BalanceDF object.</span>
@@ -669,9 +682,12 @@
 
         <span class="k">return</span> <span class="n">weighted_comparisons_plots</span><span class="o">.</span><span class="n">plot_dist</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">names</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
+
     <span class="c1">#  NOTE: The following functions use the _call_on_linked method</span>
     <span class="c1">#        to return information about the characteristics of linked Samples</span>
-<div class="viewcode-block" id="BalanceDF.mean"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.mean">[docs]</a>    <span class="k">def</span> <span class="nf">mean</span><span class="p">(</span>
+<div class="viewcode-block" id="BalanceDF.mean">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.mean">[docs]</a>
+    <span class="k">def</span> <span class="nf">mean</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span> <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculates a weighted mean on the df of the BalanceDF object.</span>
@@ -739,7 +755,10 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_descriptive_stats</span><span class="p">(</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="BalanceDF.std"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.std">[docs]</a>    <span class="k">def</span> <span class="nf">std</span><span class="p">(</span>
+
+<div class="viewcode-block" id="BalanceDF.std">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.std">[docs]</a>
+    <span class="k">def</span> <span class="nf">std</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span> <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculates a weighted std on the df of the BalanceDF object.</span>
@@ -807,7 +826,10 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_descriptive_stats</span><span class="p">(</span><span class="s2">&quot;std&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="BalanceDF.var_of_mean"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.var_of_mean">[docs]</a>    <span class="k">def</span> <span class="nf">var_of_mean</span><span class="p">(</span>
+
+<div class="viewcode-block" id="BalanceDF.var_of_mean">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.var_of_mean">[docs]</a>
+    <span class="k">def</span> <span class="nf">var_of_mean</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span> <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculates a variance of the weighted mean on the df of the BalanceDF object.</span>
@@ -879,7 +901,10 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_descriptive_stats</span><span class="p">(</span><span class="s2">&quot;var_of_mean&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="BalanceDF.ci_of_mean"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.ci_of_mean">[docs]</a>    <span class="k">def</span> <span class="nf">ci_of_mean</span><span class="p">(</span>
+
+<div class="viewcode-block" id="BalanceDF.ci_of_mean">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.ci_of_mean">[docs]</a>
+    <span class="k">def</span> <span class="nf">ci_of_mean</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span> <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculates a confidence intervals of the weighted mean on the df of the BalanceDF object.</span>
@@ -962,7 +987,10 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_descriptive_stats</span><span class="p">(</span><span class="s2">&quot;ci_of_mean&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="BalanceDF.mean_with_ci"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.mean_with_ci">[docs]</a>    <span class="k">def</span> <span class="nf">mean_with_ci</span><span class="p">(</span>
+
+<div class="viewcode-block" id="BalanceDF.mean_with_ci">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.mean_with_ci">[docs]</a>
+    <span class="k">def</span> <span class="nf">mean_with_ci</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span> <span class="n">round_ndigits</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1025,8 +1053,11 @@
         <span class="n">the_cis</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">the_cis</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;_ci&quot;</span>
         <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">the_means</span><span class="p">,</span> <span class="n">the_cis</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
 
+
     <span class="c1"># NOTE: Summary could return also an str in case it is overridden in other children&#39;s methods.</span>
-<div class="viewcode-block" id="BalanceDF.summary"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.summary">[docs]</a>    <span class="k">def</span> <span class="nf">summary</span><span class="p">(</span>
+<div class="viewcode-block" id="BalanceDF.summary">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.summary">[docs]</a>
+    <span class="k">def</span> <span class="nf">summary</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span> <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1051,6 +1082,7 @@
         <span class="c1">#       Or, update _call_on_linked to deal with non functions, get &#39;df&#39; from it, and apply the needed functions on it.</span>
         <span class="c1"># TODO add outcome variance ratio</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_with_ci</span><span class="p">(</span><span class="n">on_linked_samples</span><span class="o">=</span><span class="n">on_linked_samples</span><span class="p">)</span></div>
+
 
     <span class="k">def</span> <span class="nf">_get_df_and_weights</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
@@ -1132,7 +1164,9 @@
             <span class="n">aggregate_by_main_covar</span><span class="o">=</span><span class="n">aggregate_by_main_covar</span><span class="p">,</span>
         <span class="p">)</span>
 
-<div class="viewcode-block" id="BalanceDF.asmd"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.asmd">[docs]</a>    <span class="k">def</span> <span class="nf">asmd</span><span class="p">(</span>
+<div class="viewcode-block" id="BalanceDF.asmd">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.asmd">[docs]</a>
+    <span class="k">def</span> <span class="nf">asmd</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
         <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">target</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;BalanceDF&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1260,7 +1294,10 @@
             <span class="p">)</span>
             <span class="k">return</span> <span class="n">out</span></div>
 
-<div class="viewcode-block" id="BalanceDF.asmd_improvement"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.asmd_improvement">[docs]</a>    <span class="k">def</span> <span class="nf">asmd_improvement</span><span class="p">(</span>
+
+<div class="viewcode-block" id="BalanceDF.asmd_improvement">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.asmd_improvement">[docs]</a>
+    <span class="k">def</span> <span class="nf">asmd_improvement</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
         <span class="n">unadjusted</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;BalanceDF&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">target</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;BalanceDF&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1367,6 +1404,7 @@
             <span class="n">target_weights</span><span class="o">=</span><span class="n">target_weights</span><span class="p">,</span>
         <span class="p">)</span></div>
 
+
     <span class="c1"># TODO: implement the following methods (probably first in balance.stats_and_plots.weighted_comparisons_stats)</span>
     <span class="c1"># def emd(self):</span>
     <span class="c1">#     return NotImplementedError()</span>
@@ -1388,7 +1426,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="o">.</span><span class="n">id_column</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
-<div class="viewcode-block" id="BalanceDF.to_csv"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.to_csv">[docs]</a>    <span class="k">def</span> <span class="nf">to_csv</span><span class="p">(</span>
+<div class="viewcode-block" id="BalanceDF.to_csv">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.to_csv">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_csv</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
         <span class="n">path_or_buf</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePathOrBuffer</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">*</span><span class="n">args</span><span class="p">,</span>
@@ -1409,10 +1449,14 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="s2">&quot;index&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
             <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;index&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df_with_ids</span><span class="p">()</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">path_or_buf</span><span class="o">=</span><span class="n">path_or_buf</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df_with_ids</span><span class="p">()</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">path_or_buf</span><span class="o">=</span><span class="n">path_or_buf</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="BalanceOutcomesDF"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceOutcomesDF">[docs]</a><span class="k">class</span> <span class="nc">BalanceOutcomesDF</span><span class="p">(</span><span class="n">BalanceDF</span><span class="p">):</span>
+
+<div class="viewcode-block" id="BalanceOutcomesDF">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceOutcomesDF">[docs]</a>
+<span class="k">class</span> <span class="nc">BalanceOutcomesDF</span><span class="p">(</span><span class="n">BalanceDF</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceOutcomesDF&quot;</span><span class="p">,</span> <span class="n">sample</span><span class="p">:</span> <span class="n">Sample</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A factory function to create BalanceOutcomesDF</span>
 
@@ -1428,7 +1472,9 @@
 
     <span class="c1"># TODO: add the `relative_to` argument (with options &#39;self&#39; and &#39;target&#39;)</span>
     <span class="c1">#       this will also require to update _relative_response_rates a bit.</span>
-<div class="viewcode-block" id="BalanceOutcomesDF.relative_response_rates"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceOutcomesDF.relative_response_rates">[docs]</a>    <span class="k">def</span> <span class="nf">relative_response_rates</span><span class="p">(</span>
+<div class="viewcode-block" id="BalanceOutcomesDF.relative_response_rates">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceOutcomesDF.relative_response_rates">[docs]</a>
+    <span class="k">def</span> <span class="nf">relative_response_rates</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceOutcomesDF&quot;</span><span class="p">,</span>
         <span class="n">target</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">per_column</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -1529,7 +1575,10 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="n">df_target</span><span class="p">,</span> <span class="n">per_column</span><span class="o">=</span><span class="n">per_column</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="BalanceOutcomesDF.target_response_rates"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceOutcomesDF.target_response_rates">[docs]</a>    <span class="k">def</span> <span class="nf">target_response_rates</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceOutcomesDF&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
+
+<div class="viewcode-block" id="BalanceOutcomesDF.target_response_rates">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceOutcomesDF.target_response_rates">[docs]</a>
+    <span class="k">def</span> <span class="nf">target_response_rates</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceOutcomesDF&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculates relative_response_rates for the target in a Sample object.</span>
 
 <span class="sd">        See :func:`general_stats.relative_response_rates`.</span>
@@ -1581,10 +1630,13 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">general_stats</span><span class="o">.</span><span class="n">relative_response_rates</span><span class="p">(</span><span class="n">self_target</span><span class="o">.</span><span class="n">df</span><span class="p">)</span></div>
 
+
     <span class="c1"># TODO: it&#39;s a question if summary should produce a printable output or a DataFrame.</span>
     <span class="c1">#       The BalanceDF.summary method only returns a DataFrame. So it&#39;s a question</span>
     <span class="c1">#       what is the best way to structure this more generally.</span>
-<div class="viewcode-block" id="BalanceOutcomesDF.summary"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceOutcomesDF.summary">[docs]</a>    <span class="k">def</span> <span class="nf">summary</span><span class="p">(</span>
+<div class="viewcode-block" id="BalanceOutcomesDF.summary">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceOutcomesDF.summary">[docs]</a>
+    <span class="k">def</span> <span class="nf">summary</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceOutcomesDF&quot;</span><span class="p">,</span> <span class="n">on_linked_samples</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Produces summary printable string of a BalanceOutcomesDF object.</span>
@@ -1691,10 +1743,14 @@
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">target_clause</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
         <span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">out</span></div></div>
+        <span class="k">return</span> <span class="n">out</span></div>
+</div>
 
 
-<div class="viewcode-block" id="BalanceCovarsDF"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceCovarsDF">[docs]</a><span class="k">class</span> <span class="nc">BalanceCovarsDF</span><span class="p">(</span><span class="n">BalanceDF</span><span class="p">):</span>
+
+<div class="viewcode-block" id="BalanceCovarsDF">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceCovarsDF">[docs]</a>
+<span class="k">class</span> <span class="nc">BalanceCovarsDF</span><span class="p">(</span><span class="n">BalanceDF</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceCovarsDF&quot;</span><span class="p">,</span> <span class="n">sample</span><span class="p">:</span> <span class="n">Sample</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A factory function to create BalanceCovarsDF</span>
 
@@ -1708,7 +1764,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">_covar_columns</span><span class="p">(),</span> <span class="n">sample</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;covars&quot;</span><span class="p">)</span>
 
-<div class="viewcode-block" id="BalanceCovarsDF.from_frame"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceCovarsDF.from_frame">[docs]</a>    <span class="k">def</span> <span class="nf">from_frame</span><span class="p">(</span>
+<div class="viewcode-block" id="BalanceCovarsDF.from_frame">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceCovarsDF.from_frame">[docs]</a>
+    <span class="k">def</span> <span class="nf">from_frame</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceCovarsDF&quot;</span><span class="p">,</span>
         <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
         <span class="n">weights</span><span class="o">=</span><span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">],</span>
@@ -1729,10 +1787,14 @@
         <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
             <span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">),</span> <span class="n">weights</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
         <span class="p">)</span>
-        <span class="k">return</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span></div></div>
+        <span class="k">return</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span></div>
+</div>
 
 
-<div class="viewcode-block" id="BalanceWeightsDF"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceWeightsDF">[docs]</a><span class="k">class</span> <span class="nc">BalanceWeightsDF</span><span class="p">(</span><span class="n">BalanceDF</span><span class="p">):</span>
+
+<div class="viewcode-block" id="BalanceWeightsDF">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceWeightsDF">[docs]</a>
+<span class="k">class</span> <span class="nc">BalanceWeightsDF</span><span class="p">(</span><span class="n">BalanceDF</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceWeightsDF&quot;</span><span class="p">,</span> <span class="n">sample</span><span class="p">:</span> <span class="n">Sample</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A factory function to create BalanceWeightsDF</span>
 
@@ -1747,7 +1809,9 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">to_frame</span><span class="p">(),</span> <span class="n">sample</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;weights&quot;</span><span class="p">)</span>
 
     <span class="c1"># TODO: maybe add better control if there are no weights for unadjusted or target (the current default shows them in the legend, but not in the figure)</span>
-<div class="viewcode-block" id="BalanceWeightsDF.plot"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceWeightsDF.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span>
+<div class="viewcode-block" id="BalanceWeightsDF.plot">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceWeightsDF.plot">[docs]</a>
+    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceWeightsDF&quot;</span><span class="p">,</span> <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Plots kde (kernal density estimation) of the weights in a BalanceWeightsDF object using seaborn (as default).</span>
@@ -1812,7 +1876,10 @@
         <span class="n">default_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">on_linked_samples</span><span class="o">=</span><span class="n">on_linked_samples</span><span class="p">,</span> <span class="o">**</span><span class="n">default_kwargs</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="BalanceWeightsDF.design_effect"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceWeightsDF.design_effect">[docs]</a>    <span class="k">def</span> <span class="nf">design_effect</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceWeightsDF&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+
+<div class="viewcode-block" id="BalanceWeightsDF.design_effect">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceWeightsDF.design_effect">[docs]</a>
+    <span class="k">def</span> <span class="nf">design_effect</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceWeightsDF&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculates Kish&#39;s design effect (deff) on the BalanceWeightsDF weights.</span>
 
 <span class="sd">        Extract the first column to get a pd.Series of the weights.</span>
@@ -1826,6 +1893,7 @@
 <span class="sd">            np.float64: Deff.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">weights_stats</span><span class="o">.</span><span class="n">design_effect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span></div>
+
 
     <span class="c1"># TODO: in the future, consider if this type of overriding is the best solution.</span>
     <span class="c1">#       to reconsider as part of a larger code refactoring.</span>
@@ -1841,7 +1909,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="kc">None</span>
 
-<div class="viewcode-block" id="BalanceWeightsDF.trim"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceWeightsDF.trim">[docs]</a>    <span class="k">def</span> <span class="nf">trim</span><span class="p">(</span>
+<div class="viewcode-block" id="BalanceWeightsDF.trim">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceWeightsDF.trim">[docs]</a>
+    <span class="k">def</span> <span class="nf">trim</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceWeightsDF&quot;</span><span class="p">,</span>
         <span class="n">ratio</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">percentile</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1870,7 +1940,10 @@
             <span class="p">)</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="BalanceWeightsDF.summary"><a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceWeightsDF.summary">[docs]</a>    <span class="k">def</span> <span class="nf">summary</span><span class="p">(</span>
+
+<div class="viewcode-block" id="BalanceWeightsDF.summary">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceWeightsDF.summary">[docs]</a>
+    <span class="k">def</span> <span class="nf">summary</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceWeightsDF&quot;</span><span class="p">,</span> <span class="n">on_linked_samples</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1996,7 +2069,9 @@
                 <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">weights_diag_var</span><span class="p">,</span>
                 <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="n">weights_diag_value</span><span class="p">,</span>
             <span class="p">}</span>
-        <span class="p">)</span></div></div>
+        <span class="p">)</span></div>
+</div>
+
 </pre></div>
 
             <div class="clearer"></div>

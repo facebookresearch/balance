@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>balance.testutil &#8212; balance  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=2a422f08" />
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=b3ba4146"></script>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=eeb27264" />
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head><body>
@@ -106,7 +106,9 @@
         <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span> <span class="o">=</span> <span class="n">original_out</span><span class="p">,</span> <span class="n">original_err</span>
 
 
-<div class="viewcode-block" id="BalanceTestCase"><a class="viewcode-back" href="../../balance.testutil.html#balance.testutil.BalanceTestCase">[docs]</a><span class="k">class</span> <span class="nc">BalanceTestCase</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="BalanceTestCase">
+<a class="viewcode-back" href="../../balance.testutil.html#balance.testutil.BalanceTestCase">[docs]</a>
+<span class="k">class</span> <span class="nc">BalanceTestCase</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
     <span class="c1"># Some Warns</span>
     <span class="k">def</span> <span class="nf">assertIfWarns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">callable</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertLogs</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="s2">&quot;NOTSET&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">cm</span><span class="p">:</span>
@@ -140,7 +142,9 @@
             <span class="p">)</span>
 
     <span class="c1"># Some Equal</span>
-<div class="viewcode-block" id="BalanceTestCase.assertEqual"><a class="viewcode-back" href="../../balance.testutil.html#balance.testutil.BalanceTestCase.assertEqual">[docs]</a>    <span class="k">def</span> <span class="nf">assertEqual</span><span class="p">(</span>
+<div class="viewcode-block" id="BalanceTestCase.assertEqual">
+<a class="viewcode-back" href="../../balance.testutil.html#balance.testutil.BalanceTestCase.assertEqual">[docs]</a>
+    <span class="k">def</span> <span class="nf">assertEqual</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">first</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
         <span class="n">second</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
@@ -176,6 +180,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">first</span><span class="p">,</span> <span class="n">second</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
+
     <span class="c1"># Some Prints</span>
     <span class="k">def</span> <span class="nf">assertPrints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">callable</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">with</span> <span class="n">_capture_output</span><span class="p">()</span> <span class="k">as</span> <span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">err</span><span class="p">):</span>
@@ -209,6 +214,7 @@
                 <span class="nb">any</span><span class="p">((</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">regexp</span><span class="p">,</span> <span class="n">o</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">err</span><span class="p">)),</span>
                 <span class="sa">f</span><span class="s2">&quot;Printed output </span><span class="si">{</span><span class="p">(</span><span class="n">out</span><span class="p">,</span><span class="w"> </span><span class="n">err</span><span class="p">)</span><span class="si">}</span><span class="s2"> matches regex </span><span class="si">{</span><span class="n">regexp</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">,</span>
             <span class="p">)</span></div>
+
 </pre></div>
 
             <div class="clearer"></div>

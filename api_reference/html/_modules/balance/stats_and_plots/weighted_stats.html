@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>balance.stats_and_plots.weighted_stats &#8212; balance  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=2a422f08" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=b3ba4146"></script>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=eeb27264" />
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -143,7 +143,9 @@
     <span class="k">return</span> <span class="n">v</span><span class="p">,</span> <span class="n">w</span>
 
 
-<div class="viewcode-block" id="weighted_mean"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.weighted_mean">[docs]</a><span class="k">def</span> <span class="nf">weighted_mean</span><span class="p">(</span>
+<div class="viewcode-block" id="weighted_mean">
+<a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.weighted_mean">[docs]</a>
+<span class="k">def</span> <span class="nf">weighted_mean</span><span class="p">(</span>
     <span class="n">v</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
         <span class="n">List</span><span class="p">,</span>
         <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
@@ -207,7 +209,10 @@
     <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="s2">&quot;index&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">w</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span></div>
 
 
-<div class="viewcode-block" id="var_of_weighted_mean"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.var_of_weighted_mean">[docs]</a><span class="k">def</span> <span class="nf">var_of_weighted_mean</span><span class="p">(</span>
+
+<div class="viewcode-block" id="var_of_weighted_mean">
+<a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.var_of_weighted_mean">[docs]</a>
+<span class="k">def</span> <span class="nf">var_of_weighted_mean</span><span class="p">(</span>
     <span class="n">v</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">],</span>
     <span class="n">w</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">inf_rm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -265,7 +270,10 @@
     <span class="k">return</span> <span class="n">sum_of_squared_weighted_diffs</span> <span class="o">/</span> <span class="n">squared_sum_of_w</span></div>
 
 
-<div class="viewcode-block" id="ci_of_weighted_mean"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.ci_of_weighted_mean">[docs]</a><span class="k">def</span> <span class="nf">ci_of_weighted_mean</span><span class="p">(</span>
+
+<div class="viewcode-block" id="ci_of_weighted_mean">
+<a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.ci_of_weighted_mean">[docs]</a>
+<span class="k">def</span> <span class="nf">ci_of_weighted_mean</span><span class="p">(</span>
     <span class="n">v</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
     <span class="n">w</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">conf_level</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.95</span><span class="p">,</span>
@@ -349,7 +357,10 @@
     <span class="k">return</span> <span class="n">ci</span></div>
 
 
-<div class="viewcode-block" id="weighted_var"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.weighted_var">[docs]</a><span class="k">def</span> <span class="nf">weighted_var</span><span class="p">(</span>
+
+<div class="viewcode-block" id="weighted_var">
+<a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.weighted_var">[docs]</a>
+<span class="k">def</span> <span class="nf">weighted_var</span><span class="p">(</span>
     <span class="n">v</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
         <span class="n">List</span><span class="p">,</span>
         <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
@@ -395,7 +406,10 @@
     <span class="k">return</span> <span class="p">(</span><span class="n">v1</span> <span class="o">/</span> <span class="p">(</span><span class="n">v1</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">v2</span><span class="p">))</span> <span class="o">*</span> <span class="p">((</span><span class="n">v</span> <span class="o">-</span> <span class="n">means</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="s2">&quot;index&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span></div>
 
 
-<div class="viewcode-block" id="weighted_sd"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.weighted_sd">[docs]</a><span class="k">def</span> <span class="nf">weighted_sd</span><span class="p">(</span>
+
+<div class="viewcode-block" id="weighted_sd">
+<a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.weighted_sd">[docs]</a>
+<span class="k">def</span> <span class="nf">weighted_sd</span><span class="p">(</span>
     <span class="n">v</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
         <span class="n">List</span><span class="p">,</span>
         <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
@@ -425,7 +439,10 @@
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">weighted_var</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">inf_rm</span><span class="p">))</span></div>
 
 
-<div class="viewcode-block" id="weighted_quantile"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.weighted_quantile">[docs]</a><span class="k">def</span> <span class="nf">weighted_quantile</span><span class="p">(</span>
+
+<div class="viewcode-block" id="weighted_quantile">
+<a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.weighted_quantile">[docs]</a>
+<span class="k">def</span> <span class="nf">weighted_quantile</span><span class="p">(</span>
     <span class="n">v</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
         <span class="n">List</span><span class="p">,</span>
         <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
@@ -475,7 +492,10 @@
     <span class="k">return</span> <span class="n">d</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">quantiles</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="descriptive_stats"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.descriptive_stats">[docs]</a><span class="k">def</span> <span class="nf">descriptive_stats</span><span class="p">(</span>
+
+<div class="viewcode-block" id="descriptive_stats">
+<a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.descriptive_stats">[docs]</a>
+<span class="k">def</span> <span class="nf">descriptive_stats</span><span class="p">(</span>
     <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">weights</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
         <span class="n">List</span><span class="p">,</span>
@@ -637,7 +657,10 @@
     <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">wdf</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="relative_frequency_table"><a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.relative_frequency_table">[docs]</a><span class="k">def</span> <span class="nf">relative_frequency_table</span><span class="p">(</span>
+
+<div class="viewcode-block" id="relative_frequency_table">
+<a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.relative_frequency_table">[docs]</a>
+<span class="k">def</span> <span class="nf">relative_frequency_table</span><span class="p">(</span>
     <span class="n">df</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">],</span>
     <span class="n">column</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">w</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -720,6 +743,7 @@
     <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">relative_frequency_table_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">(</span><span class="n">column</span><span class="p">,</span> <span class="s2">&quot;prop&quot;</span><span class="p">)]</span></div>
+
 </pre></div>
 
             <div class="clearer"></div>

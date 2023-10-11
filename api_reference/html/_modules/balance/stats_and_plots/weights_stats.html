@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>balance.stats_and_plots.weights_stats &#8212; balance  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=2a422f08" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=b3ba4146"></script>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=eeb27264" />
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -100,7 +100,9 @@
 
 <span class="c1"># TODO: if the input is pd.DataFrame than the output will be pd.Series.</span>
 <span class="c1">#       we could make the support of this more official in the future.</span>
-<div class="viewcode-block" id="design_effect"><a class="viewcode-back" href="../../../balance.stats_and_plots.weights_stats.html#balance.stats_and_plots.weights_stats.design_effect">[docs]</a><span class="k">def</span> <span class="nf">design_effect</span><span class="p">(</span><span class="n">w</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+<div class="viewcode-block" id="design_effect">
+<a class="viewcode-back" href="../../../balance.stats_and_plots.weights_stats.html#balance.stats_and_plots.weights_stats.design_effect">[docs]</a>
+<span class="k">def</span> <span class="nf">design_effect</span><span class="p">(</span><span class="n">w</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Kish&#39;s design effect measure.</span>
 
@@ -132,7 +134,10 @@
     <span class="k">return</span> <span class="p">(</span><span class="n">w</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">/</span> <span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="nonparametric_skew"><a class="viewcode-back" href="../../../balance.stats_and_plots.weights_stats.html#balance.stats_and_plots.weights_stats.nonparametric_skew">[docs]</a><span class="k">def</span> <span class="nf">nonparametric_skew</span><span class="p">(</span><span class="n">w</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+
+<div class="viewcode-block" id="nonparametric_skew">
+<a class="viewcode-back" href="../../../balance.stats_and_plots.weights_stats.html#balance.stats_and_plots.weights_stats.nonparametric_skew">[docs]</a>
+<span class="k">def</span> <span class="nf">nonparametric_skew</span><span class="p">(</span><span class="n">w</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
     <span class="c1"># TODO (p2): consider adding other skew measures (https://en.wikipedia.org/wiki/Skewness)</span>
     <span class="c1">#            look more in the literature (are there references for using this vs another, or none at all?)</span>
     <span class="c1">#            update the doc with insights, once done:</span>
@@ -169,7 +174,10 @@
     <span class="k">return</span> <span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">-</span> <span class="n">w</span><span class="o">.</span><span class="n">median</span><span class="p">())</span> <span class="o">/</span> <span class="n">w</span><span class="o">.</span><span class="n">std</span><span class="p">()</span></div>
 
 
-<div class="viewcode-block" id="prop_above_and_below"><a class="viewcode-back" href="../../../balance.stats_and_plots.weights_stats.html#balance.stats_and_plots.weights_stats.prop_above_and_below">[docs]</a><span class="k">def</span> <span class="nf">prop_above_and_below</span><span class="p">(</span>
+
+<div class="viewcode-block" id="prop_above_and_below">
+<a class="viewcode-back" href="../../../balance.stats_and_plots.weights_stats.html#balance.stats_and_plots.weights_stats.prop_above_and_below">[docs]</a>
+<span class="k">def</span> <span class="nf">prop_above_and_below</span><span class="p">(</span>
     <span class="n">w</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="n">below</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
         <span class="mi">1</span> <span class="o">/</span> <span class="mi">10</span><span class="p">,</span>
@@ -302,7 +310,10 @@
     <span class="k">return</span> <span class="n">out</span>  <span class="c1"># pyre-ignore[7]:  TODO: see if we can fix this pyre</span></div>
 
 
-<div class="viewcode-block" id="weighted_median_breakdown_point"><a class="viewcode-back" href="../../../balance.stats_and_plots.weights_stats.html#balance.stats_and_plots.weights_stats.weighted_median_breakdown_point">[docs]</a><span class="k">def</span> <span class="nf">weighted_median_breakdown_point</span><span class="p">(</span><span class="n">w</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+
+<div class="viewcode-block" id="weighted_median_breakdown_point">
+<a class="viewcode-back" href="../../../balance.stats_and_plots.weights_stats.html#balance.stats_and_plots.weights_stats.weighted_median_breakdown_point">[docs]</a>
+<span class="k">def</span> <span class="nf">weighted_median_breakdown_point</span><span class="p">(</span><span class="n">w</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
     <span class="c1"># TODO (p2): do we want to have weighted_quantile_breakdown_point</span>
     <span class="c1"># so to check for quantiles other than 50%?</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -352,6 +363,7 @@
     <span class="c1"># find minimal proportion of samples needed to reach 50%</span>
     <span class="c1"># the +1 trick is to deal with cases that 1 user has a weight that is larget then 50%.</span>
     <span class="k">return</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">n</span>  <span class="c1"># breakdown_point</span></div>
+
 </pre></div>
 
             <div class="clearer"></div>

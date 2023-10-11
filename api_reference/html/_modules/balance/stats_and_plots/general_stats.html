@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>balance.stats_and_plots.general_stats &#8212; balance  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=2a422f08" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=b3ba4146"></script>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=eeb27264" />
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -45,7 +45,9 @@
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 
-<div class="viewcode-block" id="relative_response_rates"><a class="viewcode-back" href="../../../balance.stats_and_plots.general_stats.html#balance.stats_and_plots.general_stats.relative_response_rates">[docs]</a><span class="k">def</span> <span class="nf">relative_response_rates</span><span class="p">(</span>
+<div class="viewcode-block" id="relative_response_rates">
+<a class="viewcode-back" href="../../../balance.stats_and_plots.general_stats.html#balance.stats_and_plots.general_stats.relative_response_rates">[docs]</a>
+<span class="k">def</span> <span class="nf">relative_response_rates</span><span class="p">(</span>
     <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">df_target</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">per_column</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -140,6 +142,7 @@
             <span class="s2">&quot;%&quot;</span><span class="p">:</span> <span class="mi">100</span> <span class="o">*</span> <span class="p">(</span><span class="n">df_n_notnull_rows</span> <span class="o">/</span> <span class="n">target_n_notnull_rows</span><span class="p">),</span>
         <span class="p">}</span>
     <span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span></div>
+
 </pre></div>
 
             <div class="clearer"></div>
