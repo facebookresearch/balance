@@ -691,9 +691,13 @@ def make_parser() -> ArgumentParser:
     return parser
 
 
-if __name__ == "__main__":
+def main() -> None:
     parser: ArgumentParser = make_parser()
     args: Namespace = parser.parse_args()
     cli = BalanceCLI(args)
     cli.update_attributes_for_main_used_by_adjust()
     cli.main()
+
+
+if __name__ == "__main__":
+    main()
