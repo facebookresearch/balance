@@ -7331,11 +7331,12 @@ a.anchor-link {
     if (!diagrams.length) {
       return;
     }
-    const mermaid = (await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.0/mermaid.esm.min.mjs")).default;
+    const mermaid = (await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.7.0/mermaid.esm.min.mjs")).default;
     const parser = new DOMParser();
 
     mermaid.initialize({
       maxTextSize: 100000,
+      maxEdges: 100000,
       startOnLoad: false,
       fontFamily: window
         .getComputedStyle(document.body)
@@ -7525,11 +7526,35 @@ a.anchor-link {
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2023-12-07 13:53:17,996) [__init__/&lt;module&gt; (line 52)]: Using balance version 0.9.1
-WARNING (2023-12-07 13:53:18,121) [util/guess_id_column (line 111)]: Guessed id column name id for the data
-WARNING (2023-12-07 13:53:18,127) [sample_class/from_frame (line 259)]: No weights passed. Adding a 'weight' column and setting all values to 1
-WARNING (2023-12-07 13:53:18,133) [util/guess_id_column (line 111)]: Guessed id column name id for the data
-WARNING (2023-12-07 13:53:18,144) [sample_class/from_frame (line 259)]: No weights passed. Adding a 'weight' column and setting all values to 1
+<pre>INFO (2024-01-24 10:48:45,923) [__init__/&lt;module&gt; (line 52)]: Using balance version 0.9.1
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>WARNING (2024-01-24 10:48:46,053) [util/guess_id_column (line 111)]: Guessed id column name id for the data
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>WARNING (2024-01-24 10:48:46,060) [sample_class/from_frame (line 259)]: No weights passed. Adding a 'weight' column and setting all values to 1
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>WARNING (2024-01-24 10:48:46,067) [util/guess_id_column (line 111)]: Guessed id column name id for the data
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>WARNING (2024-01-24 10:48:46,078) [sample_class/from_frame (line 259)]: No weights passed. Adding a 'weight' column and setting all values to 1
 </pre>
 </div>
 </div>
@@ -7607,20 +7632,98 @@ WARNING (2023-12-07 13:53:18,144) [sample_class/from_frame (line 259)]: No weigh
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2023-12-07 13:53:18,158) [ipw/ipw (line 428)]: Starting ipw function
-INFO (2023-12-07 13:53:18,160) [adjustment/apply_transformations (line 257)]: Adding the variables: []
-INFO (2023-12-07 13:53:18,161) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['gender', 'age_group', 'income']
-INFO (2023-12-07 13:53:18,169) [adjustment/apply_transformations (line 295)]: Final variables in output: ['gender', 'age_group', 'income']
-INFO (2023-12-07 13:53:18,176) [ipw/ipw (line 462)]: Building model matrix
-INFO (2023-12-07 13:53:18,250) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
-INFO (2023-12-07 13:53:18,250) [ipw/ipw (line 489)]: The number of columns in the model matrix: 16
-INFO (2023-12-07 13:53:18,251) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
-INFO (2023-12-07 13:53:18,257) [ipw/ipw (line 521)]: Fitting logistic model
-INFO (2023-12-07 13:53:19,440) [ipw/ipw (line 564)]: max_de: None
-INFO (2023-12-07 13:53:19,444) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.0131066]
-INFO (2023-12-07 13:53:19,445) [ipw/ipw (line 602)]: Proportion null deviance explained [0.17168419]
-INFO (2023-12-07 13:53:19,449) [sample_class/diagnostics (line 822)]: Starting computation of diagnostics of the fitting
-INFO (2023-12-07 13:53:19,699) [sample_class/diagnostics (line 1022)]: Done computing diagnostics
+<pre>INFO (2024-01-24 10:48:46,093) [ipw/ipw (line 428)]: Starting ipw function
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:46,096) [adjustment/apply_transformations (line 257)]: Adding the variables: []
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:46,096) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['gender', 'age_group', 'income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:46,105) [adjustment/apply_transformations (line 295)]: Final variables in output: ['gender', 'age_group', 'income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:46,112) [ipw/ipw (line 462)]: Building model matrix
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:46,189) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:46,189) [ipw/ipw (line 489)]: The number of columns in the model matrix: 16
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:46,190) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:46,196) [ipw/ipw (line 521)]: Fitting logistic model
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:47,433) [ipw/ipw (line 564)]: max_de: None
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:47,438) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.0131066]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:47,439) [ipw/ipw (line 602)]: Proportion null deviance explained [0.17168419]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:47,443) [sample_class/diagnostics (line 822)]: Starting computation of diagnostics of the fitting
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:47,698) [sample_class/diagnostics (line 1022)]: Done computing diagnostics
 </pre>
 </div>
 </div>
@@ -7803,17 +7906,77 @@ INFO (2023-12-07 13:53:19,699) [sample_class/diagnostics (line 1022)]: Done comp
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2023-12-07 13:53:19,711) [ipw/ipw (line 428)]: Starting ipw function
-INFO (2023-12-07 13:53:19,713) [ipw/ipw (line 462)]: Building model matrix
-INFO (2023-12-07 13:53:19,764) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
-INFO (2023-12-07 13:53:19,764) [ipw/ipw (line 489)]: The number of columns in the model matrix: 8
-INFO (2023-12-07 13:53:19,765) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
-INFO (2023-12-07 13:53:19,771) [ipw/ipw (line 521)]: Fitting logistic model
-INFO (2023-12-07 13:53:21,184) [ipw/ipw (line 564)]: max_de: None
-INFO (2023-12-07 13:53:21,188) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.01683977]
-INFO (2023-12-07 13:53:21,189) [ipw/ipw (line 602)]: Proportion null deviance explained [0.17253226]
-INFO (2023-12-07 13:53:21,193) [sample_class/diagnostics (line 822)]: Starting computation of diagnostics of the fitting
-INFO (2023-12-07 13:53:21,435) [sample_class/diagnostics (line 1022)]: Done computing diagnostics
+<pre>INFO (2024-01-24 10:48:47,711) [ipw/ipw (line 428)]: Starting ipw function
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:47,712) [ipw/ipw (line 462)]: Building model matrix
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:47,765) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:47,765) [ipw/ipw (line 489)]: The number of columns in the model matrix: 8
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:47,766) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:47,772) [ipw/ipw (line 521)]: Fitting logistic model
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:49,223) [ipw/ipw (line 564)]: max_de: None
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:49,227) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.01683977]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:49,228) [ipw/ipw (line 602)]: Proportion null deviance explained [0.17253226]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:49,232) [sample_class/diagnostics (line 822)]: Starting computation of diagnostics of the fitting
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:49,479) [sample_class/diagnostics (line 1022)]: Done computing diagnostics
 </pre>
 </div>
 </div>
@@ -7956,21 +8119,105 @@ Regardless of the transformations, the model matrix made sure to turn the gender
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2023-12-07 13:53:21,447) [ipw/ipw (line 428)]: Starting ipw function
-INFO (2023-12-07 13:53:21,449) [adjustment/apply_transformations (line 257)]: Adding the variables: []
-INFO (2023-12-07 13:53:21,449) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['age_group', 'gender', 'income']
-INFO (2023-12-07 13:53:21,456) [adjustment/apply_transformations (line 295)]: Final variables in output: ['age_group', 'gender', 'income']
-INFO (2023-12-07 13:53:21,462) [ipw/ipw (line 462)]: Building model matrix
-INFO (2023-12-07 13:53:21,535) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
-INFO (2023-12-07 13:53:21,536) [ipw/ipw (line 489)]: The number of columns in the model matrix: 8
-INFO (2023-12-07 13:53:21,536) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
-INFO (2023-12-07 13:53:21,542) [ipw/ipw (line 521)]: Fitting logistic model
-INFO (2023-12-07 13:53:22,526) [ipw/ipw (line 564)]: max_de: None
-INFO (2023-12-07 13:53:22,530) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.02499574]
-INFO (2023-12-07 13:53:22,531) [ipw/ipw (line 602)]: Proportion null deviance explained [0.09302873]
-WARNING (2023-12-07 13:53:22,532) [ipw/ipw (line 619)]: The propensity model has low fraction null deviance explained ([0.09302873]). Results may not be accurate
-INFO (2023-12-07 13:53:22,536) [sample_class/diagnostics (line 822)]: Starting computation of diagnostics of the fitting
-INFO (2023-12-07 13:53:22,774) [sample_class/diagnostics (line 1022)]: Done computing diagnostics
+<pre>INFO (2024-01-24 10:48:49,491) [ipw/ipw (line 428)]: Starting ipw function
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:49,494) [adjustment/apply_transformations (line 257)]: Adding the variables: []
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:49,494) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['age_group', 'gender', 'income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:49,500) [adjustment/apply_transformations (line 295)]: Final variables in output: ['age_group', 'gender', 'income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:49,506) [ipw/ipw (line 462)]: Building model matrix
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:49,584) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:49,585) [ipw/ipw (line 489)]: The number of columns in the model matrix: 8
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:49,585) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:49,591) [ipw/ipw (line 521)]: Fitting logistic model
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:50,590) [ipw/ipw (line 564)]: max_de: None
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:50,594) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.02499574]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:50,595) [ipw/ipw (line 602)]: Proportion null deviance explained [0.09302873]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>WARNING (2024-01-24 10:48:50,596) [ipw/ipw (line 619)]: The propensity model has low fraction null deviance explained ([0.09302873]). Results may not be accurate
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:50,600) [sample_class/diagnostics (line 822)]: Starting computation of diagnostics of the fitting
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:50,847) [sample_class/diagnostics (line 1022)]: Done computing diagnostics
 </pre>
 </div>
 </div>
@@ -8109,22 +8356,112 @@ INFO (2023-12-07 13:53:22,774) [sample_class/diagnostics (line 1022)]: Done comp
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2023-12-07 13:53:22,786) [ipw/ipw (line 428)]: Starting ipw function
-INFO (2023-12-07 13:53:22,788) [adjustment/apply_transformations (line 257)]: Adding the variables: []
-INFO (2023-12-07 13:53:22,788) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['gender']
-WARNING (2023-12-07 13:53:22,789) [adjustment/apply_transformations (line 292)]: Dropping the variables: ['income', 'age_group']
-INFO (2023-12-07 13:53:22,790) [adjustment/apply_transformations (line 295)]: Final variables in output: ['gender']
-INFO (2023-12-07 13:53:22,792) [ipw/ipw (line 462)]: Building model matrix
-INFO (2023-12-07 13:53:22,820) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['gender + _is_na_gender']
-INFO (2023-12-07 13:53:22,821) [ipw/ipw (line 489)]: The number of columns in the model matrix: 4
-INFO (2023-12-07 13:53:22,821) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
-INFO (2023-12-07 13:53:22,826) [ipw/ipw (line 521)]: Fitting logistic model
-INFO (2023-12-07 13:53:23,379) [ipw/ipw (line 564)]: max_de: None
-INFO (2023-12-07 13:53:23,382) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.03209508]
-INFO (2023-12-07 13:53:23,383) [ipw/ipw (line 602)]: Proportion null deviance explained [0.02608629]
-WARNING (2023-12-07 13:53:23,384) [ipw/ipw (line 619)]: The propensity model has low fraction null deviance explained ([0.02608629]). Results may not be accurate
-INFO (2023-12-07 13:53:23,388) [sample_class/diagnostics (line 822)]: Starting computation of diagnostics of the fitting
-INFO (2023-12-07 13:53:23,630) [sample_class/diagnostics (line 1022)]: Done computing diagnostics
+<pre>INFO (2024-01-24 10:48:50,859) [ipw/ipw (line 428)]: Starting ipw function
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:50,862) [adjustment/apply_transformations (line 257)]: Adding the variables: []
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:50,862) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['gender']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>WARNING (2024-01-24 10:48:50,863) [adjustment/apply_transformations (line 292)]: Dropping the variables: ['age_group', 'income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:50,864) [adjustment/apply_transformations (line 295)]: Final variables in output: ['gender']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:50,867) [ipw/ipw (line 462)]: Building model matrix
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:50,896) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['gender + _is_na_gender']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:50,897) [ipw/ipw (line 489)]: The number of columns in the model matrix: 4
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:50,897) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:50,903) [ipw/ipw (line 521)]: Fitting logistic model
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:51,475) [ipw/ipw (line 564)]: max_de: None
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:51,479) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.03209508]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:51,480) [ipw/ipw (line 602)]: Proportion null deviance explained [0.02608629]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>WARNING (2024-01-24 10:48:51,481) [ipw/ipw (line 619)]: The propensity model has low fraction null deviance explained ([0.02608629]). Results may not be accurate
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:51,486) [sample_class/diagnostics (line 822)]: Starting computation of diagnostics of the fitting
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:51,731) [sample_class/diagnostics (line 1022)]: Done computing diagnostics
 </pre>
 </div>
 </div>
@@ -8274,20 +8611,98 @@ INFO (2023-12-07 13:53:23,630) [sample_class/diagnostics (line 1022)]: Done comp
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2023-12-07 13:53:23,646) [ipw/ipw (line 428)]: Starting ipw function
-INFO (2023-12-07 13:53:23,648) [adjustment/apply_transformations (line 257)]: Adding the variables: ['income_squared', 'income_buckets']
-INFO (2023-12-07 13:53:23,648) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['age_group', 'gender', 'income']
-INFO (2023-12-07 13:53:23,653) [adjustment/apply_transformations (line 295)]: Final variables in output: ['income_squared', 'income_buckets', 'age_group', 'gender', 'income']
-INFO (2023-12-07 13:53:23,663) [ipw/ipw (line 462)]: Building model matrix
-INFO (2023-12-07 13:53:23,739) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['income_squared + income_buckets + income + gender + age_group + _is_na_gender']
-INFO (2023-12-07 13:53:23,739) [ipw/ipw (line 489)]: The number of columns in the model matrix: 11
-INFO (2023-12-07 13:53:23,740) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
-INFO (2023-12-07 13:53:23,746) [ipw/ipw (line 521)]: Fitting logistic model
-INFO (2023-12-07 13:53:25,284) [ipw/ipw (line 564)]: max_de: None
-INFO (2023-12-07 13:53:25,289) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.01593088]
-INFO (2023-12-07 13:53:25,290) [ipw/ipw (line 602)]: Proportion null deviance explained [0.17207485]
-INFO (2023-12-07 13:53:25,295) [sample_class/diagnostics (line 822)]: Starting computation of diagnostics of the fitting
-INFO (2023-12-07 13:53:25,542) [sample_class/diagnostics (line 1022)]: Done computing diagnostics
+<pre>INFO (2024-01-24 10:48:51,748) [ipw/ipw (line 428)]: Starting ipw function
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:51,750) [adjustment/apply_transformations (line 257)]: Adding the variables: ['income_squared', 'income_buckets']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:51,751) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['age_group', 'gender', 'income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:51,756) [adjustment/apply_transformations (line 295)]: Final variables in output: ['income_squared', 'income_buckets', 'age_group', 'gender', 'income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:51,766) [ipw/ipw (line 462)]: Building model matrix
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:51,844) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['income_squared + income_buckets + income + gender + age_group + _is_na_gender']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:51,845) [ipw/ipw (line 489)]: The number of columns in the model matrix: 11
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:51,845) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:51,851) [ipw/ipw (line 521)]: Fitting logistic model
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:53,400) [ipw/ipw (line 564)]: max_de: None
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:53,403) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.01593088]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:53,404) [ipw/ipw (line 602)]: Proportion null deviance explained [0.17207485]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:53,409) [sample_class/diagnostics (line 822)]: Starting computation of diagnostics of the fitting
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:53,665) [sample_class/diagnostics (line 1022)]: Done computing diagnostics
 </pre>
 </div>
 </div>
@@ -8450,20 +8865,98 @@ INFO (2023-12-07 13:53:25,542) [sample_class/diagnostics (line 1022)]: Done comp
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2023-12-07 13:53:25,555) [ipw/ipw (line 428)]: Starting ipw function
-INFO (2023-12-07 13:53:25,557) [adjustment/apply_transformations (line 257)]: Adding the variables: []
-INFO (2023-12-07 13:53:25,558) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['age_group', 'gender', 'income']
-INFO (2023-12-07 13:53:25,562) [adjustment/apply_transformations (line 295)]: Final variables in output: ['age_group', 'gender', 'income']
-INFO (2023-12-07 13:53:25,568) [ipw/ipw (line 462)]: Building model matrix
-INFO (2023-12-07 13:53:25,619) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['age_group * gender']
-INFO (2023-12-07 13:53:25,619) [ipw/ipw (line 489)]: The number of columns in the model matrix: 12
-INFO (2023-12-07 13:53:25,620) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
-INFO (2023-12-07 13:53:25,626) [ipw/ipw (line 521)]: Fitting logistic model
-INFO (2023-12-07 13:53:26,718) [ipw/ipw (line 564)]: max_de: None
-INFO (2023-12-07 13:53:26,721) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.02478636]
-INFO (2023-12-07 13:53:26,723) [ipw/ipw (line 602)]: Proportion null deviance explained [0.11329577]
-INFO (2023-12-07 13:53:26,727) [sample_class/diagnostics (line 822)]: Starting computation of diagnostics of the fitting
-INFO (2023-12-07 13:53:26,968) [sample_class/diagnostics (line 1022)]: Done computing diagnostics
+<pre>INFO (2024-01-24 10:48:53,678) [ipw/ipw (line 428)]: Starting ipw function
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:53,681) [adjustment/apply_transformations (line 257)]: Adding the variables: []
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:53,681) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['age_group', 'gender', 'income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:53,685) [adjustment/apply_transformations (line 295)]: Final variables in output: ['age_group', 'gender', 'income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:53,692) [ipw/ipw (line 462)]: Building model matrix
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:53,744) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['age_group * gender']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:53,745) [ipw/ipw (line 489)]: The number of columns in the model matrix: 12
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:53,745) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:53,752) [ipw/ipw (line 521)]: Fitting logistic model
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:54,867) [ipw/ipw (line 564)]: max_de: None
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:54,871) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.02478636]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:54,872) [ipw/ipw (line 602)]: Proportion null deviance explained [0.11329577]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:54,876) [sample_class/diagnostics (line 822)]: Starting computation of diagnostics of the fitting
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:55,132) [sample_class/diagnostics (line 1022)]: Done computing diagnostics
 </pre>
 </div>
 </div>
@@ -8641,21 +9134,105 @@ INFO (2023-12-07 13:53:26,968) [sample_class/diagnostics (line 1022)]: Done comp
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2023-12-07 13:53:26,980) [ipw/ipw (line 428)]: Starting ipw function
-INFO (2023-12-07 13:53:26,982) [adjustment/apply_transformations (line 257)]: Adding the variables: []
-INFO (2023-12-07 13:53:26,982) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['age_group', 'gender', 'income']
-INFO (2023-12-07 13:53:26,983) [adjustment/apply_transformations (line 295)]: Final variables in output: ['age_group', 'gender', 'income']
-INFO (2023-12-07 13:53:26,989) [ipw/ipw (line 462)]: Building model matrix
-INFO (2023-12-07 13:53:27,040) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['age_group + gender', 'income']
-INFO (2023-12-07 13:53:27,040) [ipw/ipw (line 489)]: The number of columns in the model matrix: 7
-INFO (2023-12-07 13:53:27,041) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
-INFO (2023-12-07 13:53:27,047) [ipw/ipw (line 521)]: Fitting logistic model
-INFO (2023-12-07 13:53:27,680) [ipw/ipw (line 564)]: max_de: None
-INFO (2023-12-07 13:53:27,683) [ipw/ipw (line 594)]: Chosen lambda for cv: [2.81364473]
-INFO (2023-12-07 13:53:27,684) [ipw/ipw (line 602)]: Proportion null deviance explained [0.06543669]
-WARNING (2023-12-07 13:53:27,685) [ipw/ipw (line 619)]: The propensity model has low fraction null deviance explained ([0.06543669]). Results may not be accurate
-INFO (2023-12-07 13:53:27,689) [sample_class/diagnostics (line 822)]: Starting computation of diagnostics of the fitting
-INFO (2023-12-07 13:53:27,926) [sample_class/diagnostics (line 1022)]: Done computing diagnostics
+<pre>INFO (2024-01-24 10:48:55,145) [ipw/ipw (line 428)]: Starting ipw function
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:55,147) [adjustment/apply_transformations (line 257)]: Adding the variables: []
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:55,148) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['age_group', 'gender', 'income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:55,149) [adjustment/apply_transformations (line 295)]: Final variables in output: ['age_group', 'gender', 'income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:55,154) [ipw/ipw (line 462)]: Building model matrix
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:55,207) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['age_group + gender', 'income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:55,207) [ipw/ipw (line 489)]: The number of columns in the model matrix: 7
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:55,208) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:55,214) [ipw/ipw (line 521)]: Fitting logistic model
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:55,887) [ipw/ipw (line 564)]: max_de: None
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:55,890) [ipw/ipw (line 594)]: Chosen lambda for cv: [2.81364473]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:55,892) [ipw/ipw (line 602)]: Proportion null deviance explained [0.06543669]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>WARNING (2024-01-24 10:48:55,894) [ipw/ipw (line 619)]: The propensity model has low fraction null deviance explained ([0.06543669]). Results may not be accurate
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:55,897) [sample_class/diagnostics (line 822)]: Starting computation of diagnostics of the fitting
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:56,145) [sample_class/diagnostics (line 1022)]: Done computing diagnostics
 </pre>
 </div>
 </div>
@@ -8791,20 +9368,98 @@ INFO (2023-12-07 13:53:27,926) [sample_class/diagnostics (line 1022)]: Done comp
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2023-12-07 13:53:27,938) [ipw/ipw (line 428)]: Starting ipw function
-INFO (2023-12-07 13:53:27,940) [adjustment/apply_transformations (line 257)]: Adding the variables: []
-INFO (2023-12-07 13:53:27,941) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['age_group', 'gender', 'income']
-INFO (2023-12-07 13:53:27,942) [adjustment/apply_transformations (line 295)]: Final variables in output: ['age_group', 'gender', 'income']
-INFO (2023-12-07 13:53:27,947) [ipw/ipw (line 462)]: Building model matrix
-INFO (2023-12-07 13:53:27,998) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['age_group + gender', 'income']
-INFO (2023-12-07 13:53:27,998) [ipw/ipw (line 489)]: The number of columns in the model matrix: 7
-INFO (2023-12-07 13:53:27,999) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
-INFO (2023-12-07 13:53:28,005) [ipw/ipw (line 521)]: Fitting logistic model
-INFO (2023-12-07 13:53:28,857) [ipw/ipw (line 564)]: max_de: None
-INFO (2023-12-07 13:53:28,860) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.33591375]
-INFO (2023-12-07 13:53:28,861) [ipw/ipw (line 602)]: Proportion null deviance explained [0.11475535]
-INFO (2023-12-07 13:53:28,865) [sample_class/diagnostics (line 822)]: Starting computation of diagnostics of the fitting
-INFO (2023-12-07 13:53:29,101) [sample_class/diagnostics (line 1022)]: Done computing diagnostics
+<pre>INFO (2024-01-24 10:48:56,158) [ipw/ipw (line 428)]: Starting ipw function
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:56,160) [adjustment/apply_transformations (line 257)]: Adding the variables: []
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:56,161) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['age_group', 'gender', 'income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:56,162) [adjustment/apply_transformations (line 295)]: Final variables in output: ['age_group', 'gender', 'income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:56,167) [ipw/ipw (line 462)]: Building model matrix
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:56,219) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['age_group + gender', 'income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:56,219) [ipw/ipw (line 489)]: The number of columns in the model matrix: 7
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:56,220) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:56,226) [ipw/ipw (line 521)]: Fitting logistic model
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:57,115) [ipw/ipw (line 564)]: max_de: None
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:57,119) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.33591375]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:57,120) [ipw/ipw (line 602)]: Proportion null deviance explained [0.11475535]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:57,124) [sample_class/diagnostics (line 822)]: Starting computation of diagnostics of the fitting
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:57,369) [sample_class/diagnostics (line 1022)]: Done computing diagnostics
 </pre>
 </div>
 </div>
@@ -8944,24 +9599,102 @@ INFO (2023-12-07 13:53:29,101) [sample_class/diagnostics (line 1022)]: Done comp
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2023-12-07 13:53:29,114) [ipw/ipw (line 428)]: Starting ipw function
-INFO (2023-12-07 13:53:29,116) [adjustment/apply_transformations (line 257)]: Adding the variables: ['income_buckets']
-INFO (2023-12-07 13:53:29,116) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['age_group', 'gender', 'income']
-/tmp/ipykernel_2215/861112312.py:7: FutureWarning:
+<pre>INFO (2024-01-24 10:48:57,382) [ipw/ipw (line 428)]: Starting ipw function
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:57,385) [adjustment/apply_transformations (line 257)]: Adding the variables: ['income_buckets']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:57,385) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['age_group', 'gender', 'income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>/tmp/ipykernel_2163/861112312.py:7: FutureWarning:
 
 Dropping of nuisance columns in DataFrame reductions (with 'numeric_only=None') is deprecated; in a future version this will raise TypeError.  Select only valid columns before calling the reduction.
 
-INFO (2023-12-07 13:53:29,131) [adjustment/apply_transformations (line 295)]: Final variables in output: ['income_buckets', 'age_group', 'gender', 'income']
-INFO (2023-12-07 13:53:29,139) [ipw/ipw (line 462)]: Building model matrix
-INFO (2023-12-07 13:53:29,215) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['age_group + gender', 'income', 'income_buckets']
-INFO (2023-12-07 13:53:29,215) [ipw/ipw (line 489)]: The number of columns in the model matrix: 11
-INFO (2023-12-07 13:53:29,216) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
-INFO (2023-12-07 13:53:29,221) [ipw/ipw (line 521)]: Fitting logistic model
-INFO (2023-12-07 13:53:30,566) [ipw/ipw (line 564)]: max_de: None
-INFO (2023-12-07 13:53:30,569) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.02312964]
-INFO (2023-12-07 13:53:30,571) [ipw/ipw (line 602)]: Proportion null deviance explained [0.17210643]
-INFO (2023-12-07 13:53:30,575) [sample_class/diagnostics (line 822)]: Starting computation of diagnostics of the fitting
-INFO (2023-12-07 13:53:30,817) [sample_class/diagnostics (line 1022)]: Done computing diagnostics
+INFO (2024-01-24 10:48:57,400) [adjustment/apply_transformations (line 295)]: Final variables in output: ['income_buckets', 'age_group', 'gender', 'income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:57,408) [ipw/ipw (line 462)]: Building model matrix
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:57,486) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['age_group + gender', 'income', 'income_buckets']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:57,487) [ipw/ipw (line 489)]: The number of columns in the model matrix: 11
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:57,487) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:57,493) [ipw/ipw (line 521)]: Fitting logistic model
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:58,876) [ipw/ipw (line 564)]: max_de: None
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:58,880) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.02312964]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:58,881) [ipw/ipw (line 602)]: Proportion null deviance explained [0.17210643]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:58,885) [sample_class/diagnostics (line 822)]: Starting computation of diagnostics of the fitting
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:59,137) [sample_class/diagnostics (line 1022)]: Done computing diagnostics
 </pre>
 </div>
 </div>
@@ -9124,24 +9857,102 @@ INFO (2023-12-07 13:53:30,817) [sample_class/diagnostics (line 1022)]: Done comp
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2023-12-07 13:53:30,829) [ipw/ipw (line 428)]: Starting ipw function
-INFO (2023-12-07 13:53:30,831) [adjustment/apply_transformations (line 257)]: Adding the variables: ['income_buckets']
-INFO (2023-12-07 13:53:30,831) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['age_group', 'gender', 'income']
-/tmp/ipykernel_2215/1264082352.py:7: FutureWarning:
+<pre>INFO (2024-01-24 10:48:59,150) [ipw/ipw (line 428)]: Starting ipw function
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:59,153) [adjustment/apply_transformations (line 257)]: Adding the variables: ['income_buckets']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:59,153) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['age_group', 'gender', 'income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>/tmp/ipykernel_2163/1264082352.py:7: FutureWarning:
 
 Dropping of nuisance columns in DataFrame reductions (with 'numeric_only=None') is deprecated; in a future version this will raise TypeError.  Select only valid columns before calling the reduction.
 
-INFO (2023-12-07 13:53:30,845) [adjustment/apply_transformations (line 295)]: Final variables in output: ['income_buckets', 'age_group', 'gender', 'income']
-INFO (2023-12-07 13:53:30,853) [ipw/ipw (line 462)]: Building model matrix
-INFO (2023-12-07 13:53:30,927) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['age_group', 'gender', 'income + income_buckets']
-INFO (2023-12-07 13:53:30,927) [ipw/ipw (line 489)]: The number of columns in the model matrix: 12
-INFO (2023-12-07 13:53:30,928) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
-INFO (2023-12-07 13:53:30,933) [ipw/ipw (line 521)]: Fitting logistic model
-INFO (2023-12-07 13:53:32,351) [ipw/ipw (line 564)]: max_de: None
-INFO (2023-12-07 13:53:32,354) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.02344857]
-INFO (2023-12-07 13:53:32,356) [ipw/ipw (line 602)]: Proportion null deviance explained [0.17211675]
-INFO (2023-12-07 13:53:32,360) [sample_class/diagnostics (line 822)]: Starting computation of diagnostics of the fitting
-INFO (2023-12-07 13:53:32,606) [sample_class/diagnostics (line 1022)]: Done computing diagnostics
+INFO (2024-01-24 10:48:59,168) [adjustment/apply_transformations (line 295)]: Final variables in output: ['income_buckets', 'age_group', 'gender', 'income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:59,176) [ipw/ipw (line 462)]: Building model matrix
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:59,255) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['age_group', 'gender', 'income + income_buckets']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:59,255) [ipw/ipw (line 489)]: The number of columns in the model matrix: 12
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:59,256) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:48:59,262) [ipw/ipw (line 521)]: Fitting logistic model
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:00,708) [ipw/ipw (line 564)]: max_de: None
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:00,712) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.02344857]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:00,713) [ipw/ipw (line 602)]: Proportion null deviance explained [0.17211675]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:00,718) [sample_class/diagnostics (line 822)]: Starting computation of diagnostics of the fitting
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:00,971) [sample_class/diagnostics (line 1022)]: Done computing diagnostics
 </pre>
 </div>
 </div>
@@ -9297,18 +10108,84 @@ INFO (2023-12-07 13:53:32,606) [sample_class/diagnostics (line 1022)]: Done comp
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2023-12-07 13:53:32,618) [ipw/ipw (line 428)]: Starting ipw function
-INFO (2023-12-07 13:53:32,620) [adjustment/apply_transformations (line 257)]: Adding the variables: []
-INFO (2023-12-07 13:53:32,620) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['gender', 'age_group', 'income']
-INFO (2023-12-07 13:53:32,628) [adjustment/apply_transformations (line 295)]: Final variables in output: ['gender', 'age_group', 'income']
-INFO (2023-12-07 13:53:32,634) [ipw/ipw (line 462)]: Building model matrix
-INFO (2023-12-07 13:53:32,706) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
-INFO (2023-12-07 13:53:32,707) [ipw/ipw (line 489)]: The number of columns in the model matrix: 16
-INFO (2023-12-07 13:53:32,707) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
-INFO (2023-12-07 13:53:32,713) [ipw/ipw (line 521)]: Fitting logistic model
-INFO (2023-12-07 13:53:33,919) [ipw/ipw (line 564)]: max_de: None
-INFO (2023-12-07 13:53:33,922) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.0131066]
-INFO (2023-12-07 13:53:33,923) [ipw/ipw (line 602)]: Proportion null deviance explained [0.17168419]
+<pre>INFO (2024-01-24 10:49:00,983) [ipw/ipw (line 428)]: Starting ipw function
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:00,985) [adjustment/apply_transformations (line 257)]: Adding the variables: []
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:00,985) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['gender', 'age_group', 'income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:00,994) [adjustment/apply_transformations (line 295)]: Final variables in output: ['gender', 'age_group', 'income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:01,000) [ipw/ipw (line 462)]: Building model matrix
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:01,076) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:01,077) [ipw/ipw (line 489)]: The number of columns in the model matrix: 16
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:01,077) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:01,083) [ipw/ipw (line 521)]: Fitting logistic model
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:02,315) [ipw/ipw (line 564)]: max_de: None
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:02,318) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.0131066]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:02,319) [ipw/ipw (line 602)]: Proportion null deviance explained [0.17168419]
 </pre>
 </div>
 </div>
@@ -9389,15 +10266,63 @@ n    10000.0
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2023-12-07 13:53:34,786) [ipw/ipw (line 428)]: Starting ipw function
-INFO (2023-12-07 13:53:34,788) [ipw/ipw (line 462)]: Building model matrix
-INFO (2023-12-07 13:53:34,837) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
-INFO (2023-12-07 13:53:34,837) [ipw/ipw (line 489)]: The number of columns in the model matrix: 8
-INFO (2023-12-07 13:53:34,837) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
-INFO (2023-12-07 13:53:34,843) [ipw/ipw (line 521)]: Fitting logistic model
-INFO (2023-12-07 13:53:36,244) [ipw/ipw (line 564)]: max_de: None
-INFO (2023-12-07 13:53:36,248) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.01683977]
-INFO (2023-12-07 13:53:36,249) [ipw/ipw (line 602)]: Proportion null deviance explained [0.17253226]
+<pre>INFO (2024-01-24 10:49:03,253) [ipw/ipw (line 428)]: Starting ipw function
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:03,255) [ipw/ipw (line 462)]: Building model matrix
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:03,308) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:03,308) [ipw/ipw (line 489)]: The number of columns in the model matrix: 8
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:03,308) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:03,314) [ipw/ipw (line 521)]: Fitting logistic model
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:04,752) [ipw/ipw (line 564)]: max_de: None
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:04,755) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.01683977]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:04,757) [ipw/ipw (line 602)]: Proportion null deviance explained [0.17253226]
 </pre>
 </div>
 </div>
@@ -9476,15 +10401,63 @@ n    10000.0
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2023-12-07 13:53:37,139) [ipw/ipw (line 428)]: Starting ipw function
-INFO (2023-12-07 13:53:37,141) [ipw/ipw (line 462)]: Building model matrix
-INFO (2023-12-07 13:53:37,192) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['age_group + gender + income + income**2']
-INFO (2023-12-07 13:53:37,192) [ipw/ipw (line 489)]: The number of columns in the model matrix: 7
-INFO (2023-12-07 13:53:37,192) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
-INFO (2023-12-07 13:53:37,198) [ipw/ipw (line 521)]: Fitting logistic model
-INFO (2023-12-07 13:53:38,376) [ipw/ipw (line 564)]: max_de: None
-INFO (2023-12-07 13:53:38,380) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.02098571]
-INFO (2023-12-07 13:53:38,381) [ipw/ipw (line 602)]: Proportion null deviance explained [0.17160363]
+<pre>INFO (2024-01-24 10:49:05,659) [ipw/ipw (line 428)]: Starting ipw function
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:05,661) [ipw/ipw (line 462)]: Building model matrix
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:05,714) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['age_group + gender + income + income**2']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:05,715) [ipw/ipw (line 489)]: The number of columns in the model matrix: 7
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:05,715) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:05,722) [ipw/ipw (line 521)]: Fitting logistic model
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:06,935) [ipw/ipw (line 564)]: max_de: None
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:06,939) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.02098571]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:06,940) [ipw/ipw (line 602)]: Proportion null deviance explained [0.17160363]
 </pre>
 </div>
 </div>
@@ -9567,18 +10540,84 @@ n    10000.0
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2023-12-07 13:53:39,255) [ipw/ipw (line 428)]: Starting ipw function
-INFO (2023-12-07 13:53:39,314) [adjustment/apply_transformations (line 257)]: Adding the variables: ['income_buckets']
-INFO (2023-12-07 13:53:39,314) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['age_group', 'gender', 'income']
-INFO (2023-12-07 13:53:39,320) [adjustment/apply_transformations (line 295)]: Final variables in output: ['income_buckets', 'age_group', 'gender', 'income']
-INFO (2023-12-07 13:53:39,328) [ipw/ipw (line 462)]: Building model matrix
-INFO (2023-12-07 13:53:39,401) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['age_group + gender', 'income_buckets']
-INFO (2023-12-07 13:53:39,402) [ipw/ipw (line 489)]: The number of columns in the model matrix: 26
-INFO (2023-12-07 13:53:39,402) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
-INFO (2023-12-07 13:53:39,408) [ipw/ipw (line 521)]: Fitting logistic model
-INFO (2023-12-07 13:53:40,830) [ipw/ipw (line 564)]: max_de: None
-INFO (2023-12-07 13:53:40,834) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.0074004]
-INFO (2023-12-07 13:53:40,835) [ipw/ipw (line 602)]: Proportion null deviance explained [0.1759225]
+<pre>INFO (2024-01-24 10:49:07,840) [ipw/ipw (line 428)]: Starting ipw function
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:07,842) [adjustment/apply_transformations (line 257)]: Adding the variables: ['income_buckets']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:07,842) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['age_group', 'gender', 'income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:07,848) [adjustment/apply_transformations (line 295)]: Final variables in output: ['income_buckets', 'age_group', 'gender', 'income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:07,857) [ipw/ipw (line 462)]: Building model matrix
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:07,936) [ipw/ipw (line 486)]: The formula used to build the model matrix: ['age_group + gender', 'income_buckets']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:07,936) [ipw/ipw (line 489)]: The number of columns in the model matrix: 26
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:07,937) [ipw/ipw (line 490)]: The number of rows in the model matrix: 11000
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:07,943) [ipw/ipw (line 521)]: Fitting logistic model
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:09,396) [ipw/ipw (line 564)]: max_de: None
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:09,400) [ipw/ipw (line 594)]: Chosen lambda for cv: [0.0074004]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:09,401) [ipw/ipw (line 602)]: Proportion null deviance explained [0.1759225]
 </pre>
 </div>
 </div>
@@ -9674,20 +10713,98 @@ n    10000.0
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2023-12-07 13:53:41,739) [cbps/cbps (line 409)]: Starting cbps function
-INFO (2023-12-07 13:53:41,742) [adjustment/apply_transformations (line 257)]: Adding the variables: []
-INFO (2023-12-07 13:53:41,742) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['gender', 'age_group', 'income']
-INFO (2023-12-07 13:53:41,750) [adjustment/apply_transformations (line 295)]: Final variables in output: ['gender', 'age_group', 'income']
-INFO (2023-12-07 13:53:41,831) [cbps/cbps (line 460)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
-INFO (2023-12-07 13:53:41,832) [cbps/cbps (line 472)]: The number of columns in the model matrix: 16
-INFO (2023-12-07 13:53:41,833) [cbps/cbps (line 473)]: The number of rows in the model matrix: 11000
-INFO (2023-12-07 13:53:41,841) [cbps/cbps (line 535)]: Finding initial estimator for GMM optimization
-INFO (2023-12-07 13:53:41,966) [cbps/cbps (line 562)]: Finding initial estimator for GMM optimization that minimizes the balance loss
-WARNING (2023-12-07 13:53:42,355) [cbps/cbps (line 579)]: Convergence of bal_loss function has failed due to 'Maximum number of function evaluations has been exceeded.'
-INFO (2023-12-07 13:53:42,356) [cbps/cbps (line 597)]: Running GMM optimization
-WARNING (2023-12-07 13:53:42,909) [cbps/cbps (line 612)]: Convergence of gmm_loss function with gmm_init start point has failed due to 'Maximum number of function evaluations has been exceeded.'
-WARNING (2023-12-07 13:53:43,453) [cbps/cbps (line 630)]: Convergence of gmm_loss function with beta_balance start point has failed due to 'Maximum number of function evaluations has been exceeded.'
-INFO (2023-12-07 13:53:43,459) [cbps/cbps (line 726)]: Done cbps function
+<pre>INFO (2024-01-24 10:49:10,395) [cbps/cbps (line 409)]: Starting cbps function
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:10,398) [adjustment/apply_transformations (line 257)]: Adding the variables: []
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:10,399) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['gender', 'age_group', 'income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:10,407) [adjustment/apply_transformations (line 295)]: Final variables in output: ['gender', 'age_group', 'income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:10,489) [cbps/cbps (line 460)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:10,490) [cbps/cbps (line 472)]: The number of columns in the model matrix: 16
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:10,491) [cbps/cbps (line 473)]: The number of rows in the model matrix: 11000
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:10,503) [cbps/cbps (line 535)]: Finding initial estimator for GMM optimization
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:10,582) [cbps/cbps (line 562)]: Finding initial estimator for GMM optimization that minimizes the balance loss
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>WARNING (2024-01-24 10:49:10,951) [cbps/cbps (line 579)]: Convergence of bal_loss function has failed due to 'Maximum number of function evaluations has been exceeded.'
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:10,952) [cbps/cbps (line 597)]: Running GMM optimization
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>WARNING (2024-01-24 10:49:11,444) [cbps/cbps (line 612)]: Convergence of gmm_loss function with gmm_init start point has failed due to 'Maximum number of function evaluations has been exceeded.'
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>WARNING (2024-01-24 10:49:11,944) [cbps/cbps (line 630)]: Convergence of gmm_loss function with beta_balance start point has failed due to 'Maximum number of function evaluations has been exceeded.'
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:11,951) [cbps/cbps (line 726)]: Done cbps function
 </pre>
 </div>
 </div>
@@ -9771,20 +10888,98 @@ n    10000.0
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2023-12-07 13:53:44,356) [cbps/cbps (line 409)]: Starting cbps function
-INFO (2023-12-07 13:53:44,359) [adjustment/apply_transformations (line 257)]: Adding the variables: ['income_log', 'income_buckets']
-INFO (2023-12-07 13:53:44,359) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['age_group', 'gender']
-WARNING (2023-12-07 13:53:44,365) [adjustment/apply_transformations (line 292)]: Dropping the variables: ['income']
-INFO (2023-12-07 13:53:44,365) [adjustment/apply_transformations (line 295)]: Final variables in output: ['income_log', 'income_buckets', 'age_group', 'gender']
-INFO (2023-12-07 13:53:44,445) [cbps/cbps (line 460)]: The formula used to build the model matrix: ['age_group + gender + income_log * income_buckets']
-INFO (2023-12-07 13:53:44,446) [cbps/cbps (line 472)]: The number of columns in the model matrix: 15
-INFO (2023-12-07 13:53:44,446) [cbps/cbps (line 473)]: The number of rows in the model matrix: 11000
-INFO (2023-12-07 13:53:44,457) [cbps/cbps (line 535)]: Finding initial estimator for GMM optimization
-INFO (2023-12-07 13:53:44,566) [cbps/cbps (line 562)]: Finding initial estimator for GMM optimization that minimizes the balance loss
-INFO (2023-12-07 13:53:44,910) [cbps/cbps (line 597)]: Running GMM optimization
-WARNING (2023-12-07 13:53:45,391) [cbps/cbps (line 612)]: Convergence of gmm_loss function with gmm_init start point has failed due to 'Maximum number of function evaluations has been exceeded.'
-WARNING (2023-12-07 13:53:45,875) [cbps/cbps (line 630)]: Convergence of gmm_loss function with beta_balance start point has failed due to 'Maximum number of function evaluations has been exceeded.'
-INFO (2023-12-07 13:53:45,881) [cbps/cbps (line 726)]: Done cbps function
+<pre>INFO (2024-01-24 10:49:12,876) [cbps/cbps (line 409)]: Starting cbps function
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:12,879) [adjustment/apply_transformations (line 257)]: Adding the variables: ['income_log', 'income_buckets']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:12,879) [adjustment/apply_transformations (line 258)]: Transforming the variables: ['age_group', 'gender']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>WARNING (2024-01-24 10:49:12,885) [adjustment/apply_transformations (line 292)]: Dropping the variables: ['income']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:12,885) [adjustment/apply_transformations (line 295)]: Final variables in output: ['income_log', 'income_buckets', 'age_group', 'gender']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:12,970) [cbps/cbps (line 460)]: The formula used to build the model matrix: ['age_group + gender + income_log * income_buckets']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:12,972) [cbps/cbps (line 472)]: The number of columns in the model matrix: 15
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:12,972) [cbps/cbps (line 473)]: The number of rows in the model matrix: 11000
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:12,981) [cbps/cbps (line 535)]: Finding initial estimator for GMM optimization
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:13,083) [cbps/cbps (line 562)]: Finding initial estimator for GMM optimization that minimizes the balance loss
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:13,438) [cbps/cbps (line 597)]: Running GMM optimization
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>WARNING (2024-01-24 10:49:13,955) [cbps/cbps (line 612)]: Convergence of gmm_loss function with gmm_init start point has failed due to 'Maximum number of function evaluations has been exceeded.'
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>WARNING (2024-01-24 10:49:14,465) [cbps/cbps (line 630)]: Convergence of gmm_loss function with beta_balance start point has failed due to 'Maximum number of function evaluations has been exceeded.'
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2024-01-24 10:49:14,471) [cbps/cbps (line 726)]: Done cbps function
 </pre>
 </div>
 </div>
@@ -9852,15 +11047,15 @@ numpy               1.24.4
 pandas              1.4.3
 session_info        1.0.0
 -----
-PIL                         10.1.0
+PIL                         10.2.0
 anyio                       NA
 apport_python_hook          NA
 argcomplete                 NA
 arrow                       1.3.0
 asttokens                   NA
-attr                        23.1.0
-attrs                       23.1.0
-babel                       2.13.1
+attr                        23.2.0
+attrs                       23.2.0
+babel                       2.14.0
 beta_ufunc                  NA
 binom_ufunc                 NA
 certifi                     2020.06.20
@@ -9868,7 +11063,7 @@ cffi                        1.16.0
 chardet                     4.0.0
 charset_normalizer          3.3.2
 colorama                    0.4.4
-comm                        0.2.0
+comm                        0.2.1
 coxnet                      NA
 cvcompute                   NA
 cvelnet                     NA
@@ -9905,17 +11100,17 @@ gtk                         NA
 hypergeom_ufunc             NA
 idna                        3.3
 ipfn                        NA
-ipykernel                   6.27.1
+ipykernel                   6.29.0
 isoduration                 NA
 jedi                        0.19.1
 jinja2                      3.0.3
 joblib                      1.3.2
 json5                       NA
 jsonpointer                 2.0
-jsonschema                  4.20.0
+jsonschema                  4.21.1
 jsonschema_specifications   NA
 jupyter_events              0.9.0
-jupyter_server              2.12.1
+jupyter_server              2.12.5
 jupyterlab_server           2.25.2
 kiwisolver                  1.4.5
 loadGlmLib                  NA
@@ -9932,13 +11127,13 @@ netifaces                   0.11.0
 overrides                   NA
 packaging                   23.2
 parso                       0.8.3
-patsy                       0.5.4
+patsy                       0.5.6
 pexpect                     4.8.0
 platformdirs                4.1.0
 plotly                      5.18.0
 prometheus_client           NA
-prompt_toolkit              3.0.41
-psutil                      5.9.6
+prompt_toolkit              3.0.43
+psutil                      5.9.8
 ptyprocess                  0.7.0
 pure_eval                   0.2.2
 pydev_ipython               NA
@@ -9961,18 +11156,18 @@ seaborn                     0.13.0
 send2trash                  NA
 sitecustomize               NA
 six                         1.16.0
-sklearn                     1.3.2
+sklearn                     1.4.0
 sniffio                     1.3.0
 sphinxcontrib               NA
 stack_data                  0.6.3
-statsmodels                 0.14.0
+statsmodels                 0.14.1
 threadpoolctl               3.2.0
 tornado                     6.4
-traitlets                   5.14.0
+traitlets                   5.14.1
 typing_extensions           NA
 uri_template                NA
 urllib3                     1.26.5
-wcwidth                     0.2.12
+wcwidth                     0.2.13
 webcolors                   1.13
 websocket                   1.7.0
 wtmean                      NA
@@ -9981,16 +11176,16 @@ zmq                         25.1.2
 zoneinfo                    NA
 zope                        NA
 -----
-IPython             8.18.1
+IPython             8.20.0
 jupyter_client      8.6.0
-jupyter_core        5.5.0
-jupyterlab          4.0.9
-notebook            7.0.6
+jupyter_core        5.7.1
+jupyterlab          4.0.11
+notebook            7.0.7
 -----
-Python 3.10.12 (main, Jun 11 2023, 05:26:28) [GCC 11.4.0]
-Linux-6.2.0-1016-azure-x86_64-with-glibc2.35
+Python 3.10.12 (main, Nov 20 2023, 15:14:05) [GCC 11.4.0]
+Linux-6.2.0-1018-azure-x86_64-with-glibc2.35
 -----
-Session information updated at 2023-12-07 13:53
+Session information updated at 2024-01-24 10:49
 </pre>
 </div>
 </div>
