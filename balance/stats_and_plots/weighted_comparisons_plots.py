@@ -365,17 +365,6 @@ def plot_hist_kde(
     }
     if dist_type != "ecdf":
         kwargs_for_dist_function["common_norm"] = False
-    # pyre-fixme[6]: For 1st argument expected `Optional[Iterable[str]]` but got
-    #  `Union[None, Dict[str, str], int, Axes, DataFrame, Series, str]`.
-    # pyre-fixme[6]: For 1st argument expected `Optional[Axes]` but got `Union[None,
-    #  Dict[str, str], int, Axes, DataFrame, Series, str]`.
-    # pyre-fixme[6]: For 1st argument expected `Union[None, Tuple[Union[bool,
-    #  float], Union[bool, float]], bool, float]` but got `Union[None, Dict[str, str],
-    #  int, Axes, DataFrame, Series, str]`.
-    # pyre-fixme[6]: For 1st argument expected `bool` but got `Union[None, Dict[str,
-    #  str], int, Axes, DataFrame, Series, str]`.
-    # pyre-fixme[6]: For 1st argument expected `str` but got `Union[None, Dict[str,
-    #  str], int, Axes, DataFrame, Series, str]`.
     ax = dist_function(**kwargs_for_dist_function)
     ax.set_title(title)
 
@@ -458,16 +447,10 @@ def plot_qq(
             label=names[ii],
             ax=axis,
         )
-    # pyre-fixme[6]: For 1st argument expected `Axes` but got `Optional[Axes]`.
     set_xy_axes_to_use_the_same_lim(axis)
 
-    # pyre-fixme[16]: `Optional` has no attribute `plot`.
-    # pyre-fixme[16]: `Optional` has no attribute `get_xlim`.
-    # pyre-fixme[16]: `Optional` has no attribute `get_ylim`.
     axis.plot(axis.get_xlim(), axis.get_ylim(), "--")
-    # pyre-fixme[16]: `Optional` has no attribute `set_title`.
     axis.set_title(f"quantile-quantile plot of covar '{column}' in target vs sample")
-    # pyre-fixme[16]: `Optional` has no attribute `legend`.
     axis.legend()
 
 
@@ -562,19 +545,12 @@ def plot_qq_categorical(
                 # pyre-fixme[16]: `tuple` has no attribute `prop_sample`.
                 axis.text(x=r.prop_sample, y=r.prop_target, s=r[1])
 
-    # pyre-fixme[16]: `Optional` has no attribute `set_ylim`.
     axis.set_ylim(-0.1, 1.1)
-    # pyre-fixme[16]: `Optional` has no attribute `set_xlim`.
     axis.set_xlim(-0.1, 1.1)
-    # pyre-fixme[16]: `Optional` has no attribute `plot`.
-    # pyre-fixme[16]: `Optional` has no attribute `get_xlim`.
-    # pyre-fixme[16]: `Optional` has no attribute `get_ylim`.
     axis.plot(axis.get_xlim(), axis.get_ylim(), "--")
-    # pyre-fixme[16]: `Optional` has no attribute `set_title`.
     axis.set_title(
         f"proportion-proportion plot of covar '{column}' in target vs sample"
     )
-    # pyre-fixme[16]: `Optional` has no attribute `legend`.
     axis.legend()
 
 
