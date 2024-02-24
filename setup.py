@@ -5,17 +5,6 @@
 
 from setuptools import find_packages, setup
 
-"""
-Core library deps
-
-Version requirements
-* scipy<=1.9.2: Required by glmnet-python
-* pandas<=1.4.3: 1.5.0 moved UndefinedVariableError into pandas.errors
-
-Other requirements:
-* glmnet-python@1.0, from https://github.com/bbalasub1/glmnet_python.git
-
-"""
 REQUIRES = [
     "numpy",
     "pandas<=1.4.3",
@@ -31,8 +20,6 @@ REQUIRES = [
     "session-info",
 ]
 
-# Development deps (e.g. pytest, builds)
-# TODO[scubasteve]: Add dev requirements
 DEV_REQUIRES = [
     "setuptools_scm",
     "wheel",
@@ -48,16 +35,14 @@ DESCRIPTION = (
     "some target population of interest."
 )
 
-
 def setup_package() -> None:
-    """Used for building/installing the balance package."""
     with open("README.md", "r", encoding="utf-8") as fh:
         long_description = fh.read()
 
     setup(
         name="balance",
         description=DESCRIPTION,
-        author="Facebook, Inc.",
+        author="Meta Platforms, Inc. and affiliates",
         license="GPLv2",
         url="https://github.com/facebookresearch/balance",
         keywords=[""],
@@ -66,14 +51,9 @@ def setup_package() -> None:
         python_requires=">=3.7",
         install_requires=REQUIRES,
         packages=find_packages(include=["balance*"]),
-        # Include all csv files
-        package_data={"": ["*.csv"]},
-        extras_require={
-            "dev": DEV_REQUIRES,
-        },
-        use_scm_version={
-            "write_to": "version.py",
-        },
+        package_data={"balance": ["*.csv"]},  # Adjust the package name if needed
+        extras_require={"dev": DEV_REQUIRES},
+        use_scm_version={"write_to": "balance/version.py"},
         setup_requires=["setuptools_scm"],
         classifiers=[
             "Development Status :: 3 - Alpha",
@@ -88,7 +68,6 @@ def setup_package() -> None:
             "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
         ],
     )
-
 
 if __name__ == "__main__":
     setup_package()
