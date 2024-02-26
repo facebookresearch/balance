@@ -3,6 +3,8 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2.
 
+# pyre-unsafe
+
 # LICENSE file in the root directory of this source tree.
 
 from pathlib import Path
