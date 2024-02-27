@@ -297,6 +297,7 @@
 
     <span class="c1"># additions is new columns to add to data. i.e.: column names that appear in transformations</span>
     <span class="c1">#   but are not present in all_data.</span>
+    <span class="c1"># pyre-fixme[16]: Optional type has no attribute `columns`.</span>
     <span class="n">additions</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">transformations</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">all_data</span><span class="o">.</span><span class="n">columns</span><span class="p">}</span>
     <span class="n">transformations</span> <span class="o">=</span> <span class="p">{</span>
         <span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">transformations</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">all_data</span><span class="o">.</span><span class="n">columns</span>
@@ -313,6 +314,7 @@
     <span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;No transformations or additions passed&quot;</span>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">additions</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># pyre-fixme[16]: Optional type has no attribute `assign`.</span>
         <span class="n">added</span> <span class="o">=</span> <span class="n">all_data</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="o">**</span><span class="n">additions</span><span class="p">)</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="nb">list</span><span class="p">(</span><span class="n">additions</span><span class="o">.</span><span class="n">keys</span><span class="p">())]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">added</span> <span class="o">=</span> <span class="kc">None</span>
@@ -325,6 +327,7 @@
         <span class="c1"># Adding .copy(deep=False) solves this.</span>
         <span class="c1"># See: https://stackoverflow.com/a/54914752</span>
         <span class="n">transformed</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="c1"># pyre-fixme[16]: Optional type has no attribute `copy`.</span>
             <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="p">(</span><span class="n">all_data</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">transformations</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
@@ -338,6 +341,7 @@
         <span class="k">if</span> <span class="n">drop</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dropping the variables: </span><span class="si">{</span><span class="n">dropped_columns</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># pyre-fixme[16]: Optional type has no attribute `loc`.</span>
             <span class="n">out</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">out</span><span class="p">,</span> <span class="n">all_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">dropped_columns</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Final variables in output: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 

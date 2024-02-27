@@ -172,6 +172,8 @@
     <span class="c1"># series of type Object, which won&#39;t work for the ipfn script</span>
     <span class="n">levels_dict</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">variable</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
+        <span class="c1"># pyre-fixme[16]: Optional type has no attribute `__setitem__`.</span>
+        <span class="c1"># pyre-fixme[16]: Optional type has no attribute `__getitem__`.</span>
         <span class="n">target_df</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_df</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
         <span class="n">sample_df</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_df</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
 
@@ -196,6 +198,7 @@
         <span class="sa">f</span><span class="s2">&quot;Final covariates and levels that will be used in raking: </span><span class="si">{</span><span class="n">levels_dict</span><span class="si">}</span><span class="s2">.&quot;</span>
     <span class="p">)</span>
 
+    <span class="c1"># pyre-fixme[16]: Optional type has no attribute `assign`.</span>
     <span class="n">target_df</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">weight</span><span class="o">=</span><span class="n">target_weights</span><span class="p">)</span>
     <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">weight</span><span class="o">=</span><span class="n">sample_weights</span><span class="p">)</span>
 

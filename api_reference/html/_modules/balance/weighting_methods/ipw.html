@@ -316,12 +316,9 @@
             <span class="p">)</span>
     <span class="n">all_perf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">all_perf</span><span class="p">)</span>
     <span class="n">best</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="c1"># pyre-fixme[16]: `Optional` has no attribute `tail`.</span>
         <span class="n">all_perf</span><span class="p">[</span><span class="n">all_perf</span><span class="o">.</span><span class="n">design_effect</span> <span class="o">&lt;</span> <span class="n">max_de</span><span class="p">]</span>
-        <span class="c1"># pyre-fixme[6]: For 1st param expected `Union[typing_extensions.Literal[0],</span>
-        <span class="c1">#  typing_extensions.Literal[&#39;index&#39;]]` but got</span>
-        <span class="c1">#  `typing_extensions.Literal[&#39;design_effect&#39;]`.</span>
-        <span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">&quot;design_effect&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">tail</span><span class="p">(</span><span class="n">n_asmd_candidates</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">&quot;design_effect&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">tail</span><span class="p">(</span><span class="n">n_asmd_candidates</span><span class="p">)</span>
     <span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Regularisation with design effect below </span><span class="si">{</span><span class="n">max_de</span><span class="si">}</span><span class="s2">: </span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">best</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
@@ -344,7 +341,6 @@
         <span class="n">adjusted_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="p">[</span><span class="n">sample_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">index</span><span class="p">)]</span>
 
         <span class="n">asmd_after</span> <span class="o">=</span> <span class="n">asmd</span><span class="p">(</span>
-            <span class="c1"># pyre-fixme[6]: For 1st param expected `DataFrame` but got `Series`.</span>
             <span class="n">sample_df</span><span class="o">=</span><span class="n">adjusted_df</span><span class="p">,</span>
             <span class="n">target_df</span><span class="o">=</span><span class="n">target_df</span><span class="p">,</span>
             <span class="n">sample_weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
@@ -370,10 +366,8 @@
     <span class="n">all_perf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">all_perf</span><span class="p">)</span>
     <span class="n">best</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">all_perf</span><span class="p">[</span><span class="n">all_perf</span><span class="o">.</span><span class="n">design_effect</span> <span class="o">&lt;</span> <span class="n">max_de</span><span class="p">]</span>
-        <span class="c1"># pyre-fixme[6]: For 1st param expected `Union[typing_extensions.Literal[0],</span>
-        <span class="c1">#  typing_extensions.Literal[&#39;index&#39;]]` but got</span>
-        <span class="c1">#  `typing_extensions.Literal[&#39;asmd_improvement&#39;]`.</span>
-        <span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">&quot;asmd_improvement&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">tail</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">&quot;asmd_improvement&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">tail</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
     <span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Best regularisation: </span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">best</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="n">solution</span> <span class="o">=</span> <span class="p">{</span>

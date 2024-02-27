@@ -136,9 +136,7 @@
         <span class="n">v</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">replace</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
         <span class="n">w</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">replace</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
     <span class="n">v</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">w</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span>  <span class="c1"># pyre-ignore[16]: w is a pd.Series which has a reset_index method.</span>
-        <span class="n">drop</span><span class="o">=</span><span class="kc">True</span>
-    <span class="p">)</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="n">_check_weights_are_valid</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
 
@@ -355,7 +353,6 @@
         <span class="c1"># Apply a lambda function to round a pd.Series of tuples to x decimal places</span>
         <span class="n">ci</span> <span class="o">=</span> <span class="n">ci</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">round_ndigits</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">t</span><span class="p">))</span>
 
-    <span class="c1"># pyre-ignore[7]: pyre thinks this function could return a DataFrame because of ci = ci.apply(round_tuple). It&#39;s wrong.</span>
     <span class="k">return</span> <span class="n">ci</span></div>
 
 
@@ -721,7 +718,6 @@
     <span class="k">if</span> <span class="n">w</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">w</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
 
-    <span class="c1"># pyre-ignore[6]: this is a pyre bug. str inherits from hashable, and .rename works fine.</span>
     <span class="n">w</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;Freq&quot;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">column</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -734,7 +730,6 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;argument `df` must be a pandas DataFrame or Series&quot;</span><span class="p">)</span>
 
-    <span class="c1"># pyre-ignore[6]: this is a bug. pd.concat can deal with a DataFrame and a Series.</span>
     <span class="n">relative_frequency_table_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">df</span><span class="p">,</span> <span class="n">w</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
     <span class="n">relative_frequency_table_data</span> <span class="o">=</span> <span class="n">relative_frequency_table_data</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>

@@ -354,9 +354,7 @@
     <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>  <span class="c1"># n users</span>
     <span class="n">w</span> <span class="o">=</span> <span class="n">w</span> <span class="o">/</span> <span class="n">w</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>  <span class="c1"># normalize to 1</span>
     <span class="c1"># get a cumsum of sorted weights to find the median:</span>
-    <span class="n">w_freq_cumsum</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span>  <span class="c1"># pyre-ignore[16]: it does have a cumsum method.</span>
-        <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span>
-    <span class="p">)</span><span class="o">.</span><span class="n">cumsum</span><span class="p">()</span>
+    <span class="n">w_freq_cumsum</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">cumsum</span><span class="p">()</span>
     <span class="n">numerator</span> <span class="o">=</span> <span class="p">(</span><span class="n">w_freq_cumsum</span> <span class="o">&lt;=</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">numerator</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">numerator</span> <span class="o">=</span> <span class="p">(</span>
