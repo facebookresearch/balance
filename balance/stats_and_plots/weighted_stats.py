@@ -99,9 +99,7 @@ def _prepare_weighted_stat_args(
         v = v.replace([np.inf, -np.inf], np.nan)
         w = w.replace([np.inf, -np.inf], np.nan)
     v = v.reset_index(drop=True)
-    w = w.reset_index(  # pyre-ignore[16]: w is a pd.Series which has a reset_index method.
-        drop=True
-    )
+    w = w.reset_index(drop=True)
 
     _check_weights_are_valid(w)
 
@@ -310,7 +308,6 @@ def ci_of_weighted_mean(
         # Apply a lambda function to round a pd.Series of tuples to x decimal places
         ci = ci.apply(lambda t: tuple(round(x, round_ndigits) for x in t))
 
-    # pyre-ignore[7]: pyre thinks this function could return a DataFrame because of ci = ci.apply(round_tuple). It's wrong.
     return ci
 
 
@@ -661,7 +658,6 @@ def relative_frequency_table(
     if w is None:
         w = pd.Series(np.ones(df.shape[0]))
 
-    # pyre-ignore[6]: this is a pyre bug. str inherits from hashable, and .rename works fine.
     w = w.rename("Freq")
 
     if column is None:
@@ -674,7 +670,6 @@ def relative_frequency_table(
         else:
             raise TypeError("argument `df` must be a pandas DataFrame or Series")
 
-    # pyre-ignore[6]: this is a bug. pd.concat can deal with a DataFrame and a Series.
     relative_frequency_table_data = pd.concat((df, w), axis=1)
 
     relative_frequency_table_data = relative_frequency_table_data.groupby(

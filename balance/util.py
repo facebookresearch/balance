@@ -1157,7 +1157,6 @@ def rm_mutual_nas(*args) -> List:
     missing_mask = reduce(
         lambda x, y: x | y,
         [
-            # pyre-ignore[16]: pd.Series has isna.
             pd.Series(x).replace([np.inf, -np.inf], np.nan).isna()
             for x in args
             if x is not None
@@ -1433,9 +1432,7 @@ def fct_lump(s: pd.Series, prop: float = 0.05) -> pd.Series:
         remainder_category_name = remainder_category_name * 2
 
     if s.dtype.name == "category":
-        s = s.astype(  # pyre-ignore[9]: this use is for pd.Series (not defined currently for pd.DataFrame)
-            "object"
-        )
+        s = s.astype("object")
     s.loc[s.apply(lambda x: x in small_categories)] = remainder_category_name
     return s
 
@@ -1472,12 +1469,8 @@ def fct_lump_by(s: pd.Series, by: pd.Series, prop: float = 0.05) -> pd.Series:
     # https://github.com/pandas-dev/pandas/issues/16646
     # we keep the index of s as the index of the result
     s_index = s.index
-    s = s.reset_index(  # pyre-ignore[9]: this use is for pd.Series (not defined currently for pd.DataFrame)
-        drop=True
-    )
-    by = by.reset_index(  # pyre-ignore[9]: this use is for pd.Series (not defined currently for pd.DataFrame)‰
-        drop=True
-    )
+    s = s.reset_index(drop=True)
+    by = by.reset_index(drop=True)
     res = s.groupby(by).apply(lambda x: fct_lump(x, prop=prop))
     res.index = s_index
     return res
@@ -1714,11 +1707,9 @@ def _astype_in_df_from_dtypes(
                 # {'id': dtype('int64'), 'a': dtype('int64'), 'weight': dtype('float64')}
     """
     dict_of_target_dtypes = _dict_intersect(
-        # pyre-ignore[6]: using to_dict on pd.Series will work fine:
         target_dtypes.to_dict(),
         df.dtypes.to_dict(),
     )
-    # pyre-ignore[7]: we expect the input and output to be df (and not pd.Series)
     return df.astype(dict_of_target_dtypes)
 
 

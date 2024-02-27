@@ -544,7 +544,6 @@ def plot_qq_categorical(
 
         if plot_data.shape[0] < label_threshold:
             for r in plot_data.itertuples():
-                # pyre-fixme[16]: `tuple` has no attribute `prop_sample`.
                 axis.text(x=r.prop_sample, y=r.prop_target, s=r[1])
 
     axis.set_ylim(-0.1, 1.1)
@@ -1430,6 +1429,8 @@ def plot_dist(
             logger.warning("plotly plots ignore dist_type. Consider library='seaborn'")
 
         return plotly_plot_dist(
+            # pyre-fixme[6]: For 1st argument expected `Dict[str, DataFrame]` but
+            #  got `Dict[str, Union[DataFrame, Series]]`.
             dict_of_dfs,
             variables,
             numeric_n_values_threshold,

@@ -1022,6 +1022,7 @@ class Sample:
         diagnostics = diagnostics.reset_index(drop=True)
 
         logger.info("Done computing diagnostics")
+        # pyre-fixme[7]: Expected `DataFrame` but got `Optional[DataFrame]`.
         return diagnostics
 
     ############################################

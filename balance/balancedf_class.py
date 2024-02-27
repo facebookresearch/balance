@@ -1690,6 +1690,7 @@ class BalanceCovarsDF(BalanceDF):
         Returns:
             BalanceCovarsDF: Object.
         """
+        # pyre-fixme[9]: df has type `DataFrame`; used as `Optional[DataFrame]`.
         df = df.reset_index()
         df = pd.concat(
             (df, pd.Series(np.arange(0, df.shape[0]), name="id"), weights), axis=1

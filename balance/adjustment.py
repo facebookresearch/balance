@@ -252,6 +252,7 @@ def apply_transformations(
 
     # additions is new columns to add to data. i.e.: column names that appear in transformations
     #   but are not present in all_data.
+    # pyre-fixme[16]: Optional type has no attribute `columns`.
     additions = {k: v for k, v in transformations.items() if k not in all_data.columns}
     transformations = {
         k: v for k, v in transformations.items() if k in all_data.columns
@@ -268,6 +269,7 @@ def apply_transformations(
     ) > 0, "No transformations or additions passed"
 
     if len(additions) > 0:
+        # pyre-fixme[16]: Optional type has no attribute `assign`.
         added = all_data.assign(**additions).loc[:, list(additions.keys())]
     else:
         added = None
@@ -280,6 +282,7 @@ def apply_transformations(
         # Adding .copy(deep=False) solves this.
         # See: https://stackoverflow.com/a/54914752
         transformed = pd.DataFrame(
+            # pyre-fixme[16]: Optional type has no attribute `copy`.
             {k: v(all_data.copy(deep=False)[k]) for k, v in transformations.items()}
         )
     else:
@@ -293,6 +296,7 @@ def apply_transformations(
         if drop:
             logger.warning(f"Dropping the variables: {dropped_columns}")
         else:
+            # pyre-fixme[16]: Optional type has no attribute `loc`.
             out = pd.concat((out, all_data.loc[:, dropped_columns]), axis=1)
     logger.info(f"Final variables in output: {list(out.columns)}")
 

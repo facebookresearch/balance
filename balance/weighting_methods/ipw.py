@@ -271,12 +271,9 @@ def choose_regularization(
             )
     all_perf = pd.DataFrame(all_perf)
     best = (
-        # pyre-fixme[16]: `Optional` has no attribute `tail`.
         all_perf[all_perf.design_effect < max_de]
-        # pyre-fixme[6]: For 1st param expected `Union[typing_extensions.Literal[0],
-        #  typing_extensions.Literal['index']]` but got
-        #  `typing_extensions.Literal['design_effect']`.
-        .sort_values("design_effect").tail(n_asmd_candidates)
+        .sort_values("design_effect")
+        .tail(n_asmd_candidates)
     )
     logger.debug(f"Regularisation with design effect below {max_de}: \n {best}")
 
@@ -299,7 +296,6 @@ def choose_regularization(
         adjusted_df = sample_df[sample_df.index.isin(weights.index)]
 
         asmd_after = asmd(
-            # pyre-fixme[6]: For 1st param expected `DataFrame` but got `Series`.
             sample_df=adjusted_df,
             target_df=target_df,
             sample_weights=weights,
@@ -325,10 +321,8 @@ def choose_regularization(
     all_perf = pd.DataFrame(all_perf)
     best = (
         all_perf[all_perf.design_effect < max_de]
-        # pyre-fixme[6]: For 1st param expected `Union[typing_extensions.Literal[0],
-        #  typing_extensions.Literal['index']]` but got
-        #  `typing_extensions.Literal['asmd_improvement']`.
-        .sort_values("asmd_improvement").tail(1)
+        .sort_values("asmd_improvement")
+        .tail(1)
     )
     logger.info(f"Best regularisation: \n {best}")
     solution = {

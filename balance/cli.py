@@ -283,9 +283,7 @@ class BalanceCLI:
             output_df = output_df[keep_rows]
 
         if self.has_keep_columns():
-            output_df = output_df[  # pyre-ignore[9]: this uses the DataFrame also.
-                self.keep_columns()
-            ]
+            output_df = output_df[self.keep_columns()]
 
         return output_df
 

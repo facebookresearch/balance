@@ -133,6 +133,8 @@ def rake(
     # series of type Object, which won't work for the ipfn script
     levels_dict = {}
     for variable in variables:
+        # pyre-fixme[16]: Optional type has no attribute `__setitem__`.
+        # pyre-fixme[16]: Optional type has no attribute `__getitem__`.
         target_df[variable] = target_df[variable].astype(str)
         sample_df[variable] = sample_df[variable].astype(str)
 
@@ -157,6 +159,7 @@ def rake(
         f"Final covariates and levels that will be used in raking: {levels_dict}."
     )
 
+    # pyre-fixme[16]: Optional type has no attribute `assign`.
     target_df = target_df.assign(weight=target_weights)
     sample_df = sample_df.assign(weight=sample_weights)
 

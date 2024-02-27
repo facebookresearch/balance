@@ -306,9 +306,7 @@ def weighted_median_breakdown_point(w: pd.Series) -> np.float64:
     n = len(w)  # n users
     w = w / w.sum()  # normalize to 1
     # get a cumsum of sorted weights to find the median:
-    w_freq_cumsum = w.sort_values(  # pyre-ignore[16]: it does have a cumsum method.
-        ascending=False
-    ).cumsum()
+    w_freq_cumsum = w.sort_values(ascending=False).cumsum()
     numerator = (w_freq_cumsum <= 0.5).sum()
     if numerator == 0:
         numerator = (
