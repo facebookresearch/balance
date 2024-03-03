@@ -830,9 +830,11 @@
             <span class="n">weighted_quantile</span><span class="p">(</span>
                 <span class="n">dict_of_dfs</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">][</span><span class="n">variable</span><span class="p">],</span>
                 <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">),</span>
-                <span class="n">dict_of_dfs</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">][</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
-                <span class="k">if</span> <span class="s2">&quot;weight&quot;</span> <span class="ow">in</span> <span class="n">dict_of_dfs</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span>
-                <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="p">(</span>
+                    <span class="n">dict_of_dfs</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">][</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="s2">&quot;weight&quot;</span> <span class="ow">in</span> <span class="n">dict_of_dfs</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span>
+                    <span class="k">else</span> <span class="kc">None</span>
+                <span class="p">),</span>
             <span class="p">)[</span><span class="s2">&quot;col1&quot;</span><span class="p">]</span>
         <span class="p">)</span>
 
@@ -855,9 +857,11 @@
                         <span class="n">weighted_quantile</span><span class="p">(</span>
                             <span class="n">dict_of_dfs</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">variable</span><span class="p">],</span>
                             <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">),</span>
-                            <span class="n">dict_of_dfs</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
-                            <span class="k">if</span> <span class="s2">&quot;weight&quot;</span> <span class="ow">in</span> <span class="n">dict_of_dfs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span>
-                            <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                            <span class="p">(</span>
+                                <span class="n">dict_of_dfs</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
+                                <span class="k">if</span> <span class="s2">&quot;weight&quot;</span> <span class="ow">in</span> <span class="n">dict_of_dfs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span>
+                                <span class="k">else</span> <span class="kc">None</span>
+                            <span class="p">),</span>
                         <span class="p">)[</span><span class="s2">&quot;col1&quot;</span><span class="p">]</span>
                     <span class="p">),</span>
                     <span class="n">marker</span><span class="o">=</span><span class="p">{</span>
@@ -1131,9 +1135,11 @@
             <span class="n">df_plot_data</span> <span class="o">=</span> <span class="n">relative_frequency_table</span><span class="p">(</span>
                 <span class="n">dict_of_dfs</span><span class="p">[</span><span class="n">name</span><span class="p">],</span>
                 <span class="n">variable</span><span class="p">,</span>
-                <span class="n">dict_of_dfs</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
-                <span class="k">if</span> <span class="s2">&quot;weight&quot;</span> <span class="ow">in</span> <span class="n">dict_of_dfs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span>
-                <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="p">(</span>
+                    <span class="n">dict_of_dfs</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="s2">&quot;weight&quot;</span> <span class="ow">in</span> <span class="n">dict_of_dfs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span>
+                    <span class="k">else</span> <span class="kc">None</span>
+                <span class="p">),</span>
             <span class="p">)</span>
 
             <span class="n">variable_specific_dict_of_plots</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Bar</span><span class="p">(</span>

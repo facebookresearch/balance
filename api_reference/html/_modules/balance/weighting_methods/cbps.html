@@ -363,10 +363,7 @@
     <span class="n">beta_new</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span>
         <span class="n">beta_new</span><span class="p">,</span>
         <span class="mi">0</span><span class="p">,</span>
-        <span class="n">beta</span><span class="p">[</span>
-            <span class="mi">0</span><span class="p">,</span>
-        <span class="p">]</span>
-        <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">X_matrix_mean</span><span class="p">,</span> <span class="n">beta_new</span><span class="p">),</span>
+        <span class="n">beta</span><span class="p">[</span><span class="mi">0</span><span class="p">,]</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">X_matrix_mean</span><span class="p">,</span> <span class="n">beta_new</span><span class="p">),</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">beta_new</span>
 
@@ -775,14 +772,14 @@
             <span class="c1"># The following are the results of the optimizations</span>
             <span class="s2">&quot;rescale_initial_result&quot;</span><span class="p">:</span> <span class="n">rescale_initial_result</span><span class="p">,</span>
             <span class="s2">&quot;balance_optimize_result&quot;</span><span class="p">:</span> <span class="n">balance_optimize_result</span><span class="p">,</span>
-            <span class="s2">&quot;gmm_optimize_result_glm_init&quot;</span><span class="p">:</span> <span class="n">gmm_optimize_result_glm_init</span>
-            <span class="k">if</span> <span class="n">cbps_method</span> <span class="o">==</span> <span class="s2">&quot;over&quot;</span>
-            <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;gmm_optimize_result_glm_init&quot;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="n">gmm_optimize_result_glm_init</span> <span class="k">if</span> <span class="n">cbps_method</span> <span class="o">==</span> <span class="s2">&quot;over&quot;</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="p">),</span>
             <span class="c1"># pyre-fixme[61]: `gmm_optimize_result_bal_init` is undefined, or not</span>
             <span class="c1">#  always defined.</span>
-            <span class="s2">&quot;gmm_optimize_result_bal_init&quot;</span><span class="p">:</span> <span class="n">gmm_optimize_result_bal_init</span>
-            <span class="k">if</span> <span class="n">cbps_method</span> <span class="o">==</span> <span class="s2">&quot;over&quot;</span>
-            <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;gmm_optimize_result_bal_init&quot;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="n">gmm_optimize_result_bal_init</span> <span class="k">if</span> <span class="n">cbps_method</span> <span class="o">==</span> <span class="s2">&quot;over&quot;</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="p">),</span>
         <span class="p">},</span>
     <span class="p">}</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done cbps function&quot;</span><span class="p">)</span>

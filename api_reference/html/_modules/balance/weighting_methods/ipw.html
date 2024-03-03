@@ -601,9 +601,7 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;fit[&#39;lambda_1se&#39;]: </span><span class="si">{</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;lambda_1se&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-    <span class="n">X_matrix_sample</span> <span class="o">=</span> <span class="n">X_matrix</span><span class="p">[</span>
-        <span class="p">:</span><span class="n">sample_n</span><span class="p">,</span>
-    <span class="p">]</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span>
+    <span class="n">X_matrix_sample</span> <span class="o">=</span> <span class="n">X_matrix</span><span class="p">[:</span><span class="n">sample_n</span><span class="p">,]</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;max_de: </span><span class="si">{</span><span class="n">max_de</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">max_de</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
