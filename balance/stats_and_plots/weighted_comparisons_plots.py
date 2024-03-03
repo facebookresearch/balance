@@ -773,9 +773,11 @@ def plotly_plot_qq(
             weighted_quantile(
                 dict_of_dfs["target"][variable],
                 np.arange(0, 1, 0.001),
-                dict_of_dfs["target"]["weight"]
-                if "weight" in dict_of_dfs["target"].columns
-                else None,
+                (
+                    dict_of_dfs["target"]["weight"]
+                    if "weight" in dict_of_dfs["target"].columns
+                    else None
+                ),
             )["col1"]
         )
 
@@ -798,9 +800,11 @@ def plotly_plot_qq(
                         weighted_quantile(
                             dict_of_dfs[name][variable],
                             np.arange(0, 1, 0.001),
-                            dict_of_dfs[name]["weight"]
-                            if "weight" in dict_of_dfs[name].columns
-                            else None,
+                            (
+                                dict_of_dfs[name]["weight"]
+                                if "weight" in dict_of_dfs[name].columns
+                                else None
+                            ),
                         )["col1"]
                     ),
                     marker={
@@ -1068,9 +1072,11 @@ def plotly_plot_bar(
             df_plot_data = relative_frequency_table(
                 dict_of_dfs[name],
                 variable,
-                dict_of_dfs[name]["weight"]
-                if "weight" in dict_of_dfs[name].columns
-                else None,
+                (
+                    dict_of_dfs[name]["weight"]
+                    if "weight" in dict_of_dfs[name].columns
+                    else None
+                ),
             )
 
             variable_specific_dict_of_plots[name] = go.Bar(

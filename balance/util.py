@@ -1181,9 +1181,11 @@ def rm_mutual_nas(*args) -> List:
 
     # Reapply the index for pd.Series
     r = [
-        pd.Series(data, index=pd.Series(orig_data)[nonmissing_mask].index)
-        if isinstance(orig_data, pd.Series)
-        else data
+        (
+            pd.Series(data, index=pd.Series(orig_data)[nonmissing_mask].index)
+            if isinstance(orig_data, pd.Series)
+            else data
+        )
         for data, orig_data in zip(r, args)
     ]
 

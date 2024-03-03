@@ -305,10 +305,7 @@ def _reverse_svd_and_centralization(beta, U, s, Vh, X_matrix_mean, X_matrix_std)
     beta_new = np.insert(
         beta_new,
         0,
-        beta[
-            0,
-        ]
-        - np.matmul(X_matrix_mean, beta_new),
+        beta[0,] - np.matmul(X_matrix_mean, beta_new),
     )
     return beta_new
 
@@ -715,14 +712,14 @@ def cbps(  # noqa
             # The following are the results of the optimizations
             "rescale_initial_result": rescale_initial_result,
             "balance_optimize_result": balance_optimize_result,
-            "gmm_optimize_result_glm_init": gmm_optimize_result_glm_init
-            if cbps_method == "over"
-            else None,
+            "gmm_optimize_result_glm_init": (
+                gmm_optimize_result_glm_init if cbps_method == "over" else None
+            ),
             # pyre-fixme[61]: `gmm_optimize_result_bal_init` is undefined, or not
             #  always defined.
-            "gmm_optimize_result_bal_init": gmm_optimize_result_bal_init
-            if cbps_method == "over"
-            else None,
+            "gmm_optimize_result_bal_init": (
+                gmm_optimize_result_bal_init if cbps_method == "over" else None
+            ),
         },
     }
     logger.info("Done cbps function")

@@ -553,9 +553,7 @@ def ipw(
         raise NotImplementedError()
     logger.debug(f"fit['lambda_1se']: {fit['lambda_1se']}")
 
-    X_matrix_sample = X_matrix[
-        :sample_n,
-    ].toarray()
+    X_matrix_sample = X_matrix[:sample_n,].toarray()
 
     logger.info(f"max_de: {max_de}")
     if max_de is not None:
