@@ -12,7 +12,8 @@ import logging
 from contextlib import contextmanager
 from typing import Any, Callable, cast, Dict, Generator, List, Optional, Tuple, Union
 
-import glmnet_python  # noqa  # Required so that cvglmnet import works
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import GridSearchCV
 
 import numpy as np
 import pandas as pd
@@ -22,8 +23,6 @@ from balance import adjustment as balance_adjustment, util as balance_util
 from balance.stats_and_plots.weighted_comparisons_stats import asmd
 from balance.stats_and_plots.weights_stats import design_effect
 
-from cvglmnet import cvglmnet  # pyre-ignore[21]: this module exists
-from cvglmnetPredict import cvglmnetPredict  # pyre-ignore[21]: this module exists
 from scipy.sparse.csc import csc_matrix
 
 logger: logging.Logger = logging.getLogger(__package__)
@@ -94,58 +93,6 @@ def _patch_scipy_random(*args, **kwds) -> Generator:
         scipy.random = tmp_scipy_random_func
 
 
-def cv_glmnet_performance(
-    fit, feature_names: Optional[list] = None, s: Union[str, float, None] = "lambda_1se"
-) -> Dict[str, Any]:
-    """Extract elements from cvglmnet to describe the fitness quality.
-
-    Args:
-        fit (_type_): output of cvglmnet
-        feature_names (Optional[list], optional): The coeficieents of which features should be included.
-            None = all features are included. Defaults to None.
-        s (Union[str, float, None], optional): lambda avlue for cvglmnet. Defaults to "lambda_1se".
-
-    Raises:
-        Exception: _description_
-
-    Returns:
-        Dict[str, Any]: Dict of the shape:
-            {
-                "prop_dev_explained": fit["glmnet_fit"]["dev"][optimal_lambda_index],
-                "mean_cv_error": fit["cvm"][optimal_lambda_index],
-                "coefs": coefs,
-            }
-    """
-    if isinstance(s, str):
-        optimal_lambda = fit[s]
-    else:
-        optimal_lambda = s
-    optimal_lambda_index = np.where(fit["lambdau"] == optimal_lambda)[0]
-    if len(optimal_lambda_index) != 1:
-        raise Exception(
-            f"No lambda found for s={s}. You must specify a "
-            'numeric value which exists in the model or "lambda_min", or '
-            '"lambda_1se"'
-        )
-    coefs = cvglmnetPredict(
-        fit,
-        newx=np.empty([0]),
-        ptype="coefficients",
-        s=optimal_lambda,
-    )
-    coefs = coefs.reshape(coefs.shape[0])
-    if feature_names is not None:
-        coefs = pd.Series(data=coefs, index=["intercept"] + feature_names)
-    else:
-        coefs = pd.Series(data=coefs)
-
-    return {
-        "prop_dev_explained": fit["glmnet_fit"]["dev"][optimal_lambda_index],
-        "mean_cv_error": fit["cvm"][optimal_lambda_index],
-        "coefs": coefs,
-    }
-
-
 # TODO: consider add option to normalize weights to sample size
 def weights_from_link(
     link: Any,
@@ -188,158 +135,31 @@ def weights_from_link(
     return weights
 
 
-# TODO: Update choose_regularization function to be based on mse (instead of grid search)
-def choose_regularization(
-    fit,
-    sample_df: pd.DataFrame,
-    target_df: pd.DataFrame,
-    sample_weights: pd.Series,
-    target_weights: pd.Series,
-    X_matrix_sample,
-    balance_classes: bool,
-    max_de: float = 1.5,
-    trim_options: Tuple[
-        int, int, int, float, float, float, float, float, float, float
-    ] = (20, 10, 5, 2.5, 1.25, 0.5, 0.25, 0.125, 0.05, 0.01),
-    n_asmd_candidates: int = 10,
+def cv_logistic_regression_performance(
+    model, X_matrix, y, cv, feature_names: Optional[list] = None
 ) -> Dict[str, Any]:
-    """Searches through the regularisation parameters of the model and weight
-    trimming levels to find the combination with the highest covariate
-    ASMD reduction (in sample_df and target_df, NOT in the model matrix used for modeling
-    the response) subject to the design effect being lower than max_de (deafults to 1.5).
-    The function preforms a grid search over the n_asmd_candidates (deafults to 10) models
-    with highest DE lower than max_de (assuming higher DE means more bias reduction).
+    """Extract elements from GridSearchCV to describe the fitness quality."""
+    best_model = model.best_estimator_
+    coefs = best_model.coef_[0]
+    if feature_names is not None:
+        coefs = pd.Series(data=coefs, index=feature_names)
+    else:
+        coefs = pd.Series(data=coefs)
 
-    Args:
-        fit (_type_): output of cvglmnet
-        sample_df (pd.DataFrame): a dataframe representing the sample
-        target_df (pd.DataFrame): a dataframe representing the target
-        sample_weights (pd.Series): design weights for sample
-        target_weights (pd.Series): design weights for target
-        X_matrix_sample (_type_): the matrix that was used to consturct the model
-        balance_classes (bool): whether balance_classes used in glmnet
-        max_de (float, optional): upper bound for the design effect of the computed weights.
-            Used for choosing the model regularization and trimming.
-            If set to None, then it uses 'lambda_1se'. Defaults to 1.5.
-        trim_options (Tuple[ int, int, int, float, float, float, float, float, float, float ], optional):
-            options for weight_trimming_mean_ratio. Defaults to (20, 10, 5, 2.5, 1.25, 0.5, 0.25, 0.125, 0.05, 0.01).
-        n_asmd_candidates (int, optional): number of candidates for grid search.. Defaults to 10.
-
-    Returns:
-        Dict[str, Any]: Dict of the value of the chosen lambda, the value of trimming, model description.
-            Shape is
-                {
-                    "best": {"s": best.s.values, "trim": best.trim.values[0]},
-                    "perf": all_perf,
-                }
-    """
-
-    logger.info("Starting choosing regularisation parameters")
-    # get all links
-    links = cvglmnetPredict(fit, X_matrix_sample, ptype="link", s=fit["lambdau"])
-
-    asmd_before = asmd(
-        sample_df=sample_df,
-        target_df=target_df,
-        sample_weights=sample_weights,
-        target_weights=target_weights,
-    )
-    # Grid search over regularisation parameter and weight trimming
-    # First calculates design effects for all combinations, because this is cheap
-    all_perf = []
-    for wr in trim_options:
-        for i in range(links.shape[1]):
-
-            s = fit["lambdau"][i]
-            link = links[:, i]
-            weights = weights_from_link(
-                link,
-                balance_classes,
-                sample_weights,
-                target_weights,
-                weight_trimming_mean_ratio=wr,
-            )
-
-            deff = design_effect(weights)
-            all_perf.append(
-                {
-                    "s": s,
-                    "s_index": i,
-                    "trim": wr,
-                    "design_effect": deff,
-                }
-            )
-    all_perf = pd.DataFrame(all_perf)
-    best = (
-        all_perf[all_perf.design_effect < max_de]
-        .sort_values("design_effect")
-        .tail(n_asmd_candidates)
-    )
-    logger.debug(f"Regularisation with design effect below {max_de}: \n {best}")
-
-    # Calculate ASMDS for best 10 candidates (assuming that higher DE means
-    #  more bias reduction)
-    all_perf = []
-    for _, r in best.iterrows():
-        wr = r.trim
-        s_index = int(r.s_index)
-        s = fit["lambdau"][s_index]
-        link = links[:, s_index]
-
-        weights = weights_from_link(
-            link,
-            balance_classes,
-            sample_weights,
-            target_weights,
-            weight_trimming_mean_ratio=wr,
-        )
-        adjusted_df = sample_df[sample_df.index.isin(weights.index)]
-
-        asmd_after = asmd(
-            sample_df=adjusted_df,
-            target_df=target_df,
-            sample_weights=weights,
-            target_weights=target_weights,
-        )
-        # TODO: use asmd_improvement function for that
-        asmd_improvement = (
-            asmd_before.loc["mean(asmd)"] - asmd_after.loc["mean(asmd)"]
-        ) / asmd_before.loc["mean(asmd)"]
-        deff = design_effect(weights)
-        all_perf.append(
-            {
-                "s": s,
-                # pyre-fixme[61]: `i` is undefined, or not always defined.
-                "s_index": i,
-                "trim": wr,
-                "design_effect": deff,
-                "asmd_improvement": asmd_improvement,
-                "asmd": asmd_after.loc["mean(asmd)"],
-            }
-        )
-
-    all_perf = pd.DataFrame(all_perf)
-    best = (
-        all_perf[all_perf.design_effect < max_de]
-        .sort_values("asmd_improvement")
-        .tail(1)
-    )
-    logger.info(f"Best regularisation: \n {best}")
-    solution = {
-        "best": {"s": best.s.values, "trim": best.trim.values[0]},
-        "perf": all_perf,
+    return {
+        "prop_dev_explained": best_model.score(X_matrix, y),
+        "mean_cv_error": -model.best_score_,
+        "coefs": coefs,
     }
-    return solution
 
 
-# TODO: add memoaization (maybe in the adjust stage?!)
 def ipw(
     sample_df: pd.DataFrame,
     sample_weights: pd.Series,
     target_df: pd.DataFrame,
     target_weights: pd.Series,
     variables: Optional[List[str]] = None,
-    model: str = "glmnet",
+    model: str = "logistic",
     weight_trimming_mean_ratio: Optional[Union[int, float]] = 20,
     weight_trimming_percentile: Optional[float] = None,
     balance_classes: bool = True,
@@ -347,84 +167,14 @@ def ipw(
     na_action: str = "add_indicator",
     max_de: Optional[float] = None,
     formula: Union[str, List[str], None] = None,
-    penalty_factor: Optional[List[float]] = None,
     one_hot_encoding: bool = False,
-    # TODO: This is set to be false in order to keep reproducibility of works that uses balance.
-    # The best practice is for this to be true.
     random_seed: int = 2020,
     *args,
     **kwargs,
 ) -> Dict[str, Any]:
-    """Fit an ipw (inverse propensity score weighting) for the sample using the target.
-
-    Args:
-        sample_df (pd.DataFrame): a dataframe representing the sample
-        sample_weights (pd.Series): design weights for sample
-        target_df (pd.DataFrame): a dataframe representing the target
-        target_weights (pd.Series): design weights for target
-        variables (Optional[List[str]], optional): list of variables to include in the model.
-            If None all joint variables of sample_df and target_df are used. Defaults to None.
-        model (str, optional): the model used for modeling the propensity scores.
-            "glmnet" is logistic model. Defaults to "glmnet".
-        weight_trimming_mean_ratio (Optional[Union[int, float]], optional): indicating the ratio from above according to which
-            the weights are trimmed by mean(weights) * ratio.
-            Defaults to 20.
-        weight_trimming_percentile (Optional[float], optional): if weight_trimming_percentile is not none, winsorization is applied.
-            if None then trimming is applied. Defaults to None.
-        balance_classes (bool, optional): whether to balance the sample and target size for running the model.
-            True is preferable for imbalanced cases.
-            It is done to make the computation of the glmnet more efficient.
-            It shouldn't have an effect on the final weights as this is factored
-            into the computation of the weights. TODO: add ref. Defaults to True.
-        transformations (str, optional): what transformations to apply to data before fitting the model.
-            See apply_transformations function. Defaults to "default".
-        na_action (str, optional): what to do with NAs.
-            See add_na_indicator function. Defaults to "add_indicator".
-        max_de (Optional[float], optional): upper bound for the design effect of the computed weights.
-            Used for choosing the model regularization and trimming.
-            If set to None, then it uses 'lambda_1se'. Defaults to 1.5.
-        formula (Union[str, List[str], None], optional): The formula according to which build the model.
-            In case of list of formula, the model matrix will be built in steps and
-            concatenated together. Defaults to None.
-        penalty_factor (Optional[List[float]], optional): the penalty used in the glmnet function in ipw. The penalty
-            should have the same length as the formula list (and applies to each element of formula).
-            Smaller penalty on some formula will lead to elements in that formula to get more adjusted, i.e. to have a higher chance to get into the model (and not zero out). A penalty of 0 will make sure the element is included in the model.
-            If not provided, assume the same penalty (1) for all variables. Defaults to None.
-        one_hot_encoding (bool, optional): whether to encode all factor variables in the model matrix with
-            almost_one_hot_encoding. This is recomended in case of using
-            LASSO on the data (Default: False).
-            one_hot_encoding_greater_3 creates one-hot-encoding for all
-            categorical variables with more than 2 categories (i.e. the
-            number of columns will be equal to the number of categories),
-            and only 1 column for variables with 2 levels (treatment contrast). Defaults to False.
-        random_seed (int, optional): Random seed to use. Defaults to 2020.
-
-    Raises:
-        Exception: f"Sample indicator only has value {_n_unique}. This can happen when your sample or target are empty from unknown reason"
-        NotImplementedError: if model is not "glmnet"
-
-    Returns:
-        Dict[str, Any]: A dictionary includes:
-            "weight" --- The weights for the sample.
-            "model" --- parameters of the model:fit, performance, X_matrix_columns, lambda,
-                        weight_trimming_mean_ratio
-            Shape of the Dict:
-            {
-                "weight": weights,
-                "model": {
-                    "method": "ipw",
-                    "X_matrix_columns": X_matrix_columns_names,
-                    "fit": fit,
-                    "perf": performance,
-                    "lambda": best_s,
-                    "weight_trimming_mean_ratio": weight_trimming_mean_ratio,
-                },
-            }
-    """
+    """Fit an ipw (inverse propensity score weighting) for the sample using the target."""
     logger.info("Starting ipw function")
-    np.random.seed(
-        random_seed
-    )  # setting random seed for cases of variations in cvglmnet
+    np.random.seed(random_seed)
 
     balance_util._check_weighting_methods_input(sample_df, sample_weights, "sample")
     balance_util._check_weighting_methods_input(target_df, target_weights, "target")
@@ -445,10 +195,6 @@ def ipw(
     sample_n = sample_df.shape[0]
     target_n = target_df.shape[0]
 
-    # Applying transformations
-    # Important! Variables that don't need transformations
-    # should be transformed with the *identity function*,
-    # otherwise will be dropped from the model
     sample_df, target_df = balance_adjustment.apply_transformations(
         (sample_df, target_df), transformations=transformations
     )
@@ -463,10 +209,7 @@ def ipw(
         add_na=(na_action == "add_indicator"),
         return_type="one",
         return_var_type="sparse",
-        # pyre-fixme[6]: for 7th parameter `formula` expected `Optional[List[str]]` but got `Union[None, List[str], str]`.
-        # TODO: fix pyre issue
         formula=formula,
-        penalty_factor=penalty_factor,
         one_hot_encoding=one_hot_encoding,
     )
     X_matrix = cast(
@@ -476,9 +219,6 @@ def ipw(
     X_matrix_columns_names = cast(
         List[str], model_matrix_output["model_matrix_columns_names"]
     )
-    penalty_factor = cast(Optional[List[float]], model_matrix_output["penalty_factor"])
-    # in cvglmnet: "penalty factors are internally rescaled to sum to nvars."
-    # (https://glmnet-python.readthedocs.io/en/latest/glmnet_vignette.html)
     logger.info(
         f"The formula used to build the model matrix: {model_matrix_output['formula']}"
     )
@@ -499,82 +239,32 @@ def ipw(
         odds = 1
     logger.debug(f"odds for balancing classes: {odds}")
 
-    y0 = np.concatenate((np.zeros(sample_n), target_weights * odds))
-    y1 = np.concatenate((sample_weights, np.zeros(target_n)))
-    y = np.column_stack((y0, y1))
-    # From glmnet documentation: https://glmnet-python.readthedocs.io/en/latest/glmnet_vignette.html
-    # "For binomial logistic regression, the response variable y should be either
-    # a factor with two levels, or a two-column matrix of counts or proportions."
+    y = np.concatenate((np.ones(sample_n), np.zeros(target_n)))
+    sample_weight = np.concatenate((sample_weights, target_weights * odds))
 
     logger.debug(f"X_matrix shape: {X_matrix.shape}")
     logger.debug(f"y input shape: {y.shape}")
-    logger.debug(
-        f"penalty_factor frequency table {pd.crosstab(index=penalty_factor, columns='count')}"
-        f"Note that these are normalized by cvglmnet"
-    )
 
-    if model == "glmnet":
+    if model == "logistic":
         logger.info("Fitting logistic model")
-        foldid = np.resize(range(10), y.shape[0])
-        np.random.shuffle(
-            foldid
-        )  # shuffels the values of foldid - note that we set the seed in the beginning of the function, so this order is fixed
-        logger.debug(
-            f"foldid frequency table {pd.crosstab(index=foldid, columns='count')}"
+        param_grid = {
+            "C": np.logspace(-4, 4, 20),
+            "penalty": ["l1", "l2"],
+            "solver": ["liblinear"],
+        }
+        lr = LogisticRegression(random_state=random_seed, max_iter=5000)
+        grid_search = GridSearchCV(
+            lr, param_grid, cv=10, scoring="neg_log_loss", n_jobs=-1
         )
-        logger.debug(f"first 10 elements of foldid: {foldid[0:9]}")
-        with _patch_nan_in_amin_amax():
-            # we use _patch_nan_in_amin_amax here since sometimes
-            # cvglmnet could have one of the cross validated samples that
-            # produce nan. In which case, the lambda search returns nan
-            # instead of a value from the cross-validated options that successfully computed a lambda
-            # The current monkey-patch solves this problem and makes the function fail less.
-            with np.errstate(
-                divide="ignore"
-            ):  # ignoring np warning "divide by zero encountered in log"
-                with _patch_scipy_random():
-                    fit = cvglmnet(
-                        x=X_matrix,
-                        y=y,
-                        family="binomial",
-                        ptype="deviance",
-                        alpha=1,
-                        penalty_factor=penalty_factor,
-                        nlambda=250,
-                        lambda_min=np.array([1e-6]),
-                        nfolds=10,
-                        foldid=foldid,
-                        maxit=5000,
-                        *args,
-                        **kwargs,
-                    )
-        logger.debug("Done with cvglmnet")
+        grid_search.fit(X_matrix, y, sample_weight=sample_weight)
+        fit = grid_search.best_estimator_
+        logger.debug("Done with GridSearchCV")
     else:
         raise NotImplementedError()
-    logger.debug(f"fit['lambda_1se']: {fit['lambda_1se']}")
 
-    X_matrix_sample = X_matrix[:sample_n,].toarray()
+    X_matrix_sample = X_matrix[:sample_n]
 
-    logger.info(f"max_de: {max_de}")
-    if max_de is not None:
-        regularisation_perf = choose_regularization(
-            fit,
-            sample_df,
-            target_df,
-            sample_weights,
-            target_weights,
-            X_matrix_sample,
-            balance_classes,
-            max_de,
-        )
-        best_s = regularisation_perf["best"]["s"]
-        weight_trimming_mean_ratio = regularisation_perf["best"]["trim"]
-        weight_trimming_percentile = None
-    else:
-        best_s = fit["lambda_1se"]
-        regularisation_perf = None
-
-    link = cvglmnetPredict(fit, X_matrix_sample, ptype="link", s=best_s)
+    link = fit.predict_proba(X_matrix_sample)[:, 1]
     logger.debug("Predicting")
     weights = weights_from_link(
         link,
@@ -585,12 +275,10 @@ def ipw(
         weight_trimming_percentile,
     )
 
-    logger.info(f"Chosen lambda for cv: {best_s}")
+    logger.info(f"Best hyperparameters: {grid_search.best_params_}")
 
-    performance = cv_glmnet_performance(
-        fit,
-        feature_names=list(X_matrix_columns_names),
-        s=best_s,
+    performance = cv_logistic_regression_performance(
+        grid_search, X_matrix, y, cv=10, feature_names=list(X_matrix_columns_names)
     )
     dev = performance["prop_dev_explained"]
     logger.info(f"Proportion null deviance explained {dev}")
@@ -600,7 +288,6 @@ def ipw(
 
     coefs = performance["coefs"][1:]  # exclude intercept
     if all(abs(coefs) < 1e-14):
-        # The value was determined by the unit-test test_adjustment/test_ipw_bad_adjustment_warnings
         logger.warning(
             (
                 "All propensity model coefficients are zero, your covariates do "
@@ -622,12 +309,9 @@ def ipw(
             "X_matrix_columns": X_matrix_columns_names,
             "fit": fit,
             "perf": performance,
-            "lambda": best_s,
             "weight_trimming_mean_ratio": weight_trimming_mean_ratio,
         },
     }
-    if max_de is not None:
-        out["model"]["regularisation_perf"] = regularisation_perf
 
     logger.debug("Done ipw function")
 
