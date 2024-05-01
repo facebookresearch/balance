@@ -28,7 +28,7 @@ logger: logging.Logger = logging.getLogger(__package__)
 
 
 def _prepare_weighted_stat_args(
-    v: Union[  # pyre-ignore[11]: np.matrix is a type
+    v: Union[
         List,
         pd.Series,
         pd.DataFrame,

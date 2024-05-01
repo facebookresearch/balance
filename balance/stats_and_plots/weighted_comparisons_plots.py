@@ -835,7 +835,6 @@ def plotly_plot_qq(
         }
         fig = go.Figure(data=data, layout=layout)
         # Set the default PNG image size to 1400 x 1000 for when downloading the image
-        # pyre-ignore[16] update_layout IS defined.
         fig.update_layout(**kwargs)
         dict_of_qqs[variable] = fig
         if plot_it:
@@ -995,7 +994,6 @@ def plotly_plot_density(
         fig = go.Figure(data=data, layout=layout)
         dict_of_density_plots[variable] = fig
 
-        # pyre-ignore[16]: the update_layout exists
         fig.update_layout(**kwargs)
 
         if plot_it:
@@ -1114,7 +1112,6 @@ def plotly_plot_bar(
 
         fig = go.Figure(data=data, layout=layout)
 
-        # pyre-ignore[16]: the update_layout exists
         fig.update_layout(**kwargs)
 
         dict_of_bars[variable] = fig
