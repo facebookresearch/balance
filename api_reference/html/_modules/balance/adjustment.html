@@ -89,23 +89,27 @@
 <span class="sd">    The user cannot supply both weight_trimming_mean_ratio and weight_trimming_percentile.</span>
 <span class="sd">    If none are supplied, the original weights are returned.</span>
 
-<span class="sd">    If weight_trimming_mean_ratio is not none, the weights are trimmed from above by</span>
+<span class="sd">    If `weight_trimming_mean_ratio` is not None, the weights are trimmed from above by</span>
 <span class="sd">    mean(weights) * ratio. The weights are then normalized to have the original mean.</span>
 <span class="sd">    Note that trimmed weights aren&#39;t actually bounded by trimming.ratio because the</span>
-<span class="sd">    reduced weight is redistributed to arrive at the original mean</span>
+<span class="sd">    reduced weight is redistributed to arrive at the original mean.</span>
 
-<span class="sd">    Note that weight_trimming_percentile clips both sides of the distribution, unlike</span>
+<span class="sd">    If `weight_trimming_percentile` is not None, the weights are trimmed according to the percentiles of the distribution of the weights.</span>
+<span class="sd">    Note that weight_trimming_percentile by default clips both sides of the distribution, unlike</span>
 <span class="sd">    trimming that only trims the weights from above.</span>
-<span class="sd">    For example, `weight_trimming_percentile=0.1` trims below the 10th percentile</span>
-<span class="sd">    AND above the 90th. If you only want to trim the upper side, specify</span>
-<span class="sd">    `weight_trimming_percentile = (0, 0.9)`.</span>
+<span class="sd">    For example, `weight_trimming_percentile=0.1` trims below the 10th percentile AND above the 90th.</span>
+<span class="sd">    If you only want to trim the upper side, specify `weight_trimming_percentile = (0, 0.1)`. If you only want to trim the lower side, specify</span>
+<span class="sd">    `weight_trimming_percentile = (0.1, 0)`.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        weights (Union[pd.Series, np.ndarray]): pd.Series of weights to trim. np.ndarray will be turned into pd.Series) of weights.</span>
 <span class="sd">        weight_trimming_mean_ratio (Union[float, int], optional): indicating the ratio from above according to which</span>
 <span class="sd">            the weights are trimmed by mean(weights) * ratio. Defaults to None.</span>
-<span class="sd">        weight_trimming_percentile (Union[float], optional): if weight_trimming_percentile is not none,</span>
-<span class="sd">            then we apply winsorization using :func:`scipy.stats.mstats.winsorize`.</span>
+<span class="sd">        weight_trimming_percentile (Union[float], optional): if `weight_trimming_percentile` is not None,</span>
+<span class="sd">            then we apply winsorization using :func:`scipy.stats.mstats.winsorize`. Ranges between 0 and 1.</span>
+<span class="sd">            If a single value is passed, indicates the percentiles on both sides of the weight distribution beyond which the weights will be winsorized.</span>
+<span class="sd">            If two values are passed, the first value is the lower percentiles below which winsorizing will be applied, and the second is the 1. - upper percentile above which winsorizing will be applied.</span>
+<span class="sd">            For example, `weight_trimming_percentile=(0.01, 0.05)` will trim the weights with values below the 1st percentile and above the 95th percentile of the weight distribution.</span>
 <span class="sd">            See also: [https://en.wikipedia.org/wiki/Winsorizing].</span>
 <span class="sd">            Defaults to None.</span>
 <span class="sd">        verbose (bool, optional): whether to add to logger printout of trimming process.</span>
@@ -126,19 +130,60 @@
 
 <span class="sd">            import pandas as pd</span>
 <span class="sd">            from balance.adjustment import trim_weights</span>
-<span class="sd">            print(trim_weights(pd.Series([1,2,3,40]), weight_trimming_mean_ratio = None))</span>
-<span class="sd">               # 0     1.0</span>
-<span class="sd">               # 1     2.0</span>
-<span class="sd">               # 2     3.0</span>
-<span class="sd">               # 3    40.0</span>
-<span class="sd">               # dtype: float64</span>
+<span class="sd">            print(trim_weights(pd.Series(range(1, 101)), weight_trimming_mean_ratio = None))</span>
+<span class="sd">                # 0       1.0</span>
+<span class="sd">                # 1       2.0</span>
+<span class="sd">                # 2       3.0</span>
+<span class="sd">                # 3       4.0</span>
+<span class="sd">                # 4       5.0</span>
+<span class="sd">                #     ...</span>
+<span class="sd">                # 95     96.0</span>
+<span class="sd">                # 96     97.0</span>
+<span class="sd">                # 97     98.0</span>
+<span class="sd">                # 98     99.0</span>
+<span class="sd">                # 99    100.0</span>
+<span class="sd">                # Length: 100, dtype: float64</span>
 
-<span class="sd">            print(trim_weights(pd.Series([1,2,3,40]), weight_trimming_mean_ratio = 2))</span>
-<span class="sd">               # 0     1.586207</span>
-<span class="sd">               # 1     3.172414</span>
-<span class="sd">               # 2     4.758621</span>
-<span class="sd">               # 3    36.482759</span>
-<span class="sd">               # dtype: float64</span>
+<span class="sd">            print(trim_weights(pd.Series(range(1, 101)), weight_trimming_mean_ratio = 1.5))</span>
+<span class="sd">                # 0      1.064559</span>
+<span class="sd">                # 1      2.129117</span>
+<span class="sd">                # 2      3.193676</span>
+<span class="sd">                # 3      4.258235</span>
+<span class="sd">                # 4      5.322793</span>
+<span class="sd">                #         ...</span>
+<span class="sd">                # 95    80.640316</span>
+<span class="sd">                # 96    80.640316</span>
+<span class="sd">                # 97    80.640316</span>
+<span class="sd">                # 98    80.640316</span>
+<span class="sd">                # 99    80.640316</span>
+<span class="sd">                # Length: 100, dtype: float64</span>
+
+<span class="sd">            print(pd.DataFrame(trim_weights(pd.Series(range(1, 101)), weight_trimming_percentile=.01)))</span>
+<span class="sd">                # 0    2.0</span>
+<span class="sd">                # 1    2.0</span>
+<span class="sd">                # 2    3.0</span>
+<span class="sd">                # 3    4.0</span>
+<span class="sd">                # 4    5.0</span>
+<span class="sd">                # ..   ...</span>
+<span class="sd">                # 95  96.0</span>
+<span class="sd">                # 96  97.0</span>
+<span class="sd">                # 97  98.0</span>
+<span class="sd">                # 98  99.0</span>
+<span class="sd">                # 99  99.0</span>
+<span class="sd">                # [100 rows x 1 columns]</span>
+
+<span class="sd">            print(pd.DataFrame(trim_weights(pd.Series(range(1, 101)), weight_trimming_percentile=(0., .05))))</span>
+<span class="sd">                # 0    1.002979</span>
+<span class="sd">                # 1    2.005958</span>
+<span class="sd">                # 2    3.008937</span>
+<span class="sd">                # 3    4.011917</span>
+<span class="sd">                # 4    5.014896</span>
+<span class="sd">                # ..        ...</span>
+<span class="sd">                # 95  95.283019</span>
+<span class="sd">                # 96  95.283019</span>
+<span class="sd">                # 97  95.283019</span>
+<span class="sd">                # 98  95.283019</span>
+<span class="sd">                # 99  95.283019</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
