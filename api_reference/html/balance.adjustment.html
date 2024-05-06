@@ -168,9 +168,11 @@ Defaults to True.</p></li>
 <dd class="field-odd"><p>Trimmed weights</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><p>pd.Series (of type float64)</p>
-<dl>
-<dt>Examples:</dt><dd><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<dd class="field-even"><p>pd.Series (of type float64)</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">from</span> <span class="nn">balance.adjustment</span> <span class="kn">import</span> <span class="n">trim_weights</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">trim_weights</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">101</span><span class="p">)),</span> <span class="n">weight_trimming_mean_ratio</span> <span class="o">=</span> <span class="kc">None</span><span class="p">))</span>
     <span class="c1"># 0       1.0</span>
@@ -228,11 +230,6 @@ Defaults to True.</p></li>
     <span class="c1"># 99  95.283019</span>
 </pre></div>
 </div>
-</dd>
-</dl>
-</p>
-</dd>
-</dl>
 </dd></dl>
 
 </section>
