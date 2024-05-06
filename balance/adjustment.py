@@ -50,23 +50,27 @@ def trim_weights(
     The user cannot supply both weight_trimming_mean_ratio and weight_trimming_percentile.
     If none are supplied, the original weights are returned.
 
-    If weight_trimming_mean_ratio is not none, the weights are trimmed from above by
+    If `weight_trimming_mean_ratio` is not None, the weights are trimmed from above by
     mean(weights) * ratio. The weights are then normalized to have the original mean.
     Note that trimmed weights aren't actually bounded by trimming.ratio because the
-    reduced weight is redistributed to arrive at the original mean
+    reduced weight is redistributed to arrive at the original mean.
 
-    Note that weight_trimming_percentile clips both sides of the distribution, unlike
+    If `weight_trimming_percentile` is not None, the weights are trimmed according to the percentiles of the distribution of the weights.
+    Note that weight_trimming_percentile by default clips both sides of the distribution, unlike
     trimming that only trims the weights from above.
-    For example, `weight_trimming_percentile=0.1` trims below the 10th percentile
-    AND above the 90th. If you only want to trim the upper side, specify
-    `weight_trimming_percentile = (0, 0.9)`.
+    For example, `weight_trimming_percentile=0.1` trims below the 10th percentile AND above the 90th.
+    If you only want to trim the upper side, specify `weight_trimming_percentile = (0, 0.1)`. If you only want to trim the lower side, specify
+    `weight_trimming_percentile = (0.1, 0)`.
 
     Args:
         weights (Union[pd.Series, np.ndarray]): pd.Series of weights to trim. np.ndarray will be turned into pd.Series) of weights.
         weight_trimming_mean_ratio (Union[float, int], optional): indicating the ratio from above according to which
             the weights are trimmed by mean(weights) * ratio. Defaults to None.
-        weight_trimming_percentile (Union[float], optional): if weight_trimming_percentile is not none,
-            then we apply winsorization using :func:`scipy.stats.mstats.winsorize`.
+        weight_trimming_percentile (Union[float], optional): if `weight_trimming_percentile` is not None,
+            then we apply winsorization using :func:`scipy.stats.mstats.winsorize`. Ranges between 0 and 1.
+            If a single value is passed, indicates the percentiles on both sides of the weight distribution beyond which the weights will be winsorized.
+            If two values are passed, the first value is the lower percentiles below which winsorizing will be applied, and the second is the 1. - upper percentile above which winsorizing will be applied.
+            For example, `weight_trimming_percentile=(0.01, 0.05)` will trim the weights with values below the 1st percentile and above the 95th percentile of the weight distribution.
             See also: [https://en.wikipedia.org/wiki/Winsorizing].
             Defaults to None.
         verbose (bool, optional): whether to add to logger printout of trimming process.
@@ -87,19 +91,60 @@ def trim_weights(
 
             import pandas as pd
             from balance.adjustment import trim_weights
-            print(trim_weights(pd.Series([1,2,3,40]), weight_trimming_mean_ratio = None))
-               # 0     1.0
-               # 1     2.0
-               # 2     3.0
-               # 3    40.0
-               # dtype: float64
+            print(trim_weights(pd.Series(range(1, 101)), weight_trimming_mean_ratio = None))
+                # 0       1.0
+                # 1       2.0
+                # 2       3.0
+                # 3       4.0
+                # 4       5.0
+                #     ...
+                # 95     96.0
+                # 96     97.0
+                # 97     98.0
+                # 98     99.0
+                # 99    100.0
+                # Length: 100, dtype: float64
 
-            print(trim_weights(pd.Series([1,2,3,40]), weight_trimming_mean_ratio = 2))
-               # 0     1.586207
-               # 1     3.172414
-               # 2     4.758621
-               # 3    36.482759
-               # dtype: float64
+            print(trim_weights(pd.Series(range(1, 101)), weight_trimming_mean_ratio = 1.5))
+                # 0      1.064559
+                # 1      2.129117
+                # 2      3.193676
+                # 3      4.258235
+                # 4      5.322793
+                #         ...
+                # 95    80.640316
+                # 96    80.640316
+                # 97    80.640316
+                # 98    80.640316
+                # 99    80.640316
+                # Length: 100, dtype: float64
+
+            print(pd.DataFrame(trim_weights(pd.Series(range(1, 101)), weight_trimming_percentile=.01)))
+                # 0    2.0
+                # 1    2.0
+                # 2    3.0
+                # 3    4.0
+                # 4    5.0
+                # ..   ...
+                # 95  96.0
+                # 96  97.0
+                # 97  98.0
+                # 98  99.0
+                # 99  99.0
+                # [100 rows x 1 columns]
+
+            print(pd.DataFrame(trim_weights(pd.Series(range(1, 101)), weight_trimming_percentile=(0., .05))))
+                # 0    1.002979
+                # 1    2.005958
+                # 2    3.008937
+                # 3    4.011917
+                # 4    5.014896
+                # ..        ...
+                # 95  95.283019
+                # 96  95.283019
+                # 97  95.283019
+                # 98  95.283019
+                # 99  95.283019
     """
 
     if isinstance(weights, pd.Series):
