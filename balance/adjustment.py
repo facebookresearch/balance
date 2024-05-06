@@ -86,7 +86,7 @@ def trim_weights(
     Returns:
         pd.Series (of type float64): Trimmed weights
 
-     Examples:
+    Examples:
         ::
 
             import pandas as pd
