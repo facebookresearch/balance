@@ -69,9 +69,15 @@ def design_effect(w: pd.Series) -> np.float64:
     """
     Kish's design effect measure.
 
-    For details, see:
-    - https://en.wikipedia.org/wiki/Design_effect
-    - https://en.wikipedia.org/wiki/Effective_sample_size
+    The design effect is a number that shows how well a sample of people may represent
+    a larger group of people for a specific measure of interest (such as the mean).
+    Kish's design effect gives the increase in the variance of the weighted mean based on "haphazard" weights.
+
+    The inverse of the design effect is the effective sample size ratio.
+
+    For details, see: Tal Galili (5 May 2024). "Design effect".
+    WikiJournal of Science 7 (1): 4. doi:10.15347/wjs/2024.004. Wikidata Q116768211.
+    ISSN 2470-6345. https://en.wikipedia.org/wiki/Design_effect
 
     Args:
         w (pd.Series): A pandas series of weights (non negative, float/int) values.
