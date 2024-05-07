@@ -49,9 +49,13 @@
 <dt class="sig sig-object py" id="balance.stats_and_plots.weights_stats.design_effect">
 <span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weights_stats.</span></span><span class="sig-name descname"><span class="pre">design_effect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float64</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weights_stats.html#design_effect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weights_stats.design_effect" title="Link to this definition">¶</a></dt>
 <dd><p>Kish’s design effect measure.</p>
-<p>For details, see:
-- <a class="reference external" href="https://en.wikipedia.org/wiki/Design_effect">https://en.wikipedia.org/wiki/Design_effect</a>
-- <a class="reference external" href="https://en.wikipedia.org/wiki/Effective_sample_size">https://en.wikipedia.org/wiki/Effective_sample_size</a></p>
+<p>The design effect is a number that shows how well a sample of people may represent
+a larger group of people for a specific measure of interest (such as the mean).
+Kish’s design effect gives the increase in the variance of the weighted mean based on “haphazard” weights.</p>
+<p>The inverse of the design effect is the effective sample size ratio.</p>
+<p>For details, see: Tal Galili (5 May 2024). “Design effect”.
+WikiJournal of Science 7 (1): 4. doi:10.15347/wjs/2024.004. Wikidata Q116768211.
+ISSN 2470-6345. https://en.wikipedia.org/wiki/Design_effect</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>w</strong> (<em>pd.Series</em>) – A pandas series of weights (non negative, float/int) values.</p>
