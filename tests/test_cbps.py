@@ -3,7 +3,6 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2.
 
-from __future__ import absolute_import, division, print_function, unicode_literals
 
 import balance.testutil
 
@@ -398,7 +397,7 @@ class Testcbps(
         )
 
     def test_cbps_input_assertions(self):
-        s_w = np.array((1))
+        s_w = np.array(1)
         self.assertRaisesRegex(
             TypeError,
             "must be a pandas DataFrame",

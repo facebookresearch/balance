@@ -5,7 +5,6 @@
 
 # pyre-unsafe
 
-from __future__ import absolute_import, division, print_function, unicode_literals
 
 import logging
 
@@ -178,11 +177,9 @@ def rake(
     # margins from population
     target_margins = [
         (
-            (
-                target_df.groupby(variable)["weight"].sum()
-                / (sum(target_df.groupby(variable)["weight"].sum()))
-                * sample_sum_weights
-            )
+            target_df.groupby(variable)["weight"].sum()
+            / (sum(target_df.groupby(variable)["weight"].sum()))
+            * sample_sum_weights
         )
         for variable in alphabetized_variables
     ]

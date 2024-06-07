@@ -1620,10 +1620,10 @@ class TruncationFormatter(logging.Formatter):
     """
 
     def __init__(self, *args, **kwargs) -> None:
-        super(TruncationFormatter, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def format(self, record: logging.LogRecord):
-        result = super(TruncationFormatter, self).format(record)
+        result = super().format(record)
         return _truncate_text(result, 2000)
 
 

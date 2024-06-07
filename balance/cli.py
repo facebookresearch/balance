@@ -5,7 +5,6 @@
 
 # pyre-unsafe
 
-from __future__ import absolute_import, division, print_function, unicode_literals
 
 import inspect
 import logging
@@ -173,7 +172,7 @@ class BalanceCLI:
             check_id_uniqueness=False,
             standardize_types=self.standardize_types(),
         )
-        logger.info("%s sample object: %s" % (sample_package_name, str(sample)))
+        logger.info("{} sample object: {}".format(sample_package_name, str(sample)))
 
         target = sample_cls.from_frame(
             target_df,
@@ -183,7 +182,7 @@ class BalanceCLI:
             check_id_uniqueness=False,
             standardize_types=self.standardize_types(),
         )
-        logger.info("%s target object: %s" % (sample_package_name, str(target)))
+        logger.info("{} target object: {}".format(sample_package_name, str(target)))
 
         try:
             adjusted = sample.set_target(target).adjust(
@@ -196,7 +195,9 @@ class BalanceCLI:
                 weight_trimming_mean_ratio=weight_trimming_mean_ratio,
             )
             logger.info("Succeeded with adjusting sample to target")
-            logger.info("%s adjusted object: %s" % (sample_package_name, str(adjusted)))
+            logger.info(
+                "{} adjusted object: {}".format(sample_package_name, str(adjusted))
+            )
 
             logger.info(
                 "Condition on which rows to keep for diagnostics: %s "
@@ -212,7 +213,9 @@ class BalanceCLI:
                 columns_to_keep=covariate_columns_for_diagnostics,
             ).diagnostics()
             logger.info(
-                "%s diagnostics object: %s" % (sample_package_name, str(diagnostics))
+                "{} diagnostics object: {}".format(
+                    sample_package_name, str(diagnostics)
+                )
             )
 
             # Update dtypes

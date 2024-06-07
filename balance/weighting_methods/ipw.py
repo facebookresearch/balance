@@ -5,7 +5,6 @@
 
 # pyre-unsafe
 
-from __future__ import absolute_import, division, print_function, unicode_literals
 
 import logging
 
@@ -602,11 +601,9 @@ def ipw(
     if all(abs(coefs) < 1e-14):
         # The value was determined by the unit-test test_adjustment/test_ipw_bad_adjustment_warnings
         logger.warning(
-            (
-                "All propensity model coefficients are zero, your covariates do "
-                "not predict inclusion in the sample. The estimates will not be "
-                "adjusted"
-            )
+            "All propensity model coefficients are zero, your covariates do "
+            "not predict inclusion in the sample. The estimates will not be "
+            "adjusted"
         )
 
     if dev < 0.10:
