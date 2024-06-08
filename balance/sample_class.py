@@ -70,13 +70,13 @@ class Sample:
             )
         pass
 
-    def __repr__(self: Sample) -> str:
+    def __repr__(self: "Sample") -> str:
         return (
             f"({self.__class__.__module__}.{self.__class__.__qualname__})\n"
             f"{self.__str__()}"
         )
 
-    def __str__(self: Sample, pkg_source: str = __package__) -> str:
+    def __str__(self: "Sample", pkg_source: str = __package__) -> str:
         is_adjusted = self.is_adjusted() * "Adjusted "
         n_rows = self._df.shape[0]
         n_variables = self._covar_columns().shape[1]
@@ -125,15 +125,15 @@ class Sample:
 
     @classmethod
     def from_frame(
-        cls: type[Sample],
+        cls: type["Sample"],
         df: pd.DataFrame,
-        id_column: str | None = None,
-        outcome_columns: list | tuple | str | None = None,
-        weight_column: str | None = None,
+        id_column: Optional[str] = None,
+        outcome_columns: Optional[Union[list, tuple, str]] = None,
+        weight_column: Optional[str] = None,
         check_id_uniqueness: bool = True,
         standardize_types: bool = True,
         use_deepcopy: bool = True,
-    ) -> Sample:
+    ) -> "Sample":
         """
         Create a new Sample object.
 
@@ -287,7 +287,7 @@ class Sample:
     # Class base methods
     ####################
     @property
-    def df(self: Sample) -> pd.DataFrame:
+    def df(self: "Sample") -> pd.DataFrame:
         """Produce a DataFrame (of the self) from a Sample object.
 
         Args:
@@ -307,7 +307,7 @@ class Sample:
         )
 
     def outcomes(
-        self: Sample,
+        self: "Sample",
     ):  # -> "Optional[Type[BalanceOutcomesDF]]" (not imported due to circular dependency)
         """
         Produce a BalanceOutcomeDF from a Sample object.
@@ -328,7 +328,7 @@ class Sample:
             return None
 
     def weights(
-        self: Sample,
+        self: "Sample",
     ):  # -> "Optional[Type[BalanceWeightsDF]]" (not imported due to circular dependency)
         """
         Produce a BalanceWeightsDF from a Sample object.
@@ -346,7 +346,7 @@ class Sample:
         return BalanceWeightsDF(self)
 
     def covars(
-        self: Sample,
+        self: "Sample",
     ):  # -> "Optional[Type[BalanceCovarsDF]]" (not imported due to circular dependency)
         """
         Produce a BalanceCovarsDF from a Sample object.
@@ -364,8 +364,8 @@ class Sample:
         return BalanceCovarsDF(self)
 
     def model(
-        self: Sample,
-    ) -> dict | None:
+        self: "Sample",
+    ) -> Optional[Dict]:
         """
         Returns the name of the model used to adjust Sample if adjusted.
         Otherwise returns None.
@@ -381,7 +381,7 @@ class Sample:
         else:
             return None
 
-    def model_matrix(self: Sample) -> pd.DataFrame:
+    def model_matrix(self: "Sample") -> pd.DataFrame:
         """
         Returns the model matrix of sample using :func:`model_matrix`,
         while adding na indicator for null values (see :func:`add_na_indicator`).
@@ -396,14 +396,14 @@ class Sample:
     # Adjusting and adapting weights of a sample
     ############################################
     def adjust(
-        self: Sample,
-        target: Sample | None = None,
-        method: (
-            Literal["cbps", "ipw", "null", "poststratify", "rake"] | Callable
-        ) = "ipw",
+        self: "Sample",
+        target: Optional["Sample"] = None,
+        method: Union[
+            Literal["cbps", "ipw", "null", "poststratify", "rake"], Callable
+        ] = "ipw",
         *args,
         **kwargs,
-    ) -> Sample:
+    ) -> "Sample":
         """
         Perform adjustment of one sample to match another.
         This function returns a new sample.
@@ -443,7 +443,7 @@ class Sample:
 
         return new_sample
 
-    def set_weights(self, weights: pd.Series | float | None) -> None:
+    def set_weights(self, weights: Optional[Union[pd.Series, float]]) -> None:
         """
         Adjusting the weights of a Sample object.
         This will overwrite the weight_column of the Sample.
@@ -469,7 +469,7 @@ class Sample:
     ####################################
     # Handling links to other dataframes
     ####################################
-    def set_unadjusted(self, second_sample: Sample) -> Sample:
+    def set_unadjusted(self, second_sample: "Sample") -> "Sample":
         """
         Used to set the unadjusted link to Sample.
         This is useful in case one wants to compare two samples.
@@ -497,7 +497,7 @@ class Sample:
         """
         return ("unadjusted" in self._links) and ("target" in self._links)
 
-    def set_target(self, target: Sample) -> Sample:
+    def set_target(self, target: "Sample") -> "Sample":
         """
         Used to set the target linked to Sample.
 
@@ -526,7 +526,7 @@ class Sample:
     ##############################
     # Metrics for adjusted samples
     ##############################
-    def covar_means(self: Sample) -> pd.DataFrame:
+    def covar_means(self: "Sample") -> pd.DataFrame:
         """
         Compare the means of covariates (after using :func:`BalanceDF.model_matrix`) before and after adjustment as compared with target.
 
@@ -663,7 +663,7 @@ class Sample:
 
         return (adjusted_outcome_sd - unadjusted_outcome_sd) / unadjusted_outcome_sd
 
-    def outcome_variance_ratio(self: Sample) -> pd.Series:
+    def outcome_variance_ratio(self: "Sample") -> pd.Series:
         """The empirical ratio of variance of the outcomes before and after weighting.
 
         See :func:`outcome_variance_ratio` for details.
@@ -757,7 +757,7 @@ class Sample:
         )
         return out
 
-    def diagnostics(self: Sample) -> pd.DataFrame:
+    def diagnostics(self: "Sample") -> pd.DataFrame:
         # TODO: mention the other diagnostics
         # TODO: update/improve the wiki pages doc is linking to.
         # TODO: move explanation on weights normalization to some external page
@@ -1029,10 +1029,10 @@ class Sample:
     # Column and rows modifiers - use carefully!
     ############################################
     def keep_only_some_rows_columns(
-        self: Sample,
-        rows_to_keep: str | None = None,
-        columns_to_keep: list[str] | None = None,
-    ) -> Sample:
+        self: "Sample",
+        rows_to_keep: Optional[str] = None,
+        columns_to_keep: Optional[List[str]] = None,
+    ) -> "Sample":
         # TODO: split this into two functions (one for rows and one for columns)
         """
         This function returns a **copy** of the sample object
@@ -1118,7 +1118,7 @@ class Sample:
     ################
     # Saving results
     ################
-    def to_download(self, tempdir: str | None = None) -> FileLink:
+    def to_download(self, tempdir: Optional[str] = None) -> FileLink:
         """Creates a downloadable link of the DataFrame of the Sample object.
 
         File name starts with tmp_balance_out_, and some random file name (using :func:`uuid.uuid4`).
@@ -1133,8 +1133,8 @@ class Sample:
         return balance_util._to_download(self.df, tempdir)
 
     def to_csv(
-        self, path_or_buf: FilePathOrBuffer | None = None, **kwargs
-    ) -> str | None:
+        self, path_or_buf: Optional[FilePathOrBuffer] = None, **kwargs
+    ) -> Optional[str]:
         """Write df with ids from BalanceDF to a comma-separated values (csv) file.
 
         Uses :func:`pd.DataFrame.to_csv`.
@@ -1159,7 +1159,7 @@ class Sample:
     ##################
     # Column accessors
     ##################
-    def _special_columns_names(self: Sample) -> list[str]:
+    def _special_columns_names(self: "Sample") -> List[str]:
         """
         Returns names of all special columns (id column,
         wegiht column and outcome columns) in Sample.
@@ -1175,7 +1175,7 @@ class Sample:
             else []
         )
 
-    def _special_columns(self: Sample) -> pd.DataFrame:
+    def _special_columns(self: "Sample") -> pd.DataFrame:
         """
         Returns dataframe of all special columns (id column,
         weight column and outcome columns) in Sample.
@@ -1185,7 +1185,7 @@ class Sample:
         """
         return self._df[self._special_columns_names()]
 
-    def _covar_columns_names(self: Sample) -> list[str]:
+    def _covar_columns_names(self: "Sample") -> List[str]:
         """
         Returns names of all covars in Sample.
 
@@ -1196,7 +1196,7 @@ class Sample:
             c for c in self._df.columns.values if c not in self._special_columns_names()
         ]
 
-    def _covar_columns(self: Sample) -> pd.DataFrame:
+    def _covar_columns(self: "Sample") -> pd.DataFrame:
         """
         Returns dataframe of all covars columns in Sample.
 
@@ -1217,7 +1217,7 @@ class Sample:
                 "This is not an adjusted Sample. Use sample.adjust to adjust the sample to target"
             )
 
-    def _no_target_error(self: Sample) -> None:
+    def _no_target_error(self: "Sample") -> None:
         """
         Raises a ValueError if sample doesn't have target
         """

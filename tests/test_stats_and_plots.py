@@ -53,7 +53,7 @@ class TestBalance_weights_stats(
         from balance.stats_and_plots.weights_stats import nonparametric_skew
 
         self.assertEqual(nonparametric_skew(pd.Series((1, 1, 1, 1))), 0)
-        self.assertEqual(nonparametric_skew(pd.Series(1)), 0)
+        self.assertEqual(nonparametric_skew(pd.Series((1))), 0)
         self.assertEqual(nonparametric_skew(pd.Series((1, 2, 3, 4))), 0)
         self.assertEqual(nonparametric_skew(pd.Series((1, 1, 1, 2))), 0.5)
 
