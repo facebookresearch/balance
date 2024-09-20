@@ -545,7 +545,10 @@ class BalanceDF:
         return list(self.df.columns.values)
 
     def plot(
-        self: "BalanceDF", on_linked_samples: bool = True, **kwargs
+        self: "BalanceDF",
+        on_linked_samples: bool = True,
+        **kwargs,
+        # pyre-fixme[11]: Annotation `Figure` is not defined as a type.
     ) -> Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:
         """Plots the variables in the df of the BalanceDF object.
 

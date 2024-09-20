@@ -716,6 +716,7 @@ def plotly_plot_qq(
     plot_it: bool = True,
     return_dict_of_figures: bool = False,
     **kwargs,
+    # pyre-fixme[11]: Annotation `Figure` is not defined as a type.
 ) -> Optional[Dict[str, go.Figure]]:
     """
     Plots interactive QQ plot of the given variables.
