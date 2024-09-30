@@ -13,6 +13,7 @@ import re
 from typing import List, Literal, Union
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from balance.stats_and_plots.weighted_stats import (
     descriptive_stats,
@@ -122,13 +123,13 @@ def asmd(
     sample_weights: Union[
         List,
         pd.Series,
-        np.ndarray,
+        npt.NDArray,
         None,
     ] = None,
     target_weights: Union[
         List,
         pd.Series,
-        np.ndarray,
+        npt.NDArray,
         None,
     ] = None,
     std_type: Literal["target", "sample", "pooled"] = "target",
@@ -369,19 +370,19 @@ def asmd_improvement(
     sample_before_weights: Union[
         List,
         pd.Series,
-        np.ndarray,
+        npt.NDArray,
         None,
     ] = None,
     sample_after_weights: Union[
         List,
         pd.Series,
-        np.ndarray,
+        npt.NDArray,
         None,
     ] = None,
     target_weights: Union[
         List,
         pd.Series,
-        np.ndarray,
+        npt.NDArray,
         None,
     ] = None,
 ) -> np.float64:
@@ -415,13 +416,13 @@ def outcome_variance_ratio(
     w_numerator: Union[
         List,
         pd.Series,
-        np.ndarray,
+        npt.NDArray,
         None,
     ] = None,
     w_denominator: Union[
         List,
         pd.Series,
-        np.ndarray,
+        npt.NDArray,
         None,
     ] = None,
 ) -> pd.Series:

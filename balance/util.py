@@ -17,6 +17,7 @@ from itertools import combinations
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 
 from IPython.lib.display import FileLink
@@ -688,7 +689,8 @@ def model_matrix(
     penalty_factor: Optional[List[float]] = None,
     one_hot_encoding: bool = False,
 ) -> Dict[
-    str, Union[List[str], np.ndarray, Union[pd.DataFrame, np.ndarray, csc_matrix], None]
+    str,
+    Union[List[str], npt.NDArray, Union[pd.DataFrame, npt.NDArray, csc_matrix], None],
 ]:
     """Create a model matrix from a sample (and target).
     The default is to use an additive formula for all variables (or the ones specified).

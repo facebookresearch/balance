@@ -16,6 +16,7 @@ from typing import Dict, List, Literal, Optional, Tuple, Union
 import matplotlib.pyplot as plt
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 import plotly.graph_objs as go
 import plotly.offline as offline
@@ -566,7 +567,7 @@ def seaborn_plot_dist(
     dist_type: Optional[Literal["qq", "hist", "kde", "ecdf"]] = None,
     return_axes: bool = False,
     ylim: Optional[Tuple[float, float]] = None,
-) -> Union[List[plt.Axes], np.ndarray, None]:
+) -> Union[List[plt.Axes], npt.NDArray, None]:
     """Plots to compare the weighted distributions of an arbitrary number of variables from
     an arbitrary number of DataFrames.
 
@@ -1326,7 +1327,7 @@ def plot_dist(
     library: Literal["plotly", "seaborn"] = "plotly",
     ylim: Optional[Tuple[float, float]] = None,
     **kwargs,
-) -> Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:
+) -> Union[Union[List, npt.NDArray], Dict[str, go.Figure], None]:
     """Plots the variables of a DataFrame by using either seaborn or plotly.
 
     If using plotly then using kde (or qq) plots for numeric variables and bar plots for categorical variables. Uses :func:`plotly_plot_dist`.

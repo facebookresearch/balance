@@ -12,6 +12,7 @@ import logging
 from typing import Callable, Dict, List, Literal, Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 import scipy
 
@@ -38,7 +39,7 @@ BALANCE_WEIGHTING_METHODS = {
 
 
 def trim_weights(
-    weights: Union[pd.Series, np.ndarray],
+    weights: Union[pd.Series, npt.NDArray],
     # TODO: add support to more types of input weights? (e.g. list? other?)
     weight_trimming_mean_ratio: Union[float, int, None] = None,
     weight_trimming_percentile: Union[float, None] = None,

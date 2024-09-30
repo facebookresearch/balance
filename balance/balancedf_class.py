@@ -9,6 +9,7 @@ import logging
 from typing import Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 import plotly.graph_objs as go
 from balance import util as balance_util
@@ -549,7 +550,7 @@ class BalanceDF:
         on_linked_samples: bool = True,
         **kwargs,
         # pyre-fixme[11]: Annotation `Figure` is not defined as a type.
-    ) -> Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:
+    ) -> Union[Union[List, npt.NDArray], Dict[str, go.Figure], None]:
         """Plots the variables in the df of the BalanceDF object.
 
         See :func:`weighted_comparisons_plots.plot_dist` for details of various arguments that can be passed.
@@ -1022,7 +1023,7 @@ class BalanceDF:
 
     def _get_df_and_weights(
         self: "BalanceDF",
-    ) -> Tuple[pd.DataFrame, Optional[np.ndarray]]:
+    ) -> Tuple[pd.DataFrame, Optional[npt.NDArray]]:
         """Extract covars df (after using model_matrix) and weights from a BalanceDF object.
 
         Args:
@@ -1718,7 +1719,7 @@ class BalanceWeightsDF(BalanceDF):
     # TODO: maybe add better control if there are no weights for unadjusted or target (the current default shows them in the legend, but not in the figure)
     def plot(
         self: "BalanceWeightsDF", on_linked_samples: bool = True, **kwargs
-    ) -> Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:
+    ) -> Union[Union[List, npt.NDArray], Dict[str, go.Figure], None]:
         """Plots kde (kernal density estimation) of the weights in a BalanceWeightsDF object using seaborn (as default).
 
         It's possible to use other plots using dist_type with arguments such as "hist", "kde" (default), "qq", and "ecdf".

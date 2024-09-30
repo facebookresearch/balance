@@ -14,6 +14,7 @@ from contextlib import contextmanager
 from typing import Any, Union
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 
 
@@ -107,8 +108,8 @@ class BalanceTestCase(unittest.TestCase):
     # Some Equal
     def assertEqual(
         self,
-        first: Union[np.ndarray, pd.DataFrame, pd.Index, pd.Series, Any],
-        second: Union[np.ndarray, pd.DataFrame, pd.Index, pd.Series, Any],
+        first: Union[npt.NDArray, pd.DataFrame, pd.Index, pd.Series, Any],
+        second: Union[npt.NDArray, pd.DataFrame, pd.Index, pd.Series, Any],
         msg: Any = ...,
         **kwargs,
     ) -> None:

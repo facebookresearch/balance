@@ -11,6 +11,7 @@ import logging
 from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 
 logger: logging.Logger = logging.getLogger(__package__)
@@ -25,7 +26,7 @@ def _check_weights_are_valid(
     w: Union[
         List,
         pd.Series,
-        np.ndarray,
+        npt.NDArray,
         pd.DataFrame,
         None,
     ]

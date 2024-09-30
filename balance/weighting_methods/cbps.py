@@ -12,6 +12,7 @@ import logging
 from typing import Any, cast, Dict, List, Optional, Union
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 import scipy
 import sklearn.utils.extmath
@@ -25,8 +26,10 @@ logger: logging.Logger = logging.getLogger(__package__)
 
 
 def logit_truncated(
-    X: Union[np.ndarray, pd.DataFrame], beta: np.ndarray, truncation_value: float = 1e-5
-) -> np.ndarray:
+    X: Union[npt.NDArray, pd.DataFrame],
+    beta: npt.NDArray,
+    truncation_value: float = 1e-5,
+) -> npt.NDArray:
     """This is a helper function for cbps.
     Given an X matrx and avector of coeeficients beta, it computes the truncated
     version of the logit function.
@@ -44,10 +47,10 @@ def logit_truncated(
 
 
 def compute_pseudo_weights_from_logit_probs(
-    probs: np.ndarray,
-    design_weights: Union[np.ndarray, pd.DataFrame],
-    in_pop: Union[np.ndarray, pd.DataFrame],
-) -> np.ndarray:
+    probs: npt.NDArray,
+    design_weights: Union[npt.NDArray, pd.DataFrame],
+    in_pop: Union[npt.NDArray, pd.DataFrame],
+) -> npt.NDArray:
     """This is a helper function for cbps.
     Given computed probs, it computes the weights: N/N_t * (in_pop - p_i)/(1 - p_i).
     (Note that these weights on sample are negative for convenience of notations)
@@ -66,11 +69,11 @@ def compute_pseudo_weights_from_logit_probs(
 
 
 def bal_loss(
-    beta: np.ndarray,
-    X: np.ndarray,
-    design_weights: np.ndarray,
-    in_pop: np.ndarray,
-    XtXinv: np.ndarray,
+    beta: npt.NDArray,
+    X: npt.NDArray,
+    design_weights: npt.NDArray,
+    in_pop: npt.NDArray,
+    XtXinv: npt.NDArray,
 ) -> np.float64:
     """This is a helper function for cbps.
     It computes the balance loss.
@@ -98,12 +101,12 @@ def bal_loss(
 
 
 def gmm_function(
-    beta: np.ndarray,
-    X: Union[np.ndarray, pd.DataFrame],
-    design_weights: Union[np.ndarray, pd.DataFrame],
-    in_pop: Union[np.ndarray, pd.DataFrame],
-    invV: Union[np.ndarray, None] = None,
-) -> Dict[str, Union[float, np.ndarray]]:
+    beta: npt.NDArray,
+    X: Union[npt.NDArray, pd.DataFrame],
+    design_weights: Union[npt.NDArray, pd.DataFrame],
+    in_pop: Union[npt.NDArray, pd.DataFrame],
+    invV: Union[npt.NDArray, None] = None,
+) -> Dict[str, Union[float, npt.NDArray]]:
     """This is a helper function for cbps.
     It computes the gmm loss.
 
@@ -163,12 +166,12 @@ def gmm_function(
 
 
 def gmm_loss(
-    beta: np.ndarray,
-    X: Union[np.ndarray, pd.DataFrame],
-    design_weights: Union[np.ndarray, pd.DataFrame],
-    in_pop: Union[np.ndarray, pd.DataFrame],
-    invV: Optional[np.ndarray] = None,
-) -> Union[float, np.ndarray]:
+    beta: npt.NDArray,
+    X: Union[npt.NDArray, pd.DataFrame],
+    design_weights: Union[npt.NDArray, pd.DataFrame],
+    in_pop: Union[npt.NDArray, pd.DataFrame],
+    invV: Optional[npt.NDArray] = None,
+) -> Union[float, npt.NDArray]:
     """This is a helper function for cbps.
     It computes the gmm loss.
     See gmm_function for detials.
@@ -187,12 +190,12 @@ def gmm_loss(
 
 
 def alpha_function(
-    alpha: np.ndarray,
-    beta: np.ndarray,
-    X: Union[np.ndarray, pd.DataFrame],
-    design_weights: Union[np.ndarray, pd.DataFrame],
-    in_pop: Union[np.ndarray, pd.DataFrame],
-) -> Union[float, np.ndarray]:
+    alpha: npt.NDArray,
+    beta: npt.NDArray,
+    X: Union[npt.NDArray, pd.DataFrame],
+    design_weights: Union[npt.NDArray, pd.DataFrame],
+    in_pop: Union[npt.NDArray, pd.DataFrame],
+) -> Union[float, npt.NDArray]:
     """This is a helper function for cbps.
     It computes the gmm loss of alpha*beta.
 
@@ -210,7 +213,7 @@ def alpha_function(
 
 
 def compute_deff_from_beta(
-    X: np.ndarray, beta: np.ndarray, design_weights: np.ndarray, in_pop: np.ndarray
+    X: npt.NDArray, beta: npt.NDArray, design_weights: npt.NDArray, in_pop: npt.NDArray
 ) -> np.float64:
     """This is a helper function for cbps. It computes the design effect of
     the estimated weights on the sample given a value of beta.

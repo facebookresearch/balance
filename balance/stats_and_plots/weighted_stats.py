@@ -11,6 +11,7 @@ import logging
 from typing import List, Literal, Optional, Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 
 from balance.stats_and_plots.weights_stats import _check_weights_are_valid
@@ -32,13 +33,13 @@ def _prepare_weighted_stat_args(
         List,
         pd.Series,
         pd.DataFrame,
-        np.ndarray,
+        npt.NDArray,
         np.matrix,
     ],
     w: Union[
         List,
         pd.Series,
-        np.ndarray,
+        npt.NDArray,
         None,
     ] = None,
     inf_rm: bool = False,
@@ -116,7 +117,7 @@ def weighted_mean(
     w: Union[
         List,
         pd.Series,
-        np.ndarray,
+        npt.NDArray,
         None,
     ] = None,
     inf_rm: bool = False,
@@ -172,7 +173,7 @@ def weighted_mean(
 
 def var_of_weighted_mean(
     v: Union[List, pd.Series, pd.DataFrame, np.matrix],
-    w: Optional[Union[List, pd.Series, np.ndarray]] = None,
+    w: Optional[Union[List, pd.Series, npt.NDArray]] = None,
     inf_rm: bool = False,
 ) -> pd.Series:
     """
@@ -229,8 +230,8 @@ def var_of_weighted_mean(
 
 
 def ci_of_weighted_mean(
-    v: Union[List[float], pd.Series, pd.DataFrame, np.ndarray],
-    w: Optional[Union[List[float], pd.Series, np.ndarray]] = None,
+    v: Union[List[float], pd.Series, pd.DataFrame, npt.NDArray],
+    w: Optional[Union[List[float], pd.Series, npt.NDArray]] = None,
     conf_level: float = 0.95,
     round_ndigits: Optional[int] = None,
     inf_rm: bool = False,
@@ -316,13 +317,13 @@ def weighted_var(
         List,
         pd.Series,
         pd.DataFrame,
-        np.ndarray,
+        npt.NDArray,
         np.matrix,
     ],
     w: Union[
         List,
         pd.Series,
-        np.ndarray,
+        npt.NDArray,
         None,
     ] = None,
     inf_rm: bool = False,
@@ -367,7 +368,7 @@ def weighted_sd(
     w: Union[
         List,
         pd.Series,
-        np.ndarray,
+        npt.NDArray,
         None,
     ] = None,
     inf_rm: bool = False,
@@ -392,18 +393,18 @@ def weighted_quantile(
         List,
         pd.Series,
         pd.DataFrame,
-        np.ndarray,
+        npt.NDArray,
         np.matrix,
     ],
     quantiles: Union[
         List,
         pd.Series,
-        np.ndarray,
+        npt.NDArray,
     ],
     w: Union[
         List,
         pd.Series,
-        np.ndarray,
+        npt.NDArray,
         None,
     ] = None,
     inf_rm: bool = False,
@@ -442,7 +443,7 @@ def descriptive_stats(
     weights: Union[
         List,
         pd.Series,
-        np.ndarray,
+        npt.NDArray,
         None,
     ] = None,
     stat: Literal["mean", "std", "var_of_mean", "ci_of_mean", "..."] = "mean",
