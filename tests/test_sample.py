@@ -148,7 +148,7 @@ class TestSample(
             pd.Series(("1", "2", "2"), name="id"),
         )
 
-        # test weights_column
+        # Test weights_column
         df = pd.DataFrame({"id": (1, 2), "weight": (1, 2)})
         self.assertWarnsRegexp("Guessing weight", Sample.from_frame, df)
         # NOTE how weight that was integer was changed into floats.
@@ -162,6 +162,39 @@ class TestSample(
         # TODO: decide if it's o.k. to keep the default weights be 1s, or change the default to floats
         self.assertEqual(
             Sample.from_frame(df).weight_column, pd.Series((1, 1), name="weight")
+        )
+
+        # Assert error for null values
+        df = pd.DataFrame({"id": (1, 2, 3), "weight": (None, 3, 1.1)})
+        with self.assertRaisesRegex(ValueError, "Null values are not allowed"):
+            Sample.from_frame(df)
+
+        df = pd.DataFrame({"id": (1, 2, 3), "weight": (None, None, None)})
+        with self.assertRaisesRegex(ValueError, "Null values are not allowed"):
+            Sample.from_frame(df)
+
+        # Assert error for non-numeric weights
+        df = pd.DataFrame({"id": (1, 2, 3), "weight": (1, "b", 2.1)})
+        with self.assertRaisesRegex(ValueError, "must be numeric"):
+            Sample.from_frame(df)
+
+        df = pd.DataFrame({"id": (1, 2, 3), "weight": (1, "5", 2.1)})
+        with self.assertRaisesRegex(ValueError, "must be numeric"):
+            Sample.from_frame(df)
+
+        df = pd.DataFrame({"id": (1, 2, 3), "weight": (1, 2.1, True)})
+        with self.assertRaisesRegex(ValueError, "must be numeric"):
+            Sample.from_frame(df)
+
+        # Assert error for negative values
+        df = pd.DataFrame({"id": (1, 2, 3), "weight": (1, -2, 2.1)})
+        with self.assertRaisesRegex(ValueError, "must be non-negative"):
+            Sample.from_frame(df)
+
+        # Zero is legitimate
+        df = pd.DataFrame({"id": (1, 2), "weight": (0, 2), "weight_column": "weight"})
+        self.assertEqual(
+            Sample.from_frame(df).weight_column, pd.Series((0.0, 2.0), name="weight")
         )
 
         # Test type conversion

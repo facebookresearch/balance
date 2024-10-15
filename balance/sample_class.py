@@ -264,6 +264,21 @@ class Sample:
                 weight_column = "weight"
                 sample._df.loc[:, weight_column] = 1
 
+        # verify that the weights are not null
+        if any(sample._df[weight_column].isnull()):
+            raise ValueError(
+                "Null values are not allowed in the weight_column. "
+                + "If you wish to remove an observation, either remove it from the df, or use a weight of 0."
+            )
+
+        # verify that the weights are numeric
+        if not np.issubdtype(sample._df[weight_column].dtype, np.number):
+            raise ValueError("Weights must be numeric")
+
+        # verify that the weights are not negative
+        if any(sample._df[weight_column] < 0):
+            raise ValueError("Weights must be non-negative")
+
         sample.weight_column = sample._df[weight_column]
 
         # outcome columns

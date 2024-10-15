@@ -680,7 +680,7 @@ class TestBalanceDF__descriptive_stats(BalanceTestCase):
                     "b": (-42, 8, 2, np.nan),
                     "c": ("a", "b", "c", "a"),
                     "id": (1, 2, 3, 4),
-                    "w": (np.nan, 2, 1, 1),  # np.nan makes it to a float64 dtype
+                    "w": (0, 2, 1, 1),
                 }
             ),
             id_column="id",
