@@ -596,7 +596,6 @@ def descriptive_stats(
     wdf = {}
     for c in df.columns.values:
         df_c, w = rm_mutual_nas(df.loc[:, c], weights)
-        # pyre-fixme[16]: `DescrStatsW` has no attribute `...`.
         wdf[c] = [getattr(DescrStatsW(df_c, w if weighted else None), stat)]
     return pd.DataFrame(wdf)
 
