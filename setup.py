@@ -18,11 +18,11 @@ Other requirements:
 """
 REQUIRES = [
     "numpy",
-    "pandas<=1.4.3",
+    "pandas",
     "ipython",
-    "scipy<=1.9.2",
+    "scipy",
     "patsy",
-    "seaborn<=0.13",
+    "seaborn",
     "plotly",
     "matplotlib",
     "statsmodels",
