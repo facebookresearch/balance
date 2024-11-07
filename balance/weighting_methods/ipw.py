@@ -87,11 +87,20 @@ def _patch_scipy_random(*args, **kwds) -> Generator:
         else None
     )
     scipy.random = np.random
+
+    tmp_scipy_empty_func = (
+        # pyre-ignore[16]
+        scipy.empty
+        if hasattr(scipy, "empty")
+        else None
+    )
+    scipy.empty = np.empty
     try:
         yield
     finally:
         # undo the function swap
         scipy.random = tmp_scipy_random_func
+        scipy.empty = tmp_scipy_empty_func
 
 
 def cv_glmnet_performance(
