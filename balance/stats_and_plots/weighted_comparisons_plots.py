@@ -1434,8 +1434,6 @@ def plot_dist(
             logger.warning("plotly plots ignore dist_type. Consider library='seaborn'")
 
         return plotly_plot_dist(
-            # pyre-fixme[6]: For 1st argument expected `Dict[str, DataFrame]` but
-            #  got `Dict[str, Union[DataFrame, Series]]`.
             dict_of_dfs,
             variables,
             numeric_n_values_threshold,
