@@ -217,11 +217,9 @@
     <span class="c1"># margins from population</span>
     <span class="n">target_margins</span> <span class="o">=</span> <span class="p">[</span>
         <span class="p">(</span>
-            <span class="p">(</span>
-                <span class="n">target_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">variable</span><span class="p">)[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-                <span class="o">/</span> <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">target_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">variable</span><span class="p">)[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()))</span>
-                <span class="o">*</span> <span class="n">sample_sum_weights</span>
-            <span class="p">)</span>
+            <span class="n">target_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">variable</span><span class="p">)[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="o">/</span> <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">target_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">variable</span><span class="p">)[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()))</span>
+            <span class="o">*</span> <span class="n">sample_sum_weights</span>
         <span class="p">)</span>
         <span class="k">for</span> <span class="n">variable</span> <span class="ow">in</span> <span class="n">alphabetized_variables</span>
     <span class="p">]</span>
@@ -275,9 +273,7 @@
         <span class="p">),</span>
         <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span>
         <span class="n">on</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">variables</span><span class="p">),</span>
-    <span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span>
-        <span class="s2">&quot;index&quot;</span>
-    <span class="p">)</span>  <span class="c1"># important if dropping rows due to NA</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;index&quot;</span><span class="p">)</span>  <span class="c1"># important if dropping rows due to NA</span>
 
     <span class="c1"># use above merge to give each individual sample its proportion of the</span>
     <span class="c1"># cell&#39;s total weight</span>
@@ -423,7 +419,7 @@
 
 
 <span class="k">def</span> <span class="nf">_realize_dicts_of_proportions</span><span class="p">(</span>
-    <span class="n">dict_of_dicts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span>
+    <span class="n">dict_of_dicts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generates proportional arrays of equal length for each input dictionary.</span>
@@ -491,7 +487,7 @@
 <div class="viewcode-block" id="prepare_marginal_dist_for_raking">
 <a class="viewcode-back" href="../../../balance.weighting_methods.rake.html#balance.weighting_methods.rake.prepare_marginal_dist_for_raking">[docs]</a>
 <span class="k">def</span> <span class="nf">prepare_marginal_dist_for_raking</span><span class="p">(</span>
-    <span class="n">dict_of_dicts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span>
+    <span class="n">dict_of_dicts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Realizes a nested dictionary of proportions into a DataFrame.</span>
