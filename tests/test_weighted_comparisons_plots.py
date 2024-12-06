@@ -264,7 +264,6 @@ class Test_weighted_comparisons_plots(
         self.assertTrue(issubclass(out[3], matplotlib.axes.Axes))
 
     def test_plot_dist(self):
-
         import plotly.graph_objs as go
         from balance.stats_and_plots.weighted_comparisons_plots import plot_dist
         from numpy import random

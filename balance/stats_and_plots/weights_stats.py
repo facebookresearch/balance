@@ -29,7 +29,7 @@ def _check_weights_are_valid(
         npt.NDArray,
         pd.DataFrame,
         None,
-    ]
+    ],
 ) -> None:
     """Check weights.
 

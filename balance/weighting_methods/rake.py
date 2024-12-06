@@ -178,11 +178,9 @@ def rake(
     # margins from population
     target_margins = [
         (
-            (
-                target_df.groupby(variable)["weight"].sum()
-                / (sum(target_df.groupby(variable)["weight"].sum()))
-                * sample_sum_weights
-            )
+            target_df.groupby(variable)["weight"].sum()
+            / (sum(target_df.groupby(variable)["weight"].sum()))
+            * sample_sum_weights
         )
         for variable in alphabetized_variables
     ]
@@ -236,9 +234,7 @@ def rake(
         ),
         how="left",
         on=list(variables),
-    ).set_index(
-        "index"
-    )  # important if dropping rows due to NA
+    ).set_index("index")  # important if dropping rows due to NA
 
     # use above merge to give each individual sample its proportion of the
     # cell's total weight
@@ -383,7 +379,7 @@ def _find_lcm_of_array_lengths(arrays: Dict[str, List[str]]) -> int:
 
 
 def _realize_dicts_of_proportions(
-    dict_of_dicts: Dict[str, Dict[str, float]]
+    dict_of_dicts: Dict[str, Dict[str, float]],
 ) -> Dict[str, List[str]]:
     """
     Generates proportional arrays of equal length for each input dictionary.
@@ -449,7 +445,7 @@ def _realize_dicts_of_proportions(
 
 
 def prepare_marginal_dist_for_raking(
-    dict_of_dicts: Dict[str, Dict[str, float]]
+    dict_of_dicts: Dict[str, Dict[str, float]],
 ) -> pd.DataFrame:
     """
     Realizes a nested dictionary of proportions into a DataFrame.

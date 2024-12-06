@@ -211,7 +211,8 @@ class TestBalanceOutcomesDF(BalanceTestCase):
         self.assertEqual(
             s_o2.outcomes()
             .relative_response_rates(
-                target=df_target, per_column=False  # This is the default.
+                target=df_target,
+                per_column=False,  # This is the default.
             )
             .round(3)
             .to_dict(),
@@ -340,7 +341,6 @@ class TestBalanceWeightsDF(BalanceTestCase):
         self.assertTrue(w._weights is None)
 
     def test_BalanceWeightsDF_design_effect(self):
-
         s = Sample.from_frame(
             pd.DataFrame({"w": (1, 2, 4), "id": (1, 2, 3)}),
             id_column="id",
@@ -775,7 +775,6 @@ class TestBalanceDF_std(BalanceTestCase):
 
 class TestBalanceDF_var_of_mean(BalanceTestCase):
     def test_BalanceDF_var_of_mean(self):
-
         self.assertEqual(
             s3_null.covars().var_of_mean().fillna(0).round(3).to_dict(),
             {
@@ -791,7 +790,6 @@ class TestBalanceDF_var_of_mean(BalanceTestCase):
 
 class TestBalanceDF_ci(BalanceTestCase):
     def test_BalanceDF_ci_of_mean(self):
-
         self.assertEqual(
             s3_null.covars().ci_of_mean(round_ndigits=3).fillna(0).to_dict(),
             {
@@ -829,7 +827,6 @@ class TestBalanceDF_ci(BalanceTestCase):
         )
 
     def test_BalanceDF_mean_with_ci(self):
-
         self.assertEqual(
             s_o2.outcomes().mean_with_ci().to_dict(),
             {
@@ -1120,7 +1117,6 @@ class TestBalanceDF__df_with_ids(BalanceTestCase):
 
 class TestBalanceDF_summary(BalanceTestCase):
     def testBalanceDF_summary(self):
-
         self.assertEqual(
             s1.covars().summary().to_dict(),
             {

@@ -51,7 +51,6 @@ class TestDatasets(
         self.assertEqual(o.__str__(), e.__str__())
 
     def test_load_data_cbps(self):
-
         target_df, sample_df = load_data("sim_data_cbps")
 
         self.assertEqual(sample_df.shape, (246, 7))

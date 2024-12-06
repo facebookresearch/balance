@@ -22,7 +22,6 @@ def check_some_flags(flag=True, the_flag_str="--skip_standardize_types"):
     with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
         "w", suffix=".csv", delete=False
     ) as in_file:
-
         in_contents = (
             "x,y,is_respondent,id,weight\n"
             + ("1.0,50,1,1,1\n" * 1000)
@@ -80,7 +79,6 @@ class TestCli(
         with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
             "w", suffix=".csv", delete=False
         ) as in_file:
-
             in_contents = "x,y,is_respondent,id,weight\n" "a,b,1,1,1\n" "a,b,0,1,1"
             in_file.write(in_contents)
             in_file.close()
@@ -122,7 +120,6 @@ class TestCli(
         with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
             "w", suffix=".csv", delete=False
         ) as in_file:
-
             in_contents = (
                 "x,y,is_respondent,id,weight\n"
                 + ("a,b,1,1,1\n" * 1000)
@@ -244,7 +241,6 @@ class TestCli(
         with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
             "w", suffix=".csv", delete=False
         ) as in_file:
-
             in_contents = "x,y,is_respondent,id,weight\n"
             in_file.write(in_contents)
             in_file.close()
@@ -275,7 +271,6 @@ class TestCli(
         with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
             "w", suffix=".csv", delete=False
         ) as in_file:
-
             in_contents = "x,y,is_respondent,id,weight,keep_row,batch_column\n"
             in_file.write(in_contents)
             in_file.close()
@@ -394,7 +389,6 @@ class TestCli(
         with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
             "w", suffix=".tsv", delete=False
         ) as in_file:
-
             in_contents = (
                 "x\ty\tz\tis_respondent\tid\tweight\n"
                 + ("a\tb\tg\t1\t1\t1\n" * 1000)
@@ -463,7 +457,6 @@ class TestCli(
         with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
             "w", suffix=".csv", delete=False
         ) as in_file:
-
             in_contents = (
                 "x,y,z,is_respondent,id,weight\n"
                 + ("a,b,g,1,1,1\n" * 1000)
@@ -680,7 +673,6 @@ class TestCli(
         with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
             "w", suffix=".tsv", delete=False
         ) as in_file:
-
             # Assert value is False when "False" is passed
             out_file = os.path.join(temp_dir, "out.csv")
             parser = make_parser()
@@ -1020,7 +1012,6 @@ class TestCli(
         )
 
     def test_cli_standardize_types(self):
-
         out_False = check_some_flags(True, "--standardize_types=False")
         out_True = check_some_flags(
             False, "--standardize_types=True"

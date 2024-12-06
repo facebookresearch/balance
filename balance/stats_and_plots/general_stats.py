@@ -74,7 +74,6 @@ def relative_response_rates(
     if df_target is None:
         target_n_notnull_rows = df.shape[0]
     elif per_column:  # number of notnull rows, *per column*, in df_target
-
         # verify that the columns of df and df_target are identical:
         if (len(df.columns) != len(df_target.columns)) or (
             df.columns.tolist() != df_target.columns.tolist()

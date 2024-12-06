@@ -186,7 +186,9 @@ class BalanceCLI:
         logger.info("%s target object: %s" % (sample_package_name, str(target)))
 
         try:
-            adjusted = sample.set_target(target).adjust(
+            adjusted = sample.set_target(
+                target
+            ).adjust(
                 method=self.method(),  # pyre-ignore[6] it gets str, but the function will verify internally if it's the str it should be.
                 transformations=transformations,
                 formula=formula,
@@ -637,15 +639,17 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
     # TODO: Ideally we would like transformations argument to be able to get three types of values: None (for no transformations),
     # "default" for default transformations or a dictionary of transformations.
     # However, as a first step I added the option for "default" (which is also the default) and None (for no transformations).
-    parser.add_argument(
-        "--transformations",
-        default="default",
-        required=False,
-        help=(
-            "Define the transformations for the covariates. Can be set to None for no transformations or"
-            "'default' for default transformations."
+    (
+        parser.add_argument(
+            "--transformations",
+            default="default",
+            required=False,
+            help=(
+                "Define the transformations for the covariates. Can be set to None for no transformations or"
+                "'default' for default transformations."
+            ),
         ),
-    ),
+    )
     # TODO: we currently support only the option of a string formula (or None), not a list of formulas.
     parser.add_argument(
         "--formula",

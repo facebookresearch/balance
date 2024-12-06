@@ -82,9 +82,7 @@ def _patch_scipy_random(*args, **kwds) -> Generator:
 
     tmp_scipy_random_func = (
         # pyre-ignore[16]
-        scipy.random
-        if hasattr(scipy, "random")
-        else None
+        scipy.random if hasattr(scipy, "random") else None
     )
     scipy.random = np.random
     try:
@@ -249,7 +247,6 @@ def choose_regularization(
     all_perf = []
     for wr in trim_options:
         for i in range(links.shape[1]):
-
             s = fit["lambdau"][i]
             link = links[:, i]
             weights = weights_from_link(

@@ -721,9 +721,7 @@ def cbps(  # noqa
             "gmm_optimize_result_bal_init": (
                 # pyre-fixme[61]: `gmm_optimize_result_bal_init` is undefined, or
                 #  not always defined.
-                gmm_optimize_result_bal_init
-                if cbps_method == "over"
-                else None
+                gmm_optimize_result_bal_init if cbps_method == "over" else None
             ),
         },
     }

@@ -67,7 +67,6 @@ class TestAdjustment(
     balance.testutil.BalanceTestCase,
 ):
     def test_trim_weights(self):
-
         # Test no trimming
         # Notice how it changes the dtype of int64 to float64~
         pd.testing.assert_series_equal(

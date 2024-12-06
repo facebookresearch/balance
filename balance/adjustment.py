@@ -194,7 +194,7 @@ def trim_weights(
 
 
 def default_transformations(
-    dfs: Union[Tuple[pd.DataFrame, ...], List[pd.DataFrame]]
+    dfs: Union[Tuple[pd.DataFrame, ...], List[pd.DataFrame]],
 ) -> Dict[str, Callable]:
     """
     Apply default transformations to dfs, i.e.
