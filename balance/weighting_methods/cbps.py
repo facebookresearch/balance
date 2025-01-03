@@ -479,9 +479,16 @@ def cbps(  # noqa
 
     # SVD for X_matrix
     U, s, Vh = scipy.linalg.svd(X_matrix, full_matrices=False)
+
+    # remove near-zero singular values to address the rank-deficiency of X_matrix
+    # TODO: add unittest
+    singular_value_threshold = 1e-10
+    U = U[:, s > singular_value_threshold]
+    Vh = Vh[s > singular_value_threshold, :]
+    s = s[s > singular_value_threshold]
+
     # Make the sign of the SVD deterministic
     U, Vh = sklearn.utils.extmath.svd_flip(U, Vh, u_based_decision=False)
-    # TODO: add stop: if (k < ncol(X)) stop("X is not full rank")
 
     sample_n = sample_df.shape[0]
     target_n = target_df.shape[0]
