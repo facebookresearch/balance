@@ -7,19 +7,13 @@
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-from unittest.mock import patch
-
 import balance.testutil
 
-import glmnet_python  # noqa  # Required so that cvglmnet import works
 import numpy as np
 import pandas as pd
 
 from balance.sample_class import Sample
 from balance.weighting_methods import ipw as balance_ipw
-
-from cvglmnet import cvglmnet  # pyre-ignore[21]: this module exists
-from cvglmnetCoef import cvglmnetCoef  # pyre-ignore[21]: this module exists
 
 
 class Testipw(
@@ -86,16 +80,6 @@ class Testipw(
         )
         self.assertWarnsRegexp(
             (
-                "All propensity model coefficients are zero, your covariates do "
-                "not predict inclusion in the sample. The estimates will not be "
-                "adjusted"
-            ),
-            sample.adjust,
-            method="ipw",
-            balance_classes=False,
-        )
-        self.assertWarnsRegexp(
-            (
                 "The propensity model has low fraction null deviance explained "
                 ".*. Results may not be accurate"
             ),
@@ -133,78 +117,6 @@ class Testipw(
             t,
             na_action="drop",
             transformations=None,
-        )
-
-    def test_cv_glmnet_performance(self):
-        x = np.random.rand(100, 10)
-        y = np.random.rand(100, 1)
-        y = (y > 0.5) * 1.0
-        with balance_ipw._patch_scipy_random():
-            fit = cvglmnet(x=x, y=y, family="binomial", ptype="class")
-
-        #  Test default args with feature names
-        c = cvglmnetCoef(fit)
-        e_c_names = pd.Series(
-            index="intercept a b c d e f g h i j".split(), data=c.reshape((c.shape[0],))
-        )
-        e_c = pd.Series(data=c.reshape((c.shape[0],)))
-
-        r = balance_ipw.cv_glmnet_performance(
-            fit, feature_names="a b c d e f g h i j".split()
-        )
-
-        ix = fit["lambdau"] == fit["lambda_1se"]
-        e_dev = fit["glmnet_fit"]["dev"][ix]
-        e_cve = fit["cvm"][ix]
-
-        self.assertEqual(r["coefs"], e_c_names)
-        self.assertEqual(r["prop_dev_explained"], e_dev)
-        self.assertEqual(r["mean_cv_error"], e_cve)
-
-        self.assertEqual(len(fit["glmnet_fit"]["dev"].shape), 1)
-        self.assertEqual(len(fit["cvm"].shape), 1)
-
-        #  Test default args with lambda_min
-        c = cvglmnetCoef(fit, s="lambda_min")
-        e_c_names = pd.Series(
-            index="intercept a b c d e f g h i j".split(), data=c.reshape((c.shape[0],))
-        )
-        e_c = pd.Series(data=c.reshape((c.shape[0],)))
-        r = balance_ipw.cv_glmnet_performance(fit, s="lambda_min")
-
-        ix = fit["lambdau"] == fit["lambda_min"]
-        e_dev = fit["glmnet_fit"]["dev"][ix]
-        e_cve = fit["cvm"][ix]
-
-        self.assertEqual(r["coefs"], e_c)
-        self.assertEqual(r["prop_dev_explained"], e_dev)
-        self.assertEqual(r["mean_cv_error"], e_cve)
-
-        #  Test with specific lambda
-        s = np.array([fit["lambdau"][5]])
-        c = cvglmnetCoef(fit, s=s)
-        e_c_names = pd.Series(
-            index="intercept a b c d e f g h i j".split(), data=c.reshape((c.shape[0],))
-        )
-        e_c = pd.Series(data=c.reshape((c.shape[0],)))
-        r = balance_ipw.cv_glmnet_performance(fit, s=s)
-
-        ix = fit["lambdau"] == s
-        e_dev = fit["glmnet_fit"]["dev"][ix]
-        e_cve = fit["cvm"][ix]
-
-        self.assertEqual(r["coefs"], e_c)
-        self.assertEqual(r["prop_dev_explained"], e_dev)
-        self.assertEqual(r["mean_cv_error"], e_cve)
-
-        # Test exception
-        balance_ipw.cv_glmnet_performance(fit, s=s)
-        self.assertRaisesRegex(
-            Exception,
-            "No lambda found for",
-            balance_ipw.cv_glmnet_performance,
-            fit,
-            s=7,
         )
 
     def test_weights_from_link(self):
@@ -371,25 +283,17 @@ class Testipw(
         )
 
         # Compare output weights (examples and distribution)
-        self.assertEqual(round(res["weight"][15], 4), 0.0886)
-        self.assertEqual(round(res["weight"][995], 4), 0.2363)
+        self.maxDiff = None
+        self.assertEqual(round(res["weight"][15], 4), 0.4679)
+        self.assertEqual(round(res["weight"][995], 4), 0.4108)
         self.assertEqual(
             np.around(res["weight"].describe().values, 4),
-            np.array([1000, 1.0167, 0.7108, 0.0001, 0.2349, 1.2151, 1.7077, 1.7077]),
+            np.array([1000, 1.0167, 0.7187, 0.0003, 0.4304, 0.8857, 1.4284, 3.2733]),
         )
 
         # Compare properties of output model
-        self.assertEqual(np.around(res["model"]["fit"]["lambda_1se"], 5), 0.00474)
         self.assertEqual(
-            np.around(res["model"]["perf"]["prop_dev_explained"], 5), 0.77107
+            np.around(res["model"]["perf"]["prop_dev_explained"], 5), 0.20273
         )
-        self.assertEqual(np.around(res["model"]["perf"]["mean_cv_error"], 5), 0.36291)
-        self.assertEqual(np.around(res["model"]["lambda"], 5), 0.00064)
-        self.assertEqual(res["model"]["regularisation_perf"]["best"]["trim"], 0.05)
-
-    @patch("balance.weighting_methods.ipw.scipy")
-    def test_patch_scipy_random(self, mock_scipy):
-        mock_scipy.random = None
-        with balance_ipw._patch_scipy_random():
-            self.assertEqual(mock_scipy.random, np.random)
-        self.assertEqual(mock_scipy.random, None)
+        self.assertEqual(np.around(res["model"]["lambda"], 5), 0.8235)
+        self.assertEqual(res["model"]["regularisation_perf"]["best"]["trim"], 5.0)

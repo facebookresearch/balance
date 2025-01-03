@@ -741,7 +741,7 @@ class Sample:
             ):
                 model_summary = (
                     "Model proportion deviance explained: {dev_exp:.3f}".format(
-                        dev_exp=self.model()["perf"]["prop_dev_explained"][0]
+                        dev_exp=self.model()["perf"]["prop_dev_explained"]
                     )
                 )
             else:
@@ -906,36 +906,46 @@ class Sample:
             )
         )
         if model["method"] == "ipw":
-            #  Scalar values from 'perf' key of dictionary
-            fit_single_values = pd.concat(
-                [
-                    pd.DataFrame({"metric": "model_glance", "val": v, "var": k})
-                    for k, v in model["fit"].items()
-                    if (isinstance(v, np.ndarray) and v.shape == (1,))
-                ]
-            )
-            diagnostics = pd.concat((diagnostics, fit_single_values))
-
-            #  Extract glmnet output about this regularisation parameter
-            lambda_ = model["lambda"]
-            lambda_index = model["fit"]["lambdau"] == lambda_
-            fit_values = pd.concat(
-                [
-                    pd.DataFrame(
-                        {"metric": "model_glance", "val": v[lambda_index], "var": k}
+            #  Attributes of LogisticRegression class
+            fit_list = []
+            for k, v in model["fit"].__dict__.items():
+                if isinstance(v, np.ndarray) and v.shape == (1,):
+                    fit_list.extend(
+                        [
+                            pd.DataFrame(
+                                {"metric": "ipw_model_glance", "val": v, "var": k}
+                            )
+                        ]
                     )
-                    for k, v in self.model()["fit"].items()
-                    if (isinstance(v, np.ndarray) and v.shape) == lambda_index.shape
-                ]
+                elif isinstance(v, float):
+                    fit_list.extend(
+                        [
+                            pd.DataFrame(
+                                {"metric": "model_glance", "val": (v,), "var": k}
+                            )
+                        ]
+                    )
+                elif isinstance(v, str):
+                    fit_list.extend(
+                        [pd.DataFrame({"metric": "ipw_" + k, "val": (0,), "var": v})]
+                    )
+
+            if len(fit_list) > 0:
+                fit_single_values = pd.concat(fit_list)
+                diagnostics = pd.concat((diagnostics, fit_single_values))
+
+            #  Extract info about the regularisation parameter
+            lambda_df = pd.DataFrame(
+                {"metric": "model_glance", "val": (model["lambda"],), "var": "lambda"}
             )
-            diagnostics = pd.concat((diagnostics, fit_values))
+            diagnostics = pd.concat((diagnostics, lambda_df))
 
             #  Scalar values from 'perf' key of dictionary
             perf_single_values = pd.concat(
                 [
-                    pd.DataFrame({"metric": "model_glance", "val": v, "var": k})
+                    pd.DataFrame({"metric": "model_glance", "val": (v,), "var": k})
                     for k, v in model["perf"].items()
-                    if (isinstance(v, np.ndarray) and v.shape == (1,))
+                    if (isinstance(v, float))
                 ]
             )
             diagnostics = pd.concat((diagnostics, perf_single_values))
