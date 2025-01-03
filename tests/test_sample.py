@@ -563,7 +563,7 @@ class TestSample_metrics_methods(
         )
 
         self.assertEqual(
-            round(a_with_outcome_adjusted.outcome_variance_ratio()[0], 5), 0.97516
+            round(a_with_outcome_adjusted.outcome_variance_ratio()[0], 5), 0.97724
         )
 
         # two outcomes, with no adjustment (var ratio should be 1)
@@ -689,7 +689,7 @@ class TestSample_metrics_methods(
         a_diagnostics = a.diagnostics()
         # print(a_diagnostics)
 
-        self.assertEqual(a_diagnostics.shape, (198, 3))
+        self.assertEqual(a_diagnostics.shape, (203, 3))
         self.assertEqual(a_diagnostics.columns.to_list(), ["metric", "val", "var"])
         self.assertEqual(
             a_diagnostics[a_diagnostics["metric"] == "adjustment_method"]["var"].values,
@@ -699,15 +699,19 @@ class TestSample_metrics_methods(
         output = a_diagnostics.groupby("metric").size().to_dict()
         expected = {
             "adjustment_failure": 1,
+            "adjustment_method": 1,
             "covar_asmd_adjusted": 11,
             "covar_asmd_improvement": 11,
             "covar_asmd_unadjusted": 11,
             "covar_main_asmd_adjusted": 11,
             "covar_main_asmd_improvement": 11,
             "covar_main_asmd_unadjusted": 11,
+            "ipw_model_glance": 2,
+            "ipw_multi_class": 1,
+            "ipw_penalty": 1,
+            "ipw_solver": 1,
             "model_coef": 92,
             "model_glance": 10,
-            "adjustment_method": 1,
             "size": 4,
             "weights_diagnostics": 24,
         }
@@ -775,6 +779,7 @@ class TestSample_metrics_methods(
 
         a = s.adjust(t, max_de=1.5)
 
+        self.maxDiff = None
         # if both rows_to_keep = None, columns_to_keep = None - then keep_only_some_rows_columns returns the same object
         self.assertTrue(
             a is a.keep_only_some_rows_columns(rows_to_keep=None, columns_to_keep=None)
@@ -790,21 +795,21 @@ class TestSample_metrics_methods(
         output_new = a2.covars().asmd().round(2).to_dict()
         expected_orig = {
             "j": {"self": 0.01, "unadjusted": 0.03, "unadjusted - self": 0.02},
-            "i": {"self": 0.02, "unadjusted": 0.0, "unadjusted - self": -0.02},
-            "h": {"self": 0.04, "unadjusted": 0.09, "unadjusted - self": 0.04},
-            "g": {"self": 0.0, "unadjusted": 0.0, "unadjusted - self": 0.0},
-            "f": {"self": 0.01, "unadjusted": 0.03, "unadjusted - self": 0.02},
-            "e": {"self": 0.0, "unadjusted": 0.0, "unadjusted - self": 0.0},
-            "d": {"self": 0.05, "unadjusted": 0.12, "unadjusted - self": 0.06},
-            "c": {"self": 0.04, "unadjusted": 0.05, "unadjusted - self": 0.01},
-            "b": {"self": 0.14, "unadjusted": 0.55, "unadjusted - self": 0.41},
-            "a": {"self": 0.01, "unadjusted": 0.0, "unadjusted - self": -0.01},
-            "mean(asmd)": {"self": 0.03, "unadjusted": 0.09, "unadjusted - self": 0.05},
+            "i": {"self": 0.01, "unadjusted": 0.0, "unadjusted - self": -0.01},
+            "h": {"self": 0.02, "unadjusted": 0.09, "unadjusted - self": 0.06},
+            "g": {"self": 0.01, "unadjusted": 0.0, "unadjusted - self": -0.01},
+            "f": {"self": 0.01, "unadjusted": 0.03, "unadjusted - self": 0.01},
+            "e": {"self": 0.01, "unadjusted": 0.0, "unadjusted - self": -0.01},
+            "d": {"self": 0.03, "unadjusted": 0.12, "unadjusted - self": 0.09},
+            "c": {"self": 0.04, "unadjusted": 0.05, "unadjusted - self": 0.02},
+            "b": {"self": 0.18, "unadjusted": 0.55, "unadjusted - self": 0.37},
+            "a": {"self": 0.01, "unadjusted": 0.0, "unadjusted - self": -0.0},
+            "mean(asmd)": {"self": 0.03, "unadjusted": 0.09, "unadjusted - self": 0.06},
         }
         expected_new = {
-            "c": {"self": 0.04, "unadjusted": 0.05, "unadjusted - self": 0.01},
-            "b": {"self": 0.14, "unadjusted": 0.55, "unadjusted - self": 0.41},
-            "mean(asmd)": {"self": 0.09, "unadjusted": 0.3, "unadjusted - self": 0.21},
+            "c": {"self": 0.04, "unadjusted": 0.05, "unadjusted - self": 0.02},
+            "b": {"self": 0.18, "unadjusted": 0.55, "unadjusted - self": 0.37},
+            "mean(asmd)": {"self": 0.11, "unadjusted": 0.3, "unadjusted - self": 0.20},
         }
 
         self.assertEqual(output_orig, expected_orig)
@@ -836,8 +841,8 @@ class TestSample_metrics_methods(
         ss_condition = "(metric == 'covar_main_asmd_adjusted') & (var == 'mean(asmd)')"
         ss = a_diag.eval(ss_condition)
         ss2 = a2_diag.eval(ss_condition)
-        self.assertEqual(round(float(a_diag[ss].val), 4), 0.0338)
-        self.assertEqual(round(float(a2_diag[ss2].val), 3), 0.093)
+        self.assertEqual(round(float(a_diag[ss].val), 4), 0.0329)
+        self.assertEqual(round(float(a2_diag[ss2].val), 3), 0.109)
 
         # Also checking filtering using rows_to_keep:
         a3 = a.keep_only_some_rows_columns(
@@ -850,9 +855,9 @@ class TestSample_metrics_methods(
         # Making sure asmd works - we can see it's different then for a2
         output_new = a3.covars().asmd().round(2).to_dict()
         expected_new = {
-            "c": {"self": 0.06, "unadjusted": 0.07, "unadjusted - self": 0.01},
-            "b": {"self": 0.21, "unadjusted": 0.61, "unadjusted - self": 0.4},
-            "mean(asmd)": {"self": 0.13, "unadjusted": 0.34, "unadjusted - self": 0.21},
+            "c": {"self": 0.05, "unadjusted": 0.07, "unadjusted - self": 0.02},
+            "b": {"self": 0.25, "unadjusted": 0.61, "unadjusted - self": 0.36},
+            "mean(asmd)": {"self": 0.15, "unadjusted": 0.34, "unadjusted - self": 0.19},
         }
         self.assertEqual(output_new, expected_new)
 
@@ -886,11 +891,11 @@ class TestSample_metrics_methods(
         self.assertEqual(int(a3_diag[ss].val), 508)
         # Notice also that the calculated values from the weights are different
         ss = a_diag.eval("(metric == 'weights_diagnostics') & (var == 'design_effect')")
-        self.assertEqual(round(float(a_diag[ss].val), 4), 1.493)
+        self.assertEqual(round(float(a_diag[ss].val), 4), 1.4679)
         ss = a3_diag.eval(
             "(metric == 'weights_diagnostics') & (var == 'design_effect')"
         )
-        self.assertEqual(round(float(a3_diag[ss].val), 4), 1.4802)
+        self.assertEqual(round(float(a3_diag[ss].val), 4), 1.4325)
 
         # Testing it also works with outcomes
         np.random.seed(112358)
@@ -917,7 +922,7 @@ class TestSample_metrics_methods(
 
         self.assertEqual(
             a_with_outcome_adjusted2.outcomes().mean().round(3).to_dict(),
-            {"k": {"self": 0.491, "unadjusted": 0.494}},
+            {"k": {"self": 0.492, "unadjusted": 0.494}},
         )
 
         # TODO (p2): possibly add checks for columns_to_keep = None while doing something with rows_to_keep

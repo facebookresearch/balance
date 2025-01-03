@@ -595,6 +595,7 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
         action="store_true",
         help="Turn off header in the output csv file",
     )
+    # TODO: Identify conditions for weighting failure or remove this argument entirely
     parser.add_argument(
         "--succeed_on_weighting_failure",
         action="store_true",
