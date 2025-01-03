@@ -399,7 +399,7 @@ class one_hot_encoding_greater_2:
 def process_formula(formula, variables: List, factor_variables=None):
     """Process a formula string:
         1. Expand .  notation using dot_expansion function
-        2. Remove intercept (if using ipw, it will be added automatically by cvglmnet)
+        2. Remove intercept (if using ipw, it will be added automatically by sklearn)
         3. If factor_variables is not None, one_hot_encoding_greater_2 is applied
         to factor_variables
 
@@ -445,7 +445,7 @@ def process_formula(formula, variables: List, factor_variables=None):
         raise Exception("Not all factor variables are contained in variables")
 
     formula = dot_expansion(formula, variables)
-    # Remove the intercept since it is added by cvglmnet/cbps
+    # Remove the intercept since it is added by sklearn/cbps
     formula = formula + " -1"
     desc = ModelDesc.from_formula(formula)
 
@@ -715,7 +715,7 @@ def model_matrix(
             additive formula is applied. This may be a string or a list of strings
             representing different parts of the formula that will be concated together.
             Default is None, which will create an additive formula from the available variables. Defaults to None.
-        penalty_factor (Optional[List[float]], optional): the penalty used in the glmnet function in ipw. The penalty
+        penalty_factor (Optional[List[float]], optional): the penalty used in the sklearn function in ipw. The penalty
             should have the same length as the formula list. If not provided,
             assume the same penalty for all variables. Defaults to None.
         one_hot_encoding (bool, optional): whether to encode all factor variables in the model matrix with
@@ -875,6 +875,7 @@ def model_matrix(
     pf = []
     for idx, formula_item in enumerate(formula):
         logger.debug(f"Building model matrix for formula item {formula_item}")
+
         model_matrix_result = build_model_matrix(
             all_data,
             formula_item,
