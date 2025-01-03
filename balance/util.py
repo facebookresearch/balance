@@ -17,7 +17,6 @@ from itertools import combinations
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
-import numpy.typing as npt
 import pandas as pd
 
 from IPython.lib.display import FileLink
@@ -688,10 +687,7 @@ def model_matrix(
     formula: Optional[List[str]] = None,
     penalty_factor: Optional[List[float]] = None,
     one_hot_encoding: bool = False,
-) -> Dict[
-    str,
-    Union[List[str], npt.NDArray, Union[pd.DataFrame, npt.NDArray, csc_matrix], None],
-]:
+) -> Dict[str, Union[List[Any], np.ndarray[Any, np.dtype[Any]]]]:
     """Create a model matrix from a sample (and target).
     The default is to use an additive formula for all variables (or the ones specified).
     Can also create a custom model matrix if a formula is provided.
@@ -894,7 +890,7 @@ def model_matrix(
             )
         )
 
-    penalty_factor = np.concatenate(pf, axis=0)
+    penalty_factor_updated = np.concatenate(pf, axis=0)
     if return_var_type == "sparse":
         X_matrix = hstack(X_matrix, format="csc")
     elif return_var_type == "matrix":
@@ -906,7 +902,7 @@ def model_matrix(
 
     result = {
         "model_matrix_columns_names": X_matrix_columns,
-        "penalty_factor": penalty_factor,
+        "penalty_factor": penalty_factor_updated,
         "formula": formula,
     }
     if return_type == "one":
@@ -1470,14 +1466,11 @@ def fct_lump_by(s: pd.Series, by: pd.Series, prop: float = 0.05) -> pd.Series:
                 # 6                2
                 # dtype: object
     """
-    # The reindexing is required in order to overcome bug before pandas 1.2
-    # https://github.com/pandas-dev/pandas/issues/16646
-    # we keep the index of s as the index of the result
-    s_index = s.index
-    s = s.reset_index(drop=True)
-    by = by.reset_index(drop=True)
-    res = s.groupby(by).apply(lambda x: fct_lump(x, prop=prop))
-    res.index = s_index
+    res = copy.deepcopy(s)
+    pd.options.mode.copy_on_write = True
+    # pandas groupby doesnt preserve order
+    for subgroup in pd.unique(by):
+        res.loc[by == subgroup] = fct_lump(res.loc[by == subgroup], prop=prop)
     return res
 
 
@@ -1521,10 +1514,14 @@ def _pd_convert_all_types(
                 # array([dtype('float64'), dtype('float64')], dtype=object)
     """
     df = copy.deepcopy(df)
-    # source: https://stackoverflow.com/a/56944992/256662
-    df.loc[:, df.dtypes == input_type] = df.select_dtypes([input_type]).apply(
-        lambda x: x.astype(output_type)
-    )
+    # source: https://stackoverflow.com/questions/39904889/
+    df = pd.concat(
+        [
+            df.select_dtypes([], [input_type]),
+            df.select_dtypes([input_type]).apply(pd.Series.astype, dtype=output_type),
+        ],
+        axis=1,
+    ).reindex(df.columns, axis=1)
     return df
 
 

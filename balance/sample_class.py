@@ -838,7 +838,7 @@ class Sample:
         """
         logger.info("Starting computation of diagnostics of the fitting")
         self._check_if_adjusted()
-        diagnostics = pd.DataFrame(columns=("metric", "val", "var"))
+        diagnostics = pd.DataFrame(columns=["metric", "val", "var"])
 
         # ----------------------------------------------------
         # Properties of the Sample object (dimensions of the data)
@@ -1047,7 +1047,6 @@ class Sample:
         diagnostics = diagnostics.reset_index(drop=True)
 
         logger.info("Done computing diagnostics")
-        # pyre-fixme[7]: Expected `DataFrame` but got `Optional[DataFrame]`.
         return diagnostics
 
     ############################################
@@ -1118,7 +1117,7 @@ class Sample:
                     v._df = v._df[ss]
                     if v._outcome_columns is not None:
                         v._outcome_columns = v._outcome_columns[ss]
-                except pd.core.computation.ops.UndefinedVariableError:
+                except pd.errors.UndefinedVariableError:
                     # This can happen, for example, if the row filtering condition depends somehow on a feature that is
                     # in the sample but not in the _links. For example, if filtering over one of the
                     # outcome variables, it would filter out these rows from sample, but it wouldn't have this column to

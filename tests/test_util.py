@@ -1234,7 +1234,6 @@ class TestUtil(
             balance_util.fct_lump_by(s, by, 0.5),
             pd.Series(
                 [1, 1, 1, "_lumped_other", "_lumped_other", 1, "_lumped_other"],
-                name="a",
             ),
         )
 

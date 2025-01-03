@@ -103,7 +103,7 @@ def _weights_per_covars_names(covar_names: List) -> pd.DataFrame:
     counts = collections.Counter(columns_to_original_variable.values())
     weights = pd.DataFrame(
         {k: 1 / counts[v] for k, v in columns_to_original_variable.items()},
-        index=("weight",),
+        index=["weight"],
     )
     _check_weights_are_valid(weights)  # verify nothing odd has occurred.
     main_covar_names = pd.DataFrame.from_dict(
