@@ -9,24 +9,20 @@ from setuptools import find_packages, setup
 Core library deps
 
 Version requirements
-* scipy<=1.9.2: Required by glmnet-python
-* pandas<=1.4.3: 1.5.0 moved UndefinedVariableError into pandas.errors
-
-Other requirements:
-* glmnet-python@1.0, from https://github.com/bbalasub1/glmnet_python.git
-
+* pandas<=2.0.3: Newer versions lead to "AttributeError: module 'pandas.core.arrays.numpy_' has no attribute 'PandasArray'"
+* scipy<=1.10.1 and scikit-learn<=1.2.2: Necessary for numerical tests to pass. May be possible to relax these without major issues.
 """
 REQUIRES = [
     "numpy",
-    "pandas<=1.4.3",
+    "pandas<=2.0.3",
     "ipython",
-    "scipy<=1.9.2",
+    "scipy<=1.10.1",
     "patsy",
-    "seaborn<=0.13",
+    "seaborn",
     "plotly",
     "matplotlib",
     "statsmodels",
-    "scikit-learn",
+    "scikit-learn<=1.2.2",
     "ipfn",
     "session-info",
 ]
@@ -58,12 +54,12 @@ def setup_package() -> None:
         name="balance",
         description=DESCRIPTION,
         author="Facebook, Inc.",
-        license="GPLv2",
+        license="MIT",
         url="https://github.com/facebookresearch/balance",
         keywords=[""],
         long_description=long_description,
         long_description_content_type="text/markdown",
-        python_requires=">=3.7",
+        python_requires=">=3.9",
         install_requires=REQUIRES,
         packages=find_packages(include=["balance*"]),
         # Include all csv files
@@ -80,12 +76,10 @@ def setup_package() -> None:
             "Intended Audience :: Science/Research",
             "Topic :: Scientific/Engineering",
             "Programming Language :: Python :: 3",
-            "Programming Language :: Python :: 3.7",
-            "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
             "Programming Language :: Python :: 3.10",
             "Programming Language :: Python :: 3.11",
-            "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+            "License :: OSI Approved :: MIT License",
         ],
     )
 
