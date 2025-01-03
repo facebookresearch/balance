@@ -53,7 +53,7 @@ def _check_weights_are_valid(
         w = pd.Series(w)
         # TODO: (p2) consider having a check for each type of w, instead of
         #            turning w into pd.Series (since this solution might not be very efficient)
-    if not np.issubdtype(w, np.number):
+    if not pd.api.types.is_numeric_dtype(w):
         raise TypeError(
             f"weights (w) must be a number but instead they are of type: {w.dtype}."
         )
@@ -104,7 +104,7 @@ def design_effect(w: pd.Series) -> np.float64:
     return (w**2).mean() / (w.mean() ** 2)
 
 
-def nonparametric_skew(w: pd.Series) -> np.float64:
+def nonparametric_skew(w: pd.Series) -> float:
     # TODO (p2): consider adding other skew measures (https://en.wikipedia.org/wiki/Skewness)
     #            look more in the literature (are there references for using this vs another, or none at all?)
     #            update the doc with insights, once done:
@@ -137,7 +137,8 @@ def nonparametric_skew(w: pd.Series) -> np.float64:
     """
     _check_weights_are_valid(w)
     if (len(w) == 1) or (w.std() == 0):
-        return np.float64(0)
+        return float(0)
+    # pyre-ignore
     return (w.mean() - w.median()) / w.std()
 
 

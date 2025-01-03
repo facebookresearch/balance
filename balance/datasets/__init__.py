@@ -157,8 +157,8 @@ def load_cbps_data() -> Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame]]:
     # NOTE: the reason we use __file__ and not importlib.resources is because the later one changed API in Python 3.11.
     #       so in order to be compliant with 3.7-3.10 and also 3.11, using __file__ is the safer option.
     df_all = pd.read_csv(pathlib.Path(__file__).parent.joinpath("sim_data_cbps.csv"))
-    target_df = df_all[df_all.treat == 1].drop(["treat"], 1)
-    sample_df = df_all[df_all.treat == 0].drop(["treat"], 1)
+    target_df = df_all[df_all.treat == 1].drop(["treat"], axis=1)
+    sample_df = df_all[df_all.treat == 0].drop(["treat"], axis=1)
 
     return (target_df, sample_df)
 

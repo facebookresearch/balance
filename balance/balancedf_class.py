@@ -1694,7 +1694,6 @@ class BalanceCovarsDF(BalanceDF):
         Returns:
             BalanceCovarsDF: Object.
         """
-        # pyre-fixme[9]: df has type `DataFrame`; used as `Optional[DataFrame]`.
         df = df.reset_index()
         df = pd.concat(
             (df, pd.Series(np.arange(0, df.shape[0]), name="id"), weights), axis=1
@@ -1926,7 +1925,11 @@ class BalanceWeightsDF(BalanceDF):
             ["design_effect", "effective_sample_proportion", "effective_sample_size"]
         )
         weights_diag_value.extend(
-            [the_weights_de, 1 / the_weights_de, len(the_weights) / the_weights_de]
+            [
+                the_weights_de,
+                1.0 / the_weights_de,
+                float(len(the_weights)) / the_weights_de,
+            ]
         )
 
         # adding sum of weights, and then normalizing them to n (sample size)

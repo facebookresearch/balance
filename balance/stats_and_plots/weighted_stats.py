@@ -309,6 +309,7 @@ def ci_of_weighted_mean(
         # Apply a lambda function to round a pd.Series of tuples to x decimal places
         ci = ci.apply(lambda t: tuple(round(x, round_ndigits) for x in t))
 
+    # pyre-ignore
     return ci
 
 
@@ -385,7 +386,7 @@ def weighted_sd(
     Returns:
         pd.Series: np.sqrt of :func:`weighted_var` (np.float64)
     """
-    return np.sqrt(weighted_var(v, w, inf_rm))
+    return pd.Series(np.sqrt(weighted_var(v, w, inf_rm)))
 
 
 def weighted_quantile(

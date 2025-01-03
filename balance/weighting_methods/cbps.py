@@ -233,7 +233,7 @@ def compute_deff_from_beta(
         compute_pseudo_weights_from_logit_probs(probs, design_weights, in_pop)
     )
     weights = design_weights[in_pop == 0.0] * weights[in_pop == 0.0]
-    return design_effect(weights)
+    return design_effect(pd.Series(weights))
 
 
 def _standardize_model_matrix(
@@ -453,9 +453,8 @@ def cbps(  # noqa
         formula=formula,
         one_hot_encoding=False,
     )
-    # TODO: Currently using a dense version of the X matrix. We might change to using the sparse version if need.
     X_matrix = cast(
-        Union[pd.DataFrame, np.ndarray, csc_matrix],
+        csc_matrix,
         (model_matrix_output["model_matrix"]),
     ).toarray()
     X_matrix_columns_names = model_matrix_output["model_matrix_columns_names"]
