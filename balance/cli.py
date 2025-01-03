@@ -35,11 +35,14 @@ class BalanceCLI:
             self._penalty_factor,
             self._one_hot_encoding,
             self._max_de,
+            self._lambda_min,
+            self._lambda_max,
+            self._num_lambdas,
             self._weight_trimming_mean_ratio,
             self._sample_cls,
             self._sample_package_name,
             self._sample_package_version,
-        ) = (None, None, None, None, None, None, None, None, None)
+        ) = (None, None, None, None, None, None, None, None, None, None, None, None)
 
     def check_input_columns(self, columns: Union[List[str], pd.Index]) -> None:
         needed_columns = []
@@ -102,6 +105,15 @@ class BalanceCLI:
     def max_de(self) -> Optional[float]:
         return self.args.max_de
 
+    def lambda_min(self) -> Optional[float]:
+        return self.args.lambda_min
+
+    def lambda_max(self) -> Optional[float]:
+        return self.args.lambda_max
+
+    def num_lambdas(self) -> Optional[float]:
+        return self.args.num_lambdas
+
     def transformations(self) -> Optional[str]:
         if (self.args.transformations is None) or (self.args.transformations == "None"):
             return None
@@ -135,6 +147,9 @@ class BalanceCLI:
         penalty_factor=None,
         one_hot_encoding: bool = False,
         max_de: Optional[float] = 1.5,
+        lambda_min: Optional[float] = 1e-05,
+        lambda_max: Optional[float] = 10,
+        num_lambdas: Optional[int] = 250,
         weight_trimming_mean_ratio: float = 20,
         sample_cls: Type[balance_sample_cls] = balance_sample_cls,
         sample_package_name: str = __package__,
@@ -195,6 +210,9 @@ class BalanceCLI:
                 penalty_factor=penalty_factor,
                 one_hot_encoding=one_hot_encoding,
                 max_de=max_de,
+                lambda_min=lambda_min,
+                lambda_max=lambda_max,
+                num_lambdas=num_lambdas,
                 weight_trimming_mean_ratio=weight_trimming_mean_ratio,
             )
             logger.info("Succeeded with adjusting sample to target")
@@ -330,6 +348,9 @@ class BalanceCLI:
         transformations = self.transformations()
         formula = self.formula()
         penalty_factor = None
+        lambda_min = self.lambda_min()
+        lambda_max = self.lambda_max()
+        num_lambdas = self.num_lambdas()
         one_hot_encoding = self.one_hot_encoding()
         max_de = self.max_de()
         weight_trimming_mean_ratio = self.weight_trimming_mean_ratio()
@@ -346,6 +367,9 @@ class BalanceCLI:
             self._penalty_factor,
             self._one_hot_encoding,
             self._max_de,
+            self._lambda_min,
+            self._lambda_max,
+            self._num_lambdas,
             self._weight_trimming_mean_ratio,
             self._sample_cls,
             self._sample_package_name,
@@ -356,6 +380,9 @@ class BalanceCLI:
             penalty_factor,
             one_hot_encoding,
             max_de,
+            lambda_min,
+            lambda_max,
+            num_lambdas,
             weight_trimming_mean_ratio,
             sample_cls,
             sample_package_name,
@@ -370,6 +397,9 @@ class BalanceCLI:
             penalty_factor,
             one_hot_encoding,
             max_de,
+            lambda_min,
+            lambda_max,
+            num_lambdas,
             weight_trimming_mean_ratio,
             sample_cls,
             sample_package_name,
@@ -380,6 +410,9 @@ class BalanceCLI:
             self._penalty_factor,
             self._one_hot_encoding,
             self._max_de,
+            self._lambda_min,
+            self._lambda_max,
+            self._num_lambdas,
             self._weight_trimming_mean_ratio,
             self._sample_cls,
             self._sample_package_name,
@@ -398,6 +431,9 @@ class BalanceCLI:
             "penalty_factor",
             "one_hot_encoding",
             "max_de",
+            "lambda_min",
+            "lambda_max",
+            "num_lambdas",
             "weight_trimming_mean_ratio",
             "sample_cls",
             "sample_package_name",
@@ -409,6 +445,9 @@ class BalanceCLI:
             penalty_factor,
             one_hot_encoding,
             max_de,
+            lambda_min,
+            lambda_max,
+            num_lambdas,
             weight_trimming_mean_ratio,
             sample_cls,
             sample_package_name,
@@ -434,6 +473,9 @@ class BalanceCLI:
                     penalty_factor,
                     one_hot_encoding,
                     max_de,
+                    lambda_min,
+                    lambda_max,
+                    num_lambdas,
                     weight_trimming_mean_ratio,
                     sample_cls,
                     sample_package_name,
@@ -456,6 +498,9 @@ class BalanceCLI:
                 penalty_factor,
                 one_hot_encoding,
                 max_de,
+                lambda_min,
+                lambda_max,
+                num_lambdas,
                 weight_trimming_mean_ratio,
                 sample_cls,
                 sample_package_name,
@@ -614,6 +659,42 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
             "Upper bound for the design effect of the computed weights. "
             "If not supplied it defaults to 1.5. If set to 'None', then it uses 'lambda_1se'. "
             "Only used if method is ipw or CBPS."
+        ),
+    )
+    parser.add_argument(
+        "--lambda_min",
+        type=float,
+        required=False,
+        default=1e-05,
+        help=(
+            "Lower bound (least penalized) for the L1 penalty range searched over in ipw."
+            "Only used if method is ipw."
+            "If not supplied it defaults to 1e-05."
+            "When max_de is set to 'None', then this value is the only value of lambda that is used."
+        ),
+    )
+    parser.add_argument(
+        "--lambda_max",
+        type=float,
+        required=False,
+        default=10,
+        help=(
+            "Upper bound (most penalized) for the L1 penalty range searched over in ipw."
+            "Only used if method is ipw."
+            "If not supplied it defaults to 10."
+            "When max_de is set to 'None', then this value is ignored."
+        ),
+    )
+    parser.add_argument(
+        "--num_lambdas",
+        type=float,
+        required=False,
+        default=250,
+        help=(
+            "Number of elements searched over in the L1 penalty range in ipw."
+            "Only used if method is ipw."
+            "If not supplied it defaults to 250."
+            "When max_de is set to 'None', then this value is ignored."
         ),
     )
     parser.add_argument(
