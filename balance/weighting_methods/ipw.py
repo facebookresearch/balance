@@ -497,9 +497,10 @@ def ipw(
         # Note that penalty = 0 is not truly supported, and large differences in penalty factors
         # may affect convergence speed.
 
-        # Add sample_weight once on a newer sklearn version
         scaler = StandardScaler(with_mean=False, copy=False)
-        X_matrix = scaler.fit_transform(X_matrix)
+
+        # TODO: add test to verify expected behavior from model_weights
+        X_matrix = scaler.fit_transform(X_matrix, sample_weight=model_weights)
 
         if penalty_factor is not None:
             penalties_skl = [

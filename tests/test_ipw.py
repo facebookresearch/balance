@@ -284,16 +284,16 @@ class Testipw(
 
         # Compare output weights (examples and distribution)
         self.maxDiff = None
-        self.assertEqual(round(res["weight"][15], 4), 0.4679)
-        self.assertEqual(round(res["weight"][995], 4), 0.4108)
+        self.assertEqual(round(res["weight"][15], 4), 0.4575)
+        self.assertEqual(round(res["weight"][995], 4), 0.4059)
         self.assertEqual(
             np.around(res["weight"].describe().values, 4),
-            np.array([1000, 1.0167, 0.7187, 0.0003, 0.4304, 0.8857, 1.4284, 3.2733]),
+            np.array([1000, 1.0167, 0.7159, 0.0003, 0.4292, 0.8928, 1.4316, 2.5720]),
         )
 
         # Compare properties of output model
         self.assertEqual(
-            np.around(res["model"]["perf"]["prop_dev_explained"], 5), 0.20273
+            np.around(res["model"]["perf"]["prop_dev_explained"], 5), 0.27296
         )
-        self.assertEqual(np.around(res["model"]["lambda"], 5), 0.8235)
-        self.assertEqual(res["model"]["regularisation_perf"]["best"]["trim"], 5.0)
+        self.assertEqual(np.around(res["model"]["lambda"], 5), 0.52831)
+        self.assertEqual(res["model"]["regularisation_perf"]["best"]["trim"], 2.5)
