@@ -545,6 +545,7 @@ def plot_qq_categorical(
 
         if plot_data.shape[0] < label_threshold:
             for r in plot_data.itertuples():
+                # pyre-ignore
                 axis.text(x=r.prop_sample, y=r.prop_target, s=r[1])
 
     axis.set_ylim(-0.1, 1.1)
