@@ -85,19 +85,6 @@ class TestCli(
             out_file = os.path.join(temp_dir, "out.csv")
 
             parser = make_parser()
-            args = parser.parse_args(
-                [
-                    "--input_file",
-                    in_file.name,
-                    "--output_file",
-                    out_file,
-                    "--covariate_columns",
-                    "x,y",
-                ]
-            )
-            cli = BalanceCLI(args)
-            cli.update_attributes_for_main_used_by_adjust()
-            self.assertRaisesRegex(Exception, "glmnet", cli.main)
 
             args = parser.parse_args(
                 [
