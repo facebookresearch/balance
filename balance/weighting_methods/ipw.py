@@ -7,101 +7,39 @@
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import copy
 import logging
 
-from contextlib import contextmanager
-from typing import Any, Callable, cast, Dict, Generator, List, Optional, Tuple, Union
-
-import glmnet_python  # noqa  # Required so that cvglmnet import works
+from typing import Any, cast, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-import scipy
 
 from balance import adjustment as balance_adjustment, util as balance_util
 from balance.stats_and_plots.weighted_comparisons_stats import asmd
 from balance.stats_and_plots.weights_stats import design_effect
 
-from cvglmnet import cvglmnet  # pyre-ignore[21]: this module exists
-from cvglmnetPredict import cvglmnetPredict  # pyre-ignore[21]: this module exists
-from scipy.sparse.csc import csc_matrix
+from scipy.sparse import csc_matrix, csr_matrix
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import log_loss
+from sklearn.preprocessing import StandardScaler
+
 
 logger: logging.Logger = logging.getLogger(__package__)
 
 
-# Allows us to control exactly where monkey patching is applied (e.g.: for better code readability and exceptions tracking).
-@contextmanager
-def _patch_nan_in_amin_amax(*args, **kwds) -> Generator:
-    """This allows us to use nanmin and nanmax instead of amin and amax (thus removing nan from their computation)
-
-    This is needed in cases that the cvglmnet yields some nan values for the cross validation folds.
-
-    Returns:
-        Generator: replaces amin and amax, and once done, turns them back to their original version.
-    """
-
-    # swap amin and amax with nanmin and nanmax
-    # so that they won't return nan when their input has some nan values
-    tmp_amin, tmp_amax = scipy.amin, scipy.amax  # pyre-ignore[16]
-
-    # Wrapping amin and amax with logger calls so to alert the user in case nan were present.
-    # This comes with the strong assumption that this will occur within the cross validation step!
-    def new_amin(a, *args, **kwds) -> Callable:
-        nan_count = scipy.count_nonzero(scipy.isnan(a))  # pyre-ignore[16]
-        if nan_count > 0:
-            logger.warning(
-                "The scipy.amin function was replaced with scipy.nanmin."
-                f"While running, it removed {nan_count} `nan` values from an array of size {a.size}"
-                f"(~{round(100 * nan_count / a.size, 1)}% of the values)."
-            )
-        return scipy.nanmin(a, *args, **kwds)  # pyre-ignore[16]
-
-    def new_amax(a, *args, **kwds) -> Callable:
-        nan_count = scipy.count_nonzero(scipy.isnan(a))  # pyre-ignore[16]
-        if nan_count > 0:
-            logger.warning(
-                "The scipy.amax function was replaced with scipy.nanmax. "
-                f"While running, it removed {nan_count} `nan` values from an array of size {a.size}"
-                f"(~{round(100 * nan_count / a.size, 1)}% of the values)."
-            )
-        return scipy.nanmax(a, *args, **kwds)  # pyre-ignore[16]
-
-    scipy.amin = new_amin  # scipy.nanmin
-    scipy.amax = new_amax  # scipy.nanmax
-    try:
-        yield
-    finally:
-        # undo the function swap
-        scipy.amin, scipy.amax = tmp_amin, tmp_amax
-
-
-@contextmanager
-def _patch_scipy_random(*args, **kwds) -> Generator:
-    """Monkey-patch scipy.random(), used by glmnet_python
-    but removed in scipy 1.9.0"""
-
-    tmp_scipy_random_func = (
-        # pyre-ignore[16]
-        scipy.random if hasattr(scipy, "random") else None
-    )
-    scipy.random = np.random
-    try:
-        yield
-    finally:
-        # undo the function swap
-        scipy.random = tmp_scipy_random_func
-
-
-def cv_glmnet_performance(
-    fit, feature_names: Optional[list] = None, s: Union[str, float, None] = "lambda_1se"
+# TODO: Add tests for model_coefs()
+# TODO: Improve interpretability of model coefficients, as variables are no longer zero-centered.
+def model_coefs(
+    model,
+    feature_names: Optional[list] = None,
 ) -> Dict[str, Any]:
-    """Extract elements from cvglmnet to describe the fitness quality.
+    """Extract coefficients from sklearn.
 
     Args:
-        fit (_type_): output of cvglmnet
-        feature_names (Optional[list], optional): The coeficieents of which features should be included.
+        model (_type_): LogisticRegression object from sklearn,
+        feature_names (Optional[list], optional): The coefficients of which features should be included.
             None = all features are included. Defaults to None.
-        s (Union[str, float, None], optional): lambda avlue for cvglmnet. Defaults to "lambda_1se".
 
     Raises:
         Exception: _description_
@@ -109,39 +47,78 @@ def cv_glmnet_performance(
     Returns:
         Dict[str, Any]: Dict of the shape:
             {
-                "prop_dev_explained": fit["glmnet_fit"]["dev"][optimal_lambda_index],
-                "mean_cv_error": fit["cvm"][optimal_lambda_index],
                 "coefs": coefs,
             }
     """
-    if isinstance(s, str):
-        optimal_lambda = fit[s]
-    else:
-        optimal_lambda = s
-    optimal_lambda_index = np.where(fit["lambdau"] == optimal_lambda)[0]
-    if len(optimal_lambda_index) != 1:
-        raise Exception(
-            f"No lambda found for s={s}. You must specify a "
-            'numeric value which exists in the model or "lambda_min", or '
-            '"lambda_1se"'
-        )
-    coefs = cvglmnetPredict(
-        fit,
-        newx=np.empty([0]),
-        ptype="coefficients",
-        s=optimal_lambda,
-    )
-    coefs = coefs.reshape(coefs.shape[0])
+
+    coefs = model.coef_
     if feature_names is not None:
-        coefs = pd.Series(data=coefs, index=["intercept"] + feature_names)
+        coefs = pd.Series(
+            data=np.hstack((model.intercept_, coefs[0])),
+            index=["intercept"] + feature_names,
+        )
     else:
-        coefs = pd.Series(data=coefs)
+        coefs = pd.Series(data=coefs[0])
 
     return {
-        "prop_dev_explained": fit["glmnet_fit"]["dev"][optimal_lambda_index],
-        "mean_cv_error": fit["cvm"][optimal_lambda_index],
         "coefs": coefs,
     }
+
+
+# TODO: Add tests for link_transform()
+def link_transform(pred: np.ndarray):
+    """Transforms probabilities into log odds (link function).
+
+    Args:
+        pred (np.ndarray): LogisticRegression probability predictions from sklearn.
+
+    Returns:
+        np.ndarray: Array of log odds.
+
+    """
+    return np.log(pred / (1 - pred))
+
+
+# TODO: Add tests for calc_dev()
+def calc_dev(
+    X_matrix: csr_matrix,
+    y: np.ndarray,
+    model,
+    model_weights: np.ndarray,
+    foldids: np.ndarray,
+):
+    """10 fold cross validation to calculate holdout deviance.
+
+    Args:
+        X_matrix (csr_matrix): Model matrix,
+        y (np.ndarray): Vector of sample inclusion (1=sample, 0=target),
+        model (_type_): LogisticRegression object from sklearn,
+        model_weights (np.ndarray): Vector of sample and target weights,
+        foldids (np.ndarray): Vector of cross-validation fold indices.
+
+    Returns:
+        float, float: mean and standard deviance of holdout deviance.
+
+    """
+    cv_dev = [0 for _ in range(10)]
+
+    for i in range(10):
+        X_train = X_matrix[foldids != i, :]
+        X_test = X_matrix[foldids == i, :]
+        y_train = y[foldids != i]
+        y_test = y[foldids == i]
+        model_weights_train = model_weights[foldids != i]
+        model_weights_test = model_weights[foldids == i]
+        model_fit = model.fit(X_train, y_train, sample_weight=model_weights_train)
+        pred_test = model_fit.predict_proba(X_test)[:, 1]
+        cv_dev[i] = 2 * log_loss(
+            y_test, pred_test, sample_weight=model_weights_test, labels=[0, 1]
+        )
+
+    logger.debug(
+        f"dev_mean: {np.mean(cv_dev)}, dev_sd: {np.std(cv_dev, ddof=1) / np.sqrt(10)}"
+    )
+    return np.mean(cv_dev), np.std(cv_dev, ddof=1) / np.sqrt(10)
 
 
 # TODO: consider add option to normalize weights to sample size
@@ -154,13 +131,12 @@ def weights_from_link(
     weight_trimming_percentile: Optional[float] = None,
     keep_sum_of_weights: bool = True,
 ) -> pd.Series:
-    """Transform output of cvglmnetPredict(..., type='link') into weights, by
-    exponentiating them, and optionally balancing the classes and trimming
+    """Transform link predictions into weights, by exponentiating them, and optionally balancing the classes and trimming
     the weights, then normalize the weights to have sum equal to the sum of the target weights.
 
     Args:
-        link (Any): output of cvglmnetPredict(..., type='link')
-        balance_classes (bool): whether balance_classes used in glmnet
+        link (Any): link predictions
+        balance_classes (bool): whether balance_classes used
         sample_weights (pd.Series): vector of sample weights
         target_weights (pd.Series): vector of sample weights
         weight_trimming_mean_ratio (Union[None, float, int], optional): to be used in :func:`trim_weights`. Defaults to None.
@@ -188,12 +164,12 @@ def weights_from_link(
 
 # TODO: Update choose_regularization function to be based on mse (instead of grid search)
 def choose_regularization(
-    fit,
+    links: List[Any],
+    lambdas: np.ndarray,
     sample_df: pd.DataFrame,
     target_df: pd.DataFrame,
     sample_weights: pd.Series,
     target_weights: pd.Series,
-    X_matrix_sample,
     balance_classes: bool,
     max_de: float = 1.5,
     trim_options: Tuple[
@@ -209,13 +185,13 @@ def choose_regularization(
     with highest DE lower than max_de (assuming higher DE means more bias reduction).
 
     Args:
-        fit (_type_): output of cvglmnet
+        links (Links[Any]): list of link predictions from sklearn
+        lambdas (np.ndarray): the lambda values for regularization
         sample_df (pd.DataFrame): a dataframe representing the sample
         target_df (pd.DataFrame): a dataframe representing the target
         sample_weights (pd.Series): design weights for sample
         target_weights (pd.Series): design weights for target
-        X_matrix_sample (_type_): the matrix that was used to consturct the model
-        balance_classes (bool): whether balance_classes used in glmnet
+        balance_classes (bool): whether balance_classes used
         max_de (float, optional): upper bound for the design effect of the computed weights.
             Used for choosing the model regularization and trimming.
             If set to None, then it uses 'lambda_1se'. Defaults to 1.5.
@@ -233,8 +209,8 @@ def choose_regularization(
     """
 
     logger.info("Starting choosing regularisation parameters")
-    # get all links
-    links = cvglmnetPredict(fit, X_matrix_sample, ptype="link", s=fit["lambdau"])
+    # get all non-null links
+    links = [link for link in links if link is not None]
 
     asmd_before = asmd(
         sample_df=sample_df,
@@ -246,9 +222,9 @@ def choose_regularization(
     # First calculates design effects for all combinations, because this is cheap
     all_perf = []
     for wr in trim_options:
-        for i in range(links.shape[1]):
-            s = fit["lambdau"][i]
-            link = links[:, i]
+        for i in range(len(links)):
+            s = lambdas[i]
+            link = links[i]
             weights = weights_from_link(
                 link,
                 balance_classes,
@@ -280,8 +256,8 @@ def choose_regularization(
     for _, r in best.iterrows():
         wr = r.trim
         s_index = int(r.s_index)
-        s = fit["lambdau"][s_index]
-        link = links[:, s_index]
+        s = lambdas[s_index]
+        link = links[s_index]
 
         weights = weights_from_link(
             link,
@@ -306,8 +282,7 @@ def choose_regularization(
         all_perf.append(
             {
                 "s": s,
-                # pyre-fixme[61]: `i` is undefined, or not always defined.
-                "s_index": i,
+                "s_index": s_index,
                 "trim": wr,
                 "design_effect": deff,
                 "asmd_improvement": asmd_improvement,
@@ -323,26 +298,30 @@ def choose_regularization(
     )
     logger.info(f"Best regularisation: \n {best}")
     solution = {
-        "best": {"s": best.s.values, "trim": best.trim.values[0]},
+        "best": {"s_index": best.s_index.values[0], "trim": best.trim.values[0]},
         "perf": all_perf,
     }
     return solution
 
 
-# TODO: add memoaization (maybe in the adjust stage?!)
+# Lambda regularization parameters can be used to speedup the IPW algorithm,
+# counteracting the slow computational speed of sklearn.
 def ipw(
     sample_df: pd.DataFrame,
     sample_weights: pd.Series,
     target_df: pd.DataFrame,
     target_weights: pd.Series,
     variables: Optional[List[str]] = None,
-    model: str = "glmnet",
+    model: str = "sklearn",
     weight_trimming_mean_ratio: Optional[Union[int, float]] = 20,
     weight_trimming_percentile: Optional[float] = None,
     balance_classes: bool = True,
     transformations: str = "default",
     na_action: str = "add_indicator",
     max_de: Optional[float] = None,
+    lambda_min: float = 1e-05,
+    lambda_max: float = 10,
+    num_lambdas: int = 250,
     formula: Union[str, List[str], None] = None,
     penalty_factor: Optional[List[float]] = None,
     one_hot_encoding: bool = False,
@@ -362,7 +341,7 @@ def ipw(
         variables (Optional[List[str]], optional): list of variables to include in the model.
             If None all joint variables of sample_df and target_df are used. Defaults to None.
         model (str, optional): the model used for modeling the propensity scores.
-            "glmnet" is logistic model. Defaults to "glmnet".
+            "sklearn" is logistic model. Defaults to "sklearn" (no current alternatives).
         weight_trimming_mean_ratio (Optional[Union[int, float]], optional): indicating the ratio from above according to which
             the weights are trimmed by mean(weights) * ratio.
             Defaults to 20.
@@ -370,7 +349,6 @@ def ipw(
             if None then trimming is applied. Defaults to None.
         balance_classes (bool, optional): whether to balance the sample and target size for running the model.
             True is preferable for imbalanced cases.
-            It is done to make the computation of the glmnet more efficient.
             It shouldn't have an effect on the final weights as this is factored
             into the computation of the weights. TODO: add ref. Defaults to True.
         transformations (str, optional): what transformations to apply to data before fitting the model.
@@ -383,7 +361,7 @@ def ipw(
         formula (Union[str, List[str], None], optional): The formula according to which build the model.
             In case of list of formula, the model matrix will be built in steps and
             concatenated together. Defaults to None.
-        penalty_factor (Optional[List[float]], optional): the penalty used in the glmnet function in ipw. The penalty
+        penalty_factor (Optional[List[float]], optional): the penalty factors used in ipw. The penalty
             should have the same length as the formula list (and applies to each element of formula).
             Smaller penalty on some formula will lead to elements in that formula to get more adjusted, i.e. to have a higher chance to get into the model (and not zero out). A penalty of 0 will make sure the element is included in the model.
             If not provided, assume the same penalty (1) for all variables. Defaults to None.
@@ -398,7 +376,7 @@ def ipw(
 
     Raises:
         Exception: f"Sample indicator only has value {_n_unique}. This can happen when your sample or target are empty from unknown reason"
-        NotImplementedError: if model is not "glmnet"
+        NotImplementedError: if model is not "sklearn"
 
     Returns:
         Dict[str, Any]: A dictionary includes:
@@ -421,7 +399,7 @@ def ipw(
     logger.info("Starting ipw function")
     np.random.seed(
         random_seed
-    )  # setting random seed for cases of variations in cvglmnet
+    )  # setting random seed for cases of variations in sklearn
 
     balance_util._check_weighting_methods_input(sample_df, sample_weights, "sample")
     balance_util._check_weighting_methods_input(target_df, target_weights, "target")
@@ -473,17 +451,15 @@ def ipw(
     X_matrix_columns_names = cast(
         List[str], model_matrix_output["model_matrix_columns_names"]
     )
-    penalty_factor = cast(Optional[List[float]], model_matrix_output["penalty_factor"])
-    # in cvglmnet: "penalty factors are internally rescaled to sum to nvars."
-    # (https://glmnet-python.readthedocs.io/en/latest/glmnet_vignette.html)
+    penalty_factor_expanded = cast(List[float], model_matrix_output["penalty_factor"])
     logger.info(
         f"The formula used to build the model matrix: {model_matrix_output['formula']}"
     )
     logger.info(f"The number of columns in the model matrix: {X_matrix.shape[1]}")
     logger.info(f"The number of rows in the model matrix: {X_matrix.shape[0]}")
 
-    in_sample = np.concatenate((np.ones(sample_n), np.zeros(target_n)))
-    _n_unique = np.unique(in_sample.reshape(in_sample.shape[0]))
+    y = np.concatenate((np.ones(sample_n), np.zeros(target_n)))
+    _n_unique = np.unique(y.reshape(y.shape[0]))
     if len(_n_unique) == 1:
         raise Exception(
             f"Sample indicator only has value {_n_unique}. This can happen when your "
@@ -496,82 +472,158 @@ def ipw(
         odds = 1
     logger.debug(f"odds for balancing classes: {odds}")
 
-    y0 = np.concatenate((np.zeros(sample_n), target_weights * odds))
-    y1 = np.concatenate((sample_weights, np.zeros(target_n)))
-    y = np.column_stack((y0, y1))
-    # From glmnet documentation: https://glmnet-python.readthedocs.io/en/latest/glmnet_vignette.html
-    # "For binomial logistic regression, the response variable y should be either
-    # a factor with two levels, or a two-column matrix of counts or proportions."
+    model_weights = np.concatenate((sample_weights, target_weights * odds))
 
     logger.debug(f"X_matrix shape: {X_matrix.shape}")
     logger.debug(f"y input shape: {y.shape}")
     logger.debug(
-        f"penalty_factor frequency table {pd.crosstab(index=penalty_factor, columns='count')}"
-        f"Note that these are normalized by cvglmnet"
+        f"penalty_factor frequency table {pd.crosstab(index=penalty_factor_expanded, columns='count')}"
     )
 
-    if model == "glmnet":
-        logger.info("Fitting logistic model")
-        foldid = np.resize(range(10), y.shape[0])
+    if model == "sklearn":
+        foldids = np.resize(range(10), y.shape[0])
         np.random.shuffle(
-            foldid
+            foldids
         )  # shuffels the values of foldid - note that we set the seed in the beginning of the function, so this order is fixed
         logger.debug(
-            f"foldid frequency table {pd.crosstab(index=foldid, columns='count')}"
+            f"foldid frequency table {pd.crosstab(index=foldids, columns='count')}"
         )
-        logger.debug(f"first 10 elements of foldid: {foldid[0:9]}")
-        with _patch_nan_in_amin_amax():
-            # we use _patch_nan_in_amin_amax here since sometimes
-            # cvglmnet could have one of the cross validated samples that
-            # produce nan. In which case, the lambda search returns nan
-            # instead of a value from the cross-validated options that successfully computed a lambda
-            # The current monkey-patch solves this problem and makes the function fail less.
-            with np.errstate(
-                divide="ignore"
-            ):  # ignoring np warning "divide by zero encountered in log"
-                with _patch_scipy_random():
-                    fit = cvglmnet(
-                        x=X_matrix,
-                        y=y,
-                        family="binomial",
-                        ptype="deviance",
-                        alpha=1,
-                        penalty_factor=penalty_factor,
-                        nlambda=250,
-                        lambda_min=np.array([1e-6]),
-                        nfolds=10,
-                        foldid=foldid,
-                        maxit=5000,
-                        *args,
-                        **kwargs,
-                    )
-        logger.debug("Done with cvglmnet")
+        logger.debug(f"first 10 elements of foldids: {foldids[0:9]}")
+
+        logger.debug("Fitting logistic model")
+
+        # Standardize columns of the X matrix and penalize the columns of the X matrix according to the penalty_factor.
+        # Workaround for sklearn, which doesn't allow for covariate specific penalty terms.
+        # Note that penalty = 0 is not truly supported, and large differences in penalty factors
+        # may affect convergence speed.
+
+        # Add sample_weight once on a newer sklearn version
+        scaler = StandardScaler(with_mean=False, copy=False)
+        X_matrix = scaler.fit_transform(X_matrix)
+
+        if penalty_factor is not None:
+            penalties_skl = [
+                1 / pf if pf > 0.1 else 10 for pf in penalty_factor_expanded
+            ]
+            for i in range(len(penalties_skl)):
+                X_matrix[:, i] *= penalties_skl[i]
+
+        X_matrix = csr_matrix(X_matrix)
+
+        lambdas = np.logspace(np.log10(lambda_max), np.log10(lambda_min), num_lambdas)
+
+        # Using L2 regression since L1 is too slow. Observed "lbfgs" was the most computationally efficient solver.
+        lr = LogisticRegression(
+            penalty="l2",
+            solver="lbfgs",
+            tol=1e-4,
+            max_iter=5000,
+            warm_start=True,
+        )
+        fits = [None for _ in range(len(lambdas))]
+        links = [None for _ in range(len(lambdas))]
+        prop_dev = [np.nan for _ in range(len(lambdas))]
+        dev = [np.nan for _ in range(len(lambdas))]
+        cv_dev_mean = [np.nan for _ in range(len(lambdas))]
+        cv_dev_sd = [np.nan for _ in range(len(lambdas))]
+
+        min_s_index = 0
+        prev_prop_dev = None
+
+        # TODO: Create a separate function to calculate deviance.
+        null_dev = 2 * log_loss(
+            y,
+            np.full(len(y), np.sum(model_weights * y) / np.sum(model_weights)),
+            sample_weight=model_weights,
+        )
+
+        for i in range(len(lambdas)):
+            # Conversion between glmnet lambda penalty parameter and sklearn 'C' parameter referenced
+            # from https://stats.stackexchange.com/questions/203816/logistic-regression-scikit-learn-vs-glmnet
+            lr.C = 1 / (sum(model_weights) * lambdas[i])
+
+            model = lr.fit(X_matrix, y, sample_weight=model_weights)
+            pred = model.predict_proba(X_matrix)[:, 1]
+            dev[i] = 2 * log_loss(y, pred, sample_weight=model_weights)
+            prop_dev[i] = 1 - dev[i] / null_dev
+
+            # Early stopping criteria: improvement in prop_dev is less than 1e-5 (mirrors glmnet)
+            if (
+                np.sum(np.abs(model.coef_)) > 0
+                and prev_prop_dev is not None
+                and prop_dev[i] - prev_prop_dev < 1e-5
+            ):
+                break
+
+            # Cross-validation procedure is only used for choosing best lambda is max_de is None
+            # Previously, cross validation was run even when max_de is not None,
+            # but the results weren't used for model selection.
+            if max_de is not None:
+                logger.debug(
+                    f"iter {i}: lambda: {lambdas[i]}, dev: {dev[i]}, prop_dev: {prop_dev[i]}"
+                )
+            elif num_lambdas > 1:
+                dev_mean, dev_sd = calc_dev(X_matrix, y, lr, model_weights, foldids)
+                logger.debug(
+                    f"iter {i}: lambda: {lambdas[i]}, cv_dev: {dev_mean}, dev_diff: {dev_mean - dev[i]}, prop_dev: {prop_dev[i]}"
+                )
+                cv_dev_mean[i] = dev_mean
+                cv_dev_sd[i] = dev_sd
+
+            prev_prop_dev = prop_dev[i]
+            links[i] = link_transform(pred)[:sample_n,]
+            fits[i] = copy.deepcopy(model)
+
+        logger.info("Done with sklearn")
+    elif model == "glmnet":
+        raise NotImplementedError("glmnet is no longer supported")
     else:
         raise NotImplementedError()
-    logger.debug(f"fit['lambda_1se']: {fit['lambda_1se']}")
-
-    X_matrix_sample = X_matrix[:sample_n,].toarray()
 
     logger.info(f"max_de: {max_de}")
+
+    best_s_index = 0
+    regularisation_perf = None
+
     if max_de is not None:
         regularisation_perf = choose_regularization(
-            fit,
+            links,
+            lambdas,
             sample_df,
             target_df,
             sample_weights,
             target_weights,
-            X_matrix_sample,
             balance_classes,
             max_de,
         )
-        best_s = regularisation_perf["best"]["s"]
+        best_s_index = regularisation_perf["best"]["s_index"]
         weight_trimming_mean_ratio = regularisation_perf["best"]["trim"]
         weight_trimming_percentile = None
-    else:
-        best_s = fit["lambda_1se"]
-        regularisation_perf = None
+    elif num_lambdas > 1:
+        # Cross-validation procedure
+        logger.info("Starting model selection")
 
-    link = cvglmnetPredict(fit, X_matrix_sample, ptype="link", s=best_s)
+        min_s_index = np.nanargmin(cv_dev_mean)
+        min_dev_mean = cv_dev_mean[min_s_index]
+        min_dev_sd = cv_dev_sd[min_s_index]
+
+        # Mirrors 'lambda.1se' from glmnet:
+        # 'the most regularized model such that the cross-validated error is within one standard error of the minimum.'
+        best_s_index = np.argmax(
+            [
+                (
+                    l
+                    if (loss is not np.nan) and (loss < min_dev_mean + min_dev_sd)
+                    else 0
+                )
+                for loss, l in zip(cv_dev_mean, lambdas)
+            ]
+        )
+
+    best_model = fits[best_s_index]
+    link = links[best_s_index]
+    best_s = lambdas[best_s_index]
+
     logger.debug("Predicting")
     weights = weights_from_link(
         link,
@@ -582,29 +634,28 @@ def ipw(
         weight_trimming_percentile,
     )
 
-    logger.info(f"Chosen lambda for cv: {best_s}")
+    logger.info(f"Chosen lambda: {best_s}")
 
-    performance = cv_glmnet_performance(
-        fit,
+    performance = model_coefs(
+        best_model,
         feature_names=list(X_matrix_columns_names),
-        s=best_s,
     )
+    performance["null_deviance"] = null_dev
+    performance["deviance"] = dev[best_s_index]
+    performance["prop_dev_explained"] = prop_dev[best_s_index]
+    if max_de is None and num_lambdas > 1:
+        performance["cv_dev_mean"] = cv_dev_mean[best_s_index]
+        performance["lambda_min"] = lambdas[min_s_index]
+        performance["min_cv_dev_mean"] = cv_dev_mean[min_s_index]
+        performance["min_cv_dev_sd"] = cv_dev_sd[min_s_index]
+
     dev = performance["prop_dev_explained"]
     logger.info(f"Proportion null deviance explained {dev}")
 
-    if np.unique(weights).shape[0] == 1:  # All weights are the same
+    if (np.max(weights) - np.min(weights)) / np.mean(
+        weights
+    ) < 1e-04:  # All weights are (essentially) the same
         logger.warning("All weights are identical. The estimates will not be adjusted")
-
-    coefs = performance["coefs"][1:]  # exclude intercept
-    if all(abs(coefs) < 1e-14):
-        # The value was determined by the unit-test test_adjustment/test_ipw_bad_adjustment_warnings
-        logger.warning(
-            (
-                "All propensity model coefficients are zero, your covariates do "
-                "not predict inclusion in the sample. The estimates will not be "
-                "adjusted"
-            )
-        )
 
     if dev < 0.10:
         logger.warning(
@@ -617,14 +668,13 @@ def ipw(
         "model": {
             "method": "ipw",
             "X_matrix_columns": X_matrix_columns_names,
-            "fit": fit,
+            "fit": fits[best_s_index],
             "perf": performance,
             "lambda": best_s,
             "weight_trimming_mean_ratio": weight_trimming_mean_ratio,
+            "regularisation_perf": regularisation_perf,
         },
     }
-    if max_de is not None:
-        out["model"]["regularisation_perf"] = regularisation_perf
 
     logger.debug("Done ipw function")
 

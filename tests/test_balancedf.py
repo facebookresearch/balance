@@ -1034,14 +1034,14 @@ class TestBalanceDF_asmd(BalanceTestCase):
 
         expected_default = {
             "a[(0.0, 0.25]]": {
-                "self": 0.04,
+                "self": 0.01,
                 "unadjusted": 0.09,
-                "unadjusted - self": 0.05,
+                "unadjusted - self": 0.08,
             },
             "a[(0.25, 0.5]]": {
-                "self": 0.0,
+                "self": 0.01,
                 "unadjusted": 0.06,
-                "unadjusted - self": 0.06,
+                "unadjusted - self": 0.05,
             },
             "a[(0.5, 0.75]]": {
                 "self": 0.0,
@@ -1049,21 +1049,21 @@ class TestBalanceDF_asmd(BalanceTestCase):
                 "unadjusted - self": 0.01,
             },
             "a[(0.75, 1.0]]": {
-                "self": 0.04,
+                "self": 0.03,
                 "unadjusted": 0.02,
-                "unadjusted - self": -0.02,
+                "unadjusted - self": -0.0,
             },
-            "c": {"self": 0.02, "unadjusted": 0.03, "unadjusted - self": 0.01},
-            "b": {"self": 0.14, "unadjusted": 0.6, "unadjusted - self": 0.46},
+            "c": {"self": 0.01, "unadjusted": 0.03, "unadjusted - self": 0.02},
+            "b": {"self": 0.15, "unadjusted": 0.6, "unadjusted - self": 0.45},
             "mean(asmd)": {"self": 0.06, "unadjusted": 0.23, "unadjusted - self": 0.17},
         }
         expected_main_covar = {
-            "a": {"self": 0.02, "unadjusted": 0.05, "unadjusted - self": 0.02},
-            "b": {"self": 0.14, "unadjusted": 0.6, "unadjusted - self": 0.46},
-            "c": {"self": 0.02, "unadjusted": 0.03, "unadjusted - self": 0.01},
+            "a": {"self": 0.01, "unadjusted": 0.05, "unadjusted - self": 0.03},
+            "b": {"self": 0.15, "unadjusted": 0.6, "unadjusted - self": 0.45},
+            "c": {"self": 0.01, "unadjusted": 0.03, "unadjusted - self": 0.02},
             "mean(asmd)": {"self": 0.06, "unadjusted": 0.23, "unadjusted - self": 0.17},
         }
-
+        self.maxDiff = None
         self.assertEqual(outcome_default, expected_default)
         self.assertEqual(outcome_main_covar, expected_main_covar)
 
