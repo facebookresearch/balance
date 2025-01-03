@@ -90,7 +90,7 @@
         <span class="n">w</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
         <span class="c1"># TODO: (p2) consider having a check for each type of w, instead of</span>
         <span class="c1">#            turning w into pd.Series (since this solution might not be very efficient)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_numeric_dtype</span><span class="p">(</span><span class="n">w</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;weights (w) must be a number but instead they are of type: </span><span class="si">{</span><span class="n">w</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
@@ -146,7 +146,7 @@
 
 <div class="viewcode-block" id="nonparametric_skew">
 <a class="viewcode-back" href="../../../balance.stats_and_plots.weights_stats.html#balance.stats_and_plots.weights_stats.nonparametric_skew">[docs]</a>
-<span class="k">def</span> <span class="nf">nonparametric_skew</span><span class="p">(</span><span class="n">w</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">nonparametric_skew</span><span class="p">(</span><span class="n">w</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
     <span class="c1"># TODO (p2): consider adding other skew measures (https://en.wikipedia.org/wiki/Skewness)</span>
     <span class="c1">#            look more in the literature (are there references for using this vs another, or none at all?)</span>
     <span class="c1">#            update the doc with insights, once done:</span>
@@ -179,7 +179,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">_check_weights_are_valid</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
     <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">std</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># pyre-ignore</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">-</span> <span class="n">w</span><span class="o">.</span><span class="n">median</span><span class="p">())</span> <span class="o">/</span> <span class="n">w</span><span class="o">.</span><span class="n">std</span><span class="p">()</span></div>
 
 

@@ -836,7 +836,7 @@
             <span class="p">):</span>
                 <span class="n">model_summary</span> <span class="o">=</span> <span class="p">(</span>
                     <span class="s2">&quot;Model proportion deviance explained: </span><span class="si">{dev_exp:.3f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                        <span class="n">dev_exp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">()[</span><span class="s2">&quot;perf&quot;</span><span class="p">][</span><span class="s2">&quot;prop_dev_explained&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="n">dev_exp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">()[</span><span class="s2">&quot;perf&quot;</span><span class="p">][</span><span class="s2">&quot;prop_dev_explained&quot;</span><span class="p">]</span>
                     <span class="p">)</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
@@ -936,7 +936,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting computation of diagnostics of the fitting&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_if_adjusted</span><span class="p">()</span>
-        <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;metric&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">,</span> <span class="s2">&quot;var&quot;</span><span class="p">))</span>
+        <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;metric&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">,</span> <span class="s2">&quot;var&quot;</span><span class="p">])</span>
 
         <span class="c1"># ----------------------------------------------------</span>
         <span class="c1"># Properties of the Sample object (dimensions of the data)</span>
@@ -1004,36 +1004,46 @@
             <span class="p">)</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;ipw&quot;</span><span class="p">:</span>
-            <span class="c1">#  Scalar values from &#39;perf&#39; key of dictionary</span>
-            <span class="n">fit_single_values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
-                <span class="p">[</span>
-                    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;model_glance&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">,</span> <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">})</span>
-                    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;fit&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-                    <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="n">v</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,))</span>
-                <span class="p">]</span>
-            <span class="p">)</span>
-            <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">diagnostics</span><span class="p">,</span> <span class="n">fit_single_values</span><span class="p">))</span>
-
-            <span class="c1">#  Extract glmnet output about this regularisation parameter</span>
-            <span class="n">lambda_</span> <span class="o">=</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;lambda&quot;</span><span class="p">]</span>
-            <span class="n">lambda_index</span> <span class="o">=</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;fit&quot;</span><span class="p">][</span><span class="s2">&quot;lambdau&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">lambda_</span>
-            <span class="n">fit_values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
-                <span class="p">[</span>
-                    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-                        <span class="p">{</span><span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;model_glance&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">[</span><span class="n">lambda_index</span><span class="p">],</span> <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">}</span>
+            <span class="c1">#  Attributes of LogisticRegression class</span>
+            <span class="n">fit_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;fit&quot;</span><span class="p">]</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="n">v</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,):</span>
+                    <span class="n">fit_list</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                        <span class="p">[</span>
+                            <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                                <span class="p">{</span><span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;ipw_model_glance&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">,</span> <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">}</span>
+                            <span class="p">)</span>
+                        <span class="p">]</span>
                     <span class="p">)</span>
-                    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">()[</span><span class="s2">&quot;fit&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-                    <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="n">v</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="n">lambda_index</span><span class="o">.</span><span class="n">shape</span>
-                <span class="p">]</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+                    <span class="n">fit_list</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                        <span class="p">[</span>
+                            <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                                <span class="p">{</span><span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;model_glance&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">v</span><span class="p">,),</span> <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">}</span>
+                            <span class="p">)</span>
+                        <span class="p">]</span>
+                    <span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="n">fit_list</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                        <span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;ipw_&quot;</span> <span class="o">+</span> <span class="n">k</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,),</span> <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">})]</span>
+                    <span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fit_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">fit_single_values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">fit_list</span><span class="p">)</span>
+                <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">diagnostics</span><span class="p">,</span> <span class="n">fit_single_values</span><span class="p">))</span>
+
+            <span class="c1">#  Extract info about the regularisation parameter</span>
+            <span class="n">lambda_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                <span class="p">{</span><span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;model_glance&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;lambda&quot;</span><span class="p">],),</span> <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="s2">&quot;lambda&quot;</span><span class="p">}</span>
             <span class="p">)</span>
-            <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">diagnostics</span><span class="p">,</span> <span class="n">fit_values</span><span class="p">))</span>
+            <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">diagnostics</span><span class="p">,</span> <span class="n">lambda_df</span><span class="p">))</span>
 
             <span class="c1">#  Scalar values from &#39;perf&#39; key of dictionary</span>
             <span class="n">perf_single_values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
                 <span class="p">[</span>
-                    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;model_glance&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">,</span> <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">})</span>
+                    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;model_glance&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">v</span><span class="p">,),</span> <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">})</span>
                     <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;perf&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-                    <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="n">v</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,))</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span>
                 <span class="p">]</span>
             <span class="p">)</span>
             <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">diagnostics</span><span class="p">,</span> <span class="n">perf_single_values</span><span class="p">))</span>
@@ -1135,7 +1145,6 @@
         <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">diagnostics</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done computing diagnostics&quot;</span><span class="p">)</span>
-        <span class="c1"># pyre-fixme[7]: Expected `DataFrame` but got `Optional[DataFrame]`.</span>
         <span class="k">return</span> <span class="n">diagnostics</span></div>
 
 
@@ -1209,7 +1218,7 @@
                     <span class="n">v</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">ss</span><span class="p">]</span>
                     <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">_outcome_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                         <span class="n">v</span><span class="o">.</span><span class="n">_outcome_columns</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">_outcome_columns</span><span class="p">[</span><span class="n">ss</span><span class="p">]</span>
-                <span class="k">except</span> <span class="n">pd</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">computation</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">UndefinedVariableError</span><span class="p">:</span>
+                <span class="k">except</span> <span class="n">pd</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">UndefinedVariableError</span><span class="p">:</span>
                     <span class="c1"># This can happen, for example, if the row filtering condition depends somehow on a feature that is</span>
                     <span class="c1"># in the sample but not in the _links. For example, if filtering over one of the</span>
                     <span class="c1"># outcome variables, it would filter out these rows from sample, but it wouldn&#39;t have this column to</span>

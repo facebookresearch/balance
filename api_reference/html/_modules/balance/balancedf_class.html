@@ -1789,7 +1789,6 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            BalanceCovarsDF: Object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># pyre-fixme[9]: df has type `DataFrame`; used as `Optional[DataFrame]`.</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
             <span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">),</span> <span class="n">weights</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
@@ -2036,7 +2035,11 @@
             <span class="p">[</span><span class="s2">&quot;design_effect&quot;</span><span class="p">,</span> <span class="s2">&quot;effective_sample_proportion&quot;</span><span class="p">,</span> <span class="s2">&quot;effective_sample_size&quot;</span><span class="p">]</span>
         <span class="p">)</span>
         <span class="n">weights_diag_value</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">the_weights_de</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">the_weights_de</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">the_weights</span><span class="p">)</span> <span class="o">/</span> <span class="n">the_weights_de</span><span class="p">]</span>
+            <span class="p">[</span>
+                <span class="n">the_weights_de</span><span class="p">,</span>
+                <span class="mf">1.0</span> <span class="o">/</span> <span class="n">the_weights_de</span><span class="p">,</span>
+                <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">the_weights</span><span class="p">))</span> <span class="o">/</span> <span class="n">the_weights_de</span><span class="p">,</span>
+            <span class="p">]</span>
         <span class="p">)</span>
 
         <span class="c1"># adding sum of weights, and then normalizing them to n (sample size)</span>

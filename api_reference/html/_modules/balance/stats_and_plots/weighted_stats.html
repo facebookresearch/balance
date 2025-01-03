@@ -354,6 +354,7 @@
         <span class="c1"># Apply a lambda function to round a pd.Series of tuples to x decimal places</span>
         <span class="n">ci</span> <span class="o">=</span> <span class="n">ci</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">round_ndigits</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">t</span><span class="p">))</span>
 
+    <span class="c1"># pyre-ignore</span>
     <span class="k">return</span> <span class="n">ci</span></div>
 
 
@@ -436,7 +437,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        pd.Series: np.sqrt of :func:`weighted_var` (np.float64)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">weighted_var</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">inf_rm</span><span class="p">))</span></div>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">weighted_var</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">inf_rm</span><span class="p">)))</span></div>
 
 
 

@@ -31,17 +31,17 @@ More about the methodological background can be found in [Sarig, T., Galili, T.,
 # Installation
 
 ## Requirements
-You need Python 3.8 or later to run *balance*. *balance* can be built and run from Linux, OSX, and Windows (NOTE: `method="ipw"` is currently not supported on Windows).
+You need Python 3.9, 3.10, or 3.11 to run *balance*. *balance* can be built and run from Linux, OSX, and Windows.
 
 The required Python dependencies are:
 ```python
 REQUIRES = [
     "numpy",
-    "pandas<=1.4.3",
+    "pandas",
     "ipython",
-    "scipy<=1.9.2",
+    "scipy",
     "patsy",
-    "seaborn<=0.11.1",
+    "seaborn",
     "plotly",
     "matplotlib",
     "statsmodels",
@@ -51,15 +51,10 @@ REQUIRES = [
 ]
 ```
 
-Note that glmnet_python must be installed from the [Github source](https://github.com/bbalasub1/glmnet_python)
 
 See [setup.py](https://github.com/facebookresearch/balance/blob/main/setup.py) for more details.
 
 ## Installing *balance*
-As a prerequisite, you must install glmnet_python from source:
-```
-python -m pip install git+https://github.com/bbalasub1/glmnet_python.git@1.0
-```
 
 ### Installing via PyPi
 We recommend installing *balance* from PyPi via pip for the latest stable version:
@@ -246,7 +241,7 @@ BibTeX:
 }
 
 ## License
-The *balance* package is licensed under the [GPLv2 license](https://github.com/facebookresearch/balance/blob/main/LICENSE), and all the documentation on the site is under [CC-BY](https://github.com/facebookresearch/balance/blob/main/LICENSE-DOCUMENTATION).
+The *balance* package is licensed under the [MIT license](https://github.com/facebookresearch/balance/blob/main/LICENSE), and all the documentation on the site (including text and images) is under [CC-BY](https://github.com/facebookresearch/balance/blob/main/LICENSE-DOCUMENTATION).
 
 # News
 
