@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>balance.stats_and_plots.weighted_stats &#8212; balance  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=5c69cfe2" />
     <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../../_static/doctools.js?v=9bcbadda"></script>
@@ -42,20 +42,20 @@
 
 <span class="c1"># pyre-unsafe</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
 
-<span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">numpy.typing</span> <span class="k">as</span> <span class="nn">npt</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">npt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
-<span class="kn">from</span> <span class="nn">balance.stats_and_plots.weights_stats</span> <span class="kn">import</span> <span class="n">_check_weights_are_valid</span>
-<span class="kn">from</span> <span class="nn">balance.util</span> <span class="kn">import</span> <span class="n">model_matrix</span><span class="p">,</span> <span class="n">rm_mutual_nas</span>
-<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">norm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots.weights_stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">_check_weights_are_valid</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">model_matrix</span><span class="p">,</span> <span class="n">rm_mutual_nas</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">norm</span>
 
-<span class="kn">from</span> <span class="nn">statsmodels.stats.weightstats</span> <span class="kn">import</span> <span class="n">DescrStatsW</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">statsmodels.stats.weightstats</span><span class="w"> </span><span class="kn">import</span> <span class="n">DescrStatsW</span>
 
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
 
@@ -65,7 +65,7 @@
 <span class="c1">##########################################</span>
 
 
-<span class="k">def</span> <span class="nf">_prepare_weighted_stat_args</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_prepare_weighted_stat_args</span><span class="p">(</span>
     <span class="n">v</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
         <span class="n">List</span><span class="p">,</span>
         <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
@@ -146,7 +146,7 @@
 
 <div class="viewcode-block" id="weighted_mean">
 <a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.weighted_mean">[docs]</a>
-<span class="k">def</span> <span class="nf">weighted_mean</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">weighted_mean</span><span class="p">(</span>
     <span class="n">v</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
         <span class="n">List</span><span class="p">,</span>
         <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
@@ -213,7 +213,7 @@
 
 <div class="viewcode-block" id="var_of_weighted_mean">
 <a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.var_of_weighted_mean">[docs]</a>
-<span class="k">def</span> <span class="nf">var_of_weighted_mean</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">var_of_weighted_mean</span><span class="p">(</span>
     <span class="n">v</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">],</span>
     <span class="n">w</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">inf_rm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -274,7 +274,7 @@
 
 <div class="viewcode-block" id="ci_of_weighted_mean">
 <a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.ci_of_weighted_mean">[docs]</a>
-<span class="k">def</span> <span class="nf">ci_of_weighted_mean</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">ci_of_weighted_mean</span><span class="p">(</span>
     <span class="n">v</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">],</span>
     <span class="n">w</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">conf_level</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.95</span><span class="p">,</span>
@@ -361,7 +361,7 @@
 
 <div class="viewcode-block" id="weighted_var">
 <a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.weighted_var">[docs]</a>
-<span class="k">def</span> <span class="nf">weighted_var</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">weighted_var</span><span class="p">(</span>
     <span class="n">v</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
         <span class="n">List</span><span class="p">,</span>
         <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
@@ -410,7 +410,7 @@
 
 <div class="viewcode-block" id="weighted_sd">
 <a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.weighted_sd">[docs]</a>
-<span class="k">def</span> <span class="nf">weighted_sd</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">weighted_sd</span><span class="p">(</span>
     <span class="n">v</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
         <span class="n">List</span><span class="p">,</span>
         <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
@@ -443,7 +443,7 @@
 
 <div class="viewcode-block" id="weighted_quantile">
 <a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.weighted_quantile">[docs]</a>
-<span class="k">def</span> <span class="nf">weighted_quantile</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">weighted_quantile</span><span class="p">(</span>
     <span class="n">v</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
         <span class="n">List</span><span class="p">,</span>
         <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
@@ -496,7 +496,7 @@
 
 <div class="viewcode-block" id="descriptive_stats">
 <a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.descriptive_stats">[docs]</a>
-<span class="k">def</span> <span class="nf">descriptive_stats</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">descriptive_stats</span><span class="p">(</span>
     <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">weights</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
         <span class="n">List</span><span class="p">,</span>
@@ -662,7 +662,7 @@
 
 <div class="viewcode-block" id="relative_frequency_table">
 <a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.relative_frequency_table">[docs]</a>
-<span class="k">def</span> <span class="nf">relative_frequency_table</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">relative_frequency_table</span><span class="p">(</span>
     <span class="n">df</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">],</span>
     <span class="n">column</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">w</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>

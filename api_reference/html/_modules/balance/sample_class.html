@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>balance.sample_class &#8212; balance  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=5c69cfe2" />
     <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
@@ -42,24 +42,24 @@
 
 <span class="c1"># pyre-unsafe</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">import</span> <span class="nn">collections</span>
-<span class="kn">import</span> <span class="nn">inspect</span>
-<span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">collections</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
-<span class="kn">from</span> <span class="nn">balance</span> <span class="kn">import</span> <span class="n">adjustment</span> <span class="k">as</span> <span class="n">balance_adjustment</span><span class="p">,</span> <span class="n">util</span> <span class="k">as</span> <span class="n">balance_util</span>
-<span class="kn">from</span> <span class="nn">balance.stats_and_plots</span> <span class="kn">import</span> <span class="n">weights_stats</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">adjustment</span> <span class="k">as</span> <span class="n">balance_adjustment</span><span class="p">,</span> <span class="n">util</span> <span class="k">as</span> <span class="n">balance_util</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">weights_stats</span>
 
-<span class="kn">from</span> <span class="nn">balance.stats_and_plots.weighted_comparisons_stats</span> <span class="kn">import</span> <span class="n">outcome_variance_ratio</span>
-<span class="kn">from</span> <span class="nn">balance.typing</span> <span class="kn">import</span> <span class="n">FilePathOrBuffer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots.weighted_comparisons_stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">outcome_variance_ratio</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">FilePathOrBuffer</span>
 
-<span class="kn">from</span> <span class="nn">IPython.lib.display</span> <span class="kn">import</span> <span class="n">FileLink</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">IPython.lib.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileLink</span>
 
 
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
@@ -67,7 +67,7 @@
 
 <div class="viewcode-block" id="Sample">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample">[docs]</a>
-<span class="k">class</span> <span class="nc">Sample</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Sample</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A class used to represent a sample.</span>
 
@@ -91,7 +91,7 @@
     <span class="n">_adjustment_model</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">_df_dtypes</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># The following checks if the call to Sample() was initiated inside the class itself using from_frame, or outside of it</span>
         <span class="c1"># If the call was made internally, it will enable the creation of an instance of the class.</span>
         <span class="c1"># This is used when from_frame calls `sample = Sample()`. Keeping the full stack allows this also to work by a child of Sample.</span>
@@ -109,13 +109,13 @@
             <span class="p">)</span>
         <span class="k">pass</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__module__</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__qualname__</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span> <span class="n">pkg_source</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">__package__</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span> <span class="n">pkg_source</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">__package__</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">is_adjusted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">()</span> <span class="o">*</span> <span class="s2">&quot;Adjusted &quot;</span>
         <span class="n">n_rows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">n_variables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_covar_columns</span><span class="p">()</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -165,7 +165,7 @@
 <div class="viewcode-block" id="Sample.from_frame">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.from_frame">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_frame</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_frame</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="s2">&quot;Sample&quot;</span><span class="p">],</span>
         <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
         <span class="n">id_column</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -344,7 +344,7 @@
     <span class="c1"># Class base methods</span>
     <span class="c1">####################</span>
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">df</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">df</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Produce a DataFrame (of the self) from a Sample object.</span>
 
 <span class="sd">        Args:</span>
@@ -365,7 +365,7 @@
 
 <div class="viewcode-block" id="Sample.outcomes">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.outcomes">[docs]</a>
-    <span class="k">def</span> <span class="nf">outcomes</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">outcomes</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
     <span class="p">):</span>  <span class="c1"># -&gt; &quot;Optional[Type[BalanceOutcomesDF]]&quot; (not imported due to circular dependency)</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -380,7 +380,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outcome_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># NOTE: must import here so to avoid circular dependency</span>
-            <span class="kn">from</span> <span class="nn">balance.balancedf_class</span> <span class="kn">import</span> <span class="n">BalanceOutcomesDF</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">balance.balancedf_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceOutcomesDF</span>
 
             <span class="k">return</span> <span class="n">BalanceOutcomesDF</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -389,7 +389,7 @@
 
 <div class="viewcode-block" id="Sample.weights">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.weights">[docs]</a>
-    <span class="k">def</span> <span class="nf">weights</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">weights</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
     <span class="p">):</span>  <span class="c1"># -&gt; &quot;Optional[Type[BalanceWeightsDF]]&quot; (not imported due to circular dependency)</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -403,14 +403,14 @@
 <span class="sd">            BalanceWeightsDF</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># NOTE: must import here so to avoid circular dependency</span>
-        <span class="kn">from</span> <span class="nn">balance.balancedf_class</span> <span class="kn">import</span> <span class="n">BalanceWeightsDF</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.balancedf_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceWeightsDF</span>
 
         <span class="k">return</span> <span class="n">BalanceWeightsDF</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Sample.covars">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.covars">[docs]</a>
-    <span class="k">def</span> <span class="nf">covars</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">covars</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
     <span class="p">):</span>  <span class="c1"># -&gt; &quot;Optional[Type[BalanceCovarsDF]]&quot; (not imported due to circular dependency)</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -424,14 +424,14 @@
 <span class="sd">            BalanceCovarsDF</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># NOTE: must import here so to avoid circular dependency</span>
-        <span class="kn">from</span> <span class="nn">balance.balancedf_class</span> <span class="kn">import</span> <span class="n">BalanceCovarsDF</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.balancedf_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceCovarsDF</span>
 
         <span class="k">return</span> <span class="n">BalanceCovarsDF</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Sample.model">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.model">[docs]</a>
-    <span class="k">def</span> <span class="nf">model</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">model</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -452,7 +452,7 @@
 
 <div class="viewcode-block" id="Sample.model_matrix">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.model_matrix">[docs]</a>
-    <span class="k">def</span> <span class="nf">model_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">model_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the model matrix of sample using :func:`model_matrix`,</span>
 <span class="sd">        while adding na indicator for null values (see :func:`add_na_indicator`).</span>
@@ -469,7 +469,7 @@
     <span class="c1">############################################</span>
 <div class="viewcode-block" id="Sample.adjust">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.adjust">[docs]</a>
-    <span class="k">def</span> <span class="nf">adjust</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">adjust</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
         <span class="n">target</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;Sample&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">method</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
@@ -520,7 +520,7 @@
 
 <div class="viewcode-block" id="Sample.set_weights">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.set_weights">[docs]</a>
-    <span class="k">def</span> <span class="nf">set_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="nb">float</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="nb">float</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Adjusting the weights of a Sample object.</span>
 <span class="sd">        This will overwrite the weight_column of the Sample.</span>
@@ -549,7 +549,7 @@
     <span class="c1">####################################</span>
 <div class="viewcode-block" id="Sample.set_unadjusted">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.set_unadjusted">[docs]</a>
-    <span class="k">def</span> <span class="nf">set_unadjusted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">second_sample</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Sample&quot;</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_unadjusted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">second_sample</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Sample&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Used to set the unadjusted link to Sample.</span>
 <span class="sd">        This is useful in case one wants to compare two samples.</span>
@@ -572,7 +572,7 @@
 
 <div class="viewcode-block" id="Sample.is_adjusted">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.is_adjusted">[docs]</a>
-    <span class="k">def</span> <span class="nf">is_adjusted</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_adjusted</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if a Sample object is adjusted and has target attached</span>
 
 <span class="sd">        Returns:</span>
@@ -583,7 +583,7 @@
 
 <div class="viewcode-block" id="Sample.set_target">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.set_target">[docs]</a>
-    <span class="k">def</span> <span class="nf">set_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Sample&quot;</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Sample&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Used to set the target linked to Sample.</span>
 
@@ -603,7 +603,7 @@
 
 <div class="viewcode-block" id="Sample.has_target">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.has_target">[docs]</a>
-    <span class="k">def</span> <span class="nf">has_target</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_target</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a Sample object has target attached.</span>
 
@@ -618,7 +618,7 @@
     <span class="c1">##############################</span>
 <div class="viewcode-block" id="Sample.covar_means">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.covar_means">[docs]</a>
-    <span class="k">def</span> <span class="nf">covar_means</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">covar_means</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compare the means of covariates (after using :func:`BalanceDF.model_matrix`) before and after adjustment as compared with target.</span>
 
@@ -667,7 +667,7 @@
 
 <div class="viewcode-block" id="Sample.design_effect">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.design_effect">[docs]</a>
-    <span class="k">def</span> <span class="nf">design_effect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">design_effect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return the design effect of the weights of Sample. Uses :func:`weights_stats.design_effect`.</span>
 
@@ -682,7 +682,7 @@
 
 <div class="viewcode-block" id="Sample.design_effect_prop">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.design_effect_prop">[docs]</a>
-    <span class="k">def</span> <span class="nf">design_effect_prop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">design_effect_prop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return the relative difference in design effect of the weights of the unadjusted sample and the adjusted sample.</span>
 <span class="sd">        I.e. (Deff of adjusted - Deff of unadjusted) / Deff of unadjusted.</span>
@@ -705,7 +705,7 @@
     <span class="c1"># TODO: add unittest for this function</span>
 <div class="viewcode-block" id="Sample.plot_weight_density">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.plot_weight_density">[docs]</a>
-    <span class="k">def</span> <span class="nf">plot_weight_density</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_weight_density</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot the density of weights of Sample.</span>
 
 <span class="sd">        Examples:</span>
@@ -744,7 +744,7 @@
     <span class="c1">##########################################</span>
 <div class="viewcode-block" id="Sample.outcome_sd_prop">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.outcome_sd_prop">[docs]</a>
-    <span class="k">def</span> <span class="nf">outcome_sd_prop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">outcome_sd_prop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return the difference in outcome weighted standard deviation (sd) of the unadjusted</span>
 <span class="sd">        sample and the adjusted sample, relative to the unadjusted weighted sd.</span>
@@ -770,7 +770,7 @@
 
 <div class="viewcode-block" id="Sample.outcome_variance_ratio">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.outcome_variance_ratio">[docs]</a>
-    <span class="k">def</span> <span class="nf">outcome_variance_ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">outcome_variance_ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The empirical ratio of variance of the outcomes before and after weighting.</span>
 
 <span class="sd">        See :func:`outcome_variance_ratio` for details.</span>
@@ -798,7 +798,7 @@
     <span class="c1">##############################################</span>
 <div class="viewcode-block" id="Sample.summary">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.summary">[docs]</a>
-    <span class="k">def</span> <span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Provides a summary of covariate balance, design effect and model properties (if applicable)</span>
 <span class="sd">        of a sample.</span>
@@ -870,7 +870,7 @@
 
 <div class="viewcode-block" id="Sample.diagnostics">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.diagnostics">[docs]</a>
-    <span class="k">def</span> <span class="nf">diagnostics</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">diagnostics</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
         <span class="c1"># TODO: mention the other diagnostics</span>
         <span class="c1"># TODO: update/improve the wiki pages doc is linking to.</span>
         <span class="c1"># TODO: move explanation on weights normalization to some external page</span>
@@ -1153,7 +1153,7 @@
     <span class="c1">############################################</span>
 <div class="viewcode-block" id="Sample.keep_only_some_rows_columns">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.keep_only_some_rows_columns">[docs]</a>
-    <span class="k">def</span> <span class="nf">keep_only_some_rows_columns</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">keep_only_some_rows_columns</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
         <span class="n">rows_to_keep</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">columns_to_keep</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1246,7 +1246,7 @@
     <span class="c1">################</span>
 <div class="viewcode-block" id="Sample.to_download">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.to_download">[docs]</a>
-    <span class="k">def</span> <span class="nf">to_download</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tempdir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FileLink</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_download</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tempdir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FileLink</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a downloadable link of the DataFrame of the Sample object.</span>
 
 <span class="sd">        File name starts with tmp_balance_out_, and some random file name (using :func:`uuid.uuid4`).</span>
@@ -1263,7 +1263,7 @@
 
 <div class="viewcode-block" id="Sample.to_csv">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.to_csv">[docs]</a>
-    <span class="k">def</span> <span class="nf">to_csv</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_csv</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">path_or_buf</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePathOrBuffer</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Write df with ids from BalanceDF to a comma-separated values (csv) file.</span>
@@ -1291,7 +1291,7 @@
     <span class="c1">##################</span>
     <span class="c1"># Column accessors</span>
     <span class="c1">##################</span>
-    <span class="k">def</span> <span class="nf">_special_columns_names</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_special_columns_names</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns names of all special columns (id column,</span>
 <span class="sd">        wegiht column and outcome columns) in Sample.</span>
@@ -1307,7 +1307,7 @@
             <span class="k">else</span> <span class="p">[]</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_special_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_special_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns dataframe of all special columns (id column,</span>
 <span class="sd">        weight column and outcome columns) in Sample.</span>
@@ -1317,7 +1317,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_special_columns_names</span><span class="p">()]</span>
 
-    <span class="k">def</span> <span class="nf">_covar_columns_names</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_covar_columns_names</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns names of all covars in Sample.</span>
 
@@ -1328,7 +1328,7 @@
             <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_special_columns_names</span><span class="p">()</span>
         <span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">_covar_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_covar_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns dataframe of all covars columns in Sample.</span>
 
@@ -1340,7 +1340,7 @@
     <span class="c1">################</span>
     <span class="c1">#  Errors checks</span>
     <span class="c1">################</span>
-    <span class="k">def</span> <span class="nf">_check_if_adjusted</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_if_adjusted</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Raises a ValueError if sample is not adjusted</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1349,7 +1349,7 @@
                 <span class="s2">&quot;This is not an adjusted Sample. Use sample.adjust to adjust the sample to target&quot;</span>
             <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_no_target_error</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_no_target_error</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Raises a ValueError if sample doesn&#39;t have target</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1358,7 +1358,7 @@
                 <span class="s2">&quot;This Sample does not have a target set. Use sample.set_target to add target&quot;</span>
             <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_check_outcomes_exists</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_outcomes_exists</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Raises a ValueError if sample doesn&#39;t have outcome_columns specified.</span>
 <span class="sd">        &quot;&quot;&quot;</span>

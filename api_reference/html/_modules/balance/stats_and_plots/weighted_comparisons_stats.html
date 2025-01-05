@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>balance.stats_and_plots.weighted_comparisons_stats &#8212; balance  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=5c69cfe2" />
     <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../../_static/doctools.js?v=9bcbadda"></script>
@@ -42,22 +42,22 @@
 
 <span class="c1"># pyre-unsafe</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
 
-<span class="kn">import</span> <span class="nn">collections</span>
-<span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">import</span> <span class="nn">re</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">collections</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">numpy.typing</span> <span class="k">as</span> <span class="nn">npt</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">from</span> <span class="nn">balance.stats_and_plots.weighted_stats</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">npt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots.weighted_stats</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">descriptive_stats</span><span class="p">,</span>
     <span class="n">weighted_mean</span><span class="p">,</span>
     <span class="n">weighted_var</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">balance.stats_and_plots.weights_stats</span> <span class="kn">import</span> <span class="n">_check_weights_are_valid</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots.weights_stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">_check_weights_are_valid</span>
 
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
 
@@ -82,7 +82,7 @@
 <span class="c1">#     return 1 - 2 * np.sqrt(1 / (N - 1) * np.sum((p - np.mean(p)) ** 2))</span>
 
 
-<span class="k">def</span> <span class="nf">_weights_per_covars_names</span><span class="p">(</span><span class="n">covar_names</span><span class="p">:</span> <span class="n">List</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_weights_per_covars_names</span><span class="p">(</span><span class="n">covar_names</span><span class="p">:</span> <span class="n">List</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
     <span class="c1"># TODO (p2): consider if to give weights that are proportional to the proportion of this covar in the population</span>
     <span class="c1">#           E.g.: if merging varios platforms, maybe if something like windows has very few users, it&#39;s impact on the ASMD</span>
     <span class="c1">#           should be smaller (similar to how kld works).</span>
@@ -156,7 +156,7 @@
 <span class="c1"># TODO: add memoization</span>
 <div class="viewcode-block" id="asmd">
 <a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_stats.html#balance.stats_and_plots.weighted_comparisons_stats.asmd">[docs]</a>
-<span class="k">def</span> <span class="nf">asmd</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">asmd</span><span class="p">(</span>
     <span class="n">sample_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">target_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">sample_weights</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
@@ -347,7 +347,7 @@
 
 
 
-<span class="k">def</span> <span class="nf">_aggregate_asmd_by_main_covar</span><span class="p">(</span><span class="n">asmd_series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_aggregate_asmd_by_main_covar</span><span class="p">(</span><span class="n">asmd_series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This function helps to aggregate the ASMD, which is broken down per level for a category variable, into one value per covariate.</span>
 <span class="sd">    This is useful since it allows us to get high level view of features such as country, locale, etc.</span>
@@ -384,7 +384,7 @@
     <span class="c1"># turn things into DataFrame to make it easy to aggregate.</span>
     <span class="n">out</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">asmd_series</span><span class="p">,</span> <span class="n">weights</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_weighted_mean_for_our_df</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_weighted_mean_for_our_df</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
         <span class="n">values</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
         <span class="n">weights</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
         <span class="n">weighted_mean</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
@@ -405,7 +405,7 @@
 <span class="c1">#           reflect a support a comparison of two panels to some target populations.</span>
 <div class="viewcode-block" id="asmd_improvement">
 <a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_stats.html#balance.stats_and_plots.weighted_comparisons_stats.asmd_improvement">[docs]</a>
-<span class="k">def</span> <span class="nf">asmd_improvement</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">asmd_improvement</span><span class="p">(</span>
     <span class="n">sample_before</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">sample_after</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">target</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
@@ -455,7 +455,7 @@
 
 <div class="viewcode-block" id="outcome_variance_ratio">
 <a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_stats.html#balance.stats_and_plots.weighted_comparisons_stats.outcome_variance_ratio">[docs]</a>
-<span class="k">def</span> <span class="nf">outcome_variance_ratio</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">outcome_variance_ratio</span><span class="p">(</span>
     <span class="n">df_numerator</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">df_denominator</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">w_numerator</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>

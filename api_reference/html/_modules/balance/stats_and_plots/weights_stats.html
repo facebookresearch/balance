@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>balance.stats_and_plots.weights_stats &#8212; balance  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=5c69cfe2" />
     <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../../_static/doctools.js?v=9bcbadda"></script>
@@ -42,14 +42,14 @@
 
 <span class="c1"># pyre-unsafe</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
 
-<span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">numpy.typing</span> <span class="k">as</span> <span class="nn">npt</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">npt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
 
@@ -59,7 +59,7 @@
 <span class="c1">##########################################</span>
 
 
-<span class="k">def</span> <span class="nf">_check_weights_are_valid</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_check_weights_are_valid</span><span class="p">(</span>
     <span class="n">w</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
         <span class="n">List</span><span class="p">,</span>
         <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
@@ -105,7 +105,7 @@
 <span class="c1">#       we could make the support of this more official in the future.</span>
 <div class="viewcode-block" id="design_effect">
 <a class="viewcode-back" href="../../../balance.stats_and_plots.weights_stats.html#balance.stats_and_plots.weights_stats.design_effect">[docs]</a>
-<span class="k">def</span> <span class="nf">design_effect</span><span class="p">(</span><span class="n">w</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">design_effect</span><span class="p">(</span><span class="n">w</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Kish&#39;s design effect measure.</span>
 
@@ -146,7 +146,7 @@
 
 <div class="viewcode-block" id="nonparametric_skew">
 <a class="viewcode-back" href="../../../balance.stats_and_plots.weights_stats.html#balance.stats_and_plots.weights_stats.nonparametric_skew">[docs]</a>
-<span class="k">def</span> <span class="nf">nonparametric_skew</span><span class="p">(</span><span class="n">w</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">nonparametric_skew</span><span class="p">(</span><span class="n">w</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
     <span class="c1"># TODO (p2): consider adding other skew measures (https://en.wikipedia.org/wiki/Skewness)</span>
     <span class="c1">#            look more in the literature (are there references for using this vs another, or none at all?)</span>
     <span class="c1">#            update the doc with insights, once done:</span>
@@ -187,7 +187,7 @@
 
 <div class="viewcode-block" id="prop_above_and_below">
 <a class="viewcode-back" href="../../../balance.stats_and_plots.weights_stats.html#balance.stats_and_plots.weights_stats.prop_above_and_below">[docs]</a>
-<span class="k">def</span> <span class="nf">prop_above_and_below</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">prop_above_and_below</span><span class="p">(</span>
     <span class="n">w</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="n">below</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
         <span class="mi">1</span> <span class="o">/</span> <span class="mi">10</span><span class="p">,</span>
@@ -323,7 +323,7 @@
 
 <div class="viewcode-block" id="weighted_median_breakdown_point">
 <a class="viewcode-back" href="../../../balance.stats_and_plots.weights_stats.html#balance.stats_and_plots.weights_stats.weighted_median_breakdown_point">[docs]</a>
-<span class="k">def</span> <span class="nf">weighted_median_breakdown_point</span><span class="p">(</span><span class="n">w</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">weighted_median_breakdown_point</span><span class="p">(</span><span class="n">w</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
     <span class="c1"># TODO (p2): do we want to have weighted_quantile_breakdown_point</span>
     <span class="c1"># so to check for quantiles other than 50%?</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>

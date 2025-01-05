@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>balance.util &#8212; balance  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=5c69cfe2" />
     <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
@@ -42,33 +42,33 @@
 
 <span class="c1"># pyre-unsafe</span>
 
-<span class="kn">import</span> <span class="nn">collections.abc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">collections.abc</span>
 
-<span class="kn">import</span> <span class="nn">copy</span>
-<span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">import</span> <span class="nn">tempfile</span>
-<span class="kn">import</span> <span class="nn">uuid</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">reduce</span>
-<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">combinations</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">reduce</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">combinations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
-<span class="kn">from</span> <span class="nn">IPython.lib.display</span> <span class="kn">import</span> <span class="n">FileLink</span>
-<span class="kn">from</span> <span class="nn">pandas.api.types</span> <span class="kn">import</span> <span class="n">is_bool_dtype</span><span class="p">,</span> <span class="n">is_numeric_dtype</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">IPython.lib.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileLink</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pandas.api.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_bool_dtype</span><span class="p">,</span> <span class="n">is_numeric_dtype</span>
 
-<span class="kn">from</span> <span class="nn">patsy.contrasts</span> <span class="kn">import</span> <span class="n">ContrastMatrix</span>
-<span class="kn">from</span> <span class="nn">patsy.highlevel</span> <span class="kn">import</span> <span class="n">dmatrix</span><span class="p">,</span> <span class="n">ModelDesc</span>
-<span class="kn">from</span> <span class="nn">scipy.sparse</span> <span class="kn">import</span> <span class="n">csc_matrix</span><span class="p">,</span> <span class="n">hstack</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">patsy.contrasts</span><span class="w"> </span><span class="kn">import</span> <span class="n">ContrastMatrix</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">patsy.highlevel</span><span class="w"> </span><span class="kn">import</span> <span class="n">dmatrix</span><span class="p">,</span> <span class="n">ModelDesc</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.sparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">csc_matrix</span><span class="p">,</span> <span class="n">hstack</span>
 
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
 
 <span class="c1"># TODO: split util and adjustment files into separate files: transformations, model_matrix, others..</span>
 
 
-<span class="k">def</span> <span class="nf">_check_weighting_methods_input</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_check_weighting_methods_input</span><span class="p">(</span>
     <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="n">object_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -107,9 +107,9 @@
 
 <span class="c1"># This is so to avoid various cyclic imports (since various files call sample_class, and then sample_class also calls these files)</span>
 <span class="c1"># TODO: (p2) move away from this method once we restructure Sample and BalanceDF objects...</span>
-<span class="k">def</span> <span class="nf">_isinstance_sample</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_isinstance_sample</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="kn">from</span> <span class="nn">balance</span> <span class="kn">import</span> <span class="n">sample_class</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample_class</span>
     <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">False</span>
 
@@ -118,7 +118,7 @@
 
 <div class="viewcode-block" id="guess_id_column">
 <a class="viewcode-back" href="../../balance.util.html#balance.util.guess_id_column">[docs]</a>
-<span class="k">def</span> <span class="nf">guess_id_column</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">column_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">guess_id_column</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">column_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Guess the id column of a given dataset.</span>
 <span class="sd">    Possible values for guess: &#39;id&#39;.</span>
@@ -156,7 +156,7 @@
 
 <div class="viewcode-block" id="add_na_indicator">
 <a class="viewcode-back" href="../../balance.util.html#balance.util.add_na_indicator">[docs]</a>
-<span class="k">def</span> <span class="nf">add_na_indicator</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_na_indicator</span><span class="p">(</span>
     <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">replace_val_obj</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;_NA&quot;</span><span class="p">,</span> <span class="n">replace_val_num</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;If a column in the DataFrame contains NAs, replace these with 0 for</span>
@@ -213,7 +213,7 @@
 
 <div class="viewcode-block" id="drop_na_rows">
 <a class="viewcode-back" href="../../balance.util.html#balance.util.drop_na_rows">[docs]</a>
-<span class="k">def</span> <span class="nf">drop_na_rows</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">drop_na_rows</span><span class="p">(</span>
     <span class="n">sample_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;sample object&quot;</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -247,7 +247,7 @@
 
 <div class="viewcode-block" id="formula_generator">
 <a class="viewcode-back" href="../../balance.util.html#balance.util.formula_generator">[docs]</a>
-<span class="k">def</span> <span class="nf">formula_generator</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">formula_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;additive&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">formula_generator</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">formula_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;additive&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create formula to build the model matrix</span>
 <span class="sd">        Default is additive formula.</span>
 <span class="sd">    Args:</span>
@@ -281,7 +281,7 @@
 
 <div class="viewcode-block" id="dot_expansion">
 <a class="viewcode-back" href="../../balance.util.html#balance.util.dot_expansion">[docs]</a>
-<span class="k">def</span> <span class="nf">dot_expansion</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="n">variables</span><span class="p">:</span> <span class="n">List</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">dot_expansion</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="n">variables</span><span class="p">:</span> <span class="n">List</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a formula string by replacing &quot;.&quot; with &quot;summing&quot; all the variables,</span>
 <span class="sd">    If no dot appears, returns the formula as is.</span>
 
@@ -339,7 +339,7 @@
 
 <div class="viewcode-block" id="one_hot_encoding_greater_2">
 <a class="viewcode-back" href="../../balance.util.html#balance.util.one_hot_encoding_greater_2">[docs]</a>
-<span class="k">class</span> <span class="nc">one_hot_encoding_greater_2</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">one_hot_encoding_greater_2</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This class creates a special encoding for factor variable to be used in a LASSO model.</span>
 <span class="sd">    For variables with exactly two levels using this in dmatrix will only keep one level, i.e.</span>
@@ -421,10 +421,10 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reference</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reference</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">reference</span> <span class="o">=</span> <span class="n">reference</span>
 
-    <span class="k">def</span> <span class="nf">code_with_intercept</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">levels</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">code_with_intercept</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">levels</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">levels</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
             <span class="n">eye</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">levels</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
             <span class="n">contrasts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
@@ -445,14 +445,14 @@
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">contrasts_mat</span>
 
-    <span class="k">def</span> <span class="nf">code_without_intercept</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">levels</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">code_without_intercept</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">levels</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">code_with_intercept</span><span class="p">(</span><span class="n">levels</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="process_formula">
 <a class="viewcode-back" href="../../balance.util.html#balance.util.process_formula">[docs]</a>
-<span class="k">def</span> <span class="nf">process_formula</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="n">variables</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span> <span class="n">factor_variables</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">process_formula</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="n">variables</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span> <span class="n">factor_variables</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Process a formula string:</span>
 <span class="sd">        1. Expand .  notation using dot_expansion function</span>
 <span class="sd">        2. Remove intercept (if using ipw, it will be added automatically by sklearn)</span>
@@ -522,7 +522,7 @@
 
 <div class="viewcode-block" id="build_model_matrix">
 <a class="viewcode-back" href="../../balance.util.html#balance.util.build_model_matrix">[docs]</a>
-<span class="k">def</span> <span class="nf">build_model_matrix</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_model_matrix</span><span class="p">(</span>
     <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span>
     <span class="n">factor_variables</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -634,7 +634,7 @@
 
 
 
-<span class="k">def</span> <span class="nf">_prepare_input_model_matrix</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_prepare_input_model_matrix</span><span class="p">(</span>
     <span class="n">sample</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
     <span class="n">target</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">variables</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -740,7 +740,7 @@
 
 <div class="viewcode-block" id="model_matrix">
 <a class="viewcode-back" href="../../balance.util.html#balance.util.model_matrix">[docs]</a>
-<span class="k">def</span> <span class="nf">model_matrix</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">model_matrix</span><span class="p">(</span>
     <span class="n">sample</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
     <span class="n">target</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">variables</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -987,7 +987,7 @@
 <span class="c1"># TODO: add type hinting</span>
 <div class="viewcode-block" id="qcut">
 <a class="viewcode-back" href="../../balance.util.html#balance.util.qcut">[docs]</a>
-<span class="k">def</span> <span class="nf">qcut</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">duplicates</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;drop&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">qcut</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">duplicates</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;drop&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Discretize variable into equal-sized buckets based quantiles.</span>
 <span class="sd">    This is a wrapper to pandas qcut function.</span>
 
@@ -1011,7 +1011,7 @@
 <span class="c1"># TODO: fix it so that the order of the returned columns is the same as the original order in the DataFrame</span>
 <div class="viewcode-block" id="quantize">
 <a class="viewcode-back" href="../../balance.util.html#balance.util.quantize">[docs]</a>
-<span class="k">def</span> <span class="nf">quantize</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">quantize</span><span class="p">(</span>
     <span class="n">df</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">],</span> <span class="n">q</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Cut numeric variables of a DataFrame into quantiles buckets</span>
@@ -1073,7 +1073,7 @@
 
 <div class="viewcode-block" id="row_pairwise_diffs">
 <a class="viewcode-back" href="../../balance.util.html#balance.util.row_pairwise_diffs">[docs]</a>
-<span class="k">def</span> <span class="nf">row_pairwise_diffs</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">row_pairwise_diffs</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Produce the differences between every pair of rows of df</span>
 
 <span class="sd">    Args:</span>
@@ -1105,7 +1105,7 @@
 
 
 
-<span class="k">def</span> <span class="nf">_is_arraylike</span><span class="p">(</span><span class="n">o</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_is_arraylike</span><span class="p">(</span><span class="n">o</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Test (returns True) if an object is an array-ish type (a numpy array, or</span>
 <span class="sd">    a sequence, but not a string). Not the same as numpy&#39;s arraylike,</span>
 <span class="sd">    which also applies to scalars which can be turned into arrays.</span>
@@ -1130,7 +1130,7 @@
 
 <div class="viewcode-block" id="rm_mutual_nas">
 <a class="viewcode-back" href="../../balance.util.html#balance.util.rm_mutual_nas">[docs]</a>
-<span class="k">def</span> <span class="nf">rm_mutual_nas</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">rm_mutual_nas</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Remove entries in a position which is na or infinite in any of the arguments.</span>
 
@@ -1238,7 +1238,7 @@
     <span class="p">)</span>
     <span class="n">nonmissing_mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">missing_mask</span>
 
-    <span class="k">def</span> <span class="nf">_return_type_creation_function</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_return_type_creation_function</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
         <span class="c1"># The numpy.ndarray constructor doesn&#39;t take the same arguments as np.array</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
             <span class="k">return</span> <span class="k">lambda</span> <span class="n">obj</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
@@ -1275,7 +1275,7 @@
 <span class="c1">#       This would help clarify the logic of each function.</span>
 <div class="viewcode-block" id="choose_variables">
 <a class="viewcode-back" href="../../balance.util.html#balance.util.choose_variables">[docs]</a>
-<span class="k">def</span> <span class="nf">choose_variables</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">choose_variables</span><span class="p">(</span>
     <span class="o">*</span><span class="n">dfs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
     <span class="n">variables</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="nb">set</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">df_for_var_order</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
@@ -1383,7 +1383,7 @@
 
 <div class="viewcode-block" id="auto_spread">
 <a class="viewcode-back" href="../../balance.util.html#balance.util.auto_spread">[docs]</a>
-<span class="k">def</span> <span class="nf">auto_spread</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">auto_spread</span><span class="p">(</span>
     <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">features</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">id_</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;id&quot;</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Automatically transform a &#39;long&#39; DataFrame into a &#39;wide&#39; DataFrame</span>
@@ -1429,7 +1429,7 @@
 
 
 
-<span class="k">def</span> <span class="nf">auto_aggregate</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">auto_aggregate</span><span class="p">(</span>
     <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">features</span><span class="p">:</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;id&quot;</span><span class="p">,</span>
@@ -1450,7 +1450,7 @@
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">aggfunc</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">aggfunc</span> <span class="o">==</span> <span class="s2">&quot;sum&quot;</span><span class="p">:</span>
 
-            <span class="k">def</span> <span class="nf">_f</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">_f</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
                 <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
             <span class="n">aggfunc</span> <span class="o">=</span> <span class="n">_f</span>
@@ -1480,7 +1480,7 @@
 
 <div class="viewcode-block" id="fct_lump">
 <a class="viewcode-back" href="../../balance.util.html#balance.util.fct_lump">[docs]</a>
-<span class="k">def</span> <span class="nf">fct_lump</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">prop</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">fct_lump</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">prop</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Lumps infrequent levels into &#39;_lumped_other&#39;.</span>
 <span class="sd">    Note that all values with proportion less than prop output the same value &#39;_lumped_other&#39;.</span>
 
@@ -1525,7 +1525,7 @@
 
 <div class="viewcode-block" id="fct_lump_by">
 <a class="viewcode-back" href="../../balance.util.html#balance.util.fct_lump_by">[docs]</a>
-<span class="k">def</span> <span class="nf">fct_lump_by</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">by</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">prop</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">fct_lump_by</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">by</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">prop</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Lumps infrequent levels into &#39;_lumped_other, only does so per</span>
 <span class="sd">    value of the grouping variable `by`. Useful, for example, for keeping the</span>
 <span class="sd">    most important interactions in a model.</span>
@@ -1563,7 +1563,7 @@
 
 
 <span class="c1"># TODO: add tests</span>
-<span class="k">def</span> <span class="nf">_pd_convert_all_types</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_pd_convert_all_types</span><span class="p">(</span>
     <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">input_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">output_type</span><span class="p">:</span> <span class="nb">str</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts columns in the input dataframe to a specified type.</span>
@@ -1616,7 +1616,7 @@
 <span class="c1"># TODO: add tests</span>
 <div class="viewcode-block" id="find_items_index_in_list">
 <a class="viewcode-back" href="../../balance.util.html#balance.util.find_items_index_in_list">[docs]</a>
-<span class="k">def</span> <span class="nf">find_items_index_in_list</span><span class="p">(</span><span class="n">a_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">items</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_items_index_in_list</span><span class="p">(</span><span class="n">a_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">items</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Finds the index location of a given item in an array.</span>
 
 <span class="sd">    Helpful references:</span>
@@ -1659,7 +1659,7 @@
 <span class="c1"># TODO: add tests</span>
 <div class="viewcode-block" id="get_items_from_list_via_indices">
 <a class="viewcode-back" href="../../balance.util.html#balance.util.get_items_from_list_via_indices">[docs]</a>
-<span class="k">def</span> <span class="nf">get_items_from_list_via_indices</span><span class="p">(</span><span class="n">a_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">indices</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_items_from_list_via_indices</span><span class="p">(</span><span class="n">a_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">indices</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Gets a subset of items from a list via indices</span>
 
 <span class="sd">    Source code (there doesn&#39;t seem to be a better solution): https://stackoverflow.com/a/6632209</span>
@@ -1690,7 +1690,7 @@
 <span class="c1">################################################################################</span>
 
 
-<span class="k">def</span> <span class="nf">_truncate_text</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">length</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_truncate_text</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">length</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Truncate string s to be of length &#39;length&#39;. If the length of s is larger than &#39;length&#39;, then the</span>
 <span class="sd">    function will add &#39;...&#39; at the end of the truncated text.</span>
 
@@ -1707,7 +1707,7 @@
 
 <div class="viewcode-block" id="TruncationFormatter">
 <a class="viewcode-back" href="../../balance.util.html#balance.util.TruncationFormatter">[docs]</a>
-<span class="k">class</span> <span class="nc">TruncationFormatter</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TruncationFormatter</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Logging formatter which truncates the logged message to 500 characters.</span>
 
@@ -1715,12 +1715,12 @@
 <span class="sd">    --- like DataFrames --- whose string representation is very long.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TruncationFormatter</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 <div class="viewcode-block" id="TruncationFormatter.format">
 <a class="viewcode-back" href="../../balance.util.html#balance.util.TruncationFormatter.format">[docs]</a>
-    <span class="k">def</span> <span class="nf">format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">LogRecord</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">LogRecord</span><span class="p">):</span>
         <span class="n">result</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">TruncationFormatter</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">_truncate_text</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="mi">2000</span><span class="p">)</span></div>
 </div>
@@ -1730,7 +1730,7 @@
 <span class="c1">################################################################################</span>
 <span class="c1">#  File handling</span>
 <span class="c1">################################################################################</span>
-<span class="k">def</span> <span class="nf">_to_download</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_to_download</span><span class="p">(</span>
     <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">tempdir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FileLink</span><span class="p">:</span>
@@ -1758,7 +1758,7 @@
 <span class="c1">################################################################################</span>
 
 
-<span class="k">def</span> <span class="nf">_dict_intersect</span><span class="p">(</span><span class="n">d</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">d_for_keys</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_dict_intersect</span><span class="p">(</span><span class="n">d</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">d_for_keys</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns dict 1, but only with the keys that are also in d2</span>
 
 <span class="sd">    Args:</span>
@@ -1781,7 +1781,7 @@
 
 <span class="c1"># TODO: using _astype_in_df_from_dtypes to turn sample.df to original df dtypes may not be a good long term solution.</span>
 <span class="c1">#       A better solution might require a redesign of some core features.</span>
-<span class="k">def</span> <span class="nf">_astype_in_df_from_dtypes</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_astype_in_df_from_dtypes</span><span class="p">(</span>
     <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">target_dtypes</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns df with dtypes cast as specified in df_orig.</span>
@@ -1815,7 +1815,7 @@
     <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dict_of_target_dtypes</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_true_false_str_to_bool</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_true_false_str_to_bool</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Changes strings such as &#39;false&#39; to False and &#39;true&#39; to True.</span>
 
 <span class="sd">    Args:</span>
@@ -1845,7 +1845,7 @@
         <span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_are_dtypes_equal</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_are_dtypes_equal</span><span class="p">(</span>
     <span class="n">dt1</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">dt2</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="nb">set</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns True if both dtypes are the same and False otherwise.</span>
@@ -1889,7 +1889,7 @@
     <span class="p">}</span>
 
 
-<span class="k">def</span> <span class="nf">_warn_of_df_dtypes_change</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_warn_of_df_dtypes_change</span><span class="p">(</span>
     <span class="n">original_df_dtypes</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="n">new_df_dtypes</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="n">original_str</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;df&quot;</span><span class="p">,</span>
@@ -1951,7 +1951,7 @@
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">new_df_dtypes</span><span class="p">[</span><span class="n">dtypes_that_changed</span><span class="p">]))</span>
 
 
-<span class="k">def</span> <span class="nf">_make_df_column_names_unique</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_make_df_column_names_unique</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Make DataFrame column names unique by adding suffixes to duplicates.</span>
 
 <span class="sd">    This function iterates through the column names of the input DataFrame</span>
