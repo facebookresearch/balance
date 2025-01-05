@@ -3,7 +3,7 @@
 
 # *balance*: a python package for balancing biased data samples
 
-*balance* is currently **in beta** and under active development. Follow us [on github](https://github.com/facebookresearch/balance)!
+*balance* is currently **in beta** and is actively supported. Follow us [on github](https://github.com/facebookresearch/balance).
 
 ## What is *balance*?
 
@@ -77,7 +77,7 @@ python -m pip install .
 
 The core workflow in [*balance*](https://import-balance.org/) deals with fitting and evaluating weights to a sample. For each unit in the sample (such as a respondent to a survey), balance fits a weight that can be (loosely) interpreted as the number of people from the target population that this respondent represents. This aims to help mitigate the coverage and non-response biases, as illustrated in the following figure.
 
-![total_survey_error_img](https://raw.githubusercontent.com/facebookresearch/balance/main/website/docs/docs/img/total_survey_error_flow_v02.png?token=GHSAT0AAAAAAB25KSTWSBZGTWAJ7LJ3U3G6Y3VG4XA)
+![total_survey_error_img](https://raw.githubusercontent.com/facebookresearch/balance/main/website/docs/docs/img/total_survey_error_flow_v02.png)
 
 
 The weighting of survey data through *balance* is done in the following main steps:
@@ -241,7 +241,8 @@ You can follow updates on our:
 
 ## Acknowledgements / People
 
-The *balance* package is actively maintained by people from the [Core Data Science](https://research.facebook.com/teams/core-data-science/) team (in Tel Aviv and Boston), by [Tal Sarig](https://research.facebook.com/people/sarig-tal/), [Tal Galili](https://research.facebook.com/people/galili-tal/) and [Steve Mandala](https://research.facebook.com/people/mandala-steve/).
+The *balance* package is actively maintained by people from the [Central Applied Science](https://research.facebook.com/teams/central-applied-science/) team (in
+Menlo Park and Tel Aviv), by [Wesley Lee](https://www.linkedin.com/in/wesley-lee), [Tal Sarig](https://research.facebook.com/people/sarig-tal/), and [Tal Galili](https://research.facebook.com/people/galili-tal/).
 
 The *balance* package was (and is) developed by many people, including: [Roee Eilat](https://research.facebook.com/people/eilat-roee/), [Tal Galili](https://research.facebook.com/people/galili-tal/), [Daniel Haimovich](https://research.facebook.com/people/haimovich-daniel/), [Kevin Liou](https://www.linkedin.com/in/kevinycliou), [Steve Mandala](https://research.facebook.com/people/mandala-steve/), [Adam Obeng](https://adamobeng.com/) (author of the initial internal Meta version), [Tal Sarig](https://research.facebook.com/people/sarig-tal/),  [Luke Sonnet](https://www.linkedin.com/in/luke-sonnet), [Sean Taylor](https://seanjtaylor.com), [Barak Yair Reif](https://www.linkedin.com/in/barak-yair-reif-2154365/), and others. If you worked on balance in the past, please email us to be added to this list.
 
