@@ -1,5 +1,5 @@
-# This workflows will upload a Python Package using Twine when a release is published
-# For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
+# This workflow uploads a Python Package using Twine when a release is published.
+# For more information, see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
 
 name: Deploy
 
@@ -12,19 +12,17 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10'] # , '3.11']
+        python-version: ['3.9', '3.10', '3.11']
       fail-fast: false
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Pkg + Dependencies
         run: |
-          sudo apt-get install -y libopenblas-dev
-          python -m pip install git+https://github.com/bbalasub1/glmnet_python.git@1.0
           python -m pip install .[dev]
       - name: Test with pytest
         run: |
@@ -37,23 +35,23 @@ jobs:
     needs: tests # only run if previous step succeeds
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: "3.8"
-    - name: Install Pkg + Dependencies
-      run: |
-        python -m pip install git+https://github.com/bbalasub1/glmnet_python.git@1.0
-        python -m pip install .[dev]
-    - name: Fetch all history for all tags and branches
-      run: git fetch --prune --unshallow
-    - name: Build wheels pkg
-      run: |
-        python setup.py sdist bdist_wheel
-    - name: Publish a Python distribution to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        user: __token__
-        password: ${{ secrets.PYPI_API_TOKEN }}
-        verbose: true
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install Pkg + Dependencies
+        run: |
+          python -m pip install .[dev]
+      - name: Fetch all history for all tags and branches
+        run: git fetch --prune --unshallow
+      - name: Build wheels pkg
+        run: |
+          python setup.py sdist bdist_wheel
+      - name: Publish a Python distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          verbose: true
