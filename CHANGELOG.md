@@ -1,13 +1,14 @@
-0.10.0 (2025-01-03)
+0.10.0 (2025-01-06)
 ==================
 ## New Features
-- Dependency on glmnet has been removed, and the `ipw` method now uses sklearn. This should enable support for newer python versions.
+- Dependency on glmnet has been removed, and the `ipw` method now uses sklearn.
+- The transition to sklearn should enable support for newer python versions (3.11) as well as the Windows OS!
 - `ipw` method uses logistic regression with L2-penalties instead of L1-penalties for computational reasons. The transition from glmnet to sklearn and use of L2-penalties will lead to slightly different generated weights compared to previous versions of Balance.
 - Unfortunately, the sklearn-based `ipw` method is generally slower than the previous version by 2-5x. Consider using the new arguments `lambda_min`, `lambda_max`, and `num_lambdas` for a more efficient search over the `ipw` penalization space.
 
 ## Misc
--- Update to MIT license
--- Updated Python and package compatibility. Balance is now compatible with Python 3.11, but no longer compatible with Python 3.8 due to typing errors. Balance is currently incompatible with Python 3.12 due to the removal of distutils.
+- Update license from GPL v2 to [MIT license](https://github.com/facebookresearch/balance/blob/main/LICENSE).
+- Updated Python and package compatibility. Balance is now compatible with Python 3.11, but no longer compatible with Python 3.8 due to typing errors. Balance is currently incompatible with Python 3.12 due to the removal of distutils.
 
 ## Contributors
 @wesleytlee, @talgalili, @SarigT

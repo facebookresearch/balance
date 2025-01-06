@@ -27,15 +27,15 @@ The required Python dependencies are:
 ```python
 REQUIRES = [
     "numpy",
-    "pandas",
+    "pandas<=2.0.3",
     "ipython",
-    "scipy",
+    "scipy<=1.10.1",
     "patsy",
     "seaborn",
     "plotly",
     "matplotlib",
     "statsmodels",
-    "scikit-learn",
+    "scikit-learn<=1.2.2",
     "ipfn",
     "session-info",
 ]
