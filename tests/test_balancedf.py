@@ -25,37 +25,131 @@ from balance.balancedf_class import (  # noqa
 from balance.sample_class import Sample
 from balance.testutil import BalanceTestCase
 
-# TODO: verify all the objects below are used
-s1 = Sample.from_frame(
-    pd.DataFrame(
-        {
-            "a": (1, 2, 3, 1),
-            "b": (-42, 8, 2, -42),
-            "o": (7, 8, 9, 10),
-            "c": ("x", "y", "z", "v"),
-            "id": (1, 2, 3, 4),
-            "w": (0.5, 2, 1, 1),
-        }
-    ),
-    id_column="id",
-    weight_column="w",
-    outcome_columns="o",
-)
 
-s2 = Sample.from_frame(
-    pd.DataFrame(
-        {
-            "a": (1, 2, 3),
-            "b": (4, 6, 8),
-            "id": (1, 2, 3),
-            "w": (0.5, 1, 2),
-            "c": ("x", "y", "z"),
-        }
-    ),
-    id_column="id",
-    weight_column="w",
-)
+class TestDataFactory:
+    """Factory class for creating test data samples used across test cases."""
 
+    @staticmethod
+    def create_basic_sample():
+        """Create a basic sample with covariates, outcomes, and weights."""
+        return Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": (1, 2, 3, 1),
+                    "b": (-42, 8, 2, -42),
+                    "o": (7, 8, 9, 10),
+                    "c": ("x", "y", "z", "v"),
+                    "id": (1, 2, 3, 4),
+                    "w": (0.5, 2, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+            outcome_columns="o",
+        )
+
+    @staticmethod
+    def create_target_sample():
+        """Create a target sample for comparison testing."""
+        return Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": (1, 2, 3),
+                    "b": (4, 6, 8),
+                    "id": (1, 2, 3),
+                    "w": (0.5, 1, 2),
+                    "c": ("x", "y", "z"),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+
+    @staticmethod
+    def create_sample_with_null_values():
+        """Create a sample with null values for testing edge cases."""
+        return Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": (0, None, 2),
+                    "b": (0, None, 2),
+                    "c": ("a", "b", "c"),
+                    "id": (1, 2, 3),
+                }
+            ),
+            outcome_columns=("b", "c"),
+        )
+
+    @staticmethod
+    def create_multi_outcome_sample():
+        """Create a sample with multiple outcome columns."""
+        return Sample.from_frame(
+            pd.DataFrame(
+                {"o1": (7, 8, 9, 10), "o2": (7, 8, 9, np.nan), "id": (1, 2, 3, 4)}
+            ),
+            id_column="id",
+            outcome_columns=("o1", "o2"),
+        )
+
+    @staticmethod
+    def create_large_target_outcome_sample():
+        """Create a larger target sample for outcome comparison testing."""
+        return Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "o1": (7, 8, 9, 10, 11, 12, 13, 14),
+                    "o2": (7, 8, 9, np.nan, np.nan, 12, 13, 14),
+                    "id": (1, 2, 3, 4, 5, 6, 7, 8),
+                }
+            ),
+            id_column="id",
+            outcome_columns=("o1", "o2"),
+        )
+
+    @staticmethod
+    def create_sample_with_special_characters():
+        """Create a sample with special characters in column names for testing."""
+        return Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a$": (1, 2, 3, 1),
+                    "a%": (-42, 8, 2, -42),
+                    "o*": (7, 8, 9, 10),
+                    "c@": ("x", "y", "z", "v"),
+                    "id": (1, 2, 3, 4),
+                    "w": (0.5, 2, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+            outcome_columns="o*",
+        )
+
+    @staticmethod
+    def create_adjusted_samples():
+        """Create a set of related samples for adjustment testing."""
+        s1 = TestDataFactory.create_basic_sample()
+        s2 = TestDataFactory.create_target_sample()
+        s3 = s1.set_target(s2)
+        s3_null = s3.adjust(method="null")
+
+        s3_null_madeup_weights = deepcopy(s3_null)
+        # pyre-fixme[6]: For 1st argument expected `Union[None, float, Series]` but got
+        #  `Tuple[int, int, int, int]`.
+        s3_null_madeup_weights.set_weights((1, 2, 3, 1))
+
+        return {
+            "basic": s1,
+            "target": s2,
+            "with_target": s3,
+            "null_adjusted": s3_null,
+            "custom_weights": s3_null_madeup_weights,
+        }
+
+
+# Create commonly used test samples
+s1 = TestDataFactory.create_basic_sample()
+s2 = TestDataFactory.create_target_sample()
 s3 = s1.set_target(s2)
 s3_null = s3.adjust(method="null")
 
@@ -64,58 +158,27 @@ s3_null_madeup_weights = deepcopy(s3_null)
 #  `Tuple[int, int, int, int]`.
 s3_null_madeup_weights.set_weights((1, 2, 3, 1))
 
-s4 = Sample.from_frame(
-    pd.DataFrame(
-        {"a": (0, None, 2), "b": (0, None, 2), "c": ("a", "b", "c"), "id": (1, 2, 3)}
-    ),
-    outcome_columns=("b", "c"),
-)
-
+s4 = TestDataFactory.create_sample_with_null_values()
 o = s1.outcomes()
-
-
-s_o = Sample.from_frame(
-    pd.DataFrame({"o1": (7, 8, 9, 10), "o2": (7, 8, 9, np.nan), "id": (1, 2, 3, 4)}),
-    id_column="id",
-    outcome_columns=("o1", "o2"),
-)
-
-t_o = Sample.from_frame(
-    pd.DataFrame(
-        {
-            "o1": (7, 8, 9, 10, 11, 12, 13, 14),
-            "o2": (7, 8, 9, np.nan, np.nan, 12, 13, 14),
-            "id": (1, 2, 3, 4, 5, 6, 7, 8),
-        }
-    ),
-    id_column="id",
-    outcome_columns=("o1", "o2"),
-)
+s_o = TestDataFactory.create_multi_outcome_sample()
+t_o = TestDataFactory.create_large_target_outcome_sample()
 s_o2 = s_o.set_target(t_o)
-
 c = s1.covars()
-
 w = s1.weights()
-
-s1_bad_columns = Sample.from_frame(
-    pd.DataFrame(
-        {
-            "a$": (1, 2, 3, 1),
-            "a%": (-42, 8, 2, -42),
-            "o*": (7, 8, 9, 10),
-            "c@": ("x", "y", "z", "v"),
-            "id": (1, 2, 3, 4),
-            "w": (0.5, 2, 1, 1),
-        }
-    ),
-    id_column="id",
-    weight_column="w",
-    outcome_columns="o*",
-)
+s1_bad_columns = TestDataFactory.create_sample_with_special_characters()
 
 
 class TestBalanceOutcomesDF(BalanceTestCase):
+    """Test cases for BalanceOutcomesDF class functionality."""
+
     def test_Sample_outcomes(self):
+        """Test that Sample.outcomes() returns correct BalanceOutcomesDF instances.
+
+        Verifies:
+        - Returns BalanceOutcomesDF instance for samples with outcomes
+        - Handles multicharacter column names correctly
+        - Returns None for samples without outcomes
+        """
         self.assertTrue(isinstance(s4.outcomes(), BalanceOutcomesDF))
         self.assertEqual(
             s4.outcomes().df, pd.DataFrame({"b": (0, None, 2), "c": ("a", "b", "c")})
@@ -132,6 +195,14 @@ class TestBalanceOutcomesDF(BalanceTestCase):
         self.assertTrue(s2.outcomes() is None)
 
     def test_BalanceOutcomesDF_df(self):
+        """Test BalanceOutcomesDF.df property behavior and data integrity.
+
+        Verifies:
+        - df is implemented as a property decorator
+        - Property cannot be called as a function
+        - Data values are correctly converted to float type
+        - Property accessor works correctly
+        """
         # Verify that the @property decorator works properly.
         self.assertTrue(isinstance(BalanceOutcomesDF.df, property))
         # We can no longer call .df() as if it was a function:
@@ -145,6 +216,13 @@ class TestBalanceOutcomesDF(BalanceTestCase):
         self.assertEqual(o.df, pd.DataFrame({"o": (7.0, 8.0, 9.0, 10.0)}))
 
     def test__get_df_and_weights(self):
+        """Test BalanceDF._get_df_and_weights() method functionality.
+
+        Verifies:
+        - Returns correct DataFrame and numpy array types
+        - DataFrame values match expected outcome data
+        - Weights array contains correct weight values
+        """
         df, w = BalanceDF._get_df_and_weights(o)
         # Check types
         self.assertEqual(type(df), pd.DataFrame)
@@ -154,15 +232,26 @@ class TestBalanceOutcomesDF(BalanceTestCase):
         self.assertEqual(w, np.array([0.5, 2.0, 1.0, 1.0]))
 
     def test_BalanceOutcomesDF_names(self):
+        """Test that BalanceOutcomesDF.names() returns correct outcome column names."""
         self.assertEqual(o.names(), ["o"])
 
     def test_BalanceOutcomesDF__sample(self):
+        """Test that BalanceOutcomesDF._sample references the correct source sample."""
         self.assertTrue(o._sample is s1)
 
     def test_BalanceOutcomesDF_weights(self):
+        """Test that BalanceOutcomesDF._weights returns correct weight Series."""
         pd.testing.assert_series_equal(o._weights, pd.Series((0.5, 2, 1, 1)))
 
     def test_BalanceOutcomesDF_relative_response_rates(self):
+        """Test relative_response_rates method with various target configurations.
+
+        Verifies:
+        - Basic relative response rates calculation
+        - Handling of None targets
+        - Per-column vs per-dataset calculations
+        - Error handling for mismatched column structures
+        """
         self.assertEqual(
             s_o.outcomes().relative_response_rates(),
             pd.DataFrame({"o1": [100.0, 4], "o2": [75.0, 3]}, index=["%", "n"]),
@@ -228,6 +317,7 @@ class TestBalanceOutcomesDF(BalanceTestCase):
         )
 
     def test_BalanceOutcomesDF_target_response_rates(self):
+        """Test target_response_rates method for calculating target sample response rates."""
         self.assertEqual(
             s_o2.outcomes().target_response_rates(),
             pd.DataFrame({"o1": {"n": 8.0, "%": 100.0}, "o2": {"n": 6.0, "%": 75.0}}),
@@ -235,6 +325,14 @@ class TestBalanceOutcomesDF(BalanceTestCase):
         )
 
     def test_BalanceOutcomesDF_summary(self):
+        """Test BalanceOutcomesDF.summary() method output format and content.
+
+        Verifies that summary output includes:
+        - Outcome column information
+        - Mean outcomes with confidence intervals
+        - Response rates for different comparison scenarios
+        """
+
         def _remove_whitespace_and_newlines(s):
             return " ".join(s.split())
 
@@ -286,7 +384,17 @@ class TestBalanceOutcomesDF(BalanceTestCase):
 
 
 class TestBalanceCovarsDF(BalanceTestCase):
+    """Test cases for BalanceCovarsDF class functionality."""
+
     def test_BalanceCovarsDF_df(self):
+        """Test BalanceCovarsDF.df property behavior and data type conversion.
+
+        Verifies:
+        - df is implemented as a property decorator
+        - Property cannot be called as a function
+        - Integer values are converted to floats in DataFrame
+        - String values are preserved unchanged
+        """
         # Verify that the @property decorator works properly.
         self.assertTrue(isinstance(BalanceCovarsDF.df, property))
         self.assertEqual(BalanceOutcomesDF.df.fget(c), c.df)
@@ -307,20 +415,32 @@ class TestBalanceCovarsDF(BalanceTestCase):
         )
 
     def test_BalanceCovarsDF_names(self):
+        """Test that BalanceCovarsDF.names() returns correct column names as list."""
         self.assertEqual(c.names(), ["a", "b", "c"])
         self.assertEqual(type(c.names()), list)
 
     def test_BalanceCovarsDF__sample(self):
+        """Test that BalanceCovarsDF._sample references the correct source sample."""
         self.assertTrue(c._sample is s1)
 
     def test_BalanceCovarsDF_weights(self):
+        """Test that BalanceCovarsDF._weights returns correct weight Series."""
         pd.testing.assert_series_equal(
             c._weights, pd.Series(np.array([0.5, 2.0, 1.0, 1.0]))
         )
 
 
 class TestBalanceWeightsDF(BalanceTestCase):
+    """Test cases for BalanceWeightsDF class functionality."""
+
     def test_BalanceWeightsDF_df(self):
+        """Test BalanceWeightsDF.df property behavior and weight data access.
+
+        Verifies:
+        - df is implemented as a property decorator
+        - Property cannot be called as a function
+        - DataFrame contains correct weight values
+        """
         # Verify that the @property decorator works properly.
         self.assertTrue(isinstance(BalanceWeightsDF.df, property))
         self.assertEqual(BalanceWeightsDF.df.fget(w), w.df)
@@ -332,12 +452,15 @@ class TestBalanceWeightsDF(BalanceTestCase):
         self.assertEqual(w.df, pd.DataFrame({"w": (0.5, 2, 1, 1)}))
 
     def test_BalanceWeightsDF_names(self):
+        """Test that BalanceWeightsDF.names() returns correct weight column names."""
         self.assertEqual(w.names(), ["w"])
 
     def test_BalanceWeightsDF__sample(self):
+        """Test that BalanceWeightsDF._sample references the correct source sample."""
         self.assertTrue(c._sample is s1)
 
     def test_BalanceWeightsDF_weights(self):
+        """Test that BalanceWeightsDF._weights is None (weights don't have weights)."""
         self.assertTrue(w._weights is None)
 
     def test_BalanceWeightsDF_design_effect(self):
@@ -455,8 +578,13 @@ class TestBalanceDF__BalanceDF_child_from_linked_samples(BalanceTestCase):
             ["self", "target", "unadjusted"],
         )
 
-    def test__BalanceDF_child_from_linked_samples_values(self):
-        # We can get a calss using .__class__
+    def test__BalanceDF_child_from_linked_samples_class_types(self):
+        """Test that _BalanceDF_child_from_linked_samples returns correct class types.
+
+        Verifies that the method returns appropriate BalanceDF subclasses
+        based on the type and number of linked samples.
+        """
+        # We can get a class using .__class__
         self.assertEqual(s1.covars().__class__, BalanceCovarsDF)
 
         # We get a different number of classes based on the number of linked items:
@@ -472,11 +600,15 @@ class TestBalanceDF__BalanceDF_child_from_linked_samples(BalanceTestCase):
         exp = 3 * [BalanceCovarsDF]
         self.assertEqual([v.__class__ for (k, v) in the_dict.items()], exp)
 
+    def test__BalanceDF_child_from_linked_samples_weights_class(self):
+        """Test that _BalanceDF_child_from_linked_samples works for BalanceWeightsDF."""
         # This also works for things other than BalanceCovarsDF:
         the_dict = s3_null.weights()._BalanceDF_child_from_linked_samples()
         exp = 3 * [BalanceWeightsDF]
         self.assertEqual([v.__class__ for (k, v) in the_dict.items()], exp)
 
+    def test__BalanceDF_child_from_linked_samples_outcomes_with_none(self):
+        """Test that _BalanceDF_child_from_linked_samples handles None outcomes correctly."""
         # Notice that with something like outcomes, we might get a None in return!
         the_dict = s3_null.outcomes()._BalanceDF_child_from_linked_samples()
         exp = [
@@ -486,6 +618,8 @@ class TestBalanceDF__BalanceDF_child_from_linked_samples(BalanceTestCase):
         ]
         self.assertEqual([v.__class__ for (k, v) in the_dict.items()], exp)
 
+    def test__BalanceDF_child_from_linked_samples_covars_values(self):
+        """Test that covariates DataFrame values are correctly preserved in linked samples."""
         # Verify DataFrame values makes sense:
         # for covars
         the_dict = s3_null.covars()._BalanceDF_child_from_linked_samples()
@@ -508,6 +642,8 @@ class TestBalanceDF__BalanceDF_child_from_linked_samples(BalanceTestCase):
         ]
         self.assertEqual([v.df.to_dict() for (k, v) in the_dict.items()], exp)
 
+    def test__BalanceDF_child_from_linked_samples_outcomes_values(self):
+        """Test that outcomes DataFrame values are correctly preserved, excluding None values."""
         # for outcomes
         the_dict = s3_null.outcomes()._BalanceDF_child_from_linked_samples()
         exp = [{"o": {0: 7, 1: 8, 2: 9, 3: 10}}, {"o": {0: 7, 1: 8, 2: 9, 3: 10}}]
@@ -516,6 +652,8 @@ class TestBalanceDF__BalanceDF_child_from_linked_samples(BalanceTestCase):
             [v.df.to_dict() for (k, v) in the_dict.items() if v is not None], exp
         )
 
+    def test__BalanceDF_child_from_linked_samples_weights_values(self):
+        """Test that weights DataFrame values are correctly preserved in linked samples."""
         # for weights
         the_dict = s3_null.weights()._BalanceDF_child_from_linked_samples()
         exp = [
