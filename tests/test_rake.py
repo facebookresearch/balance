@@ -24,100 +24,146 @@ from balance.weighting_methods.rake import (
 class Testrake(
     balance.testutil.BalanceTestCase,
 ):
+    """
+    Test suite for the rake weighting method.
+
+    This test class validates the functionality of the rake() function and related
+    utilities used for iterative proportional fitting (raking) in survey weighting.
+    Rake weighting adjusts sample weights to match known population marginal distributions.
+    """
+
+    def _assert_rake_raises_with_message(
+        self,
+        expected_message,
+        sample_df,
+        sample_weights,
+        target_df,
+        target_weights,
+        **kwargs,
+    ):
+        """
+        Helper method to assert that rake raises an error with a specific message.
+
+        Args:
+            expected_message: Expected error message pattern
+            sample_df: Sample DataFrame
+            sample_weights: Sample weights Series
+            target_df: Target DataFrame
+            target_weights: Target weights Series
+            **kwargs: Additional arguments to pass to rake()
+        """
+        self.assertRaisesRegex(
+            AssertionError,
+            expected_message,
+            rake,
+            sample_df,
+            sample_weights,
+            target_df,
+            target_weights,
+            **kwargs,
+        )
+
     def test_rake_input_assertions(self):
-        N = 20
+        """
+        Test that rake() properly validates input parameters.
+
+        This test ensures that the rake function correctly identifies and raises
+        appropriate errors for various invalid input scenarios:
+        - Presence of 'weight' column in input data
+        - Insufficient number of variables (must be at least 2)
+        - Missing or invalid weight Series
+        - Mismatched lengths between DataFrames and weight Series
+        """
+        n_rows = 20
+        np.random.seed(42)
         sample = pd.DataFrame(
             {
-                "a": np.random.normal(size=N),
-                "b": np.random.normal(size=N),
-                "weight": [1.0] * N,
+                "a": np.random.normal(size=n_rows),
+                "b": np.random.normal(size=n_rows),
+                "weight": [1.0] * n_rows,
             }
         )
+        np.random.seed(43)
         target = pd.DataFrame(
             {
-                "a": np.random.normal(size=N),
-                "b": np.random.normal(size=N),
+                "a": np.random.normal(size=n_rows),
+                "b": np.random.normal(size=n_rows),
             }
         )
 
         # Cannot have weight in df that is not the weight column
-        self.assertRaisesRegex(
-            AssertionError,
+        self._assert_rake_raises_with_message(
             "weight shouldn't be a name for covariate in the sample data",
-            rake,
             sample,
-            pd.Series((1,) * N),
+            pd.Series((1,) * n_rows),
             target,
-            pd.Series((1,) * N),
+            pd.Series((1,) * n_rows),
         )
 
-        target["weight"] = [2.0] * N
-        self.assertRaisesRegex(
-            AssertionError,
+        target["weight"] = [2.0] * n_rows
+        self._assert_rake_raises_with_message(
             "weight shouldn't be a name for covariate in the target data",
-            rake,
             sample[["a", "b"]],
-            pd.Series((1,) * N),
+            pd.Series((1,) * n_rows),
             target,
-            pd.Series((1,) * N),
+            pd.Series((1,) * n_rows),
         )
 
-        # Must pass more than one varaible
-        self.assertRaisesRegex(
-            AssertionError,
+        # Must pass more than one variable
+        self._assert_rake_raises_with_message(
             "Must weight on at least two variables",
-            rake,
             sample[["a"]],
-            pd.Series((1,) * N),
+            pd.Series((1,) * n_rows),
             target[["a"]],
-            pd.Series((1,) * N),
+            pd.Series((1,) * n_rows),
         )
 
         # Must pass weights for sample
-        self.assertRaisesRegex(
-            AssertionError,
+        self._assert_rake_raises_with_message(
             "sample_weights must be a pandas Series",
-            rake,
             sample[["a", "b"]],
             None,
             target[["a", "b"]],
-            pd.Series((1,) * N),
+            pd.Series((1,) * n_rows),
         )
 
-        # Must pass weights for sample
-        self.assertRaisesRegex(
-            AssertionError,
+        # Must pass weights for target
+        self._assert_rake_raises_with_message(
             "target_weights must be a pandas Series",
-            rake,
             sample[["a", "b"]],
-            pd.Series((1,) * N),
+            pd.Series((1,) * n_rows),
             target[["a", "b"]],
             None,
         )
 
         # Must pass weights of same length as sample
-        self.assertRaisesRegex(
-            AssertionError,
+        self._assert_rake_raises_with_message(
             "sample_weights must be the same length as sample_df",
-            rake,
             sample[["a", "b"]],
-            pd.Series((1,) * (N - 1)),
+            pd.Series((1,) * (n_rows - 1)),
             target[["a", "b"]],
-            pd.Series((1,) * N),
+            pd.Series((1,) * n_rows),
         )
 
-        # Must pass weights for sample
-        self.assertRaisesRegex(
-            AssertionError,
+        # Must pass weights of same length as target
+        self._assert_rake_raises_with_message(
             "target_weights must be the same length as target_df",
-            rake,
             sample[["a", "b"]],
-            pd.Series((1,) * N),
+            pd.Series((1,) * n_rows),
             target[["a", "b"]],
-            pd.Series((1,) * (N - 1)),
+            pd.Series((1,) * (n_rows - 1)),
         )
 
     def test_rake_fails_when_all_na(self):
+        """
+        Test that rake() properly handles cases where all values are NaN.
+
+        This test verifies that rake() raises appropriate errors when:
+        - Sample data contains all NaN values in a column
+        - Target data contains all NaN values in a column
+        This should result in empty DataFrames after dropping NAs, which is invalid.
+        """
+        # Create test data with NaN values
         df_sample_nas = pd.DataFrame(
             {
                 "a": np.array([np.nan] * 12),
@@ -147,6 +193,7 @@ class Testrake(
             }
         )
 
+        # Test that sample with all NaN values fails
         self.assertRaisesRegex(
             ValueError,
             "Dropping rows led to empty",
@@ -159,6 +206,7 @@ class Testrake(
             transformations=None,
         )
 
+        # Test that target with NaN values that result in empty data fails
         self.assertRaisesRegex(
             ValueError,
             "Dropping rows led to empty",
@@ -172,6 +220,14 @@ class Testrake(
         )
 
     def test_rake_weights(self):
+        """
+        Test basic rake weighting functionality with categorical data.
+
+        This test verifies that rake() correctly calculates weights to match
+        target marginal distributions. It uses a simple case with categorical
+        variables and checks that the resulting weights achieve the desired
+        population balance.
+        """
         df_sample = pd.DataFrame(
             {
                 "a": np.array(["1", "2"] * 6),
@@ -204,6 +260,13 @@ class Testrake(
         )
 
     def test_rake_weights_with_weighted_input(self):
+        """
+        Test rake weighting with pre-weighted target data.
+
+        This test verifies that rake() correctly handles cases where the target
+        data already has non-uniform weights. The function should properly account
+        for these existing weights when calculating the raking adjustments.
+        """
         df_sample = pd.DataFrame(
             {
                 "a": np.array(["1", "2"] * 6),
@@ -237,6 +300,13 @@ class Testrake(
         )
 
     def test_rake_weights_scale_to_pop(self):
+        """
+        Test that rake weights properly scale to match target population size.
+
+        This test verifies that when the target population is larger than the sample,
+        the rake weights sum to the target population size, effectively scaling up
+        the sample to represent the larger population.
+        """
         df_sample = pd.DataFrame(
             {
                 "a": np.array(["1", "2"] * 6),
@@ -266,6 +336,16 @@ class Testrake(
         self.assertEqual(round(sum(adjusted["weight"]), 2), 15.0)
 
     def test_rake_expected_weights_with_na(self):
+        """
+        Test rake weighting behavior with NaN values using different na_action strategies.
+
+        This test verifies that rake() correctly handles missing values with two approaches:
+        1. 'drop': Remove rows with NaN values before raking
+        2. 'add_indicator': Create indicator variables for NaN values
+
+        The test includes detailed calculations showing expected weight values
+        for both strategies.
+        """
         dfsamp = pd.DataFrame(
             {
                 "a": np.array([1.0, 2.0, np.nan] * 6),
@@ -314,13 +394,21 @@ class Testrake(
             pd.Series([1.67, 1.0, 0.33] * 6, name="weight"),
         )
 
-    # Test consistency result of rake
     def test_rake_consistency_with_default_arguments(self):
-        # This test is meant to check the consistency of the rake function with the default arguments
-        np.random.seed(2021)
+        """
+        Test consistency of rake function results with default parameters.
+
+        This test verifies that the rake function produces consistent and expected
+        results when applied to large datasets with mixed data types (continuous
+        and categorical variables). It includes NaN values to test real-world
+        scenarios and validates specific weight values and distributions.
+        """
+        # Create test data inline
         n_sample = 1000
         n_target = 2000
+        np.random.seed(2021)
 
+        # Create sample DataFrame with mixed data types
         sample_df = pd.concat(
             [
                 pd.DataFrame(np.random.uniform(0, 10, size=n_sample), columns=[0]),
@@ -338,6 +426,7 @@ class Testrake(
         )
         sample_df = sample_df.rename(columns={i: "abcdefghij"[i] for i in range(0, 10)})
 
+        # Create target DataFrame with mixed data types
         target_df = pd.concat(
             [
                 pd.DataFrame(np.random.uniform(0, 18, size=n_target), columns=[0]),
@@ -355,10 +444,11 @@ class Testrake(
         )
         target_df = target_df.rename(columns={i: "abcdefghij"[i] for i in range(0, 10)})
 
-        # Add some NAN values
+        # Add some NaN values for realistic testing
         sample_df.loc[[0, 1], "a"] = np.nan
         target_df.loc[[100, 101], "a"] = np.nan
 
+        # Create random weights
         sample_weights = pd.Series(np.random.uniform(0, 1, size=n_sample))
         target_weights = pd.Series(np.random.uniform(0, 1, size=n_target))
 
@@ -384,6 +474,15 @@ class Testrake(
         )
 
     def test_variable_order_alphabetized(self):
+        """
+        Test that variable ordering is consistent and alphabetized.
+
+        This test ensures that the rake function produces identical results
+        regardless of the order in which variables are specified. The function
+        should internally alphabetize variables to ensure consistent behavior,
+        preventing issues where different variable orders could lead to
+        different weighting results.
+        """
         # Note: 'a' is always preferred, and due to perfect collinearity
         # with 'b', 'b' never gets weighted to, even if we reverse the
         # order. This is not a perfect test, but it broke pre-alphabetization!
@@ -427,6 +526,15 @@ class Testrake(
         )
 
     def test_rake_levels_warnings(self):
+        """
+        Test warning and error handling for mismatched categorical levels.
+
+        This test verifies that rake() properly handles cases where:
+        1. Sample data contains levels not present in target data (should raise ValueError)
+        2. Target data contains levels not present in sample data (should issue warning)
+
+        This ensures data quality and prevents silent failures in weighting.
+        """
         df_sample = pd.DataFrame(
             {
                 "a": np.array(["1", "2"] * 6),
@@ -480,6 +588,14 @@ class Testrake(
         )
 
     def test__proportional_array_from_dict(self):
+        """
+        Test the _proportional_array_from_dict utility function.
+
+        This test verifies that the helper function correctly converts a dictionary
+        of proportions into an array representation where each key appears
+        proportionally to its value. This is used internally by rake() to
+        create proportional distributions for raking calculations.
+        """
         self.assertEqual(
             _proportional_array_from_dict({"a": 0.2, "b": 0.8}),
             ["a", "b", "b", "b", "b"],
@@ -509,6 +625,14 @@ class Testrake(
         )
 
     def test__realize_dicts_of_proportions(self):
+        """
+        Test the _realize_dicts_of_proportions utility function.
+
+        This test verifies that the helper function correctly processes a dictionary
+        of dictionaries containing proportions, converting them into arrays where
+        each variable has proportional representation. This function ensures
+        consistent lengths across all variables for raking operations.
+        """
         dict_of_dicts = {
             "v1": {"a": 0.2, "b": 0.6, "c": 0.2},
             "v2": {"aa": 0.5, "bb": 0.5},
@@ -553,6 +677,14 @@ class Testrake(
         )
 
     def test_prepare_marginal_dist_for_raking(self):
+        """
+        Test the prepare_marginal_dist_for_raking utility function.
+
+        This test verifies that the function correctly prepares marginal distributions
+        for raking by converting proportion dictionaries into a DataFrame format
+        suitable for the raking algorithm. The function ensures proper alignment
+        and indexing of marginal distributions across multiple variables.
+        """
         self.assertEqual(
             prepare_marginal_dist_for_raking(
                 {"A": {"a": 0.5, "b": 0.5}, "B": {"x": 0.2, "y": 0.8}}
