@@ -15,9 +15,18 @@ class TestBalance_weights_stats(
     balance.testutil.BalanceTestCase,
 ):
     def test__check_weights_are_valid(self):
+        """Test validation of weight arrays for statistical calculations.
+
+        Verifies that _check_weights_are_valid correctly validates different
+        weight input formats (list, numpy array, pandas Series/DataFrame)
+        and raises appropriate errors for invalid inputs like negative weights
+        or non-numeric values.
+        """
         from balance.stats_and_plots.weights_stats import _check_weights_are_valid
 
         w = [np.inf, 1, 2, 1.0, 0]
+
+        # Test various valid input formats
         self.assertEqual(_check_weights_are_valid(w), None)
         self.assertEqual(_check_weights_are_valid(np.array(w)), None)
         self.assertEqual(_check_weights_are_valid(pd.Series(w)), None)
@@ -28,20 +37,28 @@ class TestBalance_weights_stats(
             None,
         )  # checking only the first column
 
+        # Test invalid weight types
         with self.assertRaisesRegex(TypeError, "weights \\(w\\) must be a number*"):
             _check_weights_are_valid([str(x) for x in w])
 
         with self.assertRaisesRegex(TypeError, "weights \\(w\\) must be a number*"):
-            w = ["a", "b"]
-            _check_weights_are_valid(w)
+            invalid_w = ["a", "b"]
+            _check_weights_are_valid(invalid_w)
 
+        # Test invalid weight values (negative)
         with self.assertRaisesRegex(
             ValueError, "weights \\(w\\) must all be non-negative values."
         ):
-            w = [-1, 0, 1]
-            _check_weights_are_valid(w)
+            negative_w = [-1, 0, 1]
+            _check_weights_are_valid(negative_w)
 
     def test_design_effect(self):
+        """Test calculation of design effect for weighted samples.
+
+        Design effect measures the loss of precision due to weighting.
+        Tests with equal weights (design effect = 1) and unequal weights
+        to verify correct calculation and return type.
+        """
         from balance.stats_and_plots.weights_stats import design_effect
 
         self.assertEqual(design_effect(pd.Series((1, 1, 1, 1))), 1)
@@ -52,6 +69,12 @@ class TestBalance_weights_stats(
         self.assertEqual(type(design_effect(pd.Series((0, 1, 2, 3)))), np.float64)
 
     def test_nonparametric_skew(self):
+        """Test calculation of nonparametric skewness measure.
+
+        Tests skewness calculation for various distributions including
+        symmetric (skew = 0), single values, and right-skewed distributions
+        to verify correct nonparametric skewness computation.
+        """
         from balance.stats_and_plots.weights_stats import nonparametric_skew
 
         self.assertEqual(nonparametric_skew(pd.Series((1, 1, 1, 1))), 0)
@@ -60,46 +83,56 @@ class TestBalance_weights_stats(
         self.assertEqual(nonparametric_skew(pd.Series((1, 1, 1, 2))), 0.5)
 
     def test_prop_above_and_below(self):
+        """Test calculation of proportions above and below thresholds.
+
+        Tests the prop_above_and_below function with default thresholds,
+        custom thresholds, and different return formats to ensure correct
+        proportion calculations and proper handling of edge cases.
+        """
         from balance.stats_and_plots.weights_stats import prop_above_and_below
 
+        # Test with identical values
         self.assertEqual(
             prop_above_and_below(pd.Series((1, 1, 1, 1))).astype(int).to_list(),
             [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
         )
+
+        # Test with varying values
         self.assertEqual(
             prop_above_and_below(pd.Series((1, 2, 3, 4))).to_list(),
             [0.0, 0.0, 0.0, 0.25, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0],
         )
 
-        self.assertEqual(
-            prop_above_and_below(
-                pd.Series((1, 2, 3, 4)), below=(0.1, 0.5), above=(2, 3)
-            ).to_list(),
-            [0.0, 0.25, 0.0, 0.0],
+        # Test custom thresholds
+        result = prop_above_and_below(
+            pd.Series((1, 2, 3, 4)), below=(0.1, 0.5), above=(2, 3)
         )
+        self.assertEqual(result.to_list(), [0.0, 0.25, 0.0, 0.0])
         self.assertEqual(
-            prop_above_and_below(
-                pd.Series((1, 2, 3, 4)), below=(0.1, 0.5), above=(2, 3)
-            ).index.to_list(),
+            result.index.to_list(),
             ["prop(w < 0.1)", "prop(w < 0.5)", "prop(w >= 2)", "prop(w >= 3)"],
         )
 
+        # Test with None parameters
         self.assertEqual(
             prop_above_and_below(pd.Series((1, 2, 3, 4)), above=None, below=None), None
         )
 
-        # test return_as_series = False
-        self.assertEqual(
-            {
-                k: v.to_list()
-                for k, v in prop_above_and_below(
-                    pd.Series((1, 2, 3, 4)), return_as_series=False
-                ).items()
-            },
-            {"below": [0.0, 0.0, 0.0, 0.25, 0.5], "above": [0.5, 0.0, 0.0, 0.0, 0.0]},
-        )
+        # Test return_as_series = False
+        result = prop_above_and_below(pd.Series((1, 2, 3, 4)), return_as_series=False)
+        expected = {
+            "below": [0.0, 0.0, 0.0, 0.25, 0.5],
+            "above": [0.5, 0.0, 0.0, 0.0, 0.0],
+        }
+        self.assertEqual({k: v.to_list() for k, v in result.items()}, expected)
 
     def test_weighted_median_breakdown_point(self):
+        """Test calculation of weighted median breakdown point.
+
+        Tests the weighted median breakdown point calculation which measures
+        the robustness of the weighted median. Tests with equal and unequal
+        weights to verify correct breakdown point calculations.
+        """
         import pandas as pd
         from balance.stats_and_plots.weights_stats import (
             weighted_median_breakdown_point,
@@ -119,6 +152,12 @@ class TestBalance_weighted_stats(
     balance.testutil.BalanceTestCase,
 ):
     def test__prepare_weighted_stat_args(self):
+        """Test preparation of arguments for weighted statistical functions.
+
+        Tests the _prepare_weighted_stat_args function which standardizes
+        input formats for weighted statistics, handles different data types,
+        manages infinite values, and validates input consistency.
+        """
         from balance.stats_and_plots.weighted_stats import _prepare_weighted_stat_args
 
         v, w = [-1, 0, 1, np.inf], [np.inf, 1, 2, 1.0]
@@ -210,6 +249,12 @@ class TestBalance_weighted_stats(
             v2, w2 = _prepare_weighted_stat_args(v, w)
 
     def test_weighted_mean(self):
+        """Test calculation of weighted mean for various input types.
+
+        Tests weighted mean calculation with different input formats,
+        handling of infinite values, None/NaN values, and validates
+        proper weight application and index handling.
+        """
         from balance.stats_and_plots.weighted_stats import weighted_mean
 
         # No weights
@@ -320,7 +365,12 @@ class TestBalance_weighted_stats(
             pd.Series((-1 * 1 + 2 * 2 + 1 * 3 + 2 * 4) / (1 + 2 + 3 + 4)),
         )
 
-    def var_of_weighted_mean(self):
+    def test_var_of_weighted_mean(self):
+        """Test calculation of variance of weighted mean.
+
+        Tests the variance calculation of weighted means with and without
+        weights to verify correct statistical computations and R compatibility.
+        """
         from balance.stats_and_plots.weighted_stats import var_of_weighted_mean
 
         # Test no weights assigned
@@ -336,7 +386,13 @@ class TestBalance_weighted_stats(
             pd.Series(0.24),
         )
 
-    def ci_of_weighted_mean(self):
+    def test_ci_of_weighted_mean(self):
+        """Test calculation of confidence intervals for weighted means.
+
+        Tests confidence interval calculations for weighted means with
+        different confidence levels and validates proper interval bounds
+        for various input data types.
+        """
         from balance.stats_and_plots.weighted_stats import ci_of_weighted_mean
 
         self.assertEqual(
@@ -359,6 +415,11 @@ class TestBalance_weighted_stats(
         )
 
     def test_weighted_var(self):
+        """Test calculation of weighted variance.
+
+        Tests weighted variance calculations with and without weights
+        to verify correct statistical computations and R compatibility.
+        """
         from balance.stats_and_plots.weighted_stats import weighted_var
 
         #  > var(c(1, 2, 3, 4))
@@ -372,6 +433,11 @@ class TestBalance_weighted_stats(
         )
 
     def test_weighted_sd(self):
+        """Test calculation of weighted standard deviation.
+
+        Tests weighted standard deviation calculations with various inputs
+        and validates against manual calculations and R compatibility.
+        """
         from balance.stats_and_plots.weighted_stats import weighted_sd
 
         #  > sd(c(1, 2, 3, 4))
@@ -391,6 +457,12 @@ class TestBalance_weighted_stats(
         self.assertEqual(round(weighted_sd(x)[0], 5), round(manual_std, 5))
 
     def test_weighted_quantile(self):
+        """Test calculation of weighted quantiles.
+
+        Tests weighted quantile calculations with various input formats
+        (pandas DataFrame, numpy matrix, numpy array) and validates
+        against R's weighted quantile calculations.
+        """
         from balance.stats_and_plots.weighted_stats import weighted_quantile
 
         self.assertEqual(
@@ -464,6 +536,12 @@ class TestBalance_weighted_stats(
         )
 
     def test_descriptive_stats(self):
+        """Test calculation of descriptive statistics with weights.
+
+        Tests the descriptive_stats function with various statistics
+        (mean, std, var_of_mean, std_mean, ci_of_mean) and validates
+        consistency with individual weighted statistic functions.
+        """
         from balance.stats_and_plots.weighted_stats import (
             descriptive_stats,
             weighted_mean,
@@ -547,23 +625,36 @@ class TestBalance_weighted_comparisons_stats(
     balance.testutil.BalanceTestCase,
 ):
     def test_outcome_variance_ratio(self):
+        """Test calculation of outcome variance ratios between datasets.
+
+        Tests the outcome_variance_ratio function which compares variance
+        ratios between sample and target datasets. Uses reproducible random
+        data to verify that identical datasets produce variance ratio of 1.0.
+        """
         from balance.stats_and_plots.weighted_comparisons_stats import (
             outcome_variance_ratio,
         )
 
+        # Create reproducible test data
         np.random.seed(876324)
-
-        d = pd.DataFrame(np.random.rand(1000, 11))
-        d["id"] = range(0, d.shape[0])
-        d = d.rename(columns={i: "abcdefghijk"[i] for i in range(0, 11)})
+        test_data = pd.DataFrame(np.random.rand(1000, 11))
+        test_data["id"] = range(0, test_data.shape[0])
+        test_data = test_data.rename(
+            columns={i: "abcdefghijk"[i] for i in range(0, 11)}
+        )
 
         self.assertEqual(
-            outcome_variance_ratio(d[["j", "k"]], d[["j", "k"]]),
+            outcome_variance_ratio(test_data[["j", "k"]], test_data[["j", "k"]]),
             pd.Series([1.0, 1.0], index=["j", "k"]),
         )
 
     def test__weights_per_covars_names(self):
-        # toy example
+        """Test calculation of weights per covariate names.
+
+        Tests the _weights_per_covars_names function which assigns weights
+        to covariates based on their names, handling categorical variables
+        with multiple levels appropriately.
+        """
         from balance.stats_and_plots.weighted_comparisons_stats import (
             _weights_per_covars_names,
         )
@@ -601,6 +692,12 @@ class TestBalance_weighted_comparisons_stats(
         self.assertEqual(outcome, expected)
 
     def test_asmd(self):
+        """Test calculation of Absolute Standardized Mean Differences (ASMD).
+
+        Tests the asmd function which calculates standardized mean differences
+        between sample and target groups, handling various input validation,
+        different standardization types, and categorical variables.
+        """
         from balance.stats_and_plots.weighted_comparisons_stats import asmd
 
         with self.assertRaisesRegex(ValueError, "sample_df must be pd.DataFrame, is*"):
@@ -814,6 +911,12 @@ class TestBalance_weighted_comparisons_stats(
         self.assertTrue(all((np.round(r2, 5)) == np.array([2.82843, 0.70711, 1.76777])))
 
     def test__aggregate_asmd_by_main_covar(self):
+        """Test aggregation of ASMD values by main covariate.
+
+        Tests the _aggregate_asmd_by_main_covar function which groups
+        ASMD values by their main covariate names (e.g., combining
+        categorical levels) and calculates appropriate aggregations.
+        """
         from balance.stats_and_plots.weighted_comparisons_stats import (
             _aggregate_asmd_by_main_covar,
         )
@@ -835,6 +938,12 @@ class TestBalance_weighted_comparisons_stats(
         self.assertEqual(outcome, expected)
 
     def test_asmd_improvement(self):
+        """Test calculation of ASMD improvement ratios.
+
+        Tests the asmd_improvement function which measures the improvement
+        in balance between unadjusted and adjusted samples by comparing
+        ASMD values before and after weighting adjustments.
+        """
         from balance.stats_and_plots.weighted_comparisons_stats import asmd_improvement
 
         r = asmd_improvement(
@@ -875,6 +984,12 @@ class TestBalance_general_stats(
     balance.testutil.BalanceTestCase,
 ):
     def test_relative_response_rates(self):
+        """Test calculation of relative response rates across columns.
+
+        Tests the relative_response_rates function which calculates response
+        rates for each column in a dataset, handling missing values and
+        comparing against target datasets when provided.
+        """
         from balance.stats_and_plots.general_stats import relative_response_rates
 
         df = pd.DataFrame(
