@@ -106,7 +106,7 @@ class TestCli(
         parser = make_parser()
 
         try:
-            args = parser.parse_args(["--help"])
+            parser.parse_args(["--help"])
             # If we get here, something is wrong - help should have exited
             self.fail("Expected SystemExit when parsing --help")
         except SystemExit as e:

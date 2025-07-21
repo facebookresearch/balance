@@ -13,8 +13,6 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import pandas.testing
-from balance.sample_class import Sample
 from balance.stats_and_plots import weighted_comparisons_plots, weighted_stats
 
 

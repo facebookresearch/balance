@@ -134,8 +134,6 @@ class TestDataFactory:
         s3_null = s3.adjust(method="null")
 
         s3_null_madeup_weights = deepcopy(s3_null)
-        # pyre-fixme[6]: For 1st argument expected `Union[None, float, Series]` but got
-        #  `Tuple[int, int, int, int]`.
         s3_null_madeup_weights.set_weights((1, 2, 3, 1))
 
         return {
@@ -154,8 +152,6 @@ s3 = s1.set_target(s2)
 s3_null = s3.adjust(method="null")
 
 s3_null_madeup_weights = deepcopy(s3_null)
-# pyre-fixme[6]: For 1st argument expected `Union[None, float, Series]` but got
-#  `Tuple[int, int, int, int]`.
 s3_null_madeup_weights.set_weights((1, 2, 3, 1))
 
 s4 = TestDataFactory.create_sample_with_null_values()
