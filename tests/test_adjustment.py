@@ -15,12 +15,12 @@ import balance.testutil
 
 import numpy as np
 import pandas as pd
-
 from balance.adjustment import (
     apply_transformations,
     default_transformations,
     trim_weights,
 )
+
 from balance.sample_class import Sample
 from balance.util import fct_lump, quantize
 from balance.weighting_methods import (
@@ -29,305 +29,380 @@ from balance.weighting_methods import (
     poststratify as balance_poststratify,
 )
 
+# Tolerance for floating point comparisons
 EPSILON = 0.00001
 
 
-sample = Sample.from_frame(
-    df=pd.DataFrame(
-        {
-            "a": (1, 2, 3, 1),
-            "b": (-42, 8, 2, -42),
-            "o": (7, 8, 9, 10),
-            "c": ("x", "y", "z", "x"),
-            "id": (1, 2, 3, 4),
-            "w": (0.5, 2, 1, 1),
-        }
-    ),
-    id_column="id",
-    weight_column="w",
-    outcome_columns="o",
-)
+class TestAdjustment(balance.testutil.BalanceTestCase):
+    """
+    Test suite for the balance adjustment module functionality.
 
-target = Sample.from_frame(
-    pd.DataFrame(
-        {
-            "a": (1, 2, 3),
-            "b": (-42, 8, 2),
-            "c": ("x", "y", "z"),
-            "id": (1, 2, 3),
-            "w": (2, 0.5, 1),
-        }
-    ),
-    id_column="id",
-    weight_column="w",
-)
+    This test class validates the core adjustment functions including:
+    - Weight trimming operations
+    - Data transformations (default and custom)
+    - Transformation application across multiple dataframes
+    - Adjustment method discovery
 
+    The tests ensure proper handling of edge cases, error conditions,
+    and maintain backward compatibility for the balance library's
+    adjustment capabilities.
+    """
 
-class TestAdjustment(
-    balance.testutil.BalanceTestCase,
-):
     def test_trim_weights(self):
-        # Test no trimming
-        # Notice how it changes the dtype of int64 to float64~
-        pd.testing.assert_series_equal(
-            trim_weights(pd.Series([0, 1, 2])), pd.Series([0.0, 1.0, 2.0])
-        )
-        self.assertEqual(type(trim_weights(pd.Series([0, 1, 2]))), pd.Series)
-        self.assertEqual(trim_weights(pd.Series([0, 1, 2])).dtype, np.float64)
+        """
+        Test weight trimming functionality including no trimming, percentile trimming,
+        and mean ratio trimming scenarios.
 
+        Validates that:
+        - Weights are properly converted to float64 dtype
+        - No trimming preserves original values
+        - Percentile and mean ratio trimming work correctly
+        - Error conditions are properly handled
+        """
+        # Test no trimming - verify dtype conversion to float64
+        input_weights = pd.Series([0, 1, 2])
+        expected_weights = pd.Series([0.0, 1.0, 2.0])
+
+        result_weights = trim_weights(input_weights)
+        pd.testing.assert_series_equal(result_weights, expected_weights)
+        self.assertEqual(type(result_weights), pd.Series)
+        self.assertEqual(result_weights.dtype, np.float64)
+
+        # Test that no trimming parameters preserves original weights
         random.seed(42)
-        w = np.random.uniform(0, 1, 10000)
-        self.assertEqual(
-            trim_weights(
-                w,
-                weight_trimming_percentile=None,
-                weight_trimming_mean_ratio=None,
-                keep_sum_of_weights=False,
-            ),
-            w,
+        random_weights = np.random.uniform(0, 1, 10000)
+        untrimmed_result = trim_weights(
+            random_weights,
+            weight_trimming_percentile=None,
+            weight_trimming_mean_ratio=None,
+            keep_sum_of_weights=False,
         )
+        self.assertEqual(untrimmed_result, random_weights)
 
-        # Test exceptions
+        # Test error handling for invalid input types
         with self.assertRaisesRegex(
             TypeError, "weights must be np.array or pd.Series, are of type*"
         ):
             trim_weights("Strings don't get trimmed", weight_trimming_mean_ratio=1)
+
+        # Test error when both trimming parameters are provided
         with self.assertRaisesRegex(ValueError, "Only one"):
-            trim_weights(
-                np.array([0, 1, 2]),
-                1,
-                1,
-            )
+            trim_weights(np.array([0, 1, 2]), 1, 1)
 
-        # Test weight_trimming_mean_ratio
+        # Test weight_trimming_mean_ratio functionality
         random.seed(42)
-        w = np.random.uniform(0, 1, 10000)
-        res = trim_weights(w, weight_trimming_mean_ratio=1)
-        self.assertAlmostEqual(np.mean(w), np.mean(res), delta=EPSILON)
+        original_weights = np.random.uniform(0, 1, 10000)
+        mean_ratio_result = trim_weights(original_weights, weight_trimming_mean_ratio=1)
+
+        # Mean should be preserved and ratio constraints should be applied
         self.assertAlmostEqual(
-            np.mean(w) / np.min(w), np.max(res) / np.min(res), delta=EPSILON
+            np.mean(original_weights), np.mean(mean_ratio_result), delta=EPSILON
+        )
+        self.assertAlmostEqual(
+            np.mean(original_weights) / np.min(original_weights),
+            np.max(mean_ratio_result) / np.min(mean_ratio_result),
+            delta=EPSILON,
         )
 
-        # Test weight_trimming_percentile
+        # Test weight_trimming_percentile functionality
         random.seed(42)
-        w = np.random.uniform(0, 1, 10000)
-        self.assertTrue(
-            max(
-                trim_weights(
-                    w, weight_trimming_percentile=(0, 0.11), keep_sum_of_weights=False
-                )
-            )
-            < 0.9
+        test_weights = np.random.uniform(0, 1, 10000)
+
+        # Test upper percentile trimming
+        upper_trimmed = trim_weights(
+            test_weights,
+            weight_trimming_percentile=(0, 0.11),
+            keep_sum_of_weights=False,
         )
-        self.assertTrue(
-            min(
-                trim_weights(
-                    w, weight_trimming_percentile=(0.11, 0), keep_sum_of_weights=False
-                )
-            )
-            > 0.1
+        self.assertTrue(max(upper_trimmed) < 0.9)
+
+        # Test lower percentile trimming
+        lower_trimmed = trim_weights(
+            test_weights,
+            weight_trimming_percentile=(0.11, 0),
+            keep_sum_of_weights=False,
         )
-        e = trim_weights(w, weight_trimming_percentile=(0.11, 0.11))
-        self.assertTrue(min(e) > 0.1)
-        self.assertTrue(max(e) < 0.9)
+        self.assertTrue(min(lower_trimmed) > 0.1)
+
+        # Test both-sided percentile trimming
+        both_trimmed = trim_weights(
+            test_weights, weight_trimming_percentile=(0.11, 0.11)
+        )
+        self.assertTrue(min(both_trimmed) > 0.1)
+        self.assertTrue(max(both_trimmed) < 0.9)
 
     def test_default_transformations(self):
-        # For multiple dataframes
-        input = (
+        """
+        Test automatic detection of appropriate transformations for different data types.
+
+        Validates that:
+        - Numeric columns get quantize transformation
+        - Categorical/string columns get fct_lump transformation
+        - Works with multiple dataframes
+        - Handles boolean and nullable Int64 dtypes correctly
+        """
+        # Test with multiple dataframes
+        multiple_dfs_input = (
             pd.DataFrame({"a": (1, 2), "b": ("a", "b")}),
             pd.DataFrame({"c": (1, 2), "d": ("a", "b")}),
         )
-        r = default_transformations(input)
-        self.assertEqual(
-            r,
-            {
-                "a": quantize,
-                "b": fct_lump,
-                "c": quantize,
-                "d": fct_lump,
-            },
-        )
+        multiple_result = default_transformations(multiple_dfs_input)
+        expected_multiple = {
+            "a": quantize,
+            "b": fct_lump,
+            "c": quantize,
+            "d": fct_lump,
+        }
+        self.assertEqual(multiple_result, expected_multiple)
 
-        # For one dataframe
-        input = pd.DataFrame({"a": (1, 2), "b": ("a", "b")})
-        r = default_transformations([input])
-        self.assertEqual(
-            r,
-            {
-                "a": quantize,
-                "b": fct_lump,
-            },
-        )
+        # Test with single dataframe
+        single_df_input = pd.DataFrame({"a": (1, 2), "b": ("a", "b")})
+        single_result = default_transformations([single_df_input])
+        expected_single = {
+            "a": quantize,
+            "b": fct_lump,
+        }
+        self.assertEqual(single_result, expected_single)
 
-        # For boolean and Int64 input
-        input = pd.DataFrame({"a": (1, 2), "b": (True, False)})
-        input = input.astype(
+        # Test with boolean and nullable Int64 dtypes
+        typed_df_input = pd.DataFrame({"a": (1, 2), "b": (True, False)})
+        typed_df_input = typed_df_input.astype(
             dtype={
                 "a": "Int64",
                 "b": "boolean",
             }
         )
-        r = default_transformations([input])
-        self.assertEqual(
-            r,
-            {
-                "a": quantize,
-                "b": fct_lump,
-            },
-        )
+        typed_result = default_transformations([typed_df_input])
+        expected_typed = {
+            "a": quantize,
+            "b": fct_lump,
+        }
+        self.assertEqual(typed_result, expected_typed)
 
     def test_default_transformations_pd_int64(self):
-        nullable_int = pd.DataFrame({"a": pd.array((1, 2), dtype="Int64")})
+        """
+        Test that nullable Int64 dtype is handled the same as regular int64.
 
-        numpy_int = nullable_int.astype(np.int64)
+        Ensures compatibility between pandas nullable integers and numpy integers
+        for transformation detection.
+        """
+        nullable_int_df = pd.DataFrame({"a": pd.array((1, 2), dtype="Int64")})
+        numpy_int_df = nullable_int_df.astype(np.int64)
 
-        test = default_transformations([nullable_int])
-        truth = default_transformations([numpy_int])
+        nullable_transformations = default_transformations([nullable_int_df])
+        numpy_transformations = default_transformations([numpy_int_df])
 
-        self.assertEqual(test, truth)
+        self.assertEqual(nullable_transformations, numpy_transformations)
 
     def test_apply_transformations(self):
-        s = pd.DataFrame({"d": [1, 2, 3], "e": [1, 2, 3]})
-        t = pd.DataFrame({"d": [4, 5, 6, 7], "e": [1, 2, 3, 4]})
-
+        """Test basic transformations with modifications and additions."""
+        source_df = pd.DataFrame({"d": [1, 2, 3], "e": [1, 2, 3]})
+        target_df = pd.DataFrame({"d": [4, 5, 6, 7], "e": [1, 2, 3, 4]})
         transformations = {"d": lambda x: x * 2, "f": lambda x: x.d + 1}
-        r = apply_transformations((s, t), transformations)
-
-        e = (
+        result = apply_transformations((source_df, target_df), transformations)
+        expected = (
             pd.DataFrame({"d": [2, 4, 6], "f": [2, 3, 4]}),
             pd.DataFrame({"d": [8, 10, 12, 14], "f": [5, 6, 7, 8]}),
         )
+        self.assertEqual(result[0], expected[0], lazy=True)
+        self.assertEqual(result[1], expected[1], lazy=True)
 
-        self.assertEqual(r[0], e[0], lazy=True)
-        self.assertEqual(r[1], e[1], lazy=True)
+    def test_apply_transformations_none_transformations(self):
+        """Test that None transformations return dataframes unchanged."""
+        source_df = pd.DataFrame({"d": [1, 2, 3], "e": [1, 2, 3]})
+        target_df = pd.DataFrame({"d": [4, 5, 6, 7], "e": [1, 2, 3, 4]})
+        result = apply_transformations((source_df, target_df), None)
+        self.assertEqual(result, (source_df, target_df))
 
-        # No transformations or additions
-        self.assertEqual(apply_transformations((s, t), None), (s, t))
+    def test_apply_transformations_only_modifications(self):
+        """Test transformations with only column modifications."""
+        source_df = pd.DataFrame({"d": [1, 2, 3], "e": [1, 2, 3]})
+        target_df = pd.DataFrame({"d": [4, 5, 6, 7], "e": [1, 2, 3, 4]})
+        result = apply_transformations((source_df, target_df), {"d": lambda x: x * 2})
+        expected = (
+            pd.DataFrame({"d": [2, 4, 6]}),
+            pd.DataFrame({"d": [8, 10, 12, 14]}),
+        )
+        self.assertEqual(result[0], expected[0])
+        self.assertEqual(result[1], expected[1])
 
-        # Only transformations
-        r = apply_transformations((s, t), {"d": lambda x: x * 2})
-        e = (pd.DataFrame({"d": [2, 4, 6]}), pd.DataFrame({"d": [8, 10, 12, 14]}))
-        self.assertEqual(r[0], e[0])
-        self.assertEqual(r[1], e[1])
+    def test_apply_transformations_only_additions(self):
+        """Test transformations with only column additions."""
+        source_df = pd.DataFrame({"d": [1, 2, 3], "e": [1, 2, 3]})
+        target_df = pd.DataFrame({"d": [4, 5, 6, 7], "e": [1, 2, 3, 4]})
+        result = apply_transformations((source_df, target_df), {"f": lambda x: x.d + 1})
+        expected = (pd.DataFrame({"f": [2, 3, 4]}), pd.DataFrame({"f": [5, 6, 7, 8]}))
+        self.assertEqual(result[0], expected[0])
+        self.assertEqual(result[1], expected[1])
 
-        # Only additions
-        r = apply_transformations((s, t), {"f": lambda x: x.d + 1})
-        e = (pd.DataFrame({"f": [2, 3, 4]}), pd.DataFrame({"f": [5, 6, 7, 8]}))
-        self.assertEqual(r[0], e[0])
-        self.assertEqual(r[1], e[1])
-
-        # Warns about dropping variable
+    def test_apply_transformations_drop_warning(self):
+        """Test that drop warning is properly issued."""
+        source_df = pd.DataFrame({"d": [1, 2, 3], "e": [1, 2, 3]})
+        target_df = pd.DataFrame({"d": [4, 5, 6, 7], "e": [1, 2, 3, 4]})
+        transformations = {"d": lambda x: x * 2, "f": lambda x: x.d + 1}
         self.assertWarnsRegexp(
             r"Dropping the variables: \['e'\]",
             apply_transformations,
-            (s, t),
+            (source_df, target_df),
             transformations,
         )
 
-        # Does not drop
-        r = apply_transformations((s, t), transformations, drop=False)
-        e = (
+    def test_apply_transformations_drop_false(self):
+        """Test that drop=False preserves all original columns."""
+        source_df = pd.DataFrame({"d": [1, 2, 3], "e": [1, 2, 3]})
+        target_df = pd.DataFrame({"d": [4, 5, 6, 7], "e": [1, 2, 3, 4]})
+        transformations = {"d": lambda x: x * 2, "f": lambda x: x.d + 1}
+        result = apply_transformations(
+            (source_df, target_df), transformations, drop=False
+        )
+        expected = (
             pd.DataFrame({"d": [2, 4, 6], "e": [1, 2, 3], "f": [2, 3, 4]}),
             pd.DataFrame({"d": [8, 10, 12, 14], "e": [1, 2, 3, 4], "f": [5, 6, 7, 8]}),
         )
-        self.assertEqual(r[0], e[0], lazy=True)
-        self.assertEqual(r[1], e[1], lazy=True)
+        self.assertEqual(result[0], expected[0], lazy=True)
+        self.assertEqual(result[1], expected[1], lazy=True)
 
-        # Works on three dfs
-        q = pd.DataFrame({"d": [8, 9], "g": [1, 2]})
-        r = apply_transformations((s, t, q), transformations)
-        e = (
+    def test_apply_transformations_three_dataframes(self):
+        """Test that transformations work correctly with three dataframes."""
+        source_df = pd.DataFrame({"d": [1, 2, 3], "e": [1, 2, 3]})
+        target_df = pd.DataFrame({"d": [4, 5, 6, 7], "e": [1, 2, 3, 4]})
+        third_df = pd.DataFrame({"d": [8, 9], "g": [1, 2]})
+        transformations = {"d": lambda x: x * 2, "f": lambda x: x.d + 1}
+
+        result = apply_transformations(
+            (source_df, target_df, third_df), transformations
+        )
+        expected = (
             pd.DataFrame({"d": [2, 4, 6], "f": [2, 3, 4]}),
             pd.DataFrame({"d": [8, 10, 12, 14], "f": [5, 6, 7, 8]}),
             pd.DataFrame({"d": [16, 18], "f": [9, 10]}),
         )
-        self.assertEqual(r[0], e[0], lazy=True)
-        self.assertEqual(r[1], e[1], lazy=True)
-        self.assertEqual(r[2], e[2], lazy=True)
+        self.assertEqual(result[0], expected[0], lazy=True)
+        self.assertEqual(result[1], expected[1], lazy=True)
+        self.assertEqual(result[2], expected[2], lazy=True)
 
-        # Test that functions are computed over all dfs passed, not each individually
+    def test_apply_transformations_global_computation(self):
+        """Test that transformations are computed over all dataframes, not individually."""
+        source_df = pd.DataFrame({"d": [1, 2, 3], "e": [1, 2, 3]})
+        target_df = pd.DataFrame({"d": [4, 5, 6, 7], "e": [1, 2, 3, 4]})
         transformations = {"d": lambda x: x / max(x)}
-        r = apply_transformations((s, t), transformations)
-        e = (
-            pd.DataFrame({"d": [2 / 14, 4 / 14, 6 / 14]}),
-            pd.DataFrame({"d": [8 / 14, 10 / 14, 12 / 14, 14 / 14]}),
-        )
-        self.assertEqual(r[0], e[0])
-        self.assertEqual(r[1], e[1])
 
-        # Transformation of a column which does not exist in one of the dataframes
-        s = pd.DataFrame({"d": [1, 2, 3], "e": [1, 2, 3]})
-        t = pd.DataFrame({"d": [4, 5, 6, 7]})
+        result = apply_transformations((source_df, target_df), transformations)
+        # Max across both dataframes is 7, so all values are divided by 7
+        expected = (
+            pd.DataFrame({"d": [1 / 7, 2 / 7, 3 / 7]}),
+            pd.DataFrame({"d": [4 / 7, 5 / 7, 6 / 7, 7 / 7]}),
+        )
+        self.assertEqual(result[0], expected[0])
+        self.assertEqual(result[1], expected[1])
+
+    def test_apply_transformations_missing_column_transform(self):
+        """Test transforming a column that exists in only one dataframe."""
+        source_df = pd.DataFrame({"d": [1, 2, 3], "e": [1, 2, 3]})
+        target_df = pd.DataFrame({"d": [4, 5, 6, 7]})  # missing column 'e'
         transformations = {"e": lambda x: x * 2}
-        r = apply_transformations((s, t), transformations)
-        e = (
+        result = apply_transformations((source_df, target_df), transformations)
+        expected = (
             pd.DataFrame({"e": [2.0, 4.0, 6.0]}),
             pd.DataFrame({"e": [np.nan, np.nan, np.nan, np.nan]}),
         )
-        self.assertEqual(r[0], e[0])
-        self.assertEqual(r[1], e[1])
+        self.assertEqual(result[0], expected[0])
+        self.assertEqual(result[1], expected[1])
 
-        # Additon of a column based on one which does not exist in one of the dataframes
+    def test_apply_transformations_missing_column_add(self):
+        """Test adding a column based on a column that exists in only one dataframe."""
+        source_df = pd.DataFrame({"d": [1, 2, 3], "e": [1, 2, 3]})
+        target_df = pd.DataFrame({"d": [4, 5, 6, 7]})  # missing column 'e'
         transformations = {"f": lambda x: x.e * 2}
-        r = apply_transformations((s, t), transformations)
-        e = (
+        result = apply_transformations((source_df, target_df), transformations)
+        expected = (
             pd.DataFrame({"f": [2.0, 4.0, 6.0]}),
             pd.DataFrame({"f": [np.nan, np.nan, np.nan, np.nan]}),
         )
-        self.assertEqual(r[0], e[0])
-        self.assertEqual(r[1], e[1])
+        self.assertEqual(result[0], expected[0])
+        self.assertEqual(result[1], expected[1])
 
-        # Column which does not exist in one of the dataframes
-        # and is also specified
-        s = pd.DataFrame({"d": [1, 2, 3], "e": [0, 0, 0]})
-        t = pd.DataFrame({"d": [4, 5, 6, 7]})
+    def test_apply_transformations_missing_column_specified(self):
+        """Test transformation of a specified column that's missing in one dataframe."""
+        source_df = pd.DataFrame({"d": [1, 2, 3], "e": [0, 0, 0]})
+        target_df = pd.DataFrame({"d": [4, 5, 6, 7]})  # missing column 'e'
         transformations = {"e": lambda x: x + 1}
-        r = apply_transformations((s, t), transformations)
-        e = (
+        result = apply_transformations((source_df, target_df), transformations)
+        expected = (
             pd.DataFrame({"e": [1.0, 1.0, 1.0]}),
             pd.DataFrame({"e": [np.nan, np.nan, np.nan, np.nan]}),
         )
-        self.assertEqual(r[0], e[0])
-        self.assertEqual(r[1], e[1])
+        self.assertEqual(result[0], expected[0])
+        self.assertEqual(result[1], expected[1])
 
-        # Test that indices are ignored in splitting dfs
-        s = pd.DataFrame({"d": [1, 2, 3]}, index=(5, 6, 7))
-        t = pd.DataFrame({"d": [4, 5, 6, 7]}, index=(0, 1, 2, 3))
+    def test_apply_transformations_index_handling(self):
+        """Test that dataframe indices are properly handled during transformations."""
+        source_df = pd.DataFrame({"d": [1, 2, 3]}, index=(5, 6, 7))
+        target_df = pd.DataFrame({"d": [4, 5, 6, 7]}, index=(0, 1, 2, 3))
         transformations = {"d": lambda x: x}
-        r = apply_transformations((s, t), transformations)
-        e = (s, t)
-        self.assertEqual(r[0], e[0])
-        self.assertEqual(r[1], e[1])
+        result = apply_transformations((source_df, target_df), transformations)
+        expected = (source_df, target_df)
+        self.assertEqual(result[0], expected[0])
+        self.assertEqual(result[1], expected[1])
 
-        # Test indices are handeled okay (this example reuired reset_index of all_data)
-        s = pd.DataFrame({"a": (0, 0, 0, 0, 0, 0, 0, 0)})
-        t = pd.DataFrame({"a": (1, 1, 1, 1)})
-        r = apply_transformations((s, t), "default")
-        e = (
+    def test_apply_transformations_index_reset_case(self):
+        """Test specific index handling case that requires reset_index internally."""
+        source_df = pd.DataFrame({"a": (0, 0, 0, 0, 0, 0, 0, 0)})
+        target_df = pd.DataFrame({"a": (1, 1, 1, 1)})
+        result = apply_transformations((source_df, target_df), "default")
+        expected = (
             pd.DataFrame({"a": ["(-0.001, 0.7]"] * 8}),
             pd.DataFrame({"a": ["(0.7, 1.0]"] * 4}),
         )
-        self.assertEqual(r[0].astype(str), e[0])
-        self.assertEqual(r[1].astype(str), e[1])
+        self.assertEqual(result[0].astype(str), expected[0])
+        self.assertEqual(result[1].astype(str), expected[1])
 
-        #  Test default transformations
-        s = pd.DataFrame({"d": range(0, 100), "e": ["a"] * 96 + ["b"] * 4})
-        t = pd.DataFrame({"d": range(0, 100), "e": ["a"] * 96 + ["b"] * 4})
-        r_s, r_t = apply_transformations((s, t), "default")
+    def test_apply_transformations_default_comprehensive(self):
+        """Test default transformations with comprehensive data."""
+        source_df = pd.DataFrame({"d": range(0, 100), "e": ["a"] * 96 + ["b"] * 4})
+        target_df = pd.DataFrame({"d": range(0, 100), "e": ["a"] * 96 + ["b"] * 4})
+        result_source, result_target = apply_transformations(
+            (source_df, target_df), "default"
+        )
 
-        self.assertEqual(r_s["d"].drop_duplicates().values.shape[0], 10)
-        self.assertEqual(r_t["d"].drop_duplicates().values.shape[0], 10)
+        # Numeric column should be quantized into 10 bins
+        self.assertEqual(result_source["d"].drop_duplicates().values.shape[0], 10)
+        self.assertEqual(result_target["d"].drop_duplicates().values.shape[0], 10)
 
-        self.assertEqual(r_s["e"].drop_duplicates().values, ("a", "_lumped_other"))
-        self.assertEqual(r_t["e"].drop_duplicates().values, ("a", "_lumped_other"))
+        # Categorical column should be lumped (rare categories combined)
+        expected_categories = ("a", "_lumped_other")
+        self.assertEqual(
+            result_source["e"].drop_duplicates().values, expected_categories
+        )
+        self.assertEqual(
+            result_target["e"].drop_duplicates().values, expected_categories
+        )
 
     def test_invalid_input_to_apply_transformations(self):
+        """Test error handling for invalid inputs to apply_transformations function."""
+        # Sample data for testing with mixed data types and weights
+        self.sample_data = Sample.from_frame(
+            df=pd.DataFrame(
+                {
+                    "a": (1, 2, 3, 1),
+                    "b": (-42, 8, 2, -42),
+                    "o": (7, 8, 9, 10),
+                    "c": ("x", "y", "z", "x"),
+                    "id": (1, 2, 3, 4),
+                    "w": (0.5, 2, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+            outcome_columns="o",
+        )
+
         # Test non-existent transformation
         self.assertRaisesRegex(
             NotImplementedError,
             "Unknown transformations",
             apply_transformations,
-            (sample.df,),
+            (self.sample_data.df,),
             "foobar",
         )
 
@@ -336,7 +411,7 @@ class TestAdjustment(
             AssertionError,
             "'dfs' must contain DataFrames",
             apply_transformations,
-            (sample,),
+            (self.sample_data,),
             "foobar",
         )
 
@@ -345,11 +420,19 @@ class TestAdjustment(
             AssertionError,
             "'dfs' argument must be a tuple of DataFrames",
             apply_transformations,
-            sample.df,
+            self.sample_data.df,
             "foobar",
         )
 
     def test__find_adjustment_method(self):
+        """
+        Test the internal adjustment method discovery function.
+
+        Validates that:
+        - Known adjustment methods (ipw, cbps, poststratify) are correctly resolved
+        - Unknown methods raise appropriate ValueError
+        """
+        # Test known adjustment methods
         self.assertTrue(
             balance.adjustment._find_adjustment_method("ipw") is balance_ipw.ipw
         )
@@ -360,5 +443,7 @@ class TestAdjustment(
             balance.adjustment._find_adjustment_method("poststratify")
             is balance_poststratify.poststratify
         )
+
+        # Test unknown adjustment method
         with self.assertRaisesRegex(ValueError, "Unknown adjustment method*"):
             balance.adjustment._find_adjustment_method("some_other_value")
