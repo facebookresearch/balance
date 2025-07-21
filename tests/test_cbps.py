@@ -18,132 +18,272 @@ from balance.sample_class import Sample
 from balance.stats_and_plots.weights_stats import design_effect
 from balance.weighting_methods import cbps as balance_cbps
 
+# Test constants for improved readability and maintainability
+TEST_SEED = 2021
+SAMPLE_SIZE = 1000
+TARGET_SIZE = 2000
+TOLERANCE = 1e-10
+MAX_DESIGN_EFFECT = 1.5
+TRUNCATION_THRESHOLD = 0.1
+
 
 class Testcbps(
     balance.testutil.BalanceTestCase,
 ):
     def test_cbps_from_adjust_function(self):
-        sample = Sample.from_frame(
-            pd.DataFrame({"a": (1, 2, 3, 4, 5, 6, 7, 8, 9, 1), "id": range(0, 10)})
-        )
-        target = Sample.from_frame(
-            pd.DataFrame({"a": (1, 2, 3, 4, 5, 6, 7, 8, 9, 9), "id": range(0, 10)})
-        )
+        """Test that CBPS results are consistent between Sample.adjust() and direct cbps() calls.
+
+        This test verifies that the high-level Sample.adjust(method="cbps") interface
+        produces identical results to calling the lower-level balance_cbps.cbps() function
+        directly with the same parameters.
+        """
+        sample_data = (1, 2, 3, 4, 5, 6, 7, 8, 9, 1)
+        target_data = (1, 2, 3, 4, 5, 6, 7, 8, 9, 9)
+
+        # Test using Sample.adjust() interface
+        sample = Sample.from_frame(pd.DataFrame({"a": sample_data, "id": range(0, 10)}))
+        target = Sample.from_frame(pd.DataFrame({"a": target_data, "id": range(0, 10)}))
         sample = sample.set_target(target)
         result_adjust = sample.adjust(method="cbps", transformations=None)
 
-        sample_df = pd.DataFrame({"a": (1, 2, 3, 4, 5, 6, 7, 8, 9, 1)})
-        target_df = pd.DataFrame({"a": (1, 2, 3, 4, 5, 6, 7, 8, 9, 9)})
+        # Test using direct cbps() function call
+        sample_df = pd.DataFrame({"a": sample_data})
+        target_df = pd.DataFrame({"a": target_data})
         sample_weights = pd.Series((1,) * 10)
         target_weights = pd.Series((1,) * 10)
         result_cbps = balance_cbps.cbps(
             sample_df, sample_weights, target_df, target_weights, transformations=None
         )
+
+        # Results should be identical
         self.assertEqual(
-            result_adjust.df["weight"], result_cbps["weight"].rename("weight")
+            result_adjust.df["weight"],
+            result_cbps["weight"].rename("weight"),
+            msg="Sample.adjust() and direct cbps() should produce identical weights",
         )
 
     def test_logit_truncated(self):
+        """Test the logit_truncated function with and without custom truncation values.
+
+        This test verifies that:
+        1. The logit function correctly computes probabilities from linear combinations
+        2. Extreme values are properly truncated to prevent numerical issues
+        3. Custom truncation values work as expected
+        """
+        # Test data with extreme values to trigger truncation
         X = np.array([[1, 2, 3], [4, 5, 6], [0, 0, -100]])
         beta = np.array([1, 0.5, 1])
+
+        # Test default truncation behavior
         result = balance_cbps.logit_truncated(X, beta)
+        expected_default = np.array([0.993307, 0.99999, 1.00000000e-05])
         self.assertEqual(
-            np.around(result, 6), np.array([0.993307, 0.99999, 1.00000000e-05])
+            np.around(result, 6),
+            expected_default,
+            msg="Default truncation should handle extreme values correctly",
         )
 
-        # test truncation_value
-        X = np.array([[1, 2, 3], [4, 5, 6], [0, 0, -100]])
-        beta = np.array([1, 0.5, 1])
-        result = balance_cbps.logit_truncated(X, beta, truncation_value=0.1)
-        self.assertEqual(np.around(result, 6), np.array([0.9, 0.9, 0.1]))
+        # Test custom truncation value
+        result_custom = balance_cbps.logit_truncated(
+            X, beta, truncation_value=TRUNCATION_THRESHOLD
+        )
+        expected_custom = np.array([0.9, 0.9, 0.1])
+        self.assertEqual(
+            np.around(result_custom, 6),
+            expected_custom,
+            msg="Custom truncation value should be applied to extreme probabilities",
+        )
 
     def test_compute_pseudo_weights_from_logit_probs(self):
+        """Test computation of pseudo weights from logistic regression probabilities.
+
+        This test verifies that pseudo weights are correctly computed based on:
+        - Logistic regression probabilities
+        - Design weights from the sample
+        - Population membership indicators
+        """
         probs = np.array([0.1, 0.6, 0.2])
         design_weights = np.array([1, 8, 3])
         in_pop = np.array([1.0, 0, 1.0])
+
         result = balance_cbps.compute_pseudo_weights_from_logit_probs(
             probs, design_weights, in_pop
         )
-        self.assertEqual(np.around(result, 1), np.array([3.0, -4.5, 3.0]))
+        expected = np.array([3.0, -4.5, 3.0])
 
-    # Testing consistency result of bal_loss
+        self.assertEqual(
+            np.around(result, 1),
+            expected,
+            msg="Pseudo weights should be computed correctly from logit probabilities",
+        )
+
     def test_bal_loss(self):
+        """Test the balance loss function used in CBPS optimization.
+
+        This function computes the loss for the balance constraints in CBPS.
+        The test verifies numerical consistency of the loss computation.
+        """
         X = np.array([[1, 2, 3], [4, 5, 6], [0, 0, -100]])
         beta = np.array([1, 0.5, 1])
         design_weights = np.array([1, 8, 3])
         in_pop = np.array([1.0, 0, 1.0])
         XtXinv = np.linalg.inv(np.matmul(X.T, X))
+
         result = balance_cbps.bal_loss(beta, X, design_weights, in_pop, XtXinv)
-        self.assertEqual(round(result, 2), 39999200004.99)
+        expected_loss = 39999200004.99
 
-    # Testing consistency result of gmm_function
-    def test_gmm_function(self):
-        X = np.array([[1, 2, 3], [4, 5, 6], [0, 0, -100]])
-        beta = np.array([1, 0.5, 1])
-        design_weights = np.array([1, 8, 3])
-        in_pop = np.array([1.0, 0, 1.0])
-        result = balance_cbps.gmm_function(beta, X, design_weights, in_pop)
-        self.assertEqual(round(result["loss"], 2), 91665.75)
-
-        # with given invV
-        X = np.array([[1, 2], [4, 5], [0, -100]])
-        beta = np.array([1, 0.5])
-        design_weights = np.array([1, 8, 3])
-        in_pop = np.array([1.0, 0, 1.0])
-        invV = np.array([[1, 1, 1, 1], [2, 2, 2, 2], [1, 0, 0, 0], [0, 0, 0, 1]])
-        result = balance_cbps.gmm_function(beta, X, design_weights, in_pop, invV)
-        self.assertEqual(round(result["loss"], 4), 45967903.9923)
-        self.assertEqual(result["invV"], invV)
-
-    # Testing consistency result of gmm_loss
-    def test_gmm_loss(self):
-        X = np.array([[1, 2, 3], [4, 5, 6], [0, 0, -100]])
-        beta = np.array([1, 0.5, 1])
-        design_weights = np.array([1, 8, 3])
-        in_pop = np.array([1.0, 0, 1.0])
-        result = balance_cbps.gmm_loss(beta, X, design_weights, in_pop)
-        self.assertEqual(round(result, 2), 91665.75)
-
-        # with given invV
-        X = np.array([[1, 2], [4, 5], [0, -100]])
-        beta = np.array([1, 0.5])
-        design_weights = np.array([1, 8, 3])
-        in_pop = np.array([1.0, 0, 1.0])
-        invV = np.array([[1, 1, 1, 1], [2, 2, 2, 2], [1, 0, 0, 0], [0, 0, 0, 1]])
-        result = balance_cbps.gmm_loss(beta, X, design_weights, in_pop, invV)
-        self.assertEqual(round(result, 4), 45967903.9923)
-
-    # Testing consistency result of alpha_function
-    def test_alpha_function(self):
-        X = np.array([[1, 2, 3], [4, 5, 6], [0, 0, -100]])
-        beta = np.array([1, 0.5, 1])
-        design_weights = np.array([1, 8, 3])
-        in_pop = np.array([1.0, 0, 1.0])
-        alpha = 1
-        result = balance_cbps.alpha_function(alpha, beta, X, design_weights, in_pop)
-        self.assertEqual(result, balance_cbps.gmm_loss(beta, X, design_weights, in_pop))
-
-        X = np.array([[1, 2, 3], [4, 5, 6], [0, 0, -100]])
-        beta = np.array([1, 0.5, 1])
-        design_weights = np.array([1, 8, 3])
-        in_pop = np.array([1.0, 0, 1.0])
-        alpha = 0.5
-        result_smaller_alpha = balance_cbps.alpha_function(
-            alpha, beta, X, design_weights, in_pop
+        self.assertEqual(
+            round(result, 2),
+            expected_loss,
+            msg="Balance loss should be computed consistently",
         )
-        self.assertEqual(round(result_smaller_alpha, 4), 25345.0987)
 
-        # smaller alpha gives smaller loss
-        self.assertTrue(result_smaller_alpha <= result)
+    def test_gmm_function(self):
+        """Test the Generalized Method of Moments (GMM) function used in CBPS.
 
-    # Testing consistency result of compute_deff_from_beta function
+        This test verifies:
+        1. GMM loss computation with automatic covariance matrix estimation
+        2. GMM loss computation with user-provided inverse covariance matrix
+        3. Correct return of the inverse covariance matrix
+        """
+        # Test with automatic covariance matrix estimation
+        X = np.array([[1, 2, 3], [4, 5, 6], [0, 0, -100]])
+        beta = np.array([1, 0.5, 1])
+        design_weights = np.array([1, 8, 3])
+        in_pop = np.array([1.0, 0, 1.0])
+
+        result = balance_cbps.gmm_function(beta, X, design_weights, in_pop)
+        expected_loss = 91665.75
+
+        self.assertEqual(
+            round(result["loss"], 2),
+            expected_loss,
+            msg="GMM loss should be computed correctly with automatic covariance estimation",
+        )
+
+        # Test with user-provided inverse covariance matrix
+        X_reduced = np.array([[1, 2], [4, 5], [0, -100]])
+        beta_reduced = np.array([1, 0.5])
+        invV = np.array([[1, 1, 1, 1], [2, 2, 2, 2], [1, 0, 0, 0], [0, 0, 0, 1]])
+
+        result_with_invV = balance_cbps.gmm_function(
+            beta_reduced, X_reduced, design_weights, in_pop, invV
+        )
+        expected_loss_with_invV = 45967903.9923
+
+        self.assertEqual(
+            round(result_with_invV["loss"], 4),
+            expected_loss_with_invV,
+            msg="GMM loss should be computed correctly with provided inverse covariance matrix",
+        )
+        self.assertEqual(
+            result_with_invV["invV"],
+            invV,
+            msg="Provided inverse covariance matrix should be returned unchanged",
+        )
+
+    def test_gmm_loss(self):
+        """Test the GMM loss function (simplified version of gmm_function).
+
+        This test verifies that the GMM loss function returns consistent results
+        both with automatic covariance estimation and with provided inverse covariance.
+        """
+        # Test with automatic covariance matrix estimation
+        X = np.array([[1, 2, 3], [4, 5, 6], [0, 0, -100]])
+        beta = np.array([1, 0.5, 1])
+        design_weights = np.array([1, 8, 3])
+        in_pop = np.array([1.0, 0, 1.0])
+
+        result = balance_cbps.gmm_loss(beta, X, design_weights, in_pop)
+        expected_loss = 91665.75
+
+        self.assertEqual(
+            round(result, 2),
+            expected_loss,
+            msg="GMM loss should match expected value with automatic covariance estimation",
+        )
+
+        # Test with user-provided inverse covariance matrix
+        X_reduced = np.array([[1, 2], [4, 5], [0, -100]])
+        beta_reduced = np.array([1, 0.5])
+        invV = np.array([[1, 1, 1, 1], [2, 2, 2, 2], [1, 0, 0, 0], [0, 0, 0, 1]])
+
+        result_with_invV = balance_cbps.gmm_loss(
+            beta_reduced, X_reduced, design_weights, in_pop, invV
+        )
+        expected_loss_with_invV = 45967903.9923
+
+        self.assertEqual(
+            round(result_with_invV, 4),
+            expected_loss_with_invV,
+            msg="GMM loss should match expected value with provided inverse covariance",
+        )
+
+    def test_alpha_function(self):
+        """Test the alpha function used for balancing efficiency and balance constraints.
+
+        This test verifies:
+        1. When alpha=1, the function equals gmm_loss (pure balance)
+        2. Smaller alpha values produce smaller loss values (more efficiency-focused)
+        3. The function correctly interpolates between efficiency and balance
+        """
+        X = np.array([[1, 2, 3], [4, 5, 6], [0, 0, -100]])
+        beta = np.array([1, 0.5, 1])
+        design_weights = np.array([1, 8, 3])
+        in_pop = np.array([1.0, 0, 1.0])
+
+        # Test alpha=1 case (should equal gmm_loss)
+        alpha_one = 1
+        result_alpha_one = balance_cbps.alpha_function(
+            alpha_one, beta, X, design_weights, in_pop
+        )
+        gmm_result = balance_cbps.gmm_loss(beta, X, design_weights, in_pop)
+
+        self.assertEqual(
+            result_alpha_one,
+            gmm_result,
+            msg="Alpha function with alpha=1 should equal gmm_loss",
+        )
+
+        # Test alpha<1 case (should give smaller loss)
+        alpha_smaller = 0.5
+        result_smaller_alpha = balance_cbps.alpha_function(
+            alpha_smaller, beta, X, design_weights, in_pop
+        )
+        expected_smaller_loss = 25345.0987
+
+        self.assertEqual(
+            round(result_smaller_alpha, 4),
+            expected_smaller_loss,
+            msg="Alpha function should produce expected loss for alpha=0.5",
+        )
+
+        # Verify that smaller alpha gives smaller or equal loss
+        self.assertTrue(
+            result_smaller_alpha <= result_alpha_one,
+            msg="Smaller alpha should produce smaller or equal loss (more efficiency-focused)",
+        )
+
     def test_compute_deff_from_beta(self):
+        """Test computation of design effect from beta coefficients.
+
+        This function computes the design effect (a measure of efficiency loss)
+        from the estimated beta coefficients in CBPS. The test verifies numerical
+        consistency of this computation.
+        """
         X = np.array([[1, 2, 3], [4, 5, 6], [0, 0, -100]])
         beta = np.array([1, 0.5, 1])
         design_weights = np.array([1, 8, 3])
         in_pop = np.array([0.0, 0, 1.0])
+
         result = balance_cbps.compute_deff_from_beta(X, beta, design_weights, in_pop)
-        self.assertEqual(round(result, 6), 1.999258)
+        expected_deff = 1.999258
+
+        self.assertEqual(
+            round(result, 6),
+            expected_deff,
+            msg="Design effect should be computed correctly from beta coefficients",
+        )
 
     def test__standardize_model_matrix(self):
         # numpy array as input
@@ -209,66 +349,84 @@ class Testcbps(
             np.around(np.matmul(U, beta), 7),
         )
 
-    # Test consistency result of cbps
     def test_cbps_consistency_with_default_arguments(self):
-        # This test is meant to check the consistency of the cbps function with the default arguments,
-        # Note that this test rely on all balance functions that are part of cbps:
-        # choose_variables, apply_transformations, model_matrix, trim_weights
-        # Therefore a failure in this test may indicate a failure in one
-        # of these functions as well as a failure of the cbps function
-        np.random.seed(2021)
-        n_sample = 1000
-        n_target = 2000
+        """Test CBPS function consistency with default arguments on complex data.
 
-        sample_df = pd.concat(
+        This comprehensive test verifies that the CBPS function works correctly
+        with default arguments on realistic data containing both continuous and
+        categorical variables. It tests the integration of all CBPS components:
+        - choose_variables: Variable selection
+        - apply_transformations: Data transformations
+        - model_matrix: Design matrix creation
+        - trim_weights: Weight trimming
+
+        Note: Due to numerical precision in SVD decomposition, exact weight values
+        may vary slightly between runs, so we test relative ordering instead.
+        """
+        # Generate complex sample data
+        np.random.seed(TEST_SEED)
+
+        # Create continuous variables for sample
+        continuous_vars_sample = pd.concat(
             [
-                pd.DataFrame(np.random.uniform(0, 10, size=n_sample), columns=[0]),
+                pd.DataFrame(np.random.uniform(0, 10, size=SAMPLE_SIZE), columns=[0]),
                 pd.DataFrame(
-                    np.random.uniform(0, 1, size=(n_sample, 4)), columns=range(1, 5)
-                ),
-                pd.DataFrame(
-                    np.random.choice(
-                        ["level1", "level2", "level3"], size=(n_sample, 5)
-                    ),
-                    columns=range(5, 10),
+                    np.random.uniform(0, 1, size=(SAMPLE_SIZE, 4)), columns=range(1, 5)
                 ),
             ],
             axis=1,
         )
+
+        # Create categorical variables for sample
+        categorical_vars_sample = pd.DataFrame(
+            np.random.choice(["level1", "level2", "level3"], size=(SAMPLE_SIZE, 5)),
+            columns=range(5, 10),
+        )
+
+        # Combine and rename columns for sample
+        sample_df = pd.concat([continuous_vars_sample, categorical_vars_sample], axis=1)
         sample_df = sample_df.rename(columns={i: "abcdefghij"[i] for i in range(0, 10)})
 
-        target_df = pd.concat(
+        # Generate complex target data with different distribution
+        np.random.seed(TEST_SEED)
+
+        # Create continuous variables with different distribution for target
+        continuous_vars_target = pd.concat(
             [
                 pd.DataFrame(
                     np.concatenate(
                         (
-                            np.random.uniform(0, 8, size=int(n_target / 2)),
-                            np.random.uniform(8, 10, size=int(n_target / 2)),
+                            np.random.uniform(0, 8, size=int(TARGET_SIZE / 2)),
+                            np.random.uniform(8, 10, size=int(TARGET_SIZE / 2)),
                         )
                     ),
                     columns=[0],
                 ),
                 pd.DataFrame(
-                    np.random.uniform(0, 1, size=(n_target, 4)), columns=range(1, 5)
-                ),
-                pd.DataFrame(
-                    np.random.choice(
-                        ["level1", "level2", "level3"], size=(n_target, 5)
-                    ),
-                    columns=range(5, 10),
+                    np.random.uniform(0, 1, size=(TARGET_SIZE, 4)), columns=range(1, 5)
                 ),
             ],
             axis=1,
         )
+
+        # Create categorical variables for target
+        categorical_vars_target = pd.DataFrame(
+            np.random.choice(["level1", "level2", "level3"], size=(TARGET_SIZE, 5)),
+            columns=range(5, 10),
+        )
+
+        # Combine and rename columns for target
+        target_df = pd.concat([continuous_vars_target, categorical_vars_target], axis=1)
         target_df = target_df.rename(columns={i: "abcdefghij"[i] for i in range(0, 10)})
 
-        sample_weights = pd.Series(np.random.uniform(0, 1, size=n_sample))
-        target_weights = pd.Series(np.random.uniform(0, 1, size=n_target))
+        # Generate random weights for realism
+        np.random.seed(TEST_SEED)
+        sample_weights = pd.Series(np.random.uniform(0, 1, size=SAMPLE_SIZE))
+        target_weights = pd.Series(np.random.uniform(0, 1, size=TARGET_SIZE))
 
-        res = balance_cbps.cbps(sample_df, sample_weights, target_df, target_weights)
-
-        # Compare output weights (examples and distribution)
-        # TODO: The results are not 100% reproducible due to rounding issues in SVD that produce slightly different U:
+        # Run CBPS with default arguments
+        result = balance_cbps.cbps(sample_df, sample_weights, target_df, target_weights)
+        # NOTE: The results are not 100% reproducible due to rounding issues in SVD that produce slightly different U:
         # http://numpy-discussion.10968.n7.nabble.com/strange-behavior-of-numpy-random-multivariate-normal-ticket-1842-td31547.html
         # This results in slightly different optimizations solutions (that might have some randomness in them too).
         # self.assertEqual(round(res["weight"][4],4), 4.3932)
@@ -276,18 +434,39 @@ class Testcbps(
         # self.assertEqual(np.around(res["weight"].describe().values,4),
         #                np.array([1.0000e+03, 1.0167e+00, 1.1340e+00, 3.0000e-04,
         #                          3.3410e-01, 6.8400e-01, 1.2317e+00, 7.4006e+00]))
-        self.assertTrue(
-            res["weight"][995] < res["weight"][999]
-        )  # these are obs with different a value
 
-    # Test cbps constraints
+        # Verify basic properties of the result
+        self.assertIn("weight", result, msg="CBPS result should contain 'weight' key")
+        self.assertEqual(
+            len(result["weight"]),
+            SAMPLE_SIZE,
+            msg="Number of weights should match sample size",
+        )
+
+        # Test relative weight ordering (observations with different 'a' values)
+        # This verifies that CBPS produces sensible relative weights
+        self.assertTrue(
+            result["weight"][995] < result["weight"][999],
+            msg="Weights should reflect differences in covariate values",
+        )
+
     def test_cbps_constraints(self):
+        """Test CBPS design effect constraints functionality.
+
+        This test verifies that CBPS correctly applies design effect constraints
+        to prevent excessive weight variation. It tests:
+        1. Unconstrained CBPS produces high design effect on problematic data
+        2. Design effect constraints successfully limit the design effect
+        3. Both "over" and "exact" CBPS methods respect the constraint
+        """
+        # Create data that would produce high design effect without constraints
         sample_df = pd.DataFrame({"a": [-20] + [1] * 13 + [10] * 1})
         sample_weights = pd.Series((1,) * 15)
         target_df = pd.DataFrame({"a": [10] * 10 + [11] * 5})
         target_weights = pd.Series((1,) * 15)
 
-        unconconstrained_result = balance_cbps.cbps(
+        # Test unconstrained CBPS (should produce high design effect)
+        unconstrained_result = balance_cbps.cbps(
             sample_df,
             sample_weights,
             target_df,
@@ -297,34 +476,55 @@ class Testcbps(
             weight_trimming_mean_ratio=None,
         )
 
-        # Ensure that example df would produce DE > 1.5 if unconstrained
-        self.assertTrue(design_effect(unconconstrained_result["weight"]) > 1.5)
+        unconstrained_de = design_effect(unconstrained_result["weight"])
+        self.assertTrue(
+            unconstrained_de > MAX_DESIGN_EFFECT,
+            msg=f"Unconstrained CBPS should produce high design effect (>{MAX_DESIGN_EFFECT}), got {unconstrained_de}",
+        )
 
-        # Same data but now with constraint produces desired design effect - for cbps_method = "over"
-        de_constrained_result = balance_cbps.cbps(
+        # Test constrained CBPS with "over" method
+        constrained_result_over = balance_cbps.cbps(
             sample_df,
             sample_weights,
             target_df,
             target_weights,
             transformations=None,
-            max_de=1.5,
+            max_de=MAX_DESIGN_EFFECT,
             weight_trimming_mean_ratio=None,
         )
-        self.assertTrue(round(design_effect(de_constrained_result["weight"]), 5) <= 1.5)
-        # Same data but now with constraint produces desired design effect - for cbps_method = "exact"
-        de_constrained_result = balance_cbps.cbps(
+
+        constrained_de_over = design_effect(constrained_result_over["weight"])
+        self.assertTrue(
+            round(constrained_de_over, 5) <= MAX_DESIGN_EFFECT,
+            msg=f"Constrained CBPS ('over' method) should respect max_de={MAX_DESIGN_EFFECT}, got {constrained_de_over}",
+        )
+
+        # Test constrained CBPS with "exact" method
+        constrained_result_exact = balance_cbps.cbps(
             sample_df,
             sample_weights,
             target_df,
             target_weights,
             transformations=None,
-            max_de=1.5,
+            max_de=MAX_DESIGN_EFFECT,
             weight_trimming_mean_ratio=None,
             cbps_method="exact",
         )
-        self.assertTrue(round(design_effect(de_constrained_result["weight"]), 5) <= 1.5)
+
+        constrained_de_exact = design_effect(constrained_result_exact["weight"])
+        self.assertTrue(
+            round(constrained_de_exact, 5) <= MAX_DESIGN_EFFECT,
+            msg=f"Constrained CBPS ('exact' method) should respect max_de={MAX_DESIGN_EFFECT}, got {constrained_de_exact}",
+        )
 
     def test_cbps_weights_order(self):
+        """Test that CBPS produces sensible weight ordering based on covariate values.
+
+        This test verifies that:
+        1. Observations with identical covariate values receive identical weights
+        2. Weight ordering reflects the need to balance sample toward target
+        3. Weights are assigned consistently based on covariate patterns
+        """
         sample = pd.DataFrame({"a": (1, 2, 3, 4, 5, 6, 7, 9, 1)})
         target = pd.DataFrame({"a": (1, 2, 3, 4, 5, 6, 7, 9, 9)})
 
@@ -336,31 +536,64 @@ class Testcbps(
             transformations=None,
         )
 
-        w = result["weight"].values
-        self.assertEqual(round(w[0], 10), round(w[8], 10))
-        self.assertTrue(w[0] < w[1])
-        self.assertTrue(w[0] < w[7])
+        weights = result["weight"].values
+
+        # Observations with identical covariate values should have identical weights
+        self.assertEqual(
+            round(weights[0], 10),
+            round(weights[8], 10),
+            msg="Observations with identical covariate values should have identical weights",
+        )
+
+        # Verify sensible weight ordering based on target distribution
+        self.assertTrue(
+            weights[0] < weights[1],
+            msg="Weight ordering should reflect covariate distribution differences",
+        )
+        self.assertTrue(
+            weights[0] < weights[7],
+            msg="Weight ordering should be consistent with balancing needs",
+        )
 
     def test_cbps_all_weight_identical(self):
-        #  Test the check for identical weights
+        """Test CBPS behavior when sample and target are identical.
+
+        When sample and target distributions are identical, CBPS should:
+        1. Produce nearly identical weights (minimal variance)
+        2. Issue a warning about weight uniformity
+        3. Handle the degenerate case gracefully
+        """
+        # Test with identical sample and target distributions
         np.random.seed(1)
-        n = 1000
-        sample_df = pd.DataFrame({"a": np.random.normal(0, 1, n).reshape((n,))})
-        sample_weights = pd.Series((1,) * n)
-        target_df = sample_df
+        n_obs = 1000
+        sample_df = pd.DataFrame({"a": np.random.normal(0, 1, n_obs).reshape((n_obs,))})
+        sample_weights = pd.Series((1,) * n_obs)
+        target_df = sample_df  # Identical to sample
         target_weights = sample_weights
+
         result = balance_cbps.cbps(
             sample_df, sample_weights, target_df, target_weights, transformations=None
         )
-        self.assertTrue(np.var(result["weight"]) < 1e-10)
 
+        # Weights should be nearly identical (very low variance)
+        weight_variance = np.var(result["weight"])
+        self.assertTrue(
+            weight_variance < TOLERANCE,
+            msg=f"Weights should be nearly identical when sample=target, variance={weight_variance}",
+        )
+
+        # Test warning generation through Sample interface
         sample = Sample.from_frame(
             df=pd.DataFrame(
-                {"a": np.random.normal(0, 1, n).reshape((n,)), "id": range(0, n)}
+                {
+                    "a": np.random.normal(0, 1, n_obs).reshape((n_obs,)),
+                    "id": range(0, n_obs),
+                }
             ),
             id_column="id",
         )
         sample = sample.set_target(sample)
+
         self.assertWarnsRegexp(
             "All weights are identical",
             sample.adjust,
@@ -492,25 +725,47 @@ class Testcbps(
         )
 
     def test_cbps_in_balance_vs_r(self):
-        # TODO: add reference to the tutorial here (once it's online)
-        # Get data
+        """Test that Python CBPS implementation matches R CBPS results.
+
+        This test validates our CBPS implementation against reference weights
+        computed by R's CBPS package. It verifies:
+        1. High correlation (>0.98) between Python and R CBPS weights
+        2. Very high correlation (>0.99) between log-transformed weights
+        3. Numerical consistency between implementations
+
+        This is also available on:
+        https://import-balance.org/docs/tutorials/comparing_cbps_in_r_vs_python_using_sim_data/
+        """
+        # Load reference data with R CBPS weights
         target_df, sample_df = load_data("sim_data_cbps")
-        # Place it into Sample objects
+
+        # Create Sample objects with outcome columns
         sample = Sample.from_frame(sample_df, outcome_columns=["y", "cbps_weights"])
         target = Sample.from_frame(target_df, outcome_columns=["y", "cbps_weights"])
         sample_target = sample.set_target(target)
-        # adjust:
-        adjust = sample_target.adjust(method="cbps", transformations=None)
 
-        # Verify balnce's CBPS gives VERY similar results to R's CBPS weights
-        self.assertTrue(
-            adjust.df[["cbps_weights", "weight"]].corr(method="pearson").iloc[0, 1]
-            > 0.98
+        # Compute Python CBPS weights
+        adjusted_sample = sample_target.adjust(method="cbps", transformations=None)
+
+        # Test correlation with R CBPS weights (linear scale)
+        linear_correlation = (
+            adjusted_sample.df[["cbps_weights", "weight"]]
+            .corr(method="pearson")
+            .iloc[0, 1]
         )
         self.assertTrue(
-            adjust.df[["cbps_weights", "weight"]]
+            linear_correlation > 0.98,
+            msg=f"Python CBPS should highly correlate with R CBPS (>0.98), got {linear_correlation}",
+        )
+
+        # Test correlation with R CBPS weights (log scale - more stringent test)
+        log_correlation = (
+            adjusted_sample.df[["cbps_weights", "weight"]]
             .apply(lambda x: np.log10(x))
             .corr(method="pearson")
             .iloc[0, 1]
-            > 0.99
+        )
+        self.assertTrue(
+            log_correlation > 0.99,
+            msg=f"Python CBPS should very highly correlate with R CBPS on log scale (>0.99), got {log_correlation}",
         )
