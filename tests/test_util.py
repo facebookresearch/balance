@@ -27,6 +27,14 @@ class TestUtil(
     balance.testutil.BalanceTestCase,
 ):
     def test__check_weighting_methods_input(self):
+        """Test input validation for weighting methods.
+
+        Validates that _check_weighting_methods_input properly validates:
+        - DataFrame type requirements
+        - Series type requirements
+        - Length matching between DataFrame and weights
+        - Index matching between DataFrame and weights
+        """
         self.assertRaisesRegex(
             TypeError,
             "sample_df must be a pandas DataFrame",
@@ -63,6 +71,14 @@ class TestUtil(
         )
 
     def test_guess_id_column(self):
+        """Test automatic identification of ID columns in DataFrames.
+
+        Tests the guess_id_column function's ability to:
+        - Automatically identify 'id' columns when present
+        - Use explicitly provided column names
+        - Handle cases where no ID column exists
+        - Raise appropriate errors for invalid column names
+        """
         # test when id column is presented
         df = pd.DataFrame(
             {
@@ -99,6 +115,12 @@ class TestUtil(
             balance_util.guess_id_column(df)
 
     def test__isinstance_sample(self):
+        """Test type checking for Sample objects.
+
+        Validates that _isinstance_sample correctly distinguishes between:
+        - Regular pandas DataFrames
+        - Sample objects created from DataFrames
+        """
         from balance.util import _isinstance_sample
 
         s_df = pd.DataFrame(
@@ -114,6 +136,14 @@ class TestUtil(
         self.assertTrue(_isinstance_sample(s))
 
     def test_add_na_indicator(self):
+        """Test addition of NA indicator columns to DataFrames.
+
+        Tests the add_na_indicator function's ability to:
+        - Add indicator columns for missing values (None, NaN)
+        - Handle different data types (numeric, string, categorical)
+        - Replace NA values with specified replacement values
+        - Handle edge cases and validation errors
+        """
         df = pd.DataFrame({"a": (0, None, 2, np.nan), "b": (None, "b", "", np.nan)})
         e = pd.DataFrame(
             {
@@ -183,6 +213,13 @@ class TestUtil(
         )
 
     def test_drop_na_rows(self):
+        """Test removal of rows containing NA values from DataFrames.
+
+        Tests the drop_na_rows function's ability to:
+        - Remove rows with NA values from both DataFrame and corresponding weights
+        - Maintain proper indexing after row removal
+        - Handle edge cases where all rows would be removed
+        """
         sample_df = pd.DataFrame(
             {"a": (0, None, 2, np.nan), "b": (None, "b", "c", np.nan)}
         )
@@ -207,6 +244,13 @@ class TestUtil(
         )
 
     def test_formula_generator(self):
+        """Test generation of formula strings from variable specifications.
+
+        Tests the formula_generator function's ability to:
+        - Convert single variables to formula strings
+        - Convert variable lists to combined formula strings
+        - Handle unsupported formula types with appropriate errors
+        """
         self.assertEqual(balance_util.formula_generator("a"), "a")
         self.assertEqual(balance_util.formula_generator(["a", "b", "c"]), "c + b + a")
         # check exceptions
@@ -745,66 +789,77 @@ class TestUtil(
         self.assertTrue(balance_util._is_arraylike(np.array([1, 2, "a"])))
         self.assertTrue(balance_util._is_arraylike(pd.Series((1, 2, 3))))
 
-    def test_rm_mutual_nas(self):
+    def test_rm_mutual_nas_basic_functionality(self):
+        """Test basic functionality of rm_mutual_nas with simple arrays."""
         from balance.util import rm_mutual_nas
 
-        self.assertEqual(rm_mutual_nas([1, 2, 3], [2, 3, None]), [[1, 2], [2.0, 3.0]])
+        # Test with lists containing None values
+        result = rm_mutual_nas([1, 2, 3], [2, 3, None])
+        self.assertEqual(result, [[1, 2], [2.0, 3.0]])
 
+    def test_rm_mutual_nas_single_arrays(self):
+        """Test rm_mutual_nas with single arrays of various types."""
+        from balance.util import rm_mutual_nas
+
+        # Test with numpy arrays without NA values
         d = np.array((0, 1, 2))
         numpy.testing.assert_array_equal(rm_mutual_nas(d), d)
 
+        # Test with multiple arrays without NA values
         d2 = np.array((5, 6, 7))
         numpy.testing.assert_array_equal(rm_mutual_nas(d, d2), (d, d2))
 
+        # Test with None argument
         r = rm_mutual_nas(d, d2, None)
         for i, j in zip(r, (d, d2, None)):
             numpy.testing.assert_array_equal(i, j)
 
-        # test exceptions
-        d3a = np.array((5, 6, 7, 8))
-        self.assertRaisesRegex(
-            ValueError,
-            "All arrays must be of same length",
-            rm_mutual_nas,
-            d,
-            d3a,
-        )
-        d3b = "a"
-        self.assertRaisesRegex(
-            ValueError,
-            "All arguments must be arraylike",
-            rm_mutual_nas,
-            d3b,
-            d3b,
-        )
+    def test_rm_mutual_nas_with_na_values(self):
+        """Test rm_mutual_nas behavior with various NA values."""
+        from balance.util import rm_mutual_nas
 
+        d = np.array((0, 1, 2))
+        d2 = np.array((5, 6, 7))
         d4 = np.array((np.nan, 9, -np.inf))
-        e = [np.array((1,)), np.array((6,)), np.array((9,))]
+        expected = [np.array((1,)), np.array((6,)), np.array((9,))]
 
-        r = rm_mutual_nas(d, d2, d4)
-        for i, j in zip(r, e):
-            print("A", i, j)
+        # Test with NA values
+        result = rm_mutual_nas(d, d2, d4)
+        for i, j in zip(result, expected):
             numpy.testing.assert_array_equal(i, j)
 
-        r = rm_mutual_nas(d, d2, d4, None)
-        for i, j in zip(r, e):
+        # Test with None argument included
+        result = rm_mutual_nas(d, d2, d4, None)
+        for i, j in zip(result, expected):
             numpy.testing.assert_array_equal(i, j)
 
+        # Test with string arrays
         d5 = np.array(("a", "b", "c"))
         numpy.testing.assert_array_equal(rm_mutual_nas(d5), d5)
 
-        e = [np.array((9,)), np.array(("b",))]
-        r = rm_mutual_nas(d4, d5)
-        for i, j in zip(r, e):
+        # Test mixed string and numeric with NA
+        expected_mixed = [np.array((9,)), np.array(("b",))]
+        result = rm_mutual_nas(d4, d5)
+        for i, j in zip(result, expected_mixed):
             numpy.testing.assert_array_equal(i, j)
 
-        # Single arraylike
+    def test_rm_mutual_nas_single_array_with_na(self):
+        """Test rm_mutual_nas with single arrays containing NA values."""
+        from balance.util import rm_mutual_nas
+
+        # Test with numpy array containing None
         d = np.array((0, 1, 2, None))
         numpy.testing.assert_array_equal(rm_mutual_nas(d), (0, 1, 2))
+
+        # Test with numpy array containing NaN
         d = np.array((0, 1, 2, np.nan))
         numpy.testing.assert_array_equal(rm_mutual_nas(d), (0, 1, 2))
+
+        # Test with string array containing None
         d = np.array(("a", "b", None))
         numpy.testing.assert_array_equal(rm_mutual_nas(d), ("a", "b"))
+
+        # Test with mixed type array containing None
         d = np.array(("a", 1, None))
         # NOTE: In the next test we must define that `dtype=object`
         # since this dtype is preserved from d. Otherwise, using np.array(("a", 1)) will have
@@ -814,6 +869,7 @@ class TestUtil(
         )
         self.assertTrue(isinstance(rm_mutual_nas(d), np.ndarray))
 
+        # Test with tuple containing None
         d = (0, 1, 2, None)
         numpy.testing.assert_array_equal(rm_mutual_nas(d), (0, 1, 2))
         d = ("a", "b", None)
@@ -822,10 +878,12 @@ class TestUtil(
         numpy.testing.assert_array_equal(rm_mutual_nas(d), ("a", 1))
         self.assertTrue(isinstance(rm_mutual_nas(d), tuple))
 
-        # Should only accept array like or none arguments
-        self.assertRaises(ValueError, rm_mutual_nas, d, "a")
+    def _create_test_arrays(self):
+        """Helper method to create test arrays for rm_mutual_nas testing.
 
-        # Make sure we can deal with various np and pd arrays
+        Returns:
+            tuple: (x1, x2, x3, x4, x5, x6, x7, x8) - Various array types with different dtypes and NA values
+        """
         x1 = pd.array([1, 2, None, np.nan, pd.NA, 3])
         x2 = pd.array([1.1, 2, 3, None, np.nan, pd.NA])
         x3 = pd.array([1.1, 2, 3, 4, 5, 6])
@@ -835,83 +893,138 @@ class TestUtil(
         x7 = np.array([1, 2, 3.3, 4, "5", "6"])
         x8 = [1, 2, 3.3, 4, "5", "6"]
 
-        # The values we expect to see after using rm_mutual_nas:
+        return x1, x2, x3, x4, x5, x6, x7, x8
+
+    def test_rm_mutual_nas_pandas_arrays(self):
+        """Test rm_mutual_nas with various pandas array types."""
+        from balance.util import rm_mutual_nas
+
+        # Get test arrays from helper method
+        x1, x2, x3, x4, x5, x6, x7, x8 = self._create_test_arrays()
+
+        # Test that values are correctly filtered
+        expected_values = [
+            [1, 2],
+            [1.1, 2],
+            [1.1, 2.0],
+            ["1.1", 2],
+            ["1.1", "2"],
+            [1.0, 2.0],
+            ["1", "2"],
+            [1, 2],
+        ]
         self.assertEqual(
             [list(x) for x in rm_mutual_nas(x1, x2, x3, x4, x5, x6, x7, x8)],
-            [
-                [1, 2],
-                [1.1, 2],
-                [1.1, 2.0],
-                ["1.1", 2],
-                ["1.1", "2"],
-                [1.0, 2.0],
-                ["1", "2"],
-                [1, 2],
-            ],
-        )
-        # The types before and after the na removal will remain the same:
-        self.assertEqual(
-            [type(x) for x in rm_mutual_nas(x1, x2, x3, x4, x5, x6, x7, x8)],
-            [type(x) for x in (x1, x2, x3, x4, x5, x6, x7, x8)],
-        )
-        self.assertEqual(
-            [type(x) for x in rm_mutual_nas(x1, x4, x5, x6, x7, x8)],
-            [
-                pd.core.arrays.integer.IntegerArray,
-                pd.core.arrays.numpy_.PandasArray,
-                pd.core.arrays.string_.StringArray,
-                np.ndarray,
-                np.ndarray,
-                list,
-            ],
+            expected_values,
         )
 
+    def test_rm_mutual_nas_type_preservation(self):
+        """Test that rm_mutual_nas preserves input types."""
+        from balance.util import rm_mutual_nas
+
+        # Get test arrays from helper method
+        x1, x2, x3, x4, x5, x6, x7, x8 = self._create_test_arrays()
+
+        # Test that types are preserved after NA removal
+        input_types = [type(x) for x in (x1, x2, x3, x4, x5, x6, x7, x8)]
+        result_types = [type(x) for x in rm_mutual_nas(x1, x2, x3, x4, x5, x6, x7, x8)]
+        self.assertEqual(result_types, input_types)
+
+        # Test specific type preservation
+        expected_types = [
+            pd.core.arrays.integer.IntegerArray,
+            pd.core.arrays.numpy_.PandasArray,
+            pd.core.arrays.string_.StringArray,
+            np.ndarray,
+            np.ndarray,
+            list,
+        ]
+        result_types = [type(x) for x in rm_mutual_nas(x1, x4, x5, x6, x7, x8)]
+        self.assertEqual(result_types, expected_types)
+
+        # Test pandas version-specific FloatingArray types
         # NOTE: pd.FloatingArray were only added in pandas version 1.2.0.
         # Before that, they were called PandasArray. For details, see:
         # https://pandas.pydata.org/docs/dev/reference/api/pandas.arrays.FloatingArray.html
         if pd.__version__ < "1.2.0":
-            e = [
+            expected_floating_types = [
                 pd.core.arrays.numpy_.PandasArray,
                 pd.core.arrays.numpy_.PandasArray,
             ]
         else:
-            e = [
+            expected_floating_types = [
                 pd.core.arrays.floating.FloatingArray,
                 pd.core.arrays.floating.FloatingArray,
             ]
-        self.assertEqual([type(x) for x in rm_mutual_nas(x2, x3)], e)
-
-        # The dtype before and after the na removal will remain the same: (only relevant for np and pd arrays)
         self.assertEqual(
-            [x.dtype for x in rm_mutual_nas(x1, x2, x3, x4, x5, x6, x7)],
-            [x.dtype for x in (x1, x2, x3, x4, x5, x6, x7)],
+            [type(x) for x in rm_mutual_nas(x2, x3)], expected_floating_types
         )
-        # The dtypes:
-        # [Int64Dtype(),
-        #  PandasDtype('object'),
-        #  PandasDtype('float64'),
-        #  PandasDtype('object'),
-        #  StringDtype,
-        #  dtype('float64'),
-        #  dtype('<U32')]
 
-        # Preserve index in pd.Series input
+    def test_rm_mutual_nas_dtype_preservation(self):
+        """Test that rm_mutual_nas preserves dtypes for numpy and pandas arrays."""
+        from balance.util import rm_mutual_nas
+
+        # Get test arrays from helper method (only need first 7 for this test)
+        x1, x2, x3, x4, x5, x6, x7, _ = self._create_test_arrays()
+
+        # Test that dtypes are preserved
+        input_dtypes = [x.dtype for x in (x1, x2, x3, x4, x5, x6, x7)]
+        result_dtypes = [x.dtype for x in rm_mutual_nas(x1, x2, x3, x4, x5, x6, x7)]
+        self.assertEqual(result_dtypes, input_dtypes)
+
+    def test_rm_mutual_nas_pandas_series_index_preservation(self):
+        """Test that rm_mutual_nas preserves pandas Series indexes."""
+        from balance.util import rm_mutual_nas
+
         x1 = pd.Series([1, 2, 3, 4])
         x2 = pd.Series([np.nan, 2, 3, 4])
         x3 = np.array([1, 2, 3, 4])
-        # When there is nothing to remove, the original pd.Series will be returned with proper index:
-        self.assertEqual(rm_mutual_nas(x1, x3)[0].to_dict(), {0: 1, 1: 2, 2: 3, 3: 4})
-        self.assertEqual(
-            rm_mutual_nas(x1.sort_values(ascending=False), x3)[0].to_dict(),
-            {3: 4, 2: 3, 1: 2, 0: 1},
+
+        # Test that index is preserved when no values are removed
+        result = rm_mutual_nas(x1, x3)[0]
+        self.assertEqual(result.to_dict(), {0: 1, 1: 2, 2: 3, 3: 4})
+
+        # Test with sorted series
+        sorted_x1 = x1.sort_values(ascending=False)
+        result = rm_mutual_nas(sorted_x1, x3)[0]
+        self.assertEqual(result.to_dict(), {3: 4, 2: 3, 1: 2, 0: 1})
+
+        # Test that index is preserved when NA values are removed
+        result = rm_mutual_nas(x1, x2)[0]
+        self.assertEqual(result.to_dict(), {1: 2, 2: 3, 3: 4})
+
+        # Test with sorted series and NA removal
+        result = rm_mutual_nas(sorted_x1, x2)[0]
+        self.assertEqual(result.to_dict(), {3: 4, 2: 3, 1: 2})
+
+    def test_rm_mutual_nas_error_handling(self):
+        """Test that rm_mutual_nas properly handles error conditions."""
+        from balance.util import rm_mutual_nas
+
+        d = np.array((0, 1, 2))
+
+        # Test arrays of different lengths
+        d3a = np.array((5, 6, 7, 8))
+        self.assertRaisesRegex(
+            ValueError,
+            "All arrays must be of same length",
+            rm_mutual_nas,
+            d,
+            d3a,
         )
-        # Index is not changed also when na values are omitted:
-        self.assertEqual(rm_mutual_nas(x1, x2)[0].to_dict(), {1: 2, 2: 3, 3: 4})
-        # The order of the Series can be is changed, but the indexes remain the same
-        self.assertEqual(
-            rm_mutual_nas(x1.sort_values(ascending=False), x2)[0].to_dict(),
-            {3: 4, 2: 3, 1: 2},
+
+        # Test non-arraylike arguments
+        d3b = "a"
+        self.assertRaisesRegex(
+            ValueError,
+            "All arguments must be arraylike",
+            rm_mutual_nas,
+            d3b,
+            d3b,
         )
+
+        # Test mixed arraylike and non-arraylike arguments
+        self.assertRaises(ValueError, rm_mutual_nas, d, "a")
 
     def test_choose_variables(self):
         from balance.util import choose_variables
@@ -1117,7 +1230,14 @@ class TestUtil(
             aggfunc="not_sum",
         )
 
-    def test_fct_lump(self):
+    def test_fct_lump_basic_functionality(self):
+        """Test basic functionality of fct_lump for category lumping.
+
+        Tests the fct_lump function's ability to:
+        - Preserve categories that meet the threshold
+        - Lump categories below the threshold into '_lumped_other'
+        - Handle different threshold values
+        """
         # Count above the threshold, value preserved
         s = pd.Series(["a"] * 95 + ["b"] * 5)
         self.assertEqual(balance_util.fct_lump(s), s)
@@ -1134,6 +1254,14 @@ class TestUtil(
             pd.Series(["a"] * 96 + ["_lumped_other"] * 4),
         )
 
+    def test_fct_lump_multiple_categories(self):
+        """Test fct_lump with multiple small categories and edge cases.
+
+        Tests the fct_lump function's ability to:
+        - Combine multiple small categories into '_lumped_other'
+        - Handle existing '_lumped_other' categories properly
+        - Work with categorical data types
+        """
         # Multiple categories combined
         self.assertEqual(
             balance_util.fct_lump(pd.Series(["a"] * 96 + ["b"] * 2 + ["c"] * 2)),
@@ -1152,8 +1280,12 @@ class TestUtil(
             pd.Series(["a"] * 96 + ["_lumped_other"] * 4),
         )
 
-        # Categorical model matrix is equal to string model matrix
-        # Load and process test data
+    def _create_wine_test_data(self):
+        """Helper method to create wine dataset for testing.
+
+        Returns:
+            tuple: (wine_survey, wine_survey_copy) for categorical and string testing
+        """
         from sklearn import datasets
 
         wine_df = pd.DataFrame(datasets.load_wine().data)
@@ -1161,64 +1293,69 @@ class TestUtil(
         wine_df = wine_df.rename(
             columns={"od280/od315_of_diluted_wines": "od280_od315_of_diluted_wines"}
         )
-        wine_df["id"] = pd.Series(
-            range(1, len(wine_df) + 1)
-        )  # Create a fake id variable, required by balance
+        wine_df["id"] = pd.Series(range(1, len(wine_df) + 1))
         wine_df.alcohol = pd.cut(
             wine_df.alcohol, bins=[0, 11, 11.5, 12, 12.5, 13, 13.5, 14, 14.5, 100]
         )
 
-        # Create a version of the dataset that treats factor variable as character
+        # Create string version for comparison
         wine_df_copy = wine_df.copy(deep=True)
         wine_df_copy.alcohol = wine_df_copy.alcohol.astype("object")
 
-        # Split into "survey" and "population" datasets based on "wine class"
+        # Split datasets
         wine_class = pd.Series(datasets.load_wine().target)
         wine_survey = Sample.from_frame(wine_df.loc[wine_class == 0, :])
         wine_pop = Sample.from_frame(wine_df.loc[wine_class != 0, :])
         wine_survey = wine_survey.set_target(wine_pop)
+
         wine_survey_copy = Sample.from_frame(wine_df_copy.loc[wine_class == 0, :])
         wine_pop_copy = Sample.from_frame(wine_df_copy.loc[wine_class != 0, :])
         wine_survey_copy = wine_survey_copy.set_target(wine_pop_copy)
 
-        # Generate weights
-        output_cat_var = wine_survey.adjust(
-            transformations={
-                "alcohol": lambda x: balance_util.fct_lump(x, prop=0.05),
-                "flavanoids": balance_util.quantize,
-                "total_phenols": balance_util.quantize,
-                "nonflavanoid_phenols": balance_util.quantize,
-                "color_intensity": balance_util.quantize,
-                "hue": balance_util.quantize,
-                "ash": balance_util.quantize,
-                "alcalinity_of_ash": balance_util.quantize,
-                "malic_acid": balance_util.quantize,
-                "magnesium": balance_util.quantize,
-            }
-        )
+        return wine_survey, wine_survey_copy
 
-        output_string_var = wine_survey_copy.adjust(
-            transformations={
-                "alcohol": lambda x: balance_util.fct_lump(x, prop=0.05),
-                "flavanoids": balance_util.quantize,
-                "total_phenols": balance_util.quantize,
-                "nonflavanoid_phenols": balance_util.quantize,
-                "color_intensity": balance_util.quantize,
-                "hue": balance_util.quantize,
-                "ash": balance_util.quantize,
-                "alcalinity_of_ash": balance_util.quantize,
-                "malic_acid": balance_util.quantize,
-                "magnesium": balance_util.quantize,
-            }
-        )
+    def test_fct_lump_categorical_vs_string_consistency(self):
+        """Test that fct_lump produces consistent results for categorical vs string variables.
 
-        # Check that model coefficients are identical in categorical and string variable coding
+        Tests that fct_lump works identically when applied to:
+        - Categorical variables
+        - String variables with the same content
+
+        This ensures consistency in model coefficient generation.
+        """
+        wine_survey, wine_survey_copy = self._create_wine_test_data()
+
+        transformations = {
+            "alcohol": lambda x: balance_util.fct_lump(x, prop=0.05),
+            "flavanoids": balance_util.quantize,
+            "total_phenols": balance_util.quantize,
+            "nonflavanoid_phenols": balance_util.quantize,
+            "color_intensity": balance_util.quantize,
+            "hue": balance_util.quantize,
+            "ash": balance_util.quantize,
+            "alcalinity_of_ash": balance_util.quantize,
+            "malic_acid": balance_util.quantize,
+            "magnesium": balance_util.quantize,
+        }
+
+        # Generate weights for both categorical and string versions
+        output_cat_var = wine_survey.adjust(transformations=transformations)
+        output_string_var = wine_survey_copy.adjust(transformations=transformations)
+
+        # Check that model coefficients are identical
         self.assertEqual(
             output_cat_var.model()["perf"]["coefs"],
             output_string_var.model()["perf"]["coefs"],
         )
 
     def test_fct_lump_by(self):
+        """Test category lumping with grouping by another variable.
+
+        Tests the fct_lump_by function's ability to:
+        - Lump categories within groups defined by another variable
+        - Handle cases where grouping variable has uniform values
+        - Preserve DataFrame indices when combining data
+        """
         # test by argument works
         s = pd.Series([1, 1, 1, 2, 3, 1, 2])
         by = pd.Series(["a", "a", "a", "a", "a", "b", "b"])
@@ -1252,6 +1389,13 @@ class TestUtil(
         self.assertEqual(r, e)
 
     def test_one_hot_encoding_greater_2(self):
+        """Test one-hot encoding for categorical variables with >2 categories.
+
+        Tests the one_hot_encoding_greater_2 function's ability to:
+        - Apply one-hot encoding only to variables with more than 2 categories
+        - Handle variables with exactly 2 categories differently
+        - Work correctly with patsy's dmatrix function
+        """
         from balance.util import one_hot_encoding_greater_2  # noqa
 
         d = {
