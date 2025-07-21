@@ -17,8 +17,32 @@ import pandas as pd
 class TestTestUtil(
     balance.testutil.BalanceTestCase,
 ):
-    def test_testutil(self):
-        # _assert_frame_equal_lazy
+    """Test cases for the testutil module functions."""
+
+    def _get_test_dataframes(self):
+        """Helper method to create test DataFrames with original and reordered columns.
+
+        Returns:
+            Tuple of (original_df, reordered_df) where both have same data but different column order.
+        """
+        df_original = pd.DataFrame({"a": (1, 2, 3), "b": (4, 5, 6)})
+        df_reordered = pd.DataFrame(
+            {"a": (1, 2, 3), "b": (4, 5, 6)}, columns=("b", "a")
+        )
+        return df_original, df_reordered
+
+    def _get_test_indices(self):
+        """Helper method to create test indices with original and reordered values.
+
+        Returns:
+            Tuple of (original_index, reordered_index) where both have same values but different order.
+        """
+        index_original = pd.Index([1, 2, 3])
+        index_reordered = pd.Index([1, 3, 2])
+        return index_original, index_reordered
+
+    def test_assert_frame_equal_lazy_with_different_values(self):
+        """Test that _assert_frame_equal_lazy raises AssertionError when DataFrames have different values."""
         self.assertRaises(
             AssertionError,
             balance.testutil._assert_frame_equal_lazy,
@@ -26,6 +50,8 @@ class TestTestUtil(
             pd.DataFrame({"a": (1, 2, 4)}),
         )
 
+    def test_assert_frame_equal_lazy_with_different_columns(self):
+        """Test that _assert_frame_equal_lazy raises AssertionError when DataFrames have different columns."""
         self.assertRaises(
             AssertionError,
             balance.testutil._assert_frame_equal_lazy,
@@ -33,17 +59,28 @@ class TestTestUtil(
             pd.DataFrame({"a": (1, 2, 4), "c": (1, 2, 3)}),
         )
 
-        a = pd.DataFrame({"a": (1, 2, 3), "b": (4, 5, 6)})
-        b = pd.DataFrame({"a": (1, 2, 3), "b": (4, 5, 6)}, columns=("b", "a"))
+    def test_assert_frame_equal_lazy_with_column_order_lazy_mode(self):
+        """Test that _assert_frame_equal_lazy handles column order differences in lazy mode."""
+        df_original, df_reordered = self._get_test_dataframes()
 
-        # Doesn't raise an error
-        balance.testutil._assert_frame_equal_lazy(a, b)
+        # Should not raise an error in lazy mode (default)
+        balance.testutil._assert_frame_equal_lazy(df_original, df_reordered)
 
+    def test_assert_frame_equal_lazy_with_column_order_strict_mode(self):
+        """Test that _assert_frame_equal_lazy raises AssertionError for column order differences in strict mode."""
+        df_original, df_reordered = self._get_test_dataframes()
+
+        # Should raise an error in strict mode (lazy=False)
         self.assertRaises(
-            AssertionError, balance.testutil._assert_frame_equal_lazy, a, b, False
+            AssertionError,
+            balance.testutil._assert_frame_equal_lazy,
+            df_original,
+            df_reordered,
+            False,
         )
 
-        # _assert_index_equal_lazy
+    def test_assert_index_equal_lazy_with_different_values(self):
+        """Test that _assert_index_equal_lazy raises AssertionError when indices have different values."""
         self.assertRaises(
             AssertionError,
             balance.testutil._assert_index_equal_lazy,
@@ -51,49 +88,93 @@ class TestTestUtil(
             pd.Index([1, 2, 4]),
         )
 
-        a = pd.Index([1, 2, 3])
-        b = pd.Index([1, 3, 2])
-        # Doesn't raise an error
-        balance.testutil._assert_index_equal_lazy(a, b)
+    def test_assert_index_equal_lazy_with_order_lazy_mode(self):
+        """Test that _assert_index_equal_lazy handles order differences in lazy mode."""
+        index_original, index_reordered = self._get_test_indices()
+
+        # Should not raise an error in lazy mode (default)
+        balance.testutil._assert_index_equal_lazy(index_original, index_reordered)
+
+    def test_assert_index_equal_lazy_with_order_strict_mode(self):
+        """Test that _assert_index_equal_lazy raises AssertionError for order differences in strict mode."""
+        index_original, index_reordered = self._get_test_indices()
+
+        # Should raise an error in strict mode (lazy=False)
         self.assertRaises(
-            AssertionError, balance.testutil._assert_index_equal_lazy, a, b, False
+            AssertionError,
+            balance.testutil._assert_index_equal_lazy,
+            index_original,
+            index_reordered,
+            False,
         )
 
 
 class TestTestUtil_BalanceTestCase_Equal(
     balance.testutil.BalanceTestCase,
 ):
-    def test_additional_equality_tests_mixin(self):
-        # np.array
+    """Test cases for the BalanceTestCase assertEqual method with different data types."""
+
+    def test_assertEqual_with_basic_types(self):
+        """Test assertEqual method with basic Python types (int, str)."""
+        # Test successful equality
+        self.assertEqual(1, 1)
+        self.assertEqual("a", "a")
+
+        # Test failure cases
         self.assertRaises(AssertionError, self.assertEqual, 1, 2)
+        self.assertRaises(AssertionError, self.assertEqual, "a", "b")
+
+    def test_assertEqual_with_numpy_arrays(self):
+        """Test assertEqual method with numpy arrays."""
+        # Test successful equality
+        self.assertEqual(np.array((1, 2)), np.array((1, 2)))
+
+        # Test failure case
         self.assertRaises(
             AssertionError, self.assertEqual, np.array((1, 2)), np.array((2, 1))
         )
 
-        # Does not raise
-        self.assertEqual(1, 1)
-        self.assertEqual(np.array((1, 2)), np.array((1, 2)))
+    def test_assertEqual_with_dataframes_strict_mode(self):
+        """Test assertEqual method with DataFrames in strict mode (default behavior)."""
+        df_original = pd.DataFrame({"a": (1, 2, 3), "b": (4, 5, 6)})
+        df_reordered = pd.DataFrame(
+            {"a": (1, 2, 3), "b": (4, 5, 6)}, columns=("b", "a")
+        )
 
-        # pd.DataFrames
-        # The default is for non-lazy testing of pandas DataFrames
-        a = pd.DataFrame({"a": (1, 2, 3), "b": (4, 5, 6)})
-        b = pd.DataFrame({"a": (1, 2, 3), "b": (4, 5, 6)}, columns=("b", "a"))
+        # Should raise error by default (strict mode)
+        self.assertRaises(AssertionError, self.assertEqual, df_original, df_reordered)
 
-        # Does raise an error by default or if lazy=False
-        self.assertRaises(AssertionError, self.assertEqual, a, b)
-        self.assertRaises(AssertionError, self.assertEqual, a, b, lazy=False)
+        # Should raise error when explicitly set to strict mode
+        self.assertRaises(
+            AssertionError, self.assertEqual, df_original, df_reordered, lazy=False
+        )
 
-        # Doesn't raise an error
-        self.assertEqual(a, b, lazy=True)
+    def test_assertEqual_with_dataframes_lazy_mode(self):
+        """Test assertEqual method with DataFrames in lazy mode."""
+        df_original = pd.DataFrame({"a": (1, 2, 3), "b": (4, 5, 6)})
+        df_reordered = pd.DataFrame(
+            {"a": (1, 2, 3), "b": (4, 5, 6)}, columns=("b", "a")
+        )
 
-        # pd.Series
+        # Should not raise error in lazy mode
+        self.assertEqual(df_original, df_reordered, lazy=True)
+
+    def test_assertEqual_with_pandas_series(self):
+        """Test assertEqual method with pandas Series."""
+        # Test successful equality
         self.assertEqual(pd.Series([1, 2]), pd.Series([1, 2]))
+
+        # Test failure case
         self.assertRaises(
             AssertionError, self.assertEqual, pd.Series([1, 2]), pd.Series([2, 1])
         )
 
-        #  Indices
+    def test_assertEqual_with_pandas_index_strict_mode(self):
+        """Test assertEqual method with pandas Index in strict mode."""
+        # Test successful equality
         self.assertEqual(pd.Index((1, 2)), pd.Index((1, 2)))
+
+        # Test failure cases in strict mode
         self.assertRaises(
             AssertionError, self.assertEqual, pd.Index((1, 2)), pd.Index((2, 1))
         )
@@ -104,45 +185,74 @@ class TestTestUtil_BalanceTestCase_Equal(
             pd.Index((2, 1)),
             lazy=False,
         )
-        self.assertEqual(pd.Index((1, 2)), pd.Index((2, 1)), lazy=True)
 
-        # Other types
-        self.assertEqual("a", "a")
-        self.assertRaises(AssertionError, self.assertEqual, "a", "b")
+    def test_assertEqual_with_pandas_index_lazy_mode(self):
+        """Test assertEqual method with pandas Index in lazy mode."""
+        # Should not raise error in lazy mode despite different order
+        self.assertEqual(pd.Index((1, 2)), pd.Index((2, 1)), lazy=True)
 
 
 class TestTestUtil_BalanceTestCase_Warns(
     balance.testutil.BalanceTestCase,
 ):
-    def test_unit_test_warning_mixin(self):
-        logger = logging.getLogger(__package__)
+    """Test cases for the BalanceTestCase warning assertion methods."""
 
-        self.assertIfWarns(lambda: logger.warning("test"))
+    def test_assertIfWarns_with_warning(self):
+        """Test assertIfWarns method when a warning is produced."""
+        self.assertIfWarns(lambda: logging.getLogger(__package__).warning("test"))
+
+    def test_assertNotWarns_without_warning(self):
+        """Test assertNotWarns method when no warning is produced."""
         self.assertNotWarns(lambda: "x")
 
-        self.assertWarnsRegexp("abc", lambda: logger.warning("abcde"))
+    def test_assertWarnsRegexp_with_matching_pattern(self):
+        """Test assertWarnsRegexp method when warning matches the regex pattern."""
+        self.assertWarnsRegexp(
+            "abc", lambda: logging.getLogger(__package__).warning("abcde")
+        )
+
+    def test_assertWarnsRegexp_with_non_matching_pattern(self):
+        """Test assertWarnsRegexp method when warning does not match the regex pattern."""
         self.assertRaises(
             AssertionError,
             self.assertWarnsRegexp,
             "abcdef",
-            lambda: logger.warning("abcde"),
+            lambda: logging.getLogger(__package__).warning("abcde"),
         )
 
-        self.assertNotWarnsRegexp("abcdef", lambda: logger.warning("abcde"))
+    def test_assertNotWarnsRegexp_with_non_matching_pattern(self):
+        """Test assertNotWarnsRegexp method when warning does not match the regex pattern."""
+        self.assertNotWarnsRegexp(
+            "abcdef", lambda: logging.getLogger(__package__).warning("abcde")
+        )
 
 
 class TestTestUtil_BalanceTestCase_Print(
     balance.testutil.BalanceTestCase,
 ):
-    def test_unit_test_print_mixin(self):
+    """Test cases for the BalanceTestCase print assertion methods."""
+
+    def test_assertPrints_with_stdout_output(self):
+        """Test assertPrints method when output is printed to stdout."""
         self.assertPrints(lambda: print("x"))
+
+    def test_assertNotPrints_without_output(self):
+        """Test assertNotPrints method when no output is produced."""
         self.assertNotPrints(lambda: "x")
 
+    def test_assertPrintsRegexp_with_matching_pattern_stdout(self):
+        """Test assertPrintsRegexp method when stdout output matches the regex pattern."""
         self.assertPrintsRegexp("abc", lambda: print("abcde"))
+
+    def test_assertPrintsRegexp_with_non_matching_pattern(self):
+        """Test assertPrintsRegexp method when output does not match the regex pattern."""
         self.assertRaises(
             AssertionError, self.assertPrintsRegexp, "abcdef", lambda: print("abcde")
         )
 
-        # assertPrintsRegexp() doesn't necessarily work with logging.warning(),
+    def test_assertPrintsRegexp_with_stderr_output(self):
+        """Test assertPrintsRegexp method when output is printed to stderr."""
+        # NOTE: assertPrintsRegexp() doesn't necessarily work with logging.warning(),
         # as logging handlers can change (e.g. in PyTest)
+        # assertPrintsRegexp() works with both stdout and stderr output
         self.assertPrintsRegexp("abc", lambda: print("abcde", file=sys.stderr))
