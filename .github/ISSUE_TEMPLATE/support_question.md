@@ -2,12 +2,12 @@
 name: Support question
 about: Ask questions about how to use the balance package
 title: '[Question] '
-labels: Question
+labels: question
 assignees: ''
 ---
 
-## :sparkles: Before submitting... (add x between the [ ])
-Please confirm that you did NOT find an answer to your question, even though you have (at least) skimmed:
+## :sparkles: Before submitting...
+Before posting, please first verify that you can NOT find an answer to your question in any of the following resources:
 - [ ] The [homepage/overview](https://import-balance.org/docs/docs/overview/) documentation.
 - [ ] The [tutorials](https://import-balance.org/docs/tutorials/) (with examples).
     - **quickstart:** Walkthrough of the end-to-end workflow with default arguments; uses simulated data.
