@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkstaticdocs_starter=self.webpackChunkstaticdocs_starter||[]).push([[472],{55513:t=>{t.exports=JSON.parse('{"title":"Recent posts","items":[{"title":"Bringing \\"balance\\" to your data","permalink":"/blog/2023/01/09/bringing-balance-to-your-data"}]}')}}]);
