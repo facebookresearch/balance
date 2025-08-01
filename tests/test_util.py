@@ -931,9 +931,15 @@ class TestUtil(
         self.assertEqual(result_types, input_types)
 
         # Test specific type preservation
+        # Handle pandas array type compatibility - PandasArray was renamed to NumpyExtensionArray
+        if hasattr(pd.core.arrays.numpy_, "NumpyExtensionArray"):
+            numpy_array_type = pd.core.arrays.numpy_.NumpyExtensionArray
+        else:
+            numpy_array_type = pd.core.arrays.numpy_.PandasArray
+
         expected_types = [
             pd.core.arrays.integer.IntegerArray,
-            pd.core.arrays.numpy_.PandasArray,
+            numpy_array_type,
             pd.core.arrays.string_.StringArray,
             np.ndarray,
             np.ndarray,
@@ -948,8 +954,8 @@ class TestUtil(
         # https://pandas.pydata.org/docs/dev/reference/api/pandas.arrays.FloatingArray.html
         if pd.__version__ < "1.2.0":
             expected_floating_types = [
-                pd.core.arrays.numpy_.PandasArray,
-                pd.core.arrays.numpy_.PandasArray,
+                numpy_array_type,
+                numpy_array_type,
             ]
         else:
             expected_floating_types = [

@@ -1046,11 +1046,13 @@ def _is_arraylike(o) -> bool:
     return (
         isinstance(o, np.ndarray)
         or isinstance(o, pd.Series)
-        or isinstance(o, pd.arrays.PandasArray)
         or isinstance(o, pd.arrays.StringArray)
         or isinstance(o, pd.arrays.IntegerArray)
         or isinstance(o, pd.arrays.BooleanArray)
-        or "pandas.core.arrays" in str(type(o))  # support any pandas array type.
+        or "pandas.core.arrays"
+        in str(
+            type(o)
+        )  # support any pandas array type including PandasArray/NumpyExtensionArray
         or (isinstance(o, collections.abc.Sequence) and not isinstance(o, str))
     )
 
