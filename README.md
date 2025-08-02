@@ -21,21 +21,21 @@ More about the methodological background can be found in [Sarig, T., Galili, T.,
 # Installation
 
 ## Requirements
-You need Python 3.9, 3.10, or 3.11 to run *balance*. *balance* can be built and run from Linux, OSX, and Windows.
+You need Python 3.10, 3.11, or 3.12 to run *balance*. *balance* can be built and run from Linux, OSX, and Windows.
 
 The required Python dependencies are:
 ```python
 REQUIRES = [
-    "numpy",
-    "pandas<=2.0.3",
+    "numpy>=1.24.2",
+    "pandas>=2.0.3",
     "ipython",
-    "scipy<=1.10.1",
+    "scipy>=1.13.1",
     "patsy",
     "seaborn",
     "plotly",
-    "matplotlib",
-    "statsmodels",
-    "scikit-learn<=1.2.2",
+    "matplotlib>=3.7.2",
+    "statsmodels>=0.14.0",
+    "scikit-learn>=1.2.2",
     "ipfn",
     "session-info",
 ]

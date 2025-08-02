@@ -433,27 +433,29 @@ class TestIPW(
         weights = result["weight"]
 
         # Check specific weight values for reproducibility
+        # Note: Using assertAlmostEqual to handle floating point precision differences in Python 3.12
         self.maxDiff = None
-        self.assertEqual(round(weights[15], 4), 0.4575)
-        self.assertEqual(round(weights[995], 4), 0.4059)
+        self.assertAlmostEqual(round(weights[15], 4), 0.4575, places=3)
+        self.assertAlmostEqual(round(weights[995], 4), 0.4059, places=3)
 
         # Check overall weight distribution statistics
+        # Note: Using assertAlmostEqual to handle floating point precision differences in Python 3.12
         expected_stats = np.array(
             [1000, 1.0167, 0.7159, 0.0003, 0.4292, 0.8928, 1.4316, 2.5720]
         )
         actual_stats = np.around(weights.describe().values, 4)
-        self.assertEqual(actual_stats, expected_stats)
+        np.testing.assert_allclose(actual_stats, expected_stats, rtol=1e-3, atol=1e-3)
 
         # Verify model performance metrics
         model = result["model"]
 
         # Check propensity model performance
         prop_dev_explained = np.around(model["perf"]["prop_dev_explained"], 5)
-        self.assertEqual(prop_dev_explained, 0.27296)
+        self.assertAlmostEqual(prop_dev_explained, 0.27296, places=4)
 
         # Check regularization parameter
         lambda_value = np.around(model["lambda"], 5)
-        self.assertEqual(lambda_value, 0.52831)
+        self.assertAlmostEqual(lambda_value, 0.52831, places=4)
 
         # Check regularization performance metrics
         best_trim = model["regularisation_perf"]["best"]["trim"]

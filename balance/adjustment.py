@@ -343,9 +343,9 @@ def apply_transformations(
     logger.info(f"Final variables in output: {list(out.columns)}")
 
     for column in out:
-        logger.debug(
-            f"Frequency table of column {column}:\n{out[column].value_counts(dropna=False)}"
-        )
+        value_counts_result = out[column].value_counts(dropna=False)
+        value_counts_result.index = value_counts_result.index.infer_objects()
+        logger.debug(f"Frequency table of column {column}:\n{value_counts_result}")
         logger.debug(
             f"Number of levels of column {column}:\n{out[column].nunique(dropna=False)}"
         )
