@@ -188,7 +188,9 @@ class Sample:
             str
         }:
             logger.warning("Casting id column to string")
-            sample._df.loc[:, id_column] = sample._df.loc[:, id_column].astype(str)
+            sample._df.loc[:, id_column] = (
+                sample._df.loc[:, id_column].astype(str).astype("object")
+            )
 
         if (check_id_uniqueness) and (
             sample._df[id_column].nunique() != len(sample._df[id_column])
@@ -236,7 +238,7 @@ class Sample:
                 )
 
             # Replace any pandas.NA with numpy.nan:
-            sample._df = sample._df.fillna(np.nan)
+            sample._df = sample._df.fillna(np.nan).infer_objects(copy=False)
 
             balance_util._warn_of_df_dtypes_change(
                 sample._df_dtypes,
@@ -478,7 +480,10 @@ class Sample:
                     """Note that not all Sample units will be assigned weights,
                     since weights are missing some of the indices in Sample.df"""
                 )
-        self._df.loc[:, self.weight_column.name] = weights
+        if isinstance(weights, pd.Series):
+            self._df.loc[:, self.weight_column.name] = weights.astype("float64")
+        else:
+            self._df.loc[:, self.weight_column.name] = weights
         self.weight_column = self._df[self.weight_column.name]
 
     ####################################
