@@ -13,16 +13,22 @@ Version requirements
 * scipy<=1.10.1 and scikit-learn<=1.2.2: Necessary for numerical tests to pass. May be possible to relax these without major issues.
 """
 REQUIRES = [
-    "numpy",
-    "pandas<=2.0.3",
+    # Numpy and pandas: carefully versioned for binary compatibility
+    "numpy>=1.21.0,<2.0; python_version<'3.12'",
+    "numpy>=1.24.0,<2.1; python_version>='3.12'",
+    "pandas>=1.5.0,<2.1.0; python_version<'3.12'",
+    "pandas>=2.0.0,<2.3.0; python_version>='3.12'",
+    # Scientific stack
+    "scipy>=1.7.0,<1.11.0; python_version<'3.12'",
+    "scipy>=1.11.0,<1.13.0; python_version>='3.12'",
+    "scikit-learn>=1.0.0,<1.3.0; python_version<'3.12'",
+    "scikit-learn>=1.3.0,<1.5.0; python_version>='3.12'",
     "ipython",
-    "scipy<=1.10.1",
     "patsy",
     "seaborn",
     "plotly",
     "matplotlib",
     "statsmodels",
-    "scikit-learn<=1.2.2",
     "ipfn",
     "session-info",
 ]
@@ -79,6 +85,7 @@ def setup_package() -> None:
             "Programming Language :: Python :: 3.9",
             "Programming Language :: Python :: 3.10",
             "Programming Language :: Python :: 3.11",
+            "Programming Language :: Python :: 3.12",
             "License :: OSI Approved :: MIT License",
         ],
     )
