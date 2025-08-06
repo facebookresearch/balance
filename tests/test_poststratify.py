@@ -216,3 +216,13 @@ class Testpoststratify(
             ValueError, "all combinations of cells in sample_df must be in target_df"
         ):
             poststratify(s, s_weights, t, t_weights)
+
+        # Check that strict_matching=False works
+        result = poststratify(
+            sample_df=s,
+            sample_weights=s_weights,
+            target_df=t,
+            target_weights=t_weights,
+            strict_matching=False,
+        )["weight"]
+        self.assertEqual(result, pd.Series([2.0, 0.0]))

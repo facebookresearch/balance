@@ -27,6 +27,7 @@ def poststratify(
     variables: Optional[List[str]] = None,
     transformations: str = "default",
     transformations_drop: bool = True,
+    strict_matching: bool = True,
     *args,
     **kwargs,
 ) -> Dict[str, Union[pd.Series, Dict[str, str]]]:
@@ -45,6 +46,9 @@ def poststratify(
             Default is "default" (see apply_transformations function)
         transformations_drop (bool, optional): whether the function should drop non-transformed variables.
             Default is True.
+        strict_matching (bool, optional): whether to require all cells in the sample be in the target.
+            Default is True. When False, a warning is provided and
+            samples in cells not covered by the target are given weight 0.
     Raises:
         ValueError: _description_
         ValueError: _description_
@@ -98,7 +102,16 @@ def poststratify(
 
     # check that all combinations of cells in sample_df are also in target_df
     if any(combined["weight"].isna()):
-        raise ValueError("all combinations of cells in sample_df must be in target_df")
+        if strict_matching:
+            raise ValueError(
+                "all combinations of cells in sample_df must be in target_df. Set strict_matching=False to continue."
+            )
+        else:
+            logger.warning(
+                "Detected some cells in sample_df that are not in target_df. "
+                "Samples in cells not covered by the target are given weight 0."
+            )
+            combined["weight"] = combined["weight"].fillna(0)
 
     combined["weight"] = combined["weight"] / combined["design_weight"]
     sample_df = sample_df.join(combined["weight"], on=variables)
