@@ -188,7 +188,9 @@ class Sample:
             str
         }:
             logger.warning("Casting id column to string")
-            sample._df.loc[:, id_column] = sample._df.loc[:, id_column].astype(str)
+            sample._df.loc[:, id_column] = (
+                sample._df.loc[:, id_column].astype(str).astype("object")
+            )
 
         if (check_id_uniqueness) and (
             sample._df[id_column].nunique() != len(sample._df[id_column])
@@ -236,7 +238,7 @@ class Sample:
                 )
 
             # Replace any pandas.NA with numpy.nan:
-            sample._df = sample._df.fillna(np.nan)
+            sample._df = sample._df.fillna(np.nan).infer_objects(copy=False)
 
             balance_util._warn_of_df_dtypes_change(
                 sample._df_dtypes,
@@ -444,11 +446,11 @@ class Sample:
             raise ValueError("Method should be one of existing weighting methods")
 
         adjusted = adjustment_function(
+            *args,
             sample_df=self.covars().df,
             sample_weights=self.weight_column,
             target_df=target.covars().df,
             target_weights=target.weight_column,
-            *args,
             **kwargs,
         )
         new_sample.set_weights(adjusted["weight"])
@@ -478,7 +480,10 @@ class Sample:
                     """Note that not all Sample units will be assigned weights,
                     since weights are missing some of the indices in Sample.df"""
                 )
-        self._df.loc[:, self.weight_column.name] = weights
+        if isinstance(weights, pd.Series):
+            self._df.loc[:, self.weight_column.name] = weights.astype("float64")
+        else:
+            self._df.loc[:, self.weight_column.name] = weights
         self.weight_column = self._df[self.weight_column.name]
 
     ####################################
@@ -1059,8 +1064,7 @@ class Sample:
     ) -> "Sample":
         # TODO: split this into two functions (one for rows and one for columns)
         """
-        This function returns a **copy** of the sample object
-        after removing ALL columns from _df and _links objects
+        This function returns the sample object after filtering rows and/or columns from _df and _links objects
         (which includes unadjusted and target objects).
 
         This function is useful when wanting to calculate metrics, such as ASMD, but only on some of the features,
@@ -1079,9 +1083,8 @@ class Sample:
                 Defaults to None, which returns all columns.
 
         Returns:
-            Sample: A copy of the original object. If both rows and columns to keep are None,
-                returns the copied object unchanged.
-                If some are not None, will update - first the rows - then the columns.
+            Sample: If both rows and columns to keep are None, returns the original object unchanged.
+                Otherwise, returns a copy of the original object with filtering applied - first the rows, then the columns.
                 This performs the transformation on both the sample's df and its linked dfs (unadjusted, target).
         """
         if (rows_to_keep is None) and (columns_to_keep is None):
