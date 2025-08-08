@@ -365,8 +365,7 @@ Defaults to True.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="balance.sample_class.Sample.keep_only_some_rows_columns">
 <span class="sig-name descname"><span class="pre">keep_only_some_rows_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rows_to_keep</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns_to_keep</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample"><span class="pre">Sample</span></a></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.keep_only_some_rows_columns"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.keep_only_some_rows_columns" title="Link to this definition">¶</a></dt>
-<dd><p>This function returns a <strong>copy</strong> of the sample object
-after removing ALL columns from _df and _links objects
+<dd><p>This function returns the sample object after filtering rows and/or columns from _df and _links objects
 (which includes unadjusted and target objects).</p>
 <p>This function is useful when wanting to calculate metrics, such as ASMD, but only on some of the features,
 or part of the observations.</p>
@@ -387,8 +386,7 @@ Defaults to None, which returns all columns.</p></li>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><dl class="simple">
-<dt>A copy of the original object. If both rows and columns to keep are None,</dt><dd><p>returns the copied object unchanged.
-If some are not None, will update - first the rows - then the columns.
+<dt>If both rows and columns to keep are None, returns the original object unchanged.</dt><dd><p>Otherwise, returns a copy of the original object with filtering applied - first the rows, then the columns.
 This performs the transformation on both the sample’s df and its linked dfs (unadjusted, target).</p>
 </dd>
 </dl>
