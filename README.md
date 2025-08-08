@@ -11,7 +11,7 @@
 
 Biased samples often occur in [survey statistics](https://en.wikipedia.org/wiki/Survey_methodology) when respondents present [non-response bias](https://en.wikipedia.org/wiki/Participation_bias) or survey suffers from [sampling bias](https://en.wikipedia.org/wiki/Sampling_bias) (that are not [missing completely at random](https://en.wikipedia.org/wiki/Missing_data#Missing_completely_at_random)). A similar issue arises in [observational studies](https://en.wikipedia.org/wiki/Observational_study) when comparing the treated vs untreated groups, and in any data that suffers from selection bias.
 
-Under the missing at random assumption ([MAR](https://en.wikipedia.org/wiki/Missing_data#Missing_at_random)), bias in samples could sometimes be (at least partially) mitigated by relying on auxiliary information (a.k.a.: “covariates” or “features”) that is present for all items in the sample, as well as present in a sample of items from the population. For example, if we want to infer from a sample of respondents to some survey, we may wish to adjust for non-response using demographic information such as age, gender, education, etc. This can be done by weighing the sample to the population using auxiliary information.
+Under the missing at random assumption ([MAR](https://en.wikipedia.org/wiki/Missing_data#Missing_at_random)), bias in samples could sometimes be (at least partially) mitigated by relying on auxiliary information (a.k.a.: "covariates" or "features") that is present for all items in the sample, as well as present in a sample of items from the population. For example, if we want to infer from a sample of respondents to some survey, we may wish to adjust for non-response using demographic information such as age, gender, education, etc. This can be done by weighing the sample to the population using auxiliary information.
 
 The package is intended for researchers who are interested in balancing biased samples, such as the ones coming from surveys, using a Python package. This need may arise by survey methodologists, demographers, UX researchers, market researchers, and generally data scientists, statisticians, and machine learners.
 
@@ -21,21 +21,27 @@ More about the methodological background can be found in [Sarig, T., Galili, T.,
 # Installation
 
 ## Requirements
-You need Python 3.9, 3.10, or 3.11 to run *balance*. *balance* can be built and run from Linux, OSX, and Windows.
+You need Python 3.9, 3.10, 3.11, or 3.12 to run *balance*. *balance* can be built and run from Linux, OSX, and Windows.
 
 The required Python dependencies are:
 ```python
 REQUIRES = [
-    "numpy",
-    "pandas<=2.0.3",
+    # Numpy and pandas: carefully versioned for binary compatibility
+    "numpy>=1.21.0,<2.0; python_version<'3.12'",
+    "numpy>=1.24.0,<2.1; python_version>='3.12'",
+    "pandas>=1.5.0,<2.1.0; python_version<'3.12'",
+    "pandas>=2.0.0,<2.3.0; python_version>='3.12'",
+    # Scientific stack
+    "scipy>=1.7.0,<1.11.0; python_version<'3.12'",
+    "scipy>=1.11.0,<1.13.0; python_version>='3.12'",
+    "scikit-learn>=1.0.0,<1.3.0; python_version<'3.12'",
+    "scikit-learn>=1.3.0,<1.5.0; python_version>='3.12'",
     "ipython",
-    "scipy<=1.10.1",
     "patsy",
     "seaborn",
     "plotly",
     "matplotlib",
     "statsmodels",
-    "scikit-learn<=1.2.2",
     "ipfn",
     "session-info",
 ]
@@ -73,7 +79,7 @@ python -m pip install .
 
 # Getting started
 
-## balance’s workflow in high-level
+## balance's workflow in high-level
 
 The core workflow in [*balance*](https://import-balance.org/) deals with fitting and evaluating weights to a sample. For each unit in the sample (such as a respondent to a survey), balance fits a weight that can be (loosely) interpreted as the number of people from the target population that this respondent represents. This aims to help mitigate the coverage and non-response biases, as illustrated in the following figure.
 
@@ -193,7 +199,7 @@ For diagnostics the main tools (comparing before, after applying weights, and th
     3. qq-plots
 2. Statistical summaries
     1. Weights distributions
-        1. [Kish’s design effect](https://en.wikipedia.org/wiki/Design_effect#Haphazard_weights_with_estimated_ratio-mean_(%7F'%22%60UNIQ--postMath-0000003A-QINU%60%22'%7F)_-_Kish's_design_effect)
+        1. [Kish's design effect](https://en.wikipedia.org/wiki/Design_effect#Haphazard_weights_with_estimated_ratio-mean_(%7F'%22%60UNIQ--postMath-0000003A-QINU%60%22'%7F)_-_Kish's_design_effect)
         2. Main summaries (mean, median, variances, quantiles)
     2. Covariate distributions
         1. Absolute Standardized Mean Difference (ASMD). For continuous variables, it is [Cohen's d](https://en.wikipedia.org/wiki/Effect_size#Cohen's_d). Categorical variables are one-hot encoded, Cohen's d is calculated for each category and ASMD for a categorical variable is defined as Cohen's d, average across all categories.

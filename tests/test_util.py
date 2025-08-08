@@ -931,9 +931,14 @@ class TestUtil(
         self.assertEqual(result_types, input_types)
 
         # Test specific type preservation
+        # Handle pandas array type compatibility - PandasArray was renamed to NumpyExtensionArray
+        if hasattr(pd.core.arrays.numpy_, "NumpyExtensionArray"):
+            numpy_array_type = pd.core.arrays.numpy_.NumpyExtensionArray
+        else:
+            numpy_array_type = pd.core.arrays.numpy_.PandasArray
         expected_types = [
             pd.core.arrays.integer.IntegerArray,
-            pd.core.arrays.numpy_.PandasArray,
+            numpy_array_type,
             pd.core.arrays.string_.StringArray,
             np.ndarray,
             np.ndarray,
@@ -948,8 +953,8 @@ class TestUtil(
         # https://pandas.pydata.org/docs/dev/reference/api/pandas.arrays.FloatingArray.html
         if pd.__version__ < "1.2.0":
             expected_floating_types = [
-                pd.core.arrays.numpy_.PandasArray,
-                pd.core.arrays.numpy_.PandasArray,
+                numpy_array_type,
+                numpy_array_type,
             ]
         else:
             expected_floating_types = [
@@ -1281,19 +1286,40 @@ class TestUtil(
         )
 
     def _create_wine_test_data(self):
-        """Helper method to create wine dataset for testing.
+        """Helper method to create synthetic wine dataset for testing.
+
+        Creates synthetic wine data that mimics the structure of the sklearn wine dataset
+        but doesn't rely on sklearn's load_wine() function which has compatibility issues
+        with newer Python versions.
 
         Returns:
             tuple: (wine_survey, wine_survey_copy) for categorical and string testing
         """
-        from sklearn import datasets
+        # Create synthetic wine data with similar structure to sklearn wine dataset
+        np.random.seed(42)  # For reproducible results
+        n_samples = 178
 
-        wine_df = pd.DataFrame(datasets.load_wine().data)
-        wine_df.columns = datasets.load_wine().feature_names
-        wine_df = wine_df.rename(
-            columns={"od280/od315_of_diluted_wines": "od280_od315_of_diluted_wines"}
-        )
+        # Create synthetic wine features
+        wine_data = {
+            "alcohol": np.random.uniform(11.0, 14.8, n_samples),
+            "malic_acid": np.random.uniform(0.74, 5.8, n_samples),
+            "ash": np.random.uniform(1.36, 3.23, n_samples),
+            "alcalinity_of_ash": np.random.uniform(10.6, 30.0, n_samples),
+            "magnesium": np.random.uniform(70, 162, n_samples),
+            "total_phenols": np.random.uniform(0.98, 3.88, n_samples),
+            "flavanoids": np.random.uniform(0.34, 5.08, n_samples),
+            "nonflavanoid_phenols": np.random.uniform(0.13, 0.66, n_samples),
+            "proanthocyanins": np.random.uniform(0.41, 3.58, n_samples),
+            "color_intensity": np.random.uniform(1.28, 13.0, n_samples),
+            "hue": np.random.uniform(0.48, 1.71, n_samples),
+            "od280_od315_of_diluted_wines": np.random.uniform(1.27, 4.0, n_samples),
+            "proline": np.random.uniform(278, 1680, n_samples),
+        }
+
+        wine_df = pd.DataFrame(wine_data)
         wine_df["id"] = pd.Series(range(1, len(wine_df) + 1))
+
+        # Create categorical alcohol variable
         wine_df.alcohol = pd.cut(
             wine_df.alcohol, bins=[0, 11, 11.5, 12, 12.5, 13, 13.5, 14, 14.5, 100]
         )
@@ -1302,8 +1328,12 @@ class TestUtil(
         wine_df_copy = wine_df.copy(deep=True)
         wine_df_copy.alcohol = wine_df_copy.alcohol.astype("object")
 
+        # Create synthetic target classes (0, 1, 2)
+        wine_class = pd.Series(
+            np.random.choice([0, 1, 2], size=n_samples, p=[0.33, 0.4, 0.27])
+        )
+
         # Split datasets
-        wine_class = pd.Series(datasets.load_wine().target)
         wine_survey = Sample.from_frame(wine_df.loc[wine_class == 0, :])
         wine_pop = Sample.from_frame(wine_df.loc[wine_class != 0, :])
         wine_survey = wine_survey.set_target(wine_pop)
