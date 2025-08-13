@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
@@ -30,7 +30,7 @@ class TestDataFactory:
     """Factory class for creating test data samples used across test cases."""
 
     @staticmethod
-    def create_basic_sample():
+    def create_basic_sample() -> Sample:
         """Create a basic sample with covariates, outcomes, and weights."""
         return Sample.from_frame(
             pd.DataFrame(
@@ -49,7 +49,7 @@ class TestDataFactory:
         )
 
     @staticmethod
-    def create_target_sample():
+    def create_target_sample() -> Sample:
         """Create a target sample for comparison testing."""
         return Sample.from_frame(
             pd.DataFrame(
@@ -66,7 +66,7 @@ class TestDataFactory:
         )
 
     @staticmethod
-    def create_sample_with_null_values():
+    def create_sample_with_null_values() -> Sample:
         """Create a sample with null values for testing edge cases."""
         return Sample.from_frame(
             pd.DataFrame(
@@ -81,7 +81,7 @@ class TestDataFactory:
         )
 
     @staticmethod
-    def create_multi_outcome_sample():
+    def create_multi_outcome_sample() -> Sample:
         """Create a sample with multiple outcome columns."""
         return Sample.from_frame(
             pd.DataFrame(
@@ -92,7 +92,7 @@ class TestDataFactory:
         )
 
     @staticmethod
-    def create_large_target_outcome_sample():
+    def create_large_target_outcome_sample() -> Sample:
         """Create a larger target sample for outcome comparison testing."""
         return Sample.from_frame(
             pd.DataFrame(
@@ -107,7 +107,7 @@ class TestDataFactory:
         )
 
     @staticmethod
-    def create_sample_with_special_characters():
+    def create_sample_with_special_characters() -> Sample:
         """Create a sample with special characters in column names for testing."""
         return Sample.from_frame(
             pd.DataFrame(
@@ -126,7 +126,7 @@ class TestDataFactory:
         )
 
     @staticmethod
-    def create_adjusted_samples():
+    def create_adjusted_samples() -> dict[str, Sample]:
         """Create a set of related samples for adjustment testing."""
         s1 = TestDataFactory.create_basic_sample()
         s2 = TestDataFactory.create_target_sample()
@@ -134,7 +134,9 @@ class TestDataFactory:
         s3_null = s3.adjust(method="null")
 
         s3_null_madeup_weights = deepcopy(s3_null)
-        s3_null_madeup_weights.set_weights((1, 2, 3, 1))
+        s3_null_madeup_weights.set_weights(
+            (1, 2, 3, 1)  # pyre-ignore[6]: Test case with tuple weights
+        )
 
         return {
             "basic": s1,
@@ -146,28 +148,30 @@ class TestDataFactory:
 
 
 # Create commonly used test samples
-s1 = TestDataFactory.create_basic_sample()
-s2 = TestDataFactory.create_target_sample()
-s3 = s1.set_target(s2)
-s3_null = s3.adjust(method="null")
+s1: Sample = TestDataFactory.create_basic_sample()
+s2: Sample = TestDataFactory.create_target_sample()
+s3: Sample = s1.set_target(s2)
+s3_null: Sample = s3.adjust(method="null")
 
-s3_null_madeup_weights = deepcopy(s3_null)
-s3_null_madeup_weights.set_weights((1, 2, 3, 1))
+s3_null_madeup_weights: Sample = deepcopy(s3_null)
+s3_null_madeup_weights.set_weights(
+    (1, 2, 3, 1)  # pyre-ignore[6]: Test case with tuple weights
+)
 
-s4 = TestDataFactory.create_sample_with_null_values()
-o = s1.outcomes()
-s_o = TestDataFactory.create_multi_outcome_sample()
-t_o = TestDataFactory.create_large_target_outcome_sample()
-s_o2 = s_o.set_target(t_o)
-c = s1.covars()
-w = s1.weights()
-s1_bad_columns = TestDataFactory.create_sample_with_special_characters()
+s4: Sample = TestDataFactory.create_sample_with_null_values()
+o: BalanceOutcomesDF = s1.outcomes()
+s_o: Sample = TestDataFactory.create_multi_outcome_sample()
+t_o: Sample = TestDataFactory.create_large_target_outcome_sample()
+s_o2: Sample = s_o.set_target(t_o)
+c: BalanceCovarsDF = s1.covars()
+w: BalanceWeightsDF = s1.weights()
+s1_bad_columns: Sample = TestDataFactory.create_sample_with_special_characters()
 
 
 class TestBalanceOutcomesDF(BalanceTestCase):
     """Test cases for BalanceOutcomesDF class functionality."""
 
-    def test_Sample_outcomes(self):
+    def test_Sample_outcomes(self) -> None:
         """Test that Sample.outcomes() returns correct BalanceOutcomesDF instances.
 
         Verifies:
@@ -190,7 +194,7 @@ class TestBalanceOutcomesDF(BalanceTestCase):
         # Null outcomes
         self.assertTrue(s2.outcomes() is None)
 
-    def test_BalanceOutcomesDF_df(self):
+    def test_BalanceOutcomesDF_df(self) -> None:
         """Test BalanceOutcomesDF.df property behavior and data integrity.
 
         Verifies:
@@ -203,7 +207,7 @@ class TestBalanceOutcomesDF(BalanceTestCase):
         self.assertTrue(isinstance(BalanceOutcomesDF.df, property))
         # We can no longer call .df() as if it was a function:
         with self.assertRaisesRegex(TypeError, "'DataFrame' object is not callable"):
-            o.df()
+            o.df()  # pyre-ignore[29]: Testing property call error
         # Here is how we can call it as a function:
         self.assertEqual(BalanceOutcomesDF.df.fget(o), o.df)
 
@@ -211,7 +215,7 @@ class TestBalanceOutcomesDF(BalanceTestCase):
         # NOTE that values changed from integer to float
         self.assertEqual(o.df, pd.DataFrame({"o": (7.0, 8.0, 9.0, 10.0)}))
 
-    def test__get_df_and_weights(self):
+    def test__get_df_and_weights(self) -> None:
         """Test BalanceDF._get_df_and_weights() method functionality.
 
         Verifies:
@@ -227,19 +231,19 @@ class TestBalanceOutcomesDF(BalanceTestCase):
         self.assertEqual(df.to_dict(), {"o": {0: 7.0, 1: 8.0, 2: 9.0, 3: 10.0}})
         self.assertEqual(w, np.array([0.5, 2.0, 1.0, 1.0]))
 
-    def test_BalanceOutcomesDF_names(self):
+    def test_BalanceOutcomesDF_names(self) -> None:
         """Test that BalanceOutcomesDF.names() returns correct outcome column names."""
         self.assertEqual(o.names(), ["o"])
 
-    def test_BalanceOutcomesDF__sample(self):
+    def test_BalanceOutcomesDF__sample(self) -> None:
         """Test that BalanceOutcomesDF._sample references the correct source sample."""
         self.assertTrue(o._sample is s1)
 
-    def test_BalanceOutcomesDF_weights(self):
+    def test_BalanceOutcomesDF_weights(self) -> None:
         """Test that BalanceOutcomesDF._weights returns correct weight Series."""
         pd.testing.assert_series_equal(o._weights, pd.Series((0.5, 2, 1, 1)))
 
-    def test_BalanceOutcomesDF_relative_response_rates(self):
+    def test_BalanceOutcomesDF_relative_response_rates(self) -> None:
         """Test relative_response_rates method with various target configurations.
 
         Verifies:
@@ -312,7 +316,7 @@ class TestBalanceOutcomesDF(BalanceTestCase):
             {"o1": {"n": 4.0, "%": 50.0}, "o2": {"n": 3.0, "%": 37.5}},
         )
 
-    def test_BalanceOutcomesDF_target_response_rates(self):
+    def test_BalanceOutcomesDF_target_response_rates(self) -> None:
         """Test target_response_rates method for calculating target sample response rates."""
         self.assertEqual(
             s_o2.outcomes().target_response_rates(),
@@ -320,7 +324,7 @@ class TestBalanceOutcomesDF(BalanceTestCase):
             lazy=True,
         )
 
-    def test_BalanceOutcomesDF_summary(self):
+    def test_BalanceOutcomesDF_summary(self) -> None:
         """Test BalanceOutcomesDF.summary() method output format and content.
 
         Verifies that summary output includes:
@@ -329,7 +333,7 @@ class TestBalanceOutcomesDF(BalanceTestCase):
         - Response rates for different comparison scenarios
         """
 
-        def _remove_whitespace_and_newlines(s):
+        def _remove_whitespace_and_newlines(s: str) -> str:
             return " ".join(s.split())
 
         e_str = """\
@@ -382,7 +386,7 @@ class TestBalanceOutcomesDF(BalanceTestCase):
 class TestBalanceCovarsDF(BalanceTestCase):
     """Test cases for BalanceCovarsDF class functionality."""
 
-    def test_BalanceCovarsDF_df(self):
+    def test_BalanceCovarsDF_df(self) -> None:
         """Test BalanceCovarsDF.df property behavior and data type conversion.
 
         Verifies:
@@ -396,8 +400,7 @@ class TestBalanceCovarsDF(BalanceTestCase):
         self.assertEqual(BalanceOutcomesDF.df.fget(c), c.df)
         # We can no longer call .df() as if it was a function:
         with self.assertRaisesRegex(TypeError, "'DataFrame' object is not callable"):
-            c.df()
-
+            c.df()  # pyre-ignore[29]: Testing property call error
         # NOTE: while the original datatype had integers, the stored df has only floats:
         self.assertEqual(
             c.df,
@@ -410,16 +413,16 @@ class TestBalanceCovarsDF(BalanceTestCase):
             ),
         )
 
-    def test_BalanceCovarsDF_names(self):
+    def test_BalanceCovarsDF_names(self) -> None:
         """Test that BalanceCovarsDF.names() returns correct column names as list."""
         self.assertEqual(c.names(), ["a", "b", "c"])
         self.assertEqual(type(c.names()), list)
 
-    def test_BalanceCovarsDF__sample(self):
+    def test_BalanceCovarsDF__sample(self) -> None:
         """Test that BalanceCovarsDF._sample references the correct source sample."""
         self.assertTrue(c._sample is s1)
 
-    def test_BalanceCovarsDF_weights(self):
+    def test_BalanceCovarsDF_weights(self) -> None:
         """Test that BalanceCovarsDF._weights returns correct weight Series."""
         pd.testing.assert_series_equal(
             c._weights, pd.Series(np.array([0.5, 2.0, 1.0, 1.0]))
@@ -429,7 +432,7 @@ class TestBalanceCovarsDF(BalanceTestCase):
 class TestBalanceWeightsDF(BalanceTestCase):
     """Test cases for BalanceWeightsDF class functionality."""
 
-    def test_BalanceWeightsDF_df(self):
+    def test_BalanceWeightsDF_df(self) -> None:
         """Test BalanceWeightsDF.df property behavior and weight data access.
 
         Verifies:
@@ -439,27 +442,29 @@ class TestBalanceWeightsDF(BalanceTestCase):
         """
         # Verify that the @property decorator works properly.
         self.assertTrue(isinstance(BalanceWeightsDF.df, property))
-        self.assertEqual(BalanceWeightsDF.df.fget(w), w.df)
+        self.assertEqual(
+            BalanceWeightsDF.df.fget(w),  # pyre-ignore[29]: Testing property getter
+            w.df,
+        )
         # We can no longer call .df() as if it was a function:
         with self.assertRaisesRegex(TypeError, "'DataFrame' object is not callable"):
-            w.df()
-
+            w.df()  # pyre-ignore[29]: Testing property call error
         # Check values are as expected:
         self.assertEqual(w.df, pd.DataFrame({"w": (0.5, 2, 1, 1)}))
 
-    def test_BalanceWeightsDF_names(self):
+    def test_BalanceWeightsDF_names(self) -> None:
         """Test that BalanceWeightsDF.names() returns correct weight column names."""
         self.assertEqual(w.names(), ["w"])
 
-    def test_BalanceWeightsDF__sample(self):
+    def test_BalanceWeightsDF__sample(self) -> None:
         """Test that BalanceWeightsDF._sample references the correct source sample."""
         self.assertTrue(c._sample is s1)
 
-    def test_BalanceWeightsDF_weights(self):
+    def test_BalanceWeightsDF_weights(self) -> None:
         """Test that BalanceWeightsDF._weights is None (weights don't have weights)."""
         self.assertTrue(w._weights is None)
 
-    def test_BalanceWeightsDF_design_effect(self):
+    def test_BalanceWeightsDF_design_effect(self) -> None:
         s = Sample.from_frame(
             pd.DataFrame({"w": (1, 2, 4), "id": (1, 2, 3)}),
             id_column="id",
@@ -467,7 +472,7 @@ class TestBalanceWeightsDF(BalanceTestCase):
         )
         self.assertTrue(s.weights().design_effect(), 7 / 3)
 
-    def test_BalanceWeightsDF_trim(self):
+    def test_BalanceWeightsDF_trim(self) -> None:
         s = Sample.from_frame(
             pd.DataFrame({"w": np.random.uniform(0, 1, 10000), "id": range(0, 10000)}),
             id_column="id",
@@ -478,7 +483,7 @@ class TestBalanceWeightsDF(BalanceTestCase):
         print(max(s.weights().df.iloc[:, 0]))
         self.assertTrue(max(s.weights().df.iloc[:, 0]) < 0.9)
 
-    def test_BalanceWeightsDF_summary(self):
+    def test_BalanceWeightsDF_summary(self) -> None:
         exp = {
             "var": {
                 0: "design_effect",
@@ -537,7 +542,7 @@ class TestBalanceWeightsDF(BalanceTestCase):
 
 
 class TestBalanceDF__BalanceDF_child_from_linked_samples(BalanceTestCase):
-    def test__BalanceDF_child_from_linked_samples_keys(self):
+    def test__BalanceDF_child_from_linked_samples_keys(self) -> None:
         self.assertEqual(
             list(s1.covars()._BalanceDF_child_from_linked_samples().keys()), ["self"]
         )
@@ -574,7 +579,7 @@ class TestBalanceDF__BalanceDF_child_from_linked_samples(BalanceTestCase):
             ["self", "target", "unadjusted"],
         )
 
-    def test__BalanceDF_child_from_linked_samples_class_types(self):
+    def test__BalanceDF_child_from_linked_samples_class_types(self) -> None:
         """Test that _BalanceDF_child_from_linked_samples returns correct class types.
 
         Verifies that the method returns appropriate BalanceDF subclasses
@@ -596,14 +601,14 @@ class TestBalanceDF__BalanceDF_child_from_linked_samples(BalanceTestCase):
         exp = 3 * [BalanceCovarsDF]
         self.assertEqual([v.__class__ for (k, v) in the_dict.items()], exp)
 
-    def test__BalanceDF_child_from_linked_samples_weights_class(self):
+    def test__BalanceDF_child_from_linked_samples_weights_class(self) -> None:
         """Test that _BalanceDF_child_from_linked_samples works for BalanceWeightsDF."""
         # This also works for things other than BalanceCovarsDF:
         the_dict = s3_null.weights()._BalanceDF_child_from_linked_samples()
         exp = 3 * [BalanceWeightsDF]
         self.assertEqual([v.__class__ for (k, v) in the_dict.items()], exp)
 
-    def test__BalanceDF_child_from_linked_samples_outcomes_with_none(self):
+    def test__BalanceDF_child_from_linked_samples_outcomes_with_none(self) -> None:
         """Test that _BalanceDF_child_from_linked_samples handles None outcomes correctly."""
         # Notice that with something like outcomes, we might get a None in return!
         the_dict = s3_null.outcomes()._BalanceDF_child_from_linked_samples()
@@ -614,7 +619,7 @@ class TestBalanceDF__BalanceDF_child_from_linked_samples(BalanceTestCase):
         ]
         self.assertEqual([v.__class__ for (k, v) in the_dict.items()], exp)
 
-    def test__BalanceDF_child_from_linked_samples_covars_values(self):
+    def test__BalanceDF_child_from_linked_samples_covars_values(self) -> None:
         """Test that covariates DataFrame values are correctly preserved in linked samples."""
         # Verify DataFrame values makes sense:
         # for covars
@@ -638,7 +643,7 @@ class TestBalanceDF__BalanceDF_child_from_linked_samples(BalanceTestCase):
         ]
         self.assertEqual([v.df.to_dict() for (k, v) in the_dict.items()], exp)
 
-    def test__BalanceDF_child_from_linked_samples_outcomes_values(self):
+    def test__BalanceDF_child_from_linked_samples_outcomes_values(self) -> None:
         """Test that outcomes DataFrame values are correctly preserved, excluding None values."""
         # for outcomes
         the_dict = s3_null.outcomes()._BalanceDF_child_from_linked_samples()
@@ -648,7 +653,7 @@ class TestBalanceDF__BalanceDF_child_from_linked_samples(BalanceTestCase):
             [v.df.to_dict() for (k, v) in the_dict.items() if v is not None], exp
         )
 
-    def test__BalanceDF_child_from_linked_samples_weights_values(self):
+    def test__BalanceDF_child_from_linked_samples_weights_values(self) -> None:
         """Test that weights DataFrame values are correctly preserved in linked samples."""
         # for weights
         the_dict = s3_null.weights()._BalanceDF_child_from_linked_samples()
@@ -661,7 +666,7 @@ class TestBalanceDF__BalanceDF_child_from_linked_samples(BalanceTestCase):
 
 
 class TestBalanceDF__call_on_linked(BalanceTestCase):
-    def test_BalanceDF__call_on_linked(self):
+    def test_BalanceDF__call_on_linked(self) -> None:
         self.assertEqual(
             s1.weights()._call_on_linked("mean").values[0][0], (0.5 + 2 + 1 + 1) / 4
         )
@@ -733,7 +738,7 @@ class TestBalanceDF__call_on_linked(BalanceTestCase):
 
 
 class TestBalanceDF__descriptive_stats(BalanceTestCase):
-    def test_BalanceDF__descriptive_stats(self):
+    def test_BalanceDF__descriptive_stats(self) -> None:
         self.assertEqual(
             s1.weights()._descriptive_stats("mean", weighted=False).values[0][0], 1.125
         )
@@ -838,7 +843,7 @@ class TestBalanceDF__descriptive_stats(BalanceTestCase):
         )
         self.assertEqual(r, e)
 
-    def test_Balance_df_summary_stats_numeric_only(self):
+    def test_Balance_df_summary_stats_numeric_only(self) -> None:
         #  Test that the asmd, std, and mean methods pass the `numeric_only`
         #  argument to _descriptive_stats
 
@@ -855,7 +860,7 @@ class TestBalanceDF__descriptive_stats(BalanceTestCase):
 
 
 class TestBalanceDF_mean(BalanceTestCase):
-    def test_BalanceDF_mean(self):
+    def test_BalanceDF_mean(self) -> None:
         self.assertEqual(
             s1.weights().mean(),
             pd.DataFrame({"w": [1.125], "source": "self"}).set_index("source"),
@@ -888,7 +893,7 @@ class TestBalanceDF_mean(BalanceTestCase):
 
 
 class TestBalanceDF_std(BalanceTestCase):
-    def test_BalanceDF_std(self):
+    def test_BalanceDF_std(self) -> None:
         self.assertEqual(
             s1.weights().std(),
             pd.DataFrame({"w": [0.6291529], "source": "self"}).set_index("source"),
@@ -908,7 +913,7 @@ class TestBalanceDF_std(BalanceTestCase):
 
 
 class TestBalanceDF_var_of_mean(BalanceTestCase):
-    def test_BalanceDF_var_of_mean(self):
+    def test_BalanceDF_var_of_mean(self) -> None:
         self.assertEqual(
             s3_null.covars().var_of_mean().fillna(0).round(3).to_dict(),
             {
@@ -923,7 +928,7 @@ class TestBalanceDF_var_of_mean(BalanceTestCase):
 
 
 class TestBalanceDF_ci(BalanceTestCase):
-    def test_BalanceDF_ci_of_mean(self):
+    def test_BalanceDF_ci_of_mean(self) -> None:
         self.assertEqual(
             s3_null.covars().ci_of_mean(round_ndigits=3).fillna(0).to_dict(),
             {
@@ -960,7 +965,7 @@ class TestBalanceDF_ci(BalanceTestCase):
             },
         )
 
-    def test_BalanceDF_mean_with_ci(self):
+    def test_BalanceDF_mean_with_ci(self) -> None:
         self.assertEqual(
             s_o2.outcomes().mean_with_ci().to_dict(),
             {
@@ -993,7 +998,7 @@ class TestBalanceDF_ci(BalanceTestCase):
 
 
 class TestBalanceDF_asmd(BalanceTestCase):
-    def test_BalanceDF_asmd(self):
+    def test_BalanceDF_asmd(self) -> None:
         # Test with BalanceDF
 
         r = BalanceDF._asmd_BalanceDF(
@@ -1095,14 +1100,16 @@ class TestBalanceDF_asmd(BalanceTestCase):
             },
         )
 
-    def test_BalanceDF_asmd_improvement(self):
+    def test_BalanceDF_asmd_improvement(self) -> None:
         with self.assertRaisesRegex(
             ValueError, "has no unadjusted set or unadjusted has no covars"
         ):
             s3.covars().asmd_improvement()
 
         s3_unadjusted = deepcopy(s3)
-        s3_unadjusted.set_weights((1, 1, 1, 1))
+        s3_unadjusted.set_weights(
+            (1, 1, 1, 1)  # pyre-ignore[6]: Test case with tuple weights
+        )
         s3_2 = s3.set_unadjusted(s3_unadjusted)
         self.assertEqual(s3_2.covars().asmd_improvement(), 0.3224900694460681)
 
@@ -1129,7 +1136,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
             s3_null_madeup_weights.covars().asmd_improvement().round(3), exp
         )
 
-    def test_BalanceDF_asmd_aggregate_by_main_covar(self):
+    def test_BalanceDF_asmd_aggregate_by_main_covar(self) -> None:
         # TODO: re-use this example across tests
         # TODO: bugfix - adjust fails with apply_transform when inputting a df with categorical column :(
 
@@ -1203,39 +1210,39 @@ class TestBalanceDF_asmd(BalanceTestCase):
 
 
 class TestBalanceDF_to_download(BalanceTestCase):
-    def test_BalanceDF_to_download(self):
+    def test_BalanceDF_to_download(self) -> None:
         r = s1.covars().to_download()
         self.assertIsInstance(r, IPython.display.FileLink)
 
 
 class TestBalanceDF_to_csv(BalanceTestCase):
-    def test_BalanceDF_to_csv(self):
+    def test_BalanceDF_to_csv(self) -> None:
         with tempfile.NamedTemporaryFile() as tf:
             s1.weights().to_csv(path_or_buf=tf.name)
             r = tf.read()
             e = b"id,w\n1,0.5\n2,2.0\n3,1.0\n4,1.0\n"
             self.assertEqual(r, e)
 
-    def test_BalanceDF_to_csv_first_default_argument_is_path(self):
+    def test_BalanceDF_to_csv_first_default_argument_is_path(self) -> None:
         with tempfile.NamedTemporaryFile() as tf:
             s1.weights().to_csv(tf.name)
             r = tf.read()
             e = b"id,w\n1,0.5\n2,2.0\n3,1.0\n4,1.0\n"
             self.assertEqual(r, e)
 
-    def test_BalanceDF_to_csv_output_with_no_path(self):
+    def test_BalanceDF_to_csv_output_with_no_path(self) -> None:
         with tempfile.NamedTemporaryFile():
             out = s1.weights().to_csv()
         self.assertEqual(out, "id,w\n1,0.5\n2,2.0\n3,1.0\n4,1.0\n")
 
-    def test_BalanceDF_to_csv_output_with_path(self):
+    def test_BalanceDF_to_csv_output_with_path(self) -> None:
         with tempfile.NamedTemporaryFile() as tf:
             out = s1.weights().to_csv(path_or_buf=tf.name)
         self.assertEqual(out, None)
 
 
 class TestBalanceDF__df_with_ids(BalanceTestCase):
-    def test_BalanceDF__df_with_ids(self):
+    def test_BalanceDF__df_with_ids(self) -> None:
         # Test it has an id column:
         self.assertTrue("id" in s1.weights()._df_with_ids().columns)
         self.assertTrue("id" in s1.covars()._df_with_ids().columns)
@@ -1250,7 +1257,7 @@ class TestBalanceDF__df_with_ids(BalanceTestCase):
 
 
 class TestBalanceDF_summary(BalanceTestCase):
-    def testBalanceDF_summary(self):
+    def testBalanceDF_summary(self) -> None:
         self.assertEqual(
             s1.covars().summary().to_dict(),
             {
@@ -1352,10 +1359,10 @@ class TestBalanceDF_summary(BalanceTestCase):
 
 
 class TestBalanceDF__str__(BalanceTestCase):
-    def testBalanceDF__str__(self):
+    def testBalanceDF__str__(self) -> None:
         self.assertTrue(s1.outcomes().df.__str__() in s1.outcomes().__str__())
 
-    def test_BalanceOutcomesDF___str__(self):
+    def test_BalanceOutcomesDF___str__(self) -> None:
         # NOTE how the type is float even though the original input was integer.
         self.assertTrue(
             pd.DataFrame({"o": (7.0, 8.0, 9.0, 10.0)}).__str__() in o.__str__()
@@ -1363,24 +1370,24 @@ class TestBalanceDF__str__(BalanceTestCase):
 
 
 class TestBalanceDF__repr__(BalanceTestCase):
-    def test_BalanceWeightsDF___repr__(self):
+    def test_BalanceWeightsDF___repr__(self) -> None:
         repr = w.__repr__()
         self.assertTrue("weights from" in repr)
         self.assertTrue(object.__repr__(s1) in repr)
 
-    def test_BalanceCovarsDF___repr__(self):
+    def test_BalanceCovarsDF___repr__(self) -> None:
         repr = c.__repr__()
         self.assertTrue("covars from" in repr)
         self.assertTrue(object.__repr__(s1) in repr)
 
-    def test_BalanceOutcomesDF___repr__(self):
+    def test_BalanceOutcomesDF___repr__(self) -> None:
         repr = o.__repr__()
         self.assertTrue("outcomes from" in repr)
         self.assertTrue(object.__repr__(s1) in repr)
 
 
 class TestBalanceDF(BalanceTestCase):
-    def testBalanceDF_model_matrix(self):
+    def testBalanceDF_model_matrix(self) -> None:
         self.assertEqual(
             s1.covars().model_matrix().sort_index(axis=1).columns.values,
             ("a", "b", "c[v]", "c[x]", "c[y]", "c[z]"),
@@ -1397,8 +1404,12 @@ class TestBalanceDF(BalanceTestCase):
             },
         )
 
-    def test_check_if_not_BalanceDF(self):
+    def test_check_if_not_BalanceDF(self) -> None:
         with self.assertRaisesRegex(ValueError, "number must be balancedf_class"):
-            BalanceDF._check_if_not_BalanceDF(5, "number")
-
-        self.assertTrue(BalanceDF._check_if_not_BalanceDF(s3.covars()) is None)
+            BalanceDF._check_if_not_BalanceDF(
+                5,  # pyre-ignore[6]: Testing error handling with wrong type
+                "number",
+            )
+        self.assertTrue(
+            BalanceDF._check_if_not_BalanceDF(s3.covars()) is None
+        )  # pyre-ignore[6]: Testing error handling with wrong type
