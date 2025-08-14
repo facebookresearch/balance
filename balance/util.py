@@ -687,7 +687,7 @@ def model_matrix(
     formula: Optional[List[str]] = None,
     penalty_factor: Optional[List[float]] = None,
     one_hot_encoding: bool = False,
-) -> Dict[str, Union[List[Any], np.ndarray[Any, np.dtype[Any]]]]:
+) -> Dict[str, Union[List[Any], np.ndarray, pd.DataFrame, csc_matrix, None]]:
     """Create a model matrix from a sample (and target).
     The default is to use an additive formula for all variables (or the ones specified).
     Can also create a custom model matrix if a formula is provided.
@@ -723,7 +723,7 @@ def model_matrix(
             and only 1 column for variables with 2 levels (treatment contrast). Defaults to False.
 
     Returns:
-        Dict[ str, Union[List[str], np.ndarray, Union[pd.DataFrame, np.ndarray, csc_matrix], None] ]:
+        Dict[str, Union[List[Any], np.ndarray, pd.DataFrame, csc_matrix, None]]
             a dict of:
                 1. "model_matrix_columns_names": columns names of the model matrix
                 2. "penalty_factor ": a penalty_factor for each column in the model matrix

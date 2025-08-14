@@ -230,10 +230,8 @@ class TestSample(
         # Test default weights when none provided
         df = pd.DataFrame({"id": (1, 2)})
         self.assertWarnsRegexp("No weights passed", Sample.from_frame, df)
-        # NOTE that the default weights are integers, not floats
-        # TODO: decide if it's o.k. to keep the default weights be 1s, or change the default to floats
         self.assertEqual(
-            Sample.from_frame(df).weight_column, pd.Series((1, 1), name="weight")
+            Sample.from_frame(df).weight_column, pd.Series((1.0, 1.0), name="weight")
         )
 
         # Test error for null weight values
@@ -1307,8 +1305,8 @@ class TestSamplePrivateAPI(balance.testutil.BalanceTestCase):
             pd.DataFrame(
                 {
                     "id": ("1", "2", "3"),
-                    # Weights were filled automatically to be integers of 1s:
-                    "weight": (1, 1, 1),
+                    # Weights were filled automatically to be floats of 1.0:
+                    "weight": (1.0, 1.0, 1.0),
                     "b": (0.0, None, 2.0),
                     "c": ("a", "b", "c"),
                 }
