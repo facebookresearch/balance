@@ -188,9 +188,7 @@ class Sample:
             str
         }:
             logger.warning("Casting id column to string")
-            sample._df.loc[:, id_column] = (
-                sample._df.loc[:, id_column].astype(str).astype("object")
-            )
+            sample._df[id_column] = sample._df[id_column].astype(str)
 
         if (check_id_uniqueness) and (
             sample._df[id_column].nunique() != len(sample._df[id_column])
@@ -264,7 +262,7 @@ class Sample:
                     "No weights passed. Adding a 'weight' column and setting all values to 1"
                 )
                 weight_column = "weight"
-                sample._df.loc[:, weight_column] = 1
+                sample._df.loc[:, weight_column] = 1.0  # Use 1.0 to ensure float64 type
 
         # verify that the weights are not null
         if any(sample._df[weight_column].isnull()):
@@ -480,10 +478,8 @@ class Sample:
                     """Note that not all Sample units will be assigned weights,
                     since weights are missing some of the indices in Sample.df"""
                 )
-        if isinstance(weights, pd.Series):
-            self._df.loc[:, self.weight_column.name] = weights.astype("float64")
-        else:
-            self._df.loc[:, self.weight_column.name] = weights
+
+        self._df.loc[:, self.weight_column.name] = weights
         self.weight_column = self._df[self.weight_column.name]
 
     ####################################
