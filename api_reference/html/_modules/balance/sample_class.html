@@ -229,9 +229,7 @@
             <span class="nb">str</span>
         <span class="p">}:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Casting id column to string&quot;</span><span class="p">)</span>
-            <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">id_column</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">id_column</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;object&quot;</span><span class="p">)</span>
-            <span class="p">)</span>
+            <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">id_column</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">id_column</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="n">check_id_uniqueness</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
             <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">id_column</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">id_column</span><span class="p">])</span>
@@ -305,7 +303,7 @@
                     <span class="s2">&quot;No weights passed. Adding a &#39;weight&#39; column and setting all values to 1&quot;</span>
                 <span class="p">)</span>
                 <span class="n">weight_column</span> <span class="o">=</span> <span class="s2">&quot;weight&quot;</span>
-                <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">weight_column</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">weight_column</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>  <span class="c1"># Use 1.0 to ensure float64 type</span>
 
         <span class="c1"># verify that the weights are not null</span>
         <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">weight_column</span><span class="p">]</span><span class="o">.</span><span class="n">isnull</span><span class="p">()):</span>
@@ -542,10 +540,8 @@
 <span class="w">                    </span><span class="sd">&quot;&quot;&quot;Note that not all Sample units will be assigned weights,</span>
 <span class="sd">                    since weights are missing some of the indices in Sample.df&quot;&quot;&quot;</span>
                 <span class="p">)</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">weights</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">weights</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">name</span><span class="p">]</span></div>
 
 
