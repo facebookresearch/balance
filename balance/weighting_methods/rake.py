@@ -7,6 +7,8 @@
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import itertools
+
 import logging
 
 import math
@@ -128,11 +130,20 @@ def rake(
     else:
         raise ValueError("`na_action` must be 'add_indicator' or 'drop'")
 
+    # Alphabetize variables to ensure consistency across covariate order
+    # (ipfn algorithm is iterative and variable order can matter on the margins)
+    alphabetized_variables = list(variables)
+    alphabetized_variables.sort()
+
+    logger.debug(
+        f"Alphabetized variable order is as follows: {alphabetized_variables}."
+    )
+
     # Cast all data types as string to be explicit about each unique value
     # being its own group and to handle that `fillna()` above creates
     # series of type Object, which won't work for the ipfn script
-    levels_dict = {}
-    for variable in variables:
+    categories = []
+    for variable in alphabetized_variables:
         target_df[variable] = target_df[variable].astype(str)
         sample_df[variable] = sample_df[variable].astype(str)
 
@@ -151,10 +162,10 @@ def rake(
                 f"'{variable}' in sample is missing these levels: {target_over_set}. "
                 "These levels are treated as if they do not exist for that variable."
             )
-        levels_dict[variable] = list(sample_var_set.intersection(target_var_set))
+        categories.append(sorted(sample_var_set.intersection(target_var_set)))
 
     logger.info(
-        f"Final covariates and levels that will be used in raking: {levels_dict}."
+        f"Final covariates and levels that will be used in raking: {dict(zip(alphabetized_variables, categories))}."
     )
 
     target_df = target_df.assign(weight=target_weights)
@@ -163,47 +174,57 @@ def rake(
     sample_sum_weights = sample_df["weight"].sum()
     target_sum_weights = target_df["weight"].sum()
 
-    # Alphabetize variables to ensure consistency across covariate order
-    # (ipfn algorithm is iterative and variable order can matter on the margins)
-    alphabetized_variables = list(variables)
-    alphabetized_variables.sort()
+    # Calculate {# covariates}-dimensional array representation of the sample
+    # for the ipfn algorithm
 
-    logger.debug(
-        f"Alphabetized variable order is as follows: {alphabetized_variables}."
-    )
+    # Create a multi-index DataFrame with all possible combinations
+    index = pd.MultiIndex.from_product(categories, names=alphabetized_variables)
+    full_df = pd.DataFrame(index=index).reset_index()
 
-    # margins from population
-    target_margins = [
-        (
-            target_df.groupby(variable)["weight"].sum()
-            / (sum(target_df.groupby(variable)["weight"].sum()))
-            * sample_sum_weights
-        )
-        for variable in alphabetized_variables
-    ]
-
-    # sample cells (joint distribution of covariates)
-    sample_cells = (
+    # Group by covariates and sum weights
+    grouped_sample = (
         sample_df.groupby(alphabetized_variables)["weight"].sum().reset_index()
     )
+
+    # Merge to ensure all combinations are present (fill missing with 0)
+    merged = pd.merge(
+        full_df, grouped_sample, on=alphabetized_variables, how="left"
+    ).fillna(0)
+
+    # Reshape to n-dimensional array
+    m_sample = merged["weight"].values.reshape([len(c) for c in categories])
+
+    # Calculate target margins for ipfn
+    target_margins = []
+    for col, cats in zip(alphabetized_variables, categories):
+        sums = (
+            target_df.groupby(col)["weight"].sum()
+            / target_sum_weights
+            * sample_sum_weights
+        )
+        sums = sums.reindex(cats, fill_value=0)
+        target_margins.append(sums.values)
+    dimensions = [[i] for i in range(len(alphabetized_variables))]
 
     logger.debug(
         "Raking algorithm running following settings: "
         f" convergence_rate: {convergence_rate}; max_iteration: {max_iteration}; rate_tolerance: {rate_tolerance}"
     )
-    # returns dataframe with joint distribution of covariates and total weight
+
+    # returns array with joint distribution of covariates and total weight
     # for that specific set of covariates
+    # no longer uses the dataframe version of the ipfn algorithm
+    # due to incompatability with latest Python versions
     ipfn_obj = ipfn.ipfn(
-        original=sample_cells,
+        original=m_sample,
         aggregates=target_margins,
-        dimensions=[[var] for var in alphabetized_variables],
-        weight_col="weight",
+        dimensions=dimensions,
         convergence_rate=convergence_rate,
         max_iteration=max_iteration,
         verbose=2,
         rate_tolerance=rate_tolerance,
     )
-    fit, converged, iterations = ipfn_obj.iteration()
+    m_fit, converged, iterations = ipfn_obj.iteration()
 
     logger.debug(
         f"Raking algorithm terminated with following convergence: {converged}; "
@@ -213,24 +234,28 @@ def rake(
     if not converged:
         logger.warning("Maximum iterations reached, convergence was not achieved")
 
+    # Convert array representation of the weighted sample into a dataframe
+    # Generate all possible combinations of categories (cartesian product)
+    combos = list(itertools.product(*categories))
+    # Flatten the array to match the order of combos
+    weights = m_fit.flatten()
+    # Build the DataFrame
+    fit = pd.DataFrame(combos, columns=alphabetized_variables)
+    fit["rake_weight"] = weights
+
     raked = pd.merge(
         sample_df.reset_index(),
-        fit.rename(columns={"weight": "rake_weight"}),
+        fit,
         how="left",
-        on=list(variables),
+        on=alphabetized_variables,
     )
 
     # Merge back to original sample weights
     raked_rescaled = pd.merge(
         raked,
-        (
-            sample_df.groupby(list(variables))["weight"]
-            .sum()
-            .reset_index()
-            .rename(columns={"weight": "total_survey_weight"})
-        ),
+        (grouped_sample.rename(columns={"weight": "total_survey_weight"})),
         how="left",
-        on=list(variables),
+        on=alphabetized_variables,
     ).set_index("index")  # important if dropping rows due to NA
 
     # use above merge to give each individual sample its proportion of the
