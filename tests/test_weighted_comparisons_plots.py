@@ -7,6 +7,8 @@
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+from typing import Any, Dict
+
 import balance.testutil
 
 import matplotlib
@@ -28,7 +30,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
     visualization functions.
     """
 
-    def _create_concentrated_weight_test_data(self):
+    def _create_concentrated_weight_test_data(self) -> Dict[str, Any]:
         """Helper method to create test data with concentrated weights."""
         return {
             "df": pd.DataFrame(
@@ -37,11 +39,11 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
             "weight": pd.Series([0, 0, 0, 0, 0, 0, 0, 0, 0, 5]),
         }
 
-    def _create_basic_test_dataframe(self):
+    def _create_basic_test_dataframe(self) -> pd.DataFrame:
         """Helper method to create basic test DataFrame for frequency table tests."""
         return pd.DataFrame({"a": list("abcd"), "b": list("bbcd")})
 
-    def test_return_sample_palette_standard_combinations(self):
+    def test_return_sample_palette_standard_combinations(self) -> None:
         """
         Test _return_sample_palette function with standard sample name combinations.
 
@@ -81,7 +83,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         # Test non-standard sample names should return default palette
         self.assertEqual(_return_sample_palette(["cat", "dog"]), "muted")
 
-    def test_plotly_marker_color_combinations(self):
+    def test_plotly_marker_color_combinations(self) -> None:
         """
         Test _plotly_marker_color function for various sample types and style combinations.
 
@@ -108,16 +110,20 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
 
         # Test 'target' sample colors
         self.assertEqual(
-            _plotly_marker_color("target", True, "color"), "rgb(158,202,225,0.8)"
+            _plotly_marker_color("target", True, "color"),  # pyre-ignore[6]
+            "rgb(158,202,225,0.8)",
         )
         self.assertEqual(
-            _plotly_marker_color("target", False, "color"), "rgb(158,202,225,0.8)"
+            _plotly_marker_color("target", False, "color"),  # pyre-ignore[6]
+            "rgb(158,202,225,0.8)",
         )
         self.assertEqual(
-            _plotly_marker_color("target", True, "line"), "rgb(158,202,225,1)"
+            _plotly_marker_color("target", True, "line"),  # pyre-ignore[6]
+            "rgb(158,202,225,1)",
         )
         self.assertEqual(
-            _plotly_marker_color("target", False, "line"), "rgb(158,202,225,1)"
+            _plotly_marker_color("target", False, "line"),  # pyre-ignore[6]
+            "rgb(158,202,225,1)",
         )
 
         # Test 'adjusted' sample colors
@@ -128,7 +134,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
             _plotly_marker_color("adjusted", False, "line"), "rgba(52,165,48,1)"
         )
 
-    def test_plot_bar_weighted_comparison(self):
+    def test_plot_bar_weighted_comparison(self) -> None:
         """
         Test plot_bar function for weighted bar plot generation.
 
@@ -165,7 +171,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         # Verify the plot title contains expected text
         self.assertIn("barplot of covar ", ax.get_title())
 
-    def test_plot_dist_kde_returns_matplotlib_axes(self):
+    def test_plot_dist_kde_returns_matplotlib_axes(self) -> None:
         """
         Test that plot_dist with KDE returns a matplotlib Axes object.
 
@@ -177,8 +183,8 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         test_data = self._create_concentrated_weight_test_data()
 
         # Generate KDE plot and get the axes type
-        plot_axes = weighted_comparisons_plots.plot_dist(
-            (test_data,),
+        plot_axes = weighted_comparisons_plots.plot_dist(  # pyre-ignore[16]
+            [test_data],
             dist_type="kde",
             numeric_n_values_threshold=0,
             weighted=False,
@@ -191,7 +197,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         # See: https://stackoverflow.com/a/11690800/256662
         self.assertTrue(issubclass(type(plot_axes), plt.Axes))
 
-    def test_relative_frequency_table_unweighted(self):
+    def test_relative_frequency_table_unweighted(self) -> None:
         """
         Test relative_frequency_table function with unweighted data.
 
@@ -210,7 +216,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         result_b = weighted_stats.relative_frequency_table(test_df, "b")
         self.assertEqual(result_b, expected_b)
 
-    def test_relative_frequency_table_with_unit_weights(self):
+    def test_relative_frequency_table_with_unit_weights(self) -> None:
         """
         Test relative_frequency_table function with explicit unit weights.
 
@@ -229,7 +235,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         result_b = weighted_stats.relative_frequency_table(test_df, "b", unit_weights)
         self.assertEqual(result_b, expected_b)
 
-    def test_relative_frequency_table_with_custom_weights(self):
+    def test_relative_frequency_table_with_custom_weights(self) -> None:
         """
         Test relative_frequency_table function with custom weight distributions.
 
@@ -258,7 +264,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         )
         self.assertEqual(result_weighted_b, expected_weighted_b)
 
-    def test_relative_frequency_table_error_handling(self):
+    def test_relative_frequency_table_error_handling(self) -> None:
         """
         Test relative_frequency_table function error handling for invalid inputs.
 
@@ -268,9 +274,9 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
 
         # Should raise TypeError for non-Series weights
         with self.assertRaisesRegex(TypeError, "must be a pandas Series"):
-            weighted_stats.relative_frequency_table(test_df, "a", 1)
+            weighted_stats.relative_frequency_table(test_df, "a", 1)  # pyre-ignore[6]
 
-    def test_relative_frequency_table_with_dataframe_and_series_input(self):
+    def test_relative_frequency_table_with_dataframe_and_series_input(self) -> None:
         """
         Test relative_frequency_table function with DataFrame vs Series input consistency.
 
@@ -301,7 +307,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         ).to_dict()
         self.assertEqual(result_series, expected_result)
 
-    def test_naming_legend_transformations(self):
+    def test_naming_legend_transformations(self) -> None:
         """
         Test naming_legend function for proper legend name transformations.
 
@@ -333,7 +339,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         )
         self.assertEqual(result_other, "other_name")
 
-    def test_seaborn_plot_dist_returns_matplotlib_axes(self):
+    def test_seaborn_plot_dist_returns_matplotlib_axes(self) -> None:
         """
         Test seaborn_plot_dist function returns matplotlib Axes for all distribution types.
 
@@ -347,9 +353,9 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         axes_types = []
         for dist_type in distribution_types:
             plot_result = weighted_comparisons_plots.seaborn_plot_dist(
-                (test_data,),
+                [test_data],
                 names=["test"],
-                dist_type=dist_type,
+                dist_type=dist_type,  # pyre-ignore[6]
                 return_axes=True,
             )
             axes_types.append(type(plot_result[0]))
@@ -360,7 +366,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         for axes_type in axes_types:
             self.assertTrue(issubclass(axes_type, matplotlib.axes.Axes))
 
-    def test_plot_dist_plotly_functionality(self):
+    def test_plot_dist_plotly_functionality(self) -> None:
         """
         Test plot_dist function with plotly backend for various scenarios.
 
@@ -409,7 +415,10 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
 
         # Verify dictionary structure and contents
         self.assertEqual(type(dict_of_figures), dict)
-        self.assertEqual(sorted(dict_of_figures.keys()), ["v1", "v2", "v3"])
+        self.assertEqual(
+            sorted(dict_of_figures.keys()),  # pyre-ignore[16]
+            ["v1", "v2", "v3"],
+        )
         self.assertEqual(type(dict_of_figures["v1"]), go.Figure)
 
         # Test error handling for invalid library parameter
@@ -417,5 +426,5 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
             plot_dist(
                 test_datasets,
                 names=["self", "unadjusted", "target"],
-                library="ploting_library_which_is_not_plotly_or_seaborn",
+                library="ploting_library_which_is_not_plotly_or_seaborn",  # pyre-ignore[6]
             )
