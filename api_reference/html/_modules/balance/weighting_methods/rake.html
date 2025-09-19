@@ -44,6 +44,8 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
@@ -167,11 +169,20 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`na_action` must be &#39;add_indicator&#39; or &#39;drop&#39;&quot;</span><span class="p">)</span>
 
+    <span class="c1"># Alphabetize variables to ensure consistency across covariate order</span>
+    <span class="c1"># (ipfn algorithm is iterative and variable order can matter on the margins)</span>
+    <span class="n">alphabetized_variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
+    <span class="n">alphabetized_variables</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;Alphabetized variable order is as follows: </span><span class="si">{</span><span class="n">alphabetized_variables</span><span class="si">}</span><span class="s2">.&quot;</span>
+    <span class="p">)</span>
+
     <span class="c1"># Cast all data types as string to be explicit about each unique value</span>
     <span class="c1"># being its own group and to handle that `fillna()` above creates</span>
     <span class="c1"># series of type Object, which won&#39;t work for the ipfn script</span>
-    <span class="n">levels_dict</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">variable</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
+    <span class="n">categories</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">variable</span> <span class="ow">in</span> <span class="n">alphabetized_variables</span><span class="p">:</span>
         <span class="n">target_df</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_df</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
         <span class="n">sample_df</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_df</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
 
@@ -190,10 +201,10 @@
                 <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">variable</span><span class="si">}</span><span class="s2">&#39; in sample is missing these levels: </span><span class="si">{</span><span class="n">target_over_set</span><span class="si">}</span><span class="s2">. &quot;</span>
                 <span class="s2">&quot;These levels are treated as if they do not exist for that variable.&quot;</span>
             <span class="p">)</span>
-        <span class="n">levels_dict</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sample_var_set</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">target_var_set</span><span class="p">))</span>
+        <span class="n">categories</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">sample_var_set</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">target_var_set</span><span class="p">)))</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;Final covariates and levels that will be used in raking: </span><span class="si">{</span><span class="n">levels_dict</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;Final covariates and levels that will be used in raking: </span><span class="si">{</span><span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">alphabetized_variables</span><span class="p">,</span><span class="w"> </span><span class="n">categories</span><span class="p">))</span><span class="si">}</span><span class="s2">.&quot;</span>
     <span class="p">)</span>
 
     <span class="n">target_df</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">weight</span><span class="o">=</span><span class="n">target_weights</span><span class="p">)</span>
@@ -202,47 +213,57 @@
     <span class="n">sample_sum_weights</span> <span class="o">=</span> <span class="n">sample_df</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
     <span class="n">target_sum_weights</span> <span class="o">=</span> <span class="n">target_df</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
 
-    <span class="c1"># Alphabetize variables to ensure consistency across covariate order</span>
-    <span class="c1"># (ipfn algorithm is iterative and variable order can matter on the margins)</span>
-    <span class="n">alphabetized_variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
-    <span class="n">alphabetized_variables</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="c1"># Calculate {# covariates}-dimensional array representation of the sample</span>
+    <span class="c1"># for the ipfn algorithm</span>
 
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;Alphabetized variable order is as follows: </span><span class="si">{</span><span class="n">alphabetized_variables</span><span class="si">}</span><span class="s2">.&quot;</span>
-    <span class="p">)</span>
+    <span class="c1"># Create a multi-index DataFrame with all possible combinations</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_product</span><span class="p">(</span><span class="n">categories</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">alphabetized_variables</span><span class="p">)</span>
+    <span class="n">full_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
 
-    <span class="c1"># margins from population</span>
-    <span class="n">target_margins</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="p">(</span>
-            <span class="n">target_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">variable</span><span class="p">)[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-            <span class="o">/</span> <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">target_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">variable</span><span class="p">)[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()))</span>
-            <span class="o">*</span> <span class="n">sample_sum_weights</span>
-        <span class="p">)</span>
-        <span class="k">for</span> <span class="n">variable</span> <span class="ow">in</span> <span class="n">alphabetized_variables</span>
-    <span class="p">]</span>
-
-    <span class="c1"># sample cells (joint distribution of covariates)</span>
-    <span class="n">sample_cells</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="c1"># Group by covariates and sum weights</span>
+    <span class="n">grouped_sample</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">sample_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">alphabetized_variables</span><span class="p">)[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
     <span class="p">)</span>
+
+    <span class="c1"># Merge to ensure all combinations are present (fill missing with 0)</span>
+    <span class="n">merged</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+        <span class="n">full_df</span><span class="p">,</span> <span class="n">grouped_sample</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="n">alphabetized_variables</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Reshape to n-dimensional array</span>
+    <span class="n">m_sample</span> <span class="o">=</span> <span class="n">merged</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">categories</span><span class="p">])</span>
+
+    <span class="c1"># Calculate target margins for ipfn</span>
+    <span class="n">target_margins</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">cats</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">alphabetized_variables</span><span class="p">,</span> <span class="n">categories</span><span class="p">):</span>
+        <span class="n">sums</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">target_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">col</span><span class="p">)[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="o">/</span> <span class="n">target_sum_weights</span>
+            <span class="o">*</span> <span class="n">sample_sum_weights</span>
+        <span class="p">)</span>
+        <span class="n">sums</span> <span class="o">=</span> <span class="n">sums</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">cats</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">target_margins</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sums</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">dimensions</span> <span class="o">=</span> <span class="p">[[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">alphabetized_variables</span><span class="p">))]</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
         <span class="s2">&quot;Raking algorithm running following settings: &quot;</span>
         <span class="sa">f</span><span class="s2">&quot; convergence_rate: </span><span class="si">{</span><span class="n">convergence_rate</span><span class="si">}</span><span class="s2">; max_iteration: </span><span class="si">{</span><span class="n">max_iteration</span><span class="si">}</span><span class="s2">; rate_tolerance: </span><span class="si">{</span><span class="n">rate_tolerance</span><span class="si">}</span><span class="s2">&quot;</span>
     <span class="p">)</span>
-    <span class="c1"># returns dataframe with joint distribution of covariates and total weight</span>
+
+    <span class="c1"># returns array with joint distribution of covariates and total weight</span>
     <span class="c1"># for that specific set of covariates</span>
+    <span class="c1"># no longer uses the dataframe version of the ipfn algorithm</span>
+    <span class="c1"># due to incompatability with latest Python versions</span>
     <span class="n">ipfn_obj</span> <span class="o">=</span> <span class="n">ipfn</span><span class="o">.</span><span class="n">ipfn</span><span class="p">(</span>
-        <span class="n">original</span><span class="o">=</span><span class="n">sample_cells</span><span class="p">,</span>
+        <span class="n">original</span><span class="o">=</span><span class="n">m_sample</span><span class="p">,</span>
         <span class="n">aggregates</span><span class="o">=</span><span class="n">target_margins</span><span class="p">,</span>
-        <span class="n">dimensions</span><span class="o">=</span><span class="p">[[</span><span class="n">var</span><span class="p">]</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">alphabetized_variables</span><span class="p">],</span>
-        <span class="n">weight_col</span><span class="o">=</span><span class="s2">&quot;weight&quot;</span><span class="p">,</span>
+        <span class="n">dimensions</span><span class="o">=</span><span class="n">dimensions</span><span class="p">,</span>
         <span class="n">convergence_rate</span><span class="o">=</span><span class="n">convergence_rate</span><span class="p">,</span>
         <span class="n">max_iteration</span><span class="o">=</span><span class="n">max_iteration</span><span class="p">,</span>
         <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
         <span class="n">rate_tolerance</span><span class="o">=</span><span class="n">rate_tolerance</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">fit</span><span class="p">,</span> <span class="n">converged</span><span class="p">,</span> <span class="n">iterations</span> <span class="o">=</span> <span class="n">ipfn_obj</span><span class="o">.</span><span class="n">iteration</span><span class="p">()</span>
+    <span class="n">m_fit</span><span class="p">,</span> <span class="n">converged</span><span class="p">,</span> <span class="n">iterations</span> <span class="o">=</span> <span class="n">ipfn_obj</span><span class="o">.</span><span class="n">iteration</span><span class="p">()</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
         <span class="sa">f</span><span class="s2">&quot;Raking algorithm terminated with following convergence: </span><span class="si">{</span><span class="n">converged</span><span class="si">}</span><span class="s2">; &quot;</span>
@@ -252,24 +273,28 @@
     <span class="k">if</span> <span class="ow">not</span> <span class="n">converged</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Maximum iterations reached, convergence was not achieved&quot;</span><span class="p">)</span>
 
+    <span class="c1"># Convert array representation of the weighted sample into a dataframe</span>
+    <span class="c1"># Generate all possible combinations of categories (cartesian product)</span>
+    <span class="n">combos</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="n">categories</span><span class="p">))</span>
+    <span class="c1"># Flatten the array to match the order of combos</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">m_fit</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+    <span class="c1"># Build the DataFrame</span>
+    <span class="n">fit</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">combos</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">alphabetized_variables</span><span class="p">)</span>
+    <span class="n">fit</span><span class="p">[</span><span class="s2">&quot;rake_weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">weights</span>
+
     <span class="n">raked</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
         <span class="n">sample_df</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(),</span>
-        <span class="n">fit</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="s2">&quot;rake_weight&quot;</span><span class="p">}),</span>
+        <span class="n">fit</span><span class="p">,</span>
         <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span>
-        <span class="n">on</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">variables</span><span class="p">),</span>
+        <span class="n">on</span><span class="o">=</span><span class="n">alphabetized_variables</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1"># Merge back to original sample weights</span>
     <span class="n">raked_rescaled</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
         <span class="n">raked</span><span class="p">,</span>
-        <span class="p">(</span>
-            <span class="n">sample_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">variables</span><span class="p">))[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
-            <span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-            <span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
-            <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="s2">&quot;total_survey_weight&quot;</span><span class="p">})</span>
-        <span class="p">),</span>
+        <span class="p">(</span><span class="n">grouped_sample</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="s2">&quot;total_survey_weight&quot;</span><span class="p">})),</span>
         <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span>
-        <span class="n">on</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">variables</span><span class="p">),</span>
+        <span class="n">on</span><span class="o">=</span><span class="n">alphabetized_variables</span><span class="p">,</span>
     <span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;index&quot;</span><span class="p">)</span>  <span class="c1"># important if dropping rows due to NA</span>
 
     <span class="c1"># use above merge to give each individual sample its proportion of the</span>
