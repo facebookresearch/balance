@@ -111,7 +111,7 @@ def poststratify(
                 "Detected some cells in sample_df that are not in target_df. "
                 "Samples in cells not covered by the target are given weight 0."
             )
-            combined["weight"] = combined["weight"].fillna(0)
+            combined["weight"] = combined["weight"].fillna(0).infer_objects(copy=False)
 
     combined["weight"] = combined["weight"] / combined["design_weight"]
     sample_df = sample_df.join(combined["weight"], on=variables)

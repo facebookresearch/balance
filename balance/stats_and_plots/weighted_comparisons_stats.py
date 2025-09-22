@@ -352,7 +352,11 @@ def _aggregate_asmd_by_main_covar(asmd_series: pd.Series) -> pd.Series:
         )
         return weighted_mean
 
-    out = out.groupby("main_covar_names").apply(_weighted_mean_for_our_df).iloc[:, 0]
+    out = (
+        out.groupby("main_covar_names", include_groups=False)
+        .apply(_weighted_mean_for_our_df)
+        .iloc[:, 0]
+    )
     out.name = None
     out.index.name = None
 

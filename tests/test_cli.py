@@ -244,7 +244,7 @@ class TestCli(
             ss = pd_diagnostics_out_file.eval(
                 "(metric == 'size') & (var == 'sample_obs')"
             )
-            self.assertEqual(int(pd_diagnostics_out_file[ss]["val"]), 2000)
+            self.assertEqual(int(pd_diagnostics_out_file[ss]["val"].iloc[0]), 2000)
 
             # verify we get diagnostics only for x and y, and not z
             ss = pd_diagnostics_out_file.eval("metric == 'covar_main_asmd_adjusted'")
@@ -380,7 +380,7 @@ class TestCli(
             ss = pd_diagnostics_out_file.eval(
                 "(metric == 'size') & (var == 'sample_obs')"
             )
-            self.assertEqual(int(pd_diagnostics_out_file[ss]["val"]), 3000)
+            self.assertEqual(int(pd_diagnostics_out_file[ss]["val"].iloc[0]), 3000)
 
     def test_cli_sep_input_works(self):
         """Test CLI functionality with custom input file separators (TSV)."""
@@ -441,7 +441,7 @@ class TestCli(
             ss = pd_diagnostics_out_file.eval(
                 "(metric == 'size') & (var == 'sample_obs')"
             )
-            self.assertEqual(int(pd_diagnostics_out_file[ss]["val"]), 3000)
+            self.assertEqual(int(pd_diagnostics_out_file[ss]["val"].iloc[0]), 3000)
 
     def test_cli_short_arg_names_works(self):
         """
@@ -509,7 +509,7 @@ class TestCli(
             ss = pd_diagnostics_out_file.eval(
                 "(metric == 'size') & (var == 'sample_obs')"
             )
-            self.assertEqual(int(pd_diagnostics_out_file[ss]["val"]), 3000)
+            self.assertEqual(int(pd_diagnostics_out_file[ss]["val"].iloc[0]), 3000)
 
     def test_method_works(self):
         """Test CLI functionality with different weighting methods (CBPS and IPW)."""

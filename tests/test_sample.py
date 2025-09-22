@@ -1117,8 +1117,8 @@ class TestSample_metrics_methods(
         ss_condition = "(metric == 'size') & (var == 'sample_covars')"
         ss = a_diag.eval(ss_condition)
         ss2 = a2_diag.eval(ss_condition)
-        self.assertEqual(int(a_diag[ss].val), 10)
-        self.assertEqual(int(a2_diag[ss2].val), 2)
+        self.assertEqual(int(a_diag[ss].val.iloc[0]), 10)
+        self.assertEqual(int(a2_diag[ss2].val.iloc[0]), 2)
 
         # Test mean ASMD changes
         # Note: Using assertAlmostEqual to handle floating point precision differences in Python 3.12
@@ -1183,9 +1183,9 @@ class TestSample_metrics_methods(
 
         # Test sample observation count changes
         ss_condition = "(metric == 'size') & (var == 'sample_obs')"
-        self.assertEqual(int(a_diag[a_diag.eval(ss_condition)].val), 1000)
-        self.assertEqual(int(a2_diag[a2_diag.eval(ss_condition)].val), 1000)
-        self.assertEqual(int(a3_diag[a3_diag.eval(ss_condition)].val), 508)
+        self.assertEqual(int(a_diag[a_diag.eval(ss_condition)].val.iloc[0]), 1000)
+        self.assertEqual(int(a2_diag[a2_diag.eval(ss_condition)].val.iloc[0]), 1000)
+        self.assertEqual(int(a3_diag[a3_diag.eval(ss_condition)].val.iloc[0]), 508)
 
         # Test target observation count changes
         ss_condition = "(metric == 'size') & (var == 'target_obs')"
@@ -1206,7 +1206,7 @@ class TestSample_metrics_methods(
         # Test design effect changes
         # Note: Using assertAlmostEqual to handle floating point precision differences in Python 3.12
         ss = a_diag.eval("(metric == 'weights_diagnostics') & (var == 'design_effect')")
-        self.assertAlmostEqual(round(float(a_diag[ss].val), 3), 1.468, places=2)
+        self.assertAlmostEqual(round(float(a_diag[ss].val.iloc[0]), 3), 1.468, places=2)
         ss = a3_diag.eval(
             "(metric == 'weights_diagnostics') & (var == 'design_effect')"
         )

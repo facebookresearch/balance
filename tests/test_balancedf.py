@@ -1127,8 +1127,8 @@ class TestBalanceDF_asmd(BalanceTestCase):
 
         asmd_df = s3_null_madeup_weights.covars().asmd()
         exp = round(
-            (asmd_df["mean(asmd)"][1] - asmd_df["mean(asmd)"][0])
-            / asmd_df["mean(asmd)"][1],
+            (asmd_df["mean(asmd)"].iloc[1] - asmd_df["mean(asmd)"].iloc[0])
+            / asmd_df["mean(asmd)"].iloc[1],
             3,
         )
         self.assertEqual(exp, 0.107)
@@ -1410,6 +1410,4 @@ class TestBalanceDF(BalanceTestCase):
                 5,  # pyre-ignore[6]: Testing error handling with wrong type
                 "number",
             )
-        self.assertTrue(
-            BalanceDF._check_if_not_BalanceDF(s3.covars()) is None
-        )  # pyre-ignore[6]: Testing error handling with wrong type
+        self.assertTrue(BalanceDF._check_if_not_BalanceDF(s3.covars()) is None)

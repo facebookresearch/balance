@@ -1043,10 +1043,18 @@ def _is_arraylike(o) -> bool:
     Returns:
         bool: returns True if an object is an array-ish type.
     """
+    # Fix FutureWarning about PandasArray being renamed to NumpyExtensionArray
+    try:
+        # Try to use the new name first
+        pandas_array_type = pd.arrays.NumpyExtensionArray
+    except AttributeError:
+        # Fall back to the old name for older pandas versions
+        pandas_array_type = pd.arrays.PandasArray
+
     return (
         isinstance(o, np.ndarray)
         or isinstance(o, pd.Series)
-        or isinstance(o, pd.arrays.PandasArray)
+        or isinstance(o, pandas_array_type)
         or isinstance(o, pd.arrays.StringArray)
         or isinstance(o, pd.arrays.IntegerArray)
         or isinstance(o, pd.arrays.BooleanArray)
@@ -1156,7 +1164,10 @@ def rm_mutual_nas(*args) -> List:
     missing_mask = reduce(
         lambda x, y: x | y,
         [
-            pd.Series(x).replace([np.inf, -np.inf], np.nan).isna()
+            pd.Series(x)
+            .replace([np.inf, -np.inf], np.nan)
+            .infer_objects(copy=False)
+            .isna()
             for x in args
             if x is not None
         ],
@@ -1190,6 +1201,15 @@ def rm_mutual_nas(*args) -> List:
 
     # reproduce the type of each array in the result
     r = [(t(x) if x is not None else x) for t, x in zip(original_types, r)]
+    # Invoke infer_objects(copy=False) for the case of pandas Series with object dtype to suppress FutureWarning
+    r = [
+        (
+            x.infer_objects(copy=False)
+            if isinstance(x, pd.Series) and x.dtype == object
+            else x
+        )
+        for x in r
+    ]
     if len(args) == 1:
         r = r[0]
     return r
@@ -1363,6 +1383,7 @@ def auto_aggregate(
         warnings.warn(
             "features argument is unused, it will be removed in the future",
             warnings.DeprecationWarning,
+            stacklevel=2,
         )
 
     if isinstance(aggfunc, str):
@@ -1424,7 +1445,10 @@ def fct_lump(s: pd.Series, prop: float = 0.05) -> pd.Series:
                 # 6                b
                 # dtype: object
     """
+    # Fix FutureWarning about value_counts with object-dtype by using infer_objects on the result index
     props = s.value_counts() / s.shape[0]
+    if hasattr(props.index, "infer_objects"):
+        props.index = props.index.infer_objects()
 
     small_categories = props[props < prop].index.tolist()
 
@@ -1434,7 +1458,12 @@ def fct_lump(s: pd.Series, prop: float = 0.05) -> pd.Series:
 
     if s.dtype.name == "category":
         s = s.astype("object")
-    s.loc[s.apply(lambda x: x in small_categories)] = remainder_category_name
+
+    # Fix FutureWarning about setting incompatible dtype by converting to object if needed
+    if len(small_categories) > 0:
+        s = s.astype("object")
+        s = s.astype("object")
+        s.loc[s.apply(lambda x: x in small_categories)] = remainder_category_name
     return s
 
 
@@ -1470,7 +1499,13 @@ def fct_lump_by(s: pd.Series, by: pd.Series, prop: float = 0.05) -> pd.Series:
     pd.options.mode.copy_on_write = True
     # pandas groupby doesnt preserve order
     for subgroup in pd.unique(by):
-        res.loc[by == subgroup] = fct_lump(res.loc[by == subgroup], prop=prop)
+        # Fix FutureWarning about setting incompatible dtype by ensuring consistent object dtype
+        subset_mask = by == subgroup
+        subset_result = fct_lump(res.loc[subset_mask], prop=prop)
+        # Always convert to object type first to avoid incompatible dtype warnings
+        if subset_result.dtype == "object":
+            res = res.astype("object")
+        res.loc[subset_mask] = subset_result
     return res
 
 

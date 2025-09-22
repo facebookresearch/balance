@@ -236,7 +236,9 @@ class Sample:
                 )
 
             # Replace any pandas.NA with numpy.nan:
-            sample._df = sample._df.fillna(np.nan).infer_objects(copy=False)
+            sample._df = sample._df.fillna(np.nan)
+            if (sample._df.dtypes == "object").any():
+                sample._df = sample._df.infer_objects(copy=False)
 
             balance_util._warn_of_df_dtypes_change(
                 sample._df_dtypes,
