@@ -751,9 +751,9 @@ class TestSample_metrics_methods(
                 a_with_outcome_adjusted._links["unadjusted"].outcomes().df,
                 a_with_outcome_adjusted._links["unadjusted"].weights().df["weight"],
             )
-        )[0]
+        ).iloc[0]
 
-        actual_ratio = a_with_outcome_adjusted.outcome_variance_ratio()[0]
+        actual_ratio = a_with_outcome_adjusted.outcome_variance_ratio().iloc[0]
         self.assertEqual(round(actual_ratio, 5), round(expected_ratio, 5))
 
     def test_outcome_variance_ratio_value(self):
@@ -769,7 +769,7 @@ class TestSample_metrics_methods(
 
         # Test expected variance ratio value
         self.assertEqual(
-            round(a_with_outcome_adjusted.outcome_variance_ratio()[0], 2), 0.98
+            round(a_with_outcome_adjusted.outcome_variance_ratio().iloc[0], 2), 0.98
         )
 
     def test_outcome_variance_ratio_null_adjustment(self):
@@ -1107,7 +1107,7 @@ class TestSample_metrics_methods(
 
         # Test weight normalization
         ss = a_diag.eval("(metric == 'weights_diagnostics') & (var == 'describe_mean')")
-        self.assertEqual(round(float(a_diag[ss].val), 4), 1.000)
+        self.assertEqual(round(float(a_diag[ss].val.iloc[0]), 4), 1.000)
 
         # Test ASMD count changes due to column filtering
         self.assertEqual(a_diag_tbl["covar_main_asmd_adjusted"], 11)
@@ -1117,16 +1117,20 @@ class TestSample_metrics_methods(
         ss_condition = "(metric == 'size') & (var == 'sample_covars')"
         ss = a_diag.eval(ss_condition)
         ss2 = a2_diag.eval(ss_condition)
-        self.assertEqual(int(a_diag[ss].val), 10)
-        self.assertEqual(int(a2_diag[ss2].val), 2)
+        self.assertEqual(int(a_diag[ss].val.iloc[0]), 10)
+        self.assertEqual(int(a2_diag[ss2].val.iloc[0]), 2)
 
         # Test mean ASMD changes
         # Note: Using assertAlmostEqual to handle floating point precision differences in Python 3.12
         ss_condition = "(metric == 'covar_main_asmd_adjusted') & (var == 'mean(asmd)')"
         ss = a_diag.eval(ss_condition)
         ss2 = a2_diag.eval(ss_condition)
-        self.assertAlmostEqual(round(float(a_diag[ss].val), 4), 0.0329, places=3)
-        self.assertAlmostEqual(round(float(a2_diag[ss2].val), 3), 0.109, places=3)
+        self.assertAlmostEqual(
+            round(float(a_diag[ss].val.iloc[0]), 4), 0.0329, places=3
+        )
+        self.assertAlmostEqual(
+            round(float(a2_diag[ss2].val.iloc[0]), 3), 0.109, places=3
+        )
 
     def test_Sample_keep_only_some_rows_columns_row_filtering(self):
         """Test row filtering functionality and its impact on sample sizes.
@@ -1183,35 +1187,37 @@ class TestSample_metrics_methods(
 
         # Test sample observation count changes
         ss_condition = "(metric == 'size') & (var == 'sample_obs')"
-        self.assertEqual(int(a_diag[a_diag.eval(ss_condition)].val), 1000)
-        self.assertEqual(int(a2_diag[a2_diag.eval(ss_condition)].val), 1000)
-        self.assertEqual(int(a3_diag[a3_diag.eval(ss_condition)].val), 508)
+        self.assertEqual(int(a_diag[a_diag.eval(ss_condition)].val.iloc[0]), 1000)
+        self.assertEqual(int(a2_diag[a2_diag.eval(ss_condition)].val.iloc[0]), 1000)
+        self.assertEqual(int(a3_diag[a3_diag.eval(ss_condition)].val.iloc[0]), 508)
 
         # Test target observation count changes
         ss_condition = "(metric == 'size') & (var == 'target_obs')"
-        self.assertEqual(int(a_diag[a_diag.eval(ss_condition)].val), 1000)
-        self.assertEqual(int(a2_diag[a2_diag.eval(ss_condition)].val), 1000)
-        self.assertEqual(int(a3_diag[a3_diag.eval(ss_condition)].val), 516)
+        self.assertEqual(int(a_diag[a_diag.eval(ss_condition)].val.iloc[0]), 1000)
+        self.assertEqual(int(a2_diag[a2_diag.eval(ss_condition)].val.iloc[0]), 1000)
+        self.assertEqual(int(a3_diag[a3_diag.eval(ss_condition)].val.iloc[0]), 516)
 
         # Test weight count changes
         ss = a_diag.eval(
             "(metric == 'weights_diagnostics') & (var == 'describe_count')"
         )
-        self.assertEqual(int(a_diag[ss].val), 1000)
+        self.assertEqual(int(a_diag[ss].val.iloc[0]), 1000)
         ss = a3_diag.eval(
             "(metric == 'weights_diagnostics') & (var == 'describe_count')"
         )
-        self.assertEqual(int(a3_diag[ss].val), 508)
+        self.assertEqual(int(a3_diag[ss].val.iloc[0]), 508)
 
         # Test design effect changes
         # Note: Using assertAlmostEqual to handle floating point precision differences in Python 3.12
         ss = a_diag.eval("(metric == 'weights_diagnostics') & (var == 'design_effect')")
-        self.assertAlmostEqual(round(float(a_diag[ss].val), 3), 1.468, places=2)
+        self.assertAlmostEqual(round(float(a_diag[ss].val.iloc[0]), 3), 1.468, places=2)
         ss = a3_diag.eval(
             "(metric == 'weights_diagnostics') & (var == 'design_effect')"
         )
         # Increased tolerance to handle Python 3.12's new summation algorithm
-        self.assertAlmostEqual(round(float(a3_diag[ss].val), 4), 1.4325, places=2)
+        self.assertAlmostEqual(
+            round(float(a3_diag[ss].val.iloc[0]), 4), 1.4325, places=2
+        )
 
     def test_Sample_keep_only_some_rows_columns_with_outcomes(self):
         """Test filtering functionality when outcome columns are present.

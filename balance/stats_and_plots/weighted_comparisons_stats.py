@@ -21,6 +21,7 @@ from balance.stats_and_plots.weighted_stats import (
     weighted_var,
 )
 from balance.stats_and_plots.weights_stats import _check_weights_are_valid
+from balance.util import _safe_replace_and_infer
 
 logger: logging.Logger = logging.getLogger(__package__)
 
@@ -287,7 +288,7 @@ def asmd(
     #  Remove na indicator columns; it's OK to assume that these columns are
     #  indicators because add_na_indicator enforces it
     out = out.loc[:, (c for c in out.columns.values if not c.startswith("_is_na_"))]
-    out = out.replace([np.inf, -np.inf], np.nan)
+    out = _safe_replace_and_infer(out)
 
     # TODO (p2): verify that df column names are unique (otherwise throw an exception).
     #            it should probably be upstream during in the Sample creation process.
@@ -344,15 +345,27 @@ def _aggregate_asmd_by_main_covar(asmd_series: pd.Series) -> pd.Series:
     # turn things into DataFrame to make it easy to aggregate.
     out = pd.concat((asmd_series, weights), axis=1)
 
-    def _weighted_mean_for_our_df(x: pd.DataFrame) -> pd.Series:
-        values = x.iloc[:, 0]
-        weights = x["weight"]
-        weighted_mean = pd.Series(
-            ((values * weights) / weights.sum()).sum(), index=["mean"]
-        )
-        return weighted_mean
+    # Use a different approach to avoid pandas groupby.apply FutureWarnings
+    # Group manually and calculate weighted means to avoid warnings across all pandas versions
+    grouped_results = {}
+    try:
+        # Try using include_groups=False to avoid FutureWarning about operating on grouping columns
+        for main_covar_name, group_data in out.groupby(
+            "main_covar_names", include_groups=False
+        ):
+            values = group_data.iloc[:, 0]  # First column contains the ASMD values
+            weights = group_data["weight"]
+            weighted_mean = ((values * weights) / weights.sum()).sum()
+            grouped_results[main_covar_name] = weighted_mean
+    except TypeError:
+        # Fallback for older pandas versions that don't support include_groups parameter
+        for main_covar_name, group_data in out.groupby("main_covar_names"):
+            values = group_data.iloc[:, 0]  # First column contains the ASMD values
+            weights = group_data["weight"]
+            weighted_mean = ((values * weights) / weights.sum()).sum()
+            grouped_results[main_covar_name] = weighted_mean
 
-    out = out.groupby("main_covar_names").apply(_weighted_mean_for_our_df).iloc[:, 0]
+    out = pd.Series(grouped_results)
     out.name = None
     out.index.name = None
 
