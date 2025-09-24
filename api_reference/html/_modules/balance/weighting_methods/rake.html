@@ -164,8 +164,10 @@
             <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span>
         <span class="p">)</span>
     <span class="k">elif</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">:</span>
-        <span class="n">target_df</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s2">&quot;__NaN__&quot;</span><span class="p">)</span>
-        <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s2">&quot;__NaN__&quot;</span><span class="p">)</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">_safe_fillna_and_infer</span>
+
+        <span class="n">target_df</span> <span class="o">=</span> <span class="n">_safe_fillna_and_infer</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="s2">&quot;__NaN__&quot;</span><span class="p">)</span>
+        <span class="n">sample_df</span> <span class="o">=</span> <span class="n">_safe_fillna_and_infer</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="s2">&quot;__NaN__&quot;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`na_action` must be &#39;add_indicator&#39; or &#39;drop&#39;&quot;</span><span class="p">)</span>
 
@@ -226,9 +228,11 @@
     <span class="p">)</span>
 
     <span class="c1"># Merge to ensure all combinations are present (fill missing with 0)</span>
-    <span class="n">merged</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
-        <span class="n">full_df</span><span class="p">,</span> <span class="n">grouped_sample</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="n">alphabetized_variables</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span>
-    <span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">merged</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">full_df</span><span class="p">,</span> <span class="n">grouped_sample</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="n">alphabetized_variables</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">infer_objects</span><span class="p">(</span><span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="p">)</span>
 
     <span class="c1"># Reshape to n-dimensional array</span>
     <span class="n">m_sample</span> <span class="o">=</span> <span class="n">merged</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">categories</span><span class="p">])</span>

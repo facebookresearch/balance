@@ -276,8 +276,11 @@
                     <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">,</span> <span class="n">i_input</span><span class="p">,</span> <span class="n">i_output</span>
                 <span class="p">)</span>
 
-            <span class="c1"># Replace any pandas.NA with numpy.nan:</span>
-            <span class="n">sample</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span><span class="o">.</span><span class="n">infer_objects</span><span class="p">(</span><span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="c1"># Replace any pandas.NA with numpy.nan avoiding downcasting warnings</span>
+            <span class="c1"># By explicitly setting the result of fillna and using infer_objects</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">_safe_fillna_and_infer</span>
+
+            <span class="n">sample</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="n">_safe_fillna_and_infer</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
 
             <span class="n">balance_util</span><span class="o">.</span><span class="n">_warn_of_df_dtypes_change</span><span class="p">(</span>
                 <span class="n">sample</span><span class="o">.</span><span class="n">_df_dtypes</span><span class="p">,</span>
@@ -303,7 +306,14 @@
                     <span class="s2">&quot;No weights passed. Adding a &#39;weight&#39; column and setting all values to 1&quot;</span>
                 <span class="p">)</span>
                 <span class="n">weight_column</span> <span class="o">=</span> <span class="s2">&quot;weight&quot;</span>
-                <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">weight_column</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>  <span class="c1"># Use 1.0 to ensure float64 type</span>
+                <span class="k">if</span> <span class="n">standardize_types</span><span class="p">:</span>
+                    <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">weight_column</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="mf">1.0</span>  <span class="c1"># Use 1.0 to ensure float64 type</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">weight_column</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="mi">1</span>  <span class="c1"># Use 1 to preserve int64 type when standardize_types=False</span>
+                    <span class="p">)</span>
 
         <span class="c1"># verify that the weights are not null</span>
         <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">weight_column</span><span class="p">]</span><span class="o">.</span><span class="n">isnull</span><span class="p">()):</span>
@@ -541,7 +551,29 @@
 <span class="sd">                    since weights are missing some of the indices in Sample.df&quot;&quot;&quot;</span>
                 <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">weights</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+            <span class="c1"># For Series weights, always ensure weight column is float64 for proper weighting operations</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_float_dtype</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">name</span><span class="p">]):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">name</span>
+                <span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Convert weights to float64 if not already</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_float_dtype</span><span class="p">(</span><span class="n">weights</span><span class="p">):</span>
+                <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Now assign the weights</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">weights</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># For scalar weights, always ensure weight column is float64 for proper weighting operations</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_float_dtype</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">name</span><span class="p">]):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">name</span>
+                <span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Now assign the weights</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">weights</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">name</span><span class="p">]</span></div>
 
 

@@ -326,9 +326,13 @@
             <span class="n">target_weights</span><span class="o">=</span><span class="n">target_weights</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="c1"># TODO: use asmd_improvement function for that</span>
-        <span class="n">asmd_improvement</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">asmd_before</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">asmd_after</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">]</span>
-        <span class="p">)</span> <span class="o">/</span> <span class="n">asmd_before</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">]</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">_safe_divide_with_zero_handling</span>
+
+        <span class="c1"># Avoid divide by zero warning</span>
+        <span class="n">asmd_improvement</span> <span class="o">=</span> <span class="n">_safe_divide_with_zero_handling</span><span class="p">(</span>
+            <span class="n">asmd_before</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">asmd_after</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">],</span>
+            <span class="n">asmd_before</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
         <span class="n">deff</span> <span class="o">=</span> <span class="n">design_effect</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
         <span class="n">all_perf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="p">{</span>
