@@ -21,6 +21,7 @@ from balance.stats_and_plots.weighted_stats import (
     weighted_var,
 )
 from balance.stats_and_plots.weights_stats import _check_weights_are_valid
+from balance.util import _safe_groupby_apply, _safe_replace_and_infer
 
 logger: logging.Logger = logging.getLogger(__package__)
 
@@ -287,7 +288,7 @@ def asmd(
     #  Remove na indicator columns; it's OK to assume that these columns are
     #  indicators because add_na_indicator enforces it
     out = out.loc[:, (c for c in out.columns.values if not c.startswith("_is_na_"))]
-    out = out.replace([np.inf, -np.inf], np.nan)
+    out = _safe_replace_and_infer(out)
 
     # TODO (p2): verify that df column names are unique (otherwise throw an exception).
     #            it should probably be upstream during in the Sample creation process.
@@ -344,15 +345,14 @@ def _aggregate_asmd_by_main_covar(asmd_series: pd.Series) -> pd.Series:
     # turn things into DataFrame to make it easy to aggregate.
     out = pd.concat((asmd_series, weights), axis=1)
 
-    def _weighted_mean_for_our_df(x: pd.DataFrame) -> pd.Series:
-        values = x.iloc[:, 0]
-        weights = x["weight"]
-        weighted_mean = pd.Series(
-            ((values * weights) / weights.sum()).sum(), index=["mean"]
-        )
-        return weighted_mean
+    # Define the apply function for calculating weighted means
+    def calculate_weighted_mean(group_data):
+        values = group_data.iloc[:, 0]  # First column contains the ASMD values
+        weights = group_data["weight"]
+        return ((values * weights) / weights.sum()).sum()
 
-    out = out.groupby("main_covar_names").apply(_weighted_mean_for_our_df).iloc[:, 0]
+    # Use _safe_groupby_apply to handle pandas compatibility
+    out = _safe_groupby_apply(out, "main_covar_names", calculate_weighted_mean)
     out.name = None
     out.index.name = None
 

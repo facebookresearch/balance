@@ -77,7 +77,13 @@ def _prepare_weighted_stat_args(
     # NOTE: np.matrix is an instance of np.ndarray, so we must turn it to pd.Dataframe before moving forward.
     if isinstance(v, np.matrix):
         v = pd.DataFrame(v)
-    if isinstance(v, np.ndarray) or isinstance(v, list):
+    if isinstance(v, np.ndarray):
+        # Check if it's a 2D array (matrix-like)
+        if v.ndim == 2:
+            v = pd.DataFrame(v)
+        else:
+            v = pd.Series(v)
+    elif isinstance(v, list):
         v = pd.Series(v)
     if isinstance(v, pd.Series):
         v = v.to_frame()
@@ -97,14 +103,20 @@ def _prepare_weighted_stat_args(
         raise TypeError("all columns must be numeric")
 
     if inf_rm:
-        v = v.replace([np.inf, -np.inf], np.nan)
-        w = w.replace([np.inf, -np.inf], np.nan)
+        from balance.util import _safe_replace_and_infer
+
+        # Since v is guaranteed to be DataFrame and w is guaranteed to be Series at this point,
+        # we can safely cast the results
+        v = _safe_replace_and_infer(v)
+        w = _safe_replace_and_infer(w)
+
     v = v.reset_index(drop=True)
     w = w.reset_index(drop=True)
 
     _check_weights_are_valid(w)
 
-    return v, w
+    # Type cast to satisfy pyre - we know these are correct types based on the function logic
+    return pd.DataFrame(v), pd.Series(w)
 
 
 def weighted_mean(
@@ -297,8 +309,10 @@ def ci_of_weighted_mean(
     ci = pd.Series(
         [
             (
-                weighed_mean_of_v[i] - z_value * np.sqrt(var_weighed_mean_of_v[i]),
-                weighed_mean_of_v[i] + z_value * np.sqrt(var_weighed_mean_of_v[i]),
+                weighed_mean_of_v.iloc[i]
+                - z_value * np.sqrt(var_weighed_mean_of_v.iloc[i]),
+                weighed_mean_of_v.iloc[i]
+                + z_value * np.sqrt(var_weighed_mean_of_v.iloc[i]),
             )
             for i in range(len(weighed_mean_of_v))
         ],
@@ -356,7 +370,11 @@ def weighted_var(
     means = weighted_mean(v, w)
     v1 = w.sum()
     v2 = (w**2).sum()
-    return (v1 / (v1**2 - v2)) * ((v - means) ** 2).multiply(w, axis="index").sum()
+    # Avoid divide by zero warning
+    denominator = v1**2 - v2
+    with np.errstate(divide="ignore", invalid="ignore"):
+        result = (v1 / denominator) * ((v - means) ** 2).multiply(w, axis="index").sum()
+    return result
 
 
 def weighted_sd(

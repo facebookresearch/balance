@@ -135,7 +135,7 @@ class TestDataFactory:
 
         s3_null_madeup_weights = deepcopy(s3_null)
         s3_null_madeup_weights.set_weights(
-            (1, 2, 3, 1)  # pyre-ignore[6]: Test case with tuple weights
+            pd.Series([1, 2, 3, 1], index=s3_null.df.index)
         )
 
         return {
@@ -154,9 +154,7 @@ s3: Sample = s1.set_target(s2)
 s3_null: Sample = s3.adjust(method="null")
 
 s3_null_madeup_weights: Sample = deepcopy(s3_null)
-s3_null_madeup_weights.set_weights(
-    (1, 2, 3, 1)  # pyre-ignore[6]: Test case with tuple weights
-)
+s3_null_madeup_weights.set_weights(pd.Series([1, 2, 3, 1], index=s3_null.df.index))
 
 s4: Sample = TestDataFactory.create_sample_with_null_values()
 o: BalanceOutcomesDF = s1.outcomes()
@@ -1107,9 +1105,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
             s3.covars().asmd_improvement()
 
         s3_unadjusted = deepcopy(s3)
-        s3_unadjusted.set_weights(
-            (1, 1, 1, 1)  # pyre-ignore[6]: Test case with tuple weights
-        )
+        s3_unadjusted.set_weights(pd.Series([1, 1, 1, 1], index=s3.df.index))
         s3_2 = s3.set_unadjusted(s3_unadjusted)
         self.assertEqual(s3_2.covars().asmd_improvement(), 0.3224900694460681)
 
@@ -1127,8 +1123,8 @@ class TestBalanceDF_asmd(BalanceTestCase):
 
         asmd_df = s3_null_madeup_weights.covars().asmd()
         exp = round(
-            (asmd_df["mean(asmd)"][1] - asmd_df["mean(asmd)"][0])
-            / asmd_df["mean(asmd)"][1],
+            (asmd_df["mean(asmd)"].iloc[1] - asmd_df["mean(asmd)"].iloc[0])
+            / asmd_df["mean(asmd)"].iloc[1],
             3,
         )
         self.assertEqual(exp, 0.107)
@@ -1410,6 +1406,4 @@ class TestBalanceDF(BalanceTestCase):
                 5,  # pyre-ignore[6]: Testing error handling with wrong type
                 "number",
             )
-        self.assertTrue(
-            BalanceDF._check_if_not_BalanceDF(s3.covars()) is None
-        )  # pyre-ignore[6]: Testing error handling with wrong type
+        self.assertTrue(BalanceDF._check_if_not_BalanceDF(s3.covars()) is None)

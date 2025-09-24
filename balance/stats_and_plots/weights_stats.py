@@ -101,7 +101,10 @@ def design_effect(w: pd.Series) -> np.float64:
                 # As expected. With a single dominating weight - the Deff is almost equal to the sample size.
     """
     _check_weights_are_valid(w)
-    return (w**2).mean() / (w.mean() ** 2)
+    from balance.util import _safe_divide_with_zero_handling
+
+    # Avoid divide by zero warning
+    return _safe_divide_with_zero_handling((w**2).mean(), w.mean() ** 2)
 
 
 def nonparametric_skew(w: pd.Series) -> float:
@@ -138,7 +141,6 @@ def nonparametric_skew(w: pd.Series) -> float:
     _check_weights_are_valid(w)
     if (len(w) == 1) or (w.std() == 0):
         return float(0)
-    # pyre-ignore
     return (w.mean() - w.median()) / w.std()
 
 

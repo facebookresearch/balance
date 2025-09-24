@@ -1560,3 +1560,170 @@ class TestUtil(
                 "A_2": {0: 10, 1: 11, 2: 12},
             },
         )
+
+    def test__safe_replace_and_infer(self):
+        """Test safe replacement and dtype inference to avoid pandas deprecation warnings."""
+        # Test with Series containing infinities
+        series_with_inf = pd.Series([1.0, np.inf, 2.0, -np.inf, 3.0])
+        result = balance_util._safe_replace_and_infer(series_with_inf)
+        expected = pd.Series([1.0, np.nan, 2.0, np.nan, 3.0])
+        pd.testing.assert_series_equal(result, expected)
+
+        # Test with DataFrame
+        df_with_inf = pd.DataFrame({"a": [1.0, np.inf, 2.0], "b": [-np.inf, 3.0, 4.0]})
+        result = balance_util._safe_replace_and_infer(df_with_inf)
+        expected = pd.DataFrame({"a": [1.0, np.nan, 2.0], "b": [np.nan, 3.0, 4.0]})
+        pd.testing.assert_frame_equal(result, expected)
+
+        # Test with custom replace values
+        series_test = pd.Series([1, 2, 3, 4])
+        result = balance_util._safe_replace_and_infer(
+            series_test, to_replace=2, value=99
+        )
+        expected = pd.Series([1, 99, 3, 4])
+        pd.testing.assert_series_equal(result, expected)
+
+        # Test with object dtype
+        series_obj = pd.Series(["a", "b", "c"], dtype="object")
+        result = balance_util._safe_replace_and_infer(
+            series_obj, to_replace="b", value="x"
+        )
+        expected = pd.Series(["a", "x", "c"], dtype="object")
+        pd.testing.assert_series_equal(result, expected)
+
+    def test__safe_fillna_and_infer(self):
+        """Test safe NA filling and dtype inference to avoid pandas deprecation warnings."""
+        # Test with Series containing NaN values
+        series_with_nan = pd.Series([1.0, np.nan, 2.0, np.nan, 3.0])
+        result = balance_util._safe_fillna_and_infer(series_with_nan, value=0)
+        expected = pd.Series([1.0, 0.0, 2.0, 0.0, 3.0])
+        pd.testing.assert_series_equal(result, expected)
+
+        # Test with DataFrame
+        df_with_nan = pd.DataFrame({"a": [1.0, np.nan, 2.0], "b": [np.nan, 3.0, 4.0]})
+        result = balance_util._safe_fillna_and_infer(df_with_nan, value=-1)
+        expected = pd.DataFrame({"a": [1.0, -1.0, 2.0], "b": [-1.0, 3.0, 4.0]})
+        pd.testing.assert_frame_equal(result, expected)
+
+        # Test with string replacement
+        series_str = pd.Series(["a", None, "c"])
+        result = balance_util._safe_fillna_and_infer(series_str, value="_NA")
+        expected = pd.Series(["a", "_NA", "c"])
+        pd.testing.assert_series_equal(result, expected)
+
+        # Test with no value provided (default None -> nan)
+        series_test = pd.Series([1, None, 3])
+        result = balance_util._safe_fillna_and_infer(series_test)
+        expected = pd.Series([1.0, np.nan, 3.0])  # Type gets converted to float
+        pd.testing.assert_series_equal(result, expected)
+
+    def test__safe_groupby_apply(self):
+        """Test safe groupby apply operations that handle include_groups parameter."""
+        # Create test DataFrame
+        df = pd.DataFrame(
+            {
+                "group": ["A", "A", "B", "B", "C"],
+                "value": [1, 2, 3, 4, 5],
+                "other": [10, 20, 30, 40, 50],
+            }
+        )
+
+        # Test with simple aggregation function
+        result = balance_util._safe_groupby_apply(
+            df, "group", lambda x: x["value"].sum()
+        )
+        expected = pd.Series([3, 7, 5], index=pd.Index(["A", "B", "C"], name="group"))
+        pd.testing.assert_series_equal(result, expected)
+
+        # Test with multiple grouping columns
+        df_multi = pd.DataFrame(
+            {
+                "group1": ["A", "A", "B", "B"],
+                "group2": ["X", "Y", "X", "Y"],
+                "value": [1, 2, 3, 4],
+            }
+        )
+        result = balance_util._safe_groupby_apply(
+            df_multi, ["group1", "group2"], lambda x: x["value"].mean()
+        )
+        expected = pd.Series(
+            [1.0, 2.0, 3.0, 4.0],
+            index=pd.MultiIndex.from_tuples(
+                [("A", "X"), ("A", "Y"), ("B", "X"), ("B", "Y")],
+                names=["group1", "group2"],
+            ),
+        )
+        pd.testing.assert_series_equal(result, expected)
+
+        # Test with function that accesses the grouping column
+        result = balance_util._safe_groupby_apply(df, "group", lambda x: len(x))
+        expected = pd.Series([2, 2, 1], index=pd.Index(["A", "B", "C"], name="group"))
+        pd.testing.assert_series_equal(result, expected)
+
+    def test__safe_show_legend(self):
+        """Test safe legend display that only shows legends when there are labeled artists."""
+        import matplotlib.pyplot as plt
+
+        # Test with labeled artists
+        fig, ax = plt.subplots()
+        ax.plot([1, 2, 3], [1, 2, 3], label="line1")
+        ax.plot([1, 2, 3], [3, 2, 1], label="line2")
+
+        # This should not raise a warning
+        balance_util._safe_show_legend(ax)
+
+        # Verify legend was created
+        legend = ax.get_legend()
+        self.assertIsNotNone(legend)
+        self.assertEqual(len(legend.get_texts()), 2)
+
+        plt.close(fig)
+
+        # Test with no labeled artists
+        fig, ax = plt.subplots()
+        ax.plot([1, 2, 3], [1, 2, 3])  # No label
+        ax.plot([1, 2, 3], [3, 2, 1])  # No label
+
+        # This should not create a legend or raise warnings
+        balance_util._safe_show_legend(ax)
+
+        # Verify no legend was created
+        legend = ax.get_legend()
+        self.assertIsNone(legend)
+
+        plt.close(fig)
+
+        # Test with mixed labeled and unlabeled artists
+        fig, ax = plt.subplots()
+        ax.plot([1, 2, 3], [1, 2, 3], label="labeled")
+        ax.plot([1, 2, 3], [3, 2, 1])  # No label
+
+        balance_util._safe_show_legend(ax)
+
+        # Verify legend was created with only labeled items
+        legend = ax.get_legend()
+        self.assertIsNotNone(legend)
+        self.assertEqual(len(legend.get_texts()), 1)
+        self.assertEqual(legend.get_texts()[0].get_text(), "labeled")
+
+        plt.close(fig)
+
+    def test__safe_divide_with_zero_handling(self):
+        """Test safe division with proper numpy error state management."""
+        # Test normal division
+        result = balance_util._safe_divide_with_zero_handling(10, 2)
+        self.assertEqual(result, 5.0)
+
+        # Test with numpy arrays - the main use case for this function
+        numerator = np.array([1, 2, 3, 4])
+        denominator = np.array([1, 0, 3, 2])
+        result = balance_util._safe_divide_with_zero_handling(numerator, denominator)
+        expected = np.array([1.0, np.inf, 1.0, 2.0])
+        np.testing.assert_array_equal(result, expected)
+
+        # Test with pandas Series
+        num_series = pd.Series([10, 20, 30])
+        den_series = pd.Series([2, 0, 5])
+        result = balance_util._safe_divide_with_zero_handling(num_series, den_series)
+        expected = pd.Series([5.0, np.inf, 6.0])
+        pd.testing.assert_series_equal(result, expected)

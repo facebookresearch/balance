@@ -275,9 +275,13 @@ def choose_regularization(
             target_weights=target_weights,
         )
         # TODO: use asmd_improvement function for that
-        asmd_improvement = (
-            asmd_before.loc["mean(asmd)"] - asmd_after.loc["mean(asmd)"]
-        ) / asmd_before.loc["mean(asmd)"]
+        from balance.util import _safe_divide_with_zero_handling
+
+        # Avoid divide by zero warning
+        asmd_improvement = _safe_divide_with_zero_handling(
+            asmd_before.loc["mean(asmd)"] - asmd_after.loc["mean(asmd)"],
+            asmd_before.loc["mean(asmd)"],
+        )
         deff = design_effect(weights)
         all_perf.append(
             {

@@ -26,7 +26,7 @@ from balance.stats_and_plots.weighted_stats import (
     relative_frequency_table,
     weighted_quantile,
 )
-from balance.util import choose_variables, rm_mutual_nas
+from balance.util import _safe_show_legend, choose_variables, rm_mutual_nas
 from matplotlib.colors import rgb2hex
 
 logger: logging.Logger = logging.getLogger(__package__)
@@ -451,10 +451,9 @@ def plot_qq(
             ax=axis,
         )
     set_xy_axes_to_use_the_same_lim(axis)
-
     axis.plot(axis.get_xlim(), axis.get_ylim(), "--")
     axis.set_title(f"quantile-quantile plot of covar '{column}' in target vs sample")
-    axis.legend()
+    _safe_show_legend(axis)
 
 
 def plot_qq_categorical(
@@ -554,7 +553,7 @@ def plot_qq_categorical(
     axis.set_title(
         f"proportion-proportion plot of covar '{column}' in target vs sample"
     )
-    axis.legend()
+    _safe_show_legend(axis)
 
 
 # TODO: add control (or just change) the default theme
@@ -718,7 +717,6 @@ def plotly_plot_qq(
     plot_it: bool = True,
     return_dict_of_figures: bool = False,
     **kwargs,
-    # pyre-fixme[11]: Annotation `Figure` is not defined as a type.
 ) -> Optional[Dict[str, go.Figure]]:
     """
     Plots interactive QQ plot of the given variables.

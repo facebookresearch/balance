@@ -125,8 +125,10 @@ def rake(
             target_df, target_weights, "target"
         )
     elif na_action == "add_indicator":
-        target_df = target_df.fillna("__NaN__")
-        sample_df = sample_df.fillna("__NaN__")
+        from balance.util import _safe_fillna_and_infer
+
+        target_df = _safe_fillna_and_infer(target_df, "__NaN__")
+        sample_df = _safe_fillna_and_infer(sample_df, "__NaN__")
     else:
         raise ValueError("`na_action` must be 'add_indicator' or 'drop'")
 
@@ -187,9 +189,11 @@ def rake(
     )
 
     # Merge to ensure all combinations are present (fill missing with 0)
-    merged = pd.merge(
-        full_df, grouped_sample, on=alphabetized_variables, how="left"
-    ).fillna(0)
+    merged = (
+        pd.merge(full_df, grouped_sample, on=alphabetized_variables, how="left")
+        .fillna(0)
+        .infer_objects(copy=False)
+    )
 
     # Reshape to n-dimensional array
     m_sample = merged["weight"].values.reshape([len(c) for c in categories])

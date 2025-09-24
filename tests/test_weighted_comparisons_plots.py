@@ -383,7 +383,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
 
         test_df = pd.DataFrame(
             {
-                "v1": random.random_integers(11111, 11114, size=100).astype(str),
+                "v1": random.randint(11111, 11115, size=100).astype(str),
                 "v2": random.normal(size=100),
                 "v3": random.uniform(size=100),
             }

@@ -159,11 +159,14 @@ def add_na_indicator(
                 f"i.e. column: {c}"
             )
         if c in categorical_cols:
-            df[c] = df[c].cat.add_categories(replace_val_obj).fillna(replace_val_obj)
+            filled_col = (
+                df[c].cat.add_categories(replace_val_obj).fillna(replace_val_obj)
+            )
+            df[c] = filled_col.infer_objects(copy=False)
         elif c in non_numeric_cols:
-            df[c] = df[c].fillna(replace_val_obj)
+            df[c] = _safe_fillna_and_infer(df[c], replace_val_obj)
         else:
-            df[c] = df[c].fillna(replace_val_num)
+            df[c] = _safe_fillna_and_infer(df[c], replace_val_num)
 
     return pd.concat((df, na_indicators), axis=1)
 
@@ -671,7 +674,9 @@ def _prepare_input_model_matrix(
         logger.warning("Dropping all rows with NAs")
 
     if fix_columns_names:
-        all_data.columns = all_data.columns.str.replace(r"[^\w]", "_", regex=True)
+        all_data.columns = all_data.columns.str.replace(
+            r"[^\w]", "_", regex=True
+        ).infer_objects(copy=False)
         all_data = _make_df_column_names_unique(all_data)
 
     return {"all_data": all_data, "sample_n": sample_n}
@@ -1046,13 +1051,141 @@ def _is_arraylike(o) -> bool:
     return (
         isinstance(o, np.ndarray)
         or isinstance(o, pd.Series)
-        or isinstance(o, pd.arrays.PandasArray)
+        or (
+            hasattr(pd.arrays, "NumpyExtensionArray")
+            and isinstance(o, pd.arrays.NumpyExtensionArray)
+        )
         or isinstance(o, pd.arrays.StringArray)
         or isinstance(o, pd.arrays.IntegerArray)
         or isinstance(o, pd.arrays.BooleanArray)
         or "pandas.core.arrays" in str(type(o))  # support any pandas array type.
         or (isinstance(o, collections.abc.Sequence) and not isinstance(o, str))
     )
+
+
+def _process_series_for_missing_mask(series: pd.Series) -> pd.Series:
+    """
+    Helper function to process a pandas Series for missing value detection
+    while avoiding deprecation warnings from replace and infer_objects.
+
+    Args:
+        series (pd.Series): Input series to process
+
+    Returns:
+        pd.Series: Boolean series indicating missing values
+    """
+    # Use _safe_replace_and_infer to avoid downcasting warnings
+    replaced_series = _safe_replace_and_infer(series, [np.inf, -np.inf], np.nan)
+    return replaced_series.isna()
+
+
+def _safe_replace_and_infer(
+    data: Union[pd.Series, pd.DataFrame], to_replace=None, value=None
+) -> Union[pd.Series, pd.DataFrame]:
+    """
+    Helper function to safely replace values and infer object dtypes
+    while avoiding pandas deprecation warnings.
+    Args:
+        data: pandas Series or DataFrame to process
+        to_replace: Value(s) to replace (default: [np.inf, -np.inf])
+        value: Value to replace with (default: np.nan)
+    Returns:
+        Processed Series or DataFrame with proper dtype inference
+    """
+    if to_replace is None:
+        to_replace = [np.inf, -np.inf]
+    if value is None:
+        value = np.nan
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="Downcasting behavior in `replace` is deprecated.*",
+            category=FutureWarning,
+        )
+        return data.replace(to_replace, value).infer_objects(copy=False)
+
+
+def _safe_fillna_and_infer(
+    data: Union[pd.Series, pd.DataFrame], value=None
+) -> Union[pd.Series, pd.DataFrame]:
+    """
+    Helper function to safely fill NaN values and infer object dtypes
+    while avoiding pandas deprecation warnings.
+
+    Args:
+        data: pandas Series or DataFrame to process
+        value: Value to fill NaN with (default: np.nan)
+
+    Returns:
+        Processed Series or DataFrame with proper dtype inference
+    """
+    if value is None:
+        value = np.nan
+
+    # Suppress pandas FutureWarnings about downcasting during fillna operations
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", FutureWarning)
+        filled_data = data.fillna(value)
+
+    return filled_data.infer_objects(copy=False)
+
+
+def _safe_groupby_apply(
+    data: pd.DataFrame, groupby_cols: Union[str, List[str]], apply_func
+) -> pd.Series:
+    """
+    Helper function to safely apply groupby operations while handling
+    the include_groups parameter for pandas compatibility.
+
+    Args:
+        data: DataFrame to group
+        groupby_cols: Column(s) to group by
+        apply_func: Function to apply to each group
+
+    Returns:
+        Result of groupby apply operation
+    """
+    # Use include_groups=False to avoid FutureWarning about operating on grouping columns
+    # Fall back to old behavior if include_groups parameter is not supported
+    try:
+        return data.groupby(groupby_cols, include_groups=False).apply(apply_func)
+    except TypeError:
+        # Suppress pandas FutureWarnings about downcasting during fillna operations
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", FutureWarning)
+            # Fallback for older pandas versions that don't support include_groups parameter
+            return data.groupby(groupby_cols).apply(apply_func)
+
+
+def _safe_show_legend(axis):
+    """
+    Helper function to safely show legend only if there are labeled artists,
+    avoiding matplotlib UserWarning about no artists with labels.
+
+    Args:
+        axis: matplotlib axis object
+    """
+    _, labels = axis.get_legend_handles_labels()
+    if labels:
+        axis.legend()
+
+
+def _safe_divide_with_zero_handling(numerator, denominator):
+    """
+    Helper function to safely perform division while handling divide by zero
+    warnings with proper numpy error state management.
+
+    Args:
+        numerator: Numerator for division
+        denominator: Denominator for division
+
+    Returns:
+        Result of division with proper handling of divide by zero cases
+    """
+    with np.errstate(divide="ignore", invalid="ignore"):
+        # Use numpy.divide to handle division by zero properly
+        result = np.divide(numerator, denominator)
+        return result
 
 
 def rm_mutual_nas(*args) -> List:
@@ -1156,7 +1289,7 @@ def rm_mutual_nas(*args) -> List:
     missing_mask = reduce(
         lambda x, y: x | y,
         [
-            pd.Series(x).replace([np.inf, -np.inf], np.nan).isna()
+            _process_series_for_missing_mask(pd.Series(x, dtype="object"))
             for x in args
             if x is not None
         ],
@@ -1322,7 +1455,15 @@ def auto_spread(
 
     is_unique = {}
     for c in features:
-        unique_userids = data.groupby(c)[id_].apply(lambda x: len(set(x)) == len(x))
+        # Use include_groups=False to avoid FutureWarning about operating on grouping columns
+        # Fall back to old behavior if include_groups parameter is not supported
+        try:
+            unique_userids = data.groupby(c, include_groups=False)[id_].apply(
+                lambda x: len(set(x)) == len(x)
+            )
+        except TypeError:
+            # Fallback for older pandas versions that don't support include_groups parameter
+            unique_userids = data.groupby(c)[id_].apply(lambda x: len(set(x)) == len(x))
         is_unique[c] = all(unique_userids.values)
 
     unique_groupings = [k for k, v in is_unique.items() if v]
@@ -1363,6 +1504,7 @@ def auto_aggregate(
         warnings.warn(
             "features argument is unused, it will be removed in the future",
             warnings.DeprecationWarning,
+            stacklevel=2,
         )
 
     if isinstance(aggfunc, str):
@@ -1424,7 +1566,17 @@ def fct_lump(s: pd.Series, prop: float = 0.05) -> pd.Series:
                 # 6                b
                 # dtype: object
     """
-    props = s.value_counts() / s.shape[0]
+    # Handle value_counts with object-dtype to maintain consistent behavior
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="The behavior of value_counts with object-dtype is deprecated.*",
+            category=FutureWarning,
+        )
+        props = s.value_counts() / s.shape[0]
+
+    # Ensure proper dtype inference on the index
+    props.index = props.index.infer_objects(copy=False)
 
     small_categories = props[props < prop].index.tolist()
 
@@ -1432,8 +1584,10 @@ def fct_lump(s: pd.Series, prop: float = 0.05) -> pd.Series:
     while remainder_category_name in props.index:
         remainder_category_name = remainder_category_name * 2
 
-    if s.dtype.name == "category":
-        s = s.astype("object")
+    # Convert to object dtype
+    s = s.astype("object")
+
+    # Replace small categories with the remainder category name
     s.loc[s.apply(lambda x: x in small_categories)] = remainder_category_name
     return s
 
@@ -1470,7 +1624,11 @@ def fct_lump_by(s: pd.Series, by: pd.Series, prop: float = 0.05) -> pd.Series:
     pd.options.mode.copy_on_write = True
     # pandas groupby doesnt preserve order
     for subgroup in pd.unique(by):
-        res.loc[by == subgroup] = fct_lump(res.loc[by == subgroup], prop=prop)
+        mask = by == subgroup
+        grouped_res = fct_lump(res.loc[mask], prop=prop)
+        # Ensure dtype compatibility before assignment
+        res = res.astype("object")
+        res.loc[mask] = grouped_res
     return res
 
 

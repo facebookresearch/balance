@@ -235,8 +235,11 @@ class Sample:
                     sample._df, i_input, i_output
                 )
 
-            # Replace any pandas.NA with numpy.nan:
-            sample._df = sample._df.fillna(np.nan).infer_objects(copy=False)
+            # Replace any pandas.NA with numpy.nan avoiding downcasting warnings
+            # By explicitly setting the result of fillna and using infer_objects
+            from balance.util import _safe_fillna_and_infer
+
+            sample._df = _safe_fillna_and_infer(sample._df, np.nan)
 
             balance_util._warn_of_df_dtypes_change(
                 sample._df_dtypes,
@@ -262,7 +265,14 @@ class Sample:
                     "No weights passed. Adding a 'weight' column and setting all values to 1"
                 )
                 weight_column = "weight"
-                sample._df.loc[:, weight_column] = 1.0  # Use 1.0 to ensure float64 type
+                if standardize_types:
+                    sample._df.loc[:, weight_column] = (
+                        1.0  # Use 1.0 to ensure float64 type
+                    )
+                else:
+                    sample._df.loc[:, weight_column] = (
+                        1  # Use 1 to preserve int64 type when standardize_types=False
+                    )
 
         # verify that the weights are not null
         if any(sample._df[weight_column].isnull()):
@@ -479,7 +489,29 @@ class Sample:
                     since weights are missing some of the indices in Sample.df"""
                 )
 
-        self._df.loc[:, self.weight_column.name] = weights
+        if isinstance(weights, pd.Series):
+            # For Series weights, always ensure weight column is float64 for proper weighting operations
+            if not pd.api.types.is_float_dtype(self._df[self.weight_column.name]):
+                self._df[self.weight_column.name] = self._df[
+                    self.weight_column.name
+                ].astype("float64")
+
+            # Convert weights to float64 if not already
+            if not pd.api.types.is_float_dtype(weights):
+                weights = weights.astype("float64")
+
+            # Now assign the weights
+            self._df.loc[:, self.weight_column.name] = weights
+        else:
+            # For scalar weights, always ensure weight column is float64 for proper weighting operations
+            if not pd.api.types.is_float_dtype(self._df[self.weight_column.name]):
+                self._df[self.weight_column.name] = self._df[
+                    self.weight_column.name
+                ].astype("float64")
+
+            # Now assign the weights
+            self._df.loc[:, self.weight_column.name] = weights
+
         self.weight_column = self._df[self.weight_column.name]
 
     ####################################

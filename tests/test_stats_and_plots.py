@@ -196,7 +196,7 @@ class TestBalance_weighted_stats(
 
         # Check that it catches wrong input types
         with self.assertRaises(TypeError):
-            v, w = pd.Series([1, 2]), np.matrix([1, 2]).T
+            v, w = pd.Series([1, 2]), "wrong_type"
             v2, w2 = _prepare_weighted_stat_args(v, w)
         with self.assertRaises(TypeError):
             v, w = pd.Series([1, 2]), (1, 2)
@@ -224,8 +224,11 @@ class TestBalance_weighted_stats(
         # assert the new types:
         self.assertEqual(type(v2), pd.DataFrame)
         self.assertEqual(type(w2), pd.Series)
-        # np.matrix
-        v, w = np.matrix([-1, 0, 1, np.inf]).T, np.array([np.inf, 1, 2, 1.0])
+        # np.array (replacing np.matrix)
+        v, w = (
+            np.array([-1, 0, 1, np.inf]).reshape(-1, 1),
+            np.array([np.inf, 1, 2, 1.0]),
+        )
         v2, w2 = _prepare_weighted_stat_args(v, w, False)
         # assert the new types:
         self.assertEqual(type(v2), pd.DataFrame)
@@ -327,8 +330,8 @@ class TestBalance_weighted_stats(
             pd.Series((1.4, 3)),
         )
 
-        # np.matrix v
-        d = np.matrix([(-1, 2, 1, 2), (1, 2, 3, 4)]).transpose()
+        # np.array v (replacing np.matrix)
+        d = np.array([(-1, 2, 1, 2), (1, 2, 3, 4)]).transpose()
         pd.testing.assert_series_equal(weighted_mean(d), pd.Series((1, 2.5)))
         pd.testing.assert_series_equal(
             weighted_mean(d, w=pd.Series((1, 2, 3, 4))),
@@ -508,11 +511,13 @@ class TestBalance_weighted_stats(
             np.array([[2.0, 1.0], [2.0, 1.0]]),
         )
 
-        # verify it indeed works with np.matrix input
+        # verify it indeed works with np.array input (replacing np.matrix)
+        # Note: np.matrix tests were removed due to NumPy deprecation warnings:
+        # "the matrix subclass is not the recommended way to represent matrices"
         # no weights
         self.assertEqual(
             weighted_quantile(
-                np.matrix([[1, 2, 3, 4], [1, 1, 1, 1]]).transpose(),
+                np.array([[1, 2, 3, 4], [1, 1, 1, 1]]).transpose(),
                 [0.25, 0.5],
             ).values,
             np.array([[1.5, 1.0], [2.5, 1.0]]),
@@ -520,7 +525,7 @@ class TestBalance_weighted_stats(
         # with weights
         self.assertEqual(
             weighted_quantile(
-                np.matrix([[1, 2, 3, 4], [1, 1, 1, 1]]).transpose(),
+                np.array([[1, 2, 3, 4], [1, 1, 1, 1]]).transpose(),
                 [0.25, 0.5],
                 w=pd.Series([1, 1, 0, 0]),
             ).values,
@@ -528,7 +533,7 @@ class TestBalance_weighted_stats(
         )
         self.assertEqual(
             weighted_quantile(
-                np.matrix([[1, 2, 3, 4], [1, 1, 1, 1]]).transpose(),
+                np.array([[1, 2, 3, 4], [1, 1, 1, 1]]).transpose(),
                 [0.25, 0.5],
                 w=pd.Series([1, 100, 1, 1]),
             ).values,
