@@ -1,3 +1,35 @@
+0.11.0 (2025-09-24)
+==================
+## New Features
+- **Python 3.12 support** - Complete support for Python 3.12 alongside existing Python 3.9, 3.10, and 3.11 support (with CI/CD integration).
+    - **Implemented Python version-specific dependency constraints** - Added conditional version ranges for numpy, pandas, scipy, and scikit-learn that vary based on Python version (e.g., numpy>=1.21.0,<2.0 for Python <3.12, numpy>=1.24.0,<2.1 for Python >=3.12)
+    - **Pandas compatibility improvements** - Replaced `value_counts(dropna=False)` with `groupby().size()` in frequency table creation to avoid FutureWarning
+    - Fixed various pandas deprecation warnings and improved DataFrame handling
+- **Improved raking algorithm** - Completely refactored rake weighting from DataFrame-based to array-based ipfn algorithm using multi-dimensional arrays and itertools for better performance and compatibility with latest Python versions. **Variables are now automatically alphabetized** to ensure consistent results regardless of input order.
+- **poststratify method enhancement** - New `strict_matching` parameter (default True) handles cases where sample cells are not present in target data. When False, issues warning and assigns weight 0 to uncovered samples
+
+## Bug Fixes
+- **Type annotations** - Enhanced Pyre type hints throughout the codebase, particularly in utility functions
+- **Sample class improvements** - Fixed weight type assignment (ensuring float64 type), improved DataFrame manipulation with `.infer_objects(copy=False)` for pandas compatibility, and enhanced weight setting logic
+- **Website dependencies** - Updated various website dependencies including Docusaurus and related packages
+
+## Tests
+**Comprehensive test refactoring**, including:
+- **Enhanced test validation** - Added detailed explanations of test methodologies and expected behaviors in docstrings
+- **Improved test coverage** - Tests now include edge cases like NaN handling, different data types, and error conditions
+- **Improved test organization** (more granular) across all test modules (test_stats_and_plots.py, test_balancedf.py, test_ipw.py, test_rake.py, test_cli.py, test_weighted_comparisons_plots.py, test_cbps.py, test_testutil.py, test_adjustment.py, test_util.py, test_sample.py)
+- **Updated GitHub workflows** to include Python 3.12 in build and test matrix
+- **Fix 261 "pandas deprecation" warnings!**
+- **Added type annotations** - Converted test_balancedf.py to pyre-strict with.
+
+## Documentation
+- **GitHub issue template for support questions** - Added structured template to help users ask questions about using the balance package
+
+## Contributors
+@talgalili, @wesleytlee, @dependabot
+
+
+
 0.10.0 (2025-01-06)
 ==================
 ## New Features

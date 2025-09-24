@@ -22,7 +22,7 @@ from balance.util import TruncationFormatter  # noqa
 # TODO: verify this works.
 
 global __version__
-__version__ = "0.10.0"
+__version__ = "0.11.0"
 
 
 def setup_logging(
