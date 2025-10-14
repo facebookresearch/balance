@@ -31,7 +31,7 @@ More about the methodological background can be found in [Sarig, T., Galili, T.,
 # Installation
 
 ## Requirements
-You need Python 3.9, 3.10, 3.11, or 3.12 to run *balance*. *balance* can be built and run from Linux, OSX, and Windows.
+You need Python 3.9, 3.10, 3.11, 3.12, 3.13, or 3.14 to run *balance*. *balance* can be built and run from Linux, OSX, and Windows.
 
 The required Python dependencies are:
 ```python
