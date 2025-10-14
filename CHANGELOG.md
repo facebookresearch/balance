@@ -1,3 +1,15 @@
+0.12.0 (2025-10-14)
+==================
+## New Features
+- **Support for Python 3.13 + 3.14**
+    - Update setup.py and CI/CD integration to include Python 3.13 and 3.14.
+    - Remove upper version constraints from numpy, pandas, scipy, and scikit-learn dependencies for Python 3.12+.
+
+
+## Contributors
+@talgalili, @wesleytlee
+
+
 0.11.0 (2025-09-24)
 ==================
 ## New Features
