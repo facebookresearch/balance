@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkstaticdocs_starter=self.webpackChunkstaticdocs_starter||[]).push([[1715],{53411:s=>{s.exports=JSON.parse('{"label":"survey-statistics","permalink":"/blog/tags/survey-statistics","allTagsPath":"/blog/tags","count":1}')}}]);

@@ -228,7 +228,7 @@ For diagnostics the main tools (comparing before, after applying weights, and th
 You are welcome to:
 
 * Learn more in the [*balance*](https://import-balance.org/) website.
-* Ask for help on: https://stats.stackexchange.com/questions/tagged/balance
+* Ask for help on: https://github.com/facebookresearch/balance/issues/new?template=support_question.md
 * Submit bug-reports and features' suggestions at: https://github.com/facebookresearch/balance/issues
 * Send a pull request on: https://github.com/facebookresearch/balance. See the [CONTRIBUTING](https://github.com/facebookresearch/balance/blob/main/CONTRIBUTING.md) file for how to help out. And our [CODE OF CONDUCT](https://github.com/facebookresearch/balance/blob/main/LICENSE-DOCUMENTATION) for our expectations from contributors.
 
