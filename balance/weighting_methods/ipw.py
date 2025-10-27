@@ -560,7 +560,7 @@ def ipw(
             ):
                 break
 
-            # Cross-validation procedure is only used for choosing best lambda is max_de is None
+            # Cross-validation procedure is only used for choosing best lambda if max_de is None
             # Previously, cross validation was run even when max_de is not None,
             # but the results weren't used for model selection.
             if max_de is not None:
