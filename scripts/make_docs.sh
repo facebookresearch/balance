@@ -53,10 +53,12 @@ echo "--------------------------------------------"
 # For idempotency/safety, remove any content between the autogen delimiters
 cleanup_doc "website/docs/docs/overview.md"
 cleanup_doc "website/docs/docs/contributing.md"
+cleanup_doc "website/docs/docs/changelog.md"
 
 # Copy the contents of README.md -> website/docs/docs/overview.md
 autosync_doc "README.md" "website/docs/docs/overview.md"
 autosync_doc "CONTRIBUTING.md" "website/docs/docs/contributing.md"
+autosync_doc "CHANGELOG.md" "website/docs/docs/changelog.md"
 
 if [[ $ONLY_DOCUSAURUS == false ]]; then
   echo "-----------------------------------"
@@ -109,3 +111,4 @@ echo "Clean up"
 echo "--------------------------------------------"
 cleanup_doc "website/docs/docs/overview.md"
 cleanup_doc "website/docs/docs/contributing.md"
+cleanup_doc "website/docs/docs/changelog.md"
