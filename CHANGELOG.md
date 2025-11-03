@@ -1,3 +1,15 @@
+0.12.1 (2025-11-03)
+==================
+## New Features
+- Added a welcome message when importing the package.
+
+## Documentation
+- Added 'CHANGELOG' to the docs website. https://import-balance.org/docs/docs/CHANGELOG/
+
+## Bug Fixes
+- Fixed plotly figures in all the tutorials. https://import-balance.org/docs/tutorials/
+
+
 0.12.0 (2025-10-14)
 ==================
 ## New Features

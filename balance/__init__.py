@@ -5,7 +5,6 @@
 
 # pyre-unsafe
 
-
 import logging
 from typing import Optional
 
@@ -18,11 +17,27 @@ from balance.datasets import load_data  # noqa
 from balance.sample_class import Sample  # noqa
 from balance.util import TruncationFormatter  # noqa
 
-# TODO: which objects do we want to explicitly externalize?
-# TODO: verify this works.
-
 global __version__
-__version__ = "0.12.0"
+__version__ = "0.12.1"
+
+WELCOME_MESSAGE = f"""
+Welcome to balance (Version {__version__})!
+An open-source Python package for balancing biased data samples.
+
+📖 Documentation: https://import-balance.org/
+🛠️ Get Help / Report Issues: https://github.com/facebookresearch/balance/issues/
+📄 Citation:
+    Sarig, T., Galili, T., & Eilat, R. (2023).
+    balance - a Python package for balancing biased data samples.
+    https://arxiv.org/abs/2307.06024
+
+Tip: You can access this information at any time with balance.help()
+"""
+
+
+def help():
+    """Display information about documentation, help, and citation."""
+    print(WELCOME_MESSAGE)
 
 
 def setup_logging(
@@ -53,7 +68,9 @@ def setup_logging(
 logger: logging.Logger = setup_logging()
 logger.info(f"Using {__package__} version {__version__}")
 
+# Print the welcome/help/citation message on import
+print(WELCOME_MESSAGE)
 
-# TODO: add example in the notebooks for using this function.
+
 def set_warnings(level: str = "WARNING") -> None:
     logger.setLevel(getattr(logging, level))
