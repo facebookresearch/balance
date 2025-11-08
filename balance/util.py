@@ -946,7 +946,6 @@ def qcut(s, q, duplicates: str = "drop", **kwargs):
         return pd.qcut(s, q, duplicates=duplicates, **kwargs).astype("O")
 
 
-# TODO: fix it so that the order of the returned columns is the same as the original order in the DataFrame
 def quantize(
     df: Union[pd.DataFrame, pd.Series], q: int = 10, variables=None
 ) -> pd.DataFrame:
@@ -984,18 +983,20 @@ def quantize(
         #  https://stackoverflow.com/questions/21635915/
         df = pd.Series(df)
 
-    # TODO: change assert to raise
     if isinstance(df, pd.Series):
-        assert is_numeric_dtype(df.dtype), "series must be numeric"
+        if not is_numeric_dtype(df.dtype):
+            raise TypeError("series must be numeric")
         return qcut(df, q, duplicates="drop")
 
-    assert isinstance(df, pd.DataFrame)
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError("df must be a pandas DataFrame")
 
     variables = choose_variables(df, variables=variables)
     numeric_columns = list(df.select_dtypes(include=[np.number]).columns)
 
     variables = [v for v in variables if v in numeric_columns]
 
+    original_columns = list(df.columns)
     transformed_data = df.loc[:, variables].transform(
         lambda c: qcut(c, q, duplicates="drop")
     )
@@ -1003,7 +1004,7 @@ def quantize(
     transformed_data = pd.concat(
         (df.loc[:, untransformed_columns], transformed_data), axis=1
     )
-    return transformed_data
+    return transformed_data.loc[:, original_columns]
 
 
 def row_pairwise_diffs(df: pd.DataFrame) -> pd.DataFrame:
