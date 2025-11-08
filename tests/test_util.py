@@ -771,6 +771,30 @@ class TestUtil(
         r = balance_util.quantize(1, 1)
         self.assertTrue(len(set(r.values)) == 1)
 
+    def test_quantize_preserves_column_order(self):
+        df = pd.DataFrame(
+            {
+                "first": np.linspace(0.0, 19.0, 20),
+                "second": list("abcdefghijklmnopqrst"),
+                "third": np.linspace(100.0, 119.0, 20),
+            }
+        )
+
+        result = balance_util.quantize(df, q=4, variables=("first", "third"))
+
+        self.assertListEqual(list(result.columns), ["first", "second", "third"])
+        self.assertIsInstance(result.loc[0, "first"], pd.Interval)
+        self.assertEqual(result.loc[0, "second"], "a")
+        self.assertIsInstance(result.loc[0, "third"], pd.Interval)
+
+    def test_quantize_non_numeric_series_raises(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "series must be numeric",
+            balance_util.quantize,
+            pd.Series(["x", "y", "z"]),
+        )
+
     def test_row_pairwise_diffs(self):
         d = pd.DataFrame({"a": (1, 2, 3), "b": (-42, 8, 2)})
         e = pd.DataFrame(
