@@ -10,7 +10,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import inspect
 import logging
 
-from argparse import ArgumentParser, FileType, Namespace
+from argparse import ArgumentParser, Namespace
+from pathlib import Path
 
 from typing import Dict, List, Optional, Tuple, Type, Union
 
@@ -329,7 +330,6 @@ class BalanceCLI:
             header=(not self.args.no_output_header),
             sep=self.args.sep_output_file,
         )
-        self.args.output_file.close()
 
         if self.args.diagnostics_output_file is not None:
             diagnostics_df.to_csv(
@@ -338,7 +338,6 @@ class BalanceCLI:
                 header=(not self.args.no_output_header),
                 sep=self.args.sep_diagnostics_output_file,
             )
-            self.args.diagnostics_output_file.close()
 
     def update_attributes_for_main_used_by_adjust(self) -> None:
         """
@@ -515,13 +514,6 @@ class BalanceCLI:
         # Write output
         self.write_outputs(output_df, diagnostics_df)
 
-    def __del__(self) -> None:
-        for handle in [self.args.input_file, self.args.output_file]:
-            try:
-                handle.close()
-            except FileNotFoundError:
-                pass
-
 
 def _float_or_none(value: Union[float, int, str, None]) -> Optional[float]:
     """Return a float (if float or int) or None if it's None or "None"
@@ -544,19 +536,19 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
     # TODO: add arguments for formula when used as a list and for penalty_factor
     parser.add_argument(
         "--input_file",
-        type=FileType("r"),
+        type=Path,
         required=True,
         help="Path to input sample/target",
     )
     parser.add_argument(
         "--output_file",
-        type=FileType("w"),
+        type=Path,
         required=True,
         help="Path to write output weights",
     )
     parser.add_argument(
         "--diagnostics_output_file",
-        type=FileType("w"),
+        type=Path,
         required=False,
         help="Path to write adjustment diagnostics",
     )
