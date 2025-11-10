@@ -270,7 +270,6 @@ def rake(
     grouped_sample_full = grouped_sample_series.reindex(index, fill_value=0)
     m_sample = grouped_sample_full.to_numpy().reshape([len(c) for c in categories])
     m_fit_input = m_sample.copy()
-    grouped_sample_df = grouped_sample_series.reset_index()
 
     # Calculate target margins for ipfn
     target_margins = []
