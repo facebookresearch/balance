@@ -329,6 +329,7 @@ def ipw(
     formula: Union[str, List[str], None] = None,
     penalty_factor: Optional[List[float]] = None,
     one_hot_encoding: bool = False,
+    logistic_regression_kwargs: Optional[Dict[str, Any]] = None,
     # TODO: This is set to be false in order to keep reproducibility of works that uses balance.
     # The best practice is for this to be true.
     random_seed: int = 2020,
@@ -376,6 +377,10 @@ def ipw(
             categorical variables with more than 2 categories (i.e. the
             number of columns will be equal to the number of categories),
             and only 1 column for variables with 2 levels (treatment contrast). Defaults to False.
+        logistic_regression_kwargs (Optional[Dict[str, Any]], optional): Additional keyword arguments
+            passed to :class:`sklearn.linear_model.LogisticRegression`. When None, the
+            model defaults to ``penalty="l2"``, ``solver="lbfgs"``, ``tol=1e-4``,
+            ``max_iter=5000``, and ``warm_start=True``. Defaults to None.
         random_seed (int, optional): Random seed to use. Defaults to 2020.
 
     Raises:
@@ -400,6 +405,13 @@ def ipw(
                 },
             }
     """
+    if model == "glmnet":
+        raise NotImplementedError("glmnet is no longer supported")
+    elif model != "sklearn":
+        raise NotImplementedError(
+            f"Model '{model}' is not supported. Only 'sklearn' is currently implemented."
+        )
+
     logger.info("Starting ipw function")
     np.random.seed(
         random_seed
@@ -484,106 +496,103 @@ def ipw(
         f"penalty_factor frequency table {pd.crosstab(index=penalty_factor_expanded, columns='count')}"
     )
 
-    if model == "sklearn":
-        foldids = np.resize(range(10), y.shape[0])
-        np.random.shuffle(
-            foldids
-        )  # shuffels the values of foldid - note that we set the seed in the beginning of the function, so this order is fixed
-        logger.debug(
-            f"foldid frequency table {pd.crosstab(index=foldids, columns='count')}"
-        )
-        logger.debug(f"first 10 elements of foldids: {foldids[0:9]}")
+    foldids = np.resize(range(10), y.shape[0])
+    np.random.shuffle(
+        foldids
+    )  # shuffels the values of foldid - note that we set the seed in the beginning of the function, so this order is fixed
+    logger.debug(
+        f"foldid frequency table {pd.crosstab(index=foldids, columns='count')}"
+    )
+    logger.debug(f"first 10 elements of foldids: {foldids[0:9]}")
 
-        logger.debug("Fitting logistic model")
+    logger.debug("Fitting logistic model")
 
-        # Standardize columns of the X matrix and penalize the columns of the X matrix according to the penalty_factor.
-        # Workaround for sklearn, which doesn't allow for covariate specific penalty terms.
-        # Note that penalty = 0 is not truly supported, and large differences in penalty factors
-        # may affect convergence speed.
+    # Standardize columns of the X matrix and penalize the columns of the X matrix according to the penalty_factor.
+    # Workaround for sklearn, which doesn't allow for covariate specific penalty terms.
+    # Note that penalty = 0 is not truly supported, and large differences in penalty factors
+    # may affect convergence speed.
 
-        scaler = StandardScaler(with_mean=False, copy=False)
+    scaler = StandardScaler(with_mean=False, copy=False)
 
-        # TODO: add test to verify expected behavior from model_weights
-        X_matrix = scaler.fit_transform(X_matrix, sample_weight=model_weights)
+    # TODO: add test to verify expected behavior from model_weights
+    X_matrix = scaler.fit_transform(X_matrix, sample_weight=model_weights)
 
-        if penalty_factor is not None:
-            penalties_skl = [
-                1 / pf if pf > 0.1 else 10 for pf in penalty_factor_expanded
-            ]
-            for i in range(len(penalties_skl)):
-                X_matrix[:, i] *= penalties_skl[i]
+    if penalty_factor is not None:
+        penalties_skl = [1 / pf if pf > 0.1 else 10 for pf in penalty_factor_expanded]
+        for i in range(len(penalties_skl)):
+            X_matrix[:, i] *= penalties_skl[i]
 
-        X_matrix = csr_matrix(X_matrix)
+    X_matrix = csr_matrix(X_matrix)
 
-        lambdas = np.logspace(np.log10(lambda_max), np.log10(lambda_min), num_lambdas)
+    lambdas = np.logspace(np.log10(lambda_max), np.log10(lambda_min), num_lambdas)
 
-        # Using L2 regression since L1 is too slow. Observed "lbfgs" was the most computationally efficient solver.
-        lr = LogisticRegression(
-            penalty="l2",
-            solver="lbfgs",
-            tol=1e-4,
-            max_iter=5000,
-            warm_start=True,
-        )
-        fits = [None for _ in range(len(lambdas))]
-        links = [None for _ in range(len(lambdas))]
-        prop_dev = [np.nan for _ in range(len(lambdas))]
-        dev = [np.nan for _ in range(len(lambdas))]
-        cv_dev_mean = [np.nan for _ in range(len(lambdas))]
-        cv_dev_sd = [np.nan for _ in range(len(lambdas))]
+    # Using L2 regression since L1 is too slow. Observed "lbfgs" was the most computationally efficient solver.
+    lr_kwargs: Dict[str, Any] = {
+        "penalty": "l2",
+        "solver": "lbfgs",
+        "tol": 1e-4,
+        "max_iter": 5000,
+        "warm_start": True,
+    }
+    if logistic_regression_kwargs is not None:
+        lr_kwargs.update(logistic_regression_kwargs)
 
-        min_s_index = 0
-        prev_prop_dev = None
+    lr = LogisticRegression(**lr_kwargs)
+    fits = [None for _ in range(len(lambdas))]
+    links = [None for _ in range(len(lambdas))]
+    prop_dev = [np.nan for _ in range(len(lambdas))]
+    dev = [np.nan for _ in range(len(lambdas))]
+    cv_dev_mean = [np.nan for _ in range(len(lambdas))]
+    cv_dev_sd = [np.nan for _ in range(len(lambdas))]
 
-        # TODO: Create a separate function to calculate deviance.
-        null_dev = 2 * log_loss(
-            y,
-            np.full(len(y), np.sum(model_weights * y) / np.sum(model_weights)),
-            sample_weight=model_weights,
-        )
+    min_s_index = 0
+    prev_prop_dev = None
 
-        for i in range(len(lambdas)):
-            # Conversion between glmnet lambda penalty parameter and sklearn 'C' parameter referenced
-            # from https://stats.stackexchange.com/questions/203816/logistic-regression-scikit-learn-vs-glmnet
-            lr.C = 1 / (sum(model_weights) * lambdas[i])
+    # TODO: Create a separate function to calculate deviance.
+    null_dev = 2 * log_loss(
+        y,
+        np.full(len(y), np.sum(model_weights * y) / np.sum(model_weights)),
+        sample_weight=model_weights,
+    )
 
-            model = lr.fit(X_matrix, y, sample_weight=model_weights)
-            pred = model.predict_proba(X_matrix)[:, 1]
-            dev[i] = 2 * log_loss(y, pred, sample_weight=model_weights)
-            prop_dev[i] = 1 - dev[i] / null_dev
+    for i in range(len(lambdas)):
+        # Conversion between glmnet lambda penalty parameter and sklearn 'C' parameter referenced
+        # from https://stats.stackexchange.com/questions/203816/logistic-regression-scikit-learn-vs-glmnet
+        lr.C = 1 / (sum(model_weights) * lambdas[i])
 
-            # Early stopping criteria: improvement in prop_dev is less than 1e-5 (mirrors glmnet)
-            if (
-                np.sum(np.abs(model.coef_)) > 0
-                and prev_prop_dev is not None
-                and prop_dev[i] - prev_prop_dev < 1e-5
-            ):
-                break
+        model = lr.fit(X_matrix, y, sample_weight=model_weights)
+        pred = model.predict_proba(X_matrix)[:, 1]
+        dev[i] = 2 * log_loss(y, pred, sample_weight=model_weights)
+        prop_dev[i] = 1 - dev[i] / null_dev
 
-            # Cross-validation procedure is only used for choosing best lambda if max_de is None
-            # Previously, cross validation was run even when max_de is not None,
-            # but the results weren't used for model selection.
-            if max_de is not None:
-                logger.debug(
-                    f"iter {i}: lambda: {lambdas[i]}, dev: {dev[i]}, prop_dev: {prop_dev[i]}"
-                )
-            elif num_lambdas > 1:
-                dev_mean, dev_sd = calc_dev(X_matrix, y, lr, model_weights, foldids)
-                logger.debug(
-                    f"iter {i}: lambda: {lambdas[i]}, cv_dev: {dev_mean}, dev_diff: {dev_mean - dev[i]}, prop_dev: {prop_dev[i]}"
-                )
-                cv_dev_mean[i] = dev_mean
-                cv_dev_sd[i] = dev_sd
+        # Early stopping criteria: improvement in prop_dev is less than 1e-5 (mirrors glmnet)
+        if (
+            np.sum(np.abs(model.coef_)) > 0
+            and prev_prop_dev is not None
+            and prop_dev[i] - prev_prop_dev < 1e-5
+        ):
+            break
 
-            prev_prop_dev = prop_dev[i]
-            links[i] = link_transform(pred)[:sample_n,]
-            fits[i] = copy.deepcopy(model)
+        # Cross-validation procedure is only used for choosing best lambda if max_de is None
+        # Previously, cross validation was run even when max_de is not None,
+        # but the results weren't used for model selection.
+        if max_de is not None:
+            logger.debug(
+                f"iter {i}: lambda: {lambdas[i]}, dev: {dev[i]}, prop_dev: {prop_dev[i]}"
+            )
+        elif num_lambdas > 1:
+            dev_mean, dev_sd = calc_dev(X_matrix, y, lr, model_weights, foldids)
+            logger.debug(
+                f"iter {i}: lambda: {lambdas[i]}, cv_dev: {dev_mean}, dev_diff: {dev_mean - dev[i]}, prop_dev: {prop_dev[i]}"
+            )
+            cv_dev_mean[i] = dev_mean
+            cv_dev_sd[i] = dev_sd
 
-        logger.info("Done with sklearn")
-    elif model == "glmnet":
-        raise NotImplementedError("glmnet is no longer supported")
-    else:
-        raise NotImplementedError()
+        prev_prop_dev = prop_dev[i]
+        links[i] = link_transform(pred)[:sample_n,]
+        fits[i] = copy.deepcopy(model)
+
+    logger.info("Done with sklearn")
 
     logger.info(f"max_de: {max_de}")
 
