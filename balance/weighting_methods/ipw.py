@@ -378,7 +378,9 @@ def ipw(
             number of columns will be equal to the number of categories),
             and only 1 column for variables with 2 levels (treatment contrast). Defaults to False.
         logistic_regression_kwargs (Optional[Dict[str, Any]], optional): Additional keyword arguments
-            passed to :class:`sklearn.linear_model.LogisticRegression`. Defaults to None.
+            passed to :class:`sklearn.linear_model.LogisticRegression`. When None, the
+            model defaults to ``penalty="l2"``, ``solver="lbfgs"``, ``tol=1e-4``,
+            ``max_iter=5000``, and ``warm_start=True``. Defaults to None.
         random_seed (int, optional): Random seed to use. Defaults to 2020.
 
     Raises:
