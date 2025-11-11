@@ -329,6 +329,7 @@ def ipw(
     formula: Union[str, List[str], None] = None,
     penalty_factor: Optional[List[float]] = None,
     one_hot_encoding: bool = False,
+    logistic_regression_kwargs: Optional[Dict[str, Any]] = None,
     # TODO: This is set to be false in order to keep reproducibility of works that uses balance.
     # The best practice is for this to be true.
     random_seed: int = 2020,
@@ -376,6 +377,8 @@ def ipw(
             categorical variables with more than 2 categories (i.e. the
             number of columns will be equal to the number of categories),
             and only 1 column for variables with 2 levels (treatment contrast). Defaults to False.
+        logistic_regression_kwargs (Optional[Dict[str, Any]], optional): Additional keyword arguments
+            passed to :class:`sklearn.linear_model.LogisticRegression`. Defaults to None.
         random_seed (int, optional): Random seed to use. Defaults to 2020.
 
     Raises:
@@ -518,13 +521,17 @@ def ipw(
         lambdas = np.logspace(np.log10(lambda_max), np.log10(lambda_min), num_lambdas)
 
         # Using L2 regression since L1 is too slow. Observed "lbfgs" was the most computationally efficient solver.
-        lr = LogisticRegression(
-            penalty="l2",
-            solver="lbfgs",
-            tol=1e-4,
-            max_iter=5000,
-            warm_start=True,
-        )
+        lr_kwargs: Dict[str, Any] = {
+            "penalty": "l2",
+            "solver": "lbfgs",
+            "tol": 1e-4,
+            "max_iter": 5000,
+            "warm_start": True,
+        }
+        if logistic_regression_kwargs is not None:
+            lr_kwargs.update(logistic_regression_kwargs)
+
+        lr = LogisticRegression(**lr_kwargs)
         fits = [None for _ in range(len(lambdas))]
         links = [None for _ in range(len(lambdas))]
         prop_dev = [np.nan for _ in range(len(lambdas))]

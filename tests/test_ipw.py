@@ -187,6 +187,26 @@ class TestIPW(
             transformations=None,
         )
 
+    def test_ipw_allows_custom_logistic_regression_kwargs(self):
+        """Users can override LogisticRegression configuration via kwargs."""
+
+        sample = pd.DataFrame({"a": (0, 1, 1, 0), "b": (1, 2, 3, 4)})
+        target = pd.DataFrame({"a": (1, 0, 0, 1), "b": (4, 3, 2, 1)})
+
+        result = balance_ipw.ipw(
+            sample_df=sample,
+            sample_weights=pd.Series((1,) * len(sample)),
+            target_df=target,
+            target_weights=pd.Series((1,) * len(target)),
+            logistic_regression_kwargs={"solver": "saga", "max_iter": 200},
+            max_de=None,
+            num_lambdas=1,
+        )
+
+        fit = result["model"]["fit"]
+        self.assertEqual(fit.solver, "saga")
+        self.assertEqual(fit.max_iter, 200)
+
     def test_weights_from_link_function(self):
         """Test the weights_from_link function with various scenarios.
 

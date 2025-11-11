@@ -8,12 +8,13 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import inspect
+import json
 import logging
 
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from typing import Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import balance
 
@@ -40,10 +41,11 @@ class BalanceCLI:
             self._lambda_max,
             self._num_lambdas,
             self._weight_trimming_mean_ratio,
+            self._logistic_regression_kwargs,
             self._sample_cls,
             self._sample_package_name,
             self._sample_package_version,
-        ) = (None, None, None, None, None, None, None, None, None, None, None, None)
+        ) = (None, None, None, None, None, None, None, None, None, None, None, None, None)
 
     def check_input_columns(self, columns: Union[List[str], pd.Index]) -> None:
         needed_columns = []
@@ -133,6 +135,24 @@ class BalanceCLI:
     def weight_trimming_mean_ratio(self) -> float:
         return self.args.weight_trimming_mean_ratio
 
+    def logistic_regression_kwargs(self) -> Optional[Dict[str, Any]]:
+        raw_kwargs = self.args.ipw_logistic_regression_kwargs
+        if raw_kwargs is None:
+            return None
+        if isinstance(raw_kwargs, dict):
+            return raw_kwargs
+        try:
+            parsed = json.loads(raw_kwargs)
+        except json.JSONDecodeError as exc:
+            raise ValueError(
+                "--ipw_logistic_regression_kwargs must be a JSON object string"
+            ) from exc
+        if not isinstance(parsed, dict):
+            raise ValueError(
+                "--ipw_logistic_regression_kwargs must decode to a JSON object"
+            )
+        return parsed
+
     def split_sample(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         in_sample = df[self.sample_column()] == 1
         sample_df = df[in_sample]
@@ -152,6 +172,7 @@ class BalanceCLI:
         lambda_max: Optional[float] = 10,
         num_lambdas: Optional[int] = 250,
         weight_trimming_mean_ratio: float = 20,
+        logistic_regression_kwargs: Optional[Dict[str, Any]] = None,
         sample_cls: Type[balance_sample_cls] = balance_sample_cls,
         sample_package_name: str = __package__,
     ) -> Dict[str, pd.DataFrame]:
@@ -215,6 +236,7 @@ class BalanceCLI:
                 lambda_max=lambda_max,
                 num_lambdas=num_lambdas,
                 weight_trimming_mean_ratio=weight_trimming_mean_ratio,
+                logistic_regression_kwargs=logistic_regression_kwargs,
             )
             logger.info("Succeeded with adjusting sample to target")
             logger.info("%s adjusted object: %s" % (sample_package_name, str(adjusted)))
@@ -353,6 +375,7 @@ class BalanceCLI:
         one_hot_encoding = self.one_hot_encoding()
         max_de = self.max_de()
         weight_trimming_mean_ratio = self.weight_trimming_mean_ratio()
+        logistic_regression_kwargs = self.logistic_regression_kwargs()
         sample_cls, sample_package_name, sample_package_version = (
             balance_sample_cls,
             __package__,
@@ -370,6 +393,7 @@ class BalanceCLI:
             self._lambda_max,
             self._num_lambdas,
             self._weight_trimming_mean_ratio,
+            self._logistic_regression_kwargs,
             self._sample_cls,
             self._sample_package_name,
             self._sample_package_version,
@@ -383,6 +407,7 @@ class BalanceCLI:
             lambda_max,
             num_lambdas,
             weight_trimming_mean_ratio,
+            logistic_regression_kwargs,
             sample_cls,
             sample_package_name,
             sample_package_version,
@@ -400,6 +425,7 @@ class BalanceCLI:
             lambda_max,
             num_lambdas,
             weight_trimming_mean_ratio,
+            logistic_regression_kwargs,
             sample_cls,
             sample_package_name,
             sample_package_version,
@@ -413,6 +439,7 @@ class BalanceCLI:
             self._lambda_max,
             self._num_lambdas,
             self._weight_trimming_mean_ratio,
+            self._logistic_regression_kwargs,
             self._sample_cls,
             self._sample_package_name,
             self._sample_package_version,
@@ -434,6 +461,7 @@ class BalanceCLI:
             "lambda_max",
             "num_lambdas",
             "weight_trimming_mean_ratio",
+            "logistic_regression_kwargs",
             "sample_cls",
             "sample_package_name",
             "sample_package_version",
@@ -448,6 +476,7 @@ class BalanceCLI:
             lambda_max,
             num_lambdas,
             weight_trimming_mean_ratio,
+            logistic_regression_kwargs,
             sample_cls,
             sample_package_name,
             sample_package_version,
@@ -476,6 +505,7 @@ class BalanceCLI:
                     lambda_max,
                     num_lambdas,
                     weight_trimming_mean_ratio,
+                    logistic_regression_kwargs,
                     sample_cls,
                     sample_package_name,
                 )
@@ -501,6 +531,7 @@ class BalanceCLI:
                 lambda_max,
                 num_lambdas,
                 weight_trimming_mean_ratio,
+                logistic_regression_kwargs,
                 sample_cls,
                 sample_package_name,
             )
@@ -684,6 +715,16 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
             "Number of elements searched over in the L1 penalty range in ipw."
             "Only used if method is ipw."
             "If not supplied it defaults to 250."
+        ),
+    )
+    parser.add_argument(
+        "--ipw_logistic_regression_kwargs",
+        type=str,
+        required=False,
+        default=None,
+        help=(
+            "JSON object string with additional keyword arguments passed to "
+            "sklearn.linear_model.LogisticRegression when method is ipw."
         ),
     )
     parser.add_argument(
