@@ -15,18 +15,104 @@ import math
 from fractions import Fraction
 
 from functools import reduce
-from typing import Callable, Dict, List, Union
+from typing import Callable, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
 
 from balance import adjustment as balance_adjustment, util as balance_util
-from ipfn import ipfn
 
 logger = logging.getLogger(__package__)
 
 
 # TODO: Add options for only marginal distributions input
+def _run_ipf_numpy(
+    original: np.ndarray,
+    target_margins: List[np.ndarray],
+    convergence_rate: float,
+    max_iteration: int,
+    rate_tolerance: float,
+) -> Tuple[np.ndarray, int, pd.DataFrame]:
+    """Run iterative proportional fitting on a NumPy array.
+
+    This reimplements the minimal subset of the :mod:`ipfn` package that is
+    required for balance's usage.  The original implementation spends most of
+    its time looping in pure Python over every slice of the contingency table,
+    which is prohibitively slow for the high-cardinality problems we test
+    against.  The logic here mirrors the algorithm used by ``ipfn.ipfn`` but
+    applies the adjustments in a vectorised manner, yielding identical
+    numerical results with a fraction of the runtime.
+
+    The caller is expected to pass ``target_margins`` that correspond to
+    single-axis marginals (which is how :func:`rake` constructs the inputs).
+    """
+
+    if original.ndim == 0:
+        raise ValueError("`original` must have at least one dimension")
+
+    table = np.asarray(original, dtype=np.float64)
+    margins = [np.asarray(margin, dtype=np.float64) for margin in target_margins]
+
+    # Pre-compute shapes and axes that are repeatedly required during the
+    # iterative updates.  Each entry in ``axis_shapes`` represents how a
+    # one-dimensional scaling factor should be reshaped in order to broadcast
+    # along the appropriate axis of ``table``.
+    axis_shapes: List[Tuple[int, ...]] = []
+    sum_axes: List[Tuple[int, ...]] = []
+    for axis in range(table.ndim):
+        shape = [1] * table.ndim
+        shape[axis] = table.shape[axis]
+        axis_shapes.append(tuple(shape))
+        sum_axes.append(tuple(i for i in range(table.ndim) if i != axis))
+
+    conv = np.inf
+    old_conv = -np.inf
+    conv_history: List[float] = []
+    iteration = 0
+
+    while (
+        iteration <= max_iteration
+        and conv > convergence_rate
+        and abs(conv - old_conv) > rate_tolerance
+    ):
+        old_conv = conv
+
+        # Sequentially update the table for each marginal.  Because the
+        # marginals correspond to single axes we can compute all scaling
+        # factors at once, avoiding the expensive Python loops present in the
+        # reference implementation.
+        for axis, margin in enumerate(margins):
+            current = table.sum(axis=sum_axes[axis])
+            factors = np.ones_like(margin, dtype=np.float64)
+            np.divide(margin, current, out=factors, where=current != 0)
+            table *= factors.reshape(axis_shapes[axis])
+
+        # Measure convergence using the same criterion as ``ipfn.ipfn``.  The
+        # implementation there keeps the maximum absolute proportional
+        # difference while naturally ignoring NaNs (which arise for 0/0).  We
+        # match that behaviour by treating NaNs as zero deviation.
+        conv = 0.0
+        for axis, margin in enumerate(margins):
+            current = table.sum(axis=sum_axes[axis])
+            with np.errstate(divide="ignore", invalid="ignore"):
+                diff = np.abs(np.divide(current, margin) - 1.0)
+            current_conv = float(np.nanmax(diff)) if diff.size else 0.0
+            if math.isnan(current_conv):
+                current_conv = 0.0
+            if current_conv > conv:
+                conv = current_conv
+
+        conv_history.append(conv)
+        iteration += 1
+
+    converged = int(iteration <= max_iteration)
+    iterations_df = pd.DataFrame(
+        {"iteration": range(len(conv_history)), "conv": conv_history}
+    ).set_index("iteration")
+
+    return table, converged, iterations_df
+
+
 def rake(
     sample_df: pd.DataFrame,
     sample_weights: pd.Series,
@@ -179,24 +265,11 @@ def rake(
     # Calculate {# covariates}-dimensional array representation of the sample
     # for the ipfn algorithm
 
-    # Create a multi-index DataFrame with all possible combinations
+    grouped_sample_series = sample_df.groupby(alphabetized_variables)["weight"].sum()
     index = pd.MultiIndex.from_product(categories, names=alphabetized_variables)
-    full_df = pd.DataFrame(index=index).reset_index()
-
-    # Group by covariates and sum weights
-    grouped_sample = (
-        sample_df.groupby(alphabetized_variables)["weight"].sum().reset_index()
-    )
-
-    # Merge to ensure all combinations are present (fill missing with 0)
-    merged = (
-        pd.merge(full_df, grouped_sample, on=alphabetized_variables, how="left")
-        .fillna(0)
-        .infer_objects(copy=False)
-    )
-
-    # Reshape to n-dimensional array
-    m_sample = merged["weight"].values.reshape([len(c) for c in categories])
+    grouped_sample_full = grouped_sample_series.reindex(index, fill_value=0)
+    m_sample = grouped_sample_full.to_numpy().reshape([len(c) for c in categories])
+    m_fit_input = m_sample.copy()
 
     # Calculate target margins for ipfn
     target_margins = []
@@ -208,7 +281,6 @@ def rake(
         )
         sums = sums.reindex(cats, fill_value=0)
         target_margins.append(sums.values)
-    dimensions = [[i] for i in range(len(alphabetized_variables))]
 
     logger.debug(
         "Raking algorithm running following settings: "
@@ -219,16 +291,13 @@ def rake(
     # for that specific set of covariates
     # no longer uses the dataframe version of the ipfn algorithm
     # due to incompatability with latest Python versions
-    ipfn_obj = ipfn.ipfn(
-        original=m_sample,
-        aggregates=target_margins,
-        dimensions=dimensions,
-        convergence_rate=convergence_rate,
-        max_iteration=max_iteration,
-        verbose=2,
-        rate_tolerance=rate_tolerance,
+    m_fit, converged, iterations = _run_ipf_numpy(
+        m_fit_input,
+        target_margins,
+        convergence_rate,
+        max_iteration,
+        rate_tolerance,
     )
-    m_fit, converged, iterations = ipfn_obj.iteration()
 
     logger.debug(
         f"Raking algorithm terminated with following convergence: {converged}; "
@@ -238,14 +307,9 @@ def rake(
     if not converged:
         logger.warning("Maximum iterations reached, convergence was not achieved")
 
-    # Convert array representation of the weighted sample into a dataframe
-    # Generate all possible combinations of categories (cartesian product)
     combos = list(itertools.product(*categories))
-    # Flatten the array to match the order of combos
-    weights = m_fit.flatten()
-    # Build the DataFrame
     fit = pd.DataFrame(combos, columns=alphabetized_variables)
-    fit["rake_weight"] = weights
+    fit["rake_weight"] = m_fit.flatten()
 
     raked = pd.merge(
         sample_df.reset_index(),
@@ -254,23 +318,24 @@ def rake(
         on=alphabetized_variables,
     )
 
-    # Merge back to original sample weights
     raked_rescaled = pd.merge(
         raked,
-        (grouped_sample.rename(columns={"weight": "total_survey_weight"})),
+        grouped_sample_series.reset_index().rename(
+            columns={"weight": "total_survey_weight"}
+        ),
         how="left",
         on=alphabetized_variables,
-    ).set_index("index")  # important if dropping rows due to NA
+    ).set_index("index")
 
-    # use above merge to give each individual sample its proportion of the
-    # cell's total weight
     raked_rescaled["rake_weight"] = (
         raked_rescaled["rake_weight"] / raked_rescaled["total_survey_weight"]
     )
-    # rescale weights to sum to target_sum_weights (sum of initial target weights)
+
     w = (
-        raked_rescaled["rake_weight"] / raked_rescaled["rake_weight"].sum()
-    ) * target_sum_weights
+        raked_rescaled["rake_weight"]
+        / raked_rescaled["rake_weight"].sum()
+        * target_sum_weights
+    ).rename("rake_weight")
     return {
         "weight": w,
         "model": {

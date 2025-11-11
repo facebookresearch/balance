@@ -16,6 +16,7 @@ from balance.sample_class import Sample
 from balance.weighting_methods.rake import (
     _proportional_array_from_dict,
     _realize_dicts_of_proportions,
+    _run_ipf_numpy,
     prepare_marginal_dist_for_raking,
     rake,
 )
@@ -718,6 +719,94 @@ class Testrake(
             },
         )
 
-    # TODO: test convergence rate
-    # TODO: test max iteration
-    # TODO: test logging
+    def test_run_ipf_numpy_matches_expected_margins(self):
+        """Validate that the NumPy IPF solver hits the requested marginals."""
+
+        original = np.array([[5.0, 3.0], [2.0, 4.0]])
+        # Target row totals and column totals after rescaling the sample sum.
+        target_rows = np.array([7.0, 7.0])
+        target_cols = np.array([6.0, 8.0])
+
+        fitted, converged, iterations = _run_ipf_numpy(
+            original,
+            [target_rows, target_cols],
+            convergence_rate=1e-6,
+            max_iteration=10,
+            rate_tolerance=0.0,
+        )
+
+        self.assertEqual(converged, 1)
+        np.testing.assert_allclose(fitted.sum(axis=1), target_rows, rtol=0, atol=1e-6)
+        np.testing.assert_allclose(fitted.sum(axis=0), target_cols, rtol=0, atol=1e-6)
+        self.assertGreater(len(iterations), 0)
+
+    def test_run_ipf_numpy_handles_zero_targets(self):
+        """Ensure zero-valued margins do not introduce NaNs or divergence."""
+
+        original = np.array([[4.0, 1.0, 0.0], [0.0, 3.0, 2.0]])
+        target_rows = np.array([5.0, 5.0])
+        # The last column should be forced to zero.
+        target_cols = np.array([4.0, 6.0, 0.0])
+
+        fitted, converged, _ = _run_ipf_numpy(
+            original,
+            [target_rows, target_cols],
+            convergence_rate=1e-7,
+            max_iteration=50,
+            rate_tolerance=0.0,
+        )
+
+        self.assertEqual(converged, 1)
+        self.assertTrue(np.all(np.isfinite(fitted)))
+        np.testing.assert_allclose(fitted.sum(axis=1), target_rows, atol=1e-9)
+        np.testing.assert_allclose(fitted.sum(axis=0), target_cols, atol=1e-9)
+
+    def test_run_ipf_numpy_flags_non_convergence(self):
+        """The solver should report non-convergence when the iteration budget is exhausted."""
+
+        original = np.array([[1.0, 0.0], [0.0, 1.0]])
+        target_rows = np.array([1.0, 1.0])
+        target_cols = np.array([0.5, 1.5])
+
+        _, converged, _ = _run_ipf_numpy(
+            original,
+            [target_rows, target_cols],
+            convergence_rate=1e-9,
+            max_iteration=0,
+            rate_tolerance=0.0,
+        )
+
+        self.assertEqual(converged, 0)
+
+    def test_rake_zero_weight_levels_respected(self):
+        """Variable levels with zero target weight should collapse to zero mass."""
+
+        sample_df = pd.DataFrame(
+            {
+                "a": ["x", "x", "y", "y"],
+                "b": ["p", "q", "p", "q"],
+            }
+        )
+        sample_weights = pd.Series([1.0, 2.0, 3.0, 4.0])
+        target_df = pd.DataFrame(
+            {
+                "a": ["x", "x", "y", "y"],
+                "b": ["p", "q", "p", "q"],
+            }
+        )
+        # Force the 'q' column margin to zero in the target population.
+        target_weights = pd.Series([1.0, 0.0, 1.0, 0.0])
+
+        result = rake(sample_df, sample_weights, target_df, target_weights)
+
+        raked = pd.concat([sample_df, result["weight"]], axis=1)
+        level_totals = raked.groupby("b")["rake_weight"].sum()
+        expected = (
+            pd.concat([target_df, target_weights.rename("weight")], axis=1)
+            .groupby("b")["weight"]
+            .sum()
+            .rename("rake_weight")
+        )
+
+        self.assertAlmostEqual(level_totals.loc["q"], 0.0)
+        pd.testing.assert_series_equal(level_totals.sort_index(), expected.sort_index())
