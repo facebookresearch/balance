@@ -52,7 +52,6 @@ REQUIRES = [
     "plotly",
     "matplotlib",
     "statsmodels",
-    "ipfn",
     "session-info",
 ]
 ```

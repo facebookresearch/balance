@@ -383,6 +383,7 @@
     <span class="n">formula</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">penalty_factor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">one_hot_encoding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">logistic_regression_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="c1"># TODO: This is set to be false in order to keep reproducibility of works that uses balance.</span>
     <span class="c1"># The best practice is for this to be true.</span>
     <span class="n">random_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2020</span><span class="p">,</span>
@@ -430,6 +431,10 @@
 <span class="sd">            categorical variables with more than 2 categories (i.e. the</span>
 <span class="sd">            number of columns will be equal to the number of categories),</span>
 <span class="sd">            and only 1 column for variables with 2 levels (treatment contrast). Defaults to False.</span>
+<span class="sd">        logistic_regression_kwargs (Optional[Dict[str, Any]], optional): Additional keyword arguments</span>
+<span class="sd">            passed to :class:`sklearn.linear_model.LogisticRegression`. When None, the</span>
+<span class="sd">            model defaults to ``penalty=&quot;l2&quot;``, ``solver=&quot;lbfgs&quot;``, ``tol=1e-4``,</span>
+<span class="sd">            ``max_iter=5000``, and ``warm_start=True``. Defaults to None.</span>
 <span class="sd">        random_seed (int, optional): Random seed to use. Defaults to 2020.</span>
 
 <span class="sd">    Raises:</span>
@@ -454,6 +459,13 @@
 <span class="sd">                },</span>
 <span class="sd">            }</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;glmnet&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;glmnet is no longer supported&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">model</span> <span class="o">!=</span> <span class="s2">&quot;sklearn&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Model &#39;</span><span class="si">{</span><span class="n">model</span><span class="si">}</span><span class="s2">&#39; is not supported. Only &#39;sklearn&#39; is currently implemented.&quot;</span>
+        <span class="p">)</span>
+
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting ipw function&quot;</span><span class="p">)</span>
     <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span>
         <span class="n">random_seed</span>
@@ -538,106 +550,103 @@
         <span class="sa">f</span><span class="s2">&quot;penalty_factor frequency table </span><span class="si">{</span><span class="n">pd</span><span class="o">.</span><span class="n">crosstab</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">penalty_factor_expanded</span><span class="p">,</span><span class="w"> </span><span class="n">columns</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
     <span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;sklearn&quot;</span><span class="p">:</span>
-        <span class="n">foldids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span>
-            <span class="n">foldids</span>
-        <span class="p">)</span>  <span class="c1"># shuffels the values of foldid - note that we set the seed in the beginning of the function, so this order is fixed</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;foldid frequency table </span><span class="si">{</span><span class="n">pd</span><span class="o">.</span><span class="n">crosstab</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">foldids</span><span class="p">,</span><span class="w"> </span><span class="n">columns</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;first 10 elements of foldids: </span><span class="si">{</span><span class="n">foldids</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">9</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">foldids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span>
+        <span class="n">foldids</span>
+    <span class="p">)</span>  <span class="c1"># shuffels the values of foldid - note that we set the seed in the beginning of the function, so this order is fixed</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;foldid frequency table </span><span class="si">{</span><span class="n">pd</span><span class="o">.</span><span class="n">crosstab</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">foldids</span><span class="p">,</span><span class="w"> </span><span class="n">columns</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;first 10 elements of foldids: </span><span class="si">{</span><span class="n">foldids</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">9</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Fitting logistic model&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Fitting logistic model&quot;</span><span class="p">)</span>
 
-        <span class="c1"># Standardize columns of the X matrix and penalize the columns of the X matrix according to the penalty_factor.</span>
-        <span class="c1"># Workaround for sklearn, which doesn&#39;t allow for covariate specific penalty terms.</span>
-        <span class="c1"># Note that penalty = 0 is not truly supported, and large differences in penalty factors</span>
-        <span class="c1"># may affect convergence speed.</span>
+    <span class="c1"># Standardize columns of the X matrix and penalize the columns of the X matrix according to the penalty_factor.</span>
+    <span class="c1"># Workaround for sklearn, which doesn&#39;t allow for covariate specific penalty terms.</span>
+    <span class="c1"># Note that penalty = 0 is not truly supported, and large differences in penalty factors</span>
+    <span class="c1"># may affect convergence speed.</span>
 
-        <span class="n">scaler</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">(</span><span class="n">with_mean</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">scaler</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">(</span><span class="n">with_mean</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-        <span class="c1"># TODO: add test to verify expected behavior from model_weights</span>
-        <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="n">model_weights</span><span class="p">)</span>
+    <span class="c1"># TODO: add test to verify expected behavior from model_weights</span>
+    <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="n">model_weights</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">penalty_factor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">penalties_skl</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="mi">1</span> <span class="o">/</span> <span class="n">pf</span> <span class="k">if</span> <span class="n">pf</span> <span class="o">&gt;</span> <span class="mf">0.1</span> <span class="k">else</span> <span class="mi">10</span> <span class="k">for</span> <span class="n">pf</span> <span class="ow">in</span> <span class="n">penalty_factor_expanded</span>
-            <span class="p">]</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">penalties_skl</span><span class="p">)):</span>
-                <span class="n">X_matrix</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">*=</span> <span class="n">penalties_skl</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">penalty_factor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">penalties_skl</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span> <span class="o">/</span> <span class="n">pf</span> <span class="k">if</span> <span class="n">pf</span> <span class="o">&gt;</span> <span class="mf">0.1</span> <span class="k">else</span> <span class="mi">10</span> <span class="k">for</span> <span class="n">pf</span> <span class="ow">in</span> <span class="n">penalty_factor_expanded</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">penalties_skl</span><span class="p">)):</span>
+            <span class="n">X_matrix</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">*=</span> <span class="n">penalties_skl</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
 
-        <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">csr_matrix</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">)</span>
+    <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">csr_matrix</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">)</span>
 
-        <span class="n">lambdas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">lambda_max</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">lambda_min</span><span class="p">),</span> <span class="n">num_lambdas</span><span class="p">)</span>
+    <span class="n">lambdas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">lambda_max</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">lambda_min</span><span class="p">),</span> <span class="n">num_lambdas</span><span class="p">)</span>
 
-        <span class="c1"># Using L2 regression since L1 is too slow. Observed &quot;lbfgs&quot; was the most computationally efficient solver.</span>
-        <span class="n">lr</span> <span class="o">=</span> <span class="n">LogisticRegression</span><span class="p">(</span>
-            <span class="n">penalty</span><span class="o">=</span><span class="s2">&quot;l2&quot;</span><span class="p">,</span>
-            <span class="n">solver</span><span class="o">=</span><span class="s2">&quot;lbfgs&quot;</span><span class="p">,</span>
-            <span class="n">tol</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span>
-            <span class="n">max_iter</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span>
-            <span class="n">warm_start</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">fits</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lambdas</span><span class="p">))]</span>
-        <span class="n">links</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lambdas</span><span class="p">))]</span>
-        <span class="n">prop_dev</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lambdas</span><span class="p">))]</span>
-        <span class="n">dev</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lambdas</span><span class="p">))]</span>
-        <span class="n">cv_dev_mean</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lambdas</span><span class="p">))]</span>
-        <span class="n">cv_dev_sd</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lambdas</span><span class="p">))]</span>
+    <span class="c1"># Using L2 regression since L1 is too slow. Observed &quot;lbfgs&quot; was the most computationally efficient solver.</span>
+    <span class="n">lr_kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;penalty&quot;</span><span class="p">:</span> <span class="s2">&quot;l2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;solver&quot;</span><span class="p">:</span> <span class="s2">&quot;lbfgs&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tol&quot;</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">,</span>
+        <span class="s2">&quot;max_iter&quot;</span><span class="p">:</span> <span class="mi">5000</span><span class="p">,</span>
+        <span class="s2">&quot;warm_start&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">logistic_regression_kwargs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">lr_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">logistic_regression_kwargs</span><span class="p">)</span>
 
-        <span class="n">min_s_index</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">prev_prop_dev</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">lr</span> <span class="o">=</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="o">**</span><span class="n">lr_kwargs</span><span class="p">)</span>
+    <span class="n">fits</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lambdas</span><span class="p">))]</span>
+    <span class="n">links</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lambdas</span><span class="p">))]</span>
+    <span class="n">prop_dev</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lambdas</span><span class="p">))]</span>
+    <span class="n">dev</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lambdas</span><span class="p">))]</span>
+    <span class="n">cv_dev_mean</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lambdas</span><span class="p">))]</span>
+    <span class="n">cv_dev_sd</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lambdas</span><span class="p">))]</span>
 
-        <span class="c1"># TODO: Create a separate function to calculate deviance.</span>
-        <span class="n">null_dev</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">log_loss</span><span class="p">(</span>
-            <span class="n">y</span><span class="p">,</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">model_weights</span> <span class="o">*</span> <span class="n">y</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">model_weights</span><span class="p">)),</span>
-            <span class="n">sample_weight</span><span class="o">=</span><span class="n">model_weights</span><span class="p">,</span>
-        <span class="p">)</span>
+    <span class="n">min_s_index</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">prev_prop_dev</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lambdas</span><span class="p">)):</span>
-            <span class="c1"># Conversion between glmnet lambda penalty parameter and sklearn &#39;C&#39; parameter referenced</span>
-            <span class="c1"># from https://stats.stackexchange.com/questions/203816/logistic-regression-scikit-learn-vs-glmnet</span>
-            <span class="n">lr</span><span class="o">.</span><span class="n">C</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">model_weights</span><span class="p">)</span> <span class="o">*</span> <span class="n">lambdas</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="c1"># TODO: Create a separate function to calculate deviance.</span>
+    <span class="n">null_dev</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">log_loss</span><span class="p">(</span>
+        <span class="n">y</span><span class="p">,</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">model_weights</span> <span class="o">*</span> <span class="n">y</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">model_weights</span><span class="p">)),</span>
+        <span class="n">sample_weight</span><span class="o">=</span><span class="n">model_weights</span><span class="p">,</span>
+    <span class="p">)</span>
 
-            <span class="n">model</span> <span class="o">=</span> <span class="n">lr</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="n">model_weights</span><span class="p">)</span>
-            <span class="n">pred</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">)[:,</span> <span class="mi">1</span><span class="p">]</span>
-            <span class="n">dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">log_loss</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="n">model_weights</span><span class="p">)</span>
-            <span class="n">prop_dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="n">null_dev</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lambdas</span><span class="p">)):</span>
+        <span class="c1"># Conversion between glmnet lambda penalty parameter and sklearn &#39;C&#39; parameter referenced</span>
+        <span class="c1"># from https://stats.stackexchange.com/questions/203816/logistic-regression-scikit-learn-vs-glmnet</span>
+        <span class="n">lr</span><span class="o">.</span><span class="n">C</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">model_weights</span><span class="p">)</span> <span class="o">*</span> <span class="n">lambdas</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 
-            <span class="c1"># Early stopping criteria: improvement in prop_dev is less than 1e-5 (mirrors glmnet)</span>
-            <span class="k">if</span> <span class="p">(</span>
-                <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">coef_</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span>
-                <span class="ow">and</span> <span class="n">prev_prop_dev</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-                <span class="ow">and</span> <span class="n">prop_dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">prev_prop_dev</span> <span class="o">&lt;</span> <span class="mf">1e-5</span>
-            <span class="p">):</span>
-                <span class="k">break</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">lr</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="n">model_weights</span><span class="p">)</span>
+        <span class="n">pred</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">)[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">log_loss</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="n">model_weights</span><span class="p">)</span>
+        <span class="n">prop_dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="n">null_dev</span>
 
-            <span class="c1"># Cross-validation procedure is only used for choosing best lambda if max_de is None</span>
-            <span class="c1"># Previously, cross validation was run even when max_de is not None,</span>
-            <span class="c1"># but the results weren&#39;t used for model selection.</span>
-            <span class="k">if</span> <span class="n">max_de</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;iter </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: lambda: </span><span class="si">{</span><span class="n">lambdas</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">, dev: </span><span class="si">{</span><span class="n">dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">, prop_dev: </span><span class="si">{</span><span class="n">prop_dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="p">)</span>
-            <span class="k">elif</span> <span class="n">num_lambdas</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">dev_mean</span><span class="p">,</span> <span class="n">dev_sd</span> <span class="o">=</span> <span class="n">calc_dev</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">lr</span><span class="p">,</span> <span class="n">model_weights</span><span class="p">,</span> <span class="n">foldids</span><span class="p">)</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;iter </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: lambda: </span><span class="si">{</span><span class="n">lambdas</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">, cv_dev: </span><span class="si">{</span><span class="n">dev_mean</span><span class="si">}</span><span class="s2">, dev_diff: </span><span class="si">{</span><span class="n">dev_mean</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">, prop_dev: </span><span class="si">{</span><span class="n">prop_dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="p">)</span>
-                <span class="n">cv_dev_mean</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dev_mean</span>
-                <span class="n">cv_dev_sd</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dev_sd</span>
+        <span class="c1"># Early stopping criteria: improvement in prop_dev is less than 1e-5 (mirrors glmnet)</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">coef_</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="ow">and</span> <span class="n">prev_prop_dev</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="n">prop_dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">prev_prop_dev</span> <span class="o">&lt;</span> <span class="mf">1e-5</span>
+        <span class="p">):</span>
+            <span class="k">break</span>
 
-            <span class="n">prev_prop_dev</span> <span class="o">=</span> <span class="n">prop_dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-            <span class="n">links</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">link_transform</span><span class="p">(</span><span class="n">pred</span><span class="p">)[:</span><span class="n">sample_n</span><span class="p">,]</span>
-            <span class="n">fits</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="c1"># Cross-validation procedure is only used for choosing best lambda if max_de is None</span>
+        <span class="c1"># Previously, cross validation was run even when max_de is not None,</span>
+        <span class="c1"># but the results weren&#39;t used for model selection.</span>
+        <span class="k">if</span> <span class="n">max_de</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;iter </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: lambda: </span><span class="si">{</span><span class="n">lambdas</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">, dev: </span><span class="si">{</span><span class="n">dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">, prop_dev: </span><span class="si">{</span><span class="n">prop_dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">num_lambdas</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">dev_mean</span><span class="p">,</span> <span class="n">dev_sd</span> <span class="o">=</span> <span class="n">calc_dev</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">lr</span><span class="p">,</span> <span class="n">model_weights</span><span class="p">,</span> <span class="n">foldids</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;iter </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: lambda: </span><span class="si">{</span><span class="n">lambdas</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">, cv_dev: </span><span class="si">{</span><span class="n">dev_mean</span><span class="si">}</span><span class="s2">, dev_diff: </span><span class="si">{</span><span class="n">dev_mean</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">, prop_dev: </span><span class="si">{</span><span class="n">prop_dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="n">cv_dev_mean</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dev_mean</span>
+            <span class="n">cv_dev_sd</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dev_sd</span>
 
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done with sklearn&quot;</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;glmnet&quot;</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;glmnet is no longer supported&quot;</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+        <span class="n">prev_prop_dev</span> <span class="o">=</span> <span class="n">prop_dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">links</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">link_transform</span><span class="p">(</span><span class="n">pred</span><span class="p">)[:</span><span class="n">sample_n</span><span class="p">,]</span>
+        <span class="n">fits</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done with sklearn&quot;</span><span class="p">)</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;max_de: </span><span class="si">{</span><span class="n">max_de</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 

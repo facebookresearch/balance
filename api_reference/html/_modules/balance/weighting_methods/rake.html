@@ -52,18 +52,104 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">fractions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Fraction</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">reduce</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">adjustment</span> <span class="k">as</span> <span class="n">balance_adjustment</span><span class="p">,</span> <span class="n">util</span> <span class="k">as</span> <span class="n">balance_util</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">ipfn</span><span class="w"> </span><span class="kn">import</span> <span class="n">ipfn</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
 
 
 <span class="c1"># TODO: Add options for only marginal distributions input</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_run_ipf_numpy</span><span class="p">(</span>
+    <span class="n">original</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">target_margins</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+    <span class="n">convergence_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">max_iteration</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">rate_tolerance</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run iterative proportional fitting on a NumPy array.</span>
+
+<span class="sd">    This reimplements the minimal subset of the :mod:`ipfn` package that is</span>
+<span class="sd">    required for balance&#39;s usage.  The original implementation spends most of</span>
+<span class="sd">    its time looping in pure Python over every slice of the contingency table,</span>
+<span class="sd">    which is prohibitively slow for the high-cardinality problems we test</span>
+<span class="sd">    against.  The logic here mirrors the algorithm used by ``ipfn.ipfn`` but</span>
+<span class="sd">    applies the adjustments in a vectorised manner, yielding identical</span>
+<span class="sd">    numerical results with a fraction of the runtime.</span>
+
+<span class="sd">    The caller is expected to pass ``target_margins`` that correspond to</span>
+<span class="sd">    single-axis marginals (which is how :func:`rake` constructs the inputs).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">original</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`original` must have at least one dimension&quot;</span><span class="p">)</span>
+
+    <span class="n">table</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">original</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">margins</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">margin</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span> <span class="k">for</span> <span class="n">margin</span> <span class="ow">in</span> <span class="n">target_margins</span><span class="p">]</span>
+
+    <span class="c1"># Pre-compute shapes and axes that are repeatedly required during the</span>
+    <span class="c1"># iterative updates.  Each entry in ``axis_shapes`` represents how a</span>
+    <span class="c1"># one-dimensional scaling factor should be reshaped in order to broadcast</span>
+    <span class="c1"># along the appropriate axis of ``table``.</span>
+    <span class="n">axis_shapes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">sum_axes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">ndim</span><span class="p">):</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">table</span><span class="o">.</span><span class="n">ndim</span>
+        <span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span>
+        <span class="n">axis_shapes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">shape</span><span class="p">))</span>
+        <span class="n">sum_axes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">axis</span><span class="p">))</span>
+
+    <span class="n">conv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+    <span class="n">old_conv</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+    <span class="n">conv_history</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">iteration</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">while</span> <span class="p">(</span>
+        <span class="n">iteration</span> <span class="o">&lt;=</span> <span class="n">max_iteration</span>
+        <span class="ow">and</span> <span class="n">conv</span> <span class="o">&gt;</span> <span class="n">convergence_rate</span>
+        <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span><span class="n">conv</span> <span class="o">-</span> <span class="n">old_conv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">rate_tolerance</span>
+    <span class="p">):</span>
+        <span class="n">old_conv</span> <span class="o">=</span> <span class="n">conv</span>
+
+        <span class="c1"># Sequentially update the table for each marginal.  Because the</span>
+        <span class="c1"># marginals correspond to single axes we can compute all scaling</span>
+        <span class="c1"># factors at once, avoiding the expensive Python loops present in the</span>
+        <span class="c1"># reference implementation.</span>
+        <span class="k">for</span> <span class="n">axis</span><span class="p">,</span> <span class="n">margin</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">margins</span><span class="p">):</span>
+            <span class="n">current</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="n">sum_axes</span><span class="p">[</span><span class="n">axis</span><span class="p">])</span>
+            <span class="n">factors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">margin</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">margin</span><span class="p">,</span> <span class="n">current</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">factors</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="n">current</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">table</span> <span class="o">*=</span> <span class="n">factors</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">axis_shapes</span><span class="p">[</span><span class="n">axis</span><span class="p">])</span>
+
+        <span class="c1"># Measure convergence using the same criterion as ``ipfn.ipfn``.  The</span>
+        <span class="c1"># implementation there keeps the maximum absolute proportional</span>
+        <span class="c1"># difference while naturally ignoring NaNs (which arise for 0/0).  We</span>
+        <span class="c1"># match that behaviour by treating NaNs as zero deviation.</span>
+        <span class="n">conv</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">for</span> <span class="n">axis</span><span class="p">,</span> <span class="n">margin</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">margins</span><span class="p">):</span>
+            <span class="n">current</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="n">sum_axes</span><span class="p">[</span><span class="n">axis</span><span class="p">])</span>
+            <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">):</span>
+                <span class="n">diff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">margin</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span>
+            <span class="n">current_conv</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">diff</span><span class="p">))</span> <span class="k">if</span> <span class="n">diff</span><span class="o">.</span><span class="n">size</span> <span class="k">else</span> <span class="mf">0.0</span>
+            <span class="k">if</span> <span class="n">math</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">current_conv</span><span class="p">):</span>
+                <span class="n">current_conv</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">if</span> <span class="n">current_conv</span> <span class="o">&gt;</span> <span class="n">conv</span><span class="p">:</span>
+                <span class="n">conv</span> <span class="o">=</span> <span class="n">current_conv</span>
+
+        <span class="n">conv_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">conv</span><span class="p">)</span>
+        <span class="n">iteration</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">converged</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">iteration</span> <span class="o">&lt;=</span> <span class="n">max_iteration</span><span class="p">)</span>
+    <span class="n">iterations_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span><span class="s2">&quot;iteration&quot;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">conv_history</span><span class="p">)),</span> <span class="s2">&quot;conv&quot;</span><span class="p">:</span> <span class="n">conv_history</span><span class="p">}</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;iteration&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">table</span><span class="p">,</span> <span class="n">converged</span><span class="p">,</span> <span class="n">iterations_df</span>
+
+
 <div class="viewcode-block" id="rake">
 <a class="viewcode-back" href="../../../balance.weighting_methods.rake.html#balance.weighting_methods.rake.rake">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">rake</span><span class="p">(</span>
@@ -218,24 +304,11 @@
     <span class="c1"># Calculate {# covariates}-dimensional array representation of the sample</span>
     <span class="c1"># for the ipfn algorithm</span>
 
-    <span class="c1"># Create a multi-index DataFrame with all possible combinations</span>
+    <span class="n">grouped_sample_series</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">alphabetized_variables</span><span class="p">)[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
     <span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_product</span><span class="p">(</span><span class="n">categories</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">alphabetized_variables</span><span class="p">)</span>
-    <span class="n">full_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
-
-    <span class="c1"># Group by covariates and sum weights</span>
-    <span class="n">grouped_sample</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">sample_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">alphabetized_variables</span><span class="p">)[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
-    <span class="p">)</span>
-
-    <span class="c1"># Merge to ensure all combinations are present (fill missing with 0)</span>
-    <span class="n">merged</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">full_df</span><span class="p">,</span> <span class="n">grouped_sample</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="n">alphabetized_variables</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">infer_objects</span><span class="p">(</span><span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="p">)</span>
-
-    <span class="c1"># Reshape to n-dimensional array</span>
-    <span class="n">m_sample</span> <span class="o">=</span> <span class="n">merged</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">categories</span><span class="p">])</span>
+    <span class="n">grouped_sample_full</span> <span class="o">=</span> <span class="n">grouped_sample_series</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">m_sample</span> <span class="o">=</span> <span class="n">grouped_sample_full</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">categories</span><span class="p">])</span>
+    <span class="n">m_fit_input</span> <span class="o">=</span> <span class="n">m_sample</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
     <span class="c1"># Calculate target margins for ipfn</span>
     <span class="n">target_margins</span> <span class="o">=</span> <span class="p">[]</span>
@@ -247,7 +320,6 @@
         <span class="p">)</span>
         <span class="n">sums</span> <span class="o">=</span> <span class="n">sums</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">cats</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">target_margins</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sums</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
-    <span class="n">dimensions</span> <span class="o">=</span> <span class="p">[[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">alphabetized_variables</span><span class="p">))]</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
         <span class="s2">&quot;Raking algorithm running following settings: &quot;</span>
@@ -258,16 +330,13 @@
     <span class="c1"># for that specific set of covariates</span>
     <span class="c1"># no longer uses the dataframe version of the ipfn algorithm</span>
     <span class="c1"># due to incompatability with latest Python versions</span>
-    <span class="n">ipfn_obj</span> <span class="o">=</span> <span class="n">ipfn</span><span class="o">.</span><span class="n">ipfn</span><span class="p">(</span>
-        <span class="n">original</span><span class="o">=</span><span class="n">m_sample</span><span class="p">,</span>
-        <span class="n">aggregates</span><span class="o">=</span><span class="n">target_margins</span><span class="p">,</span>
-        <span class="n">dimensions</span><span class="o">=</span><span class="n">dimensions</span><span class="p">,</span>
-        <span class="n">convergence_rate</span><span class="o">=</span><span class="n">convergence_rate</span><span class="p">,</span>
-        <span class="n">max_iteration</span><span class="o">=</span><span class="n">max_iteration</span><span class="p">,</span>
-        <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-        <span class="n">rate_tolerance</span><span class="o">=</span><span class="n">rate_tolerance</span><span class="p">,</span>
+    <span class="n">m_fit</span><span class="p">,</span> <span class="n">converged</span><span class="p">,</span> <span class="n">iterations</span> <span class="o">=</span> <span class="n">_run_ipf_numpy</span><span class="p">(</span>
+        <span class="n">m_fit_input</span><span class="p">,</span>
+        <span class="n">target_margins</span><span class="p">,</span>
+        <span class="n">convergence_rate</span><span class="p">,</span>
+        <span class="n">max_iteration</span><span class="p">,</span>
+        <span class="n">rate_tolerance</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">m_fit</span><span class="p">,</span> <span class="n">converged</span><span class="p">,</span> <span class="n">iterations</span> <span class="o">=</span> <span class="n">ipfn_obj</span><span class="o">.</span><span class="n">iteration</span><span class="p">()</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
         <span class="sa">f</span><span class="s2">&quot;Raking algorithm terminated with following convergence: </span><span class="si">{</span><span class="n">converged</span><span class="si">}</span><span class="s2">; &quot;</span>
@@ -277,14 +346,9 @@
     <span class="k">if</span> <span class="ow">not</span> <span class="n">converged</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Maximum iterations reached, convergence was not achieved&quot;</span><span class="p">)</span>
 
-    <span class="c1"># Convert array representation of the weighted sample into a dataframe</span>
-    <span class="c1"># Generate all possible combinations of categories (cartesian product)</span>
     <span class="n">combos</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="n">categories</span><span class="p">))</span>
-    <span class="c1"># Flatten the array to match the order of combos</span>
-    <span class="n">weights</span> <span class="o">=</span> <span class="n">m_fit</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-    <span class="c1"># Build the DataFrame</span>
     <span class="n">fit</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">combos</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">alphabetized_variables</span><span class="p">)</span>
-    <span class="n">fit</span><span class="p">[</span><span class="s2">&quot;rake_weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">weights</span>
+    <span class="n">fit</span><span class="p">[</span><span class="s2">&quot;rake_weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">m_fit</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
 
     <span class="n">raked</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
         <span class="n">sample_df</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(),</span>
@@ -293,23 +357,24 @@
         <span class="n">on</span><span class="o">=</span><span class="n">alphabetized_variables</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="c1"># Merge back to original sample weights</span>
     <span class="n">raked_rescaled</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
         <span class="n">raked</span><span class="p">,</span>
-        <span class="p">(</span><span class="n">grouped_sample</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="s2">&quot;total_survey_weight&quot;</span><span class="p">})),</span>
+        <span class="n">grouped_sample_series</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
+            <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="s2">&quot;total_survey_weight&quot;</span><span class="p">}</span>
+        <span class="p">),</span>
         <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span>
         <span class="n">on</span><span class="o">=</span><span class="n">alphabetized_variables</span><span class="p">,</span>
-    <span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;index&quot;</span><span class="p">)</span>  <span class="c1"># important if dropping rows due to NA</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;index&quot;</span><span class="p">)</span>
 
-    <span class="c1"># use above merge to give each individual sample its proportion of the</span>
-    <span class="c1"># cell&#39;s total weight</span>
     <span class="n">raked_rescaled</span><span class="p">[</span><span class="s2">&quot;rake_weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">raked_rescaled</span><span class="p">[</span><span class="s2">&quot;rake_weight&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">raked_rescaled</span><span class="p">[</span><span class="s2">&quot;total_survey_weight&quot;</span><span class="p">]</span>
     <span class="p">)</span>
-    <span class="c1"># rescale weights to sum to target_sum_weights (sum of initial target weights)</span>
+
     <span class="n">w</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">raked_rescaled</span><span class="p">[</span><span class="s2">&quot;rake_weight&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">raked_rescaled</span><span class="p">[</span><span class="s2">&quot;rake_weight&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-    <span class="p">)</span> <span class="o">*</span> <span class="n">target_sum_weights</span>
+        <span class="n">raked_rescaled</span><span class="p">[</span><span class="s2">&quot;rake_weight&quot;</span><span class="p">]</span>
+        <span class="o">/</span> <span class="n">raked_rescaled</span><span class="p">[</span><span class="s2">&quot;rake_weight&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="o">*</span> <span class="n">target_sum_weights</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;rake_weight&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="p">{</span>
         <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="n">w</span><span class="p">,</span>
         <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="p">{</span>
