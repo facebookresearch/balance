@@ -53,6 +53,70 @@ Similarly, we can compute the weight for people from each cell in the table:
 
 
 
+## Examples
+
+Below are two short code examples that show how to run ``balance.weighting_methods.poststratify`` on the simulated data shipped
+with the package. They rely on ``balance.load_data`` so you can copy-paste the
+cells into a notebook, or refer to the new
+[post-stratification tutorial](../../tutorials/quickstart_poststratify).
+
+> **Tip:** For clarity we drop rows where any of the adjustment variables are
+> missing, because the default ``strict_matching=True`` requires that every
+> combination observed in the sample also appears in the target data.
+
+### Matching a single variable
+
+````python
+import pandas as pd
+from balance import load_data
+from balance.weighting_methods.poststratify import poststratify
+
+target_df, sample_df = load_data()
+
+sample_gender = sample_df.dropna(subset=["gender"])
+target_gender = target_df.dropna(subset=["gender"])
+
+result = poststratify(
+    sample_df=sample_gender[["gender"]],
+    sample_weights=pd.Series(1, index=sample_gender.index),
+    target_df=target_gender[["gender"]],
+    target_weights=pd.Series(1, index=target_gender.index),
+)
+
+weighted = sample_gender.assign(weight=result["weight"])
+display(weighted.groupby("gender")["weight"].sum())
+````
+
+The grouped sum reproduces the target population counts (because we pass unit
+design weights): each gender sums to ``4551`` in this dataset. You can divide
+by the total weight to recover the target proportions.
+
+### Matching the joint distribution of two variables
+
+````python
+covariates = ["gender", "age_group"]
+sample_cells = sample_df.dropna(subset=covariates)
+target_cells = target_df.dropna(subset=covariates)
+
+result = poststratify(
+    sample_df=sample_cells[covariates],
+    sample_weights=pd.Series(1, index=sample_cells.index),
+    target_df=target_cells[covariates],
+    target_weights=pd.Series(1, index=target_cells.index),
+)
+
+weighted = sample_cells.assign(weight=result["weight"])
+display(weighted.groupby(covariates)["weight"].sum().unstack())
+````
+
+This second example uses the same two categorical variables but keeps their
+joint cells intact. The pivoted table matches the census counts for each cell
+(e.g. ``Female`` aged ``25-34`` totals ``1360`` and ``Male`` aged ``18-24``
+totals ``905``). Unlike raking, which iteratively matches the marginal
+distributions of each variable, ``poststratify`` calculates weights per cell so
+that the final weighted sample matches the full two-dimensional distribution.
+
+
 ## References
 - More about post-stratification: [Introduction to post-stratification](https://docs.wfp.org/api/documents/WFP-0000121326/download/)
 - Kolenikov, Stas. 2016. “Post-Stratification or Non-Response Adjustment?” Survey Practice 9 (3). https://doi.org/10.29115/SP-2016-0014.
