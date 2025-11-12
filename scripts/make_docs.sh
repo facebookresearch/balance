@@ -77,9 +77,12 @@ if [[ $ONLY_DOCUSAURUS == false ]]; then
   echo "-----------------------------------"
   echo "Building tutorial HTML"
   echo "-----------------------------------"
+  mkdir -p website/static/html/tutorials
   jupyter nbconvert tutorials/balance_quickstart.ipynb --execute --to html \
     --output-dir website/static/html/tutorials
   jupyter nbconvert tutorials/balance_quickstart_cbps.ipynb --execute --to html \
+    --output-dir website/static/html/tutorials
+  jupyter nbconvert tutorials/balance_quickstart_poststratify.ipynb --execute --to html \
     --output-dir website/static/html/tutorials
   jupyter nbconvert tutorials/balance_quickstart_rake.ipynb --execute --to html \
     --output-dir website/static/html/tutorials
