@@ -70,38 +70,89 @@
     <span class="o">*</span><span class="n">args</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform cell-based post-stratification. The output weights take into account</span>
-<span class="sd">    the design weights and the post-stratification weights.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perform cell-based post-stratification to adjust sample weights so that the sample matches the joint distribution of, one or more, specified variables in the target population.</span>
+
+<span class="sd">    This method computes one weight per *cell* - a unique combination of the supplied variables - so that the weighted sample reproduces the cell distribution observed in the target population.</span>
+<span class="sd">    When more than one variable is supplied, the function operates on cells from the joint distribution (as opposed to raking, which operates on the marginals distribution).</span>
+
 <span class="sd">    Reference: https://docs.wfp.org/api/documents/WFP-0000121326/download/</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        sample_df (pd.DataFrame): a dataframe representing the sample</span>
-<span class="sd">        sample_weights (pd.Series): design weights for sample</span>
-<span class="sd">        target_df (pd.DataFrame): a dataframe representing the target</span>
-<span class="sd">        target_weights (pd.Series): design weights for target</span>
-<span class="sd">        variables (Optional[List[str]], optional): list of variables to include in the model.</span>
-<span class="sd">            If None all joint variables of sample_df and target_df are used</span>
-<span class="sd">        transformations (str, optional): what transformations to apply to data before fitting the model.</span>
-<span class="sd">            Default is &quot;default&quot; (see apply_transformations function)</span>
-<span class="sd">        transformations_drop (bool, optional): whether the function should drop non-transformed variables.</span>
-<span class="sd">            Default is True.</span>
-<span class="sd">        strict_matching (bool, optional): whether to require all cells in the sample be in the target.</span>
-<span class="sd">            Default is True. When False, a warning is provided and</span>
-<span class="sd">            samples in cells not covered by the target are given weight 0.</span>
-<span class="sd">    Raises:</span>
-<span class="sd">        ValueError: _description_</span>
-<span class="sd">        ValueError: _description_</span>
+<span class="sd">        sample_df (pd.DataFrame): DataFrame representing the sample.</span>
+<span class="sd">        sample_weights (pd.Series): Design weights for the sample.</span>
+<span class="sd">        target_df (pd.DataFrame): DataFrame representing the target population.</span>
+<span class="sd">        target_weights (pd.Series): Design weights for the target.</span>
+<span class="sd">        variables (Optional[List[str]], optional): List of variables to define post-stratification cells. If None, uses the intersection of columns in sample_df and target_df.</span>
+<span class="sd">        transformations (str, optional): Transformations to apply to data before fitting the model. Default is &quot;default&quot;. See `balance.adjustment.apply_transformations`.</span>
+<span class="sd">        transformations_drop (bool, optional): If True, drops variables not affected by transformations. Default is True.</span>
+<span class="sd">        strict_matching (bool, optional): If True, requires all sample cells to be present in the target. If False, cells missing in the target are assigned weight 0 (and a warning is raised). Default is True.</span>
+<span class="sd">        *args: Additional positional arguments (currently unused).</span>
+<span class="sd">        **kwargs: Additional keyword arguments (currently unused).</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Dict[str, Union[pd.Series, Dict[str, str]]]:</span>
-<span class="sd">            weight (pd.Series): final weights (sum up to target&#39;s sum of weights)</span>
-<span class="sd">            model (dict): method of adjustment</span>
+<span class="sd">        dict:</span>
+<span class="sd">            weight (pd.Series): Final weights for the sample, summing to the target&#39;s total weight.</span>
+<span class="sd">            model (dict): Description of the adjustment method used.</span>
 
-<span class="sd">            Dict shape:</span>
-<span class="sd">            {</span>
-<span class="sd">                &quot;weight&quot;: w,</span>
-<span class="sd">                &quot;model&quot;: {&quot;method&quot;: &quot;poststratify&quot;},</span>
-<span class="sd">            }</span>
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If strict_matching is True and some sample cells are missing in the target.</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        * The function expects that every combination of ``variables`` present</span>
+<span class="sd">          in ``sample_df`` is also present in ``target_df``. Set</span>
+<span class="sd">          ``strict_matching=False`` to keep rows whose cell is missing in the</span>
+<span class="sd">          target and assign them weight 0.</span>
+<span class="sd">        * When no ``variables`` are provided, the intersection of columns in</span>
+<span class="sd">          ``sample_df`` and ``target_df`` is used. In practice you will</span>
+<span class="sd">          usually provide a small number of categorical variables (often one</span>
+<span class="sd">          or two) describing the post-stratification cells.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        Post-stratifying on a single categorical variable:</span>
+
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; sample_df = pd.DataFrame({&quot;gender&quot;: [&quot;Female&quot;, &quot;Male&quot;, &quot;Female&quot;]})</span>
+<span class="sd">            &gt;&gt;&gt; target_df = pd.DataFrame({&quot;gender&quot;: [&quot;Female&quot;, &quot;Female&quot;, &quot;Male&quot;, &quot;Male&quot;]})</span>
+<span class="sd">            &gt;&gt;&gt; design = pd.Series(1, index=sample_df.index)</span>
+<span class="sd">            &gt;&gt;&gt; target_design = pd.Series(1, index=target_df.index)</span>
+<span class="sd">            &gt;&gt;&gt; weights = poststratify(</span>
+<span class="sd">            ...     sample_df=sample_df,</span>
+<span class="sd">            ...     sample_weights=design,</span>
+<span class="sd">            ...     target_df=target_df,</span>
+<span class="sd">            ...     target_weights=target_design,</span>
+<span class="sd">            ...     variables=[&quot;gender&quot;],</span>
+<span class="sd">            ... )[&quot;weight&quot;]</span>
+<span class="sd">            &gt;&gt;&gt; weights.tolist()</span>
+<span class="sd">            [1.0, 2.0, 1.0]</span>
+
+<span class="sd">        Post-stratifying on the joint distribution of two variables (the</span>
+<span class="sd">        resulting weights depend on the combination of both columns rather</span>
+<span class="sd">        than their marginals):</span>
+
+<span class="sd">            &gt;&gt;&gt; sample_df = pd.DataFrame(</span>
+<span class="sd">            ...     {</span>
+<span class="sd">            ...         &quot;gender&quot;: [&quot;Female&quot;, &quot;Female&quot;, &quot;Male&quot;, &quot;Male&quot;],</span>
+<span class="sd">            ...         &quot;age_group&quot;: [&quot;18-34&quot;, &quot;35+&quot;, &quot;18-34&quot;, &quot;35+&quot;],</span>
+<span class="sd">            ...     }</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; target_df = pd.DataFrame(</span>
+<span class="sd">            ...     {</span>
+<span class="sd">            ...         &quot;gender&quot;: [&quot;Female&quot;, &quot;Female&quot;, &quot;Female&quot;, &quot;Male&quot;, &quot;Male&quot;, &quot;Male&quot;],</span>
+<span class="sd">            ...         &quot;age_group&quot;: [&quot;18-34&quot;, &quot;18-34&quot;, &quot;35+&quot;, &quot;18-34&quot;, &quot;35+&quot;, &quot;35+&quot;],</span>
+<span class="sd">            ...     }</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; design = pd.Series(1, index=sample_df.index)</span>
+<span class="sd">            &gt;&gt;&gt; target_design = pd.Series(1, index=target_df.index)</span>
+<span class="sd">            &gt;&gt;&gt; weights = poststratify(</span>
+<span class="sd">            ...     sample_df=sample_df,</span>
+<span class="sd">            ...     sample_weights=design,</span>
+<span class="sd">            ...     target_df=target_df,</span>
+<span class="sd">            ...     target_weights=target_design,</span>
+<span class="sd">            ...     variables=[&quot;gender&quot;, &quot;age_group&quot;],</span>
+<span class="sd">            ... )[&quot;weight&quot;]</span>
+<span class="sd">            &gt;&gt;&gt; weights.tolist()</span>
+<span class="sd">            [2.0, 1.0, 1.0, 2.0]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">balance_util</span><span class="o">.</span><span class="n">_check_weighting_methods_input</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">&quot;sample&quot;</span><span class="p">)</span>
     <span class="n">balance_util</span><span class="o">.</span><span class="n">_check_weighting_methods_input</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">)</span>
