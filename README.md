@@ -11,7 +11,6 @@
 [![CodeQL](https://github.com/facebookresearch/balance/actions/workflows/codeql.yml/badge.svg)](https://github.com/facebookresearch/balance/actions/workflows/codeql.yml?query=branch%3Amain)
 [![Deploy Website](https://github.com/facebookresearch/balance/actions/workflows/deploy-website.yml/badge.svg)](https://github.com/facebookresearch/balance/actions/workflows/deploy-website.yml?query=branch%3Amain)
 [![Release](https://github.com/facebookresearch/balance/actions/workflows/release.yml/badge.svg)](https://github.com/facebookresearch/balance/actions/workflows/release.yml?query=branch%3Amain)
-[![License](https://img.shields.io/badge/License-MIT-3c60b1.svg?logo=opensourceinitiative&logoColor=white)](./LICENSE)
 
 </div>
 
