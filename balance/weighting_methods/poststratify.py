@@ -31,38 +31,89 @@ def poststratify(
     *args,
     **kwargs,
 ) -> Dict[str, Union[pd.Series, Dict[str, str]]]:
-    """Perform cell-based post-stratification. The output weights take into account
-    the design weights and the post-stratification weights.
+    """
+    Perform cell-based post-stratification to adjust sample weights so that the sample matches the joint distribution of, one or more, specified variables in the target population.
+
+    This method computes one weight per *cell* - a unique combination of the supplied variables - so that the weighted sample reproduces the cell distribution observed in the target population.
+    When more than one variable is supplied, the function operates on cells from the joint distribution (as opposed to raking, which operates on the marginals distribution).
+
     Reference: https://docs.wfp.org/api/documents/WFP-0000121326/download/
 
     Args:
-        sample_df (pd.DataFrame): a dataframe representing the sample
-        sample_weights (pd.Series): design weights for sample
-        target_df (pd.DataFrame): a dataframe representing the target
-        target_weights (pd.Series): design weights for target
-        variables (Optional[List[str]], optional): list of variables to include in the model.
-            If None all joint variables of sample_df and target_df are used
-        transformations (str, optional): what transformations to apply to data before fitting the model.
-            Default is "default" (see apply_transformations function)
-        transformations_drop (bool, optional): whether the function should drop non-transformed variables.
-            Default is True.
-        strict_matching (bool, optional): whether to require all cells in the sample be in the target.
-            Default is True. When False, a warning is provided and
-            samples in cells not covered by the target are given weight 0.
-    Raises:
-        ValueError: _description_
-        ValueError: _description_
+        sample_df (pd.DataFrame): DataFrame representing the sample.
+        sample_weights (pd.Series): Design weights for the sample.
+        target_df (pd.DataFrame): DataFrame representing the target population.
+        target_weights (pd.Series): Design weights for the target.
+        variables (Optional[List[str]], optional): List of variables to define post-stratification cells. If None, uses the intersection of columns in sample_df and target_df.
+        transformations (str, optional): Transformations to apply to data before fitting the model. Default is "default". See `balance.adjustment.apply_transformations`.
+        transformations_drop (bool, optional): If True, drops variables not affected by transformations. Default is True.
+        strict_matching (bool, optional): If True, requires all sample cells to be present in the target. If False, cells missing in the target are assigned weight 0 (and a warning is raised). Default is True.
+        *args: Additional positional arguments (currently unused).
+        **kwargs: Additional keyword arguments (currently unused).
 
     Returns:
-        Dict[str, Union[pd.Series, Dict[str, str]]]:
-            weight (pd.Series): final weights (sum up to target's sum of weights)
-            model (dict): method of adjustment
+        dict:
+            weight (pd.Series): Final weights for the sample, summing to the target's total weight.
+            model (dict): Description of the adjustment method used.
 
-            Dict shape:
-            {
-                "weight": w,
-                "model": {"method": "poststratify"},
-            }
+    Raises:
+        ValueError: If strict_matching is True and some sample cells are missing in the target.
+
+    Notes:
+        * The function expects that every combination of ``variables`` present
+          in ``sample_df`` is also present in ``target_df``. Set
+          ``strict_matching=False`` to keep rows whose cell is missing in the
+          target and assign them weight 0.
+        * When no ``variables`` are provided, the intersection of columns in
+          ``sample_df`` and ``target_df`` is used. In practice you will
+          usually provide a small number of categorical variables (often one
+          or two) describing the post-stratification cells.
+
+    Examples:
+        Post-stratifying on a single categorical variable:
+
+            >>> import pandas as pd
+            >>> sample_df = pd.DataFrame({"gender": ["Female", "Male", "Female"]})
+            >>> target_df = pd.DataFrame({"gender": ["Female", "Female", "Male", "Male"]})
+            >>> design = pd.Series(1, index=sample_df.index)
+            >>> target_design = pd.Series(1, index=target_df.index)
+            >>> weights = poststratify(
+            ...     sample_df=sample_df,
+            ...     sample_weights=design,
+            ...     target_df=target_df,
+            ...     target_weights=target_design,
+            ...     variables=["gender"],
+            ... )["weight"]
+            >>> weights.tolist()
+            [1.0, 2.0, 1.0]
+
+        Post-stratifying on the joint distribution of two variables (the
+        resulting weights depend on the combination of both columns rather
+        than their marginals):
+
+            >>> sample_df = pd.DataFrame(
+            ...     {
+            ...         "gender": ["Female", "Female", "Male", "Male"],
+            ...         "age_group": ["18-34", "35+", "18-34", "35+"],
+            ...     }
+            ... )
+            >>> target_df = pd.DataFrame(
+            ...     {
+            ...         "gender": ["Female", "Female", "Female", "Male", "Male", "Male"],
+            ...         "age_group": ["18-34", "18-34", "35+", "18-34", "35+", "35+"],
+            ...     }
+            ... )
+            >>> design = pd.Series(1, index=sample_df.index)
+            >>> target_design = pd.Series(1, index=target_df.index)
+            >>> weights = poststratify(
+            ...     sample_df=sample_df,
+            ...     sample_weights=design,
+            ...     target_df=target_df,
+            ...     target_weights=target_design,
+            ...     variables=["gender", "age_group"],
+            ... )["weight"]
+            >>> weights.tolist()
+            [2.0, 1.0, 1.0, 2.0]
     """
     balance_util._check_weighting_methods_input(sample_df, sample_weights, "sample")
     balance_util._check_weighting_methods_input(target_df, target_weights, "target")
