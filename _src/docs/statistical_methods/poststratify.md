@@ -58,6 +58,7 @@ Similarly, we can compute the weight for people from each cell in the table:
 Below are two short code examples that show how to run ``balance.weighting_methods.poststratify`` on the simulated data shipped
 with the package. They rely on ``balance.load_data`` so you can copy-paste the
 cells into a notebook, or refer to the new
+[post-stratification tutorial](https://import-balance.org/docs/tutorials/quickstart_poststratify/).
 
 > **Tip:** For clarity we drop rows where any of the adjustment variables are
 > missing, because the default ``strict_matching=True`` requires that every
