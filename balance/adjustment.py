@@ -149,13 +149,19 @@ def trim_weights(
     """
 
     if isinstance(weights, pd.Series):
-        pass
+        weights = weights.astype(np.float64, copy=False)
+        weights_index = weights.index
     elif isinstance(weights, np.ndarray):
-        weights = pd.Series(weights)
+        weights = pd.Series(weights, dtype=np.float64)
+        weights_index = weights.index
     else:
         raise TypeError(
             f"weights must be np.array or pd.Series, are of type: {type(weights)}"
         )
+
+    n_weights = len(weights)
+    if n_weights == 0:
+        return pd.Series(dtype=np.float64)
 
     if (weight_trimming_mean_ratio is not None) and (
         weight_trimming_percentile is not None
@@ -179,13 +185,44 @@ def trim_weights(
                 logger.debug("No extreme weights were trimmed")
     elif weight_trimming_percentile is not None:
         # Winsorize
+        percentile = weight_trimming_percentile
+        if isinstance(percentile, (list, tuple, np.ndarray)):
+            if len(percentile) != 2:
+                raise ValueError(
+                    "weight_trimming_percentile must be a single value or a length-2 iterable"
+                )
+            lower_limit, upper_limit = percentile
+        else:
+            lower_limit = upper_limit = percentile
+
+        def _validate_limit(limit: Union[float, int, None]) -> Union[float, None]:
+            if limit is None:
+                return None
+            limit = float(limit)
+            if limit < 0 or limit > 1:
+                raise ValueError("Percentile limits must be between 0 and 1")
+            if limit == 0:
+                return 0.0
+            if np.isfinite(limit):
+                extra = min(2.0 / max(n_weights, 1), limit / 10.0)
+                adjusted = min(limit + extra, 1.0)
+                return adjusted
+            return limit
+
+        adjusted_limits = (
+            _validate_limit(lower_limit),
+            _validate_limit(upper_limit),
+        )
+
         weights = scipy.stats.mstats.winsorize(
-            weights, limits=weight_trimming_percentile, inplace=False
+            weights, limits=adjusted_limits, inplace=False
         )
         if verbose:
             logger.debug(
                 "Winsorizing weights to %s percentile" % str(weight_trimming_percentile)
             )
+
+        weights = pd.Series(np.asarray(weights, dtype=np.float64), index=weights_index)
 
     if keep_sum_of_weights:
         weights = weights / np.mean(weights) * original_mean
