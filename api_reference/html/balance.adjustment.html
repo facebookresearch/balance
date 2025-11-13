@@ -125,47 +125,67 @@ quantize to numeric columns and fct_lump to non-numeric and boolean</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="balance.adjustment.trim_weights">
 <span class="sig-prename descclassname"><span class="pre">balance.adjustment.</span></span><span class="sig-name descname"><span class="pre">trim_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">_ScalarType_co</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_trimming_mean_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_trimming_percentile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_sum_of_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/balance/adjustment.html#trim_weights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.adjustment.trim_weights" title="Link to this definition">¶</a></dt>
-<dd><p>Trim extreme weights.</p>
+<dd><p>Trim extreme weights using mean ratio clipping or percentile-based winsorization.</p>
 <p>The user cannot supply both weight_trimming_mean_ratio and weight_trimming_percentile.
-If none are supplied, the original weights are returned.</p>
-<p>If <cite>weight_trimming_mean_ratio</cite> is not None, the weights are trimmed from above by
-mean(weights) * ratio. The weights are then normalized to have the original mean.
-Note that trimmed weights aren’t actually bounded by trimming.ratio because the
-reduced weight is redistributed to arrive at the original mean.</p>
-<p>If <cite>weight_trimming_percentile</cite> is not None, the weights are trimmed according to the percentiles of the distribution of the weights.
-Note that weight_trimming_percentile by default clips both sides of the distribution, unlike
-trimming that only trims the weights from above.
-For example, <cite>weight_trimming_percentile=0.1</cite> trims below the 10th percentile AND above the 90th.
-If you only want to trim the upper side, specify <cite>weight_trimming_percentile = (0, 0.1)</cite>. If you only want to trim the lower side, specify
-<cite>weight_trimming_percentile = (0.1, 0)</cite>.</p>
+If neither is supplied, the original weights are returned unchanged.</p>
+<p><strong>Mean Ratio Trimming (weight_trimming_mean_ratio)</strong>:
+When specified, weights are clipped from above at mean(weights) * ratio, then
+renormalized to preserve the original mean. This is a hard upper bound.
+Note: Final weights may slightly exceed the trimming ratio due to renormalization
+redistributing the clipped weight mass across all observations.</p>
+<p><strong>Percentile-Based Winsorization (weight_trimming_percentile)</strong>:
+When specified, extreme weights are replaced with less extreme values using
+scipy.stats.mstats.winsorize. By default, winsorization affects both tails
+of the distribution symmetrically, unlike mean ratio trimming which only
+clips from above.</p>
+<p>Behavior:
+- Single value (e.g., 0.1): Winsorizes below 10th AND above 90th percentile
+- Tuple (lower, upper): Winsorizes independently on each side</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>(0.1, 0): Only winsorizes below 10th percentile</p></li>
+<li><p>(0, 0.1): Only winsorizes above 90th percentile</p></li>
+<li><p>(0.01, 0.05): Winsorizes below 1st AND above 95th percentile</p></li>
+</ul>
+</div></blockquote>
+<p>Important implementation detail: Percentile limits are automatically adjusted
+upward slightly (via _validate_limit) to ensure at least one value gets
+winsorized at boundary percentiles. This prevents edge cases where discrete
+distributions or floating-point precision might prevent winsorization at the
+exact percentile value. The adjustment is min(2/n_weights, limit/10), capped at 1.0.</p>
+<p>After trimming/winsorization, if keep_sum_of_weights=True (default), weights
+are rescaled to preserve the original sum of weights.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>weights</strong> (<em>Union</em><em>[</em><em>pd.Series</em><em>, </em><em>np.ndarray</em><em>]</em>) – pd.Series of weights to trim. np.ndarray will be turned into pd.Series) of weights.</p></li>
-<li><p><strong>weight_trimming_mean_ratio</strong> (<em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>, </em><em>optional</em>) – indicating the ratio from above according to which
-the weights are trimmed by mean(weights) * ratio. Defaults to None.</p></li>
-<li><p><strong>weight_trimming_percentile</strong> (<em>Union</em><em>[</em><em>float</em><em>]</em><em>, </em><em>optional</em>) – if <cite>weight_trimming_percentile</cite> is not None,
-then we apply winsorization using <code class="xref py py-func docutils literal notranslate"><span class="pre">scipy.stats.mstats.winsorize()</span></code>. Ranges between 0 and 1.
-If a single value is passed, indicates the percentiles on both sides of the weight distribution beyond which the weights will be winsorized.
-If two values are passed, the first value is the lower percentiles below which winsorizing will be applied, and the second is the 1. - upper percentile above which winsorizing will be applied.
-For example, <cite>weight_trimming_percentile=(0.01, 0.05)</cite> will trim the weights with values below the 1st percentile and above the 95th percentile of the weight distribution.
-See also: [<a class="reference external" href="https://en.wikipedia.org/wiki/Winsorizing">https://en.wikipedia.org/wiki/Winsorizing</a>].
-Defaults to None.</p></li>
-<li><p><strong>verbose</strong> (<em>bool</em><em>, </em><em>optional</em>) – whether to add to logger printout of trimming process.
+<li><p><strong>weights</strong> (<em>Union</em><em>[</em><em>pd.Series</em><em>, </em><em>np.ndarray</em><em>]</em>) – Weights to trim. np.ndarray will be
+converted to pd.Series internally.</p></li>
+<li><p><strong>weight_trimming_mean_ratio</strong> (<em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>, </em><em>optional</em>) – Ratio for upper bound
+clipping as mean(weights) * ratio. Mutually exclusive with
+weight_trimming_percentile. Defaults to None.</p></li>
+<li><p><strong>weight_trimming_percentile</strong> (<em>Union</em><em>[</em><em>float</em><em>, </em><em>Tuple</em><em>[</em><em>float</em><em>, </em><em>float</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – <p>Percentile limits for winsorization. Value(s) must be between 0 and 1.
+- Single float: Symmetric winsorization on both tails
+- Tuple[float, float]: (lower_percentile, upper_percentile) for</p>
+<blockquote>
+<div><p>independent control of each tail</p>
+</div></blockquote>
+<p>Mutually exclusive with weight_trimming_mean_ratio. Defaults to None.</p>
+</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to log details about the trimming process.
 Defaults to False.</p></li>
-<li><p><strong>keep_sum_of_weights</strong> (<em>bool</em><em>, </em><em>optional</em>) – Set if the sum of weights after trimming
-should be the same as the sum of weights before trimming.
-Defaults to True.</p></li>
+<li><p><strong>keep_sum_of_weights</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to rescale weights after trimming
+to preserve the original sum of weights. Defaults to True.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>TypeError</strong> – If weights is not np.array or pd.Series.</p></li>
-<li><p><strong>ValueError</strong> – If both weight_trimming_mean_ratio and weight_trimming_percentile are set.</p></li>
+<li><p><strong>ValueError</strong> – If both weight_trimming_mean_ratio and weight_trimming_percentile
+    are specified, or if weight_trimming_percentile tuple has length != 2.</p></li>
 </ul>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Trimmed weights</p>
+<dd class="field-odd"><p>Trimmed weights with the same index as input</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>pd.Series (of type float64)</p>
