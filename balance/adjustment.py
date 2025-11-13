@@ -38,6 +38,55 @@ BALANCE_WEIGHTING_METHODS = {
 }
 
 
+def _validate_limit(
+    limit: Union[float, int, None], n_weights: int
+) -> Union[float, None]:
+    """Validate and adjust a percentile limit for use with scipy.stats.mstats.winsorize.
+
+    This function prepares percentile limits for winsorization by:
+    1. Validating that finite limits are within valid bounds (0-1)
+    2. Adding a small adjustment to finite, non-zero limits to ensure at least
+       one value gets winsorized at the boundary percentile
+
+    The adjustment prevents edge cases where the exact percentile value might not
+    trigger winsorization due to floating-point precision or discrete data distributions.
+    The adjustment is the minimum of (2/n_weights, limit/10), capped at 1.0.
+
+    Special cases:
+    - None: Returns None unchanged (no winsorization on this side)
+    - 0: Returns 0.0 (no winsorization on this side)
+    - Non-finite (inf): Returns as-is without validation or adjustment
+
+    Args:
+        limit (Union[float, int, None]): The percentile limit to validate.
+            For finite values, should be between 0 and 1.
+        n_weights (int): The number of weights in the dataset. Used to calculate
+            an adjustment factor that scales inversely with sample size.
+
+    Returns:
+        Union[float, None]: The validated and adjusted limit, or None if the
+            input limit was None.
+
+    Raises:
+        ValueError: If the limit is finite and not between 0 and 1.
+    """
+    if limit is None:
+        return None
+    limit = float(limit)
+    if limit == 0:
+        return 0.0
+    # Check for non-finite values before validating range
+    if not np.isfinite(limit):
+        return limit
+    # Validate range only for finite values
+    if limit < 0 or limit > 1:
+        raise ValueError("Percentile limits must be between 0 and 1")
+    # Apply adjustment for finite values within valid range
+    extra = min(2.0 / max(n_weights, 1), limit / 10.0)
+    adjusted = min(limit + extra, 1.0)
+    return adjusted
+
+
 def trim_weights(
     weights: Union[pd.Series, npt.NDArray],
     # TODO: add support to more types of input weights? (e.g. list? other?)
@@ -46,46 +95,63 @@ def trim_weights(
     verbose: bool = False,
     keep_sum_of_weights: bool = True,
 ) -> pd.Series:
-    """Trim extreme weights.
+    """Trim extreme weights using mean ratio clipping or percentile-based winsorization.
 
     The user cannot supply both weight_trimming_mean_ratio and weight_trimming_percentile.
-    If none are supplied, the original weights are returned.
+    If neither is supplied, the original weights are returned unchanged.
 
-    If `weight_trimming_mean_ratio` is not None, the weights are trimmed from above by
-    mean(weights) * ratio. The weights are then normalized to have the original mean.
-    Note that trimmed weights aren't actually bounded by trimming.ratio because the
-    reduced weight is redistributed to arrive at the original mean.
+    **Mean Ratio Trimming (weight_trimming_mean_ratio)**:
+    When specified, weights are clipped from above at mean(weights) * ratio, then
+    renormalized to preserve the original mean. This is a hard upper bound.
+    Note: Final weights may slightly exceed the trimming ratio due to renormalization
+    redistributing the clipped weight mass across all observations.
 
-    If `weight_trimming_percentile` is not None, the weights are trimmed according to the percentiles of the distribution of the weights.
-    Note that weight_trimming_percentile by default clips both sides of the distribution, unlike
-    trimming that only trims the weights from above.
-    For example, `weight_trimming_percentile=0.1` trims below the 10th percentile AND above the 90th.
-    If you only want to trim the upper side, specify `weight_trimming_percentile = (0, 0.1)`. If you only want to trim the lower side, specify
-    `weight_trimming_percentile = (0.1, 0)`.
+    **Percentile-Based Winsorization (weight_trimming_percentile)**:
+    When specified, extreme weights are replaced with less extreme values using
+    scipy.stats.mstats.winsorize. By default, winsorization affects both tails
+    of the distribution symmetrically, unlike mean ratio trimming which only
+    clips from above.
+
+    Behavior:
+    - Single value (e.g., 0.1): Winsorizes below 10th AND above 90th percentile
+    - Tuple (lower, upper): Winsorizes independently on each side
+      - (0.1, 0): Only winsorizes below 10th percentile
+      - (0, 0.1): Only winsorizes above 90th percentile
+      - (0.01, 0.05): Winsorizes below 1st AND above 95th percentile
+
+    Important implementation detail: Percentile limits are automatically adjusted
+    upward slightly (via _validate_limit) to ensure at least one value gets
+    winsorized at boundary percentiles. This prevents edge cases where discrete
+    distributions or floating-point precision might prevent winsorization at the
+    exact percentile value. The adjustment is min(2/n_weights, limit/10), capped at 1.0.
+
+    After trimming/winsorization, if keep_sum_of_weights=True (default), weights
+    are rescaled to preserve the original sum of weights.
 
     Args:
-        weights (Union[pd.Series, np.ndarray]): pd.Series of weights to trim. np.ndarray will be turned into pd.Series) of weights.
-        weight_trimming_mean_ratio (Union[float, int], optional): indicating the ratio from above according to which
-            the weights are trimmed by mean(weights) * ratio. Defaults to None.
-        weight_trimming_percentile (Union[float], optional): if `weight_trimming_percentile` is not None,
-            then we apply winsorization using :func:`scipy.stats.mstats.winsorize`. Ranges between 0 and 1.
-            If a single value is passed, indicates the percentiles on both sides of the weight distribution beyond which the weights will be winsorized.
-            If two values are passed, the first value is the lower percentiles below which winsorizing will be applied, and the second is the 1. - upper percentile above which winsorizing will be applied.
-            For example, `weight_trimming_percentile=(0.01, 0.05)` will trim the weights with values below the 1st percentile and above the 95th percentile of the weight distribution.
-            See also: [https://en.wikipedia.org/wiki/Winsorizing].
-            Defaults to None.
-        verbose (bool, optional): whether to add to logger printout of trimming process.
+        weights (Union[pd.Series, np.ndarray]): Weights to trim. np.ndarray will be
+            converted to pd.Series internally.
+        weight_trimming_mean_ratio (Union[float, int], optional): Ratio for upper bound
+            clipping as mean(weights) * ratio. Mutually exclusive with
+            weight_trimming_percentile. Defaults to None.
+        weight_trimming_percentile (Union[float, Tuple[float, float]], optional):
+            Percentile limits for winsorization. Value(s) must be between 0 and 1.
+            - Single float: Symmetric winsorization on both tails
+            - Tuple[float, float]: (lower_percentile, upper_percentile) for
+              independent control of each tail
+            Mutually exclusive with weight_trimming_mean_ratio. Defaults to None.
+        verbose (bool, optional): Whether to log details about the trimming process.
             Defaults to False.
-        keep_sum_of_weights (bool, optional): Set if the sum of weights after trimming
-            should be the same as the sum of weights before trimming.
-            Defaults to True.
+        keep_sum_of_weights (bool, optional): Whether to rescale weights after trimming
+            to preserve the original sum of weights. Defaults to True.
 
     Raises:
         TypeError: If weights is not np.array or pd.Series.
-        ValueError: If both weight_trimming_mean_ratio and weight_trimming_percentile are set.
+        ValueError: If both weight_trimming_mean_ratio and weight_trimming_percentile
+            are specified, or if weight_trimming_percentile tuple has length != 2.
 
     Returns:
-        pd.Series (of type float64): Trimmed weights
+        pd.Series (of type float64): Trimmed weights with the same index as input
 
     Examples:
         ::
@@ -149,13 +215,18 @@ def trim_weights(
     """
 
     if isinstance(weights, pd.Series):
-        pass
+        weights = weights.astype(np.float64, copy=False)
     elif isinstance(weights, np.ndarray):
-        weights = pd.Series(weights)
+        weights = pd.Series(weights, dtype=np.float64)
     else:
         raise TypeError(
             f"weights must be np.array or pd.Series, are of type: {type(weights)}"
         )
+    weights_index = weights.index
+
+    n_weights = len(weights)
+    if n_weights == 0:
+        return pd.Series(dtype=np.float64)
 
     if (weight_trimming_mean_ratio is not None) and (
         weight_trimming_percentile is not None
@@ -177,15 +248,34 @@ def trim_weights(
                 logger.debug("Clipped %s of the weights" % percent_trimmed)
             else:
                 logger.debug("No extreme weights were trimmed")
+
+        weights = pd.Series(np.asarray(weights, dtype=np.float64), index=weights_index)
     elif weight_trimming_percentile is not None:
         # Winsorize
+        percentile = weight_trimming_percentile
+        if isinstance(percentile, (list, tuple, np.ndarray)):
+            if len(percentile) != 2:
+                raise ValueError(
+                    "weight_trimming_percentile must be a single value or a length-2 iterable"
+                )
+            lower_limit, upper_limit = percentile
+        else:
+            lower_limit = upper_limit = percentile
+
+        adjusted_limits = (
+            _validate_limit(lower_limit, n_weights),
+            _validate_limit(upper_limit, n_weights),
+        )
+
         weights = scipy.stats.mstats.winsorize(
-            weights, limits=weight_trimming_percentile, inplace=False
+            weights, limits=adjusted_limits, inplace=False
         )
         if verbose:
             logger.debug(
                 "Winsorizing weights to %s percentile" % str(weight_trimming_percentile)
             )
+
+        weights = pd.Series(np.asarray(weights, dtype=np.float64), index=weights_index)
 
     if keep_sum_of_weights:
         weights = weights / np.mean(weights) * original_mean

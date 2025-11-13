@@ -16,6 +16,7 @@ import balance.testutil
 import numpy as np
 import pandas as pd
 from balance.adjustment import (
+    _validate_limit,
     apply_transformations,
     default_transformations,
     trim_weights,
@@ -130,6 +131,36 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         )
         self.assertTrue(min(both_trimmed) > 0.1)
         self.assertTrue(max(both_trimmed) < 0.9)
+
+    def test_trim_weights_return_type_consistency(self):
+        """
+        Test that both weight_trimming_mean_ratio and weight_trimming_percentile
+        return pd.Series with dtype=float64 and preserve the index.
+
+        This validates the explicit conversions added to ensure consistent
+        return types across all trimming methods.
+        """
+        # Create test data with custom index
+        custom_index = pd.Index([10, 20, 30, 40, 50])
+        test_weights = pd.Series([0.5, 1.0, 1.5, 2.0, 2.5], index=custom_index)
+
+        # Test weight_trimming_mean_ratio returns pd.Series with correct dtype and index
+        mean_ratio_result = trim_weights(
+            test_weights, weight_trimming_mean_ratio=1.5, keep_sum_of_weights=False
+        )
+        self.assertEqual(type(mean_ratio_result), pd.Series)
+        self.assertEqual(mean_ratio_result.dtype, np.float64)
+        pd.testing.assert_index_equal(mean_ratio_result.index, custom_index)
+
+        # Test weight_trimming_percentile returns pd.Series with correct dtype and index
+        percentile_result = trim_weights(
+            test_weights,
+            weight_trimming_percentile=(0.1, 0.1),
+            keep_sum_of_weights=False,
+        )
+        self.assertEqual(type(percentile_result), pd.Series)
+        self.assertEqual(percentile_result.dtype, np.float64)
+        pd.testing.assert_index_equal(percentile_result.index, custom_index)
 
     def test_default_transformations(self):
         """
@@ -447,3 +478,188 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         # Test unknown adjustment method
         with self.assertRaisesRegex(ValueError, "Unknown adjustment method*"):
             balance.adjustment._find_adjustment_method("some_other_value")
+
+    def test_validate_limit_none_input(self):
+        """
+        Test that _validate_limit returns None when given None input.
+
+        This validates the function's handling of the None sentinel value
+        which indicates no limit should be applied.
+        """
+        # Setup: None limit
+        limit = None
+        n_weights = 100
+
+        # Execute: validate the limit
+        result = _validate_limit(limit, n_weights)
+
+        # Assert: None should be returned unchanged
+        self.assertIsNone(result)
+
+    def test_validate_limit_zero_input(self):
+        """
+        Test that _validate_limit returns 0.0 when given 0 input.
+
+        This validates the special case handling for zero limits.
+        """
+        # Setup: zero limit
+        limit = 0
+        n_weights = 100
+
+        # Execute: validate the limit
+        result = _validate_limit(limit, n_weights)
+
+        # Assert: should return 0.0
+        self.assertEqual(result, 0.0)
+        self.assertEqual(type(result), float)
+
+    def test_validate_limit_finite_value_adjustment(self):
+        """
+        Test that _validate_limit properly adjusts finite limits.
+
+        For finite limits between 0 and 1, the function should add a small
+        adjustment based on n_weights to ensure proper winsorization behavior.
+        """
+        # Setup: finite limit between 0 and 1
+        limit = 0.1
+        n_weights = 100
+
+        # Execute: validate and adjust the limit
+        result = _validate_limit(limit, n_weights)
+
+        # Assert: result should be slightly larger than input
+        self.assertIsNotNone(result)
+        self.assertGreater(result, limit)
+        # Extra is min(2.0/100, 0.1/10) = min(0.02, 0.01) = 0.01
+        expected = limit + 0.01
+        self.assertAlmostEqual(result, expected, delta=EPSILON)
+
+    def test_validate_limit_finite_value_with_small_n_weights(self):
+        """
+        Test _validate_limit with small n_weights values.
+
+        When n_weights is small, the adjustment factor should be larger.
+        """
+        # Setup: finite limit with small n_weights
+        limit = 0.1
+        n_weights = 10
+
+        # Execute: validate and adjust the limit
+        result = _validate_limit(limit, n_weights)
+
+        # Assert: result should have larger adjustment due to small n_weights
+        self.assertIsNotNone(result)
+        self.assertGreater(result, limit)
+        # Extra is min(2.0/10, 0.1/10) = min(0.2, 0.01) = 0.01
+        expected = limit + 0.01
+        self.assertAlmostEqual(result, expected, delta=EPSILON)
+
+    def test_validate_limit_finite_value_capped_at_one(self):
+        """
+        Test that _validate_limit caps adjusted values at 1.0.
+
+        Even if the adjustment would push the limit above 1.0,
+        the result should be capped at 1.0.
+        """
+        # Setup: limit close to 1.0
+        limit = 0.99
+        n_weights = 100
+
+        # Execute: validate and adjust the limit
+        result = _validate_limit(limit, n_weights)
+
+        # Assert: result should be capped at 1.0
+        self.assertIsNotNone(result)
+        self.assertLessEqual(result, 1.0)
+        # Extra is min(2.0/100, 0.99/10) = min(0.02, 0.099) = 0.02
+        # 0.99 + 0.02 = 1.01, but should be capped at 1.0
+        self.assertEqual(result, 1.0)
+
+    def test_validate_limit_invalid_negative_value(self):
+        """
+        Test that _validate_limit raises ValueError for negative limits.
+
+        Percentile limits must be in the range [0, 1], so negative values
+        should raise a ValueError.
+        """
+        # Setup: invalid negative limit
+        limit = -0.1
+        n_weights = 100
+
+        # Execute and Assert: should raise ValueError
+        with self.assertRaisesRegex(
+            ValueError, "Percentile limits must be between 0 and 1"
+        ):
+            _validate_limit(limit, n_weights)
+
+    def test_validate_limit_invalid_greater_than_one(self):
+        """
+        Test that _validate_limit raises ValueError for limits > 1.
+
+        Percentile limits must be in the range [0, 1], so values greater than 1
+        should raise a ValueError.
+        """
+        # Setup: invalid limit greater than 1
+        limit = 1.5
+        n_weights = 100
+
+        # Execute and Assert: should raise ValueError
+        with self.assertRaisesRegex(
+            ValueError, "Percentile limits must be between 0 and 1"
+        ):
+            _validate_limit(limit, n_weights)
+
+    def test_validate_limit_non_finite_value(self):
+        """
+        Test that _validate_limit returns non-finite values unchanged.
+
+        If a non-finite value (like infinity) is passed, it should be returned
+        without adjustment, after basic validation.
+        """
+        # Setup: non-finite limit (infinity)
+        limit = float("inf")
+        n_weights = 100
+
+        # Execute: validate the limit
+        result = _validate_limit(limit, n_weights)
+
+        # Assert: should return infinity unchanged
+        self.assertEqual(result, float("inf"))
+
+    def test_validate_limit_integer_input(self):
+        """
+        Test that _validate_limit handles integer inputs correctly.
+
+        The function should accept integer inputs and convert them to float.
+        """
+        # Setup: integer limit
+        limit = 1
+        n_weights = 100
+
+        # Execute: validate the limit
+        result = _validate_limit(limit, n_weights)
+
+        # Assert: should return float type
+        self.assertEqual(type(result), float)
+        self.assertEqual(result, 1.0)
+
+    def test_validate_limit_edge_case_n_weights_one(self):
+        """
+        Test _validate_limit with n_weights=1.
+
+        With only one weight, the adjustment calculation should handle
+        the edge case properly using max(n_weights, 1).
+        """
+        # Setup: single weight scenario
+        limit = 0.5
+        n_weights = 1
+
+        # Execute: validate and adjust the limit
+        result = _validate_limit(limit, n_weights)
+
+        # Assert: should calculate adjustment correctly
+        self.assertIsNotNone(result)
+        self.assertGreater(result, limit)
+        # Extra is min(2.0/max(1, 1), 0.5/10) = min(2.0, 0.05) = 0.05
+        expected = limit + 0.05
+        self.assertAlmostEqual(result, expected, delta=EPSILON)
