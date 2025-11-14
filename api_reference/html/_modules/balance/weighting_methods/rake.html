@@ -163,6 +163,9 @@
     <span class="n">max_iteration</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
     <span class="n">convergence_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0005</span><span class="p">,</span>
     <span class="n">rate_tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-8</span><span class="p">,</span>
+    <span class="n">weight_trimming_mean_ratio</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">weight_trimming_percentile</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">keep_sum_of_weights</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="o">*</span><span class="n">args</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
@@ -192,6 +195,13 @@
 <span class="sd">    rate_tolerance --- (float) convergence criteria; if convergence rate does not move more</span>
 <span class="sd">                               than this amount than the algorithm is also considered to</span>
 <span class="sd">                               have converged.</span>
+<span class="sd">    weight_trimming_mean_ratio --- (float, int, optional) upper bound for weights expressed as a</span>
+<span class="sd">                                   multiple of the mean weight. Delegated to</span>
+<span class="sd">                                   :func:`balance.adjustment.trim_weights`.</span>
+<span class="sd">    weight_trimming_percentile --- (float, optional) percentile limit(s) for winsorisation.</span>
+<span class="sd">                                   Delegated to :func:`balance.adjustment.trim_weights`.</span>
+<span class="sd">    keep_sum_of_weights --- (bool, optional) preserve the sum of weights during trimming before</span>
+<span class="sd">                            rescaling to the target total. Defaults to True.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">    A dictionary including:</span>
@@ -370,10 +380,12 @@
         <span class="n">raked_rescaled</span><span class="p">[</span><span class="s2">&quot;rake_weight&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">raked_rescaled</span><span class="p">[</span><span class="s2">&quot;total_survey_weight&quot;</span><span class="p">]</span>
     <span class="p">)</span>
 
-    <span class="n">w</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">raked_rescaled</span><span class="p">[</span><span class="s2">&quot;rake_weight&quot;</span><span class="p">]</span>
-        <span class="o">/</span> <span class="n">raked_rescaled</span><span class="p">[</span><span class="s2">&quot;rake_weight&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="o">*</span> <span class="n">target_sum_weights</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">trim_weights</span><span class="p">(</span>
+        <span class="n">raked_rescaled</span><span class="p">[</span><span class="s2">&quot;rake_weight&quot;</span><span class="p">],</span>
+        <span class="n">target_sum_weights</span><span class="o">=</span><span class="n">target_sum_weights</span><span class="p">,</span>
+        <span class="n">weight_trimming_mean_ratio</span><span class="o">=</span><span class="n">weight_trimming_mean_ratio</span><span class="p">,</span>
+        <span class="n">weight_trimming_percentile</span><span class="o">=</span><span class="n">weight_trimming_percentile</span><span class="p">,</span>
+        <span class="n">keep_sum_of_weights</span><span class="o">=</span><span class="n">keep_sum_of_weights</span><span class="p">,</span>
     <span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;rake_weight&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="p">{</span>
         <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="n">w</span><span class="p">,</span>

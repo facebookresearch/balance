@@ -48,6 +48,12 @@ hide_title: true
   - Improved `quantize` function: preserves column ordering and replaces
     assertions with proper TypeError exceptions
     ([#133](https://github.com/facebookresearch/balance/pull/133)).
+- **Weighting Methods**
+  - `rake()` and `poststratify()` now honour `weight_trimming_mean_ratio` and
+    `weight_trimming_percentile`, trimming and renormalising weights through the
+    enhanced `trim_weights(..., target_sum_weights=...)` API so the documented
+    parameters work as expected
+    ([#147](https://github.com/facebookresearch/balance/pull/147)).
 - **CLI & Infrastructure**
   - Replaced deprecated argparse FileType with pathlib.Path, eliminating
     PendingDeprecationWarning
