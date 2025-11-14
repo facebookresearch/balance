@@ -28,6 +28,9 @@ def poststratify(
     transformations: str = "default",
     transformations_drop: bool = True,
     strict_matching: bool = True,
+    weight_trimming_mean_ratio: Union[float, int, None] = None,
+    weight_trimming_percentile: Union[float, None] = None,
+    keep_sum_of_weights: bool = True,
     *args,
     **kwargs,
 ) -> Dict[str, Union[pd.Series, Dict[str, str]]]:
@@ -48,6 +51,12 @@ def poststratify(
         transformations (str, optional): Transformations to apply to data before fitting the model. Default is "default". See `balance.adjustment.apply_transformations`.
         transformations_drop (bool, optional): If True, drops variables not affected by transformations. Default is True.
         strict_matching (bool, optional): If True, requires all sample cells to be present in the target. If False, cells missing in the target are assigned weight 0 (and a warning is raised). Default is True.
+        weight_trimming_mean_ratio (Union[float, int, None], optional): Forwarded to
+            :func:`balance.adjustment.trim_weights` to clip weights at a multiple of the mean.
+        weight_trimming_percentile (Union[float, None], optional): Percentile limit(s) for
+            winsorisation, passed to :func:`balance.adjustment.trim_weights`.
+        keep_sum_of_weights (bool, optional): Preserve the sum of weights during trimming before
+            the final normalisation to the target total. Defaults to True.
         *args: Additional positional arguments (currently unused).
         **kwargs: Additional keyword arguments (currently unused).
 
@@ -168,7 +177,15 @@ def poststratify(
 
     combined["weight"] = combined["weight"] / combined["design_weight"]
     sample_df = sample_df.join(combined["weight"], on=variables)
-    w = sample_df.weight * sample_df.design_weight
+    raw_weights = sample_df.weight * sample_df.design_weight
+    target_total = raw_weights.sum()
+    w = balance_adjustment.trim_and_normalize_weights(
+        raw_weights,
+        target_sum_weights=target_total,
+        weight_trimming_mean_ratio=weight_trimming_mean_ratio,
+        weight_trimming_percentile=weight_trimming_percentile,
+        keep_sum_of_weights=keep_sum_of_weights,
+    ).rename(raw_weights.name)
 
     return {
         "weight": w,

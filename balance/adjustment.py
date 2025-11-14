@@ -283,6 +283,72 @@ def trim_weights(
     return weights
 
 
+def trim_and_normalize_weights(
+    weights: Union[pd.Series, npt.NDArray],
+    target_sum_weights: Union[float, int, np.floating, None],
+    weight_trimming_mean_ratio: Union[float, int, None] = None,
+    weight_trimming_percentile: Union[float, None] = None,
+    verbose: bool = False,
+    keep_sum_of_weights: bool = True,
+) -> pd.Series:
+    """Trim weights and normalize them to sum to a target total.
+
+    This helper first delegates to :func:`trim_weights` (thereby supporting both
+    mean-ratio clipping and percentile winsorisation) and then rescales the
+    resulting weights so that their sum matches ``target_sum_weights``.
+
+    Args:
+        weights: Raw weights to trim and normalise. Accepts either a pandas
+            ``Series`` or a NumPy array. NumPy arrays are converted to
+            ``Series`` internally and inherit a default integer index.
+        target_sum_weights: Desired total weight after normalisation. If
+            ``None`` the weights are only trimmed and returned without an
+            additional rescaling step.
+        weight_trimming_mean_ratio: Upper bound expressed as a multiple of the
+            mean weight (see :func:`trim_weights`).
+        weight_trimming_percentile: Percentile limits passed to
+            :func:`trim_weights` for winsorisation.
+        verbose: Whether to emit trimming diagnostics (forwarded to
+            :func:`trim_weights`).
+        keep_sum_of_weights: Passed directly to :func:`trim_weights` to control
+            whether the trimming stage preserves the original weight sum prior
+            to the final normalisation step.
+
+    Returns:
+        pd.Series: Trimmed (if requested) weights that sum to the specified
+        ``target_sum_weights``. The returned series preserves the index and
+        ``dtype`` of the trimmed weights.
+
+    Raises:
+        ValueError: If ``target_sum_weights`` is provided but the trimmed
+            weights sum to zero (normalisation would require division by zero).
+    """
+
+    original_name = getattr(weights, "name", None)
+
+    trimmed = trim_weights(
+        weights,
+        weight_trimming_mean_ratio=weight_trimming_mean_ratio,
+        weight_trimming_percentile=weight_trimming_percentile,
+        verbose=verbose,
+        keep_sum_of_weights=keep_sum_of_weights,
+    )
+
+    trimmed = trimmed.rename(original_name)
+
+    if target_sum_weights is None:
+        return trimmed
+
+    target_total = float(target_sum_weights)
+    current_total = float(trimmed.sum())
+
+    if np.isclose(current_total, 0.0):
+        raise ValueError("Cannot normalise weights because their sum is zero.")
+
+    normalised = trimmed * (target_total / current_total)
+    return normalised
+
+
 def default_transformations(
     dfs: Union[Tuple[pd.DataFrame, ...], List[pd.DataFrame]],
 ) -> Dict[str, Callable]:

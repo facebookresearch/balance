@@ -124,6 +124,9 @@ def rake(
     max_iteration: int = 1000,
     convergence_rate: float = 0.0005,
     rate_tolerance: float = 1e-8,
+    weight_trimming_mean_ratio: Union[float, int, None] = None,
+    weight_trimming_percentile: Union[float, None] = None,
+    keep_sum_of_weights: bool = True,
     *args,
     **kwargs,
 ) -> Dict:
@@ -153,6 +156,13 @@ def rake(
     rate_tolerance --- (float) convergence criteria; if convergence rate does not move more
                                than this amount than the algorithm is also considered to
                                have converged.
+    weight_trimming_mean_ratio --- (float, int, optional) upper bound for weights expressed as a
+                                   multiple of the mean weight. Delegated to
+                                   :func:`balance.adjustment.trim_weights`.
+    weight_trimming_percentile --- (float, optional) percentile limit(s) for winsorisation.
+                                   Delegated to :func:`balance.adjustment.trim_weights`.
+    keep_sum_of_weights --- (bool, optional) preserve the sum of weights during trimming before
+                            rescaling to the target total. Defaults to True.
 
     Returns:
     A dictionary including:
@@ -331,10 +341,12 @@ def rake(
         raked_rescaled["rake_weight"] / raked_rescaled["total_survey_weight"]
     )
 
-    w = (
-        raked_rescaled["rake_weight"]
-        / raked_rescaled["rake_weight"].sum()
-        * target_sum_weights
+    w = balance_adjustment.trim_and_normalize_weights(
+        raked_rescaled["rake_weight"],
+        target_sum_weights=target_sum_weights,
+        weight_trimming_mean_ratio=weight_trimming_mean_ratio,
+        weight_trimming_percentile=weight_trimming_percentile,
+        keep_sum_of_weights=keep_sum_of_weights,
     ).rename("rake_weight")
     return {
         "weight": w,
