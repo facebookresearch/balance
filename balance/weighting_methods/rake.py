@@ -341,7 +341,7 @@ def rake(
         raked_rescaled["rake_weight"] / raked_rescaled["total_survey_weight"]
     )
 
-    w = balance_adjustment.trim_and_normalize_weights(
+    w = balance_adjustment.trim_weights(
         raked_rescaled["rake_weight"],
         target_sum_weights=target_sum_weights,
         weight_trimming_mean_ratio=weight_trimming_mean_ratio,

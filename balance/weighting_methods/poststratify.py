@@ -179,7 +179,7 @@ def poststratify(
     sample_df = sample_df.join(combined["weight"], on=variables)
     raw_weights = sample_df.weight * sample_df.design_weight
     target_total = raw_weights.sum()
-    w = balance_adjustment.trim_and_normalize_weights(
+    w = balance_adjustment.trim_weights(
         raw_weights,
         target_sum_weights=target_total,
         weight_trimming_mean_ratio=weight_trimming_mean_ratio,

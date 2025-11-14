@@ -127,10 +127,44 @@ class Testpoststratify(
             weight_trimming_mean_ratio=1.0,
         )["weight"]
 
-        expected = balance_adjustment.trim_and_normalize_weights(
+        expected = balance_adjustment.trim_weights(
             baseline,
             target_sum_weights=baseline.sum(),
             weight_trimming_mean_ratio=1.0,
+        ).rename(baseline.name)
+
+        pd.testing.assert_series_equal(trimmed, expected)
+
+    def test_poststratify_percentile_trimming_applied(self):
+        s = pd.DataFrame(
+            {
+                "a": (0, 1, 0, 1),
+                "c": ("a", "a", "b", "b"),
+            },
+        )
+        s_weights = pd.Series([4, 2, 1, 1])
+        t = s
+        t_weights = pd.Series([4, 2, 2, 8])
+
+        baseline = poststratify(
+            sample_df=s,
+            sample_weights=s_weights,
+            target_df=t,
+            target_weights=t_weights,
+        )["weight"]
+
+        trimmed = poststratify(
+            sample_df=s,
+            sample_weights=s_weights,
+            target_df=t,
+            target_weights=t_weights,
+            weight_trimming_percentile=0.25,
+        )["weight"]
+
+        expected = balance_adjustment.trim_weights(
+            baseline,
+            target_sum_weights=baseline.sum(),
+            weight_trimming_percentile=0.25,
         ).rename(baseline.name)
 
         pd.testing.assert_series_equal(trimmed, expected)
