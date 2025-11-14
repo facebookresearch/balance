@@ -162,6 +162,24 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         self.assertEqual(percentile_result.dtype, np.float64)
         pd.testing.assert_index_equal(percentile_result.index, custom_index)
 
+    def test_trim_weights_target_sum_scaling(self):
+        """Trimming can directly scale to a target sum of weights."""
+
+        weights = pd.Series([1.0, 2.0, 3.0], name="w")
+
+        scaled = trim_weights(weights, target_sum_weights=12.0)
+
+        self.assertAlmostEqual(scaled.sum(), 12.0, delta=EPSILON)
+        self.assertEqual(scaled.name, "w")
+
+    def test_trim_weights_target_sum_zero_raises(self):
+        """Scaling to a target sum fails when trimmed weights sum to zero."""
+
+        zeros = pd.Series([0.0, 0.0])
+
+        with self.assertRaisesRegex(ValueError, "sum is zero"):
+            trim_weights(zeros, keep_sum_of_weights=False, target_sum_weights=1.0)
+
     def test_default_transformations(self):
         """
         Test automatic detection of appropriate transformations for different data types.

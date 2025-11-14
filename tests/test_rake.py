@@ -12,6 +12,7 @@ import balance.testutil
 import numpy as np
 import pandas as pd
 
+from balance import adjustment as balance_adjustment
 from balance.sample_class import Sample
 from balance.weighting_methods.rake import (
     _proportional_array_from_dict,
@@ -259,6 +260,96 @@ class Testrake(
             adjusted["weight"].round(2),
             pd.Series([1.67, 0.33] * 6, name="rake_weight").rename_axis("index"),
         )
+
+    def test_rake_weight_trimming_applied(self):
+        """Verify that rake forwards trimming arguments to the adjustment helper."""
+
+        df_sample = pd.DataFrame(
+            {
+                "a": np.array(["1", "2"] * 6),
+                "b": ["a"] * 6 + ["b"] * 6,
+                "id": range(0, 12),
+            }
+        )
+        df_target = pd.DataFrame(
+            {
+                "a": np.array(["1"] * 10 + ["2"] * 2),
+                "b": ["a"] * 6 + ["b"] * 6,
+                "id": range(0, 12),
+            }
+        )
+
+        sample = Sample.from_frame(df_sample)
+        target = Sample.from_frame(df_target)
+        sample = sample.set_target(target)
+
+        baseline = rake(
+            sample.covars().df,
+            sample.weight_column,
+            target.covars().df,
+            target.weight_column,
+        )
+
+        trimmed = rake(
+            sample.covars().df,
+            sample.weight_column,
+            target.covars().df,
+            target.weight_column,
+            weight_trimming_mean_ratio=1.0,
+        )
+
+        expected = balance_adjustment.trim_weights(
+            baseline["weight"],
+            target_sum_weights=baseline["weight"].sum(),
+            weight_trimming_mean_ratio=1.0,
+        ).rename("rake_weight")
+
+        pd.testing.assert_series_equal(trimmed["weight"], expected)
+
+    def test_rake_percentile_trimming_applied(self):
+        """Percentile trimming parameters should be honoured by rake."""
+
+        df_sample = pd.DataFrame(
+            {
+                "a": np.array(["1", "2"] * 6),
+                "b": ["a"] * 6 + ["b"] * 6,
+                "id": range(0, 12),
+            }
+        )
+        df_target = pd.DataFrame(
+            {
+                "a": np.array(["1"] * 10 + ["2"] * 2),
+                "b": ["a"] * 6 + ["b"] * 6,
+                "id": range(0, 12),
+            }
+        )
+
+        sample = Sample.from_frame(df_sample)
+        target = Sample.from_frame(df_target)
+        sample = sample.set_target(target)
+
+        baseline = rake(
+            sample.covars().df,
+            sample.weight_column,
+            target.covars().df,
+            target.weight_column,
+        )
+
+        trimmed = rake(
+            sample.covars().df,
+            sample.weight_column,
+            target.covars().df,
+            target.weight_column,
+            weight_trimming_percentile=0.1,
+        )
+
+        expected = balance_adjustment.trim_weights(
+            baseline["weight"],
+            target_sum_weights=baseline["weight"].sum(),
+            weight_trimming_percentile=0.1,
+        ).rename("rake_weight")
+
+        pd.testing.assert_series_equal(trimmed["weight"], expected)
 
     def test_rake_weights_with_weighted_input(self):
         """

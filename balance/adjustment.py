@@ -94,6 +94,7 @@ def trim_weights(
     weight_trimming_percentile: Union[float, None] = None,
     verbose: bool = False,
     keep_sum_of_weights: bool = True,
+    target_sum_weights: Union[float, int, np.floating, None] = None,
 ) -> pd.Series:
     """Trim extreme weights using mean ratio clipping or percentile-based winsorization.
 
@@ -126,7 +127,9 @@ def trim_weights(
     exact percentile value. The adjustment is min(2/n_weights, limit/10), capped at 1.0.
 
     After trimming/winsorization, if keep_sum_of_weights=True (default), weights
-    are rescaled to preserve the original sum of weights.
+    are rescaled to preserve the original sum of weights.  Alternatively, pass a
+    ``target_sum_weights`` to rescale the trimmed weights so their sum matches a
+    desired total.
 
     Args:
         weights (Union[pd.Series, np.ndarray]): Weights to trim. np.ndarray will be
@@ -144,6 +147,9 @@ def trim_weights(
             Defaults to False.
         keep_sum_of_weights (bool, optional): Whether to rescale weights after trimming
             to preserve the original sum of weights. Defaults to True.
+        target_sum_weights (Union[float, int, np.floating, None], optional): If
+            provided, rescale the trimmed weights so their sum equals this
+            target. ``None`` (default) leaves the post-trimming sum unchanged.
 
     Raises:
         TypeError: If weights is not np.array or pd.Series.
@@ -214,10 +220,12 @@ def trim_weights(
                 # 99  95.283019
     """
 
+    original_name = getattr(weights, "name", None)
+
     if isinstance(weights, pd.Series):
         weights = weights.astype(np.float64, copy=False)
     elif isinstance(weights, np.ndarray):
-        weights = pd.Series(weights, dtype=np.float64)
+        weights = pd.Series(weights, dtype=np.float64, name=original_name)
     else:
         raise TypeError(
             f"weights must be np.array or pd.Series, are of type: {type(weights)}"
@@ -249,7 +257,11 @@ def trim_weights(
             else:
                 logger.debug("No extreme weights were trimmed")
 
-        weights = pd.Series(np.asarray(weights, dtype=np.float64), index=weights_index)
+        weights = pd.Series(
+            np.asarray(weights, dtype=np.float64),
+            index=weights_index,
+            name=original_name,
+        )
     elif weight_trimming_percentile is not None:
         # Winsorize
         percentile = weight_trimming_percentile
@@ -275,10 +287,23 @@ def trim_weights(
                 "Winsorizing weights to %s percentile" % str(weight_trimming_percentile)
             )
 
-        weights = pd.Series(np.asarray(weights, dtype=np.float64), index=weights_index)
+        weights = pd.Series(
+            np.asarray(weights, dtype=np.float64),
+            index=weights_index,
+            name=original_name,
+        )
 
     if keep_sum_of_weights:
         weights = weights / np.mean(weights) * original_mean
+
+    if target_sum_weights is not None:
+        target_total = float(target_sum_weights)
+        current_total = float(weights.sum())
+        if np.isclose(current_total, 0.0):
+            raise ValueError("Cannot normalise weights because their sum is zero.")
+        weights = weights * (target_total / current_total)
+
+    weights = weights.rename(original_name)
 
     return weights
 
