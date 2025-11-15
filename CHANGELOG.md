@@ -17,6 +17,12 @@
   - CLI now supports `--ipw_logistic_regression_kwargs` for passing custom
     LogisticRegression parameters via JSON
     ([#138](https://github.com/facebookresearch/balance/pull/138)).
+- **Propensity modeling flexibility**
+  - `ipw()` now accepts any sklearn classifier via the new `sklearn_model`
+    argument, enabling the use of models like random forests while preserving
+    all existing trimming and diagnostic workflows. Dense-only estimators and
+    models without linear coefficients are fully supported, and propensity
+    probabilities are stabilized to avoid numerical issues.
 
 ## Documentation
 
