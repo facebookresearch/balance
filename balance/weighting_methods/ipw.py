@@ -19,7 +19,8 @@ from balance import adjustment as balance_adjustment, util as balance_util
 from balance.stats_and_plots.weighted_comparisons_stats import asmd
 from balance.stats_and_plots.weights_stats import design_effect
 
-from scipy.sparse import csc_matrix, csr_matrix
+from scipy.sparse import csc_matrix, csr_matrix, issparse
+from sklearn.base import ClassifierMixin, clone
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import log_loss
 from sklearn.preprocessing import StandardScaler
@@ -31,37 +32,53 @@ logger: logging.Logger = logging.getLogger(__package__)
 # TODO: Add tests for model_coefs()
 # TODO: Improve interpretability of model coefficients, as variables are no longer zero-centered.
 def model_coefs(
-    model,
+    model: ClassifierMixin,
     feature_names: Optional[list] = None,
 ) -> Dict[str, Any]:
-    """Extract coefficients from sklearn.
+    """Extract coefficient-like information from sklearn classifiers.
+
+    For linear models such as :class:`~sklearn.linear_model.LogisticRegression`,
+    this returns the fitted coefficients (and intercept when available).  For
+    classifiers that do not expose a ``coef_`` attribute (e.g. tree ensembles),
+    an empty :class:`pandas.Series` is returned so downstream diagnostics can
+    handle the absence of coefficients gracefully.
 
     Args:
-        model (_type_): LogisticRegression object from sklearn,
-        feature_names (Optional[list], optional): The coefficients of which features should be included.
-            None = all features are included. Defaults to None.
-
-    Raises:
-        Exception: _description_
+        model (ClassifierMixin): Fitted sklearn classifier.
+        feature_names (Optional[list], optional): Feature names associated with
+            the model matrix columns. When provided and the model exposes a
+            one-dimensional ``coef_`` array, the returned Series is indexed by
+            ``["intercept"] + feature_names``.
 
     Returns:
-        Dict[str, Any]: Dict of the shape:
-            {
-                "coefs": coefs,
-            }
+        Dict[str, Any]: Dictionary containing a ``coefs`` key with a
+        :class:`pandas.Series` of coefficients (which may be empty when the
+        model does not expose linear coefficients).
     """
 
-    coefs = model.coef_
-    if feature_names is not None:
-        coefs = pd.Series(
-            data=np.hstack((model.intercept_, coefs[0])),
-            index=["intercept"] + feature_names,
-        )
+    if not hasattr(model, "coef_"):
+        return {"coefs": pd.Series(dtype=float)}
+
+    coefs = np.asarray(model.coef_)
+    intercept = getattr(model, "intercept_", None)
+
+    if coefs.ndim > 1 and coefs.shape[0] == 1:
+        coefs = coefs.reshape(-1)
+
+    if feature_names is not None and coefs.ndim == 1:
+        index: List[str] = list(feature_names[: len(coefs)])
+        values = coefs
+        if intercept is not None:
+            intercept_array = np.asarray(intercept).ravel()
+            if intercept_array.size == 1:
+                index = ["intercept"] + index
+                values = np.hstack((intercept_array, coefs))
+        coefs_series = pd.Series(data=values, index=index)
     else:
-        coefs = pd.Series(data=coefs[0])
+        coefs_series = pd.Series(data=np.ravel(coefs))
 
     return {
-        "coefs": coefs,
+        "coefs": coefs_series,
     }
 
 
@@ -76,6 +93,10 @@ def link_transform(pred: np.ndarray):
         np.ndarray: Array of log odds.
 
     """
+    pred = np.asarray(pred, dtype=float)
+    # Clip probabilities to avoid dividing by zero or taking log of zero
+    eps = np.finfo(float).eps
+    pred = np.clip(pred, eps, 1 - eps)
     return np.log(pred / (1 - pred))
 
 
@@ -333,6 +354,7 @@ def ipw(
     # TODO: This is set to be false in order to keep reproducibility of works that uses balance.
     # The best practice is for this to be true.
     random_seed: int = 2020,
+    sklearn_model: Optional[ClassifierMixin] = None,
     *args,
     **kwargs,
 ) -> Dict[str, Any]:
@@ -382,6 +404,11 @@ def ipw(
             model defaults to ``penalty="l2"``, ``solver="lbfgs"``, ``tol=1e-4``,
             ``max_iter=5000``, and ``warm_start=True``. Defaults to None.
         random_seed (int, optional): Random seed to use. Defaults to 2020.
+        sklearn_model (Optional[ClassifierMixin], optional): Custom sklearn classifier
+            to use for propensity modeling instead of the default logistic
+            regression. The estimator must implement ``fit`` and
+            ``predict_proba``. When provided, ``logistic_regression_kwargs`` and
+            ``penalty_factor`` are ignored. Defaults to None.
 
     Raises:
         Exception: f"Sample indicator only has value {_n_unique}. This can happen when your sample or target are empty from unknown reason"
@@ -505,48 +532,7 @@ def ipw(
     )
     logger.debug(f"first 10 elements of foldids: {foldids[0:9]}")
 
-    logger.debug("Fitting logistic model")
-
-    # Standardize columns of the X matrix and penalize the columns of the X matrix according to the penalty_factor.
-    # Workaround for sklearn, which doesn't allow for covariate specific penalty terms.
-    # Note that penalty = 0 is not truly supported, and large differences in penalty factors
-    # may affect convergence speed.
-
-    scaler = StandardScaler(with_mean=False, copy=False)
-
-    # TODO: add test to verify expected behavior from model_weights
-    X_matrix = scaler.fit_transform(X_matrix, sample_weight=model_weights)
-
-    if penalty_factor is not None:
-        penalties_skl = [1 / pf if pf > 0.1 else 10 for pf in penalty_factor_expanded]
-        for i in range(len(penalties_skl)):
-            X_matrix[:, i] *= penalties_skl[i]
-
-    X_matrix = csr_matrix(X_matrix)
-
-    lambdas = np.logspace(np.log10(lambda_max), np.log10(lambda_min), num_lambdas)
-
-    # Using L2 regression since L1 is too slow. Observed "lbfgs" was the most computationally efficient solver.
-    lr_kwargs: Dict[str, Any] = {
-        "penalty": "l2",
-        "solver": "lbfgs",
-        "tol": 1e-4,
-        "max_iter": 5000,
-        "warm_start": True,
-    }
-    if logistic_regression_kwargs is not None:
-        lr_kwargs.update(logistic_regression_kwargs)
-
-    lr = LogisticRegression(**lr_kwargs)
-    fits = [None for _ in range(len(lambdas))]
-    links = [None for _ in range(len(lambdas))]
-    prop_dev = [np.nan for _ in range(len(lambdas))]
-    dev = [np.nan for _ in range(len(lambdas))]
-    cv_dev_mean = [np.nan for _ in range(len(lambdas))]
-    cv_dev_sd = [np.nan for _ in range(len(lambdas))]
-
-    min_s_index = 0
-    prev_prop_dev = None
+    logger.debug("Fitting propensity model")
 
     # TODO: Create a separate function to calculate deviance.
     null_dev = 2 * log_loss(
@@ -555,42 +541,133 @@ def ipw(
         sample_weight=model_weights,
     )
 
-    for i in range(len(lambdas)):
-        # Conversion between glmnet lambda penalty parameter and sklearn 'C' parameter referenced
-        # from https://stats.stackexchange.com/questions/203816/logistic-regression-scikit-learn-vs-glmnet
-        lr.C = 1 / (sum(model_weights) * lambdas[i])
+    using_default_logistic = sklearn_model is None
 
-        model = lr.fit(X_matrix, y, sample_weight=model_weights)
-        pred = model.predict_proba(X_matrix)[:, 1]
-        dev[i] = 2 * log_loss(y, pred, sample_weight=model_weights)
-        prop_dev[i] = 1 - dev[i] / null_dev
+    if using_default_logistic:
+        # Standardize columns of the X matrix and penalize the columns of the X matrix according to the penalty_factor.
+        # Workaround for sklearn, which doesn't allow for covariate specific penalty terms.
+        # Note that penalty = 0 is not truly supported, and large differences in penalty factors
+        # may affect convergence speed.
 
-        # Early stopping criteria: improvement in prop_dev is less than 1e-5 (mirrors glmnet)
-        if (
-            np.sum(np.abs(model.coef_)) > 0
-            and prev_prop_dev is not None
-            and prop_dev[i] - prev_prop_dev < 1e-5
-        ):
-            break
+        scaler = StandardScaler(with_mean=False, copy=False)
 
-        # Cross-validation procedure is only used for choosing best lambda if max_de is None
-        # Previously, cross validation was run even when max_de is not None,
-        # but the results weren't used for model selection.
-        if max_de is not None:
-            logger.debug(
-                f"iter {i}: lambda: {lambdas[i]}, dev: {dev[i]}, prop_dev: {prop_dev[i]}"
+        # TODO: add test to verify expected behavior from model_weights
+        X_matrix = scaler.fit_transform(X_matrix, sample_weight=model_weights)
+
+        if penalty_factor is not None:
+            penalties_skl = [1 / pf if pf > 0.1 else 10 for pf in penalty_factor_expanded]
+            for i in range(len(penalties_skl)):
+                X_matrix[:, i] *= penalties_skl[i]
+
+        X_matrix = csr_matrix(X_matrix)
+
+        lambdas = np.logspace(np.log10(lambda_max), np.log10(lambda_min), num_lambdas)
+
+        # Using L2 regression since L1 is too slow. Observed "lbfgs" was the most computationally efficient solver.
+        lr_kwargs: Dict[str, Any] = {
+            "penalty": "l2",
+            "solver": "lbfgs",
+            "tol": 1e-4,
+            "max_iter": 5000,
+            "warm_start": True,
+        }
+        if logistic_regression_kwargs is not None:
+            lr_kwargs.update(logistic_regression_kwargs)
+
+        lr = LogisticRegression(**lr_kwargs)
+        fits = [None for _ in range(len(lambdas))]
+        links = [None for _ in range(len(lambdas))]
+        prop_dev = [np.nan for _ in range(len(lambdas))]
+        dev = [np.nan for _ in range(len(lambdas))]
+        cv_dev_mean = [np.nan for _ in range(len(lambdas))]
+        cv_dev_sd = [np.nan for _ in range(len(lambdas))]
+
+        prev_prop_dev = None
+
+        for i in range(len(lambdas)):
+            # Conversion between glmnet lambda penalty parameter and sklearn 'C' parameter referenced
+            # from https://stats.stackexchange.com/questions/203816/logistic-regression-scikit-learn-vs-glmnet
+            lr.C = 1 / (sum(model_weights) * lambdas[i])
+
+            model = lr.fit(X_matrix, y, sample_weight=model_weights)
+            pred = model.predict_proba(X_matrix)[:, 1]
+            dev[i] = 2 * log_loss(y, pred, sample_weight=model_weights)
+            prop_dev[i] = 1 - dev[i] / null_dev
+
+            # Early stopping criteria: improvement in prop_dev is less than 1e-5 (mirrors glmnet)
+            if (
+                np.sum(np.abs(model.coef_)) > 0
+                and prev_prop_dev is not None
+                and prop_dev[i] - prev_prop_dev < 1e-5
+            ):
+                break
+
+            # Cross-validation procedure is only used for choosing best lambda if max_de is None
+            # Previously, cross validation was run even when max_de is not None,
+            # but the results weren't used for model selection.
+            if max_de is not None:
+                logger.debug(
+                    f"iter {i}: lambda: {lambdas[i]}, dev: {dev[i]}, prop_dev: {prop_dev[i]}"
+                )
+            elif num_lambdas > 1:
+                dev_mean, dev_sd = calc_dev(X_matrix, y, lr, model_weights, foldids)
+                logger.debug(
+                    f"iter {i}: lambda: {lambdas[i]}, cv_dev: {dev_mean}, dev_diff: {dev_mean - dev[i]}, prop_dev: {prop_dev[i]}"
+                )
+                cv_dev_mean[i] = dev_mean
+                cv_dev_sd[i] = dev_sd
+
+            prev_prop_dev = prop_dev[i]
+            links[i] = link_transform(pred)[:sample_n,]
+            fits[i] = copy.deepcopy(model)
+
+    else:
+        if logistic_regression_kwargs is not None:
+            raise ValueError(
+                "logistic_regression_kwargs cannot be used when providing a custom sklearn_model"
             )
-        elif num_lambdas > 1:
-            dev_mean, dev_sd = calc_dev(X_matrix, y, lr, model_weights, foldids)
-            logger.debug(
-                f"iter {i}: lambda: {lambdas[i]}, cv_dev: {dev_mean}, dev_diff: {dev_mean - dev[i]}, prop_dev: {prop_dev[i]}"
+        if penalty_factor is not None:
+            logger.warning(
+                "penalty_factor is ignored when using a custom sklearn_model."
             )
-            cv_dev_mean[i] = dev_mean
-            cv_dev_sd[i] = dev_sd
 
-        prev_prop_dev = prop_dev[i]
-        links[i] = link_transform(pred)[:sample_n,]
-        fits[i] = copy.deepcopy(model)
+        custom_model = clone(cast(ClassifierMixin, sklearn_model))
+        if not hasattr(custom_model, "predict_proba"):
+            raise ValueError(
+                "The provided sklearn_model must implement predict_proba for propensity estimation."
+            )
+
+        if isinstance(X_matrix, csc_matrix):
+            X_matrix = X_matrix.tocsr()
+
+        if issparse(X_matrix):
+            X_matrix = X_matrix.toarray()
+
+        lambdas = np.array([np.nan])
+        fits = [None]
+        links = [None]
+        prop_dev = [np.nan]
+        dev = [np.nan]
+        cv_dev_mean = [np.nan]
+        cv_dev_sd = [np.nan]
+
+        model = custom_model.fit(X_matrix, y, sample_weight=model_weights)
+        probas = model.predict_proba(X_matrix)
+        if probas.ndim != 2 or probas.shape[1] < 2:
+            raise ValueError(
+                "The provided sklearn_model.predict_proba must return probability estimates for both classes."
+            )
+        try:
+            class_index = list(model.classes_).index(1)
+        except ValueError as error:
+            raise ValueError(
+                "The provided sklearn_model must be trained on the binary labels {0, 1}."
+            ) from error
+        pred = probas[:, class_index]
+        dev[0] = 2 * log_loss(y, pred, sample_weight=model_weights)
+        prop_dev[0] = 1 - dev[0] / null_dev
+        links[0] = link_transform(pred)[:sample_n,]
+        fits[0] = copy.deepcopy(model)
 
     logger.info("Done with sklearn")
 
@@ -613,7 +690,7 @@ def ipw(
         best_s_index = regularisation_perf["best"]["s_index"]
         weight_trimming_mean_ratio = regularisation_perf["best"]["trim"]
         weight_trimming_percentile = None
-    elif num_lambdas > 1:
+    elif num_lambdas > 1 and using_default_logistic:
         # Cross-validation procedure
         logger.info("Starting model selection")
 
@@ -657,7 +734,7 @@ def ipw(
     performance["null_deviance"] = null_dev
     performance["deviance"] = dev[best_s_index]
     performance["prop_dev_explained"] = prop_dev[best_s_index]
-    if max_de is None and num_lambdas > 1:
+    if max_de is None and num_lambdas > 1 and using_default_logistic:
         performance["cv_dev_mean"] = cv_dev_mean[best_s_index]
         performance["lambda_min"] = lambdas[min_s_index]
         performance["min_cv_dev_mean"] = cv_dev_mean[min_s_index]
