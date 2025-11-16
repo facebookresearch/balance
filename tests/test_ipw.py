@@ -16,6 +16,7 @@ from balance.sample_class import Sample
 from balance.weighting_methods import ipw as balance_ipw
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import log_loss
 from sklearn.naive_bayes import GaussianNB
 from sklearn.svm import LinearSVC
 from sklearn.tree import DecisionTreeClassifier
@@ -667,3 +668,130 @@ class TestIPW(
         # Check regularization performance metrics
         best_trim = model["regularisation_perf"]["best"]["trim"]
         self.assertEqual(best_trim, 2.5)
+
+    def test_compute_deviance_without_labels(self):
+        """Test _compute_deviance computes 2 * log_loss correctly without labels parameter.
+
+        Verifies that the helper function correctly computes deviance as 2 * log_loss
+        when no labels parameter is provided.
+        """
+        # Setup: Create test data with known values
+        y = np.array([1, 0, 1, 0, 1])
+        pred = np.array([0.9, 0.1, 0.8, 0.2, 0.7])
+        model_weights = np.array([1.0, 1.0, 1.0, 1.0, 1.0])
+
+        # Execute: Compute deviance using the helper function
+        result = balance_ipw._compute_deviance(y, pred, model_weights)
+
+        # Assert: Verify result equals 2 * log_loss
+        expected = 2 * log_loss(y, pred, sample_weight=model_weights)
+        self.assertAlmostEqual(result, expected, places=10)
+        self.assertIsInstance(result, float)
+
+    def test_compute_deviance_with_labels(self):
+        """Test _compute_deviance computes 2 * log_loss correctly with labels parameter.
+
+        Verifies that the helper function correctly computes deviance when
+        explicit labels are provided.
+        """
+        # Setup: Create test data with known values
+        y = np.array([1, 0, 1, 0, 1])
+        pred = np.array([0.9, 0.1, 0.8, 0.2, 0.7])
+        model_weights = np.array([1.0, 1.0, 1.0, 1.0, 1.0])
+        labels = [0, 1]
+
+        # Execute: Compute deviance with labels parameter
+        result = balance_ipw._compute_deviance(y, pred, model_weights, labels=labels)
+
+        # Assert: Verify result equals 2 * log_loss with labels
+        expected = 2 * log_loss(y, pred, sample_weight=model_weights, labels=labels)
+        self.assertAlmostEqual(result, expected, places=10)
+        self.assertIsInstance(result, float)
+
+    def test_compute_deviance_with_different_weights(self):
+        """Test _compute_deviance handles non-uniform sample weights correctly.
+
+        Verifies that the deviance calculation properly incorporates
+        different sample weights when computing log loss.
+        """
+        # Setup: Create test data with varying weights
+        y = np.array([1, 0, 1, 0, 1])
+        pred = np.array([0.9, 0.1, 0.8, 0.2, 0.7])
+        model_weights = np.array([1.0, 2.0, 1.5, 0.5, 1.0])
+
+        # Execute: Compute deviance with non-uniform weights
+        result = balance_ipw._compute_deviance(y, pred, model_weights)
+
+        # Assert: Verify weighted deviance is computed correctly
+        expected = 2 * log_loss(y, pred, sample_weight=model_weights)
+        self.assertAlmostEqual(result, expected, places=10)
+
+    def test_compute_proportion_deviance_basic(self):
+        """Test _compute_proportion_deviance computes (1 - dev/null_dev) correctly.
+
+        Verifies basic computation of proportion of deviance explained
+        using the formula (1 - dev/null_dev).
+        """
+        # Setup: Define deviance and null deviance values
+        dev = 50.0
+        null_dev = 100.0
+
+        # Execute: Compute proportion deviance
+        result = balance_ipw._compute_proportion_deviance(dev, null_dev)
+
+        # Assert: Verify result equals 1 - dev/null_dev
+        expected = 1 - (50.0 / 100.0)
+        self.assertAlmostEqual(result, expected, places=10)
+        self.assertEqual(result, 0.5)
+
+    def test_compute_proportion_deviance_perfect_fit(self):
+        """Test _compute_proportion_deviance when dev equals 0 (perfect fit).
+
+        Verifies that when deviance is 0 (perfect model fit),
+        the proportion of deviance explained is 1.0.
+        """
+        # Setup: Perfect fit scenario (dev = 0)
+        dev = 0.0
+        null_dev = 100.0
+
+        # Execute: Compute proportion deviance for perfect fit
+        result = balance_ipw._compute_proportion_deviance(dev, null_dev)
+
+        # Assert: Perfect fit should yield proportion of 1.0
+        self.assertEqual(result, 1.0)
+
+    def test_compute_proportion_deviance_no_improvement(self):
+        """Test _compute_proportion_deviance when dev equals null_dev (no improvement).
+
+        Verifies that when model deviance equals null deviance (no improvement
+        over null model), the proportion of deviance explained is 0.0.
+        """
+        # Setup: No improvement scenario (dev = null_dev)
+        dev = 100.0
+        null_dev = 100.0
+
+        # Execute: Compute proportion deviance for no improvement
+        result = balance_ipw._compute_proportion_deviance(dev, null_dev)
+
+        # Assert: No improvement should yield proportion of 0.0
+        self.assertAlmostEqual(result, 0.0, places=10)
+
+    def test_compute_proportion_deviance_partial_improvement(self):
+        """Test _compute_proportion_deviance with various partial improvement levels.
+
+        Verifies correct computation of proportion deviance for different
+        levels of model improvement over the null model.
+        """
+        # Setup: Test different improvement levels
+        test_cases = [
+            (75.0, 100.0, 0.25),  # 25% improvement
+            (25.0, 100.0, 0.75),  # 75% improvement
+            (90.0, 100.0, 0.10),  # 10% improvement
+        ]
+
+        for dev, null_dev, expected in test_cases:
+            # Execute: Compute proportion deviance
+            result = balance_ipw._compute_proportion_deviance(dev, null_dev)
+
+            # Assert: Verify expected proportion
+            self.assertAlmostEqual(result, expected, places=10)

@@ -16,7 +16,10 @@ import numpy as np
 import pandas as pd
 
 from balance import adjustment as balance_adjustment, util as balance_util
-from balance.stats_and_plots.weighted_comparisons_stats import asmd
+from balance.stats_and_plots.weighted_comparisons_stats import (
+    asmd,
+    asmd_improvement as compute_asmd_improvement,
+)
 from balance.stats_and_plots.weights_stats import design_effect
 
 from scipy.sparse import csc_matrix, csr_matrix, issparse
@@ -100,6 +103,71 @@ def link_transform(pred: np.ndarray):
     return np.log(pred / (1 - pred))
 
 
+def _compute_deviance(
+    y: np.ndarray,
+    pred: np.ndarray,
+    model_weights: np.ndarray,
+    labels: Optional[List[int]] = None,
+) -> float:
+    """Compute deviance (2 * log loss).
+
+    Used multiple times throughout ipw() and calc_dev() functions.
+
+    Args:
+        y (np.ndarray): True labels.
+        pred (np.ndarray): Predicted probabilities.
+        model_weights (np.ndarray): Sample weights.
+        labels (Optional[List[int]], optional): Label specification. Defaults to None.
+
+    Returns:
+        float: Deviance value.
+    """
+    if labels is not None:
+        return 2 * log_loss(y, pred, sample_weight=model_weights, labels=labels)
+    return 2 * log_loss(y, pred, sample_weight=model_weights)
+
+
+def _compute_proportion_deviance(dev: float, null_dev: float) -> float:
+    """Compute proportion of null deviance explained.
+
+    Used multiple times in ipw() for model evaluation.
+
+    Args:
+        dev (float): Model deviance.
+        null_dev (float): Null model deviance.
+
+    Returns:
+        float: Proportion of deviance explained (1 - dev/null_dev).
+    """
+    return 1 - dev / null_dev
+
+
+def _convert_to_dense_array(
+    X_matrix: Union[csc_matrix, csr_matrix, np.ndarray, pd.DataFrame],
+) -> np.ndarray:
+    """Convert sparse matrix or DataFrame to dense numpy array.
+
+    If the input is a CSC matrix, first convert to CSR for efficiency,
+    then convert to dense array. If already a dense numpy array or DataFrame,
+    return as-is (note: DataFrames will be returned unchanged and may need
+    explicit conversion to numpy array elsewhere if needed).
+
+    Args:
+        X_matrix: Input matrix - can be a sparse matrix (csc_matrix, csr_matrix),
+            dense numpy array, or pandas DataFrame.
+
+    Returns:
+        np.ndarray: Dense numpy array (or DataFrame if input was DataFrame).
+    """
+    if isinstance(X_matrix, csc_matrix):
+        X_matrix = X_matrix.tocsr()
+
+    if issparse(X_matrix):
+        X_matrix = X_matrix.toarray()
+
+    return X_matrix
+
+
 # TODO: Add tests for calc_dev()
 def calc_dev(
     X_matrix: csr_matrix,
@@ -121,7 +189,7 @@ def calc_dev(
         float, float: mean and standard deviance of holdout deviance.
 
     """
-    cv_dev = [0 for _ in range(10)]
+    cv_dev = [0.0 for _ in range(10)]
 
     for i in range(10):
         X_train = X_matrix[foldids != i, :]
@@ -132,8 +200,8 @@ def calc_dev(
         model_weights_test = model_weights[foldids == i]
         model_fit = model.fit(X_train, y_train, sample_weight=model_weights_train)
         pred_test = model_fit.predict_proba(X_test)[:, 1]
-        cv_dev[i] = 2 * log_loss(
-            y_test, pred_test, sample_weight=model_weights_test, labels=[0, 1]
+        cv_dev[i] = _compute_deviance(
+            y_test, pred_test, model_weights_test, labels=[0, 1]
         )
 
     logger.debug(
@@ -233,12 +301,6 @@ def choose_regularization(
     # get all non-null links
     links = [link for link in links if link is not None]
 
-    asmd_before = asmd(
-        sample_df=sample_df,
-        target_df=target_df,
-        sample_weights=sample_weights,
-        target_weights=target_weights,
-    )
     # Grid search over regularisation parameter and weight trimming
     # First calculates design effects for all combinations, because this is cheap
     all_perf = []
@@ -295,13 +357,13 @@ def choose_regularization(
             sample_weights=weights,
             target_weights=target_weights,
         )
-        # TODO: use asmd_improvement function for that
-        from balance.util import _safe_divide_with_zero_handling
-
-        # Avoid divide by zero warning
-        asmd_improvement = _safe_divide_with_zero_handling(
-            asmd_before.loc["mean(asmd)"] - asmd_after.loc["mean(asmd)"],
-            asmd_before.loc["mean(asmd)"],
+        asmd_impr = compute_asmd_improvement(
+            sample_before=sample_df,
+            sample_after=adjusted_df,
+            target=target_df,
+            sample_before_weights=sample_weights,
+            sample_after_weights=weights,
+            target_weights=target_weights,
         )
         deff = design_effect(weights)
         all_perf.append(
@@ -310,7 +372,7 @@ def choose_regularization(
                 "s_index": s_index,
                 "trim": wr,
                 "design_effect": deff,
-                "asmd_improvement": asmd_improvement,
+                "asmd_improvement": asmd_impr,
                 "asmd": asmd_after.loc["mean(asmd)"],
             }
         )
@@ -490,6 +552,10 @@ def ipw(
     logger.debug(f"Final variables in the model: {variables}")
 
     logger.info("Building model matrix")
+    # Convert formula to List[str] if it's a single string
+    formula_list: Optional[List[str]] = (
+        [formula] if isinstance(formula, str) else formula
+    )
     model_matrix_output = balance_util.model_matrix(
         sample_df,
         target_df,
@@ -497,9 +563,7 @@ def ipw(
         add_na=(na_action == "add_indicator"),
         return_type="one",
         return_var_type="sparse",
-        # pyre-fixme[6]: for 7th parameter `formula` expected `Optional[List[str]]` but got `Union[None, List[str], str]`.
-        # TODO: fix pyre issue
-        formula=formula,
+        formula=formula_list,
         penalty_factor=penalty_factor,
         one_hot_encoding=one_hot_encoding,
     )
@@ -550,11 +614,10 @@ def ipw(
 
     logger.debug("Fitting propensity model")
 
-    # TODO: Create a separate function to calculate deviance.
-    null_dev = 2 * log_loss(
+    null_dev = _compute_deviance(
         y,
         np.full(len(y), np.sum(model_weights * y) / np.sum(model_weights)),
-        sample_weight=model_weights,
+        model_weights,
     )
 
     using_default_logistic = sklearn_model is None
@@ -611,8 +674,8 @@ def ipw(
 
             model = lr.fit(X_matrix, y, sample_weight=model_weights)
             pred = model.predict_proba(X_matrix)[:, 1]
-            dev[i] = 2 * log_loss(y, pred, sample_weight=model_weights)
-            prop_dev[i] = 1 - dev[i] / null_dev
+            dev[i] = _compute_deviance(y, pred, model_weights)
+            prop_dev[i] = _compute_proportion_deviance(dev[i], null_dev)
 
             # Early stopping criteria: improvement in prop_dev is less than 1e-5 (mirrors glmnet)
             if (
@@ -657,11 +720,7 @@ def ipw(
                 "The provided sklearn_model must implement predict_proba for propensity estimation."
             )
 
-        if isinstance(X_matrix, csc_matrix):
-            X_matrix = X_matrix.tocsr()
-
-        if issparse(X_matrix):
-            X_matrix = X_matrix.toarray()
+        X_matrix = _convert_to_dense_array(X_matrix)
 
         lambdas = np.array([np.nan])
         fits = [None]
@@ -684,8 +743,8 @@ def ipw(
                 "The provided sklearn_model must be trained on the binary labels {0, 1}."
             ) from error
         pred = probas[:, class_index]
-        dev[0] = 2 * log_loss(y, pred, sample_weight=model_weights)
-        prop_dev[0] = 1 - dev[0] / null_dev
+        dev[0] = _compute_deviance(y, pred, model_weights)
+        prop_dev[0] = _compute_proportion_deviance(dev[0], null_dev)
         links[0] = link_transform(pred)[:sample_n,]
         fits[0] = copy.deepcopy(model)
 
