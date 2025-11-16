@@ -39,10 +39,41 @@ outlined on that page and do not file a public issue.
 
 ### Coding Style
 * 4 spaces for indentation rather than tabs
-* 80 character line length
+* 88 character line length
 
-### Linting
-Run the linter via `flake8` (`pip install flake8`) from the root of the Ax repository. Note that we have a [custom flake8 configuration](https://github.com/facebookresearch/balance/blob/main/.flake8).
+### Linting and Code Formatting
+
+We use **ufmt** (µfmt) for code formatting and **flake8** for linting. This matches Meta's internal pyfmt tooling and ensures consistency between internal and external development.
+
+**Installation:**
+```bash
+pip install -r requirements-fmt.txt
+```
+
+**Running formatters and linters:**
+```bash
+# Check formatting (doesn't modify files)
+ufmt check .
+
+# Auto-format code
+ufmt format .
+
+# Run flake8 linter
+flake8 .
+```
+
+**Pre-commit hooks (optional but recommended):**
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+After installing pre-commit hooks, formatting and linting will run automatically on every commit.
+
+**Configuration files:**
+- `.flake8` - Custom flake8 configuration
+- `pyproject.toml` - Configuration for ufmt, black, and usort
+- `requirements-fmt.txt` - Pinned versions of formatting tools matching Meta's internal setup
 
 ### Static Type Checking
 We use [Pyre](https://pyre-check.org/) for static type checking and require code to be fully type annotated.
