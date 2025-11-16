@@ -1,0 +1,18 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  - repo: https://github.com/omnilib/ufmt
+    rev: v2.8.0
+    hooks:
+      - id: ufmt
+        additional_dependencies:
+          - black==24.4.2
+          - ruff-api==0.1.0
+          - usort==1.0.8.post1
+          - stdlibs
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        additional_dependencies: []

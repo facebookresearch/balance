@@ -4,3 +4,19 @@
 # W503: Line break before binary operator
 # E203: Whitespace before ':'
 ignore = E501, W503, E203
+
+# Match Black's default line length
+max-line-length = 88
+
+# Exclude common directories
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    build,
+    dist,
+    *.egg-info,
+    .github,
+    website/node_modules,
+    sphinx/_build
