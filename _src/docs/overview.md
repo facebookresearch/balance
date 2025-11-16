@@ -21,6 +21,8 @@ hide_title: true
 [![CodeQL](https://github.com/facebookresearch/balance/actions/workflows/codeql.yml/badge.svg)](https://github.com/facebookresearch/balance/actions/workflows/codeql.yml?query=branch%3Amain)
 [![Deploy Website](https://github.com/facebookresearch/balance/actions/workflows/deploy-website.yml/badge.svg)](https://github.com/facebookresearch/balance/actions/workflows/deploy-website.yml?query=branch%3Amain)
 [![Release](https://github.com/facebookresearch/balance/actions/workflows/release.yml/badge.svg)](https://github.com/facebookresearch/balance/actions/workflows/release.yml?query=branch%3Amain)
+[![DOI](https://img.shields.io/badge/DOI-10.48550/arXiv.2307.06024-blue.svg)](https://doi.org/10.48550/arXiv.2307.06024)
+[![Downloads](https://pepy.tech/badge/balance)](https://pepy.tech/project/balance)
 
 </div>
 
