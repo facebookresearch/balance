@@ -30,7 +30,7 @@ outlined on that page and do not file a public issue.
 
 ### Coding Style
 * 4 spaces for indentation rather than tabs
-* 80 character line length
+* 88 character line length
 
 ### Linting and Code Formatting
 
