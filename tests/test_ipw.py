@@ -14,6 +14,11 @@ import pandas as pd
 
 from balance.sample_class import Sample
 from balance.weighting_methods import ipw as balance_ipw
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import LinearSVC
+from sklearn.tree import DecisionTreeClassifier
 
 
 class TestIPW(
@@ -206,6 +211,188 @@ class TestIPW(
         fit = result["model"]["fit"]
         self.assertEqual(fit.solver, "saga")
         self.assertEqual(fit.max_iter, 200)
+
+    def test_ipw_supports_custom_sklearn_model(self):
+        """Custom sklearn models (e.g., RandomForest) can drive propensity scores."""
+
+        rng = np.random.RandomState(1234)
+        sample = pd.DataFrame(
+            {
+                "a": rng.normal(0, 1, 80),
+                "b": rng.binomial(1, 0.4, 80),
+            }
+        )
+        target = pd.DataFrame(
+            {
+                "a": rng.normal(0.5, 1.2, 120),
+                "b": rng.binomial(1, 0.6, 120),
+            }
+        )
+
+        rf = RandomForestClassifier(n_estimators=50, max_depth=3, random_state=7)
+        result = balance_ipw.ipw(
+            sample_df=sample,
+            sample_weights=pd.Series(np.ones(len(sample))),
+            target_df=target,
+            target_weights=pd.Series(np.ones(len(target))),
+            sklearn_model=rf,
+            transformations=None,
+            num_lambdas=1,
+            max_de=1.5,
+        )
+
+        self.assertIsInstance(result["model"]["fit"], RandomForestClassifier)
+        self.assertEqual(len(result["weight"]), len(sample))
+        self.assertTrue(np.isnan(result["model"]["lambda"]))
+        self.assertTrue(result["model"]["perf"]["coefs"].empty)
+        prop_dev = result["model"]["perf"]["prop_dev_explained"]
+        self.assertGreaterEqual(prop_dev, 0.0)
+        self.assertLessEqual(prop_dev, 1.0)
+        self.assertIsNotNone(result["model"]["regularisation_perf"])
+
+    def test_ipw_supports_dense_only_estimators(self):
+        """Estimators that require dense matrices (e.g., GaussianNB) are supported."""
+
+        rng = np.random.RandomState(42)
+        sample = pd.DataFrame({"a": rng.normal(size=40), "b": rng.normal(size=40)})
+        target = pd.DataFrame({"a": rng.normal(size=60), "b": rng.normal(size=60)})
+
+        model = GaussianNB()
+        result = balance_ipw.ipw(
+            sample_df=sample,
+            sample_weights=pd.Series(np.ones(len(sample))),
+            target_df=target,
+            target_weights=pd.Series(np.ones(len(target))),
+            sklearn_model=model,
+            transformations=None,
+            num_lambdas=1,
+            max_de=1.5,
+        )
+
+        weights = result["weight"].to_numpy()
+        self.assertTrue(np.all(np.isfinite(weights)))
+        self.assertIsInstance(result["model"]["fit"], GaussianNB)
+
+    def test_ipw_extreme_probabilities_yield_finite_weights(self):
+        """Models producing 0/1 probabilities result in finite stabilized weights."""
+
+        rng = np.random.RandomState(0)
+        sample = pd.DataFrame({"a": rng.binomial(1, 0.5, 50)})
+        target = pd.DataFrame({"a": rng.binomial(1, 0.5, 75)})
+
+        tree = DecisionTreeClassifier(random_state=0)
+        result = balance_ipw.ipw(
+            sample_df=sample,
+            sample_weights=pd.Series(np.ones(len(sample))),
+            target_df=target,
+            target_weights=pd.Series(np.ones(len(target))),
+            sklearn_model=tree,
+            transformations=None,
+            num_lambdas=1,
+            max_de=1.5,
+        )
+
+        weights = result["weight"].to_numpy()
+        self.assertTrue(np.all(np.isfinite(weights)))
+
+    def test_ipw_requires_predict_proba_for_custom_model(self):
+        """Custom sklearn models without predict_proba are rejected."""
+
+        sample = pd.DataFrame({"a": (0, 1, 1, 0)})
+        target = pd.DataFrame({"a": (1, 0, 0, 1)})
+
+        with self.assertRaisesRegex(ValueError, "predict_proba"):
+            balance_ipw.ipw(
+                sample_df=sample,
+                sample_weights=pd.Series((1,) * len(sample)),
+                target_df=target,
+                target_weights=pd.Series((1,) * len(target)),
+                sklearn_model=LinearSVC(),
+                transformations=None,
+                num_lambdas=1,
+            )
+
+    def test_ipw_rejects_custom_models_with_single_proba_column(self):
+        """Custom models must return probability estimates for both classes."""
+
+        class SingleColumnRF(RandomForestClassifier):
+            def predict_proba(self, X):  # type: ignore[override]
+                full = super().predict_proba(X)
+                return full[:, :1]
+
+        rng = np.random.RandomState(1)
+        sample = pd.DataFrame({"a": rng.normal(size=40)})
+        target = pd.DataFrame({"a": rng.normal(size=55)})
+
+        with self.assertRaisesRegex(
+            ValueError, "probability estimates for both classes"
+        ):
+            balance_ipw.ipw(
+                sample_df=sample,
+                sample_weights=pd.Series(np.ones(len(sample))),
+                target_df=target,
+                target_weights=pd.Series(np.ones(len(target))),
+                sklearn_model=SingleColumnRF(n_estimators=5, random_state=2),
+                transformations=None,
+                num_lambdas=1,
+            )
+
+    def test_ipw_rejects_logistic_kwargs_with_custom_model(self):
+        """Providing logistic_regression_kwargs with custom model raises an error."""
+
+        sample = pd.DataFrame({"a": (0, 1, 1, 0)})
+        target = pd.DataFrame({"a": (1, 0, 0, 1)})
+
+        with self.assertRaisesRegex(ValueError, "logistic_regression_kwargs"):
+            balance_ipw.ipw(
+                sample_df=sample,
+                sample_weights=pd.Series((1,) * len(sample)),
+                target_df=target,
+                target_weights=pd.Series((1,) * len(target)),
+                sklearn_model=RandomForestClassifier(n_estimators=10, random_state=1),
+                logistic_regression_kwargs={"max_iter": 10},
+                transformations=None,
+                num_lambdas=1,
+            )
+
+    def test_ipw_warns_when_penalty_factor_with_custom_model(self):
+        """Providing penalty_factor with custom models emits a warning."""
+
+        rng = np.random.RandomState(5)
+        sample = pd.DataFrame({"a": rng.normal(size=30)})
+        target = pd.DataFrame({"a": rng.normal(size=45)})
+
+        with self.assertLogs(balance_ipw.logger, level="WARNING") as logs:
+            balance_ipw.ipw(
+                sample_df=sample,
+                sample_weights=pd.Series(np.ones(len(sample))),
+                target_df=target,
+                target_weights=pd.Series(np.ones(len(target))),
+                sklearn_model=RandomForestClassifier(n_estimators=5, random_state=7),
+                penalty_factor=[1.0],
+                transformations=None,
+                num_lambdas=1,
+                max_de=1.5,
+            )
+
+        self.assertTrue(
+            any("penalty_factor is ignored" in message for message in logs.output)
+        )
+
+    def test_model_coefs_handles_linear_and_non_linear_estimators(self):
+        """model_coefs returns coefficients for linear models and empty series otherwise."""
+
+        X = pd.DataFrame({"a": (0, 1, 0, 1), "b": (1, 1, 0, 0)})
+        y = np.array((1, 1, 0, 0))
+        lr = LogisticRegression().fit(X, y)
+        coefs = balance_ipw.model_coefs(lr, feature_names=list(X.columns))["coefs"]
+        self.assertListEqual(list(coefs.index), ["intercept", "a", "b"])
+        self.assertAlmostEqual(coefs.loc["intercept"], lr.intercept_[0])
+        self.assertAlmostEqual(coefs.loc["a"], lr.coef_[0][0])
+
+        rf = RandomForestClassifier(n_estimators=5, random_state=3).fit(X, y)
+        rf_coefs = balance_ipw.model_coefs(rf, feature_names=list(X.columns))["coefs"]
+        self.assertTrue(rf_coefs.empty)
 
     def test_weights_from_link_function(self):
         """Test the weights_from_link function with various scenarios.
