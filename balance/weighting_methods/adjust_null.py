@@ -3,12 +3,11 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import logging
-from typing import Dict, Union
 
 import pandas as pd
 
@@ -20,9 +19,9 @@ def adjust_null(
     sample_weights: pd.Series,
     target_df: pd.DataFrame,
     target_weights: pd.Series,
-    *args,
-    **kwargs,
-) -> Dict[str, Union[Dict[str, str], pd.Series]]:
+    *args: object,
+    **kwargs: object,
+) -> dict[str, dict[str, str] | pd.Series]:
     """Doesn't apply any adjustment to the data. Returns the design weights as they are.
     This may be useful when one needs the output of Sample.adjust() (i.e.: an adjusted object),
     but wishes to not run any model for it.
