@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
@@ -27,39 +27,23 @@ logger: logging.Logger = logging.getLogger(__package__)
 
 
 class BalanceCLI:
-    def __init__(self, args) -> None:
-        self.args = args
+    def __init__(self, args: Namespace) -> None:
+        self.args: Namespace = args
 
         # Create attributes (to be populated later, which will be used in main)
-        (
-            self._transformations,
-            self._formula,
-            self._penalty_factor,
-            self._one_hot_encoding,
-            self._max_de,
-            self._lambda_min,
-            self._lambda_max,
-            self._num_lambdas,
-            self._weight_trimming_mean_ratio,
-            self._logistic_regression_kwargs,
-            self._sample_cls,
-            self._sample_package_name,
-            self._sample_package_version,
-        ) = (
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        )
+        self._transformations: Union[Dict[str, Any], str, None] = None
+        self._formula: Optional[str] = None
+        self._penalty_factor: None = None
+        self._one_hot_encoding: bool = False
+        self._max_de: Optional[float] = None
+        self._lambda_min: Optional[float] = None
+        self._lambda_max: Optional[float] = None
+        self._num_lambdas: Optional[int] = None
+        self._weight_trimming_mean_ratio: float = 20.0
+        self._logistic_regression_kwargs: Optional[Dict[str, Any]] = None
+        self._sample_cls: Type[balance_sample_cls] = balance_sample_cls
+        self._sample_package_name: str = __package__
+        self._sample_package_version: str = __version__
 
     def check_input_columns(self, columns: Union[List[str], pd.Index]) -> None:
         needed_columns = []
@@ -70,7 +54,9 @@ class BalanceCLI:
         if self.has_batch_columns():
             needed_columns.extend(self.batch_columns())
         if self.has_keep_columns():
-            needed_columns.extend(self.keep_columns())
+            keep_cols = self.keep_columns()
+            if keep_cols is not None:
+                needed_columns.extend(keep_cols)
         if self.has_keep_row_column():
             needed_columns.append(self.keep_row_column())
 
@@ -109,9 +95,10 @@ class BalanceCLI:
     def has_keep_columns(self) -> bool:
         return self.args.keep_columns is not None
 
-    def keep_columns(self):  # TODO: figure out how to type hint this one.
+    def keep_columns(self) -> Optional[List[str]]:
         if self.args.keep_columns:
             return self.args.keep_columns.split(",")
+        return None
 
     def has_keep_row_column(self) -> bool:
         return self.args.keep_row_column is not None
@@ -128,8 +115,10 @@ class BalanceCLI:
     def lambda_max(self) -> Optional[float]:
         return self.args.lambda_max
 
-    def num_lambdas(self) -> Optional[float]:
-        return self.args.num_lambdas
+    def num_lambdas(self) -> Optional[int]:
+        if self.args.num_lambdas is None:
+            return None
+        return int(self.args.num_lambdas)
 
     def transformations(self) -> Optional[str]:
         if (self.args.transformations is None) or (self.args.transformations == "None"):
@@ -177,9 +166,9 @@ class BalanceCLI:
     def process_batch(
         self,
         batch_df: pd.DataFrame,
-        transformations: Union[Dict, str, None] = "default",
-        formula=None,
-        penalty_factor=None,
+        transformations: Union[Dict[str, Any], str, None] = "default",
+        formula: Optional[str] = None,
+        penalty_factor: None = None,
         one_hot_encoding: bool = False,
         max_de: Optional[float] = 1.5,
         lambda_min: Optional[float] = 1e-05,
@@ -357,7 +346,9 @@ class BalanceCLI:
         logger.info("Number of columns in input file: %d" % input_df.shape[1])
         return input_df
 
-    def write_outputs(self, output_df, diagnostics_df) -> None:
+    def write_outputs(
+        self, output_df: pd.DataFrame, diagnostics_df: pd.DataFrame
+    ) -> None:
         # TODO: Add unit tests for function
         # Write output
         output_df.to_csv(
@@ -386,7 +377,10 @@ class BalanceCLI:
         lambda_min = self.lambda_min()
         lambda_max = self.lambda_max()
         num_lambdas = self.num_lambdas()
-        one_hot_encoding = self.one_hot_encoding()
+        one_hot_encoding_result = self.one_hot_encoding()
+        one_hot_encoding = (
+            one_hot_encoding_result if one_hot_encoding_result is not None else False
+        )
         max_de = self.max_de()
         weight_trimming_mean_ratio = self.weight_trimming_mean_ratio()
         logistic_regression_kwargs = self.logistic_regression_kwargs()

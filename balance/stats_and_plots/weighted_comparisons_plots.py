@@ -3,15 +3,21 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import (
+    absolute_import,
+    annotations,
+    division,
+    print_function,
+    unicode_literals,
+)
 
 import logging
 
 import random
 
-from typing import Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, cast, Dict, List, Literal, Optional, Tuple
 
 import matplotlib.pyplot as plt
 
@@ -39,7 +45,7 @@ logger: logging.Logger = logging.getLogger(__package__)
 
 def _return_sample_palette(
     names: List[str],
-) -> Union[Dict[str, str], str]:
+) -> Dict[str, str] | str:
     """Returns sample palette for seaborn plots.
 
     Named colors for matplotlib: https://stackoverflow.com/a/37232760
@@ -49,6 +55,10 @@ def _return_sample_palette(
 
     Returns:
         Union[Dict[str, str], str]: e.g. {'self': 'tomato', 'target': 'dodgerblue'}
+
+    Note:
+        Color palettes are matched to specific sample combinations for consistency
+        across different plot types and comparisons.
     """
     # colors to match the plotly colors
     col_unadjusted = rgb2hex((222 / 255, 45 / 255, 38 / 255, 0.8), keep_alpha=True)
@@ -123,7 +133,7 @@ def _plotly_marker_color(
 
 
 def plot_bar(
-    dfs: List[Dict[str, Union[pd.DataFrame, pd.Series]]],
+    dfs: List[Dict[str, pd.DataFrame | pd.Series]],
     names: List[str],
     column: str,
     axis: Optional[plt.Axes] = None,
@@ -224,7 +234,7 @@ def plot_bar(
 
 
 def plot_hist_kde(
-    dfs: List[Dict[str, Union[pd.DataFrame, pd.Series]]],
+    dfs: List[Dict[str, pd.DataFrame | pd.Series]],
     names: List[str],
     column: str,
     axis: Optional[plt.Axes] = None,
@@ -373,7 +383,7 @@ def plot_hist_kde(
 
 
 def plot_qq(
-    dfs: List[Dict[str, Union[pd.DataFrame, pd.Series]]],
+    dfs: List[Dict[str, pd.DataFrame | pd.Series]],
     names: List[str],
     column: str,
     axis: Optional[plt.Axes] = None,
@@ -457,7 +467,7 @@ def plot_qq(
 
 
 def plot_qq_categorical(
-    dfs: List[Dict[str, Union[pd.DataFrame, pd.Series]]],
+    dfs: List[Dict[str, pd.DataFrame | pd.Series]],
     names: List[str],
     column: str,
     axis: Optional[plt.Axes] = None,
@@ -559,15 +569,15 @@ def plot_qq_categorical(
 # TODO: add control (or just change) the default theme
 # TODO: add a separate dist_type control parameter for categorical and numeric variables.
 def seaborn_plot_dist(
-    dfs: List[Dict[str, Union[pd.DataFrame, pd.Series]]],
+    dfs: List[Dict[str, pd.DataFrame | pd.Series]],
     names: Optional[List[str]] = None,
-    variables: Optional[List] = None,
+    variables: Optional[List[str]] = None,
     numeric_n_values_threshold: int = 15,
     weighted: bool = True,
     dist_type: Optional[Literal["qq", "hist", "kde", "ecdf"]] = None,
     return_axes: bool = False,
     ylim: Optional[Tuple[float, float]] = None,
-) -> Union[List[plt.Axes], npt.NDArray, None]:
+) -> List[plt.Axes] | npt.NDArray | None:
     """Plots to compare the weighted distributions of an arbitrary number of variables from
     an arbitrary number of DataFrames.
 
@@ -629,11 +639,27 @@ def seaborn_plot_dist(
             # With limiting the y axis range to (0,1)
             seaborn_plot_dist(dfs1, names=["self", "unadjusted", "target"], dist_type = "kde", ylim = (0,1))
     """
+    # Provide default names if not specified
+    if names is None:
+        names = [f"df_{i}" for i in range(len(dfs))]
+
+    # Set default dist_type
+    dist_type_resolved: Literal["qq", "hist", "kde", "ecdf"]
     if dist_type is None:
         if len(dfs) == 1:
-            dist_type = "hist"
+            dist_type_resolved = "hist"
         else:
-            dist_type = "qq"
+            dist_type_resolved = "qq"
+    else:
+        dist_type_resolved = dist_type
+
+    # Set default names if not provided
+    if names is None:
+        names = [f"df_{i}" for i in range(len(dfs))]
+
+    # Type narrowing for names parameter
+    if names is None:
+        names = []
 
     #  Choose set of variables to plot
     variables = choose_variables(*(d["df"] for d in dfs), variables=variables)
@@ -641,8 +667,12 @@ def seaborn_plot_dist(
 
     #  Set up subplots
     f, axes = plt.subplots(len(variables), 1, figsize=(7, 7 * len(variables)))
+    axes_list: List[plt.Axes]
     if not isinstance(axes, np.ndarray):  # If only one subplot
         axes = [axes]
+    axes_list: List[plt.Axes] = cast(
+        List[plt.Axes], axes if isinstance(axes, list) else axes.tolist()
+    )
 
     # TODO: patch choose_variables to return outcome_types from multiple_objects
     numeric_variables = dfs[0]["df"].select_dtypes(exclude=["object"]).columns.values
@@ -661,22 +691,22 @@ def seaborn_plot_dist(
         )
 
         if categorical:
-            if dist_type == "qq":
-                # pyre-fixme[6]
-                plot_qq_categorical(dfs, names, o, axes[io], weighted)
+            if dist_type_resolved == "qq":
+                plot_qq_categorical(dfs, names, o, axes_list[io], weighted)
             else:
-                # pyre-fixme[6]
-                plot_bar(dfs, names, o, axes[io], weighted, ylim=ylim)
+                plot_bar(dfs, names, o, axes_list[io], weighted, ylim=ylim)
         else:
-            if dist_type == "qq":
-                # pyre-fixme[6]
-                plot_qq(dfs, names, o, axes[io], weighted)
+            if dist_type_resolved == "qq":
+                plot_qq(dfs, names, o, axes_list[io], weighted)
             else:
-                # pyre-fixme[6]
-                plot_hist_kde(dfs, names, o, axes[io], weighted, dist_type)
+                # At this point, dist_type is guaranteed to be one of "hist", "kde", or "ecdf"
+                hist_kde_dist_type = cast(Literal["hist", "kde", "ecdf"], dist_type)
+                plot_hist_kde(
+                    dfs, names, o, axes_list[io], weighted, hist_kde_dist_type
+                )
 
     if return_axes:
-        return axes
+        return axes_list
     # else (default) will return None
 
 
@@ -716,7 +746,7 @@ def plotly_plot_qq(
     variables: List[str],
     plot_it: bool = True,
     return_dict_of_figures: bool = False,
-    **kwargs,
+    **kwargs: Any,
 ) -> Optional[Dict[str, go.Figure]]:
     """
     Plots interactive QQ plot of the given variables.
@@ -850,7 +880,7 @@ def plotly_plot_density(
     plot_it: bool = True,
     return_dict_of_figures: bool = False,
     plot_width: int = 800,
-    **kwargs,
+    **kwargs: Any,
 ) -> Optional[Dict[str, go.Figure]]:
     """
     Plots interactive density plots of the given variables using kernel density estimation.
@@ -1010,7 +1040,7 @@ def plotly_plot_bar(
     plot_it: bool = True,
     return_dict_of_figures: bool = False,
     ylim: Optional[Tuple[float, float]] = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> Optional[Dict[str, go.Figure]]:
     """
     Plots interactive bar plots of the given variables (with optional control over the y-axis limits).
@@ -1135,7 +1165,7 @@ def plotly_plot_dist(
     plot_it: bool = True,
     return_dict_of_figures: bool = False,
     ylim: Optional[Tuple[float, float]] = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> Optional[Dict[str, go.Figure]]:
     """
     Plots interactive distribution plots (qq and bar plots) of the given variables.
@@ -1317,7 +1347,7 @@ def naming_legend(object_name: str, names_of_dfs: List[str]) -> str:
 
 
 def plot_dist(
-    dfs: List[Dict[str, Union[pd.DataFrame, pd.Series]]],
+    dfs: List[Dict[str, pd.DataFrame | pd.Series]],
     names: Optional[List[str]] = None,
     variables: Optional[List[str]] = None,
     numeric_n_values_threshold: int = 15,
@@ -1325,8 +1355,8 @@ def plot_dist(
     dist_type: Optional[Literal["kde", "hist", "qq", "ecdf"]] = None,
     library: Literal["plotly", "seaborn"] = "plotly",
     ylim: Optional[Tuple[float, float]] = None,
-    **kwargs,
-) -> Union[Union[List, npt.NDArray], Dict[str, go.Figure], None]:
+    **kwargs: Any,
+) -> List[plt.Axes] | npt.NDArray | Dict[str, go.Figure] | None:
     """Plots the variables of a DataFrame by using either seaborn or plotly.
 
     If using plotly then using kde (or qq) plots for numeric variables and bar plots for categorical variables. Uses :func:`plotly_plot_dist`.

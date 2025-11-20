@@ -3,15 +3,14 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
 import logging
-from typing import Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, Literal, Optional, Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-import plotly.graph_objs as go
 from balance import util as balance_util
 from balance.adjustment import trim_weights
 from balance.sample_class import Sample
@@ -26,6 +25,7 @@ from balance.typing import FilePathOrBuffer
 from balance.util import find_items_index_in_list, get_items_from_list_via_indices
 
 from IPython.lib.display import FileLink
+from plotly.graph_objs import Figure
 
 logger: "logging.Logger" = logging.getLogger(__package__)
 
@@ -35,7 +35,7 @@ class BalanceDF:
     Wrapper class around a Sample which provides additional balance-specific functionality
     """
 
-    _model_matrix = None
+    _model_matrix: Any = None
 
     def __init__(
         self: "BalanceDF",
@@ -123,7 +123,13 @@ class BalanceDF:
         self: "BalanceDF",
     ) -> Dict[
         str,
-        Union["BalanceCovarsDF", "BalanceWeightsDF", Union["BalanceOutcomesDF", None]],
+        Union[
+            "BalanceDF",
+            "BalanceCovarsDF",
+            "BalanceWeightsDF",
+            "BalanceOutcomesDF",
+            None,
+        ],
     ]:
         """Returns a dict with self and the same type of BalanceDF_child when created from the linked samples.
 
@@ -262,21 +268,30 @@ class BalanceDF:
         """
         # NOTE: this assumes that the .__name is the same as the creation method (i.e.: .covars(), .weights(), .outcomes())
         BalanceDF_child_method = self.__name
-        d = {"self": self}
+        d: Dict[
+            str,
+            Union[
+                "BalanceDF",
+                "BalanceCovarsDF",
+                "BalanceWeightsDF",
+                "BalanceOutcomesDF",
+                None,
+            ],
+        ] = {"self": self}
         d.update(
             {
                 k: getattr(v, BalanceDF_child_method)()
                 for k, v in self._sample._links.items()
             }
         )
-        return d  # pyre-fixme[7]: this returns what's declared `Dict[str, Union[BalanceCovarsDF, BalanceOutcomesDF, BalanceWeightsDF]]` but got `Dict[str, BalanceDF]`
+        return d
 
     def _call_on_linked(
         self: "BalanceDF",
         method: str,
-        exclude: Union[Tuple[str], Tuple] = (),
-        *args,
-        **kwargs,
+        exclude: tuple[str, ...] = (),
+        *args: Any,
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """Call a given method on the linked DFs of the BalanceDF object.
         Returns the result as a pandas DataFrame where the source column
@@ -356,7 +371,7 @@ class BalanceDF:
                 v_att_method = getattr(v, method)
                 if callable(v_att_method):
                     v_att_method = v_att_method(
-                        on_linked_samples=False, *args, **kwargs
+                        *args, on_linked_samples=False, **kwargs
                     )
                 output.append(v_att_method.assign(source=k).set_index("source"))
 
@@ -438,7 +453,7 @@ class BalanceDF:
         weighted: bool = True,
         numeric_only: bool = False,
         add_na: bool = True,
-        **kwargs,
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         Calls a given method from :func:`weighted_stats.descriptive_stats` on 'self'.
@@ -508,7 +523,7 @@ class BalanceDF:
         """
         return self.__df
 
-    def names(self: "BalanceDF") -> List:
+    def names(self: "BalanceDF") -> list[str]:
         """Returns the column names of the DataFrame (df) inside a BalanceDF object.
 
         Args:
@@ -548,9 +563,8 @@ class BalanceDF:
     def plot(
         self: "BalanceDF",
         on_linked_samples: bool = True,
-        **kwargs,
-        # pyre-fixme[11]: Annotation `Figure` is not defined as a type.
-    ) -> Union[Union[List, npt.NDArray], Dict[str, go.Figure], None]:
+        **kwargs: Any,
+    ) -> list[Any] | npt.NDArray[Any] | dict[str, Figure] | None:
         """Plots the variables in the df of the BalanceDF object.
 
         See :func:`weighted_comparisons_plots.plot_dist` for details of various arguments that can be passed.
@@ -566,7 +580,7 @@ class BalanceDF:
             **kwargs: passed to :func:`weighted_comparisons_plots.plot_dist`.
 
         Returns:
-            Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:
+            Union[Union[List, np.ndarray], Dict[str, Figure], None]:
                 If library="plotly" then returns a dictionary containing plots if return_dict_of_figures is True. None otherwise.
                 If library="seaborn" then returns None, unless return_axes is True. Then either a list or an np.array of matplotlib axis.
 
@@ -630,6 +644,7 @@ class BalanceDF:
 
         # re-order dfs and names
         # NOTE: "target", if exists, is placed at the end of the dict so that comparative plotting functions,
+        # can use it as the reference distribution for comparison.
         indices_of_ordered_names = find_items_index_in_list(
             names, ["unadjusted", "self", "adjusted", "target"]
         )
@@ -641,7 +656,7 @@ class BalanceDF:
     #  NOTE: The following functions use the _call_on_linked method
     #        to return information about the characteristics of linked Samples
     def mean(
-        self: "BalanceDF", on_linked_samples: bool = True, **kwargs
+        self: "BalanceDF", on_linked_samples: bool = True, **kwargs: Any
     ) -> pd.DataFrame:
         """Calculates a weighted mean on the df of the BalanceDF object.
 
@@ -709,7 +724,7 @@ class BalanceDF:
             return self._descriptive_stats("mean", **kwargs)
 
     def std(
-        self: "BalanceDF", on_linked_samples: bool = True, **kwargs
+        self: "BalanceDF", on_linked_samples: bool = True, **kwargs: Any
     ) -> pd.DataFrame:
         """Calculates a weighted std on the df of the BalanceDF object.
 
@@ -777,7 +792,7 @@ class BalanceDF:
             return self._descriptive_stats("std", **kwargs)
 
     def var_of_mean(
-        self: "BalanceDF", on_linked_samples: bool = True, **kwargs
+        self: "BalanceDF", on_linked_samples: bool = True, **kwargs: Any
     ) -> pd.DataFrame:
         """Calculates a variance of the weighted mean on the df of the BalanceDF object.
 
@@ -849,7 +864,7 @@ class BalanceDF:
             return self._descriptive_stats("var_of_mean", **kwargs)
 
     def ci_of_mean(
-        self: "BalanceDF", on_linked_samples: bool = True, **kwargs
+        self: "BalanceDF", on_linked_samples: bool = True, **kwargs: Any
     ) -> pd.DataFrame:
         """Calculates a confidence intervals of the weighted mean on the df of the BalanceDF object.
 
@@ -1106,7 +1121,7 @@ class BalanceDF:
         on_linked_samples: bool = True,
         target: Optional["BalanceDF"] = None,
         aggregate_by_main_covar: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """ASMD is the absolute difference of the means of two groups (say, P and T), divided by some standard deviation (std).
         It can be std of P or of T, or of P and T.
@@ -1360,8 +1375,8 @@ class BalanceDF:
     def to_csv(
         self: "BalanceDF",
         path_or_buf: Optional[FilePathOrBuffer] = None,
-        *args,
-        **kwargs,
+        *args: Any,
+        **kwargs: Any,
     ) -> Optional[str]:
         """Write df with ids from BalanceDF to a comma-separated values (csv) file.
 
@@ -1378,7 +1393,7 @@ class BalanceDF:
         """
         if "index" not in kwargs:
             kwargs["index"] = False
-        return self._df_with_ids().to_csv(path_or_buf=path_or_buf, *args, **kwargs)
+        return self._df_with_ids().to_csv(*args, path_or_buf=path_or_buf, **kwargs)
 
 
 class BalanceOutcomesDF(BalanceDF):
@@ -1680,7 +1695,7 @@ class BalanceCovarsDF(BalanceDF):
     def from_frame(
         self: "BalanceCovarsDF",
         df: pd.DataFrame,
-        weights=Optional[pd.Series],
+        weights: pd.Series | None = None,
     ) -> "BalanceCovarsDF":
         """A factory function to create a BalanceCovarsDF from a df.
 
@@ -1695,9 +1710,13 @@ class BalanceCovarsDF(BalanceDF):
             BalanceCovarsDF: Object.
         """
         df = df.reset_index()
-        df = pd.concat(
-            (df, pd.Series(np.arange(0, df.shape[0]), name="id"), weights), axis=1
-        )
+        concat_list: list[pd.DataFrame | pd.Series] = [
+            df,
+            pd.Series(np.arange(0, df.shape[0]), name="id"),
+        ]
+        if weights is not None:
+            concat_list.append(weights)
+        df = pd.concat(concat_list, axis=1)
         return Sample.from_frame(df, id_column="id").covars()
 
 
@@ -1717,8 +1736,8 @@ class BalanceWeightsDF(BalanceDF):
 
     # TODO: maybe add better control if there are no weights for unadjusted or target (the current default shows them in the legend, but not in the figure)
     def plot(
-        self: "BalanceWeightsDF", on_linked_samples: bool = True, **kwargs
-    ) -> Union[Union[List, npt.NDArray], Dict[str, go.Figure], None]:
+        self: "BalanceWeightsDF", on_linked_samples: bool = True, **kwargs: Any
+    ) -> list[Any] | npt.NDArray[Any] | dict[str, Figure] | None:
         """Plots kde (kernal density estimation) of the weights in a BalanceWeightsDF object using seaborn (as default).
 
         It's possible to use other plots using dist_type with arguments such as "hist", "kde" (default), "qq", and "ecdf".
@@ -1730,7 +1749,7 @@ class BalanceWeightsDF(BalanceDF):
                 Defaults to True.
 
         Returns:
-            Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:
+            Union[Union[List, np.ndarray], Dict[str, Figure], None]:
                 If library="plotly" then returns a dictionary containing plots if return_dict_of_figures is True. None otherwise.
                 If library="seaborn" then returns None, unless return_axes is True. Then either a list or an np.array of matplotlib axis.
 

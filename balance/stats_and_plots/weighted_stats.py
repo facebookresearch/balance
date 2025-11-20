@@ -3,12 +3,12 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import logging
-from typing import List, Literal, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -30,14 +30,14 @@ logger: logging.Logger = logging.getLogger(__package__)
 
 def _prepare_weighted_stat_args(
     v: Union[
-        List,
+        List[Any],
         pd.Series,
         pd.DataFrame,
         npt.NDArray,
         np.matrix,
     ],
     w: Union[
-        List,
+        List[Any],
         pd.Series,
         npt.NDArray,
         None,
@@ -121,13 +121,13 @@ def _prepare_weighted_stat_args(
 
 def weighted_mean(
     v: Union[
-        List,
+        List[Any],
         pd.Series,
         pd.DataFrame,
         np.matrix,
     ],
     w: Union[
-        List,
+        List[Any],
         pd.Series,
         npt.NDArray,
         None,
@@ -184,8 +184,8 @@ def weighted_mean(
 
 
 def var_of_weighted_mean(
-    v: Union[List, pd.Series, pd.DataFrame, np.matrix],
-    w: Optional[Union[List, pd.Series, npt.NDArray]] = None,
+    v: Union[List[Any], pd.Series, pd.DataFrame, np.matrix],
+    w: Optional[Union[List[Any], pd.Series, npt.NDArray]] = None,
     inf_rm: bool = False,
 ) -> pd.Series:
     """
@@ -329,14 +329,14 @@ def ci_of_weighted_mean(
 
 def weighted_var(
     v: Union[
-        List,
+        List[Any],
         pd.Series,
         pd.DataFrame,
         npt.NDArray,
         np.matrix,
     ],
     w: Union[
-        List,
+        List[Any],
         pd.Series,
         npt.NDArray,
         None,
@@ -379,13 +379,13 @@ def weighted_var(
 
 def weighted_sd(
     v: Union[
-        List,
+        List[Any],
         pd.Series,
         pd.DataFrame,
         np.matrix,
     ],
     w: Union[
-        List,
+        List[Any],
         pd.Series,
         npt.NDArray,
         None,
@@ -409,19 +409,19 @@ def weighted_sd(
 
 def weighted_quantile(
     v: Union[
-        List,
+        List[Any],
         pd.Series,
         pd.DataFrame,
         npt.NDArray,
         np.matrix,
     ],
     quantiles: Union[
-        List,
+        List[Any],
         pd.Series,
         npt.NDArray,
     ],
     w: Union[
-        List,
+        List[Any],
         pd.Series,
         npt.NDArray,
         None,
@@ -460,18 +460,18 @@ def weighted_quantile(
 def descriptive_stats(
     df: pd.DataFrame,
     weights: Union[
-        List,
+        List[Any],
         pd.Series,
         npt.NDArray,
         None,
     ] = None,
-    stat: Literal["mean", "std", "var_of_mean", "ci_of_mean", "..."] = "mean",
+    stat: str = "mean",
     # relevant only if stat is None
     weighted: bool = True,
     # relevant only if we have non-numeric columns and we want to use model_matrix on them
     numeric_only: bool = False,
     add_na: bool = True,
-    **kwargs,
+    **kwargs: Any,
 ) -> pd.DataFrame:
     """Computes weighted statistics (e.g.: mean, std) on a DataFrame
 
@@ -482,7 +482,7 @@ def descriptive_stats(
     Args:
         df (pd.DataFrame): Some DataFrame to get stats (mean, std, etc.) for.
         weights (Union[ List, pd.Series, np.ndarray, ], optional): Weights to apply for the computation. Defaults to None.
-        stat (Literal["mean", "std", "var_of_mean", ...], optional): Which statistic to calculate on the data.
+        stat (str, optional): Which statistic to calculate on the data.
             If mean - uses :func:`weighted_mean` (with inf_rm=True)
             If std - uses :func:`weighted_sd` (with inf_rm=True)
             If var_of_mean - uses :func:`var_of_weighted_mean` (with inf_rm=True)
@@ -615,7 +615,6 @@ def descriptive_stats(
     wdf = {}
     for c in df.columns.values:
         df_c, w = rm_mutual_nas(df.loc[:, c], weights)
-        # pyre-fixme[16]: `DescrStatsW` has no attribute `...`.
         wdf[c] = [getattr(DescrStatsW(df_c, w if weighted else None), stat)]
     return pd.DataFrame(wdf)
 

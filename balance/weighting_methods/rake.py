@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
@@ -15,14 +15,14 @@ import math
 from fractions import Fraction
 
 from functools import reduce
-from typing import Callable, Dict, List, Tuple, Union
+from typing import Any, Callable, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
 
 from balance import adjustment as balance_adjustment, util as balance_util
 
-logger = logging.getLogger(__package__)
+logger: logging.Logger = logging.getLogger(__package__)
 
 
 # TODO: Add options for only marginal distributions input
@@ -119,7 +119,7 @@ def rake(
     target_df: pd.DataFrame,
     target_weights: pd.Series,
     variables: Union[List[str], None] = None,
-    transformations: Union[Dict[str, Callable], str] = "default",
+    transformations: Union[Dict[str, Callable[..., Any]], str] = "default",
     na_action: str = "add_indicator",
     max_iteration: int = 1000,
     convergence_rate: float = 0.0005,
@@ -127,9 +127,9 @@ def rake(
     weight_trimming_mean_ratio: Union[float, int, None] = None,
     weight_trimming_percentile: Union[float, None] = None,
     keep_sum_of_weights: bool = True,
-    *args,
-    **kwargs,
-) -> Dict:
+    *args: Any,
+    **kwargs: Any,
+) -> Dict[str, Any]:
     """
     Perform raking (using the iterative proportional fitting algorithm).
     See: https://en.wikipedia.org/wiki/Iterative_proportional_fitting

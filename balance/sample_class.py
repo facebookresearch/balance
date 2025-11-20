@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ import collections
 import inspect
 import logging
 from copy import deepcopy
-from typing import Callable, Dict, List, Literal, Optional, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -44,12 +44,19 @@ class Sample:
     """
 
     # The following attributes are updated when initiating Sample using Sample.from_frame
+    # pyre-fixme[4]: Attributes are initialized in from_frame()
     _df = None
+    # pyre-fixme[4]: Attributes are initialized in from_frame()
     id_column = None
+    # pyre-fixme[4]: Attributes are initialized in from_frame()
     _outcome_columns = None
+    # pyre-fixme[4]: Attributes are initialized in from_frame()
     weight_column = None
+    # pyre-fixme[4]: Attributes are initialized in from_frame()
     _links = None
+    # pyre-fixme[4]: Attributes are initialized in from_frame()
     _adjustment_model = None
+    # pyre-fixme[4]: Attributes are initialized in from_frame()
     _df_dtypes = None
 
     def __init__(self) -> None:
@@ -128,7 +135,7 @@ class Sample:
         cls: type["Sample"],
         df: pd.DataFrame,
         id_column: Optional[str] = None,
-        outcome_columns: Optional[Union[list, tuple, str]] = None,
+        outcome_columns: Optional[Union[List[str], tuple[str, ...], str]] = None,
         weight_column: Optional[str] = None,
         check_id_uniqueness: bool = True,
         standardize_types: bool = True,
@@ -184,9 +191,7 @@ class Sample:
         id_column = balance_util.guess_id_column(df, id_column)
         if any(sample._df[id_column].isnull()):
             raise ValueError("Null values are not allowed in the id_column")
-        if not set(map(type, sample._df[id_column].tolist())) == {  # pyre-fixme[6] ???
-            str
-        }:
+        if not all(isinstance(x, str) for x in sample._df[id_column].tolist()):
             logger.warning("Casting id column to string")
             sample._df[id_column] = sample._df[id_column].astype(str)
 
@@ -333,7 +338,7 @@ class Sample:
 
     def outcomes(
         self: "Sample",
-    ):  # -> "Optional[Type[BalanceOutcomesDF]]" (not imported due to circular dependency)
+    ) -> Any:  # -> "Optional[Type[BalanceOutcomesDF]]" (not imported due to circular dependency)
         """
         Produce a BalanceOutcomeDF from a Sample object.
         See :class:BalanceOutcomesDF.
@@ -354,7 +359,7 @@ class Sample:
 
     def weights(
         self: "Sample",
-    ):  # -> "Optional[Type[BalanceWeightsDF]]" (not imported due to circular dependency)
+    ) -> Any:  # -> "Optional[Type[BalanceWeightsDF]]" (not imported due to circular dependency)
         """
         Produce a BalanceWeightsDF from a Sample object.
         See :class:BalanceWeightsDF.
@@ -372,6 +377,8 @@ class Sample:
 
     def covars(
         self: "Sample",
+    ) -> (
+        Any
     ):  # -> "Optional[Type[BalanceCovarsDF]]" (not imported due to circular dependency)
         """
         Produce a BalanceCovarsDF from a Sample object.
@@ -390,7 +397,7 @@ class Sample:
 
     def model(
         self: "Sample",
-    ) -> Optional[Dict]:
+    ) -> Optional[Dict[str, Any]]:
         """
         Returns the name of the model used to adjust Sample if adjusted.
         Otherwise returns None.
@@ -424,10 +431,10 @@ class Sample:
         self: "Sample",
         target: Optional["Sample"] = None,
         method: Union[
-            Literal["cbps", "ipw", "null", "poststratify", "rake"], Callable
+            Literal["cbps", "ipw", "null", "poststratify", "rake"], Callable[..., Any]
         ] = "ipw",
-        *args,
-        **kwargs,
+        *args: Any,
+        **kwargs: Any,
     ) -> "Sample":
         """
         Perform adjustment of one sample to match another.
@@ -747,6 +754,12 @@ class Sample:
         Returns:
             str: a summary description of properties of an adjusted sample.
         """
+        # Initialize variables
+        n_asmd_covars: int = 0
+        asmd_before: float = 0.0
+        asmd_improvement: float = 0.0
+        asmd_now: float = 0.0
+
         # asmd
         if self.is_adjusted() or self.has_target():
             asmd = self.covars().asmd()
@@ -785,17 +798,12 @@ class Sample:
 
         out = (
             (
-                # pyre-fixme[61]: `asmd_improvement` is undefined, or not always
-                #  defined.
                 f"Covar ASMD reduction: {asmd_improvement:.1f}%, design effect: {design_effect:.3f}\n"
                 if self.is_adjusted()
                 else ""
             )
-            # pyre-fixme[61]: `n_asmd_covars` is undefined, or not always defined.
             + (f"Covar ASMD ({n_asmd_covars} variables): " if self.has_target() else "")
-            # pyre-fixme[61]: `asmd_before` is undefined, or not always defined.
             + (f"{asmd_before:.3f} -> " if self.is_adjusted() else "")
-            # pyre-fixme[61]: `asmd_now` is undefined, or not always defined.
             + (f"{asmd_now:.3f}\n" if self.has_target() else "")
             + (
                 f"Model performance: {model_summary}"
@@ -1188,7 +1196,7 @@ class Sample:
         return balance_util._to_download(self.df, tempdir)
 
     def to_csv(
-        self, path_or_buf: Optional[FilePathOrBuffer] = None, **kwargs
+        self, path_or_buf: Optional[FilePathOrBuffer] = None, **kwargs: Any
     ) -> Optional[str]:
         """Write df with ids from BalanceDF to a comma-separated values (csv) file.
 

@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
 import logging
 from typing import Optional
@@ -35,7 +35,7 @@ Tip: You can access this information at any time with balance.help()
 """
 
 
-def help():
+def help() -> None:
     """Display information about documentation, help, and citation."""
     print(WELCOME_MESSAGE)
 

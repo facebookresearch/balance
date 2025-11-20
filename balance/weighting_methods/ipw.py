@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
@@ -36,7 +36,7 @@ logger: logging.Logger = logging.getLogger(__package__)
 # TODO: Improve interpretability of model coefficients, as variables are no longer zero-centered.
 def model_coefs(
     model: ClassifierMixin,
-    feature_names: Optional[list] = None,
+    feature_names: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """Extract coefficient-like information from sklearn classifiers.
 
@@ -61,8 +61,7 @@ def model_coefs(
 
     if not hasattr(model, "coef_"):
         return {"coefs": pd.Series(dtype=float)}
-    # pyre-ignore[16]: model.coef_ is checked via hasattr above
-    coefs = np.asarray(model.coef_)
+    coefs = np.asarray(cast(Any, model).coef_)
     intercept = getattr(model, "intercept_", None)
 
     if coefs.ndim > 1 and coefs.shape[0] == 1:
@@ -86,7 +85,7 @@ def model_coefs(
 
 
 # TODO: Add tests for link_transform()
-def link_transform(pred: np.ndarray):
+def link_transform(pred: np.ndarray) -> np.ndarray:
     """Transforms probabilities into log odds (link function).
 
     Args:
@@ -172,10 +171,10 @@ def _convert_to_dense_array(
 def calc_dev(
     X_matrix: csr_matrix,
     y: np.ndarray,
-    model,
+    model: ClassifierMixin,
     model_weights: np.ndarray,
     foldids: np.ndarray,
-):
+) -> Tuple[float, float]:
     """10 fold cross validation to calculate holdout deviance.
 
     Args:
@@ -198,6 +197,7 @@ def calc_dev(
         y_test = y[foldids == i]
         model_weights_train = model_weights[foldids != i]
         model_weights_test = model_weights[foldids == i]
+        # pyre-ignore[16]: ClassifierMixin has fit method at runtime
         model_fit = model.fit(X_train, y_train, sample_weight=model_weights_train)
         pred_test = model_fit.predict_proba(X_test)[:, 1]
         cv_dev[i] = _compute_deviance(
@@ -429,8 +429,8 @@ def ipw(
     logistic_regression_kwargs: Optional[Dict[str, Any]] = None,
     random_seed: int = 2020,
     sklearn_model: Optional[ClassifierMixin] = None,
-    *args,
-    **kwargs,
+    *args: Any,
+    **kwargs: Any,
 ) -> Dict[str, Any]:
     """Fit an ipw (inverse propensity score weighting) for the sample using the target.
 
@@ -658,8 +658,8 @@ def ipw(
             lr_kwargs.update(logistic_regression_kwargs)
 
         lr = LogisticRegression(**lr_kwargs)
-        fits = [None for _ in range(len(lambdas))]
-        links = [None for _ in range(len(lambdas))]
+        fits: List[Optional[ClassifierMixin]] = [None for _ in range(len(lambdas))]
+        links: List[Optional[np.ndarray]] = [None for _ in range(len(lambdas))]
         prop_dev = [np.nan for _ in range(len(lambdas))]
         dev = [np.nan for _ in range(len(lambdas))]
         cv_dev_mean = [np.nan for _ in range(len(lambdas))]
@@ -723,8 +723,8 @@ def ipw(
         X_matrix = _convert_to_dense_array(X_matrix)
 
         lambdas = np.array([np.nan])
-        fits = [None]
-        links = [None]
+        fits: List[Optional[ClassifierMixin]] = [None]
+        links: List[Optional[np.ndarray]] = [None]
         prop_dev = [np.nan]
         dev = [np.nan]
         cv_dev_mean = [np.nan]
@@ -806,8 +806,9 @@ def ipw(
     )
 
     logger.info(f"Chosen lambda: {best_s}")
+    assert best_model is not None, "best_model should not be None at this point"
     performance = model_coefs(
-        best_model,  # pyre-ignore[6]: best_model is guaranteed to be a fitted classifier at this point
+        best_model,
         feature_names=list(X_matrix_columns_names),
     )
     performance["null_deviance"] = null_dev

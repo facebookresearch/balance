@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
@@ -24,7 +24,7 @@ logger: logging.Logger = logging.getLogger(__package__)
 
 def _check_weights_are_valid(
     w: Union[
-        List,
+        List[Any],
         pd.Series,
         npt.NDArray,
         pd.DataFrame,

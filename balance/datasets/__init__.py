@@ -3,16 +3,20 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
 import pathlib
 from typing import Literal, Optional, Tuple
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 
 # TODO: move the functions from datasets/__init__.py to some other file (e.g.: datasets/loading_data.py),
 #       and then import the functions from that file in the init file (so the behavior would remain the same)
+
+# This module provides data loading utilities for simulated datasets used in balance package.
+# It supports loading simulation data with reproducible random seeds for testing and examples.
 
 
 # TODO: add tests
@@ -41,7 +45,7 @@ def load_sim_data(
         Tuple[pd.DataFrame, pd.DataFrame]: Two DataFrames containing simulated data for the target and sample of interest.
     """
 
-    def _create_outcome_happiness(df, n):
+    def _create_outcome_happiness(df: pd.DataFrame, n: int) -> npt.NDArray[np.floating]:
         # females are happier
         # older people are happier
         # people with higher income are happier

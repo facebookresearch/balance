@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
@@ -46,7 +46,7 @@ logger: logging.Logger = logging.getLogger(__package__)
 #     return 1 - 2 * np.sqrt(1 / (N - 1) * np.sum((p - np.mean(p)) ** 2))
 
 
-def _weights_per_covars_names(covar_names: List) -> pd.DataFrame:
+def _weights_per_covars_names(covar_names: List[str]) -> pd.DataFrame:
     # TODO (p2): consider if to give weights that are proportional to the proportion of this covar in the population
     #           E.g.: if merging varios platforms, maybe if something like windows has very few users, it's impact on the ASMD
     #           should be smaller (similar to how kld works).
@@ -122,13 +122,13 @@ def asmd(
     sample_df: pd.DataFrame,
     target_df: pd.DataFrame,
     sample_weights: Union[
-        List,
+        List[float],
         pd.Series,
         npt.NDArray,
         None,
     ] = None,
     target_weights: Union[
-        List,
+        List[float],
         pd.Series,
         npt.NDArray,
         None,
@@ -346,7 +346,7 @@ def _aggregate_asmd_by_main_covar(asmd_series: pd.Series) -> pd.Series:
     out = pd.concat((asmd_series, weights), axis=1)
 
     # Define the apply function for calculating weighted means
-    def calculate_weighted_mean(group_data):
+    def calculate_weighted_mean(group_data: pd.DataFrame) -> float:
         values = group_data.iloc[:, 0]  # First column contains the ASMD values
         weights = group_data["weight"]
         return ((values * weights) / weights.sum()).sum()
@@ -368,19 +368,19 @@ def asmd_improvement(
     sample_after: pd.DataFrame,
     target: pd.DataFrame,
     sample_before_weights: Union[
-        List,
+        List[float],
         pd.Series,
         npt.NDArray,
         None,
     ] = None,
     sample_after_weights: Union[
-        List,
+        List[float],
         pd.Series,
         npt.NDArray,
         None,
     ] = None,
     target_weights: Union[
-        List,
+        List[float],
         pd.Series,
         npt.NDArray,
         None,
@@ -414,13 +414,13 @@ def outcome_variance_ratio(
     df_numerator: pd.DataFrame,
     df_denominator: pd.DataFrame,
     w_numerator: Union[
-        List,
+        List[float],
         pd.Series,
         npt.NDArray,
         None,
     ] = None,
     w_denominator: Union[
-        List,
+        List[float],
         pd.Series,
         npt.NDArray,
         None,

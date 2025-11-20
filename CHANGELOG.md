@@ -53,10 +53,25 @@
   - Fixed TODO: Removed manual ASMD improvement calculation and now uses
     existing `compute_asmd_improvement()` from `weighted_comparisons_stats.py`
 - **Type safety improvements**
-  - Fixed pyre type error in `ipw()`: converts `formula` parameter from
-    `Union[str, List[str], None]` to `Optional[List[str]]` before passing to
-    `model_matrix()` by wrapping single strings in a list
-  - Fixed float list initialization to match return type annotations
+  - **Pyre-strict migration**: Converted 17 Python files from `# pyre-unsafe` to
+    `# pyre-strict` mode, significantly improving type safety across the
+    codebase. Files converted include core modules (`__init__.py`,
+    `adjustment.py`, `balancedf_class.py`, `cli.py`, `sample_class.py`,
+    `util.py`, `typing.py`), statistics modules
+    (`stats_and_plots/general_stats.py`, `stats_and_plots/weighted_stats.py`,
+    `stats_and_plots/weighted_comparisons_plots.py`,
+    `stats_and_plots/weighted_comparisons_stats.py`,
+    `stats_and_plots/weights_stats.py`), weighting methods
+    (`weighting_methods/cbps.py`, `weighting_methods/ipw.py`,
+    `weighting_methods/poststratify.py`, `weighting_methods/rake.py`), and
+    datasets module (`datasets/__init__.py`)
+  - Fixed missing `Any` import in `weighted_comparisons_plots.py` to resolve
+    pyre-fixme[10] error
+  - Added comprehensive type annotations for previously untyped parameters and
+    return values throughout the codebase
+  - Fixed type casts and narrowed types where appropriate
+  - Initialized optional variables to handle pyre-fixme[61] issues
+  - Updated method signatures to match parent class interfaces
 
 ## Bug Fixes
 

@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
@@ -282,20 +282,27 @@ def _standardize_model_matrix(
 
 
 # TODO: update docs
-def _reverse_svd_and_centralization(beta, U, s, Vh, X_matrix_mean, X_matrix_std):
+def _reverse_svd_and_centralization(
+    beta: npt.NDArray,
+    U: npt.NDArray,
+    s: npt.NDArray,
+    Vh: npt.NDArray,
+    X_matrix_mean: npt.NDArray,
+    X_matrix_std: npt.NDArray,
+) -> npt.NDArray:
     """This is a helper function for cbps. It revrse the svd and the centralization to get an estimate of beta
     Source: https://github.com/kosukeimai/CBPS/blob/master/R/CBPSMain.R#L353
 
     Args:
-        beta (_type_): _description_
-        U (_type_): _description_
-        s (_type_): _description_
-        Vh (_type_): _description_
-        X_matrix_mean (_type_): _description_
-        X_matrix_std (_type_): _description_
+        beta (np.ndarray): coefficient vector
+        U (np.ndarray): left singular vectors from SVD
+        s (np.ndarray): singular values from SVD
+        Vh (np.ndarray): right singular vectors from SVD
+        X_matrix_mean (np.ndarray): mean of the model matrix
+        X_matrix_std (np.ndarray): standard deviation of the model matrix
 
     Returns:
-        _type_: _description_
+        np.ndarray: reversed beta coefficient vector
     """
     # TODO: update SVD and reverse SVD to the functions in scikit-learn
     # Invert s
@@ -326,13 +333,13 @@ def cbps(  # noqa
     cbps_method: str = "over",  # other option: "exact"
     max_de: Optional[float] = None,
     opt_method: str = "COBYLA",
-    opt_opts: Optional[Dict] = None,
+    opt_opts: Optional[Dict[str, Any]] = None,
     weight_trimming_mean_ratio: Union[None, float, int] = 20,
     weight_trimming_percentile: Optional[float] = None,
     random_seed: int = 2020,
-    *args,
-    **kwargs,
-) -> Dict[str, Union[pd.Series, Dict]]:
+    *args: Any,
+    **kwargs: Any,
+) -> Dict[str, Union[pd.Series, Dict[str, Any]]]:
     """Fit cbps (covariate balancing propensity score model) for the sample using the target.
     Final weights are normalized to target size.
     We use a two-step GMM estimator (as in the default R package), unlike the suggeted continuous-updating
@@ -449,7 +456,6 @@ def cbps(  # noqa
         add_na=(na_action == "add_indicator"),
         return_type="one",
         return_var_type="sparse",
-        # pyre-fixme[6]: for 7th parameter `formula` expected `Optional[List[str]]` but got `Union[None, List[str], str]`.
         formula=formula,
         one_hot_encoding=False,
     )
@@ -457,7 +463,9 @@ def cbps(  # noqa
         csc_matrix,
         (model_matrix_output["model_matrix"]),
     ).toarray()
-    X_matrix_columns_names = model_matrix_output["model_matrix_columns_names"]
+    X_matrix_columns_names = cast(
+        List[str], model_matrix_output["model_matrix_columns_names"]
+    )
     logger.info(
         f"The formula used to build the model matrix: {model_matrix_output['formula']}"
     )
@@ -465,7 +473,6 @@ def cbps(  # noqa
     # Standardize the X_matrix for SVD
     model_matrix_standardized = _standardize_model_matrix(
         X_matrix,
-        # pyre-fixme[6]: for 2nd positional only parameter expected `List[str]` but got `Union[None, List[str], ndarray, DataFrame, csc_matrix]`.
         X_matrix_columns_names,
     )
     X_matrix = model_matrix_standardized["model_matrix"]
@@ -505,7 +512,8 @@ def cbps(  # noqa
 
     # balance classes
     if balance_classes:
-        design_weights = (
+        design_weights = cast(
+            npt.NDArray,
             total_n
             / 2
             * np.concatenate(
@@ -513,11 +521,10 @@ def cbps(  # noqa
                     sample_weights / np.sum(sample_weights),
                     target_weights / np.sum(target_weights),
                 )
-            )
+            ),
         )
 
         XtXinv = np.linalg.pinv(
-            # pyre-fixme[16] Undefined attribute [16]: `float` has no attribute `__getitem__`.
             np.matmul((U * design_weights[:, None]).T, U * design_weights[:, None])
         )
     else:
@@ -590,6 +597,7 @@ def cbps(  # noqa
     beta_balance = balance_optimize_result["x"]
 
     gmm_optimize_result_glm_init = None
+    gmm_optimize_result_bal_init = None
     if cbps_method == "exact":
         if (
             balance_optimize_result["success"] is np.bool_(False)
@@ -725,8 +733,6 @@ def cbps(  # noqa
                 gmm_optimize_result_glm_init if cbps_method == "over" else None
             ),
             "gmm_optimize_result_bal_init": (
-                # pyre-fixme[61]: `gmm_optimize_result_bal_init` is undefined, or
-                #  not always defined.
                 gmm_optimize_result_bal_init if cbps_method == "over" else None
             ),
         },

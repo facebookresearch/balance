@@ -3,13 +3,13 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import logging
 
-from typing import Callable, Dict, List, Literal, Tuple, Union
+from typing import Any, Callable, Dict, List, Literal, Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -29,7 +29,7 @@ from pandas.api.types import is_bool_dtype, is_numeric_dtype
 logger: logging.Logger = logging.getLogger(__package__)
 
 
-BALANCE_WEIGHTING_METHODS = {
+BALANCE_WEIGHTING_METHODS: Dict[str, Callable[..., Any]] = {
     "ipw": balance_ipw.ipw,
     "cbps": balance_cbps.cbps,
     "null": balance_adjust_null.adjust_null,
@@ -310,7 +310,7 @@ def trim_weights(
 
 def default_transformations(
     dfs: Union[Tuple[pd.DataFrame, ...], List[pd.DataFrame]],
-) -> Dict[str, Callable]:
+) -> Dict[str, Callable[..., Any]]:
     """
     Apply default transformations to dfs, i.e.
     quantize to numeric columns and fct_lump to non-numeric and boolean
@@ -339,7 +339,7 @@ def default_transformations(
 
 def apply_transformations(
     dfs: Tuple[pd.DataFrame, ...],
-    transformations: Union[Dict[str, Callable], str, None],
+    transformations: Union[Dict[str, Callable[..., Any]], str, None],
     drop: bool = True,
 ) -> Tuple[pd.DataFrame, ...]:
     """Apply the transformations specified in transformations to all of the dfs
@@ -473,8 +473,8 @@ def apply_transformations(
 
 def _find_adjustment_method(
     method: Literal["cbps", "ipw", "null", "poststratify", "rake"],
-    WEIGHTING_METHODS: Dict[str, Callable] = BALANCE_WEIGHTING_METHODS,
-) -> Callable:
+    WEIGHTING_METHODS: Dict[str, Callable[..., Any]] = BALANCE_WEIGHTING_METHODS,
+) -> Callable[..., Any]:
     """This function translates a string method argument to the function itself.
 
     Args:

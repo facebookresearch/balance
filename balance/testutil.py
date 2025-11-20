@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
 import io
 import re
@@ -11,7 +11,7 @@ import sys
 
 import unittest
 from contextlib import contextmanager
-from typing import Any, Union
+from typing import Any, Callable, Generator, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -62,7 +62,7 @@ def _assert_index_equal_lazy(x: pd.Index, y: pd.Index, lazy: bool = True) -> Non
 
 
 @contextmanager
-def _capture_output():
+def _capture_output() -> Generator[tuple[io.StringIO, io.StringIO], None, None]:
     redirect_out, redirect_err = io.StringIO(), io.StringIO()
     original_out, original_err = sys.stdout, sys.stderr
     try:
@@ -74,12 +74,16 @@ def _capture_output():
 
 class BalanceTestCase(unittest.TestCase):
     # Some Warns
-    def assertIfWarns(self, callable, *args, **kwargs) -> None:
+    def assertIfWarns(
+        self, callable: Callable[..., Any], *args: Any, **kwargs: Any
+    ) -> None:
         with self.assertLogs(level="NOTSET") as cm:
             callable(*args, **kwargs)
             self.assertTrue(len(cm.output) > 0, "No warning produced.")
 
-    def assertNotWarns(self, callable, *args, **kwargs) -> None:
+    def assertNotWarns(
+        self, callable: Callable[..., Any], *args: Any, **kwargs: Any
+    ) -> None:
         output = None
         try:
             with self.assertLogs() as cm:
@@ -89,7 +93,9 @@ class BalanceTestCase(unittest.TestCase):
             return
         raise AssertionError(f"Warning produced {output.output}.")
 
-    def assertWarnsRegexp(self, regexp, callable, *args, **kwargs) -> None:
+    def assertWarnsRegexp(
+        self, regexp: str, callable: Callable[..., Any], *args: Any, **kwargs: Any
+    ) -> None:
         with self.assertLogs(level="NOTSET") as cm:
             callable(*args, **kwargs)
             self.assertTrue(
@@ -97,7 +103,9 @@ class BalanceTestCase(unittest.TestCase):
                 f"Warning {cm.output} does not match regex {regexp}.",
             )
 
-    def assertNotWarnsRegexp(self, regexp, callable, *args, **kwargs) -> None:
+    def assertNotWarnsRegexp(
+        self, regexp: str, callable: Callable[..., Any], *args: Any, **kwargs: Any
+    ) -> None:
         with self.assertLogs(level="NOTSET") as cm:
             callable(*args, **kwargs)
             self.assertFalse(
@@ -111,7 +119,7 @@ class BalanceTestCase(unittest.TestCase):
         first: Union[npt.NDArray, pd.DataFrame, pd.Index, pd.Series, Any],
         second: Union[npt.NDArray, pd.DataFrame, pd.Index, pd.Series, Any],
         msg: Any = ...,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """
         Check if first and second are equal.
@@ -143,13 +151,17 @@ class BalanceTestCase(unittest.TestCase):
             super().assertEqual(first, second, msg=msg, **kwargs)
 
     # Some Prints
-    def assertPrints(self, callable, *args, **kwargs) -> None:
+    def assertPrints(
+        self, callable: Callable[..., Any], *args: Any, **kwargs: Any
+    ) -> None:
         with _capture_output() as (out, err):
             callable(*args, **kwargs)
             out, err = out.getvalue(), err.getvalue()
             self.assertTrue((len(out) + len(err)) > 0, "No printed output.")
 
-    def assertNotPrints(self, callable, *args, **kwargs) -> None:
+    def assertNotPrints(
+        self, callable: Callable[..., Any], *args: Any, **kwargs: Any
+    ) -> None:
         with _capture_output() as (out, err):
             callable(*args, **kwargs)
             out, err = out.getvalue(), err.getvalue()
@@ -158,7 +170,9 @@ class BalanceTestCase(unittest.TestCase):
                 f"Printed output is longer than 0: {(out, err)}.",
             )
 
-    def assertPrintsRegexp(self, regexp, callable, *args, **kwargs) -> None:
+    def assertPrintsRegexp(
+        self, regexp: str, callable: Callable[..., Any], *args: Any, **kwargs: Any
+    ) -> None:
         with _capture_output() as (out, err):
             callable(*args, **kwargs)
             out, err = out.getvalue(), err.getvalue()
@@ -167,7 +181,9 @@ class BalanceTestCase(unittest.TestCase):
                 f"Printed output {(out, err)} does not match regex {regexp}.",
             )
 
-    def assertNotPrintsRegexp(self, regexp, callable, *args, **kwargs) -> None:
+    def assertNotPrintsRegexp(
+        self, regexp: str, callable: Callable[..., Any], *args: Any, **kwargs: Any
+    ) -> None:
         with _capture_output() as (out, err):
             callable(*args, **kwargs)
             out, err = out.getvalue(), err.getvalue()

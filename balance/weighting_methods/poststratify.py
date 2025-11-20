@@ -3,12 +3,12 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import logging
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 
@@ -31,8 +31,8 @@ def poststratify(
     weight_trimming_mean_ratio: Union[float, int, None] = None,
     weight_trimming_percentile: Union[float, None] = None,
     keep_sum_of_weights: bool = True,
-    *args,
-    **kwargs,
+    *args: Any,
+    **kwargs: Any,
 ) -> Dict[str, Union[pd.Series, Dict[str, str]]]:
     """
     Perform cell-based post-stratification to adjust sample weights so that the sample matches the joint distribution of, one or more, specified variables in the target population.

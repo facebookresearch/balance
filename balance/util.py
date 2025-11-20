@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
 import collections.abc
 
@@ -70,7 +70,7 @@ def _check_weighting_methods_input(
 
 # This is so to avoid various cyclic imports (since various files call sample_class, and then sample_class also calls these files)
 # TODO: (p2) move away from this method once we restructure Sample and BalanceDF objects...
-def _isinstance_sample(obj) -> bool:
+def _isinstance_sample(obj: Any) -> bool:
     try:
         from balance import sample_class
     except ImportError:
@@ -79,7 +79,7 @@ def _isinstance_sample(obj) -> bool:
     return isinstance(obj, sample_class.Sample)
 
 
-def guess_id_column(dataset: pd.DataFrame, column_name: Optional[str] = None):
+def guess_id_column(dataset: pd.DataFrame, column_name: Optional[str] = None) -> str:
     """
     Guess the id column of a given dataset.
     Possible values for guess: 'id'.
@@ -202,7 +202,7 @@ def drop_na_rows(
     return (sample_df, sample_weights)
 
 
-def formula_generator(variables, formula_type: str = "additive") -> str:
+def formula_generator(variables: List[str], formula_type: str = "additive") -> str:
     """Create formula to build the model matrix
         Default is additive formula.
     Args:
@@ -233,7 +233,7 @@ def formula_generator(variables, formula_type: str = "additive") -> str:
     return rhs_formula
 
 
-def dot_expansion(formula, variables: List):
+def dot_expansion(formula: str, variables: List[str]) -> str:
     """Build a formula string by replacing "." with "summing" all the variables,
     If no dot appears, returns the formula as is.
 
@@ -373,7 +373,7 @@ class one_hot_encoding_greater_2:
     def __init__(self, reference: int = 0) -> None:
         self.reference = reference
 
-    def code_with_intercept(self, levels):
+    def code_with_intercept(self, levels: List[Any]) -> ContrastMatrix:
         if len(levels) == 2:
             eye = np.eye(len(levels) - 1)
             contrasts = np.vstack(
@@ -394,11 +394,13 @@ class one_hot_encoding_greater_2:
             )
         return contrasts_mat
 
-    def code_without_intercept(self, levels):
+    def code_without_intercept(self, levels: List[Any]) -> ContrastMatrix:
         return self.code_with_intercept(levels)
 
 
-def process_formula(formula, variables: List, factor_variables=None):
+def process_formula(
+    formula: str, variables: List[str], factor_variables: Optional[List[str]] = None
+) -> ModelDesc:
     """Process a formula string:
         1. Expand .  notation using dot_expansion function
         2. Remove intercept (if using ipw, it will be added automatically by sklearn)
@@ -468,7 +470,7 @@ def process_formula(formula, variables: List, factor_variables=None):
 def build_model_matrix(
     df: pd.DataFrame,
     formula: str = ".",
-    factor_variables: Optional[List] = None,
+    factor_variables: Optional[List[str]] = None,
     return_sparse: bool = False,
 ) -> Dict[str, Any]:
     """Build a model matrix from a formula (using patsy.dmatrix)
@@ -579,7 +581,7 @@ def build_model_matrix(
 def _prepare_input_model_matrix(
     sample: Union[pd.DataFrame, Any],
     target: Union[pd.DataFrame, Any, None] = None,
-    variables: Optional[List] = None,
+    variables: Optional[List[str]] = None,
     add_na: bool = True,
     fix_columns_names: bool = True,
 ) -> Dict[str, Any]:
@@ -685,11 +687,11 @@ def _prepare_input_model_matrix(
 def model_matrix(
     sample: Union[pd.DataFrame, Any],
     target: Union[pd.DataFrame, Any, None] = None,
-    variables: Optional[List] = None,
+    variables: Optional[List[str]] = None,
     add_na: bool = True,
     return_type: str = "two",
     return_var_type: str = "dataframe",
-    formula: Optional[List[str]] = None,
+    formula: Optional[Union[str, List[str]]] = None,
     penalty_factor: Optional[List[float]] = None,
     one_hot_encoding: bool = False,
 ) -> Dict[str, Union[List[Any], np.ndarray, pd.DataFrame, csc_matrix, None]]:
@@ -926,7 +928,12 @@ def model_matrix(
 
 
 # TODO: add type hinting
-def qcut(s, q, duplicates: str = "drop", **kwargs):
+def qcut(
+    s: Union[np.ndarray, pd.Series],
+    q: Union[int, float],
+    duplicates: str = "drop",
+    **kwargs: Any,
+) -> Union[np.ndarray, pd.Series]:
     """Discretize variable into equal-sized buckets based quantiles.
     This is a wrapper to pandas qcut function.
 
@@ -939,7 +946,7 @@ def qcut(s, q, duplicates: str = "drop", **kwargs):
     Returns:
         Series of type object with intervals.
     """
-    if s.shape[0] < q:
+    if s.shape[0] < q:  # pyre-ignore[58]: Comparison is valid in practice
         logger.warning("Not quantizing, too few values")
         return s
     else:
@@ -947,8 +954,10 @@ def qcut(s, q, duplicates: str = "drop", **kwargs):
 
 
 def quantize(
-    df: Union[pd.DataFrame, pd.Series], q: int = 10, variables=None
-) -> pd.DataFrame:
+    df: Union[pd.DataFrame, pd.Series],
+    q: int = 10,
+    variables: Optional[List[str]] = None,
+) -> Union[pd.DataFrame, np.ndarray, pd.Series]:
     """Cut numeric variables of a DataFrame into quantiles buckets
 
     Args:
@@ -1038,7 +1047,7 @@ def row_pairwise_diffs(df: pd.DataFrame) -> pd.DataFrame:
     return pd.concat([df] + diffs)
 
 
-def _is_arraylike(o) -> bool:
+def _is_arraylike(o: Any) -> bool:
     """Test (returns True) if an object is an array-ish type (a numpy array, or
     a sequence, but not a string). Not the same as numpy's arraylike,
     which also applies to scalars which can be turned into arrays.
@@ -1081,7 +1090,9 @@ def _process_series_for_missing_mask(series: pd.Series) -> pd.Series:
 
 
 def _safe_replace_and_infer(
-    data: Union[pd.Series, pd.DataFrame], to_replace=None, value=None
+    data: Union[pd.Series, pd.DataFrame],
+    to_replace: Optional[Any] = None,
+    value: Optional[Any] = None,
 ) -> Union[pd.Series, pd.DataFrame]:
     """
     Helper function to safely replace values and infer object dtypes
@@ -1107,7 +1118,7 @@ def _safe_replace_and_infer(
 
 
 def _safe_fillna_and_infer(
-    data: Union[pd.Series, pd.DataFrame], value=None
+    data: Union[pd.Series, pd.DataFrame], value: Optional[Any] = None
 ) -> Union[pd.Series, pd.DataFrame]:
     """
     Helper function to safely fill NaN values and infer object dtypes
@@ -1132,7 +1143,9 @@ def _safe_fillna_and_infer(
 
 
 def _safe_groupby_apply(
-    data: pd.DataFrame, groupby_cols: Union[str, List[str]], apply_func
+    data: pd.DataFrame,
+    groupby_cols: Union[str, List[str]],
+    apply_func: Callable[..., Any],
 ) -> pd.Series:
     """
     Helper function to safely apply groupby operations while handling
@@ -1158,7 +1171,7 @@ def _safe_groupby_apply(
             return data.groupby(groupby_cols).apply(apply_func)
 
 
-def _safe_show_legend(axis):
+def _safe_show_legend(axis: Any) -> None:
     """
     Helper function to safely show legend only if there are labeled artists,
     avoiding matplotlib UserWarning about no artists with labels.
@@ -1171,7 +1184,7 @@ def _safe_show_legend(axis):
         axis.legend()
 
 
-def _safe_divide_with_zero_handling(numerator, denominator):
+def _safe_divide_with_zero_handling(numerator: Any, denominator: Any) -> Any:
     """
     Helper function to safely perform division while handling divide by zero
     warnings with proper numpy error state management.
@@ -1189,7 +1202,7 @@ def _safe_divide_with_zero_handling(numerator, denominator):
         return result
 
 
-def rm_mutual_nas(*args) -> List:
+def rm_mutual_nas(*args: Any) -> List[Any]:
     """
     Remove entries in a position which is na or infinite in any of the arguments.
 
@@ -1333,7 +1346,7 @@ def rm_mutual_nas(*args) -> List:
 #       This would help clarify the logic of each function.
 def choose_variables(
     *dfs: Union[pd.DataFrame, Any],
-    variables: Optional[Union[List, set]] = None,
+    variables: Optional[Union[List[str], set[str]]] = None,
     df_for_var_order: int = 0,
 ) -> List[str]:
     """
@@ -1437,7 +1450,7 @@ def choose_variables(
 
 
 def auto_spread(
-    data: pd.DataFrame, features: Optional[list] = None, id_: str = "id"
+    data: pd.DataFrame, features: Optional[List[str]] = None, id_: str = "id"
 ) -> pd.DataFrame:
     """Automatically transform a 'long' DataFrame into a 'wide' DataFrame
     by guessing which column should be used as a key, treating all
@@ -1496,7 +1509,7 @@ def auto_aggregate(
     # NOTE: we use str as default since using a lambda function directly would make this argument mutable -
     # so if one function call would change it, another function call would get the revised aggfunc argument.
     # Thus, using str is important so to keep our function idempotent.
-    aggfunc: Union[str, Callable] = "sum",
+    aggfunc: Union[str, Callable[..., Any]] = "sum",
 ) -> pd.DataFrame:
     # The default aggregation function is a lambda around sum(x), because as of
     # Pandas 0.22.0, Series.sum of an all-na Series is 0, not nan
@@ -1511,7 +1524,7 @@ def auto_aggregate(
     if isinstance(aggfunc, str):
         if aggfunc == "sum":
 
-            def _f(x):
+            def _f(x: Any) -> int:
                 return sum(x)
 
             aggfunc = _f
@@ -1778,10 +1791,10 @@ class TruncationFormatter(logging.Formatter):
     --- like DataFrames --- whose string representation is very long.
     """
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(TruncationFormatter, self).__init__(*args, **kwargs)
 
-    def format(self, record: logging.LogRecord):
+    def format(self, record: logging.LogRecord) -> str:
         result = super(TruncationFormatter, self).format(record)
         return _truncate_text(result, 2000)
 
@@ -1817,7 +1830,7 @@ def _to_download(
 ################################################################################
 
 
-def _dict_intersect(d: Dict, d_for_keys: Dict) -> Dict:
+def _dict_intersect(d: Dict[Any, Any], d_for_keys: Dict[Any, Any]) -> Dict[Any, Any]:
     """Returns dict 1, but only with the keys that are also in d2
 
     Args:
@@ -1906,7 +1919,7 @@ def _true_false_str_to_bool(x: str) -> bool:
 
 def _are_dtypes_equal(
     dt1: pd.Series, dt2: pd.Series
-) -> Dict[str, Union[bool, pd.Series, set]]:
+) -> Dict[str, Union[bool, pd.Series, set[Any]]]:
     """Returns True if both dtypes are the same and False otherwise.
 
     If dtypes have an unequal set of items, the comparison will only be about the same set of keys.
