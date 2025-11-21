@@ -5,10 +5,10 @@
 
 # pyre-strict
 
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import annotations
 
 import logging
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -29,19 +29,8 @@ logger: logging.Logger = logging.getLogger(__package__)
 
 
 def _prepare_weighted_stat_args(
-    v: Union[
-        List[Any],
-        pd.Series,
-        pd.DataFrame,
-        npt.NDArray,
-        np.matrix,
-    ],
-    w: Union[
-        List[Any],
-        pd.Series,
-        npt.NDArray,
-        None,
-    ] = None,
+    v: list[Any] | pd.Series | pd.DataFrame | npt.NDArray | np.matrix,
+    w: list[Any] | pd.Series | npt.NDArray | None = None,
     inf_rm: bool = False,
 ) -> Tuple[pd.DataFrame, pd.Series]:
     """
@@ -120,18 +109,8 @@ def _prepare_weighted_stat_args(
 
 
 def weighted_mean(
-    v: Union[
-        List[Any],
-        pd.Series,
-        pd.DataFrame,
-        np.matrix,
-    ],
-    w: Union[
-        List[Any],
-        pd.Series,
-        npt.NDArray,
-        None,
-    ] = None,
+    v: list[Any] | pd.Series | pd.DataFrame | np.matrix,
+    w: list[Any] | pd.Series | npt.NDArray | None = None,
     inf_rm: bool = False,
 ) -> pd.Series:
     """
@@ -184,8 +163,8 @@ def weighted_mean(
 
 
 def var_of_weighted_mean(
-    v: Union[List[Any], pd.Series, pd.DataFrame, np.matrix],
-    w: Optional[Union[List[Any], pd.Series, npt.NDArray]] = None,
+    v: list[Any] | pd.Series | pd.DataFrame | np.matrix,
+    w: list[Any] | pd.Series | npt.NDArray | None = None,
     inf_rm: bool = False,
 ) -> pd.Series:
     """
@@ -242,10 +221,10 @@ def var_of_weighted_mean(
 
 
 def ci_of_weighted_mean(
-    v: Union[List[float], pd.Series, pd.DataFrame, npt.NDArray],
-    w: Optional[Union[List[float], pd.Series, npt.NDArray]] = None,
+    v: list[float] | pd.Series | pd.DataFrame | npt.NDArray,
+    w: list[float] | pd.Series | npt.NDArray | None = None,
     conf_level: float = 0.95,
-    round_ndigits: Optional[int] = None,
+    round_ndigits: int | None = None,
     inf_rm: bool = False,
 ) -> pd.Series:
     """
@@ -328,19 +307,8 @@ def ci_of_weighted_mean(
 
 
 def weighted_var(
-    v: Union[
-        List[Any],
-        pd.Series,
-        pd.DataFrame,
-        npt.NDArray,
-        np.matrix,
-    ],
-    w: Union[
-        List[Any],
-        pd.Series,
-        npt.NDArray,
-        None,
-    ] = None,
+    v: list[Any] | pd.Series | pd.DataFrame | npt.NDArray | np.matrix,
+    w: list[Any] | pd.Series | npt.NDArray | None = None,
     inf_rm: bool = False,
 ) -> pd.Series:
     """
@@ -378,18 +346,8 @@ def weighted_var(
 
 
 def weighted_sd(
-    v: Union[
-        List[Any],
-        pd.Series,
-        pd.DataFrame,
-        np.matrix,
-    ],
-    w: Union[
-        List[Any],
-        pd.Series,
-        npt.NDArray,
-        None,
-    ] = None,
+    v: list[Any] | pd.Series | pd.DataFrame | np.matrix,
+    w: list[Any] | pd.Series | npt.NDArray | None = None,
     inf_rm: bool = False,
 ) -> pd.Series:
     """Calculate the sample weighted standard deviation
@@ -408,24 +366,9 @@ def weighted_sd(
 
 
 def weighted_quantile(
-    v: Union[
-        List[Any],
-        pd.Series,
-        pd.DataFrame,
-        npt.NDArray,
-        np.matrix,
-    ],
-    quantiles: Union[
-        List[Any],
-        pd.Series,
-        npt.NDArray,
-    ],
-    w: Union[
-        List[Any],
-        pd.Series,
-        npt.NDArray,
-        None,
-    ] = None,
+    v: list[Any] | pd.Series | pd.DataFrame | npt.NDArray | np.matrix,
+    quantiles: list[Any] | pd.Series | npt.NDArray,
+    w: list[Any] | pd.Series | npt.NDArray | None = None,
     inf_rm: bool = False,
 ) -> pd.DataFrame:
     """
@@ -459,12 +402,7 @@ def weighted_quantile(
 
 def descriptive_stats(
     df: pd.DataFrame,
-    weights: Union[
-        List[Any],
-        pd.Series,
-        npt.NDArray,
-        None,
-    ] = None,
+    weights: list[Any] | pd.Series | npt.NDArray | None = None,
     stat: str = "mean",
     # relevant only if stat is None
     weighted: bool = True,
@@ -620,9 +558,9 @@ def descriptive_stats(
 
 
 def relative_frequency_table(
-    df: Union[pd.DataFrame, pd.Series],
-    column: Optional[str] = None,
-    w: Optional[pd.Series] = None,
+    df: pd.DataFrame | pd.Series,
+    column: str | None = None,
+    w: pd.Series | None = None,
 ) -> pd.DataFrame:
     """Creates a relative frequency table by aggregating over a categorical column (`column`) - optionally weighted by `w`.
     I.e.: produce the proportion (or weighted proportion) of rows that appear in each category, relative to the total number of rows (or sum of weights).

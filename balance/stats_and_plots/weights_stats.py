@@ -5,10 +5,10 @@
 
 # pyre-strict
 
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any
 
 import numpy as np
 import numpy.typing as npt
@@ -23,13 +23,7 @@ logger: logging.Logger = logging.getLogger(__package__)
 
 
 def _check_weights_are_valid(
-    w: Union[
-        List[Any],
-        pd.Series,
-        npt.NDArray,
-        pd.DataFrame,
-        None,
-    ],
+    w: list[Any] | pd.Series | npt.NDArray | pd.DataFrame | None,
 ) -> None:
     """Check weights.
 
@@ -146,16 +140,10 @@ def nonparametric_skew(w: pd.Series) -> float:
 
 def prop_above_and_below(
     w: pd.Series,
-    below: Union[Tuple[float, ...], List[float], None] = (
-        1 / 10,
-        1 / 5,
-        1 / 3,
-        1 / 2,
-        1,
-    ),
-    above: Union[Tuple[float, ...], List[float], None] = (1, 2, 3, 5, 10),
+    below: tuple[float, ...] | list[float] | None = (1 / 10, 1 / 5, 1 / 3, 1 / 2, 1),
+    above: tuple[float, ...] | list[float] | None = (1, 2, 3, 5, 10),
     return_as_series: bool = True,
-) -> Union[pd.Series, Dict[Any, Any], None]:
+) -> pd.Series | dict[Any, Any] | None:
     # TODO (p2): look more in the literature (are there references for using this vs another, or none at all?)
     #            update the doc with insights, once done.
     """
@@ -171,11 +159,11 @@ def prop_above_and_below(
 
     Args:
         w (pd.Series): A pandas series of weights (float, non negative) values.
-        below (Union[Tuple[float, ...], List[float], None], optional):
+        below (tuple[float, ...] | list[float] | None, optional):
             values to check which proportion of normalized weights are *below* them.
             Using None returns None.
             Defaults to (1/10, 1/5, 1/3, 1/2, 1).
-        above (Union[Tuple[float, ...], List[float], None], optional):
+        above (tuple[float, ...] | list[float] | None, optional):
             values to check which proportion of normalized weights are *above* (or equal) to them.
             Using None returns None.
             Defaults to (1, 2, 3, 5, 10).
@@ -184,7 +172,7 @@ def prop_above_and_below(
             Defaults to True.
 
     Returns:
-        Union[pd.Series, Dict]:
+        pd.Series | dict:
         If return_as_series is True we get pd.Series with proportions of (normalized weights)
         that are below/above some numbers, the index indicates which threshold was checked
         (the values in the index are rounded up to 3 points for printing purposes).

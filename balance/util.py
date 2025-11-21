@@ -5,8 +5,9 @@
 
 # pyre-strict
 
-import collections.abc
+from __future__ import annotations
 
+import collections
 import copy
 import logging
 import tempfile
@@ -14,7 +15,7 @@ import uuid
 import warnings
 from functools import reduce
 from itertools import combinations
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -79,7 +80,7 @@ def _isinstance_sample(obj: Any) -> bool:
     return isinstance(obj, sample_class.Sample)
 
 
-def guess_id_column(dataset: pd.DataFrame, column_name: Optional[str] = None) -> str:
+def guess_id_column(dataset: pd.DataFrame, column_name: str | None = None) -> str:
     """
     Guess the id column of a given dataset.
     Possible values for guess: 'id'.
@@ -399,7 +400,7 @@ class one_hot_encoding_greater_2:
 
 
 def process_formula(
-    formula: str, variables: List[str], factor_variables: Optional[List[str]] = None
+    formula: str, variables: list[str], factor_variables: list[str] | None = None
 ) -> ModelDesc:
     """Process a formula string:
         1. Expand .  notation using dot_expansion function
@@ -470,7 +471,7 @@ def process_formula(
 def build_model_matrix(
     df: pd.DataFrame,
     formula: str = ".",
-    factor_variables: Optional[List[str]] = None,
+    factor_variables: List[str] | None = None,
     return_sparse: bool = False,
 ) -> Dict[str, Any]:
     """Build a model matrix from a formula (using patsy.dmatrix)
@@ -579,9 +580,9 @@ def build_model_matrix(
 
 
 def _prepare_input_model_matrix(
-    sample: Union[pd.DataFrame, Any],
-    target: Union[pd.DataFrame, Any, None] = None,
-    variables: Optional[List[str]] = None,
+    sample: pd.DataFrame | Any,
+    target: pd.DataFrame | Any | None = None,
+    variables: List[str] | None = None,
     add_na: bool = True,
     fix_columns_names: bool = True,
 ) -> Dict[str, Any]:
@@ -592,9 +593,9 @@ def _prepare_input_model_matrix(
         - Add na indicator if required.
 
     Args:
-        sample (Union[pd.DataFrame, Any]): This can either be a DataFrame or a Sample object. TODO: add text.
-        target (Union[pd.DataFrame, Any, None], optional): This can either be a DataFrame or a Sample object.. Defaults to None.
-        variables (Optional[List], optional): Defaults to None. TODO: add text.
+        sample (pd.DataFrame | Any): This can either be a DataFrame or a Sample object. TODO: add text.
+        target (pd.DataFrame | Any | None, optional): This can either be a DataFrame or a Sample object.. Defaults to None.
+        variables (List[str] | None, optional): Defaults to None. TODO: add text.
         add_na (bool, optional): Defaults to True. TODO: add text.
         fix_columns_names (bool, optional): Defaults to True. If to fix the column names of the DataFrame by changing special characters to '_'.
 
@@ -685,40 +686,39 @@ def _prepare_input_model_matrix(
 
 
 def model_matrix(
-    sample: Union[pd.DataFrame, Any],
-    target: Union[pd.DataFrame, Any, None] = None,
-    variables: Optional[List[str]] = None,
+    sample: pd.DataFrame | Any,
+    target: pd.DataFrame | Any | None = None,
+    variables: List[str] | None = None,
     add_na: bool = True,
     return_type: str = "two",
     return_var_type: str = "dataframe",
-    formula: Optional[Union[str, List[str]]] = None,
-    penalty_factor: Optional[List[float]] = None,
+    formula: str | List[str] | None = None,
+    penalty_factor: List[float] | None = None,
     one_hot_encoding: bool = False,
-) -> Dict[str, Union[List[Any], np.ndarray, pd.DataFrame, csc_matrix, None]]:
+) -> Dict[str, List[Any] | np.ndarray | pd.DataFrame | csc_matrix | None]:
     """Create a model matrix from a sample (and target).
     The default is to use an additive formula for all variables (or the ones specified).
     Can also create a custom model matrix if a formula is provided.
 
     Args:
-        sample (Union[pd.DataFrame, Any]): The Samples from which to create the model matrix. This can either be a DataFrame or a Sample object.
-        target (Union[pd.DataFrame, Any, None], optional): See sample. Defaults to None. This can either be a DataFrame or a Sample object.
-        variables (Optional[List]): the names of the variables to include (when 'None' then
+        sample (pd.DataFrame | Any): The Samples from which to create the model matrix. This can either be a DataFrame or a Sample object.
+        target (pd.DataFrame | Any | None, optional): See sample. Defaults to None. This can either be a DataFrame or a Sample object.
+        variables (List[str] | None): the names of the variables to include (when 'None' then
             all joint variables to target and sample are used). Defaults to None.
         add_na (bool, optional): whether to call add_na_indicator on the data before constructing
             the matrix.If add_na = True, then the function add_na_indicator is applied,
             i.e. if a column in the DataFrame contains NAs, replace these with 0 or "_NA", and
             add another column of an indicator variable for which rows were NA.
-            If add_na is False, observations with any missing data will be
             omitted from the model. Defaults to True.
         return_type (str, optional): whether to return a single matrix ('one'), or a dict of
             sample and target matrices. Defaults to "two".
         return_var_type (str, optional): whether to return a "dataframe" (pd.dataframe) a "matrix" (np.ndarray)
             (i.e. only values of the output dataframe), or a "sparse" matrix. Defaults to "dataframe".
-        formula (Optional[List[str]], optional): according to what formula to construct the matrix. If no formula is provided an
+        formula (str | List[str] | None, optional): according to what formula to construct the matrix. If no formula is provided an
             additive formula is applied. This may be a string or a list of strings
             representing different parts of the formula that will be concated together.
             Default is None, which will create an additive formula from the available variables. Defaults to None.
-        penalty_factor (Optional[List[float]], optional): the penalty used in the sklearn function in ipw. The penalty
+        penalty_factor (List[float] | None, optional): the penalty used in the sklearn function in ipw. The penalty
             should have the same length as the formula list. If not provided,
             assume the same penalty for all variables. Defaults to None.
         one_hot_encoding (bool, optional): whether to encode all factor variables in the model matrix with
@@ -730,7 +730,7 @@ def model_matrix(
             and only 1 column for variables with 2 levels (treatment contrast). Defaults to False.
 
     Returns:
-        Dict[str, Union[List[Any], np.ndarray, pd.DataFrame, csc_matrix, None]]
+        Dict[str, List[Any] | np.ndarray | pd.DataFrame | csc_matrix | None]
             a dict of:
                 1. "model_matrix_columns_names": columns names of the model matrix
                 2. "penalty_factor ": a penalty_factor for each column in the model matrix
@@ -929,11 +929,11 @@ def model_matrix(
 
 # TODO: add type hinting
 def qcut(
-    s: Union[np.ndarray, pd.Series],
-    q: Union[int, float],
+    s: np.ndarray | pd.Series,
+    q: int | float,
     duplicates: str = "drop",
     **kwargs: Any,
-) -> Union[np.ndarray, pd.Series]:
+) -> np.ndarray | pd.Series:
     """Discretize variable into equal-sized buckets based quantiles.
     This is a wrapper to pandas qcut function.
 
@@ -954,10 +954,10 @@ def qcut(
 
 
 def quantize(
-    df: Union[pd.DataFrame, pd.Series],
+    df: pd.DataFrame | pd.Series,
     q: int = 10,
-    variables: Optional[List[str]] = None,
-) -> Union[pd.DataFrame, np.ndarray, pd.Series]:
+    variables: List[str] | None = None,
+) -> pd.DataFrame | np.ndarray | pd.Series:
     """Cut numeric variables of a DataFrame into quantiles buckets
 
     Args:
@@ -1090,10 +1090,10 @@ def _process_series_for_missing_mask(series: pd.Series) -> pd.Series:
 
 
 def _safe_replace_and_infer(
-    data: Union[pd.Series, pd.DataFrame],
-    to_replace: Optional[Any] = None,
-    value: Optional[Any] = None,
-) -> Union[pd.Series, pd.DataFrame]:
+    data: pd.Series | pd.DataFrame,
+    to_replace: Any | None = None,
+    value: Any | None = None,
+) -> pd.Series | pd.DataFrame:
     """
     Helper function to safely replace values and infer object dtypes
     while avoiding pandas deprecation warnings.
@@ -1118,8 +1118,8 @@ def _safe_replace_and_infer(
 
 
 def _safe_fillna_and_infer(
-    data: Union[pd.Series, pd.DataFrame], value: Optional[Any] = None
-) -> Union[pd.Series, pd.DataFrame]:
+    data: pd.Series | pd.DataFrame, value: Any | None = None
+) -> pd.Series | pd.DataFrame:
     """
     Helper function to safely fill NaN values and infer object dtypes
     while avoiding pandas deprecation warnings.
@@ -1144,7 +1144,7 @@ def _safe_fillna_and_infer(
 
 def _safe_groupby_apply(
     data: pd.DataFrame,
-    groupby_cols: Union[str, List[str]],
+    groupby_cols: str | List[str],
     apply_func: Callable[..., Any],
 ) -> pd.Series:
     """
@@ -1310,7 +1310,7 @@ def rm_mutual_nas(*args: Any) -> List[Any]:
     )
     nonmissing_mask = ~missing_mask
 
-    def _return_type_creation_function(x: Any) -> Union[Callable, Any]:
+    def _return_type_creation_function(x: Any) -> Callable | Any:
         # The numpy.ndarray constructor doesn't take the same arguments as np.array
         if isinstance(x, np.ndarray):
             return lambda obj: np.array(obj, dtype=x.dtype)
@@ -1345,8 +1345,8 @@ def rm_mutual_nas(*args: Any) -> List[Any]:
 # TODO: (p2) create choose_variables_df that only works with pd.DataFrames as input, and wrap it with something that deals with Sample.
 #       This would help clarify the logic of each function.
 def choose_variables(
-    *dfs: Union[pd.DataFrame, Any],
-    variables: Optional[Union[List[str], set[str]]] = None,
+    *dfs: pd.DataFrame | Any,
+    variables: List[str] | set[str] | None = None,
     df_for_var_order: int = 0,
 ) -> List[str]:
     """
@@ -1358,8 +1358,8 @@ def choose_variables(
              1 means the order from the second df, etc.
 
     Args:
-         *dfs (Union[pd.DataFrame, Any]): One or more pandas.DataFrames or balance.Samples.
-         variables (Optional[Union[List, set]]): The variables to choose from. If None, returns all joint variables found
+         *dfs (pd.DataFrame | Any): One or more pandas.DataFrames or balance.Samples.
+         variables (List[str] | set[str] | None): The variables to choose from. If None, returns all joint variables found
              in the input dataframes. Defaults to None.
          df_for_var_order (int): Index of the dataframe used to determine the order of the variables in the output list.
              Defaults to 0. This is used only if the `variables` argument is not a list (e.g.: a set or None).
@@ -1450,7 +1450,7 @@ def choose_variables(
 
 
 def auto_spread(
-    data: pd.DataFrame, features: Optional[List[str]] = None, id_: str = "id"
+    data: pd.DataFrame, features: List[str] | None = None, id_: str = "id"
 ) -> pd.DataFrame:
     """Automatically transform a 'long' DataFrame into a 'wide' DataFrame
     by guessing which column should be used as a key, treating all
@@ -1509,7 +1509,7 @@ def auto_aggregate(
     # NOTE: we use str as default since using a lambda function directly would make this argument mutable -
     # so if one function call would change it, another function call would get the revised aggfunc argument.
     # Thus, using str is important so to keep our function idempotent.
-    aggfunc: Union[str, Callable[..., Any]] = "sum",
+    aggfunc: str | Callable[..., Any] = "sum",
 ) -> pd.DataFrame:
     # The default aggregation function is a lambda around sum(x), because as of
     # Pandas 0.22.0, Series.sum of an all-na Series is 0, not nan
@@ -1804,7 +1804,7 @@ class TruncationFormatter(logging.Formatter):
 ################################################################################
 def _to_download(
     df: pd.DataFrame,
-    tempdir: Optional[str] = None,
+    tempdir: str | None = None,
 ) -> FileLink:
     """Creates a downloadable link of the DataFrame (df).
 
@@ -1812,7 +1812,7 @@ def _to_download(
 
     Args:
         self (BalanceDF): Object.
-        tempdir (Optional[str], optional): Defaults to None (which then uses a temporary folder using :func:`tempfile.gettempdir`).
+        tempdir (str | None, optional): Defaults to None (which then uses a temporary folder using :func:`tempfile.gettempdir`).
 
     Returns:
         FileLink: Embedding a local file link in an IPython session, based on path. Using :func:FileLink.
@@ -1919,7 +1919,7 @@ def _true_false_str_to_bool(x: str) -> bool:
 
 def _are_dtypes_equal(
     dt1: pd.Series, dt2: pd.Series
-) -> Dict[str, Union[bool, pd.Series, set[Any]]]:
+) -> Dict[str, bool | pd.Series | set[Any]]:
     """Returns True if both dtypes are the same and False otherwise.
 
     If dtypes have an unequal set of items, the comparison will only be about the same set of keys.

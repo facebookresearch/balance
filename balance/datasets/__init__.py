@@ -5,8 +5,10 @@
 
 # pyre-strict
 
+from __future__ import annotations
+
 import pathlib
-from typing import Literal, Optional, Tuple
+from typing import Literal, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -22,7 +24,7 @@ import pandas as pd
 # TODO: add tests
 def load_sim_data(
     version: str = "01",
-) -> Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame]]:
+) -> Tuple[pd.DataFrame | None, pd.DataFrame | None]:
     """Load simulated data for target and sample of interest
 
     Version 01 returns two dataframes containing the columns gender ("Male", "Female" and nan),
@@ -114,7 +116,7 @@ def load_sim_data(
 
 
 # TODO: add tests
-def load_cbps_data() -> Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame]]:
+def load_cbps_data() -> Tuple[pd.DataFrame | None, pd.DataFrame | None]:
     """Load simulated data for CBPS comparison with R
 
     The code in balance that implements CBPS attempts to mimic the code from the R package CBPS (https://cran.r-project.org/web/packages/CBPS/).
@@ -128,7 +130,7 @@ def load_cbps_data() -> Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame]]:
     And when the `treat` variable is 1, the row belongs to target.
 
     Returns:
-        Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame]]: Two DataFrames containing simulated data for the target and sample of interest.
+        Tuple[pd.DataFrame | None, pd.DataFrame | None]: Two DataFrames containing simulated data for the target and sample of interest.
 
     Example:
         ::
@@ -169,7 +171,7 @@ def load_cbps_data() -> Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame]]:
 
 def load_data(
     source: Literal["sim_data_01", "sim_data_cbps"] = "sim_data_01",
-) -> Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame]]:
+) -> Tuple[pd.DataFrame | None, pd.DataFrame | None]:
     """Returns a tuple of two DataFrames containing simulated data.
 
     To learn more about each dataset, please refer to their help pages:

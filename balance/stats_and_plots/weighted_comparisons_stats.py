@@ -5,12 +5,12 @@
 
 # pyre-strict
 
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import annotations
 
 import collections
 import logging
 import re
-from typing import List, Literal, Union
+from typing import List, Literal
 
 import numpy as np
 import numpy.typing as npt
@@ -121,18 +121,8 @@ def _weights_per_covars_names(covar_names: List[str]) -> pd.DataFrame:
 def asmd(
     sample_df: pd.DataFrame,
     target_df: pd.DataFrame,
-    sample_weights: Union[
-        List[float],
-        pd.Series,
-        npt.NDArray,
-        None,
-    ] = None,
-    target_weights: Union[
-        List[float],
-        pd.Series,
-        npt.NDArray,
-        None,
-    ] = None,
+    sample_weights: list[float] | pd.Series | npt.NDArray | None = None,
+    target_weights: list[float] | pd.Series | npt.NDArray | None = None,
     std_type: Literal["target", "sample", "pooled"] = "target",
     aggregate_by_main_covar: bool = False,
 ) -> pd.Series:
@@ -367,24 +357,9 @@ def asmd_improvement(
     sample_before: pd.DataFrame,
     sample_after: pd.DataFrame,
     target: pd.DataFrame,
-    sample_before_weights: Union[
-        List[float],
-        pd.Series,
-        npt.NDArray,
-        None,
-    ] = None,
-    sample_after_weights: Union[
-        List[float],
-        pd.Series,
-        npt.NDArray,
-        None,
-    ] = None,
-    target_weights: Union[
-        List[float],
-        pd.Series,
-        npt.NDArray,
-        None,
-    ] = None,
+    sample_before_weights: list[float] | pd.Series | npt.NDArray | None = None,
+    sample_after_weights: list[float] | pd.Series | npt.NDArray | None = None,
+    target_weights: list[float] | pd.Series | npt.NDArray | None = None,
 ) -> np.float64:
     """Calculates the improvement in mean(asmd) from before to after applying some weight adjustment.
 
@@ -400,6 +375,7 @@ def asmd_improvement(
     Returns:
         np.float64: The improvement is taking the (before_mean_asmd-after_mean_asmd)/before_mean_asmd.
         The asmd is calculated using :func:`asmd`.
+        Returns 0.0 when asmd_mean_before is zero or very close to zero (< 1e-10).
     """
     asmd_mean_before = asmd(
         sample_before, target, sample_before_weights, target_weights
@@ -407,24 +383,19 @@ def asmd_improvement(
     asmd_mean_after = asmd(
         sample_after, target, sample_after_weights, target_weights
     ).loc["mean(asmd)"]
+
+    # Avoid division by zero when asmd_mean_before is zero or very close to zero
+    if np.abs(asmd_mean_before) < 1e-10:
+        return np.float64(0.0)
+
     return (asmd_mean_before - asmd_mean_after) / asmd_mean_before
 
 
 def outcome_variance_ratio(
     df_numerator: pd.DataFrame,
     df_denominator: pd.DataFrame,
-    w_numerator: Union[
-        List[float],
-        pd.Series,
-        npt.NDArray,
-        None,
-    ] = None,
-    w_denominator: Union[
-        List[float],
-        pd.Series,
-        npt.NDArray,
-        None,
-    ] = None,
+    w_numerator: list[float] | pd.Series | npt.NDArray | None = None,
+    w_denominator: list[float] | pd.Series | npt.NDArray | None = None,
 ) -> pd.Series:
     """Calculate ratio of weighted variances of two DataFrames
 

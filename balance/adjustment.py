@@ -5,11 +5,11 @@
 
 # pyre-strict
 
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import annotations
 
 import logging
 
-from typing import Any, Callable, Dict, List, Literal, Tuple, Union
+from typing import Any, Callable, Dict, Literal, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -38,9 +38,7 @@ BALANCE_WEIGHTING_METHODS: Dict[str, Callable[..., Any]] = {
 }
 
 
-def _validate_limit(
-    limit: Union[float, int, None], n_weights: int
-) -> Union[float, None]:
+def _validate_limit(limit: float | int | None, n_weights: int) -> float | None:
     """Validate and adjust a percentile limit for use with scipy.stats.mstats.winsorize.
 
     This function prepares percentile limits for winsorization by:
@@ -88,13 +86,13 @@ def _validate_limit(
 
 
 def trim_weights(
-    weights: Union[pd.Series, npt.NDArray],
+    weights: pd.Series | npt.NDArray,
     # TODO: add support to more types of input weights? (e.g. list? other?)
-    weight_trimming_mean_ratio: Union[float, int, None] = None,
-    weight_trimming_percentile: Union[float, None] = None,
+    weight_trimming_mean_ratio: float | int | None = None,
+    weight_trimming_percentile: float | None = None,
     verbose: bool = False,
     keep_sum_of_weights: bool = True,
-    target_sum_weights: Union[float, int, np.floating, None] = None,
+    target_sum_weights: float | int | np.floating | None = None,
 ) -> pd.Series:
     """Trim extreme weights using mean ratio clipping or percentile-based winsorization.
 
@@ -132,22 +130,22 @@ def trim_weights(
     desired total.
 
     Args:
-        weights (Union[pd.Series, np.ndarray]): Weights to trim. np.ndarray will be
+        weights (pd.Series | np.ndarray): Weights to trim. np.ndarray will be
             converted to pd.Series internally.
-        weight_trimming_mean_ratio (Union[float, int], optional): Ratio for upper bound
+        weight_trimming_mean_ratio (float | int | None, optional): Ratio for upper bound
             clipping as mean(weights) * ratio. Mutually exclusive with
             weight_trimming_percentile. Defaults to None.
-        weight_trimming_percentile (Union[float, Tuple[float, float]], optional):
+        weight_trimming_percentile (float | tuple[float, float] | None, optional):
             Percentile limits for winsorization. Value(s) must be between 0 and 1.
             - Single float: Symmetric winsorization on both tails
-            - Tuple[float, float]: (lower_percentile, upper_percentile) for
+            - tuple[float, float]: (lower_percentile, upper_percentile) for
               independent control of each tail
             Mutually exclusive with weight_trimming_mean_ratio. Defaults to None.
         verbose (bool, optional): Whether to log details about the trimming process.
             Defaults to False.
         keep_sum_of_weights (bool, optional): Whether to rescale weights after trimming
             to preserve the original sum of weights. Defaults to True.
-        target_sum_weights (Union[float, int, np.floating, None], optional): If
+        target_sum_weights (float | int | np.floating | None, optional): If
             provided, rescale the trimmed weights so their sum equals this
             target. ``None`` (default) leaves the post-trimming sum unchanged.
 
@@ -309,14 +307,14 @@ def trim_weights(
 
 
 def default_transformations(
-    dfs: Union[Tuple[pd.DataFrame, ...], List[pd.DataFrame]],
+    dfs: tuple[pd.DataFrame, ...] | list[pd.DataFrame],
 ) -> Dict[str, Callable[..., Any]]:
     """
     Apply default transformations to dfs, i.e.
     quantize to numeric columns and fct_lump to non-numeric and boolean
 
     Args:
-        dfs (Union[Tuple[pd.DataFrame, ...], List[pd.DataFrame]]): A list or tuple of dataframes
+        dfs (tuple[pd.DataFrame, ...] | list[pd.DataFrame]): A list or tuple of dataframes
 
     Returns:
         Dict[str, Callable]: Dict of transformations
@@ -339,7 +337,7 @@ def default_transformations(
 
 def apply_transformations(
     dfs: Tuple[pd.DataFrame, ...],
-    transformations: Union[Dict[str, Callable[..., Any]], str, None],
+    transformations: Dict[str, Callable[..., Any]] | str | None,
     drop: bool = True,
 ) -> Tuple[pd.DataFrame, ...]:
     """Apply the transformations specified in transformations to all of the dfs
@@ -357,7 +355,7 @@ def apply_transformations(
 
     Args:
         dfs (Tuple[pd.DataFrame, ...]): The DataFrames on which to operate
-        transformations (Union[Dict[str, Callable], str, None]): Mapping from column name to function to apply.
+        transformations (Dict[str, Callable[..., Any]] | str | None): Mapping from column name to function to apply.
             Transformations of existing columns should be specified as functions
             of those columns (e.g. `lambda x: x*2`), whereas additions of new
             columns should be specified as functions of the DataFrame

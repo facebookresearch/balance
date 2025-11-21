@@ -5,7 +5,7 @@
 
 # pyre-strict
 
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import annotations
 
 import inspect
 import json
@@ -14,7 +14,7 @@ import logging
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Tuple, Type
 
 import balance
 
@@ -31,21 +31,21 @@ class BalanceCLI:
         self.args: Namespace = args
 
         # Create attributes (to be populated later, which will be used in main)
-        self._transformations: Union[Dict[str, Any], str, None] = None
-        self._formula: Optional[str] = None
+        self._transformations: Dict[str, Any] | str | None = None
+        self._formula: str | None = None
         self._penalty_factor: None = None
         self._one_hot_encoding: bool = False
-        self._max_de: Optional[float] = None
-        self._lambda_min: Optional[float] = None
-        self._lambda_max: Optional[float] = None
-        self._num_lambdas: Optional[int] = None
+        self._max_de: float | None = None
+        self._lambda_min: float | None = None
+        self._lambda_max: float | None = None
+        self._num_lambdas: int | None = None
         self._weight_trimming_mean_ratio: float = 20.0
-        self._logistic_regression_kwargs: Optional[Dict[str, Any]] = None
+        self._logistic_regression_kwargs: Dict[str, Any] | None = None
         self._sample_cls: Type[balance_sample_cls] = balance_sample_cls
         self._sample_package_name: str = __package__
         self._sample_package_version: str = __version__
 
-    def check_input_columns(self, columns: Union[List[str], pd.Index]) -> None:
+    def check_input_columns(self, columns: List[str] | pd.Index) -> None:
         needed_columns = []
         needed_columns.append(self.sample_column())
         needed_columns.append(self.id_column())
@@ -95,7 +95,7 @@ class BalanceCLI:
     def has_keep_columns(self) -> bool:
         return self.args.keep_columns is not None
 
-    def keep_columns(self) -> Optional[List[str]]:
+    def keep_columns(self) -> list[str] | None:
         if self.args.keep_columns:
             return self.args.keep_columns.split(",")
         return None
@@ -106,30 +106,30 @@ class BalanceCLI:
     def keep_row_column(self) -> str:
         return self.args.keep_row_column
 
-    def max_de(self) -> Optional[float]:
+    def max_de(self) -> float | None:
         return self.args.max_de
 
-    def lambda_min(self) -> Optional[float]:
+    def lambda_min(self) -> float | None:
         return self.args.lambda_min
 
-    def lambda_max(self) -> Optional[float]:
+    def lambda_max(self) -> float | None:
         return self.args.lambda_max
 
-    def num_lambdas(self) -> Optional[int]:
+    def num_lambdas(self) -> int | None:
         if self.args.num_lambdas is None:
             return None
         return int(self.args.num_lambdas)
 
-    def transformations(self) -> Optional[str]:
+    def transformations(self) -> str | None:
         if (self.args.transformations is None) or (self.args.transformations == "None"):
             return None
         else:
             return self.args.transformations
 
-    def formula(self) -> Optional[str]:
+    def formula(self) -> str | None:
         return self.args.formula
 
-    def one_hot_encoding(self) -> Optional[bool]:
+    def one_hot_encoding(self) -> bool | None:
         return balance.util._true_false_str_to_bool(self.args.one_hot_encoding)
 
     def standardize_types(self) -> bool:
@@ -138,7 +138,7 @@ class BalanceCLI:
     def weight_trimming_mean_ratio(self) -> float:
         return self.args.weight_trimming_mean_ratio
 
-    def logistic_regression_kwargs(self) -> Optional[Dict[str, Any]]:
+    def logistic_regression_kwargs(self) -> Dict[str, Any] | None:
         raw_kwargs = self.args.ipw_logistic_regression_kwargs
         if raw_kwargs is None:
             return None
@@ -166,16 +166,16 @@ class BalanceCLI:
     def process_batch(
         self,
         batch_df: pd.DataFrame,
-        transformations: Union[Dict[str, Any], str, None] = "default",
-        formula: Optional[str] = None,
+        transformations: Dict[str, Any] | str | None = "default",
+        formula: str | None = None,
         penalty_factor: None = None,
         one_hot_encoding: bool = False,
-        max_de: Optional[float] = 1.5,
-        lambda_min: Optional[float] = 1e-05,
-        lambda_max: Optional[float] = 10,
-        num_lambdas: Optional[int] = 250,
+        max_de: float | None = 1.5,
+        lambda_min: float | None = 1e-05,
+        lambda_max: float | None = 10,
+        num_lambdas: int | None = 250,
         weight_trimming_mean_ratio: float = 20,
-        logistic_regression_kwargs: Optional[Dict[str, Any]] = None,
+        logistic_regression_kwargs: Dict[str, Any] | None = None,
         sample_cls: Type[balance_sample_cls] = balance_sample_cls,
         sample_package_name: str = __package__,
     ) -> Dict[str, pd.DataFrame]:
@@ -554,7 +554,7 @@ class BalanceCLI:
         self.write_outputs(output_df, diagnostics_df)
 
 
-def _float_or_none(value: Union[float, int, str, None]) -> Optional[float]:
+def _float_or_none(value: float | int | str | None) -> float | None:
     """Return a float (if float or int) or None if it's None or "None"
 
     This is so as to be clear that some input returned type is float or None.
