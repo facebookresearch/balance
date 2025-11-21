@@ -1,4 +1,4 @@
-# 0.12.x (2025-11-16)
+# 0.12.x (2025-11-21)
 
 > TODO: update 0.12.x to 0.13.0 before release.
 
@@ -65,6 +65,25 @@
     (`weighting_methods/cbps.py`, `weighting_methods/ipw.py`,
     `weighting_methods/poststratify.py`, `weighting_methods/rake.py`), and
     datasets module (`datasets/__init__.py`)
+  - **Modernized type hints to PEP 604 syntax**: Updated all type annotations
+    across 11 files to use the newer PEP 604 union syntax (`X | Y` instead of
+    `Union[X, Y]` and `X | None` instead of `Optional[X]`), improving code
+    readability and aligning with Python 3.10+ typing conventions. Updated
+    `from __future__ import` statements to use `annotations` instead of the
+    older `absolute_import, division, print_function, unicode_literals`.
+    Removed unnecessary `Union` and `Optional` imports from `typing`. Files
+    updated: `__init__.py`, `adjustment.py`, `balancedf_class.py`, `cli.py`,
+    `datasets/__init__.py`, `sample_class.py`,
+    `stats_and_plots/weighted_comparisons_stats.py`,
+    `stats_and_plots/weighted_stats.py`, `stats_and_plots/weights_stats.py`,
+    `util.py`, `weighting_methods/ipw.py`.
+  - **Important compatibility note**:
+    Type alias definitions in `typing.py` retain `Union` syntax for Python 3.9
+    compatibility, as the `|` operator for type aliases only works at runtime
+    in Python 3.10+. Added comprehensive inline documentation explaining this
+    limitation and the distinction between type annotations (which support `|`
+    with `from __future__ import annotations`) and type alias assignments
+    (which require `Union` for runtime evaluation in Python 3.9).
   - Fixed missing `Any` import in `weighted_comparisons_plots.py` to resolve
     pyre-fixme[10] error
   - Added comprehensive type annotations for previously untyped parameters and
@@ -79,6 +98,13 @@
   - Improved `quantize` function: preserves column ordering and replaces
     assertions with proper TypeError exceptions
     ([#133](https://github.com/facebookresearch/balance/pull/133)).
+- **Statistical Functions**
+  - **Fixed division by zero in `asmd_improvement()`**: Added safety check to
+    prevent RuntimeWarning when `asmd_mean_before` is zero or very close to zero
+    (< 1e-10). The function now returns `0.0` (representing 0% improvement) when
+    the sample was already perfectly matched to the target before adjustment,
+    which is the semantically correct result. This eliminates the "invalid value
+    encountered in scalar divide" warning that appeared in test runs.
 - **Weighting Methods**
   - `rake()` and `poststratify()` now honour `weight_trimming_mean_ratio` and
     `weight_trimming_percentile`, trimming and renormalising weights through the

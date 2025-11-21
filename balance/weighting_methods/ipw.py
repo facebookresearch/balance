@@ -5,12 +5,11 @@
 
 # pyre-strict
 
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import annotations
 
 import copy
 import logging
-
-from typing import Any, cast, Dict, List, Optional, Tuple, Union
+from typing import Any, cast, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -36,7 +35,7 @@ logger: logging.Logger = logging.getLogger(__package__)
 # TODO: Improve interpretability of model coefficients, as variables are no longer zero-centered.
 def model_coefs(
     model: ClassifierMixin,
-    feature_names: Optional[List[str]] = None,
+    feature_names: list[str] | None = None,
 ) -> Dict[str, Any]:
     """Extract coefficient-like information from sklearn classifiers.
 
@@ -106,7 +105,7 @@ def _compute_deviance(
     y: np.ndarray,
     pred: np.ndarray,
     model_weights: np.ndarray,
-    labels: Optional[List[int]] = None,
+    labels: list[int] | None = None,
 ) -> float:
     """Compute deviance (2 * log loss).
 
@@ -216,8 +215,8 @@ def weights_from_link(
     balance_classes: bool,
     sample_weights: pd.Series,
     target_weights: pd.Series,
-    weight_trimming_mean_ratio: Union[None, float, int] = None,
-    weight_trimming_percentile: Optional[float] = None,
+    weight_trimming_mean_ratio: None | float | int = None,
+    weight_trimming_percentile: float | None = None,
     keep_sum_of_weights: bool = True,
 ) -> pd.Series:
     """Transform link predictions into weights, by exponentiating them, and optionally balancing the classes and trimming
@@ -398,7 +397,7 @@ def ipw(
     sample_weights: pd.Series,
     target_df: pd.DataFrame,
     target_weights: pd.Series,
-    variables: Optional[List[str]] = None,
+    variables: list[str] | None = None,
     # TODO: change 'model' to be Union[Optional[ClassifierMixin], str]
     #       in which the default will be
     # LogisticRegression(
@@ -412,23 +411,23 @@ def ipw(
     # a user could then just update the LogisticRegression by providing a different LogisticRegression implementation
     # Or any other sklearn classifier (e.g. RandomForestClassifier)
     model: str = "sklearn",
-    weight_trimming_mean_ratio: Optional[Union[int, float]] = 20,
-    weight_trimming_percentile: Optional[float] = None,
+    weight_trimming_mean_ratio: int | float | None = 20,
+    weight_trimming_percentile: float | None = None,
     balance_classes: bool = True,
     transformations: str = "default",
     na_action: str = "add_indicator",
-    max_de: Optional[float] = None,
+    max_de: float | None = None,
     lambda_min: float = 1e-05,
     lambda_max: float = 10,
     num_lambdas: int = 250,
-    formula: Union[str, List[str], None] = None,
-    penalty_factor: Optional[List[float]] = None,
+    formula: str | list[str] | None = None,
+    penalty_factor: list[float] | None = None,
     one_hot_encoding: bool = False,
     # TODO: This is set to be false in order to keep reproducibility of works that uses balance.
     # The best practice is for this to be true.
-    logistic_regression_kwargs: Optional[Dict[str, Any]] = None,
+    logistic_regression_kwargs: Dict[str, Any] | None = None,
     random_seed: int = 2020,
-    sklearn_model: Optional[ClassifierMixin] = None,
+    sklearn_model: ClassifierMixin | None = None,
     *args: Any,
     **kwargs: Any,
 ) -> Dict[str, Any]:
@@ -553,9 +552,7 @@ def ipw(
 
     logger.info("Building model matrix")
     # Convert formula to List[str] if it's a single string
-    formula_list: Optional[List[str]] = (
-        [formula] if isinstance(formula, str) else formula
-    )
+    formula_list: list[str] | None = [formula] if isinstance(formula, str) else formula
     model_matrix_output = balance_util.model_matrix(
         sample_df,
         target_df,
@@ -658,8 +655,8 @@ def ipw(
             lr_kwargs.update(logistic_regression_kwargs)
 
         lr = LogisticRegression(**lr_kwargs)
-        fits: List[Optional[ClassifierMixin]] = [None for _ in range(len(lambdas))]
-        links: List[Optional[np.ndarray]] = [None for _ in range(len(lambdas))]
+        fits: list[ClassifierMixin | None] = [None for _ in range(len(lambdas))]
+        links: list[np.ndarray | None] = [None for _ in range(len(lambdas))]
         prop_dev = [np.nan for _ in range(len(lambdas))]
         dev = [np.nan for _ in range(len(lambdas))]
         cv_dev_mean = [np.nan for _ in range(len(lambdas))]
@@ -723,8 +720,8 @@ def ipw(
         X_matrix = _convert_to_dense_array(X_matrix)
 
         lambdas = np.array([np.nan])
-        fits: List[Optional[ClassifierMixin]] = [None]
-        links: List[Optional[np.ndarray]] = [None]
+        fits: list[ClassifierMixin | None] = [None]
+        links: list[np.ndarray | None] = [None]
         prop_dev = [np.nan]
         dev = [np.nan]
         cv_dev_mean = [np.nan]

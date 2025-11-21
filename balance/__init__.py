@@ -5,8 +5,9 @@
 
 # pyre-strict
 
+from __future__ import annotations
+
 import logging
-from typing import Optional
 
 from balance.balancedf_class import (  # noqa
     BalanceCovarsDF,  # noqa
@@ -41,7 +42,7 @@ def help() -> None:
 
 
 def setup_logging(
-    logger_name: Optional[str] = __package__,
+    logger_name: str | None = __package__,
     level: str = "INFO",
     removeHandler: bool = True,
 ) -> logging.Logger:

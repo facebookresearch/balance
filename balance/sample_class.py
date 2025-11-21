@@ -11,7 +11,7 @@ import collections
 import inspect
 import logging
 from copy import deepcopy
-from typing import Any, Callable, Dict, List, Literal, Optional, Union
+from typing import Any, Callable, Dict, List, Literal
 
 import numpy as np
 import pandas as pd
@@ -134,9 +134,9 @@ class Sample:
     def from_frame(
         cls: type["Sample"],
         df: pd.DataFrame,
-        id_column: Optional[str] = None,
-        outcome_columns: Optional[Union[List[str], tuple[str, ...], str]] = None,
-        weight_column: Optional[str] = None,
+        id_column: str | None = None,
+        outcome_columns: List[str] | tuple[str, ...] | str | None = None,
+        weight_column: str | None = None,
         check_id_uniqueness: bool = True,
         standardize_types: bool = True,
         use_deepcopy: bool = True,
@@ -157,13 +157,13 @@ class Sample:
 
         Args:
             df (pd.DataFrame): containing the sample's data
-            id_column (Optional, Optional[str]): the column of the df which contains the respondent's id
+            id_column (str | None): the column of the df which contains the respondent's id
             (should be unique). Defaults to None.
-            outcome_columns (Optional, Optional[Union[list, tuple, str]]): names of columns to treat as outcome
-            weight_column (Optional, Optional[str]): name of column to treat as weight. If not specified, will
+            outcome_columns (list | tuple | str | None): names of columns to treat as outcome
+            weight_column (str | None): name of column to treat as weight. If not specified, will
                 be guessed (either "weight" or "weights"). If not found, a new column will be created ("weight") and filled with 1.0.
-            check_id_uniqueness (Optional, bool): Whether to check if ids are unique. Defaults to True.
-            standardize_types (Optional, bool): Whether to standardize types. Defaults to True.
+            check_id_uniqueness (bool): Whether to check if ids are unique. Defaults to True.
+            standardize_types (bool): Whether to standardize types. Defaults to True.
                 Int64/int64 -> float64
                 Int32/int32 -> float64
                 string -> object
@@ -397,7 +397,7 @@ class Sample:
 
     def model(
         self: "Sample",
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Dict[str, Any] | None:
         """
         Returns the name of the model used to adjust Sample if adjusted.
         Otherwise returns None.
@@ -429,10 +429,9 @@ class Sample:
     ############################################
     def adjust(
         self: "Sample",
-        target: Optional["Sample"] = None,
-        method: Union[
-            Literal["cbps", "ipw", "null", "poststratify", "rake"], Callable[..., Any]
-        ] = "ipw",
+        target: "Sample" | None = None,
+        method: Literal["cbps", "ipw", "null", "poststratify", "rake"]
+        | Callable[..., Any] = "ipw",
         *args: Any,
         **kwargs: Any,
     ) -> "Sample":
@@ -441,7 +440,7 @@ class Sample:
         This function returns a new sample.
 
         Args:
-            target (Optional["Sample"]): Second sample object which should be matched.
+            target ("Sample" | None): Second sample object which should be matched.
                 If None, the set target of the object is used for matching.
             method (str): method for adjustment: cbps, ipw, null, poststratify, rake
 
@@ -475,7 +474,7 @@ class Sample:
 
         return new_sample
 
-    def set_weights(self, weights: Optional[Union[pd.Series, float]]) -> None:
+    def set_weights(self, weights: pd.Series | float | None) -> None:
         """
         Adjusting the weights of a Sample object.
         This will overwrite the weight_column of the Sample.
@@ -483,7 +482,7 @@ class Sample:
         (of Sample.df and weights series)
 
         Args:
-            weights (Optional[Union[pd.Series, float]]): Series of weights to add to sample.
+            weights (pd.Series | float | None): Series of weights to add to sample.
                 If None or float values, the same weight (or None) will be assigned to all units.
 
         Returns:
@@ -1095,8 +1094,8 @@ class Sample:
     ############################################
     def keep_only_some_rows_columns(
         self: "Sample",
-        rows_to_keep: Optional[str] = None,
-        columns_to_keep: Optional[List[str]] = None,
+        rows_to_keep: str | None = None,
+        columns_to_keep: List[str] | None = None,
     ) -> "Sample":
         # TODO: split this into two functions (one for rows and one for columns)
         """
@@ -1108,14 +1107,14 @@ class Sample:
 
         Args:
             self (Sample): a sample object (preferably after adjustment)
-            rows_to_keep (Optional[str], optional): A string with a condition to eval (on some of the columns).
+            rows_to_keep (str | None, optional): A string with a condition to eval (on some of the columns).
                 This will run df.eval(rows_to_keep) which will return a pd.Series of bool by which
                 we will filter the Sample object.
                 This effects both the df of covars AND the weights column (weight_column)
                 AND the outcome column (_outcome_columns), AND the id_column column.
                 Input should be a boolean feature, or a condition such as: 'gender == "Female" & age >= 18'.
                 Defaults to None.
-            columns_to_keep (Optional[List[str]], optional): the covariates of interest.
+            columns_to_keep (List[str] | None, optional): the covariates of interest.
                 Defaults to None, which returns all columns.
 
         Returns:
@@ -1181,14 +1180,14 @@ class Sample:
     ################
     # Saving results
     ################
-    def to_download(self, tempdir: Optional[str] = None) -> FileLink:
+    def to_download(self, tempdir: str | None = None) -> FileLink:
         """Creates a downloadable link of the DataFrame of the Sample object.
 
         File name starts with tmp_balance_out_, and some random file name (using :func:`uuid.uuid4`).
 
         Args:
             self (Sample): Object.
-            tempdir (Optional[str], optional): Defaults to None (which then uses a temporary folder using :func:`tempfile.gettempdir`).
+            tempdir (str | None, optional): Defaults to None (which then uses a temporary folder using :func:`tempfile.gettempdir`).
 
         Returns:
             FileLink: Embedding a local file link in an IPython session, based on path. Using :func:FileLink.
@@ -1196,8 +1195,8 @@ class Sample:
         return balance_util._to_download(self.df, tempdir)
 
     def to_csv(
-        self, path_or_buf: Optional[FilePathOrBuffer] = None, **kwargs: Any
-    ) -> Optional[str]:
+        self, path_or_buf: FilePathOrBuffer | None = None, **kwargs: Any
+    ) -> str | None:
         """Write df with ids from BalanceDF to a comma-separated values (csv) file.
 
         Uses :func:`pd.DataFrame.to_csv`.
@@ -1206,10 +1205,10 @@ class Sample:
 
         Args:
             self: Object.
-            path_or_buf (Optional[FilePathOrBuffer], optional): location where to save the csv.
+            path_or_buf (FilePathOrBuffer | None, optional): location where to save the csv.
 
         Returns:
-            Optional[str]: If path_or_buf is None, returns the resulting csv format as a string. Otherwise returns None.
+            str | None: If path_or_buf is None, returns the resulting csv format as a string. Otherwise returns None.
         """
         if "index" not in kwargs:
             kwargs["index"] = False

@@ -5,8 +5,10 @@
 
 # pyre-strict
 
+from __future__ import annotations
+
 import logging
-from typing import Any, Dict, Literal, Optional, Tuple, Union
+from typing import Any, Dict, Literal, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -106,14 +108,14 @@ class BalanceDF:
     @property
     def _weights(
         self: "BalanceDF",
-    ) -> Optional[pd.DataFrame]:
+    ) -> pd.DataFrame | None:
         """Access the weight_column in __sample.
 
         Args:
             self (BalanceDF): Object
 
         Returns:
-            Optional[pd.DataFrame]: The weights (with no column name)
+            pd.DataFrame | None: The weights (with no column name)
         """
         w = self._sample.weight_column
         return w.rename(None)
@@ -123,13 +125,11 @@ class BalanceDF:
         self: "BalanceDF",
     ) -> Dict[
         str,
-        Union[
-            "BalanceDF",
-            "BalanceCovarsDF",
-            "BalanceWeightsDF",
-            "BalanceOutcomesDF",
-            None,
-        ],
+        "BalanceDF"
+        | "BalanceCovarsDF"
+        | "BalanceWeightsDF"
+        | "BalanceOutcomesDF"
+        | None,
     ]:
         """Returns a dict with self and the same type of BalanceDF_child when created from the linked samples.
 
@@ -270,13 +270,11 @@ class BalanceDF:
         BalanceDF_child_method = self.__name
         d: Dict[
             str,
-            Union[
-                "BalanceDF",
-                "BalanceCovarsDF",
-                "BalanceWeightsDF",
-                "BalanceOutcomesDF",
-                None,
-            ],
+            "BalanceDF"
+            | "BalanceCovarsDF"
+            | "BalanceWeightsDF"
+            | "BalanceOutcomesDF"
+            | None,
         ] = {"self": self}
         d.update(
             {
@@ -492,7 +490,7 @@ class BalanceDF:
         )
         return wdf
 
-    def to_download(self: "BalanceDF", tempdir: Optional[str] = None) -> FileLink:
+    def to_download(self: "BalanceDF", tempdir: str | None = None) -> FileLink:
         """Creates a downloadable link of the DataFrame, with ids, of the BalanceDF object.
 
         File name starts with tmp_balance_out_, and some random file name (using :func:`uuid.uuid4`).
@@ -1012,7 +1010,7 @@ class BalanceDF:
     # NOTE: Summary could return also an str in case it is overridden in other children's methods.
     def summary(
         self: "BalanceDF", on_linked_samples: bool = True
-    ) -> Union[pd.DataFrame, str]:
+    ) -> pd.DataFrame | str:
         """
         Returns a summary of the BalanceDF object.
 
@@ -1038,14 +1036,14 @@ class BalanceDF:
 
     def _get_df_and_weights(
         self: "BalanceDF",
-    ) -> Tuple[pd.DataFrame, Optional[npt.NDArray]]:
+    ) -> Tuple[pd.DataFrame, npt.NDArray | None]:
         """Extract covars df (after using model_matrix) and weights from a BalanceDF object.
 
         Args:
             self (BalanceDF): Object
 
         Returns:
-            Tuple[pd.DataFrame, Optional[np.ndarray]]:
+            Tuple[pd.DataFrame, np.ndarray | None]:
                 A pd.DataFrame output from running :func:`model_matrix`, and
                 A np.ndarray of weights from :func:`_weights`, or just None (if there are no weights).
         """
@@ -1119,7 +1117,7 @@ class BalanceDF:
     def asmd(
         self: "BalanceDF",
         on_linked_samples: bool = True,
-        target: Optional["BalanceDF"] = None,
+        target: "BalanceDF" | None = None,
         aggregate_by_main_covar: bool = False,
         **kwargs: Any,
     ) -> pd.DataFrame:
@@ -1246,8 +1244,8 @@ class BalanceDF:
 
     def asmd_improvement(
         self: "BalanceDF",
-        unadjusted: Optional["BalanceDF"] = None,
-        target: Optional["BalanceDF"] = None,
+        unadjusted: "BalanceDF" | None = None,
+        target: "BalanceDF" | None = None,
     ) -> np.float64:
         """Calculates the improvement in mean(asmd) from before to after applying some weight adjustment.
 
@@ -1374,10 +1372,10 @@ class BalanceDF:
 
     def to_csv(
         self: "BalanceDF",
-        path_or_buf: Optional[FilePathOrBuffer] = None,
+        path_or_buf: FilePathOrBuffer | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Write df with ids from BalanceDF to a comma-separated values (csv) file.
 
         Uses :func:`pd.DataFrame.to_csv`.
@@ -1414,9 +1412,9 @@ class BalanceOutcomesDF(BalanceDF):
     #       this will also require to update _relative_response_rates a bit.
     def relative_response_rates(
         self: "BalanceOutcomesDF",
-        target: Union[bool, pd.DataFrame] = False,
+        target: bool | pd.DataFrame = False,
         per_column: bool = False,
-    ) -> Optional[pd.DataFrame]:
+    ) -> pd.DataFrame | None:
         """Produces a summary table of number of responses and proportion of completed responses.
 
         See :func:`general_stats.relative_response_rates`.
@@ -1513,7 +1511,7 @@ class BalanceOutcomesDF(BalanceDF):
             self.df, df_target, per_column=per_column
         )
 
-    def target_response_rates(self: "BalanceOutcomesDF") -> Optional[pd.DataFrame]:
+    def target_response_rates(self: "BalanceOutcomesDF") -> pd.DataFrame | None:
         """Calculates relative_response_rates for the target in a Sample object.
 
         See :func:`general_stats.relative_response_rates`.
@@ -1569,7 +1567,7 @@ class BalanceOutcomesDF(BalanceDF):
     #       The BalanceDF.summary method only returns a DataFrame. So it's a question
     #       what is the best way to structure this more generally.
     def summary(
-        self: "BalanceOutcomesDF", on_linked_samples: Optional[bool] = None
+        self: "BalanceOutcomesDF", on_linked_samples: bool | None = None
     ) -> str:
         """Produces summary printable string of a BalanceOutcomesDF object.
 
@@ -1831,8 +1829,8 @@ class BalanceWeightsDF(BalanceDF):
 
     def trim(
         self: "BalanceWeightsDF",
-        ratio: Optional[Union[float, int]] = None,
-        percentile: Optional[float] = None,
+        ratio: float | int | None = None,
+        percentile: float | None = None,
         keep_sum_of_weights: bool = True,
     ) -> None:
         """Trim weights in the sample object.
@@ -1859,7 +1857,7 @@ class BalanceWeightsDF(BalanceDF):
         )
 
     def summary(
-        self: "BalanceWeightsDF", on_linked_samples: Optional[bool] = None
+        self: "BalanceWeightsDF", on_linked_samples: bool | None = None
     ) -> pd.DataFrame:
         """
         Generates a summary of a BalanceWeightsDF object.
