@@ -40,7 +40,7 @@
 <span class="c1"># This source code is licensed under the MIT license found in the</span>
 <span class="c1"># LICENSE file in the root directory of this source tree.</span>
 
-<span class="c1"># pyre-unsafe</span>
+<span class="c1"># pyre-strict</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
@@ -48,7 +48,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
@@ -83,12 +83,19 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># The following attributes are updated when initiating Sample using Sample.from_frame</span>
+    <span class="c1"># pyre-fixme[4]: Attributes are initialized in from_frame()</span>
     <span class="n">_df</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># pyre-fixme[4]: Attributes are initialized in from_frame()</span>
     <span class="n">id_column</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># pyre-fixme[4]: Attributes are initialized in from_frame()</span>
     <span class="n">_outcome_columns</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># pyre-fixme[4]: Attributes are initialized in from_frame()</span>
     <span class="n">weight_column</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># pyre-fixme[4]: Attributes are initialized in from_frame()</span>
     <span class="n">_links</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># pyre-fixme[4]: Attributes are initialized in from_frame()</span>
     <span class="n">_adjustment_model</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># pyre-fixme[4]: Attributes are initialized in from_frame()</span>
     <span class="n">_df_dtypes</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -168,9 +175,9 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">from_frame</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="s2">&quot;Sample&quot;</span><span class="p">],</span>
         <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
-        <span class="n">id_column</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">outcome_columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">weight_column</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">outcome_columns</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">weight_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">check_id_uniqueness</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">standardize_types</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">use_deepcopy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -191,13 +198,13 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            df (pd.DataFrame): containing the sample&#39;s data</span>
-<span class="sd">            id_column (Optional, Optional[str]): the column of the df which contains the respondent&#39;s id</span>
+<span class="sd">            id_column (str | None): the column of the df which contains the respondent&#39;s id</span>
 <span class="sd">            (should be unique). Defaults to None.</span>
-<span class="sd">            outcome_columns (Optional, Optional[Union[list, tuple, str]]): names of columns to treat as outcome</span>
-<span class="sd">            weight_column (Optional, Optional[str]): name of column to treat as weight. If not specified, will</span>
+<span class="sd">            outcome_columns (list | tuple | str | None): names of columns to treat as outcome</span>
+<span class="sd">            weight_column (str | None): name of column to treat as weight. If not specified, will</span>
 <span class="sd">                be guessed (either &quot;weight&quot; or &quot;weights&quot;). If not found, a new column will be created (&quot;weight&quot;) and filled with 1.0.</span>
-<span class="sd">            check_id_uniqueness (Optional, bool): Whether to check if ids are unique. Defaults to True.</span>
-<span class="sd">            standardize_types (Optional, bool): Whether to standardize types. Defaults to True.</span>
+<span class="sd">            check_id_uniqueness (bool): Whether to check if ids are unique. Defaults to True.</span>
+<span class="sd">            standardize_types (bool): Whether to standardize types. Defaults to True.</span>
 <span class="sd">                Int64/int64 -&gt; float64</span>
 <span class="sd">                Int32/int32 -&gt; float64</span>
 <span class="sd">                string -&gt; object</span>
@@ -225,9 +232,7 @@
         <span class="n">id_column</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">guess_id_column</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">id_column</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">id_column</span><span class="p">]</span><span class="o">.</span><span class="n">isnull</span><span class="p">()):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Null values are not allowed in the id_column&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">type</span><span class="p">,</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">id_column</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span> <span class="o">==</span> <span class="p">{</span>  <span class="c1"># pyre-fixme[6] ???</span>
-            <span class="nb">str</span>
-        <span class="p">}:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">id_column</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()):</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Casting id column to string&quot;</span><span class="p">)</span>
             <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">id_column</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">id_column</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
 
@@ -377,7 +382,7 @@
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.outcomes">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">outcomes</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
-    <span class="p">):</span>  <span class="c1"># -&gt; &quot;Optional[Type[BalanceOutcomesDF]]&quot; (not imported due to circular dependency)</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>  <span class="c1"># -&gt; &quot;Optional[Type[BalanceOutcomesDF]]&quot; (not imported due to circular dependency)</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Produce a BalanceOutcomeDF from a Sample object.</span>
 <span class="sd">        See :class:BalanceOutcomesDF.</span>
@@ -401,7 +406,7 @@
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.weights">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">weights</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
-    <span class="p">):</span>  <span class="c1"># -&gt; &quot;Optional[Type[BalanceWeightsDF]]&quot; (not imported due to circular dependency)</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>  <span class="c1"># -&gt; &quot;Optional[Type[BalanceWeightsDF]]&quot; (not imported due to circular dependency)</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Produce a BalanceWeightsDF from a Sample object.</span>
 <span class="sd">        See :class:BalanceWeightsDF.</span>
@@ -422,6 +427,8 @@
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.covars">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">covars</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span>
+        <span class="n">Any</span>
     <span class="p">):</span>  <span class="c1"># -&gt; &quot;Optional[Type[BalanceCovarsDF]]&quot; (not imported due to circular dependency)</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Produce a BalanceCovarsDF from a Sample object.</span>
@@ -443,7 +450,7 @@
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.model">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">model</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the name of the model used to adjust Sample if adjusted.</span>
 <span class="sd">        Otherwise returns None.</span>
@@ -481,19 +488,18 @@
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.adjust">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">adjust</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
-        <span class="n">target</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;Sample&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">method</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
-            <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;cbps&quot;</span><span class="p">,</span> <span class="s2">&quot;ipw&quot;</span><span class="p">,</span> <span class="s2">&quot;null&quot;</span><span class="p">,</span> <span class="s2">&quot;poststratify&quot;</span><span class="p">,</span> <span class="s2">&quot;rake&quot;</span><span class="p">],</span> <span class="n">Callable</span>
-        <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;ipw&quot;</span><span class="p">,</span>
-        <span class="o">*</span><span class="n">args</span><span class="p">,</span>
-        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="n">target</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">method</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;cbps&quot;</span><span class="p">,</span> <span class="s2">&quot;ipw&quot;</span><span class="p">,</span> <span class="s2">&quot;null&quot;</span><span class="p">,</span> <span class="s2">&quot;poststratify&quot;</span><span class="p">,</span> <span class="s2">&quot;rake&quot;</span><span class="p">]</span>
+        <span class="o">|</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;ipw&quot;</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Sample&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Perform adjustment of one sample to match another.</span>
 <span class="sd">        This function returns a new sample.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            target (Optional[&quot;Sample&quot;]): Second sample object which should be matched.</span>
+<span class="sd">            target (&quot;Sample&quot; | None): Second sample object which should be matched.</span>
 <span class="sd">                If None, the set target of the object is used for matching.</span>
 <span class="sd">            method (str): method for adjustment: cbps, ipw, null, poststratify, rake</span>
 
@@ -530,7 +536,7 @@
 
 <div class="viewcode-block" id="Sample.set_weights">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.set_weights">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">set_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="nb">float</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Adjusting the weights of a Sample object.</span>
 <span class="sd">        This will overwrite the weight_column of the Sample.</span>
@@ -538,7 +544,7 @@
 <span class="sd">        (of Sample.df and weights series)</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            weights (Optional[Union[pd.Series, float]]): Series of weights to add to sample.</span>
+<span class="sd">            weights (pd.Series | float | None): Series of weights to add to sample.</span>
 <span class="sd">                If None or float values, the same weight (or None) will be assigned to all units.</span>
 
 <span class="sd">        Returns:</span>
@@ -842,6 +848,12 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            str: a summary description of properties of an adjusted sample.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize variables</span>
+        <span class="n">n_asmd_covars</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">asmd_before</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">asmd_improvement</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">asmd_now</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+
         <span class="c1"># asmd</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">()</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_target</span><span class="p">():</span>
             <span class="n">asmd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">asmd</span><span class="p">()</span>
@@ -880,17 +892,12 @@
 
         <span class="n">out</span> <span class="o">=</span> <span class="p">(</span>
             <span class="p">(</span>
-                <span class="c1"># pyre-fixme[61]: `asmd_improvement` is undefined, or not always</span>
-                <span class="c1">#  defined.</span>
                 <span class="sa">f</span><span class="s2">&quot;Covar ASMD reduction: </span><span class="si">{</span><span class="n">asmd_improvement</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%, design effect: </span><span class="si">{</span><span class="n">design_effect</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">()</span>
                 <span class="k">else</span> <span class="s2">&quot;&quot;</span>
             <span class="p">)</span>
-            <span class="c1"># pyre-fixme[61]: `n_asmd_covars` is undefined, or not always defined.</span>
             <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Covar ASMD (</span><span class="si">{</span><span class="n">n_asmd_covars</span><span class="si">}</span><span class="s2"> variables): &quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_target</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-            <span class="c1"># pyre-fixme[61]: `asmd_before` is undefined, or not always defined.</span>
             <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">asmd_before</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> -&gt; &quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-            <span class="c1"># pyre-fixme[61]: `asmd_now` is undefined, or not always defined.</span>
             <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">asmd_now</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_target</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
             <span class="o">+</span> <span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Model performance: </span><span class="si">{</span><span class="n">model_summary</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -1188,8 +1195,8 @@
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.keep_only_some_rows_columns">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">keep_only_some_rows_columns</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
-        <span class="n">rows_to_keep</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">columns_to_keep</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">rows_to_keep</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">columns_to_keep</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Sample&quot;</span><span class="p">:</span>
         <span class="c1"># TODO: split this into two functions (one for rows and one for columns)</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1201,14 +1208,14 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (Sample): a sample object (preferably after adjustment)</span>
-<span class="sd">            rows_to_keep (Optional[str], optional): A string with a condition to eval (on some of the columns).</span>
+<span class="sd">            rows_to_keep (str | None, optional): A string with a condition to eval (on some of the columns).</span>
 <span class="sd">                This will run df.eval(rows_to_keep) which will return a pd.Series of bool by which</span>
 <span class="sd">                we will filter the Sample object.</span>
 <span class="sd">                This effects both the df of covars AND the weights column (weight_column)</span>
 <span class="sd">                AND the outcome column (_outcome_columns), AND the id_column column.</span>
 <span class="sd">                Input should be a boolean feature, or a condition such as: &#39;gender == &quot;Female&quot; &amp; age &gt;= 18&#39;.</span>
 <span class="sd">                Defaults to None.</span>
-<span class="sd">            columns_to_keep (Optional[List[str]], optional): the covariates of interest.</span>
+<span class="sd">            columns_to_keep (List[str] | None, optional): the covariates of interest.</span>
 <span class="sd">                Defaults to None, which returns all columns.</span>
 
 <span class="sd">        Returns:</span>
@@ -1277,14 +1284,14 @@
     <span class="c1">################</span>
 <div class="viewcode-block" id="Sample.to_download">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.to_download">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">to_download</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tempdir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FileLink</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_download</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tempdir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FileLink</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a downloadable link of the DataFrame of the Sample object.</span>
 
 <span class="sd">        File name starts with tmp_balance_out_, and some random file name (using :func:`uuid.uuid4`).</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (Sample): Object.</span>
-<span class="sd">            tempdir (Optional[str], optional): Defaults to None (which then uses a temporary folder using :func:`tempfile.gettempdir`).</span>
+<span class="sd">            tempdir (str | None, optional): Defaults to None (which then uses a temporary folder using :func:`tempfile.gettempdir`).</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            FileLink: Embedding a local file link in an IPython session, based on path. Using :func:FileLink.</span>
@@ -1295,8 +1302,8 @@
 <div class="viewcode-block" id="Sample.to_csv">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.to_csv">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_csv</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">path_or_buf</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePathOrBuffer</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">path_or_buf</span><span class="p">:</span> <span class="n">FilePathOrBuffer</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Write df with ids from BalanceDF to a comma-separated values (csv) file.</span>
 
 <span class="sd">        Uses :func:`pd.DataFrame.to_csv`.</span>
@@ -1305,10 +1312,10 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            self: Object.</span>
-<span class="sd">            path_or_buf (Optional[FilePathOrBuffer], optional): location where to save the csv.</span>
+<span class="sd">            path_or_buf (FilePathOrBuffer | None, optional): location where to save the csv.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Optional[str]: If path_or_buf is None, returns the resulting csv format as a string. Otherwise returns None.</span>
+<span class="sd">            str | None: If path_or_buf is None, returns the resulting csv format as a string. Otherwise returns None.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="s2">&quot;index&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
             <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;index&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>

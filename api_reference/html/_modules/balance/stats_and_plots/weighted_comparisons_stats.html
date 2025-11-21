@@ -40,14 +40,14 @@
 <span class="c1"># This source code is licensed under the MIT license found in the</span>
 <span class="c1"># LICENSE file in the root directory of this source tree.</span>
 
-<span class="c1"># pyre-unsafe</span>
+<span class="c1"># pyre-strict</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">collections</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">npt</span>
@@ -83,7 +83,7 @@
 <span class="c1">#     return 1 - 2 * np.sqrt(1 / (N - 1) * np.sum((p - np.mean(p)) ** 2))</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_weights_per_covars_names</span><span class="p">(</span><span class="n">covar_names</span><span class="p">:</span> <span class="n">List</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_weights_per_covars_names</span><span class="p">(</span><span class="n">covar_names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
     <span class="c1"># TODO (p2): consider if to give weights that are proportional to the proportion of this covar in the population</span>
     <span class="c1">#           E.g.: if merging varios platforms, maybe if something like windows has very few users, it&#39;s impact on the ASMD</span>
     <span class="c1">#           should be smaller (similar to how kld works).</span>
@@ -160,18 +160,8 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">asmd</span><span class="p">(</span>
     <span class="n">sample_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">target_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
-    <span class="n">sample_weights</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
-        <span class="n">List</span><span class="p">,</span>
-        <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
-        <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
-        <span class="kc">None</span><span class="p">,</span>
-    <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">target_weights</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
-        <span class="n">List</span><span class="p">,</span>
-        <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
-        <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
-        <span class="kc">None</span><span class="p">,</span>
-    <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">sample_weights</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">target_weights</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">std_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="s2">&quot;sample&quot;</span><span class="p">,</span> <span class="s2">&quot;pooled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;target&quot;</span><span class="p">,</span>
     <span class="n">aggregate_by_main_covar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
@@ -386,7 +376,7 @@
     <span class="n">out</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">asmd_series</span><span class="p">,</span> <span class="n">weights</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
     <span class="c1"># Define the apply function for calculating weighted means</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_weighted_mean</span><span class="p">(</span><span class="n">group_data</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_weighted_mean</span><span class="p">(</span><span class="n">group_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="n">values</span> <span class="o">=</span> <span class="n">group_data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>  <span class="c1"># First column contains the ASMD values</span>
         <span class="n">weights</span> <span class="o">=</span> <span class="n">group_data</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
         <span class="k">return</span> <span class="p">((</span><span class="n">values</span> <span class="o">*</span> <span class="n">weights</span><span class="p">)</span> <span class="o">/</span> <span class="n">weights</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
@@ -409,24 +399,9 @@
     <span class="n">sample_before</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">sample_after</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">target</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
-    <span class="n">sample_before_weights</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
-        <span class="n">List</span><span class="p">,</span>
-        <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
-        <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
-        <span class="kc">None</span><span class="p">,</span>
-    <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">sample_after_weights</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
-        <span class="n">List</span><span class="p">,</span>
-        <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
-        <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
-        <span class="kc">None</span><span class="p">,</span>
-    <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">target_weights</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
-        <span class="n">List</span><span class="p">,</span>
-        <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
-        <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
-        <span class="kc">None</span><span class="p">,</span>
-    <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">sample_before_weights</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">sample_after_weights</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">target_weights</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates the improvement in mean(asmd) from before to after applying some weight adjustment.</span>
 
@@ -442,6 +417,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        np.float64: The improvement is taking the (before_mean_asmd-after_mean_asmd)/before_mean_asmd.</span>
 <span class="sd">        The asmd is calculated using :func:`asmd`.</span>
+<span class="sd">        Returns 0.0 when asmd_mean_before is zero or very close to zero (&lt; 1e-10).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">asmd_mean_before</span> <span class="o">=</span> <span class="n">asmd</span><span class="p">(</span>
         <span class="n">sample_before</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">sample_before_weights</span><span class="p">,</span> <span class="n">target_weights</span>
@@ -449,6 +425,11 @@
     <span class="n">asmd_mean_after</span> <span class="o">=</span> <span class="n">asmd</span><span class="p">(</span>
         <span class="n">sample_after</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">sample_after_weights</span><span class="p">,</span> <span class="n">target_weights</span>
     <span class="p">)</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">]</span>
+
+    <span class="c1"># Avoid division by zero when asmd_mean_before is zero or very close to zero</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">asmd_mean_before</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-10</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="p">(</span><span class="n">asmd_mean_before</span> <span class="o">-</span> <span class="n">asmd_mean_after</span><span class="p">)</span> <span class="o">/</span> <span class="n">asmd_mean_before</span></div>
 
 
@@ -458,18 +439,8 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">outcome_variance_ratio</span><span class="p">(</span>
     <span class="n">df_numerator</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">df_denominator</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
-    <span class="n">w_numerator</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
-        <span class="n">List</span><span class="p">,</span>
-        <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
-        <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
-        <span class="kc">None</span><span class="p">,</span>
-    <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">w_denominator</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
-        <span class="n">List</span><span class="p">,</span>
-        <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
-        <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
-        <span class="kc">None</span><span class="p">,</span>
-    <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">w_numerator</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">w_denominator</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate ratio of weighted variances of two DataFrames</span>
 

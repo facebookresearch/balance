@@ -40,13 +40,13 @@
 <span class="c1"># This source code is licensed under the MIT license found in the</span>
 <span class="c1"># LICENSE file in the root directory of this source tree.</span>
 
-<span class="c1"># pyre-unsafe</span>
+<span class="c1"># pyre-strict</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">npt</span>
@@ -66,7 +66,7 @@
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
 
 
-<span class="n">BALANCE_WEIGHTING_METHODS</span> <span class="o">=</span> <span class="p">{</span>
+<span class="n">BALANCE_WEIGHTING_METHODS</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;ipw&quot;</span><span class="p">:</span> <span class="n">balance_ipw</span><span class="o">.</span><span class="n">ipw</span><span class="p">,</span>
     <span class="s2">&quot;cbps&quot;</span><span class="p">:</span> <span class="n">balance_cbps</span><span class="o">.</span><span class="n">cbps</span><span class="p">,</span>
     <span class="s2">&quot;null&quot;</span><span class="p">:</span> <span class="n">balance_adjust_null</span><span class="o">.</span><span class="n">adjust_null</span><span class="p">,</span>
@@ -75,9 +75,7 @@
 <span class="p">}</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_validate_limit</span><span class="p">(</span>
-    <span class="n">limit</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">n_weights</span><span class="p">:</span> <span class="nb">int</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_validate_limit</span><span class="p">(</span><span class="n">limit</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">n_weights</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate and adjust a percentile limit for use with scipy.stats.mstats.winsorize.</span>
 
 <span class="sd">    This function prepares percentile limits for winsorization by:</span>
@@ -127,13 +125,13 @@
 <div class="viewcode-block" id="trim_weights">
 <a class="viewcode-back" href="../../balance.adjustment.html#balance.adjustment.trim_weights">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">trim_weights</span><span class="p">(</span>
-    <span class="n">weights</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">],</span>
+    <span class="n">weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
     <span class="c1"># TODO: add support to more types of input weights? (e.g. list? other?)</span>
-    <span class="n">weight_trimming_mean_ratio</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">weight_trimming_percentile</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">weight_trimming_mean_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">weight_trimming_percentile</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">keep_sum_of_weights</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">target_sum_weights</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">target_sum_weights</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Trim extreme weights using mean ratio clipping or percentile-based winsorization.</span>
 
@@ -171,22 +169,22 @@
 <span class="sd">    desired total.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        weights (Union[pd.Series, np.ndarray]): Weights to trim. np.ndarray will be</span>
+<span class="sd">        weights (pd.Series | np.ndarray): Weights to trim. np.ndarray will be</span>
 <span class="sd">            converted to pd.Series internally.</span>
-<span class="sd">        weight_trimming_mean_ratio (Union[float, int], optional): Ratio for upper bound</span>
+<span class="sd">        weight_trimming_mean_ratio (float | int | None, optional): Ratio for upper bound</span>
 <span class="sd">            clipping as mean(weights) * ratio. Mutually exclusive with</span>
 <span class="sd">            weight_trimming_percentile. Defaults to None.</span>
-<span class="sd">        weight_trimming_percentile (Union[float, Tuple[float, float]], optional):</span>
+<span class="sd">        weight_trimming_percentile (float | tuple[float, float] | None, optional):</span>
 <span class="sd">            Percentile limits for winsorization. Value(s) must be between 0 and 1.</span>
 <span class="sd">            - Single float: Symmetric winsorization on both tails</span>
-<span class="sd">            - Tuple[float, float]: (lower_percentile, upper_percentile) for</span>
+<span class="sd">            - tuple[float, float]: (lower_percentile, upper_percentile) for</span>
 <span class="sd">              independent control of each tail</span>
 <span class="sd">            Mutually exclusive with weight_trimming_mean_ratio. Defaults to None.</span>
 <span class="sd">        verbose (bool, optional): Whether to log details about the trimming process.</span>
 <span class="sd">            Defaults to False.</span>
 <span class="sd">        keep_sum_of_weights (bool, optional): Whether to rescale weights after trimming</span>
 <span class="sd">            to preserve the original sum of weights. Defaults to True.</span>
-<span class="sd">        target_sum_weights (Union[float, int, np.floating, None], optional): If</span>
+<span class="sd">        target_sum_weights (float | int | np.floating | None, optional): If</span>
 <span class="sd">            provided, rescale the trimmed weights so their sum equals this</span>
 <span class="sd">            target. ``None`` (default) leaves the post-trimming sum unchanged.</span>
 
@@ -351,14 +349,14 @@
 <div class="viewcode-block" id="default_transformations">
 <a class="viewcode-back" href="../../balance.adjustment.html#balance.adjustment.default_transformations">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">default_transformations</span><span class="p">(</span>
-    <span class="n">dfs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]],</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]:</span>
+    <span class="n">dfs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Apply default transformations to dfs, i.e.</span>
 <span class="sd">    quantize to numeric columns and fct_lump to non-numeric and boolean</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        dfs (Union[Tuple[pd.DataFrame, ...], List[pd.DataFrame]]): A list or tuple of dataframes</span>
+<span class="sd">        dfs (tuple[pd.DataFrame, ...] | list[pd.DataFrame]): A list or tuple of dataframes</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict[str, Callable]: Dict of transformations</span>
@@ -384,7 +382,7 @@
 <a class="viewcode-back" href="../../balance.adjustment.html#balance.adjustment.apply_transformations">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">apply_transformations</span><span class="p">(</span>
     <span class="n">dfs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
-    <span class="n">transformations</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span>
+    <span class="n">transformations</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">drop</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply the transformations specified in transformations to all of the dfs</span>
@@ -402,7 +400,7 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        dfs (Tuple[pd.DataFrame, ...]): The DataFrames on which to operate</span>
-<span class="sd">        transformations (Union[Dict[str, Callable], str, None]): Mapping from column name to function to apply.</span>
+<span class="sd">        transformations (Dict[str, Callable[..., Any]] | str | None): Mapping from column name to function to apply.</span>
 <span class="sd">            Transformations of existing columns should be specified as functions</span>
 <span class="sd">            of those columns (e.g. `lambda x: x*2`), whereas additions of new</span>
 <span class="sd">            columns should be specified as functions of the DataFrame</span>
@@ -519,8 +517,8 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_find_adjustment_method</span><span class="p">(</span>
     <span class="n">method</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;cbps&quot;</span><span class="p">,</span> <span class="s2">&quot;ipw&quot;</span><span class="p">,</span> <span class="s2">&quot;null&quot;</span><span class="p">,</span> <span class="s2">&quot;poststratify&quot;</span><span class="p">,</span> <span class="s2">&quot;rake&quot;</span><span class="p">],</span>
-    <span class="n">WEIGHTING_METHODS</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="n">BALANCE_WEIGHTING_METHODS</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
+    <span class="n">WEIGHTING_METHODS</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="n">BALANCE_WEIGHTING_METHODS</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;This function translates a string method argument to the function itself.</span>
 
 <span class="sd">    Args:</span>

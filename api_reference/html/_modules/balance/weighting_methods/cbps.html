@@ -40,7 +40,7 @@
 <span class="c1"># This source code is licensed under the MIT license found in the</span>
 <span class="c1"># LICENSE file in the root directory of this source tree.</span>
 
-<span class="c1"># pyre-unsafe</span>
+<span class="c1"># pyre-strict</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
 
@@ -340,20 +340,27 @@
 
 
 <span class="c1"># TODO: update docs</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">_reverse_svd_and_centralization</span><span class="p">(</span><span class="n">beta</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">Vh</span><span class="p">,</span> <span class="n">X_matrix_mean</span><span class="p">,</span> <span class="n">X_matrix_std</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_reverse_svd_and_centralization</span><span class="p">(</span>
+    <span class="n">beta</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">U</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">s</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">Vh</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">X_matrix_mean</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">X_matrix_std</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a helper function for cbps. It revrse the svd and the centralization to get an estimate of beta</span>
 <span class="sd">    Source: https://github.com/kosukeimai/CBPS/blob/master/R/CBPSMain.R#L353</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        beta (_type_): _description_</span>
-<span class="sd">        U (_type_): _description_</span>
-<span class="sd">        s (_type_): _description_</span>
-<span class="sd">        Vh (_type_): _description_</span>
-<span class="sd">        X_matrix_mean (_type_): _description_</span>
-<span class="sd">        X_matrix_std (_type_): _description_</span>
+<span class="sd">        beta (np.ndarray): coefficient vector</span>
+<span class="sd">        U (np.ndarray): left singular vectors from SVD</span>
+<span class="sd">        s (np.ndarray): singular values from SVD</span>
+<span class="sd">        Vh (np.ndarray): right singular vectors from SVD</span>
+<span class="sd">        X_matrix_mean (np.ndarray): mean of the model matrix</span>
+<span class="sd">        X_matrix_std (np.ndarray): standard deviation of the model matrix</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        _type_: _description_</span>
+<span class="sd">        np.ndarray: reversed beta coefficient vector</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># TODO: update SVD and reverse SVD to the functions in scikit-learn</span>
     <span class="c1"># Invert s</span>
@@ -386,13 +393,13 @@
     <span class="n">cbps_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;over&quot;</span><span class="p">,</span>  <span class="c1"># other option: &quot;exact&quot;</span>
     <span class="n">max_de</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">opt_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;COBYLA&quot;</span><span class="p">,</span>
-    <span class="n">opt_opts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">opt_opts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">weight_trimming_mean_ratio</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
     <span class="n">weight_trimming_percentile</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">random_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2020</span><span class="p">,</span>
-    <span class="o">*</span><span class="n">args</span><span class="p">,</span>
-    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]]:</span>
+    <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Fit cbps (covariate balancing propensity score model) for the sample using the target.</span>
 <span class="sd">    Final weights are normalized to target size.</span>
 <span class="sd">    We use a two-step GMM estimator (as in the default R package), unlike the suggeted continuous-updating</span>
@@ -509,7 +516,6 @@
         <span class="n">add_na</span><span class="o">=</span><span class="p">(</span><span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">),</span>
         <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;one&quot;</span><span class="p">,</span>
         <span class="n">return_var_type</span><span class="o">=</span><span class="s2">&quot;sparse&quot;</span><span class="p">,</span>
-        <span class="c1"># pyre-fixme[6]: for 7th parameter `formula` expected `Optional[List[str]]` but got `Union[None, List[str], str]`.</span>
         <span class="n">formula</span><span class="o">=</span><span class="n">formula</span><span class="p">,</span>
         <span class="n">one_hot_encoding</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span>
@@ -517,7 +523,9 @@
         <span class="n">csc_matrix</span><span class="p">,</span>
         <span class="p">(</span><span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">&quot;model_matrix&quot;</span><span class="p">]),</span>
     <span class="p">)</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span>
-    <span class="n">X_matrix_columns_names</span> <span class="o">=</span> <span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">&quot;model_matrix_columns_names&quot;</span><span class="p">]</span>
+    <span class="n">X_matrix_columns_names</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+        <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">&quot;model_matrix_columns_names&quot;</span><span class="p">]</span>
+    <span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
         <span class="sa">f</span><span class="s2">&quot;The formula used to build the model matrix: </span><span class="si">{</span><span class="n">model_matrix_output</span><span class="p">[</span><span class="s1">&#39;formula&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
     <span class="p">)</span>
@@ -525,7 +533,6 @@
     <span class="c1"># Standardize the X_matrix for SVD</span>
     <span class="n">model_matrix_standardized</span> <span class="o">=</span> <span class="n">_standardize_model_matrix</span><span class="p">(</span>
         <span class="n">X_matrix</span><span class="p">,</span>
-        <span class="c1"># pyre-fixme[6]: for 2nd positional only parameter expected `List[str]` but got `Union[None, List[str], ndarray, DataFrame, csc_matrix]`.</span>
         <span class="n">X_matrix_columns_names</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">model_matrix_standardized</span><span class="p">[</span><span class="s2">&quot;model_matrix&quot;</span><span class="p">]</span>
@@ -565,7 +572,8 @@
 
     <span class="c1"># balance classes</span>
     <span class="k">if</span> <span class="n">balance_classes</span><span class="p">:</span>
-        <span class="n">design_weights</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">design_weights</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+            <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
             <span class="n">total_n</span>
             <span class="o">/</span> <span class="mi">2</span>
             <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
@@ -573,11 +581,10 @@
                     <span class="n">sample_weights</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">sample_weights</span><span class="p">),</span>
                     <span class="n">target_weights</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">target_weights</span><span class="p">),</span>
                 <span class="p">)</span>
-            <span class="p">)</span>
+            <span class="p">),</span>
         <span class="p">)</span>
 
         <span class="n">XtXinv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">pinv</span><span class="p">(</span>
-            <span class="c1"># pyre-fixme[16] Undefined attribute [16]: `float` has no attribute `__getitem__`.</span>
             <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">((</span><span class="n">U</span> <span class="o">*</span> <span class="n">design_weights</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">])</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">U</span> <span class="o">*</span> <span class="n">design_weights</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">])</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
@@ -650,6 +657,7 @@
     <span class="n">beta_balance</span> <span class="o">=</span> <span class="n">balance_optimize_result</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span>
 
     <span class="n">gmm_optimize_result_glm_init</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">gmm_optimize_result_bal_init</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">cbps_method</span> <span class="o">==</span> <span class="s2">&quot;exact&quot;</span><span class="p">:</span>
         <span class="k">if</span> <span class="p">(</span>
             <span class="n">balance_optimize_result</span><span class="p">[</span><span class="s2">&quot;success&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
@@ -785,8 +793,6 @@
                 <span class="n">gmm_optimize_result_glm_init</span> <span class="k">if</span> <span class="n">cbps_method</span> <span class="o">==</span> <span class="s2">&quot;over&quot;</span> <span class="k">else</span> <span class="kc">None</span>
             <span class="p">),</span>
             <span class="s2">&quot;gmm_optimize_result_bal_init&quot;</span><span class="p">:</span> <span class="p">(</span>
-                <span class="c1"># pyre-fixme[61]: `gmm_optimize_result_bal_init` is undefined, or</span>
-                <span class="c1">#  not always defined.</span>
                 <span class="n">gmm_optimize_result_bal_init</span> <span class="k">if</span> <span class="n">cbps_method</span> <span class="o">==</span> <span class="s2">&quot;over&quot;</span> <span class="k">else</span> <span class="kc">None</span>
             <span class="p">),</span>
         <span class="p">},</span>
