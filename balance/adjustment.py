@@ -89,7 +89,7 @@ def trim_weights(
     weights: pd.Series | npt.NDArray,
     # TODO: add support to more types of input weights? (e.g. list? other?)
     weight_trimming_mean_ratio: float | int | None = None,
-    weight_trimming_percentile: float | None = None,
+    weight_trimming_percentile: float | Tuple[float, float] | None = None,
     verbose: bool = False,
     keep_sum_of_weights: bool = True,
     target_sum_weights: float | int | np.floating | None = None,
