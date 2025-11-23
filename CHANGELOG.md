@@ -84,6 +84,13 @@
     limitation and the distinction between type annotations (which support `|`
     with `from __future__ import annotations`) and type alias assignments
     (which require `Union` for runtime evaluation in Python 3.9).
+  - **Enhanced type safety for plotting functions**: Replaced loose dictionary
+    type hints with structured `TypedDict` definition (`DataFrameWithWeight`)
+    for better type checking in `weighted_comparisons_plots.py`. Added
+    `SampleName` type alias to precisely specify valid sample name literals.
+    Removed numerous `# pyre-ignore` comments by properly handling type casts
+    and narrowing types. Added validation for plotly `dist_type` parameter to
+    raise clear errors when unsupported types are used.
   - Fixed missing `Any` import in `weighted_comparisons_plots.py` to resolve
     pyre-fixme[10] error
   - Added comprehensive type annotations for previously untyped parameters and
