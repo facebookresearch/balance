@@ -414,7 +414,7 @@ def ipw(
     weight_trimming_mean_ratio: int | float | None = 20,
     weight_trimming_percentile: float | None = None,
     balance_classes: bool = True,
-    transformations: str = "default",
+    transformations: str | None = "default",
     na_action: str = "add_indicator",
     max_de: float | None = None,
     lambda_min: float = 1e-05,
