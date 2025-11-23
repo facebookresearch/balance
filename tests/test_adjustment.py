@@ -3,9 +3,15 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import (
+    absolute_import,
+    annotations,
+    division,
+    print_function,
+    unicode_literals,
+)
 
 import random
 
@@ -49,7 +55,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
     adjustment capabilities.
     """
 
-    def test_trim_weights(self):
+    def test_trim_weights(self) -> None:
         """
         Test weight trimming functionality including no trimming, percentile trimming,
         and mean ratio trimming scenarios.
@@ -84,6 +90,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         with self.assertRaisesRegex(
             TypeError, "weights must be np.array or pd.Series, are of type*"
         ):
+            # pyre-ignore[6]: Testing error handling with intentionally wrong type
             trim_weights("Strings don't get trimmed", weight_trimming_mean_ratio=1)
 
         # Test error when both trimming parameters are provided
@@ -127,12 +134,13 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
 
         # Test both-sided percentile trimming
         both_trimmed = trim_weights(
-            test_weights, weight_trimming_percentile=(0.11, 0.11)
+            test_weights,
+            weight_trimming_percentile=(0.11, 0.11),
         )
         self.assertTrue(min(both_trimmed) > 0.1)
         self.assertTrue(max(both_trimmed) < 0.9)
 
-    def test_trim_weights_return_type_consistency(self):
+    def test_trim_weights_return_type_consistency(self) -> None:
         """
         Test that both weight_trimming_mean_ratio and weight_trimming_percentile
         return pd.Series with dtype=float64 and preserve the index.
@@ -162,7 +170,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         self.assertEqual(percentile_result.dtype, np.float64)
         pd.testing.assert_index_equal(percentile_result.index, custom_index)
 
-    def test_trim_weights_target_sum_scaling(self):
+    def test_trim_weights_target_sum_scaling(self) -> None:
         """Trimming can directly scale to a target sum of weights."""
 
         weights = pd.Series([1.0, 2.0, 3.0], name="w")
@@ -172,7 +180,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         self.assertAlmostEqual(scaled.sum(), 12.0, delta=EPSILON)
         self.assertEqual(scaled.name, "w")
 
-    def test_trim_weights_target_sum_zero_raises(self):
+    def test_trim_weights_target_sum_zero_raises(self) -> None:
         """Scaling to a target sum fails when trimmed weights sum to zero."""
 
         zeros = pd.Series([0.0, 0.0])
@@ -180,7 +188,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         with self.assertRaisesRegex(ValueError, "sum is zero"):
             trim_weights(zeros, keep_sum_of_weights=False, target_sum_weights=1.0)
 
-    def test_default_transformations(self):
+    def test_default_transformations(self) -> None:
         """
         Test automatic detection of appropriate transformations for different data types.
 
@@ -228,7 +236,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         }
         self.assertEqual(typed_result, expected_typed)
 
-    def test_default_transformations_pd_int64(self):
+    def test_default_transformations_pd_int64(self) -> None:
         """
         Test that nullable Int64 dtype is handled the same as regular int64.
 
@@ -243,7 +251,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
 
         self.assertEqual(nullable_transformations, numpy_transformations)
 
-    def test_apply_transformations(self):
+    def test_apply_transformations(self) -> None:
         """Test basic transformations with modifications and additions."""
         source_df = pd.DataFrame({"d": [1, 2, 3], "e": [1, 2, 3]})
         target_df = pd.DataFrame({"d": [4, 5, 6, 7], "e": [1, 2, 3, 4]})
@@ -256,14 +264,14 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         self.assertEqual(result[0], expected[0], lazy=True)
         self.assertEqual(result[1], expected[1], lazy=True)
 
-    def test_apply_transformations_none_transformations(self):
+    def test_apply_transformations_none_transformations(self) -> None:
         """Test that None transformations return dataframes unchanged."""
         source_df = pd.DataFrame({"d": [1, 2, 3], "e": [1, 2, 3]})
         target_df = pd.DataFrame({"d": [4, 5, 6, 7], "e": [1, 2, 3, 4]})
         result = apply_transformations((source_df, target_df), None)
         self.assertEqual(result, (source_df, target_df))
 
-    def test_apply_transformations_only_modifications(self):
+    def test_apply_transformations_only_modifications(self) -> None:
         """Test transformations with only column modifications."""
         source_df = pd.DataFrame({"d": [1, 2, 3], "e": [1, 2, 3]})
         target_df = pd.DataFrame({"d": [4, 5, 6, 7], "e": [1, 2, 3, 4]})
@@ -275,7 +283,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         self.assertEqual(result[0], expected[0])
         self.assertEqual(result[1], expected[1])
 
-    def test_apply_transformations_only_additions(self):
+    def test_apply_transformations_only_additions(self) -> None:
         """Test transformations with only column additions."""
         source_df = pd.DataFrame({"d": [1, 2, 3], "e": [1, 2, 3]})
         target_df = pd.DataFrame({"d": [4, 5, 6, 7], "e": [1, 2, 3, 4]})
@@ -284,7 +292,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         self.assertEqual(result[0], expected[0])
         self.assertEqual(result[1], expected[1])
 
-    def test_apply_transformations_drop_warning(self):
+    def test_apply_transformations_drop_warning(self) -> None:
         """Test that drop warning is properly issued."""
         source_df = pd.DataFrame({"d": [1, 2, 3], "e": [1, 2, 3]})
         target_df = pd.DataFrame({"d": [4, 5, 6, 7], "e": [1, 2, 3, 4]})
@@ -296,7 +304,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
             transformations,
         )
 
-    def test_apply_transformations_drop_false(self):
+    def test_apply_transformations_drop_false(self) -> None:
         """Test that drop=False preserves all original columns."""
         source_df = pd.DataFrame({"d": [1, 2, 3], "e": [1, 2, 3]})
         target_df = pd.DataFrame({"d": [4, 5, 6, 7], "e": [1, 2, 3, 4]})
@@ -311,7 +319,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         self.assertEqual(result[0], expected[0], lazy=True)
         self.assertEqual(result[1], expected[1], lazy=True)
 
-    def test_apply_transformations_three_dataframes(self):
+    def test_apply_transformations_three_dataframes(self) -> None:
         """Test that transformations work correctly with three dataframes."""
         source_df = pd.DataFrame({"d": [1, 2, 3], "e": [1, 2, 3]})
         target_df = pd.DataFrame({"d": [4, 5, 6, 7], "e": [1, 2, 3, 4]})
@@ -330,7 +338,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         self.assertEqual(result[1], expected[1], lazy=True)
         self.assertEqual(result[2], expected[2], lazy=True)
 
-    def test_apply_transformations_global_computation(self):
+    def test_apply_transformations_global_computation(self) -> None:
         """Test that transformations are computed over all dataframes, not individually."""
         source_df = pd.DataFrame({"d": [1, 2, 3], "e": [1, 2, 3]})
         target_df = pd.DataFrame({"d": [4, 5, 6, 7], "e": [1, 2, 3, 4]})
@@ -345,7 +353,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         self.assertEqual(result[0], expected[0])
         self.assertEqual(result[1], expected[1])
 
-    def test_apply_transformations_missing_column_transform(self):
+    def test_apply_transformations_missing_column_transform(self) -> None:
         """Test transforming a column that exists in only one dataframe."""
         source_df = pd.DataFrame({"d": [1, 2, 3], "e": [1, 2, 3]})
         target_df = pd.DataFrame({"d": [4, 5, 6, 7]})  # missing column 'e'
@@ -358,7 +366,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         self.assertEqual(result[0], expected[0])
         self.assertEqual(result[1], expected[1])
 
-    def test_apply_transformations_missing_column_add(self):
+    def test_apply_transformations_missing_column_add(self) -> None:
         """Test adding a column based on a column that exists in only one dataframe."""
         source_df = pd.DataFrame({"d": [1, 2, 3], "e": [1, 2, 3]})
         target_df = pd.DataFrame({"d": [4, 5, 6, 7]})  # missing column 'e'
@@ -371,7 +379,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         self.assertEqual(result[0], expected[0])
         self.assertEqual(result[1], expected[1])
 
-    def test_apply_transformations_missing_column_specified(self):
+    def test_apply_transformations_missing_column_specified(self) -> None:
         """Test transformation of a specified column that's missing in one dataframe."""
         source_df = pd.DataFrame({"d": [1, 2, 3], "e": [0, 0, 0]})
         target_df = pd.DataFrame({"d": [4, 5, 6, 7]})  # missing column 'e'
@@ -384,7 +392,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         self.assertEqual(result[0], expected[0])
         self.assertEqual(result[1], expected[1])
 
-    def test_apply_transformations_index_handling(self):
+    def test_apply_transformations_index_handling(self) -> None:
         """Test that dataframe indices are properly handled during transformations."""
         source_df = pd.DataFrame({"d": [1, 2, 3]}, index=(5, 6, 7))
         target_df = pd.DataFrame({"d": [4, 5, 6, 7]}, index=(0, 1, 2, 3))
@@ -394,7 +402,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         self.assertEqual(result[0], expected[0])
         self.assertEqual(result[1], expected[1])
 
-    def test_apply_transformations_index_reset_case(self):
+    def test_apply_transformations_index_reset_case(self) -> None:
         """Test specific index handling case that requires reset_index internally."""
         source_df = pd.DataFrame({"a": (0, 0, 0, 0, 0, 0, 0, 0)})
         target_df = pd.DataFrame({"a": (1, 1, 1, 1)})
@@ -406,7 +414,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         self.assertEqual(result[0].astype(str), expected[0])
         self.assertEqual(result[1].astype(str), expected[1])
 
-    def test_apply_transformations_default_comprehensive(self):
+    def test_apply_transformations_default_comprehensive(self) -> None:
         """Test default transformations with comprehensive data."""
         source_df = pd.DataFrame({"d": range(0, 100), "e": ["a"] * 96 + ["b"] * 4})
         target_df = pd.DataFrame({"d": range(0, 100), "e": ["a"] * 96 + ["b"] * 4})
@@ -427,10 +435,10 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
             result_target["e"].drop_duplicates().values, expected_categories
         )
 
-    def test_invalid_input_to_apply_transformations(self):
+    def test_invalid_input_to_apply_transformations(self) -> None:
         """Test error handling for invalid inputs to apply_transformations function."""
         # Sample data for testing with mixed data types and weights
-        self.sample_data = Sample.from_frame(
+        sample_data = Sample.from_frame(
             df=pd.DataFrame(
                 {
                     "a": (1, 2, 3, 1),
@@ -451,7 +459,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
             NotImplementedError,
             "Unknown transformations",
             apply_transformations,
-            (self.sample_data.df,),
+            (sample_data.df,),
             "foobar",
         )
 
@@ -460,7 +468,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
             AssertionError,
             "'dfs' must contain DataFrames",
             apply_transformations,
-            (self.sample_data,),
+            (sample_data,),
             "foobar",
         )
 
@@ -469,11 +477,11 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
             AssertionError,
             "'dfs' argument must be a tuple of DataFrames",
             apply_transformations,
-            self.sample_data.df,
+            sample_data.df,
             "foobar",
         )
 
-    def test__find_adjustment_method(self):
+    def test__find_adjustment_method(self) -> None:
         """
         Test the internal adjustment method discovery function.
 
@@ -495,9 +503,10 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
 
         # Test unknown adjustment method
         with self.assertRaisesRegex(ValueError, "Unknown adjustment method*"):
+            # pyre-ignore[6]: Testing error handling with intentionally wrong type
             balance.adjustment._find_adjustment_method("some_other_value")
 
-    def test_validate_limit_none_input(self):
+    def test_validate_limit_none_input(self) -> None:
         """
         Test that _validate_limit returns None when given None input.
 
@@ -514,7 +523,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         # Assert: None should be returned unchanged
         self.assertIsNone(result)
 
-    def test_validate_limit_zero_input(self):
+    def test_validate_limit_zero_input(self) -> None:
         """
         Test that _validate_limit returns 0.0 when given 0 input.
 
@@ -531,7 +540,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         self.assertEqual(result, 0.0)
         self.assertEqual(type(result), float)
 
-    def test_validate_limit_finite_value_adjustment(self):
+    def test_validate_limit_finite_value_adjustment(self) -> None:
         """
         Test that _validate_limit properly adjusts finite limits.
 
@@ -552,7 +561,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         expected = limit + 0.01
         self.assertAlmostEqual(result, expected, delta=EPSILON)
 
-    def test_validate_limit_finite_value_with_small_n_weights(self):
+    def test_validate_limit_finite_value_with_small_n_weights(self) -> None:
         """
         Test _validate_limit with small n_weights values.
 
@@ -572,7 +581,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         expected = limit + 0.01
         self.assertAlmostEqual(result, expected, delta=EPSILON)
 
-    def test_validate_limit_finite_value_capped_at_one(self):
+    def test_validate_limit_finite_value_capped_at_one(self) -> None:
         """
         Test that _validate_limit caps adjusted values at 1.0.
 
@@ -593,7 +602,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         # 0.99 + 0.02 = 1.01, but should be capped at 1.0
         self.assertEqual(result, 1.0)
 
-    def test_validate_limit_invalid_negative_value(self):
+    def test_validate_limit_invalid_negative_value(self) -> None:
         """
         Test that _validate_limit raises ValueError for negative limits.
 
@@ -610,7 +619,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         ):
             _validate_limit(limit, n_weights)
 
-    def test_validate_limit_invalid_greater_than_one(self):
+    def test_validate_limit_invalid_greater_than_one(self) -> None:
         """
         Test that _validate_limit raises ValueError for limits > 1.
 
@@ -627,7 +636,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         ):
             _validate_limit(limit, n_weights)
 
-    def test_validate_limit_non_finite_value(self):
+    def test_validate_limit_non_finite_value(self) -> None:
         """
         Test that _validate_limit returns non-finite values unchanged.
 
@@ -644,7 +653,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         # Assert: should return infinity unchanged
         self.assertEqual(result, float("inf"))
 
-    def test_validate_limit_integer_input(self):
+    def test_validate_limit_integer_input(self) -> None:
         """
         Test that _validate_limit handles integer inputs correctly.
 
@@ -661,7 +670,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         self.assertEqual(type(result), float)
         self.assertEqual(result, 1.0)
 
-    def test_validate_limit_edge_case_n_weights_one(self):
+    def test_validate_limit_edge_case_n_weights_one(self) -> None:
         """
         Test _validate_limit with n_weights=1.
 
