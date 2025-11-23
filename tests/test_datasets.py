@@ -3,7 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
+
+from __future__ import annotations
 
 import balance.testutil
 import numpy as np
@@ -14,8 +16,11 @@ from balance.datasets import load_data
 class TestDatasets(
     balance.testutil.BalanceTestCase,
 ):
-    def test_load_data(self):
+    def test_load_data(self) -> None:
         target_df, sample_df = load_data()
+
+        assert sample_df is not None
+        assert target_df is not None
 
         self.assertEqual(sample_df.shape, (1000, 5))
         self.assertEqual(target_df.shape, (10000, 5))
@@ -50,8 +55,11 @@ class TestDatasets(
         }
         self.assertEqual(o.__str__(), e.__str__())
 
-    def test_load_data_cbps(self):
+    def test_load_data_cbps(self) -> None:
         target_df, sample_df = load_data("sim_data_cbps")
+
+        assert sample_df is not None
+        assert target_df is not None
 
         self.assertEqual(sample_df.shape, (246, 7))
         self.assertEqual(target_df.shape, (254, 7))
