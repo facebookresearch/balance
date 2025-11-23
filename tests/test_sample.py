@@ -17,13 +17,14 @@ The tests are organized into several test classes focusing on different aspects
 of Sample functionality.
 """
 
-# pyre-unsafe
+# pyre-strict
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import tempfile
 
 from copy import deepcopy
+from typing import Any, Optional, TypeVar
 
 import balance.testutil
 import IPython.display
@@ -33,12 +34,24 @@ import pandas as pd
 
 from balance.sample_class import Sample
 
+# Conditional import for pyre_extensions (Meta-internal, not available in open-source)
+try:
+    from pyre_extensions import none_throws
+except ImportError:
+    # Fallback implementation for open-source environments (Python 3.9+ compatible)
+    T = TypeVar("T")
+
+    def none_throws(optional: Optional[T]) -> T:
+        """Assert that optional value is not None and return it."""
+        assert optional is not None, "Unexpected None value"
+        return optional
+
 
 # Test sample fixtures - shared across multiple test methods
 # These represent common test scenarios for Sample functionality
 
 # Sample with outcome column and mixed data types
-s1 = Sample.from_frame(
+s1: Sample = Sample.from_frame(
     pd.DataFrame(
         {
             "a": (1, 2, 3, 1),
@@ -55,7 +68,7 @@ s1 = Sample.from_frame(
 )
 
 # Sample without outcome columns for target testing
-s2 = Sample.from_frame(
+s2: Sample = Sample.from_frame(
     pd.DataFrame(
         {
             "a": (1, 2, 3),
@@ -69,11 +82,11 @@ s2 = Sample.from_frame(
     weight_column="w",
 )
 
-s3 = s1.set_target(s2)
-s3_adjusted_null = s3.adjust(method="null")
+s3: Sample = s1.set_target(s2)
+s3_adjusted_null: Sample = s3.adjust(method="null")
 
 # Sample with missing values and multiple outcome columns
-s4 = Sample.from_frame(
+s4: Sample = Sample.from_frame(
     pd.DataFrame(
         {"a": (0, None, 2), "b": (0, None, 2), "c": ("a", "b", "c"), "id": (1, 2, 3)}
     ),
@@ -86,7 +99,7 @@ class TestSample(
 ):
     """Test class for basic Sample functionality and constructor behavior."""
 
-    def test_constructor_not_implemented(self):
+    def test_constructor_not_implemented(self) -> None:
         """Test that Sample constructor raises NotImplementedError.
 
         The Sample class should not be instantiated directly without using
@@ -96,7 +109,7 @@ class TestSample(
             s1 = Sample()
             print(s1)
 
-    def test_Sample__str__(self):
+    def test_Sample__str__(self) -> None:
         """Test string representation of Sample objects.
 
         Verifies that __str__ method correctly displays:
@@ -122,7 +135,7 @@ class TestSample(
             in s3_adjusted_null.__str__()
         )
 
-    def test_Sample__str__multiple_outcomes(self):
+    def test_Sample__str__multiple_outcomes(self) -> None:
         """Test string representation with multiple outcome columns.
 
         Verifies that samples with multiple outcome columns display
@@ -138,7 +151,7 @@ class TestSample(
         )
         self.assertTrue("outcome_columns: a,b" in s1.__str__())
 
-    def test_Sample_from_frame_id_column_detection(self):
+    def test_Sample_from_frame_id_column_detection(self) -> None:
         """Test automatic ID column detection and validation.
 
         Verifies that from_frame correctly:
@@ -190,7 +203,7 @@ class TestSample(
         ):
             Sample.from_frame(df)
 
-    def test_Sample_from_frame_id_uniqueness(self):
+    def test_Sample_from_frame_id_uniqueness(self) -> None:
         """Test ID column uniqueness validation.
 
         Verifies that from_frame correctly validates ID uniqueness
@@ -211,7 +224,7 @@ class TestSample(
             pd.Series(("1", "2", "2"), name="id"),
         )
 
-    def test_Sample_from_frame_weight_column_handling(self):
+    def test_Sample_from_frame_weight_column_handling(self) -> None:
         """Test weight column detection, validation, and default behavior.
 
         Verifies that from_frame correctly:
@@ -243,7 +256,7 @@ class TestSample(
         with self.assertRaisesRegex(ValueError, "Null values are not allowed"):
             Sample.from_frame(df)
 
-    def test_Sample_from_frame_weight_validation(self):
+    def test_Sample_from_frame_weight_validation(self) -> None:
         """Test weight value validation for numeric and non-negative constraints.
 
         Verifies that weights must be numeric and non-negative,
@@ -273,7 +286,7 @@ class TestSample(
             Sample.from_frame(df).weight_column, pd.Series((0.0, 2.0), name="weight")
         )
 
-    def test_Sample_from_frame_type_conversion(self):
+    def test_Sample_from_frame_type_conversion(self) -> None:
         """Test automatic type conversion for different numeric types.
 
         Verifies that from_frame correctly converts integer types
@@ -300,7 +313,7 @@ class TestSample(
         self.assertEqual(Sample.from_frame(df).df.a.dtype.type, np.float16)
         # TODO: add tests for other types of conversions
 
-    def test_Sample_from_frame_deepcopy_behavior(self):
+    def test_Sample_from_frame_deepcopy_behavior(self) -> None:
         """Test deepcopy parameter behavior.
 
         Verifies that use_deepcopy parameter controls whether
@@ -320,7 +333,7 @@ class TestSample(
         self.assertEqual(Sample.from_frame(df).df.id.dtype.type, np.object_)
         self.assertEqual(df.id.dtype.type, np.int64)
 
-    def test_Sample_adjust(self):
+    def test_Sample_adjust(self) -> None:
         """Test Sample adjustment functionality.
 
         Verifies that adjust method correctly:
@@ -344,6 +357,7 @@ class TestSample(
             ValueError,
             "Method should be one of existing weighting methods",
         ):
+            # pyre-ignore[6]: Intentionally passing None to test exception handling
             s1.set_target(s2).adjust(method=None)
 
 
@@ -352,7 +366,7 @@ class TestSample_base_and_adjust_methods(
 ):
     """Test class for Sample data access methods and property behavior."""
 
-    def test_Sample_df(self):
+    def test_Sample_df(self) -> None:
         """Test DataFrame property access and type conversion behavior.
 
         Verifies that:
@@ -378,10 +392,13 @@ class TestSample_base_and_adjust_methods(
 
         # Test property decorator functionality
         self.assertTrue(isinstance(Sample.df, property))
-        self.assertEqual(Sample.df.fget(s1), s1.df)
+        df_fget = Sample.df.fget
+        if df_fget is not None:
+            self.assertEqual(df_fget(s1), s1.df)
 
         # Test that df cannot be called as function
         with self.assertRaisesRegex(TypeError, "'DataFrame' object is not callable"):
+            # pyre-ignore[29]: Intentionally calling DataFrame to test exception
             s1.df()
 
         # Test s2 DataFrame structure and type conversion
@@ -398,7 +415,7 @@ class TestSample_base_and_adjust_methods(
         self.assertEqual(s2.df, e)
 
     # TODO: consider removing this test, since it's already tested in test_balancedf.py
-    def test_Sample_outcomes(self):
+    def test_Sample_outcomes(self) -> None:
         """Test outcome columns extraction functionality.
 
         Verifies that outcomes() method correctly extracts
@@ -412,7 +429,7 @@ class TestSample_base_and_adjust_methods(
         )
         self.assertEqual(s1.outcomes().df, e)
 
-    def test_Sample_weights(self):
+    def test_Sample_weights(self) -> None:
         """Test weights extraction functionality.
 
         Verifies that weights() method correctly extracts
@@ -427,7 +444,7 @@ class TestSample_base_and_adjust_methods(
         self.assertEqual(s1.weights().df, e)
 
     # TODO: consider removing this test, since it's already tested in test_balancedf.py
-    def test_Sample_covars(self):
+    def test_Sample_covars(self) -> None:
         """Test covariate columns extraction functionality.
 
         Verifies that covars() method correctly extracts
@@ -443,7 +460,9 @@ class TestSample_base_and_adjust_methods(
         )
         self.assertEqual(s1.covars().df, e)
 
-    def _create_test_sample_with_target(self, source_size=1000, target_size=10000):
+    def _create_test_sample_with_target(
+        self, source_size: int = 1000, target_size: int = 10000
+    ) -> tuple[Sample, Sample]:
         """Helper method to create test samples for model testing.
 
         Args:
@@ -467,7 +486,7 @@ class TestSample_base_and_adjust_methods(
 
         return source, target
 
-    def test_Sample_model_null_adjustment(self):
+    def test_Sample_model_null_adjustment(self) -> None:
         """Test model information for null adjustment method.
 
         Verifies that null adjustment correctly reports method name.
@@ -477,9 +496,10 @@ class TestSample_base_and_adjust_methods(
 
         a = s.adjust(t, max_de=None, method="null")
         m = a.model()
-        self.assertEqual(m["method"], "null_adjustment")
 
-    def test_Sample_model_ipw_adjustment(self):
+        self.assertEqual(none_throws(m)["method"], "null_adjustment")
+
+    def test_Sample_model_ipw_adjustment(self) -> None:
         """Test model information for IPW adjustment method.
 
         Verifies that IPW adjustment correctly reports method name
@@ -490,14 +510,15 @@ class TestSample_base_and_adjust_methods(
 
         a = s.adjust(t, max_de=None)
         m = a.model()
-        self.assertEqual(m["method"], "ipw")
+
+        self.assertEqual(none_throws(m)["method"], "ipw")
 
         # Test structure of IPW output
-        self.assertTrue("perf" in m.keys())
-        self.assertTrue("fit" in m.keys())
-        self.assertTrue("coefs" in m["perf"].keys())
+        self.assertTrue("perf" in none_throws(m).keys())
+        self.assertTrue("fit" in none_throws(m).keys())
+        self.assertTrue("coefs" in none_throws(m)["perf"].keys())
 
-    def test_Sample_model_matrix(self):
+    def test_Sample_model_matrix(self) -> None:
         """Test model matrix generation for samples.
 
         Verifies that model_matrix method correctly:
@@ -531,7 +552,7 @@ class TestSample_base_and_adjust_methods(
         r = s.model_matrix()
         self.assertEqual(r, e, lazy=True)
 
-    def test_Sample_set_weights(self):
+    def test_Sample_set_weights(self) -> None:
         s = Sample.from_frame(
             pd.DataFrame(
                 {
@@ -563,7 +584,7 @@ class TestSample_base_and_adjust_methods(
             pd.Series([1, 2, 3, 4], index=(0, 1, 2, 3)),
         )
 
-    def test_Sample_set_unadjusted(self):
+    def test_Sample_set_unadjusted(self) -> None:
         s5 = s1.set_unadjusted(s2)
         self.assertTrue(s5._links["unadjusted"] is s2)
         # test exceptions when there is no a second sample
@@ -571,14 +592,15 @@ class TestSample_base_and_adjust_methods(
             TypeError,
             "set_unadjusted must be called with second_sample argument of type Sample",
         ):
+            # pyre-ignore[6]: Intentionally passing str to test exception handling
             s1.set_unadjusted("Not a Sample object")
 
-    def test_Sample_is_adjusted(self):
+    def test_Sample_is_adjusted(self) -> None:
         self.assertFalse(s1.is_adjusted())
         self.assertFalse(s3.is_adjusted())
         self.assertTrue(s3_adjusted_null.is_adjusted())
 
-    def test_Sample_set_target(self):
+    def test_Sample_set_target(self) -> None:
         s5 = s1.set_target(s2)
         self.assertTrue(s5._links["target"] is s2)
         # test exceptions when the provided object is not a second sample
@@ -586,9 +608,10 @@ class TestSample_base_and_adjust_methods(
             ValueError,
             "A target, a Sample object, must be specified",
         ):
+            # pyre-ignore[6]: Intentionally passing str to test exception handling
             s1.set_target("Not a Sample object")
 
-    def test_Sample_has_target(self):
+    def test_Sample_has_target(self) -> None:
         self.assertFalse(s1.has_target())
         self.assertTrue(s1.set_target(s2).has_target())
 
@@ -596,7 +619,9 @@ class TestSample_base_and_adjust_methods(
 class TestSample_metrics_methods(
     balance.testutil.BalanceTestCase,
 ):
-    def _assert_dict_almost_equal(self, actual, expected, places=2):
+    def _assert_dict_almost_equal(
+        self, actual: dict[str, Any], expected: dict[str, Any], places: int = 2
+    ) -> None:
         """Helper method to compare nested dictionaries with floating point tolerance.
 
         This addresses floating point precision differences introduced by Python 3.12's
@@ -620,7 +645,7 @@ class TestSample_metrics_methods(
                     msg=f"Values for key '{key}' don't match within {places} decimal places",
                 )
 
-    def test_Sample_covar_means(self):
+    def test_Sample_covar_means(self) -> None:
         s3_null = s1.adjust(s2, method="null")
         e = pd.DataFrame(
             {
@@ -660,11 +685,11 @@ class TestSample_metrics_methods(
         ):
             s1.covar_means()
 
-    def test_Sample_design_effect(self):
+    def test_Sample_design_effect(self) -> None:
         self.assertEqual(s1.design_effect().round(3), 1.235)
         self.assertEqual(s4.design_effect(), 1.0)
 
-    def test_Sample_design_effect_prop(self):
+    def test_Sample_design_effect_prop(self) -> None:
         s3_null = s1.adjust(s2, method="null")
         self.assertEqual(s3_null.design_effect_prop(), 0.0)
 
@@ -675,7 +700,7 @@ class TestSample_metrics_methods(
         ):
             s1.design_effect_prop()
 
-    def test_Sample_outcome_sd_prop(self):
+    def test_Sample_outcome_sd_prop(self) -> None:
         s3_null = s1.adjust(s2, method="null")
         self.assertEqual(s3_null.outcome_sd_prop(), pd.Series((0.0), index=["o"]))
         # test with two outcomes
@@ -705,7 +730,7 @@ class TestSample_metrics_methods(
         ):
             s2.adjust(s2, method="null").outcome_sd_prop()
 
-    def _create_samples_for_outcome_variance_tests(self):
+    def _create_samples_for_outcome_variance_tests(self) -> tuple[Sample, pd.DataFrame]:
         """Helper method to create samples for outcome variance ratio testing.
 
         Returns:
@@ -727,7 +752,7 @@ class TestSample_metrics_methods(
 
         return t, d
 
-    def test_outcome_variance_ratio_calculation(self):
+    def test_outcome_variance_ratio_calculation(self) -> None:
         """Test outcome variance ratio calculation accuracy.
 
         Verifies that outcome_variance_ratio method correctly computes
@@ -756,7 +781,7 @@ class TestSample_metrics_methods(
         actual_ratio = a_with_outcome_adjusted.outcome_variance_ratio().iloc[0]
         self.assertEqual(round(actual_ratio, 5), round(expected_ratio, 5))
 
-    def test_outcome_variance_ratio_value(self):
+    def test_outcome_variance_ratio_value(self) -> None:
         """Test expected outcome variance ratio value for test data.
 
         Verifies that the outcome variance ratio produces expected
@@ -772,7 +797,7 @@ class TestSample_metrics_methods(
             round(a_with_outcome_adjusted.outcome_variance_ratio().iloc[0], 2), 0.98
         )
 
-    def test_outcome_variance_ratio_null_adjustment(self):
+    def test_outcome_variance_ratio_null_adjustment(self) -> None:
         """Test outcome variance ratio with null adjustment.
 
         Verifies that null adjustment produces variance ratio of 1.0
@@ -790,7 +815,7 @@ class TestSample_metrics_methods(
             pd.Series([1.0, 1.0], index=["j", "k"]),
         )
 
-    def test_Sample_weights_summary(self):
+    def test_Sample_weights_summary(self) -> None:
         self.assertEqual(
             s1.weights().summary().round(2).to_dict(),
             {
@@ -849,7 +874,7 @@ class TestSample_metrics_methods(
             },
         )
 
-    def test_Sample_summary(self):
+    def test_Sample_summary(self) -> None:
         s1_summ = s1.summary()
         self.assertTrue("Model performance" not in s1_summ)
         self.assertTrue("Covar ASMD" not in s1_summ)
@@ -870,7 +895,7 @@ class TestSample_metrics_methods(
         self.assertTrue("Covar ASMD reduction: 0.0%" in s3_summ)
         self.assertTrue("design effect" in s3_summ)
 
-    def test_Sample_invalid_outcomes(self):
+    def test_Sample_invalid_outcomes(self) -> None:
         with self.assertRaisesRegex(
             ValueError,
             r"outcome columns \['o'\] not in df columns \['a', 'id', 'weight'\]",
@@ -880,7 +905,7 @@ class TestSample_metrics_methods(
                 outcome_columns="o",
             )
 
-    def _create_samples_for_diagnostics_tests(self):
+    def _create_samples_for_diagnostics_tests(self) -> tuple[Sample, Sample]:
         """Helper method to create samples for diagnostics testing.
 
         Returns:
@@ -902,7 +927,7 @@ class TestSample_metrics_methods(
 
         return s, t
 
-    def test_Sample_diagnostics_ipw_method(self):
+    def test_Sample_diagnostics_ipw_method(self) -> None:
         """Test diagnostics output structure and content for IPW adjustment.
 
         Verifies that diagnostics method produces expected structure,
@@ -945,7 +970,7 @@ class TestSample_metrics_methods(
         }
         self.assertEqual(output, expected)
 
-    def test_Sample_diagnostics_cbps_method(self):
+    def test_Sample_diagnostics_cbps_method(self) -> None:
         """Test diagnostics output structure and content for CBPS adjustment.
 
         Verifies that diagnostics method produces expected structure,
@@ -987,7 +1012,7 @@ class TestSample_metrics_methods(
         }
         self.assertEqual(output, expected)
 
-    def test_Sample_diagnostics_null_method(self):
+    def test_Sample_diagnostics_null_method(self) -> None:
         """Test diagnostics output structure and content for null adjustment.
 
         Verifies that diagnostics method produces expected structure,
@@ -1008,7 +1033,7 @@ class TestSample_metrics_methods(
             np.array(["null_adjustment"]),
         )
 
-    def _create_adjusted_sample_for_filtering_tests(self):
+    def _create_adjusted_sample_for_filtering_tests(self) -> tuple[Sample, Sample]:
         """Helper method to create adjusted sample for filtering tests.
 
         Returns:
@@ -1031,7 +1056,7 @@ class TestSample_metrics_methods(
 
         return s.adjust(t, max_de=1.5), t
 
-    def test_Sample_keep_only_some_rows_columns_identity(self):
+    def test_Sample_keep_only_some_rows_columns_identity(self) -> None:
         """Test that keep_only_some_rows_columns returns same object when no filtering applied.
 
         Verifies that when both rows_to_keep and columns_to_keep are None,
@@ -1044,7 +1069,7 @@ class TestSample_metrics_methods(
             a is a.keep_only_some_rows_columns(rows_to_keep=None, columns_to_keep=None)
         )
 
-    def test_Sample_keep_only_some_rows_columns_column_filtering(self):
+    def test_Sample_keep_only_some_rows_columns_column_filtering(self) -> None:
         """Test column filtering functionality and its impact on ASMD calculations.
 
         Verifies that column filtering:
@@ -1086,7 +1111,7 @@ class TestSample_metrics_methods(
         self._assert_dict_almost_equal(output_orig, expected_orig, places=1)
         self._assert_dict_almost_equal(output_new, expected_new, places=1)
 
-    def test_Sample_keep_only_some_rows_columns_diagnostics_impact(self):
+    def test_Sample_keep_only_some_rows_columns_diagnostics_impact(self) -> None:
         """Test the impact of column filtering on diagnostics.
 
         Verifies that column filtering appropriately updates:
@@ -1132,7 +1157,7 @@ class TestSample_metrics_methods(
             round(float(a2_diag[ss2].val.iloc[0]), 3), 0.109, places=3
         )
 
-    def test_Sample_keep_only_some_rows_columns_row_filtering(self):
+    def test_Sample_keep_only_some_rows_columns_row_filtering(self) -> None:
         """Test row filtering functionality and its impact on sample sizes.
 
         Verifies that row filtering:
@@ -1159,7 +1184,7 @@ class TestSample_metrics_methods(
         }
         self.assertEqual(output_new, expected_new)
 
-    def test_Sample_keep_only_some_rows_columns_sample_size_changes(self):
+    def test_Sample_keep_only_some_rows_columns_sample_size_changes(self) -> None:
         """Test that row filtering correctly updates sample size statistics.
 
         Verifies that diagnostics correctly reflect changes in:
@@ -1219,7 +1244,7 @@ class TestSample_metrics_methods(
             round(float(a3_diag[ss].val.iloc[0]), 4), 1.4325, places=2
         )
 
-    def test_Sample_keep_only_some_rows_columns_with_outcomes(self):
+    def test_Sample_keep_only_some_rows_columns_with_outcomes(self) -> None:
         """Test filtering functionality when outcome columns are present.
 
         Verifies that filtering works correctly with samples that have
@@ -1253,7 +1278,7 @@ class TestSample_metrics_methods(
             {"k": {"self": 0.492, "unadjusted": 0.494}},
         )
 
-    def test_Sample_keep_only_some_rows_columns_column_warnings(self):
+    def test_Sample_keep_only_some_rows_columns_column_warnings(self) -> None:
         """Test warning behavior when requested columns don't exist.
 
         Verifies that appropriate warnings are issued when some
@@ -1272,11 +1297,11 @@ class TestSample_metrics_methods(
 
 
 class TestSample_to_download(balance.testutil.BalanceTestCase):
-    def test_Sample_to_download(self):
+    def test_Sample_to_download(self) -> None:
         r = s1.to_download()
         self.assertIsInstance(r, IPython.display.FileLink)
 
-    def test_Sample_to_csv(self):
+    def test_Sample_to_csv(self) -> None:
         with tempfile.NamedTemporaryFile() as tf:
             s1.to_csv(path_or_buf=tf.name)
             r = tf.read()
@@ -1288,7 +1313,7 @@ class TestSample_to_download(balance.testutil.BalanceTestCase):
 
 
 class TestSamplePrivateAPI(balance.testutil.BalanceTestCase):
-    def test__links(self):
+    def test__links(self) -> None:
         self.assertTrue(len(s1._links.keys()) == 0)
 
         self.assertTrue(s3._links["target"] is s2)
@@ -1298,13 +1323,13 @@ class TestSamplePrivateAPI(balance.testutil.BalanceTestCase):
         self.assertTrue(s3_adjusted_null._links["unadjusted"] is s3)
         self.assertTrue(s3_adjusted_null.has_target())
 
-    def test__special_columns_names(self):
+    def test__special_columns_names(self) -> None:
         self.assertEqual(
             sorted(s4._special_columns_names()), ["b", "c", "id", "weight"]
         )
 
     # NOTE how integers were changed into floats.
-    def test__special_columns(self):
+    def test__special_columns(self) -> None:
         # NOTE how integers in weight were changed into floats.
         self.assertEqual(
             s4._special_columns(),
@@ -1319,10 +1344,10 @@ class TestSamplePrivateAPI(balance.testutil.BalanceTestCase):
             ),
         )
 
-    def test__covar_columns_names(self):
+    def test__covar_columns_names(self) -> None:
         self.assertEqual(sorted(s1._covar_columns_names()), ["a", "b", "c"])
 
-    def test__covar_columns(self):
+    def test__covar_columns(self) -> None:
         # NOTE how integers were changed into floats.
         self.assertEqual(
             s1._covar_columns(),
@@ -1335,7 +1360,7 @@ class TestSamplePrivateAPI(balance.testutil.BalanceTestCase):
             ),
         )
 
-    def test_Sample__check_if_adjusted(self):
+    def test_Sample__check_if_adjusted(self) -> None:
         with self.assertRaisesRegex(
             ValueError,
             "This is not an adjusted Sample. Use sample.adjust to adjust the sample to target",
@@ -1350,7 +1375,7 @@ class TestSamplePrivateAPI(balance.testutil.BalanceTestCase):
             s3_adjusted_null._check_if_adjusted() is None
         )  # Does not raise an error
 
-    def test_Sample__no_target_error(self):
+    def test_Sample__no_target_error(self) -> None:
         # test exception when the is no target
         with self.assertRaisesRegex(
             ValueError,
@@ -1359,7 +1384,7 @@ class TestSamplePrivateAPI(balance.testutil.BalanceTestCase):
             s1._no_target_error()
         s3._no_target_error()  # Should not raise an error
 
-    def test_Sample__check_outcomes_exists(self):
+    def test_Sample__check_outcomes_exists(self) -> None:
         with self.assertRaisesRegex(
             ValueError,
             "This Sample does not have outcome columns specified",
@@ -1369,10 +1394,12 @@ class TestSamplePrivateAPI(balance.testutil.BalanceTestCase):
 
 
 class TestSample_NA_behavior(balance.testutil.BalanceTestCase):
-    def test_can_handle_various_NAs(self):
+    def test_can_handle_various_NAs(self) -> None:
         # Testing if we can handle NA values from pandas
 
-        def get_sample_to_adjust(df, standardize_types=True):
+        def get_sample_to_adjust(
+            df: pd.DataFrame, standardize_types: bool = True
+        ) -> Sample:
             s1 = Sample.from_frame(df, standardize_types=standardize_types)
             s2 = deepcopy(s1)
             s2.set_weights(np.ones(100))
