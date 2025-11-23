@@ -5,11 +5,17 @@
 
 # pyre-strict
 
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import (
+    absolute_import,
+    annotations,
+    division,
+    print_function,
+    unicode_literals,
+)
 
 import logging
 
-from typing import Any, cast, Dict, List, Optional, Union
+from typing import Any, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -26,7 +32,7 @@ logger: logging.Logger = logging.getLogger(__package__)
 
 
 def logit_truncated(
-    X: Union[npt.NDArray, pd.DataFrame],
+    X: npt.NDArray | pd.DataFrame,
     beta: npt.NDArray,
     truncation_value: float = 1e-5,
 ) -> npt.NDArray:
@@ -48,8 +54,8 @@ def logit_truncated(
 
 def compute_pseudo_weights_from_logit_probs(
     probs: npt.NDArray,
-    design_weights: Union[npt.NDArray, pd.DataFrame],
-    in_pop: Union[npt.NDArray, pd.DataFrame],
+    design_weights: npt.NDArray | pd.DataFrame,
+    in_pop: npt.NDArray | pd.DataFrame,
 ) -> npt.NDArray:
     """This is a helper function for cbps.
     Given computed probs, it computes the weights: N/N_t * (in_pop - p_i)/(1 - p_i).
@@ -102,11 +108,11 @@ def bal_loss(
 
 def gmm_function(
     beta: npt.NDArray,
-    X: Union[npt.NDArray, pd.DataFrame],
-    design_weights: Union[npt.NDArray, pd.DataFrame],
-    in_pop: Union[npt.NDArray, pd.DataFrame],
-    invV: Union[npt.NDArray, None] = None,
-) -> Dict[str, Union[float, npt.NDArray]]:
+    X: npt.NDArray | pd.DataFrame,
+    design_weights: npt.NDArray | pd.DataFrame,
+    in_pop: npt.NDArray | pd.DataFrame,
+    invV: npt.NDArray | None = None,
+) -> dict[str, float | npt.NDArray]:
     """This is a helper function for cbps.
     It computes the gmm loss.
 
@@ -167,11 +173,11 @@ def gmm_function(
 
 def gmm_loss(
     beta: npt.NDArray,
-    X: Union[npt.NDArray, pd.DataFrame],
-    design_weights: Union[npt.NDArray, pd.DataFrame],
-    in_pop: Union[npt.NDArray, pd.DataFrame],
-    invV: Optional[npt.NDArray] = None,
-) -> Union[float, npt.NDArray]:
+    X: npt.NDArray | pd.DataFrame,
+    design_weights: npt.NDArray | pd.DataFrame,
+    in_pop: npt.NDArray | pd.DataFrame,
+    invV: npt.NDArray | None = None,
+) -> float | npt.NDArray:
     """This is a helper function for cbps.
     It computes the gmm loss.
     See gmm_function for detials.
@@ -192,10 +198,10 @@ def gmm_loss(
 def alpha_function(
     alpha: npt.NDArray,
     beta: npt.NDArray,
-    X: Union[npt.NDArray, pd.DataFrame],
-    design_weights: Union[npt.NDArray, pd.DataFrame],
-    in_pop: Union[npt.NDArray, pd.DataFrame],
-) -> Union[float, npt.NDArray]:
+    X: npt.NDArray | pd.DataFrame,
+    design_weights: npt.NDArray | pd.DataFrame,
+    in_pop: npt.NDArray | pd.DataFrame,
+) -> float | npt.NDArray:
     """This is a helper function for cbps.
     It computes the gmm loss of alpha*beta.
 
@@ -237,8 +243,8 @@ def compute_deff_from_beta(
 
 
 def _standardize_model_matrix(
-    model_matrix: pd.DataFrame, model_matrix_columns_names: List[str]
-) -> Dict[str, Any]:
+    model_matrix: pd.DataFrame, model_matrix_columns_names: list[str]
+) -> dict[str, Any]:
     """This is a helper function for cbps. It standardizes the columns of the model matrix.
 
     Args:
@@ -325,21 +331,21 @@ def cbps(  # noqa
     sample_weights: pd.Series,
     target_df: pd.DataFrame,
     target_weights: pd.Series,
-    variables: Optional[List[str]] = None,
-    transformations: str = "default",
+    variables: list[str] | None = None,
+    transformations: str | None = "default",
     na_action: str = "add_indicator",
-    formula: Optional[Union[str, List[str]]] = None,
+    formula: str | list[str] | None = None,
     balance_classes: bool = True,
     cbps_method: str = "over",  # other option: "exact"
-    max_de: Optional[float] = None,
+    max_de: float | None = None,
     opt_method: str = "COBYLA",
-    opt_opts: Optional[Dict[str, Any]] = None,
-    weight_trimming_mean_ratio: Union[None, float, int] = 20,
-    weight_trimming_percentile: Optional[float] = None,
+    opt_opts: dict[str, Any] | None = None,
+    weight_trimming_mean_ratio: None | float | int = 20,
+    weight_trimming_percentile: float | None = None,
     random_seed: int = 2020,
     *args: Any,
     **kwargs: Any,
-) -> Dict[str, Union[pd.Series, Dict[str, Any]]]:
+) -> dict[str, pd.Series | dict[str, Any]]:
     """Fit cbps (covariate balancing propensity score model) for the sample using the target.
     Final weights are normalized to target size.
     We use a two-step GMM estimator (as in the default R package), unlike the suggeted continuous-updating
@@ -464,7 +470,7 @@ def cbps(  # noqa
         (model_matrix_output["model_matrix"]),
     ).toarray()
     X_matrix_columns_names = cast(
-        List[str], model_matrix_output["model_matrix_columns_names"]
+        list[str], model_matrix_output["model_matrix_columns_names"]
     )
     logger.info(
         f"The formula used to build the model matrix: {model_matrix_output['formula']}"
