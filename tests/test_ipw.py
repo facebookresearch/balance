@@ -3,9 +3,15 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import (
+    absolute_import,
+    annotations,
+    division,
+    print_function,
+    unicode_literals,
+)
 
 import balance.testutil
 
@@ -27,7 +33,7 @@ class TestIPW(
 ):
     """Test suite for Inverse Propensity Weighting (IPW) functionality."""
 
-    def test_ipw_weights_order(self):
+    def test_ipw_weights_order(self) -> None:
         """Test that IPW assigns correct relative weight ordering.
 
         Tests that identical values in sample and target receive equal weights,
@@ -55,7 +61,7 @@ class TestIPW(
         self.assertTrue(weights[0] < weights[1])
         self.assertTrue(weights[0] < weights[7])
 
-    def test_ipw_different_sample_sizes(self):
+    def test_ipw_different_sample_sizes(self) -> None:
         """Test IPW behavior with different sample and target sizes.
 
         Verifies that IPW can handle datasets of different sizes and produces
@@ -114,7 +120,7 @@ class TestIPW(
         self.assertIsNotNone(result_same_size)
         self.assertIn("weight", result_same_size)
 
-    def test_ipw_adjustment_warnings(self):
+    def test_ipw_adjustment_warnings(self) -> None:
         """Test that IPW generates appropriate warnings for problematic adjustments.
 
         Tests warning generation for:
@@ -154,7 +160,7 @@ class TestIPW(
             balance_classes=False,
         )
 
-    def test_ipw_na_drop_behavior(self):
+    def test_ipw_na_drop_behavior(self) -> None:
         """Test that IPW correctly handles and warns about dropping NA values.
 
         Verifies that when na_action="drop" is specified, IPW properly drops
@@ -193,7 +199,7 @@ class TestIPW(
             transformations=None,
         )
 
-    def test_ipw_allows_custom_logistic_regression_kwargs(self):
+    def test_ipw_allows_custom_logistic_regression_kwargs(self) -> None:
         """Users can override LogisticRegression configuration via kwargs."""
 
         sample = pd.DataFrame({"a": (0, 1, 1, 0), "b": (1, 2, 3, 4)})
@@ -213,7 +219,7 @@ class TestIPW(
         self.assertEqual(fit.solver, "saga")
         self.assertEqual(fit.max_iter, 200)
 
-    def test_ipw_supports_custom_sklearn_model(self):
+    def test_ipw_supports_custom_sklearn_model(self) -> None:
         """Custom sklearn models (e.g., RandomForest) can drive propensity scores."""
 
         rng = np.random.RandomState(1234)
@@ -251,7 +257,7 @@ class TestIPW(
         self.assertLessEqual(prop_dev, 1.0)
         self.assertIsNotNone(result["model"]["regularisation_perf"])
 
-    def test_ipw_supports_dense_only_estimators(self):
+    def test_ipw_supports_dense_only_estimators(self) -> None:
         """Estimators that require dense matrices (e.g., GaussianNB) are supported."""
 
         rng = np.random.RandomState(42)
@@ -274,7 +280,7 @@ class TestIPW(
         self.assertTrue(np.all(np.isfinite(weights)))
         self.assertIsInstance(result["model"]["fit"], GaussianNB)
 
-    def test_ipw_extreme_probabilities_yield_finite_weights(self):
+    def test_ipw_extreme_probabilities_yield_finite_weights(self) -> None:
         """Models producing 0/1 probabilities result in finite stabilized weights."""
 
         rng = np.random.RandomState(0)
@@ -296,7 +302,7 @@ class TestIPW(
         weights = result["weight"].to_numpy()
         self.assertTrue(np.all(np.isfinite(weights)))
 
-    def test_ipw_requires_predict_proba_for_custom_model(self):
+    def test_ipw_requires_predict_proba_for_custom_model(self) -> None:
         """Custom sklearn models without predict_proba are rejected."""
 
         sample = pd.DataFrame({"a": (0, 1, 1, 0)})
@@ -313,7 +319,7 @@ class TestIPW(
                 num_lambdas=1,
             )
 
-    def test_ipw_rejects_custom_models_with_single_proba_column(self):
+    def test_ipw_rejects_custom_models_with_single_proba_column(self) -> None:
         """Custom models must return probability estimates for both classes."""
 
         class SingleColumnRF(RandomForestClassifier):
@@ -338,7 +344,7 @@ class TestIPW(
                 num_lambdas=1,
             )
 
-    def test_ipw_rejects_logistic_kwargs_with_custom_model(self):
+    def test_ipw_rejects_logistic_kwargs_with_custom_model(self) -> None:
         """Providing logistic_regression_kwargs with custom model raises an error."""
 
         sample = pd.DataFrame({"a": (0, 1, 1, 0)})
@@ -356,7 +362,7 @@ class TestIPW(
                 num_lambdas=1,
             )
 
-    def test_ipw_warns_when_penalty_factor_with_custom_model(self):
+    def test_ipw_warns_when_penalty_factor_with_custom_model(self) -> None:
         """Providing penalty_factor with custom models emits a warning."""
 
         rng = np.random.RandomState(5)
@@ -380,7 +386,7 @@ class TestIPW(
             any("penalty_factor is ignored" in message for message in logs.output)
         )
 
-    def test_model_coefs_handles_linear_and_non_linear_estimators(self):
+    def test_model_coefs_handles_linear_and_non_linear_estimators(self) -> None:
         """model_coefs returns coefficients for linear models and empty series otherwise."""
 
         X = pd.DataFrame({"a": (0, 1, 0, 1), "b": (1, 1, 0, 0)})
@@ -395,7 +401,7 @@ class TestIPW(
         rf_coefs = balance_ipw.model_coefs(rf, feature_names=list(X.columns))["coefs"]
         self.assertTrue(rf_coefs.empty)
 
-    def test_weights_from_link_function(self):
+    def test_weights_from_link_function(self) -> None:
         """Test the weights_from_link function with various scenarios.
 
         Tests the core weight calculation function that converts logistic
@@ -410,7 +416,7 @@ class TestIPW(
         target_weights = (1, 2)
 
         result_weights = balance_ipw.weights_from_link(
-            link_values, False, (1, 1, 1), target_weights
+            link_values, False, pd.Series((1, 1, 1)), pd.Series(target_weights)
         )
         expected_weights = np.array((1 / np.exp(1), 1 / np.exp(2), 1 / np.exp(3)))
         expected_weights = (
@@ -422,7 +428,7 @@ class TestIPW(
 
         # Test that balance_classes does nothing when classes have same sum weights
         result_balanced = balance_ipw.weights_from_link(
-            link_values, True, (1, 1, 1), (1, 2)
+            link_values, True, pd.Series((1, 1, 1)), pd.Series((1, 2))
         )
         self.assertEqual(result_balanced, expected_weights)
 
@@ -431,8 +437,8 @@ class TestIPW(
         result_class_balanced = balance_ipw.weights_from_link(
             link_values,
             True,
-            (1, 1, 1),
-            target_weights_unbalanced,
+            pd.Series((1, 1, 1)),
+            pd.Series(target_weights_unbalanced),
             keep_sum_of_weights=False,
         )
         # Expected calculation includes log odds adjustment
@@ -453,7 +459,7 @@ class TestIPW(
         # Test sample weight scaling
         target_weights_scaled = (1, 2)
         result_scaled = balance_ipw.weights_from_link(
-            link_values, False, (2, 2, 2), target_weights_scaled
+            link_values, False, pd.Series((2, 2, 2)), pd.Series(target_weights_scaled)
         )
         expected_scaled = np.array((2 / np.exp(1), 2 / np.exp(2), 2 / np.exp(3)))
         expected_scaled = (
@@ -466,15 +472,15 @@ class TestIPW(
         result_trimmed = balance_ipw.weights_from_link(
             np.random.uniform(0, 1, large_sample_size),
             False,
-            (1,) * large_sample_size,
-            (1,),
-            weight_trimming_percentile=(0, 0.11),
+            pd.Series((1,) * large_sample_size),
+            pd.Series((1,)),
+            weight_trimming_percentile=0.11,
             keep_sum_of_weights=False,
         )
         # Verify that trimming limits extreme weights
         self.assertTrue(result_trimmed.max() < 0.9)
 
-    def test_ipw_input_validation(self):
+    def test_ipw_input_validation(self) -> None:
         """Test that IPW properly validates input parameters and raises appropriate errors.
 
         Tests validation for:
@@ -508,7 +514,7 @@ class TestIPW(
             mismatched_weights,
         )
 
-    def test_ipw_dropna_empty_result(self):
+    def test_ipw_dropna_empty_result(self) -> None:
         """Test IPW error handling when dropping NA values results in empty DataFrame.
 
         When all rows contain NaN values and na_action="drop" is specified,
@@ -532,7 +538,7 @@ class TestIPW(
             na_action="drop",
         )
 
-    def test_ipw_custom_formula(self):
+    def test_ipw_custom_formula(self) -> None:
         """Test IPW with custom formula specification.
 
         Verifies that IPW correctly interprets and applies custom formulas
@@ -555,6 +561,7 @@ class TestIPW(
         )
 
         # Test IPW with interaction term formula "a : b + c"
+        # Disable transformations to get simple column names for testing
         result = balance_ipw.ipw(
             sample_df=sample,
             sample_weights=pd.Series((1,) * 9),
@@ -568,7 +575,7 @@ class TestIPW(
         expected_columns = ["a:b", "c"]
         self.assertEqual(result["model"]["X_matrix_columns"], expected_columns)
 
-    def _build_mixed_dataframe(self, size, is_sample=True):
+    def _build_mixed_dataframe(self, size: int, is_sample: bool = True) -> pd.DataFrame:
         """Build DataFrame with continuous and categorical features.
 
         Args:
@@ -604,7 +611,7 @@ class TestIPW(
         mixed_df = mixed_df.rename(columns={i: "abcdefghij"[i] for i in range(0, 10)})
         return mixed_df
 
-    def test_ipw_consistency_with_default_arguments(self):
+    def test_ipw_consistency_with_default_arguments(self) -> None:
         """Test IPW consistency and reproducibility with default parameters.
 
         This comprehensive test verifies that IPW produces consistent results
@@ -624,9 +631,13 @@ class TestIPW(
         target_size = 2000
 
         # Create sample DataFrame with mixed data types
-        sample_df = self._build_mixed_dataframe(sample_size, is_sample=True)
+        sample_df: pd.DataFrame = self._build_mixed_dataframe(
+            sample_size, is_sample=True
+        )
         # Create target DataFrame with different distribution
-        target_df = self._build_mixed_dataframe(target_size, is_sample=False)
+        target_df: pd.DataFrame = self._build_mixed_dataframe(
+            target_size, is_sample=False
+        )
 
         # Generate random weights
         sample_weights = pd.Series(np.random.uniform(0, 1, size=sample_size))
@@ -669,7 +680,7 @@ class TestIPW(
         best_trim = model["regularisation_perf"]["best"]["trim"]
         self.assertEqual(best_trim, 2.5)
 
-    def test_compute_deviance_without_labels(self):
+    def test_compute_deviance_without_labels(self) -> None:
         """Test _compute_deviance computes 2 * log_loss correctly without labels parameter.
 
         Verifies that the helper function correctly computes deviance as 2 * log_loss
@@ -688,7 +699,7 @@ class TestIPW(
         self.assertAlmostEqual(result, expected, places=10)
         self.assertIsInstance(result, float)
 
-    def test_compute_deviance_with_labels(self):
+    def test_compute_deviance_with_labels(self) -> None:
         """Test _compute_deviance computes 2 * log_loss correctly with labels parameter.
 
         Verifies that the helper function correctly computes deviance when
@@ -708,7 +719,7 @@ class TestIPW(
         self.assertAlmostEqual(result, expected, places=10)
         self.assertIsInstance(result, float)
 
-    def test_compute_deviance_with_different_weights(self):
+    def test_compute_deviance_with_different_weights(self) -> None:
         """Test _compute_deviance handles non-uniform sample weights correctly.
 
         Verifies that the deviance calculation properly incorporates
@@ -726,7 +737,7 @@ class TestIPW(
         expected = 2 * log_loss(y, pred, sample_weight=model_weights)
         self.assertAlmostEqual(result, expected, places=10)
 
-    def test_compute_proportion_deviance_basic(self):
+    def test_compute_proportion_deviance_basic(self) -> None:
         """Test _compute_proportion_deviance computes (1 - dev/null_dev) correctly.
 
         Verifies basic computation of proportion of deviance explained
@@ -744,7 +755,7 @@ class TestIPW(
         self.assertAlmostEqual(result, expected, places=10)
         self.assertEqual(result, 0.5)
 
-    def test_compute_proportion_deviance_perfect_fit(self):
+    def test_compute_proportion_deviance_perfect_fit(self) -> None:
         """Test _compute_proportion_deviance when dev equals 0 (perfect fit).
 
         Verifies that when deviance is 0 (perfect model fit),
@@ -760,7 +771,7 @@ class TestIPW(
         # Assert: Perfect fit should yield proportion of 1.0
         self.assertEqual(result, 1.0)
 
-    def test_compute_proportion_deviance_no_improvement(self):
+    def test_compute_proportion_deviance_no_improvement(self) -> None:
         """Test _compute_proportion_deviance when dev equals null_dev (no improvement).
 
         Verifies that when model deviance equals null deviance (no improvement
@@ -776,7 +787,7 @@ class TestIPW(
         # Assert: No improvement should yield proportion of 0.0
         self.assertAlmostEqual(result, 0.0, places=10)
 
-    def test_compute_proportion_deviance_partial_improvement(self):
+    def test_compute_proportion_deviance_partial_improvement(self) -> None:
         """Test _compute_proportion_deviance with various partial improvement levels.
 
         Verifies correct computation of proportion deviance for different
