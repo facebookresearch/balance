@@ -3,9 +3,15 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import (
+    absolute_import,
+    annotations,
+    division,
+    print_function,
+    unicode_literals,
+)
 
 import balance.testutil
 import pandas as pd
@@ -14,7 +20,7 @@ from balance.sample_class import Sample
 from balance.weighting_methods import adjust_null as balance_adjust_null
 
 
-sample = Sample.from_frame(
+sample: Sample = Sample.from_frame(
     df=pd.DataFrame(
         {
             "a": (1, 2, 3, 1),
@@ -30,7 +36,7 @@ sample = Sample.from_frame(
     outcome_columns="o",
 )
 
-target = Sample.from_frame(
+target: Sample = Sample.from_frame(
     pd.DataFrame(
         {
             "a": (1, 2, 3),
@@ -45,10 +51,10 @@ target = Sample.from_frame(
 )
 
 
-class TestAdjustmentNull(
+class TestAdjustNull(
     balance.testutil.BalanceTestCase,
 ):
-    def test_adjust_null(self):
+    def test_check_adjust_null_generates_null_model_dict(self) -> None:
         res = balance_adjust_null.adjust_null(
             pd.DataFrame({"a": [1, 2, 3]}),
             pd.Series([4, 5, 6]),
