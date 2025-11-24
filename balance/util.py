@@ -675,6 +675,7 @@ def _prepare_input_model_matrix(
         all_data = add_na_indicator(all_data)
     else:
         logger.warning("Dropping all rows with NAs")
+        # TODO: add code to drop all rows with NAs (columns are left as is)
 
     if fix_columns_names:
         all_data.columns = all_data.columns.str.replace(
@@ -1424,7 +1425,7 @@ def choose_variables(
 
         if len(variables_not_in_df) > 0:
             logger.warning(
-                "These variables are not included in the dataframes: {variables_not_in_df}"
+                f"These variables are not included in the dataframes: {variables_not_in_df}"
             )
             raise ValueError(
                 f"{len(variables_not_in_df)} requested variables are not in all Samples: "
