@@ -3,9 +3,15 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import (
+    absolute_import,
+    annotations,
+    division,
+    print_function,
+    unicode_literals,
+)
 
 import balance.testutil
 
@@ -19,7 +25,7 @@ from balance.weighting_methods.poststratify import poststratify
 class Testpoststratify(
     balance.testutil.BalanceTestCase,
 ):
-    def test_poststratify(self):
+    def test_poststratify(self) -> None:
         s = pd.DataFrame(
             {
                 "a": (0, 1, 0, 1),
@@ -101,7 +107,7 @@ class Testpoststratify(
         )
         self.assertEqual(expected, result.weights().df.iloc[:, 0].values)
 
-    def test_poststratify_weight_trimming_applied(self):
+    def test_poststratify_weight_trimming_applied(self) -> None:
         s = pd.DataFrame(
             {
                 "a": (0, 1, 0, 1),
@@ -112,20 +118,24 @@ class Testpoststratify(
         t = s
         t_weights = pd.Series([4, 2, 2, 8])
 
-        baseline = poststratify(
+        baseline_result = poststratify(
             sample_df=s,
             sample_weights=s_weights,
             target_df=t,
             target_weights=t_weights,
         )["weight"]
+        assert isinstance(baseline_result, pd.Series)
+        baseline = baseline_result
 
-        trimmed = poststratify(
+        trimmed_result = poststratify(
             sample_df=s,
             sample_weights=s_weights,
             target_df=t,
             target_weights=t_weights,
             weight_trimming_mean_ratio=1.0,
         )["weight"]
+        assert isinstance(trimmed_result, pd.Series)
+        trimmed = trimmed_result
 
         expected = balance_adjustment.trim_weights(
             baseline,
@@ -135,7 +145,7 @@ class Testpoststratify(
 
         pd.testing.assert_series_equal(trimmed, expected)
 
-    def test_poststratify_percentile_trimming_applied(self):
+    def test_poststratify_percentile_trimming_applied(self) -> None:
         s = pd.DataFrame(
             {
                 "a": (0, 1, 0, 1),
@@ -146,20 +156,24 @@ class Testpoststratify(
         t = s
         t_weights = pd.Series([4, 2, 2, 8])
 
-        baseline = poststratify(
+        baseline_result = poststratify(
             sample_df=s,
             sample_weights=s_weights,
             target_df=t,
             target_weights=t_weights,
         )["weight"]
+        assert isinstance(baseline_result, pd.Series)
+        baseline = baseline_result
 
-        trimmed = poststratify(
+        trimmed_result = poststratify(
             sample_df=s,
             sample_weights=s_weights,
             target_df=t,
             target_weights=t_weights,
             weight_trimming_percentile=0.25,
         )["weight"]
+        assert isinstance(trimmed_result, pd.Series)
+        trimmed = trimmed_result
 
         expected = balance_adjustment.trim_weights(
             baseline,
@@ -169,7 +183,7 @@ class Testpoststratify(
 
         pd.testing.assert_series_equal(trimmed, expected)
 
-    def test_poststratify_variables_arg(self):
+    def test_poststratify_variables_arg(self) -> None:
         s = pd.DataFrame(
             {
                 "a": (0, 1, 0, 1),
@@ -188,7 +202,7 @@ class Testpoststratify(
         )["weight"]
         self.assertEqual(result, pd.Series([4.0, 4.0, 2.0, 6.0]))
 
-    def test_poststratify_transformations(self):
+    def test_poststratify_transformations(self) -> None:
         # for numeric
         size = 10000
         s = pd.DataFrame({"age": np.random.uniform(0, 1, size)})
@@ -239,7 +253,7 @@ class Testpoststratify(
         self.assertTrue(abs(result[s.x == "b"].sum() / size - 0.035) < eps)
         self.assertTrue(abs(result[s.x == "c"].sum() / size - 0.015) < eps)
 
-    def test_poststratify_exceptions(self):
+    def test_poststratify_exceptions(self) -> None:
         # column with name weight
         s = pd.DataFrame(
             {
