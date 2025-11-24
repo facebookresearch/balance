@@ -23,6 +23,7 @@ from balance.balancedf_class import (  # noqa
     BalanceWeightsDF,  # noqa
 )
 from balance.sample_class import Sample
+from balance.stats_and_plots import weighted_comparisons_stats
 from balance.testutil import BalanceTestCase
 
 
@@ -1097,6 +1098,104 @@ class TestBalanceDF_asmd(BalanceTestCase):
                 },
             },
         )
+
+    def test_BalanceDF_kld(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "a": (1, 2, 3, 4),
+                    "c": ("x", "x", "y", "z"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "a": (1, 2, 2, 3),
+                    "c": ("x", "y", "y", "z"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+
+        sample_with_target = sample.set_target(target)
+
+        output = sample_with_target.covars().kld(on_linked_samples=False)
+
+        expected = pd.DataFrame(
+            {
+                "a": 0.479355,
+                "c[x]": 0.143841,
+                "c[y]": 0.130812,
+                "c[z]": 0.0,
+                "mean(kld)": 0.285453,
+            },
+            index=("covars",),
+        )
+
+        self.assertEqual(output.round(6), expected)
+
+    def test_BalanceDF_kld_aggregate_by_main_covar(self) -> None:
+        covars = s3.covars()
+
+        unaggregated = covars.kld(on_linked_samples=False)
+        expected = weighted_comparisons_stats._aggregate_asmd_by_main_covar(
+            unaggregated.loc["covars"]
+        )
+
+        aggregated = covars.kld(
+            on_linked_samples=False, aggregate_by_main_covar=True
+        ).loc["covars"]
+
+        self.assertEqual(aggregated.rename(None).round(6), expected.round(6))
+
+    def test_BalanceDF_kld_on_linked_samples(self) -> None:
+        covars = s3_null_madeup_weights.covars()
+        links = covars._BalanceDF_child_from_linked_samples()
+
+        self.assertIn("unadjusted", links)
+        self.assertIn("target", links)
+
+        self_df, self_weights = links["self"]._get_df_and_weights()
+        target_df, target_weights = links["target"]._get_df_and_weights()
+        unadj_df, unadj_weights = links["unadjusted"]._get_df_and_weights()
+
+        expected_self = weighted_comparisons_stats.kld(
+            self_df,
+            target_df,
+            self_weights,
+            target_weights,
+            aggregate_by_main_covar=True,
+        )
+        expected_unadjusted = weighted_comparisons_stats.kld(
+            unadj_df,
+            target_df,
+            unadj_weights,
+            target_weights,
+            aggregate_by_main_covar=True,
+        )
+
+        expected = pd.DataFrame(
+            [
+                expected_self,
+                expected_unadjusted,
+                expected_unadjusted - expected_self,
+            ],
+            index=["self", "unadjusted", "unadjusted - self"],
+        )
+
+        output = covars.kld(aggregate_by_main_covar=True)
+        expected.index.name = output.index.name
+
+        self.assertEqual(output.round(6), expected.round(6))
 
     def test_BalanceDF_asmd_improvement(self) -> None:
         with self.assertRaisesRegex(

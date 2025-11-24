@@ -117,6 +117,22 @@ def _weights_per_covars_names(covar_names: List[str]) -> pd.DataFrame:
     return pd.concat([weights.transpose(), main_covar_names], axis=1)
 
 
+def _kl_divergence_bernoulli(p: float, q: float, eps: float = 1e-12) -> float:
+    p = float(np.clip(p, eps, 1 - eps))
+    q = float(np.clip(q, eps, 1 - eps))
+    return float(p * np.log(p / q) + (1 - p) * np.log((1 - p) / (1 - q)))
+
+
+def _kl_divergence_gaussian(
+    mu_p: float, var_p: float, mu_q: float, var_q: float, eps: float = 1e-12
+) -> float:
+    var_p = float(max(var_p, eps))
+    var_q = float(max(var_q, eps))
+    return float(
+        0.5 * (np.log(var_q / var_p) + (var_p + (mu_p - mu_q) ** 2) / var_q - 1)
+    )
+
+
 # TODO: add memoization
 def asmd(
     sample_df: pd.DataFrame,
@@ -288,6 +304,101 @@ def asmd(
     out = pd.concat((out, weights))
     mean = weighted_mean(out.iloc[0], out.loc["weight"])
     out["mean(asmd)"] = mean
+
+    out = out.iloc[0]
+    out.name = None
+
+    if aggregate_by_main_covar:
+        out = _aggregate_asmd_by_main_covar(out)
+
+    return out
+
+
+def kld(
+    sample_df: pd.DataFrame,
+    target_df: pd.DataFrame,
+    sample_weights: list[float] | pd.Series | npt.NDArray | None = None,
+    target_weights: list[float] | pd.Series | npt.NDArray | None = None,
+    aggregate_by_main_covar: bool = False,
+) -> pd.Series:
+    """
+    Calculate the Kullback-Leibler divergence (KLD) between the columns of two DataFrames.
+
+    Numeric columns are modeled as Gaussian distributions, and categorical columns are
+    expected to be one-hot encoded, so their KLD is computed using Bernoulli
+    distributions. Each column's contribution is aggregated into ``mean(kld)``
+    using the same weighting scheme as ASMD.
+
+    Args:
+        sample_df (pd.DataFrame): source group of the comparison.
+        target_df (pd.DataFrame): target group of the comparison.
+        sample_weights (Union[List, pd.Series, np.ndarray,], optional): weights to use.
+            The default is None. If no weights are passed (None), it will use an array
+            of 1s.
+        target_weights (Union[List, pd.Series, np.ndarray,], optional): weights to use.
+            The default is None. If no weights are passed (None), it will use an array
+            of 1s.
+        aggregate_by_main_covar (bool):
+            If to aggregate the KLD based on the main covariate name. Defaults to False.
+    Returns:
+        pd.Series: a Series indexed on the names of the columns in the input DataFrames.
+        The values (of type np.float64) are of the KLD calculation. The last element is
+        ``mean(kld)``, which is the weighted average of the calculated KLD values.
+    """
+
+    if not isinstance(sample_df, pd.DataFrame):
+        raise ValueError(f"sample_df must be pd.DataFrame, is {type(sample_df)}")
+    if not isinstance(target_df, pd.DataFrame):
+        raise ValueError(f"target_df must be pd.DataFrame, is {type(target_df)}")
+
+    if sample_df.columns.values.tolist() != target_df.columns.values.tolist():
+        logger.warning(
+            f"""
+            sample_df and target_df must have the same column names.
+            sample_df column names: {sample_df.columns.values.tolist()}
+            target_df column names: {target_df.columns.values.tolist()}"""
+        )
+
+    sample_df, target_df = sample_df.align(
+        target_df, join="outer", axis=1, fill_value=0
+    )
+
+    sample_mean = descriptive_stats(sample_df, sample_weights, "mean")
+    target_mean = descriptive_stats(target_df, target_weights, "mean")
+    sample_var = weighted_var(sample_df, sample_weights)
+    target_var = weighted_var(target_df, target_weights)
+
+    out = {}
+
+    def _is_binary(series: pd.Series) -> bool:
+        uniques = pd.unique(series.dropna())
+        return len(uniques) <= 2 and set(uniques).issubset({0, 1})
+
+    for col in sample_df.columns:
+        if col.startswith("_is_na_"):
+            continue
+        if _is_binary(sample_df[col]) and _is_binary(target_df[col]):
+            out[col] = _kl_divergence_bernoulli(
+                sample_mean.iloc[0][col], target_mean.iloc[0][col]
+            )
+        else:
+            out[col] = _kl_divergence_gaussian(
+                sample_mean.iloc[0][col],
+                sample_var[col],
+                target_mean.iloc[0][col],
+                target_var[col],
+            )
+
+    out = _safe_replace_and_infer(pd.DataFrame([out]))
+
+    weights = (
+        _weights_per_covars_names(out.columns.values.tolist())["weight"]
+        .to_frame()
+        .transpose()
+    )
+    out = pd.concat((out, weights))
+    mean = weighted_mean(out.iloc[0], out.loc["weight"])
+    out["mean(kld)"] = mean
 
     out = out.iloc[0]
     out.name = None

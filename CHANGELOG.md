@@ -22,6 +22,10 @@
     all existing trimming and diagnostic workflows. Dense-only estimators and
     models without linear coefficients are fully supported, and propensity
     probabilities are stabilized to avoid numerical issues.
+- **Covariate diagnostics**
+  - Added KL divergence calculations for covariate comparisons (numeric and
+    one-hot categorical), exposed via `BalanceDF.kld()` alongside linked-sample
+    aggregation support.
 
 ## Documentation
 

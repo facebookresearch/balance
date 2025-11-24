@@ -1114,6 +1114,39 @@ class BalanceDF:
             aggregate_by_main_covar=aggregate_by_main_covar,
         )
 
+    @staticmethod
+    def _kld_BalanceDF(
+        sample_BalanceDF: "BalanceDF",
+        target_BalanceDF: "BalanceDF",
+        aggregate_by_main_covar: bool = False,
+    ) -> pd.Series:
+        """Run KLD on two BalanceDF objects.
+
+        Prepares the BalanceDF objects by passing them through :func:`_get_df_and_weights`, and
+        then pass the df and weights from the two objects into :func:`weighted_comparisons_stats.kld`.
+
+        Args:
+            sample_BalanceDF (BalanceDF): Object
+            target_BalanceDF (BalanceDF): Object
+            aggregate_by_main_covar (bool, optional): See :func:`weighted_comparisons_stats.kld`. Defaults to False.
+
+        Returns:
+            pd.Series: See :func:`weighted_comparisons_stats.kld`.
+        """
+        BalanceDF._check_if_not_BalanceDF(sample_BalanceDF, "sample_BalanceDF")
+        BalanceDF._check_if_not_BalanceDF(target_BalanceDF, "target_BalanceDF")
+
+        sample_df_values, sample_weights = sample_BalanceDF._get_df_and_weights()
+        target_df_values, target_weights = target_BalanceDF._get_df_and_weights()
+
+        return weighted_comparisons_stats.kld(
+            sample_df_values,
+            target_df_values,
+            sample_weights,
+            target_weights,
+            aggregate_by_main_covar=aggregate_by_main_covar,
+        )
+
     def asmd(
         self: "BalanceDF",
         on_linked_samples: bool = True,
@@ -1241,6 +1274,55 @@ class BalanceDF:
                 .set_index("index")
             )
             return out
+
+    def kld(
+        self: "BalanceDF",
+        on_linked_samples: bool = True,
+        target: "BalanceDF" | None = None,
+        aggregate_by_main_covar: bool = False,
+        **kwargs: Any,
+    ) -> pd.DataFrame:
+        """Calculate the KL divergence between the BalanceDF and a target.
+
+        Args:
+            self (BalanceDF): Object from sample (with/without adjustment, but it needs some target).
+            on_linked_samples (bool, optional): If to compare also to linked sample objects (specifically: unadjusted), or not.
+                Defaults to True.
+            target (Optional["BalanceDF"], optional): A BalanceDF (of the same type as the one used in self) to compare against.
+                If None then it looks for a target in the self linked objects. Defaults to None.
+            aggregate_by_main_covar (bool, optional): Defaults to False.
+                If True, it will aggregate the KLD across one-hot encoded categorical levels to the main covariate name.
+        Returns:
+            pd.DataFrame: KLD per covariate (and their aggregate mean) across the requested sources.
+        """
+
+        target_from_self = self._BalanceDF_child_from_linked_samples().get("target")
+
+        if target is None:
+            target = target_from_self
+
+        if target is None:
+            raise ValueError(
+                f"Sample {object.__str__(self._sample)} has no target set, or target has no {self.__name} to compare against."
+            )
+        elif on_linked_samples:
+            return balance_util.row_pairwise_diffs(
+                self._call_on_linked(
+                    "kld",
+                    exclude=("target",),
+                    target=target,
+                    aggregate_by_main_covar=aggregate_by_main_covar,
+                    **kwargs,
+                )
+            )
+        else:
+            out = (
+                pd.DataFrame(self._kld_BalanceDF(self, target, aggregate_by_main_covar))
+                .transpose()
+                .assign(index=(self.__name,))
+                .set_index("index")
+            )
+            return out.rename_axis(None)
 
     def asmd_improvement(
         self: "BalanceDF",
