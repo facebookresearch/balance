@@ -17,7 +17,7 @@ import logging
 
 import random
 
-from typing import Any, cast, Dict, List, Literal, Optional, Tuple
+from typing import Any, cast, Dict, List, Literal, Optional, Tuple, TypedDict, Union
 
 import matplotlib.pyplot as plt
 
@@ -36,6 +36,28 @@ from balance.util import _safe_show_legend, choose_variables, rm_mutual_nas
 from matplotlib.colors import rgb2hex
 
 logger: logging.Logger = logging.getLogger(__package__)
+
+# Type alias for valid sample names used in plots
+# Note: Uses Union syntax for Python 3.9 compatibility
+SampleName = Union[
+    Literal["sample"],
+    Literal["unadjusted"],
+    Literal["self"],
+    Literal["adjusted"],
+    Literal["target"],
+]
+
+
+class DataFrameWithWeight(TypedDict, total=False):
+    """Structure for DataFrame with optional weight Series.
+
+    Note: Uses Union (Optional) syntax for Python 3.9 compatibility.
+    TypedDict field definitions are evaluated at runtime and cannot use
+    the | operator in Python 3.9.
+    """
+
+    df: pd.DataFrame
+    weight: Optional[pd.Series]
 
 
 ################################################################################
@@ -93,7 +115,7 @@ def _return_sample_palette(
 
 
 def _plotly_marker_color(
-    name: Literal["sample", "unadjusted", "self", "adjusted"],
+    name: SampleName,
     only_self_and_target: bool,
     color_type: Literal["color", "line"],
 ) -> str:
@@ -101,7 +123,8 @@ def _plotly_marker_color(
     Returns a color string for a marker in a plotly plot based on the given parameters.
 
     Args:
-        name (Literal["sample", "unadjusted", "self", "adjusted"]): Name of the marker.
+        name (SampleName): Name of the marker. Must be one of: "sample", "unadjusted", "self", "adjusted", or "target".
+            The function handles these values case-insensitively and provides a fallback color for unexpected values.
         only_self_and_target (bool): Determines if only self and target groups are available, or if it's self, unadjusted and target.
         color_type (Literal["color", "line"]): The type of color, either "color" or "line".
 
@@ -133,7 +156,7 @@ def _plotly_marker_color(
 
 
 def plot_bar(
-    dfs: List[Dict[str, pd.DataFrame | pd.Series]],
+    dfs: List[DataFrameWithWeight],
     names: List[str],
     column: str,
     axis: Optional[plt.Axes] = None,
@@ -234,7 +257,7 @@ def plot_bar(
 
 
 def plot_hist_kde(
-    dfs: List[Dict[str, pd.DataFrame | pd.Series]],
+    dfs: List[DataFrameWithWeight],
     names: List[str],
     column: str,
     axis: Optional[plt.Axes] = None,
@@ -383,7 +406,7 @@ def plot_hist_kde(
 
 
 def plot_qq(
-    dfs: List[Dict[str, pd.DataFrame | pd.Series]],
+    dfs: List[DataFrameWithWeight],
     names: List[str],
     column: str,
     axis: Optional[plt.Axes] = None,
@@ -439,18 +462,11 @@ def plot_qq(
         target_q = weighted_quantile(
             target["df"][column],
             np.arange(0, 1, 0.001),
-            # pyre-fixme[6]: TODO:
-            # This is because of using:
-            # dfs: List[Dict[str, Union[pd.DataFrame, pd.Series]]],
-            # When in fact we want to be clear that the first element is called
-            # "df" and the second "weight", and that the first is a pd.DataFrame and
-            # the second pd.Series. Until this is not clear - the following line will raise an error.
             target["weight"] if weighted else None,
         )
         sample_q = weighted_quantile(
             d.loc[:, column],
             np.arange(0, 1, 0.001),
-            # pyre-fixme[6]
             _w if weighted else None,
         )
 
@@ -467,7 +483,7 @@ def plot_qq(
 
 
 def plot_qq_categorical(
-    dfs: List[Dict[str, pd.DataFrame | pd.Series]],
+    dfs: List[DataFrameWithWeight],
     names: List[str],
     column: str,
     axis: Optional[plt.Axes] = None,
@@ -531,14 +547,12 @@ def plot_qq_categorical(
     target_weights = dfs[-1]["weight"]
     dfs = dfs[:-1]
 
-    # pyre-fixme[6]
     target_plot_data = relative_frequency_table(target, column, target_weights)
 
     for ii, i in enumerate(dfs):
         d = i["df"]
         _w = i["weight"] if weighted else None
 
-        # pyre-fixme[6]
         sample_plot_data = relative_frequency_table(d, column, _w)
         plot_data = pd.merge(
             sample_plot_data,
@@ -554,8 +568,8 @@ def plot_qq_categorical(
 
         if plot_data.shape[0] < label_threshold:
             for r in plot_data.itertuples():
-                # pyre-ignore
-                axis.text(x=r.prop_sample, y=r.prop_target, s=r[1])
+                # Using index access for namedtuple since attribute access causes pyre errors
+                axis.text(x=r.prop_sample, y=r.prop_target, s=r[1])  # type: ignore[attr-defined]
 
     axis.set_ylim(-0.1, 1.1)
     axis.set_xlim(-0.1, 1.1)
@@ -569,7 +583,7 @@ def plot_qq_categorical(
 # TODO: add control (or just change) the default theme
 # TODO: add a separate dist_type control parameter for categorical and numeric variables.
 def seaborn_plot_dist(
-    dfs: List[Dict[str, pd.DataFrame | pd.Series]],
+    dfs: List[DataFrameWithWeight],
     names: Optional[List[str]] = None,
     variables: Optional[List[str]] = None,
     numeric_n_values_threshold: int = 15,
@@ -817,6 +831,9 @@ def plotly_plot_qq(
         only_self_and_target = set(dict_of_dfs.keys()) == {"self", "target"}
 
         for name in dict_of_dfs:
+            # Cast once at the start of the loop for type safety
+            sample_name = cast(SampleName, name)
+
             if name.lower() == "target":
                 variable_specific_dict_of_plots[name] = go.Scatter(
                     x=line_data,
@@ -840,8 +857,7 @@ def plotly_plot_qq(
                     ),
                     marker={
                         "color": _plotly_marker_color(
-                            # pyre-ignore[6]: it cannot get to this point if name=="target".
-                            name,
+                            sample_name,
                             only_self_and_target,
                             "color",
                         )
@@ -968,6 +984,9 @@ def plotly_plot_density(
         only_self_and_target = set(dict_of_dfs.keys()) == {"self", "target"}
 
         for name, df in dict_of_dfs.items():
+            # Cast once at the start of the loop for type safety
+            sample_name = cast(SampleName, name)
+
             if "weight" in df.columns:
                 weights = df["weight"]
                 # TODO: verify if this normalization to sum to 1 is needed (if so, how come we don't do it when _w is None)?
@@ -997,8 +1016,9 @@ def plotly_plot_density(
                 mode="lines",
                 name=naming_legend(name, list(dict_of_dfs.keys())),
                 line={
-                    # pyre-ignore[6]: it cannot get to this point if name=="target".
-                    "color": _plotly_marker_color(name, only_self_and_target, "line"),
+                    "color": _plotly_marker_color(
+                        sample_name, only_self_and_target, "line"
+                    ),
                     "width": 1.5,
                 },
             )
@@ -1098,6 +1118,9 @@ def plotly_plot_bar(
 
         # filter dict_of_dfs
         for name in dict_of_dfs:
+            # Cast once at the start of the loop for type safety
+            sample_name = cast(SampleName, name)
+
             df_plot_data = relative_frequency_table(
                 dict_of_dfs[name],
                 variable,
@@ -1112,12 +1135,12 @@ def plotly_plot_bar(
                 x=list(df_plot_data[variable]),
                 y=list(df_plot_data["prop"]),
                 marker={
-                    # pyre-ignore[6]: it cannot get to this point if name=="target".
-                    "color": _plotly_marker_color(name, only_self_and_target, "color"),
+                    "color": _plotly_marker_color(
+                        sample_name, only_self_and_target, "color"
+                    ),
                     "line": {
                         "color": _plotly_marker_color(
-                            # pyre-ignore[6]: it cannot get to this point if name=="target".
-                            name,
+                            sample_name,
                             only_self_and_target,
                             "line",
                         ),
@@ -1347,7 +1370,7 @@ def naming_legend(object_name: str, names_of_dfs: List[str]) -> str:
 
 
 def plot_dist(
-    dfs: List[Dict[str, pd.DataFrame | pd.Series]],
+    dfs: List[DataFrameWithWeight],
     names: Optional[List[str]] = None,
     variables: Optional[List[str]] = None,
     numeric_n_values_threshold: int = 15,
@@ -1459,16 +1482,23 @@ def plot_dist(
             )
         )
 
-        if dist_type is not None:
-            logger.warning("plotly plots ignore dist_type. Consider library='seaborn'")
+        dist_type_for_plotly: Literal["kde", "qq"] | None = None
+        if dist_type is None:
+            dist_type_for_plotly = None
+        elif dist_type in ("kde", "qq"):
+            dist_type_for_plotly = dist_type
+        elif dist_type in ("hist", "ecdf"):
+            raise ValueError(
+                f"plotly library does not support dist_type='{dist_type}'. "
+                f"Use dist_type='kde' or 'qq' with plotly, or use library='seaborn' for all dist_type options."
+            )
 
         return plotly_plot_dist(
             dict_of_dfs,
             variables,
             numeric_n_values_threshold,
             weighted,
-            # pyre-ignore[6]: plotly_plot_dist will raise a NotImplemented error if dist_type is not None, 'kde', or 'qq'
-            dist_type=dist_type,
+            dist_type=dist_type_for_plotly,
             ylim=ylim,
             **kwargs,
         )
