@@ -3,7 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
+
+from __future__ import annotations
 
 import os.path
 import tempfile
@@ -20,7 +22,9 @@ SAMPLE_SIZE_LARGE = 2000
 TEST_SEED = 2021
 
 
-def check_some_flags(flag=True, the_flag_str="--skip_standardize_types"):
+def check_some_flags(
+    flag: bool = True, the_flag_str: str = "--skip_standardize_types"
+) -> dict[str, pd.DataFrame]:
     """
     Helper function to test CLI flags with standardized input data.
 
@@ -62,10 +66,10 @@ def check_some_flags(flag=True, the_flag_str="--skip_standardize_types"):
 
         pd_in = pd.read_csv(in_file.name)
         pd_out = pd.read_csv(out_file)
-    return {"pd_in": pd_in, "pd_out": pd_out}
+        return {"pd_in": pd_in, "pd_out": pd_out}
 
 
-def _create_sample_and_target_data():
+def _create_sample_and_target_data() -> pd.DataFrame:
     """
     Helper function to create standardized sample and target datasets for testing.
 
@@ -101,7 +105,7 @@ def _create_sample_and_target_data():
 class TestCli(
     balance.testutil.BalanceTestCase,
 ):
-    def test_cli_help(self):
+    def test_cli_help(self) -> None:
         """Test that CLI help command executes without errors."""
         parser = make_parser()
 
@@ -113,13 +117,13 @@ class TestCli(
             # Help command should exit with code 0
             self.assertEqual(e.code, 0)
 
-    def test_cli_float_or_none(self):
+    def test_cli_float_or_none(self) -> None:
         """Test the _float_or_none utility function with various inputs."""
         self.assertEqual(_float_or_none(None), None)
         self.assertEqual(_float_or_none("None"), None)
         self.assertEqual(_float_or_none("13.37"), 13.37)
 
-    def test_cli_succeed_on_weighting_failure(self):
+    def test_cli_succeed_on_weighting_failure(self) -> None:
         """Test CLI behavior when weighting fails but succeed_on_weighting_failure flag is set."""
         with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
             "w", suffix=".csv", delete=False
@@ -148,7 +152,7 @@ class TestCli(
 
             self.assertTrue(os.path.isfile(out_file))
 
-    def test_cli_works(self):
+    def test_cli_works(self) -> None:
         """Test basic CLI functionality with sample data and diagnostics output."""
         with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
             "w", suffix=".csv", delete=False
@@ -183,7 +187,7 @@ class TestCli(
             self.assertTrue(os.path.isfile(out_file))
             self.assertTrue(os.path.isfile(diagnostics_out_file))
 
-    def test_cli_works_with_row_column_filters(self):
+    def test_cli_works_with_row_column_filters(self) -> None:
         """Test CLI functionality with row and column filtering for diagnostics."""
         with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
             "w", suffix=".csv", delete=False
@@ -252,7 +256,7 @@ class TestCli(
             expected = ["x", "y", "mean(asmd)"]
             self.assertEqual(output, expected)
 
-    def test_cli_empty_input(self):
+    def test_cli_empty_input(self) -> None:
         """Test CLI behavior with empty input data (header only)."""
         with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
             "w", suffix=".csv", delete=False
@@ -283,7 +287,7 @@ class TestCli(
             self.assertTrue(os.path.isfile(out_file))
             self.assertTrue(os.path.isfile(diagnostics_out_file))
 
-    def test_cli_empty_input_keep_row(self):
+    def test_cli_empty_input_keep_row(self) -> None:
         """Test CLI behavior with empty input data when using keep_row and batch_columns."""
         with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
             "w", suffix=".csv", delete=False
@@ -318,7 +322,7 @@ class TestCli(
             self.assertTrue(os.path.isfile(out_file))
             self.assertTrue(os.path.isfile(diagnostics_out_file))
 
-    def test_cli_sep_works(self):
+    def test_cli_sep_works(self) -> None:
         """Test CLI functionality with custom output file separators."""
         with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
             "w", suffix=".csv", delete=False
@@ -382,7 +386,7 @@ class TestCli(
             )
             self.assertEqual(int(pd_diagnostics_out_file[ss]["val"].iloc[0]), 3000)
 
-    def test_cli_sep_input_works(self):
+    def test_cli_sep_input_works(self) -> None:
         """Test CLI functionality with custom input file separators (TSV)."""
         with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
             "w", suffix=".tsv", delete=False
@@ -443,7 +447,7 @@ class TestCli(
             )
             self.assertEqual(int(pd_diagnostics_out_file[ss]["val"].iloc[0]), 3000)
 
-    def test_cli_short_arg_names_works(self):
+    def test_cli_short_arg_names_works(self) -> None:
         """
         Test CLI backward compatibility with partial argument names.
 
@@ -511,7 +515,7 @@ class TestCli(
             )
             self.assertEqual(int(pd_diagnostics_out_file[ss]["val"].iloc[0]), 3000)
 
-    def test_method_works(self):
+    def test_method_works(self) -> None:
         """Test CLI functionality with different weighting methods (CBPS and IPW)."""
         np.random.seed(TEST_SEED)
         n_sample = SAMPLE_SIZE_SMALL
@@ -600,7 +604,7 @@ class TestCli(
                 np.array(["ipw"]),
             )
 
-    def test_method_works_with_rake(self):
+    def test_method_works_with_rake(self) -> None:
         """Test CLI functionality with raking weighting method."""
         np.random.seed(TEST_SEED)
         n_sample = SAMPLE_SIZE_SMALL
@@ -661,7 +665,7 @@ class TestCli(
                 np.array(["rake"]),
             )
 
-    def test_one_hot_encoding_works(self):
+    def test_one_hot_encoding_works(self) -> None:
         """Test CLI one-hot encoding parameter with various boolean values."""
         with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
             "w", suffix=".tsv", delete=False
@@ -719,7 +723,7 @@ class TestCli(
                 cli3 = BalanceCLI(args3)
                 cli3.update_attributes_for_main_used_by_adjust()
 
-    def test_transformations_works(self):
+    def test_transformations_works(self) -> None:
         """Test CLI functionality with different transformation options (None and default)."""
         input_dataset = _create_sample_and_target_data()
 
@@ -849,7 +853,7 @@ class TestCli(
                 ),
             )
 
-    def test_formula_works(self):
+    def test_formula_works(self) -> None:
         """Test CLI functionality with custom formula specifications."""
         input_dataset = _create_sample_and_target_data()
 
@@ -919,7 +923,7 @@ class TestCli(
                 np.array(["intercept", "age", "age:gender", "gender"]),
             )
 
-    def test_cli_return_df_with_original_dtypes(self):
+    def test_cli_return_df_with_original_dtypes(self) -> None:
         """Test CLI flag for preserving original data types in output DataFrames."""
         out_True = check_some_flags(True, "--return_df_with_original_dtypes")
         out_False = check_some_flags(False, "--return_df_with_original_dtypes")
@@ -963,7 +967,7 @@ class TestCli(
             },
         )
 
-    def test_cli_standardize_types(self):
+    def test_cli_standardize_types(self) -> None:
         """Test CLI standardize_types flag with different boolean values."""
         out_False = check_some_flags(True, "--standardize_types=False")
         out_True = check_some_flags(
