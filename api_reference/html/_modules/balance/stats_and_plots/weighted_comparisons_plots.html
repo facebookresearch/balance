@@ -54,7 +54,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">TypedDict</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
@@ -73,6 +73,31 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.colors</span><span class="w"> </span><span class="kn">import</span> <span class="n">rgb2hex</span>
 
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
+
+<span class="c1"># Type alias for valid sample names used in plots</span>
+<span class="c1"># Note: Uses Union syntax for Python 3.9 compatibility</span>
+<span class="n">SampleName</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span>
+    <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;sample&quot;</span><span class="p">],</span>
+    <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">],</span>
+    <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">],</span>
+    <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;adjusted&quot;</span><span class="p">],</span>
+    <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">],</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="DataFrameWithWeight">
+<a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.DataFrameWithWeight">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DataFrameWithWeight</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Structure for DataFrame with optional weight Series.</span>
+
+<span class="sd">    Note: Uses Union (Optional) syntax for Python 3.9 compatibility.</span>
+<span class="sd">    TypedDict field definitions are evaluated at runtime and cannot use</span>
+<span class="sd">    the | operator in Python 3.9.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
+    <span class="n">weight</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]</span></div>
+
 
 
 <span class="c1">################################################################################</span>
@@ -130,7 +155,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_plotly_marker_color</span><span class="p">(</span>
-    <span class="n">name</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;sample&quot;</span><span class="p">,</span> <span class="s2">&quot;unadjusted&quot;</span><span class="p">,</span> <span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;adjusted&quot;</span><span class="p">],</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n">SampleName</span><span class="p">,</span>
     <span class="n">only_self_and_target</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="n">color_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">,</span> <span class="s2">&quot;line&quot;</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -138,7 +163,8 @@
 <span class="sd">    Returns a color string for a marker in a plotly plot based on the given parameters.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        name (Literal[&quot;sample&quot;, &quot;unadjusted&quot;, &quot;self&quot;, &quot;adjusted&quot;]): Name of the marker.</span>
+<span class="sd">        name (SampleName): Name of the marker. Must be one of: &quot;sample&quot;, &quot;unadjusted&quot;, &quot;self&quot;, &quot;adjusted&quot;, or &quot;target&quot;.</span>
+<span class="sd">            The function handles these values case-insensitively and provides a fallback color for unexpected values.</span>
 <span class="sd">        only_self_and_target (bool): Determines if only self and target groups are available, or if it&#39;s self, unadjusted and target.</span>
 <span class="sd">        color_type (Literal[&quot;color&quot;, &quot;line&quot;]): The type of color, either &quot;color&quot; or &quot;line&quot;.</span>
 
@@ -172,7 +198,7 @@
 <div class="viewcode-block" id="plot_bar">
 <a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.plot_bar">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">plot_bar</span><span class="p">(</span>
-    <span class="n">dfs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]],</span>
+    <span class="n">dfs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DataFrameWithWeight</span><span class="p">],</span>
     <span class="n">names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="n">column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">axis</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -276,7 +302,7 @@
 <div class="viewcode-block" id="plot_hist_kde">
 <a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.plot_hist_kde">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">plot_hist_kde</span><span class="p">(</span>
-    <span class="n">dfs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]],</span>
+    <span class="n">dfs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DataFrameWithWeight</span><span class="p">],</span>
     <span class="n">names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="n">column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">axis</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -428,7 +454,7 @@
 <div class="viewcode-block" id="plot_qq">
 <a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.plot_qq">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">plot_qq</span><span class="p">(</span>
-    <span class="n">dfs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]],</span>
+    <span class="n">dfs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DataFrameWithWeight</span><span class="p">],</span>
     <span class="n">names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="n">column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">axis</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -484,18 +510,11 @@
         <span class="n">target_q</span> <span class="o">=</span> <span class="n">weighted_quantile</span><span class="p">(</span>
             <span class="n">target</span><span class="p">[</span><span class="s2">&quot;df&quot;</span><span class="p">][</span><span class="n">column</span><span class="p">],</span>
             <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">),</span>
-            <span class="c1"># pyre-fixme[6]: TODO:</span>
-            <span class="c1"># This is because of using:</span>
-            <span class="c1"># dfs: List[Dict[str, Union[pd.DataFrame, pd.Series]]],</span>
-            <span class="c1"># When in fact we want to be clear that the first element is called</span>
-            <span class="c1"># &quot;df&quot; and the second &quot;weight&quot;, and that the first is a pd.DataFrame and</span>
-            <span class="c1"># the second pd.Series. Until this is not clear - the following line will raise an error.</span>
             <span class="n">target</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">weighted</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">sample_q</span> <span class="o">=</span> <span class="n">weighted_quantile</span><span class="p">(</span>
             <span class="n">d</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">column</span><span class="p">],</span>
             <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">),</span>
-            <span class="c1"># pyre-fixme[6]</span>
             <span class="n">_w</span> <span class="k">if</span> <span class="n">weighted</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -515,7 +534,7 @@
 <div class="viewcode-block" id="plot_qq_categorical">
 <a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.plot_qq_categorical">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">plot_qq_categorical</span><span class="p">(</span>
-    <span class="n">dfs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]],</span>
+    <span class="n">dfs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DataFrameWithWeight</span><span class="p">],</span>
     <span class="n">names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="n">column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">axis</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -579,14 +598,12 @@
     <span class="n">target_weights</span> <span class="o">=</span> <span class="n">dfs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
     <span class="n">dfs</span> <span class="o">=</span> <span class="n">dfs</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
-    <span class="c1"># pyre-fixme[6]</span>
     <span class="n">target_plot_data</span> <span class="o">=</span> <span class="n">relative_frequency_table</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">column</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">)</span>
 
     <span class="k">for</span> <span class="n">ii</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dfs</span><span class="p">):</span>
         <span class="n">d</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="s2">&quot;df&quot;</span><span class="p">]</span>
         <span class="n">_w</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">weighted</span> <span class="k">else</span> <span class="kc">None</span>
 
-        <span class="c1"># pyre-fixme[6]</span>
         <span class="n">sample_plot_data</span> <span class="o">=</span> <span class="n">relative_frequency_table</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">column</span><span class="p">,</span> <span class="n">_w</span><span class="p">)</span>
         <span class="n">plot_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
             <span class="n">sample_plot_data</span><span class="p">,</span>
@@ -602,8 +619,8 @@
 
         <span class="k">if</span> <span class="n">plot_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">label_threshold</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">plot_data</span><span class="o">.</span><span class="n">itertuples</span><span class="p">():</span>
-                <span class="c1"># pyre-ignore</span>
-                <span class="n">axis</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">prop_sample</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">prop_target</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="c1"># Using index access for namedtuple since attribute access causes pyre errors</span>
+                <span class="n">axis</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">prop_sample</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">prop_target</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>  <span class="c1"># type: ignore[attr-defined]</span>
 
     <span class="n">axis</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">)</span>
     <span class="n">axis</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">)</span>
@@ -620,7 +637,7 @@
 <div class="viewcode-block" id="seaborn_plot_dist">
 <a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.seaborn_plot_dist">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">seaborn_plot_dist</span><span class="p">(</span>
-    <span class="n">dfs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]],</span>
+    <span class="n">dfs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DataFrameWithWeight</span><span class="p">],</span>
     <span class="n">names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">variables</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">numeric_n_values_threshold</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span>
@@ -874,6 +891,9 @@
         <span class="n">only_self_and_target</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">dict_of_dfs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">}</span>
 
         <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">dict_of_dfs</span><span class="p">:</span>
+            <span class="c1"># Cast once at the start of the loop for type safety</span>
+            <span class="n">sample_name</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">SampleName</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
             <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;target&quot;</span><span class="p">:</span>
                 <span class="n">variable_specific_dict_of_plots</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
                     <span class="n">x</span><span class="o">=</span><span class="n">line_data</span><span class="p">,</span>
@@ -897,8 +917,7 @@
                     <span class="p">),</span>
                     <span class="n">marker</span><span class="o">=</span><span class="p">{</span>
                         <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="n">_plotly_marker_color</span><span class="p">(</span>
-                            <span class="c1"># pyre-ignore[6]: it cannot get to this point if name==&quot;target&quot;.</span>
-                            <span class="n">name</span><span class="p">,</span>
+                            <span class="n">sample_name</span><span class="p">,</span>
                             <span class="n">only_self_and_target</span><span class="p">,</span>
                             <span class="s2">&quot;color&quot;</span><span class="p">,</span>
                         <span class="p">)</span>
@@ -1028,6 +1047,9 @@
         <span class="n">only_self_and_target</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">dict_of_dfs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">}</span>
 
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">df</span> <span class="ow">in</span> <span class="n">dict_of_dfs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># Cast once at the start of the loop for type safety</span>
+            <span class="n">sample_name</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">SampleName</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
             <span class="k">if</span> <span class="s2">&quot;weight&quot;</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
                 <span class="n">weights</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
                 <span class="c1"># TODO: verify if this normalization to sum to 1 is needed (if so, how come we don&#39;t do it when _w is None)?</span>
@@ -1057,8 +1079,9 @@
                 <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;lines&quot;</span><span class="p">,</span>
                 <span class="n">name</span><span class="o">=</span><span class="n">naming_legend</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">dict_of_dfs</span><span class="o">.</span><span class="n">keys</span><span class="p">())),</span>
                 <span class="n">line</span><span class="o">=</span><span class="p">{</span>
-                    <span class="c1"># pyre-ignore[6]: it cannot get to this point if name==&quot;target&quot;.</span>
-                    <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="n">_plotly_marker_color</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">only_self_and_target</span><span class="p">,</span> <span class="s2">&quot;line&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="n">_plotly_marker_color</span><span class="p">(</span>
+                        <span class="n">sample_name</span><span class="p">,</span> <span class="n">only_self_and_target</span><span class="p">,</span> <span class="s2">&quot;line&quot;</span>
+                    <span class="p">),</span>
                     <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span>
                 <span class="p">},</span>
             <span class="p">)</span>
@@ -1161,6 +1184,9 @@
 
         <span class="c1"># filter dict_of_dfs</span>
         <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">dict_of_dfs</span><span class="p">:</span>
+            <span class="c1"># Cast once at the start of the loop for type safety</span>
+            <span class="n">sample_name</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">SampleName</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
             <span class="n">df_plot_data</span> <span class="o">=</span> <span class="n">relative_frequency_table</span><span class="p">(</span>
                 <span class="n">dict_of_dfs</span><span class="p">[</span><span class="n">name</span><span class="p">],</span>
                 <span class="n">variable</span><span class="p">,</span>
@@ -1175,12 +1201,12 @@
                 <span class="n">x</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">df_plot_data</span><span class="p">[</span><span class="n">variable</span><span class="p">]),</span>
                 <span class="n">y</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">df_plot_data</span><span class="p">[</span><span class="s2">&quot;prop&quot;</span><span class="p">]),</span>
                 <span class="n">marker</span><span class="o">=</span><span class="p">{</span>
-                    <span class="c1"># pyre-ignore[6]: it cannot get to this point if name==&quot;target&quot;.</span>
-                    <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="n">_plotly_marker_color</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">only_self_and_target</span><span class="p">,</span> <span class="s2">&quot;color&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="n">_plotly_marker_color</span><span class="p">(</span>
+                        <span class="n">sample_name</span><span class="p">,</span> <span class="n">only_self_and_target</span><span class="p">,</span> <span class="s2">&quot;color&quot;</span>
+                    <span class="p">),</span>
                     <span class="s2">&quot;line&quot;</span><span class="p">:</span> <span class="p">{</span>
                         <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="n">_plotly_marker_color</span><span class="p">(</span>
-                            <span class="c1"># pyre-ignore[6]: it cannot get to this point if name==&quot;target&quot;.</span>
-                            <span class="n">name</span><span class="p">,</span>
+                            <span class="n">sample_name</span><span class="p">,</span>
                             <span class="n">only_self_and_target</span><span class="p">,</span>
                             <span class="s2">&quot;line&quot;</span><span class="p">,</span>
                         <span class="p">),</span>
@@ -1419,7 +1445,7 @@
 <div class="viewcode-block" id="plot_dist">
 <a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.plot_dist">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">plot_dist</span><span class="p">(</span>
-    <span class="n">dfs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]],</span>
+    <span class="n">dfs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DataFrameWithWeight</span><span class="p">],</span>
     <span class="n">names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">variables</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">numeric_n_values_threshold</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span>
@@ -1531,16 +1557,23 @@
             <span class="p">)</span>
         <span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">dist_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;plotly plots ignore dist_type. Consider library=&#39;seaborn&#39;&quot;</span><span class="p">)</span>
+        <span class="n">dist_type_for_plotly</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;kde&quot;</span><span class="p">,</span> <span class="s2">&quot;qq&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">dist_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dist_type_for_plotly</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="n">dist_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;kde&quot;</span><span class="p">,</span> <span class="s2">&quot;qq&quot;</span><span class="p">):</span>
+            <span class="n">dist_type_for_plotly</span> <span class="o">=</span> <span class="n">dist_type</span>
+        <span class="k">elif</span> <span class="n">dist_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;hist&quot;</span><span class="p">,</span> <span class="s2">&quot;ecdf&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;plotly library does not support dist_type=&#39;</span><span class="si">{</span><span class="n">dist_type</span><span class="si">}</span><span class="s2">&#39;. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Use dist_type=&#39;kde&#39; or &#39;qq&#39; with plotly, or use library=&#39;seaborn&#39; for all dist_type options.&quot;</span>
+            <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">plotly_plot_dist</span><span class="p">(</span>
             <span class="n">dict_of_dfs</span><span class="p">,</span>
             <span class="n">variables</span><span class="p">,</span>
             <span class="n">numeric_n_values_threshold</span><span class="p">,</span>
             <span class="n">weighted</span><span class="p">,</span>
-            <span class="c1"># pyre-ignore[6]: plotly_plot_dist will raise a NotImplemented error if dist_type is not None, &#39;kde&#39;, or &#39;qq&#39;</span>
-            <span class="n">dist_type</span><span class="o">=</span><span class="n">dist_type</span><span class="p">,</span>
+            <span class="n">dist_type</span><span class="o">=</span><span class="n">dist_type_for_plotly</span><span class="p">,</span>
             <span class="n">ylim</span><span class="o">=</span><span class="n">ylim</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span></div>

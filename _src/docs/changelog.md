@@ -63,7 +63,7 @@ hide_title: true
   - Fixed TODO: Removed manual ASMD improvement calculation and now uses
     existing `compute_asmd_improvement()` from `weighted_comparisons_stats.py`
 - **Type safety improvements**
-  - **Pyre-strict migration**: Converted 17 Python files from `# pyre-unsafe` to
+  - **Pyre-strict migration**: Converted 20 Python files from `# pyre-unsafe` to
     `# pyre-strict` mode, significantly improving type safety across the
     codebase. Files converted include core modules (`__init__.py`,
     `adjustment.py`, `balancedf_class.py`, `cli.py`, `sample_class.py`,
@@ -73,27 +73,36 @@ hide_title: true
     `stats_and_plots/weighted_comparisons_stats.py`,
     `stats_and_plots/weights_stats.py`), weighting methods
     (`weighting_methods/cbps.py`, `weighting_methods/ipw.py`,
-    `weighting_methods/poststratify.py`, `weighting_methods/rake.py`), and
-    datasets module (`datasets/__init__.py`)
+    `weighting_methods/poststratify.py`, `weighting_methods/rake.py`), datasets
+    module (`datasets/__init__.py`), and test files
+    (`parent_balance/tests/test_adjustment.py`,
+    `parent_balance/tests/test_ipw.py`)
   - **Modernized type hints to PEP 604 syntax**: Updated all type annotations
     across 11 files to use the newer PEP 604 union syntax (`X | Y` instead of
     `Union[X, Y]` and `X | None` instead of `Optional[X]`), improving code
     readability and aligning with Python 3.10+ typing conventions. Updated
     `from __future__ import` statements to use `annotations` instead of the
-    older `absolute_import, division, print_function, unicode_literals`.
-    Removed unnecessary `Union` and `Optional` imports from `typing`. Files
-    updated: `__init__.py`, `adjustment.py`, `balancedf_class.py`, `cli.py`,
+    older `absolute_import, division, print_function, unicode_literals`. Removed
+    unnecessary `Union` and `Optional` imports from `typing`. Files updated:
+    `__init__.py`, `adjustment.py`, `balancedf_class.py`, `cli.py`,
     `datasets/__init__.py`, `sample_class.py`,
     `stats_and_plots/weighted_comparisons_stats.py`,
     `stats_and_plots/weighted_stats.py`, `stats_and_plots/weights_stats.py`,
     `util.py`, `weighting_methods/ipw.py`.
-  - **Important compatibility note**:
-    Type alias definitions in `typing.py` retain `Union` syntax for Python 3.9
-    compatibility, as the `|` operator for type aliases only works at runtime
-    in Python 3.10+. Added comprehensive inline documentation explaining this
-    limitation and the distinction between type annotations (which support `|`
-    with `from __future__ import annotations`) and type alias assignments
-    (which require `Union` for runtime evaluation in Python 3.9).
+  - **Important compatibility note**: Type alias definitions in `typing.py`
+    retain `Union` syntax for Python 3.9 compatibility, as the `|` operator for
+    type aliases only works at runtime in Python 3.10+. Added comprehensive
+    inline documentation explaining this limitation and the distinction between
+    type annotations (which support `|` with
+    `from __future__ import annotations`) and type alias assignments (which
+    require `Union` for runtime evaluation in Python 3.9).
+  - **Enhanced type safety for plotting functions**: Replaced loose dictionary
+    type hints with structured `TypedDict` definition (`DataFrameWithWeight`)
+    for better type checking in `weighted_comparisons_plots.py`. Added
+    `SampleName` type alias to precisely specify valid sample name literals.
+    Removed numerous `# pyre-ignore` comments by properly handling type casts
+    and narrowing types. Added validation for plotly `dist_type` parameter to
+    raise clear errors when unsupported types are used.
   - Fixed missing `Any` import in `weighted_comparisons_plots.py` to resolve
     pyre-fixme[10] error
   - Added comprehensive type annotations for previously untyped parameters and
