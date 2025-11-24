@@ -11,11 +11,22 @@ import sys
 
 import unittest
 from contextlib import contextmanager
-from typing import Any, Callable, Generator, Union
+from typing import Any, Callable, Generator, Optional, TypeVar, Union
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
+
+# Generic type variable used for none_throws to preserve type information
+T = TypeVar("T")
+
+
+# TODO: move to use this function throughout the tests
+def none_throws(optional: Optional[T]) -> T:
+    """Assert that optional value is not None and return it."""
+    if optional is None:
+        raise ValueError("Unexpected None value")
+    return optional
 
 
 def _assert_frame_equal_lazy(
