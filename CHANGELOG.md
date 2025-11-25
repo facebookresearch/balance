@@ -53,7 +53,7 @@
   - Fixed TODO: Removed manual ASMD improvement calculation and now uses
     existing `compute_asmd_improvement()` from `weighted_comparisons_stats.py`
 - **Type safety improvements**
-  - **Pyre-strict migration**: Converted 20 Python files from `# pyre-unsafe` to
+  - **Pyre-strict migration**: Converted 32 Python files from `# pyre-unsafe` to
     `# pyre-strict` mode, significantly improving type safety across the
     codebase. Files converted include core modules (`__init__.py`,
     `adjustment.py`, `balancedf_class.py`, `cli.py`, `sample_class.py`,
@@ -65,8 +65,16 @@
     (`weighting_methods/cbps.py`, `weighting_methods/ipw.py`,
     `weighting_methods/poststratify.py`, `weighting_methods/rake.py`), datasets
     module (`datasets/__init__.py`), and test files
-    (`parent_balance/tests/test_adjustment.py`,
-    `parent_balance/tests/test_ipw.py`)
+    (`parent_balance/tests/test_adjust_null.py`,
+    `parent_balance/tests/test_adjustment.py`,
+    `parent_balance/tests/test_cbps.py`, `parent_balance/tests/test_cli.py`,
+    `parent_balance/tests/test_datasets.py`,
+    `parent_balance/tests/test_ipw.py`, `parent_balance/tests/test_logging.py`,
+    `parent_balance/tests/test_poststratify.py`,
+    `parent_balance/tests/test_rake.py`, `parent_balance/tests/test_sample.py`,
+    `parent_balance/tests/test_stats_and_plots.py`,
+    `parent_balance/tests/test_testutil.py`,
+    `parent_balance/tests/test_util.py`)
   - **Modernized type hints to PEP 604 syntax**: Updated all type annotations
     across 11 files to use the newer PEP 604 union syntax (`X | Y` instead of
     `Union[X, Y]` and `X | None` instead of `Optional[X]`), improving code
