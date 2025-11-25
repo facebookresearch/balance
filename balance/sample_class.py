@@ -758,6 +758,10 @@ class Sample:
         asmd_before: float = 0.0
         asmd_improvement: float = 0.0
         asmd_now: float = 0.0
+        n_kld_covars: int = 0
+        kld_before: float = 0.0
+        kld_now: float = 0.0
+        kld_reduction: float = 0.0
 
         # asmd
         if self.is_adjusted() or self.has_target():
@@ -766,13 +770,20 @@ class Sample:
                 asmd.columns.values[asmd.columns.values != "mean(asmd)"]
             )
 
+            kld = self.covars().kld(aggregate_by_main_covar=True)
+            n_kld_covars = len(kld.columns.values[kld.columns.values != "mean(kld)"])
+
         # asmd improvement
         if self.is_adjusted():
             asmd_before = asmd.loc["unadjusted", "mean(asmd)"]
             asmd_improvement = 100 * self.covars().asmd_improvement()
+            kld_before = kld.loc["unadjusted", "mean(kld)"]
 
         if self.has_target():
             asmd_now = asmd.loc["self", "mean(asmd)"]
+            kld_now = kld.loc["self", "mean(kld)"]
+            if self.is_adjusted() and kld_before > 0:
+                kld_reduction = 100 * (kld_before - kld_now) / kld_before
 
         # design effect
         design_effect = self.design_effect()
@@ -804,6 +815,18 @@ class Sample:
             + (f"Covar ASMD ({n_asmd_covars} variables): " if self.has_target() else "")
             + (f"{asmd_before:.3f} -> " if self.is_adjusted() else "")
             + (f"{asmd_now:.3f}\n" if self.has_target() else "")
+            + (
+                f"Covar mean KLD reduction: {kld_reduction:.1f}%\n"
+                if self.is_adjusted() and self.has_target()
+                else ""
+            )
+            + (
+                f"Covar mean KLD ({n_kld_covars} variables): "
+                if self.has_target()
+                else ""
+            )
+            + (f"{kld_before:.3f} -> " if self.is_adjusted() else "")
+            + (f"{kld_now:.3f}\n" if self.has_target() else "")
             + (
                 f"Model performance: {model_summary}"
                 if (model_summary is not None)

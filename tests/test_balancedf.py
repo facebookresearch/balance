@@ -1132,11 +1132,11 @@ class TestBalanceDF_asmd(BalanceTestCase):
 
         expected = pd.DataFrame(
             {
-                "a": 0.479355,
+                "a": 0.0,
                 "c[x]": 0.143841,
                 "c[y]": 0.130812,
                 "c[z]": 0.0,
-                "mean(kld)": 0.285453,
+                "mean(kld)": 0.045776,
             },
             index=("covars",),
         )

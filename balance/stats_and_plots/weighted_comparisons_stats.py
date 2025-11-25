@@ -22,6 +22,9 @@ from balance.stats_and_plots.weighted_stats import (
 )
 from balance.stats_and_plots.weights_stats import _check_weights_are_valid
 from balance.util import _safe_groupby_apply, _safe_replace_and_infer
+from pandas import CategoricalDtype
+from scipy.integrate import quad
+from scipy.stats import gaussian_kde
 
 logger: logging.Logger = logging.getLogger(__package__)
 
@@ -117,46 +120,111 @@ def _weights_per_covars_names(covar_names: List[str]) -> pd.DataFrame:
     return pd.concat([weights.transpose(), main_covar_names], axis=1)
 
 
-def _kl_divergence_bernoulli(p: float, q: float, eps: float = 1e-12) -> float:
+def _kl_divergence_discrete(p: np.ndarray, q: np.ndarray, eps: float = 1e-12) -> float:
     """
-    Compute the KL divergence between two Bernoulli distributions.
+    Compute the KL divergence between two discrete probability mass functions.
 
     Args:
-        p: Probability of success for the sample distribution.
-        q: Probability of success for the target distribution.
+        p: 1D array-like, PMF of the sample distribution (must sum to 1).
+        q: 1D array-like, PMF of the target distribution (must sum to 1).
+        eps: Small constant to avoid ``log(0)`` or division by zero.
+
+    Returns:
+        The KL divergence ``sum_i p[i] * log(p[i] / q[i])``.
+
+    Raises:
+        ValueError: If inputs are not 1D arrays, are empty, have different
+            lengths, contain invalid values, or sum to zero.
+    """
+    p = np.asarray(p, dtype=np.float64)
+    q = np.asarray(q, dtype=np.float64)
+
+    if p.ndim != 1 or q.ndim != 1:
+        raise ValueError("Both p and q must be 1D arrays.")
+    if p.size == 0 or q.size == 0:
+        raise ValueError("Input PMF arrays must not be empty.")
+    if p.size != q.size:
+        raise ValueError("Input PMF arrays must have the same length.")
+    if np.any(p < 0) or np.any(q < 0):
+        raise ValueError("PMF arrays must not contain negative values.")
+    if not np.isfinite(p).all() or not np.isfinite(q).all():
+        raise ValueError("PMF arrays must not contain NaN or infinite values.")
+
+    p_sum = np.sum(p)
+    q_sum = np.sum(q)
+    if p_sum == 0 or q_sum == 0:
+        raise ValueError("PMF arrays must not sum to zero.")
+    p = p / p_sum
+    q = q / q_sum
+
+    p = np.clip(p, eps, 1)
+    q = np.clip(q, eps, 1)
+
+    kl = np.sum(p * np.log(p / q))
+    return float(kl)
+
+
+def _kl_divergence_continuous_quad(
+    p_samples: np.ndarray,
+    q_samples: np.ndarray,
+    p_weights: np.ndarray | None = None,
+    q_weights: np.ndarray | None = None,
+    eps: float = 1e-12,
+) -> float:
+    """
+    Estimate the KL divergence between two continuous distributions using KDEs
+    integrated with adaptive quadrature.
+
+    Args:
+        p_samples: 1D array-like samples from the sample distribution.
+        q_samples: 1D array-like samples from the target distribution.
+        p_weights: Optional weights for ``p_samples``.
+        q_weights: Optional weights for ``q_samples``.
         eps: Small constant to avoid evaluating ``log(0)`` or dividing by zero.
 
     Returns:
-        The KL divergence ``p * log(p / q) + (1 - p) * log((1 - p) / (1 - q))``.
+        Estimated KL divergence ``∫ p(x) log(p(x) / q(x)) dx``.
+
+    Raises:
+        ValueError: If inputs are not valid 1D arrays, empty, or have
+            insufficient samples.
     """
-    p = float(np.clip(p, eps, 1 - eps))
-    q = float(np.clip(q, eps, 1 - eps))
-    return float(p * np.log(p / q) + (1 - p) * np.log((1 - p) / (1 - q)))
 
+    def _validate_samples(
+        samples: np.ndarray, weights: np.ndarray | None, label: str
+    ) -> tuple[np.ndarray, np.ndarray | None]:
+        samples = np.asarray(samples)
+        if samples.ndim != 1:
+            raise ValueError(f"{label} must be a 1D array.")
+        if samples.size == 0:
+            raise ValueError(f"{label} must not be empty.")
+        weights_arr = None if weights is None else np.asarray(weights, dtype=float)
+        if weights_arr is not None and weights_arr.shape[0] != samples.shape[0]:
+            raise ValueError(f"{label} weights must match the number of samples.")
+        if weights_arr is not None and weights_arr.sum() <= 0:
+            raise ValueError(f"{label} weights must sum to a positive value.")
+        if samples.size < 2:
+            raise ValueError(f"{label} must contain at least two samples for KDE.")
+        if weights_arr is not None and np.any(weights_arr < 0):
+            raise ValueError(f"{label} weights must be non-negative.")
+        return samples, weights_arr
 
-def _kl_divergence_gaussian(
-    mu_p: float, var_p: float, mu_q: float, var_q: float, eps: float = 1e-12
-) -> float:
-    """
-    Compute the KL divergence between two univariate Gaussian distributions.
+    p_samples, p_weights = _validate_samples(p_samples, p_weights, "p_samples")
+    q_samples, q_weights = _validate_samples(q_samples, q_weights, "q_samples")
 
-    Args:
-        mu_p: Mean of the sample distribution.
-        var_p: Variance of the sample distribution.
-        mu_q: Mean of the target distribution.
-        var_q: Variance of the target distribution.
-        eps: Small constant to avoid division by zero when variances are tiny.
+    kde_p = gaussian_kde(p_samples, weights=p_weights)
+    kde_q = gaussian_kde(q_samples, weights=q_weights)
 
-    Returns:
-        The KL divergence based on the closed-form expression for univariate
-        Gaussians: ``0.5 * (log(var_q / var_p) + (var_p + (mu_p - mu_q) ** 2)
-        / var_q - 1)``.
-    """
-    var_p = float(max(var_p, eps))
-    var_q = float(max(var_q, eps))
-    return float(
-        0.5 * (np.log(var_q / var_p) + (var_p + (mu_p - mu_q) ** 2) / var_q - 1)
-    )
+    min_support = min(p_samples.min(), q_samples.min())
+    max_support = max(p_samples.max(), q_samples.max())
+
+    def integrand(x: float) -> float:
+        p_x = float(np.clip(kde_p(x), eps, None)[0])
+        q_x = float(np.clip(kde_q(x), eps, None)[0])
+        return float(p_x * np.log(p_x / q_x))
+
+    kl, _ = quad(integrand, float(min_support), float(max_support), limit=100)
+    return float(max(kl, 0.0))
 
 
 # TODO: add memoization
@@ -350,10 +418,11 @@ def kld(
     """
     Calculate the Kullback-Leibler divergence (KLD) between the columns of two DataFrames.
 
-    Numeric columns are modeled as Gaussian distributions, and categorical columns are
-    expected to be one-hot encoded, so their KLD is computed using Bernoulli
-    distributions. Each column's contribution is aggregated into ``mean(kld)``
-    using the same weighting scheme as ASMD.
+    Numeric columns are compared using weighted kernel density estimates integrated
+    via adaptive quadrature. Categorical (including binary/one-hot encoded)
+    columns are treated as general discrete distributions based on their weighted
+    empirical probability mass functions. Each column's contribution is aggregated
+    into ``mean(kld)`` using the same weighting scheme as ASMD.
 
     Args:
         sample_df (pd.DataFrame): source group of the comparison.
@@ -389,30 +458,75 @@ def kld(
         target_df, join="outer", axis=1, fill_value=0
     )
 
-    sample_mean = descriptive_stats(sample_df, sample_weights, "mean")
-    target_mean = descriptive_stats(target_df, target_weights, "mean")
-    sample_var = weighted_var(sample_df, sample_weights)
-    target_var = weighted_var(target_df, target_weights)
-
-    out = {}
+    sample_weights_arr = (
+        np.asarray(sample_weights, dtype=float)
+        if sample_weights is not None
+        else np.ones(sample_df.shape[0], dtype=float)
+    )
+    target_weights_arr = (
+        np.asarray(target_weights, dtype=float)
+        if target_weights is not None
+        else np.ones(target_df.shape[0], dtype=float)
+    )
 
     def _is_binary(series: pd.Series) -> bool:
         uniques = pd.unique(series.dropna())
         return len(uniques) <= 2 and set(uniques).issubset({0, 1})
 
+    def _extract_series_and_weights(
+        series: pd.Series, weights: np.ndarray
+    ) -> tuple[pd.Series, np.ndarray]:
+        if weights.shape[0] != series.shape[0]:
+            raise ValueError("Weights must match the number of observations.")
+        mask = series.notna().to_numpy()
+        return series[mask], weights[mask]
+
+    def _weighted_pmf(series: pd.Series, weights: np.ndarray) -> pd.Series:
+        df = pd.DataFrame({"value": series, "weight": weights})
+        df = df[df["value"].notna()]
+        grouped = df.groupby("value", sort=False)["weight"].sum()
+        total = grouped.sum()
+        if total <= 0:
+            raise ValueError("PMF weights must sum to a positive value.")
+        return grouped / total
+
+    out: dict[str, float] = {}
+
     for col in sample_df.columns:
         if col.startswith("_is_na_"):
             continue
-        if _is_binary(sample_df[col]) and _is_binary(target_df[col]):
-            out[col] = _kl_divergence_bernoulli(
-                sample_mean.iloc[0][col], target_mean.iloc[0][col]
+
+        sample_series, sample_w = _extract_series_and_weights(
+            sample_df[col], sample_weights_arr
+        )
+        target_series, target_w = _extract_series_and_weights(
+            target_df[col], target_weights_arr
+        )
+
+        is_discrete = _is_binary(sample_series) and _is_binary(target_series)
+        is_discrete = is_discrete or pd.api.types.is_object_dtype(sample_series)
+        is_discrete = is_discrete or isinstance(sample_series.dtype, CategoricalDtype)
+        is_discrete = is_discrete or pd.api.types.is_bool_dtype(sample_series)
+
+        if is_discrete:
+            sample_pmf = _weighted_pmf(sample_series, sample_w)
+            target_pmf = _weighted_pmf(target_series, target_w)
+            pmfs = pd.concat(
+                [sample_pmf.rename("sample"), target_pmf.rename("target")], axis=1
+            ).fillna(0.0)
+            out[col] = _kl_divergence_discrete(
+                pmfs["sample"].to_numpy(), pmfs["target"].to_numpy()
             )
         else:
-            out[col] = _kl_divergence_gaussian(
-                sample_mean.iloc[0][col],
-                sample_var[col],
-                target_mean.iloc[0][col],
-                target_var[col],
+            sample_vals = pd.to_numeric(sample_series, errors="coerce").dropna()
+            target_vals = pd.to_numeric(target_series, errors="coerce").dropna()
+            sample_w_numeric = sample_w[sample_series.index.isin(sample_vals.index)]
+            target_w_numeric = target_w[target_series.index.isin(target_vals.index)]
+            out[col] = _kl_divergence_continuous_quad(
+                sample_vals.to_numpy(),
+                target_vals.to_numpy(),
+                sample_w_numeric if sample_w_numeric.size else None,
+                target_w_numeric if target_w_numeric.size else None,
             )
 
     out = _safe_replace_and_infer(pd.DataFrame([out]))
