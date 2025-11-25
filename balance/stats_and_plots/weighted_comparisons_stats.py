@@ -549,17 +549,18 @@ def kld(
     return out
 
 
-def _aggregate_statistic_by_main_covar(asmd_series: pd.Series) -> pd.Series:
+def _aggregate_statistic_by_main_covar(statistic_series: pd.Series) -> pd.Series:
     """
-    This function helps to aggregate the ASMD, which is broken down per level for a category variable, into one value per covariate.
+    This function helps to aggregate statistics (e.g., ASMD, KLD), which are broken down per level for a category variable,
+    into one value per covariate.
     This is useful since it allows us to get high level view of features such as country, locale, etc.
     It also allows us to filter out variables (such as is_today) before the overall averaging of the ASMD.
 
     Args:
-        asmd_series (pd.Series): a value for each covariate. Covariate name are in the index, the values are the asmd values.
+        statistic_series (pd.Series): a value for each covariate. Covariate name are in the index, the values are the asmd values.
 
     Returns:
-        pd.Series: If asmd_series had several items broken by one-hot encoding,
+        pd.Series: If statistic_series had several items broken by one-hot encoding,
             then they would be averaged (with equal weight to each).
 
     Examples:
@@ -567,7 +568,7 @@ def _aggregate_statistic_by_main_covar(asmd_series: pd.Series) -> pd.Series:
 
             from balance.stats_and_plots.weighted_comparisons_stats import _aggregate_statistic_by_main_covar
 
-            asmd_series = pd.Series(
+            statistic_series = pd.Series(
             {
                 'age': 0.5,
                 'education[T.high_school]': 1,
@@ -576,15 +577,15 @@ def _aggregate_statistic_by_main_covar(asmd_series: pd.Series) -> pd.Series:
                 'education[T.phd]': 4,
             })
 
-            _aggregate_statistic_by_main_covar(asmd_series).to_dict()
+            _aggregate_statistic_by_main_covar(statistic_series).to_dict()
 
             # output:
             # {'age': 0.5, 'education': 2.5}
     """
-    weights = _weights_per_covars_names(asmd_series.index.values.tolist())
+    weights = _weights_per_covars_names(statistic_series.index.values.tolist())
 
     # turn things into DataFrame to make it easy to aggregate.
-    out = pd.concat((asmd_series, weights), axis=1)
+    out = pd.concat((statistic_series, weights), axis=1)
 
     # Define the apply function for calculating weighted means
     def calculate_weighted_mean(group_data: pd.DataFrame) -> float:
