@@ -1282,18 +1282,33 @@ class BalanceDF:
         aggregate_by_main_covar: bool = False,
         **kwargs: Any,
     ) -> pd.DataFrame:
-        """Calculate the KL divergence between the BalanceDF and a target.
-
+        """
+        Calculate the KL divergence between the BalanceDF and a target.
         Args:
             self (BalanceDF): Object from sample (with/without adjustment, but it needs some target).
-            on_linked_samples (bool, optional): If to compare also to linked sample objects (specifically: unadjusted), or not.
+            on_linked_samples (bool, optional): If True, compares to linked sample objects (e.g., unadjusted, adjusted, etc.),
+                and returns a DataFrame with KLD for each linked sample. If False, only compares self to target.
                 Defaults to True.
-            target (Optional["BalanceDF"], optional): A BalanceDF (of the same type as the one used in self) to compare against.
-                If None then it looks for a target in the self linked objects. Defaults to None.
-            aggregate_by_main_covar (bool, optional): Defaults to False.
-                If True, it will aggregate the KLD across one-hot encoded categorical levels to the main covariate name.
+            target (Optional[BalanceDF], optional): A BalanceDF (of the same type as the one used in self) to compare against.
+                If None, attempts to use a target from the linked samples. Defaults to None.
+            aggregate_by_main_covar (bool, optional): If True, aggregates the KLD across one-hot encoded categorical levels
+                to the main covariate name. Defaults to False.
+            **kwargs: Additional keyword arguments passed to internal methods.
         Returns:
-            pd.DataFrame: KLD per covariate (and their aggregate mean) across the requested sources.
+            pd.DataFrame:
+                If on_linked_samples is True, returns a DataFrame with KLD per covariate (and their aggregate mean)
+                for each linked sample (e.g., unadjusted, adjusted, etc.), with samples as rows and covariates as columns.
+                If on_linked_samples is False, returns a single-row DataFrame with KLD per covariate (and their aggregate mean)
+                for self vs. target.
+        Raises:
+            ValueError: If no target is set or found in linked samples.
+        Examples:
+            >>> # Compare adjusted sample to unadjusted (target) sample
+            >>> kld_df = adjusted_balance_df.kld()
+            >>> print(kld_df)
+            >>> # Compare only self to a specific target, without linked samples
+            >>> kld_df = adjusted_balance_df.kld(on_linked_samples=False, target=unadjusted_balance_df)
+            >>> print(kld_df)
         """
 
         target_from_self = self._BalanceDF_child_from_linked_samples().get("target")
@@ -1322,7 +1337,7 @@ class BalanceDF:
                 .assign(index=(self.__name,))
                 .set_index("index")
             )
-            return out.rename_axis(None)
+            return out
 
     def asmd_improvement(
         self: "BalanceDF",

@@ -118,6 +118,17 @@ def _weights_per_covars_names(covar_names: List[str]) -> pd.DataFrame:
 
 
 def _kl_divergence_bernoulli(p: float, q: float, eps: float = 1e-12) -> float:
+    """
+    Compute the KL divergence between two Bernoulli distributions.
+
+    Args:
+        p: Probability of success for the sample distribution.
+        q: Probability of success for the target distribution.
+        eps: Small constant to avoid evaluating ``log(0)`` or dividing by zero.
+
+    Returns:
+        The KL divergence ``p * log(p / q) + (1 - p) * log((1 - p) / (1 - q))``.
+    """
     p = float(np.clip(p, eps, 1 - eps))
     q = float(np.clip(q, eps, 1 - eps))
     return float(p * np.log(p / q) + (1 - p) * np.log((1 - p) / (1 - q)))
@@ -126,6 +137,21 @@ def _kl_divergence_bernoulli(p: float, q: float, eps: float = 1e-12) -> float:
 def _kl_divergence_gaussian(
     mu_p: float, var_p: float, mu_q: float, var_q: float, eps: float = 1e-12
 ) -> float:
+    """
+    Compute the KL divergence between two univariate Gaussian distributions.
+
+    Args:
+        mu_p: Mean of the sample distribution.
+        var_p: Variance of the sample distribution.
+        mu_q: Mean of the target distribution.
+        var_q: Variance of the target distribution.
+        eps: Small constant to avoid division by zero when variances are tiny.
+
+    Returns:
+        The KL divergence based on the closed-form expression for univariate
+        Gaussians: ``0.5 * (log(var_q / var_p) + (var_p + (mu_p - mu_q) ** 2)
+        / var_q - 1)``.
+    """
     var_p = float(max(var_p, eps))
     var_q = float(max(var_q, eps))
     return float(
