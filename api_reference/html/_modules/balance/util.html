@@ -736,6 +736,7 @@
         <span class="n">all_data</span> <span class="o">=</span> <span class="n">add_na_indicator</span><span class="p">(</span><span class="n">all_data</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Dropping all rows with NAs&quot;</span><span class="p">)</span>
+        <span class="c1"># TODO: add code to drop all rows with NAs (columns are left as is)</span>
 
     <span class="k">if</span> <span class="n">fix_columns_names</span><span class="p">:</span>
         <span class="n">all_data</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">all_data</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
@@ -1502,7 +1503,7 @@
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">variables_not_in_df</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">&quot;These variables are not included in the dataframes: </span><span class="si">{variables_not_in_df}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;These variables are not included in the dataframes: </span><span class="si">{</span><span class="n">variables_not_in_df</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">variables_not_in_df</span><span class="p">)</span><span class="si">}</span><span class="s2"> requested variables are not in all Samples: &quot;</span>
