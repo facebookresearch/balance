@@ -3,7 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
+
+from __future__ import annotations
 
 from copy import deepcopy
 
@@ -19,14 +21,13 @@ from balance.sample_class import Sample
 
 from numpy import dtype
 
-from patsy import dmatrix  # pyre-ignore[21]: this module exists
 from scipy.sparse import csc_matrix
 
 
 class TestUtil(
     balance.testutil.BalanceTestCase,
 ):
-    def test__check_weighting_methods_input(self):
+    def test__check_weighting_methods_input(self) -> None:
         """Test input validation for weighting methods.
 
         Validates that _check_weighting_methods_input properly validates:
@@ -70,7 +71,7 @@ class TestUtil(
             object_name="sample",
         )
 
-    def test_guess_id_column(self):
+    def test_guess_id_column(self) -> None:
         """Test automatic identification of ID columns in DataFrames.
 
         Tests the guess_id_column function's ability to:
@@ -114,7 +115,7 @@ class TestUtil(
         ):
             balance_util.guess_id_column(df)
 
-    def test__isinstance_sample(self):
+    def test__isinstance_sample(self) -> None:
         """Test type checking for Sample objects.
 
         Validates that _isinstance_sample correctly distinguishes between:
@@ -135,7 +136,7 @@ class TestUtil(
         self.assertFalse(_isinstance_sample(s_df))
         self.assertTrue(_isinstance_sample(s))
 
-    def test_add_na_indicator(self):
+    def test_add_na_indicator(self) -> None:
         """Test addition of NA indicator columns to DataFrames.
 
         Tests the add_na_indicator function's ability to:
@@ -212,7 +213,7 @@ class TestUtil(
             d,
         )
 
-    def test_drop_na_rows(self):
+    def test_drop_na_rows(self) -> None:
         """Test removal of rows containing NA values from DataFrames.
 
         Tests the drop_na_rows function's ability to:
@@ -243,7 +244,7 @@ class TestUtil(
             "sample",
         )
 
-    def test_formula_generator(self):
+    def test_formula_generator(self) -> None:
         """Test generation of formula strings from variable specifications.
 
         Tests the formula_generator function's ability to:
@@ -251,18 +252,18 @@ class TestUtil(
         - Convert variable lists to combined formula strings
         - Handle unsupported formula types with appropriate errors
         """
-        self.assertEqual(balance_util.formula_generator("a"), "a")
+        self.assertEqual(balance_util.formula_generator(["a"]), "a")
         self.assertEqual(balance_util.formula_generator(["a", "b", "c"]), "c + b + a")
         # check exceptions
         self.assertRaisesRegex(
             Exception,
             "This formula type is not supported",
             balance_util.formula_generator,
-            ["a", "b"],
+            ["aa"],
             "interaction",
         )
 
-    def test_dot_expansion(self):
+    def test_dot_expansion(self) -> None:
         self.assertEqual(
             balance_util.dot_expansion(".", ["a", "b", "c", "d"]), "(a+b+c+d)"
         )
@@ -291,15 +292,15 @@ class TestUtil(
             df,
         )
 
-    def test_process_formula(self):
-        from patsy import EvalFactor, Term  # pyre-ignore[21]: this module exists
+    def test_process_formula(self) -> None:
+        from patsy import EvalFactor, Term  # pyre-ignore[21]
 
         f1 = balance_util.process_formula("a:(b+aab)", ["a", "b", "aab"])
         self.assertEqual(
             f1.rhs_termlist,
             [
-                Term([EvalFactor("a"), EvalFactor("b")]),
-                Term([EvalFactor("a"), EvalFactor("aab")]),
+                Term([EvalFactor("a"), EvalFactor("b")]),  # pyre-ignore[16]
+                Term([EvalFactor("a"), EvalFactor("aab")]),  # pyre-ignore[16]
             ],
         )
 
@@ -307,14 +308,23 @@ class TestUtil(
         self.assertEqual(
             f2.rhs_termlist,
             [
-                Term(
+                Term(  # pyre-ignore[16]
                     [
-                        EvalFactor("C(a, one_hot_encoding_greater_2)"),
-                        EvalFactor("C(b, one_hot_encoding_greater_2)"),
+                        EvalFactor(  # pyre-ignore[16]
+                            "C(a, one_hot_encoding_greater_2)"
+                        ),
+                        EvalFactor(  # pyre-ignore[16]
+                            "C(b, one_hot_encoding_greater_2)"
+                        ),
                     ]
                 ),
-                Term(
-                    [EvalFactor("C(a, one_hot_encoding_greater_2)"), EvalFactor("aab")]
+                Term(  # pyre-ignore[16]
+                    [
+                        EvalFactor(  # pyre-ignore[16]
+                            "C(a, one_hot_encoding_greater_2)"
+                        ),
+                        EvalFactor("aab"),  # pyre-ignore[16]
+                    ]
                 ),
             ],
         )
@@ -329,7 +339,7 @@ class TestUtil(
             factor_variables="c",
         )
 
-    def test_build_model_matrix(self):
+    def test_build_model_matrix(self) -> None:
         df = pd.DataFrame(
             {"a": ["a1", "a2", "a1", "a1"], "b": ["b1", "b2", "b3", "b3"]}
         )
@@ -401,7 +411,7 @@ class TestUtil(
         self.assertEqual(x_matrix["model_matrix"], res)
         self.assertEqual(x_matrix["model_matrix_columns"], res.columns.tolist())
 
-    def test_model_matrix(self):
+    def test_model_matrix(self) -> None:
         s_df = pd.DataFrame(
             {
                 "a": (0, 1, 2),
@@ -423,7 +433,9 @@ class TestUtil(
             }
         )
         r = balance_util.model_matrix(s)
-        self.assertEqual(r["sample"], e, lazy=True)
+        sample_result_433 = r["sample"]
+        assert sample_result_433 is not None
+        self.assertEqual(sample_result_433, e, lazy=True)
         self.assertTrue(r["target"] is None)
 
         # Tests on a single sample dataframe
@@ -437,7 +449,10 @@ class TestUtil(
             }
         )
         r = balance_util.model_matrix(s_df[["a", "b", "c"]])
-        self.assertEqual(r["sample"].sort_index(axis=1), e, lazy=True)
+        sample_result_447 = r["sample"]
+        assert sample_result_447 is not None
+        assert isinstance(sample_result_447, pd.DataFrame)
+        self.assertEqual(sample_result_447.sort_index(axis=1), e, lazy=True)
 
         # Tests on a single sample with a target
         t = Sample.from_frame(
@@ -470,8 +485,14 @@ class TestUtil(
                 "c[c]": (0.0, 0.0, 0.0, 1.0),
             }
         )
-        self.assertEqual(r["sample"].sort_index(axis=1), e_s, lazy=True)
-        self.assertEqual(r["target"].sort_index(axis=1), e_t, lazy=True)
+        sample_result_480 = r["sample"]
+        target_result_481 = r["target"]
+        assert sample_result_480 is not None
+        assert target_result_481 is not None
+        assert isinstance(sample_result_480, pd.DataFrame)
+        assert isinstance(target_result_481, pd.DataFrame)
+        self.assertEqual(sample_result_480.sort_index(axis=1), e_s, lazy=True)
+        self.assertEqual(target_result_481.sort_index(axis=1), e_t, lazy=True)
 
         # Test passing DataFrames rather than Samples
         r = balance_util.model_matrix(
@@ -480,8 +501,14 @@ class TestUtil(
                 {"a": (0, 1, 2, None), "d": (0, 2, 2, 1), "c": ("a", "b", "a", "c")}
             ),
         )
-        self.assertEqual(r["sample"].sort_index(axis=1), e_s, lazy=True)
-        self.assertEqual(r["target"].sort_index(axis=1), e_t, lazy=True)
+        sample_result_494 = r["sample"]
+        target_result_495 = r["target"]
+        assert sample_result_494 is not None
+        assert target_result_495 is not None
+        assert isinstance(sample_result_494, pd.DataFrame)
+        assert isinstance(target_result_495, pd.DataFrame)
+        self.assertEqual(sample_result_494.sort_index(axis=1), e_s, lazy=True)
+        self.assertEqual(target_result_495.sort_index(axis=1), e_t, lazy=True)
 
         # Check warnings for variables not present in both
         self.assertWarnsRegexp(
@@ -519,7 +546,10 @@ class TestUtil(
             "c___c[b]": {0: 0.0, 1: 1.0, 2: 0.0},
             "id": {0: 1.0, 1: 2.0, 2: 3.0},
         }
-        self.assertEqual(r["sample"].to_dict(), exp)
+        sample_result_536 = r["sample"]
+        assert sample_result_536 is not None
+        assert isinstance(sample_result_536, pd.DataFrame)
+        self.assertEqual(sample_result_536.to_dict(), exp)
 
         # Tests that we can handle multiple columns what would be turned to have the same column name
         s_df_bad_col_names = pd.DataFrame(
@@ -554,9 +584,12 @@ class TestUtil(
             "b1__3[c]": {0: 0.0, 1: 0.0, 2: 1.0},
             "id": {0: 1.0, 1: 2.0, 2: 3.0},
         }
-        self.assertEqual(r["sample"].to_dict(), exp)
+        sample_result_571 = r["sample"]
+        assert sample_result_571 is not None
+        assert isinstance(sample_result_571, pd.DataFrame)
+        self.assertEqual(sample_result_571.to_dict(), exp)
 
-    def test_model_matrix_arguments(self):
+    def test_model_matrix_arguments(self) -> None:
         s_df = pd.DataFrame(
             {
                 "a": (0, 1, 2),
@@ -577,7 +610,7 @@ class TestUtil(
             )
         )
         # Test variables argument
-        r = balance_util.model_matrix(s, variables="c")
+        r = balance_util.model_matrix(s, variables=["c"])
         e = pd.DataFrame({"c[a]": (1.0, 0.0, 1.0), "c[b]": (0.0, 1.0, 0.0)})
         self.assertEqual(r["sample"], e)
         self.assertTrue(r["target"] is None)
@@ -589,7 +622,7 @@ class TestUtil(
             balance_util.model_matrix,
             s,
             t,
-            "b",
+            ["b"],
         )
 
         # Test add_na argument
@@ -601,11 +634,14 @@ class TestUtil(
         self.assertWarnsRegexp(
             "Dropping all rows with NAs", balance_util.model_matrix, s, add_na=False
         )
-        self.assertEqual(r["sample"].sort_index(axis=1), e)
+        sample_add_na = r["sample"]
+        assert sample_add_na is not None
+        assert isinstance(sample_add_na, pd.DataFrame)
+        self.assertEqual(sample_add_na.sort_index(axis=1), e)
         self.assertTrue(r["target"] is None)
 
         #  Test return_type argument
-        r = balance_util.model_matrix(s, t, return_type="one")["model_matrix"]
+        r_one = balance_util.model_matrix(s, t, return_type="one")["model_matrix"]
         e_s = pd.DataFrame(
             {
                 "a": (0.0, 1.0, 2.0),
@@ -624,45 +660,67 @@ class TestUtil(
                 "c[c]": (0.0, 0.0, 0.0, 1.0),
             }
         )
-        self.assertEqual(r.sort_index(axis=1), pd.concat((e_s, e_t)), lazy=True)
+        assert r_one is not None
+        assert isinstance(r_one, pd.DataFrame)
+        self.assertEqual(r_one.sort_index(axis=1), pd.concat((e_s, e_t)), lazy=True)
 
         # Test return_var_type argument
-        r = balance_util.model_matrix(
+        r_df = balance_util.model_matrix(
             s, t, return_type="one", return_var_type="dataframe"
         )["model_matrix"]
-        self.assertEqual(r.sort_index(axis=1), pd.concat((e_s, e_t)), lazy=True)
-        r = balance_util.model_matrix(s, t, return_type="one", return_var_type="matrix")
+        assert r_df is not None
+        assert isinstance(r_df, pd.DataFrame)
+        self.assertEqual(r_df.sort_index(axis=1), pd.concat((e_s, e_t)), lazy=True)
+        r_mat = balance_util.model_matrix(
+            s, t, return_type="one", return_var_type="matrix"
+        )
+        model_matrix_mat = r_mat["model_matrix"]
+        assert model_matrix_mat is not None
         self.assertEqual(
-            r["model_matrix"],
+            model_matrix_mat,
             pd.concat((e_s, e_t))
-            .reindex(columns=r["model_matrix_columns_names"])
+            .reindex(columns=r_mat["model_matrix_columns_names"])
             .values,
         )
-        r = balance_util.model_matrix(s, t, return_type="one", return_var_type="sparse")
+        r_sparse = balance_util.model_matrix(
+            s, t, return_type="one", return_var_type="sparse"
+        )
+        model_matrix_sparse = r_sparse["model_matrix"]
+        assert model_matrix_sparse is not None
+        assert isinstance(model_matrix_sparse, csc_matrix)
         self.assertEqual(
-            r["model_matrix"].toarray(),
+            model_matrix_sparse.toarray(),
             pd.concat((e_s, e_t))
-            .reindex(columns=r["model_matrix_columns_names"])
+            .reindex(columns=r_sparse["model_matrix_columns_names"])
             .values,
         )
         self.assertEqual(
-            r["model_matrix_columns_names"],
+            r_sparse["model_matrix_columns_names"],
             ["_is_na_a[T.True]", "a", "c[a]", "c[b]", "c[c]"],
         )
-        self.assertTrue(type(r["model_matrix"]) is csc_matrix)
+        self.assertTrue(type(model_matrix_sparse) is csc_matrix)
 
         # Test formula argument
+        result_a_plus_b = balance_util.model_matrix(s, formula="a + b")["sample"]
+        assert result_a_plus_b is not None
+        assert isinstance(result_a_plus_b, pd.DataFrame)
         self.assertEqual(
-            balance_util.model_matrix(s, formula="a + b")["sample"].sort_index(axis=1),
+            result_a_plus_b.sort_index(axis=1),
             pd.DataFrame({"a": (0.0, 1.0, 2.0), "b": (0.0, 0.0, 2.0)}),
         )
 
+        result_b = balance_util.model_matrix(s, formula="b ")["sample"]
+        assert result_b is not None
+        assert isinstance(result_b, pd.DataFrame)
         self.assertEqual(
-            balance_util.model_matrix(s, formula="b ")["sample"].sort_index(axis=1),
+            result_b.sort_index(axis=1),
             pd.DataFrame({"b": (0.0, 0.0, 2.0)}),
         )
+        result_a_times_c = balance_util.model_matrix(s, formula="a * c ")["sample"]
+        assert result_a_times_c is not None
+        assert isinstance(result_a_times_c, pd.DataFrame)
         self.assertEqual(
-            balance_util.model_matrix(s, formula="a * c ")["sample"].sort_index(axis=1),
+            result_a_times_c.sort_index(axis=1),
             pd.DataFrame(
                 {
                     "a": (0.0, 1.0, 2.0),
@@ -672,10 +730,11 @@ class TestUtil(
                 }
             ),
         )
+        result_a_b_list = balance_util.model_matrix(s, formula=["a", "b"])["sample"]
+        assert result_a_b_list is not None
+        assert isinstance(result_a_b_list, pd.DataFrame)
         self.assertEqual(
-            balance_util.model_matrix(s, formula=["a", "b"])["sample"].sort_index(
-                axis=1
-            ),
+            result_a_b_list.sort_index(axis=1),
             pd.DataFrame({"a": (0.0, 1.0, 2.0), "b": (0.0, 0.0, 2.0)}),
         )
 
@@ -715,9 +774,12 @@ class TestUtil(
             }
         )
         r = balance_util.model_matrix(s, one_hot_encoding=True)
-        self.assertEqual(r["sample"].sort_index(axis=1), e, lazy=True)
+        sample_result_750 = r["sample"]
+        assert sample_result_750 is not None
+        assert isinstance(sample_result_750, pd.DataFrame)
+        self.assertEqual(sample_result_750.sort_index(axis=1), e, lazy=True)
 
-    def test_qcut(self):
+    def test_qcut(self) -> None:
         d = pd.Series([0, 1, 2, 3, 4])
         self.assertEqual(
             balance_util.qcut(d, 4).astype(str),
@@ -739,12 +801,12 @@ class TestUtil(
             6,
         )
 
-    def test_quantize(self):
+    def test_quantize(self) -> None:
         d = pd.DataFrame(np.random.rand(1000, 2))
         d = d.rename(columns={i: "ab"[i] for i in range(0, 2)})
         d["c"] = ["x"] * 1000
 
-        r = balance_util.quantize(d, variables=("a"))
+        r = balance_util.quantize(d, variables=["a"])
         self.assertTrue(isinstance(r["a"][0], pd.Interval))
         self.assertTrue(isinstance(r["b"][0], float))
         self.assertTrue(r["c"][0] == "x")
@@ -768,10 +830,10 @@ class TestUtil(
         self.assertTrue(len(set(r.values)) == 7)
 
         # Test on single integer input
-        r = balance_util.quantize(1, 1)
+        r = balance_util.quantize(pd.Series([1]), 1)
         self.assertTrue(len(set(r.values)) == 1)
 
-    def test_quantize_preserves_column_order(self):
+    def test_quantize_preserves_column_order(self) -> None:
         df = pd.DataFrame(
             {
                 "first": np.linspace(0.0, 19.0, 20),
@@ -780,14 +842,14 @@ class TestUtil(
             }
         )
 
-        result = balance_util.quantize(df, q=4, variables=("first", "third"))
+        result = balance_util.quantize(df, q=4, variables=["first", "third"])
 
         self.assertListEqual(list(result.columns), ["first", "second", "third"])
         self.assertIsInstance(result.loc[0, "first"], pd.Interval)
         self.assertEqual(result.loc[0, "second"], "a")
         self.assertIsInstance(result.loc[0, "third"], pd.Interval)
 
-    def test_quantize_non_numeric_series_raises(self):
+    def test_quantize_non_numeric_series_raises(self) -> None:
         self.assertRaisesRegex(
             TypeError,
             "series must be numeric",
@@ -795,7 +857,7 @@ class TestUtil(
             pd.Series(["x", "y", "z"]),
         )
 
-    def test_row_pairwise_diffs(self):
+    def test_row_pairwise_diffs(self) -> None:
         d = pd.DataFrame({"a": (1, 2, 3), "b": (-42, 8, 2)})
         e = pd.DataFrame(
             {"a": (1, 2, 3, 1, 2, 1), "b": (-42, 8, 2, 50, 44, -6)},
@@ -803,7 +865,7 @@ class TestUtil(
         )
         self.assertEqual(balance_util.row_pairwise_diffs(d), e)
 
-    def test_isarraylike(self):
+    def test_isarraylike(self) -> None:
         self.assertFalse(balance_util._is_arraylike(""))
         self.assertFalse(balance_util._is_arraylike("test"))
         self.assertTrue(balance_util._is_arraylike(()))
@@ -813,7 +875,7 @@ class TestUtil(
         self.assertTrue(balance_util._is_arraylike(np.array([1, 2, "a"])))
         self.assertTrue(balance_util._is_arraylike(pd.Series((1, 2, 3))))
 
-    def test_rm_mutual_nas_basic_functionality(self):
+    def test_rm_mutual_nas_basic_functionality(self) -> None:
         """Test basic functionality of rm_mutual_nas with simple arrays."""
         from balance.util import rm_mutual_nas
 
@@ -821,7 +883,7 @@ class TestUtil(
         result = rm_mutual_nas([1, 2, 3], [2, 3, None])
         self.assertEqual(result, [[1, 2], [2.0, 3.0]])
 
-    def test_rm_mutual_nas_single_arrays(self):
+    def test_rm_mutual_nas_single_arrays(self) -> None:
         """Test rm_mutual_nas with single arrays of various types."""
         from balance.util import rm_mutual_nas
 
@@ -838,7 +900,7 @@ class TestUtil(
         for i, j in zip(r, (d, d2, None)):
             numpy.testing.assert_array_equal(i, j)
 
-    def test_rm_mutual_nas_with_na_values(self):
+    def test_rm_mutual_nas_with_na_values(self) -> None:
         """Test rm_mutual_nas behavior with various NA values."""
         from balance.util import rm_mutual_nas
 
@@ -867,7 +929,7 @@ class TestUtil(
         for i, j in zip(result, expected_mixed):
             numpy.testing.assert_array_equal(i, j)
 
-    def test_rm_mutual_nas_single_array_with_na(self):
+    def test_rm_mutual_nas_single_array_with_na(self) -> None:
         """Test rm_mutual_nas with single arrays containing NA values."""
         from balance.util import rm_mutual_nas
 
@@ -902,7 +964,18 @@ class TestUtil(
         numpy.testing.assert_array_equal(rm_mutual_nas(d), ("a", 1))
         self.assertTrue(isinstance(rm_mutual_nas(d), tuple))
 
-    def _create_test_arrays(self):
+    def _create_test_arrays(
+        self,
+    ) -> tuple[
+        pd.core.arrays.base.ExtensionArray,
+        pd.core.arrays.base.ExtensionArray,
+        pd.core.arrays.base.ExtensionArray,
+        pd.core.arrays.base.ExtensionArray,
+        pd.core.arrays.base.ExtensionArray,
+        np.ndarray,
+        np.ndarray,
+        list[int | float | str],
+    ]:
         """Helper method to create test arrays for rm_mutual_nas testing.
 
         Returns:
@@ -919,7 +992,7 @@ class TestUtil(
 
         return x1, x2, x3, x4, x5, x6, x7, x8
 
-    def test_rm_mutual_nas_pandas_arrays(self):
+    def test_rm_mutual_nas_pandas_arrays(self) -> None:
         """Test rm_mutual_nas with various pandas array types."""
         from balance.util import rm_mutual_nas
 
@@ -942,7 +1015,7 @@ class TestUtil(
             expected_values,
         )
 
-    def test_rm_mutual_nas_type_preservation(self):
+    def test_rm_mutual_nas_type_preservation(self) -> None:
         """Test that rm_mutual_nas preserves input types."""
         from balance.util import rm_mutual_nas
 
@@ -955,11 +1028,8 @@ class TestUtil(
         self.assertEqual(result_types, input_types)
 
         # Test specific type preservation
-        # Handle pandas array type compatibility - PandasArray was renamed to NumpyExtensionArray
-        if hasattr(pd.core.arrays.numpy_, "NumpyExtensionArray"):
-            numpy_array_type = pd.core.arrays.numpy_.NumpyExtensionArray
-        else:
-            numpy_array_type = pd.core.arrays.numpy_.PandasArray
+        # x4 is a mixed-type array which in pandas becomes the same type as x2 (both contain floats)
+        numpy_array_type = type(x4)
         expected_types = [
             pd.core.arrays.integer.IntegerArray,
             numpy_array_type,
@@ -975,6 +1045,7 @@ class TestUtil(
         # NOTE: pd.FloatingArray were only added in pandas version 1.2.0.
         # Before that, they were called PandasArray. For details, see:
         # https://pandas.pydata.org/docs/dev/reference/api/pandas.arrays.FloatingArray.html
+        # pyre-ignore[16]: Module `pandas` has no attribute `__version__`.
         if pd.__version__ < "1.2.0":
             expected_floating_types = [
                 numpy_array_type,
@@ -989,7 +1060,7 @@ class TestUtil(
             [type(x) for x in rm_mutual_nas(x2, x3)], expected_floating_types
         )
 
-    def test_rm_mutual_nas_dtype_preservation(self):
+    def test_rm_mutual_nas_dtype_preservation(self) -> None:
         """Test that rm_mutual_nas preserves dtypes for numpy and pandas arrays."""
         from balance.util import rm_mutual_nas
 
@@ -1001,7 +1072,7 @@ class TestUtil(
         result_dtypes = [x.dtype for x in rm_mutual_nas(x1, x2, x3, x4, x5, x6, x7)]
         self.assertEqual(result_dtypes, input_dtypes)
 
-    def test_rm_mutual_nas_pandas_series_index_preservation(self):
+    def test_rm_mutual_nas_pandas_series_index_preservation(self) -> None:
         """Test that rm_mutual_nas preserves pandas Series indexes."""
         from balance.util import rm_mutual_nas
 
@@ -1010,23 +1081,27 @@ class TestUtil(
         x3 = np.array([1, 2, 3, 4])
 
         # Test that index is preserved when no values are removed
-        result = rm_mutual_nas(x1, x3)[0]
-        self.assertEqual(result.to_dict(), {0: 1, 1: 2, 2: 3, 3: 4})
+        result_0 = rm_mutual_nas(x1, x3)[0]
+        assert isinstance(result_0, pd.Series)
+        self.assertEqual(result_0.to_dict(), {0: 1, 1: 2, 2: 3, 3: 4})
 
         # Test with sorted series
         sorted_x1 = x1.sort_values(ascending=False)
-        result = rm_mutual_nas(sorted_x1, x3)[0]
-        self.assertEqual(result.to_dict(), {3: 4, 2: 3, 1: 2, 0: 1})
+        result_1 = rm_mutual_nas(sorted_x1, x3)[0]
+        assert isinstance(result_1, pd.Series)
+        self.assertEqual(result_1.to_dict(), {3: 4, 2: 3, 1: 2, 0: 1})
 
         # Test that index is preserved when NA values are removed
-        result = rm_mutual_nas(x1, x2)[0]
-        self.assertEqual(result.to_dict(), {1: 2, 2: 3, 3: 4})
+        result_2 = rm_mutual_nas(x1, x2)[0]
+        assert isinstance(result_2, pd.Series)
+        self.assertEqual(result_2.to_dict(), {1: 2, 2: 3, 3: 4})
 
         # Test with sorted series and NA removal
-        result = rm_mutual_nas(sorted_x1, x2)[0]
-        self.assertEqual(result.to_dict(), {3: 4, 2: 3, 1: 2})
+        result_3 = rm_mutual_nas(sorted_x1, x2)[0]
+        assert isinstance(result_3, pd.Series)
+        self.assertEqual(result_3.to_dict(), {3: 4, 2: 3, 1: 2})
 
-    def test_rm_mutual_nas_error_handling(self):
+    def test_rm_mutual_nas_error_handling(self) -> None:
         """Test that rm_mutual_nas properly handles error conditions."""
         from balance.util import rm_mutual_nas
 
@@ -1055,7 +1130,7 @@ class TestUtil(
         # Test mixed arraylike and non-arraylike arguments
         self.assertRaises(ValueError, rm_mutual_nas, d, "a")
 
-    def test_choose_variables(self):
+    def test_choose_variables(self) -> None:
         from balance.util import choose_variables
 
         # For one dataframe
@@ -1069,7 +1144,7 @@ class TestUtil(
             choose_variables(
                 pd.DataFrame({"a": [1], "b": [2]}),
                 pd.DataFrame({"c": [1], "b": [2]}),
-                variables="",
+                variables=None,
             ),
             ["b"],
         )
@@ -1106,7 +1181,7 @@ class TestUtil(
             choose_variables(
                 pd.DataFrame({"a": [1], "b": [2]}),
                 pd.DataFrame({"c": [1], "b": [2]}),
-                variables="a",
+                variables=["a"],
             )
 
         #  Three dataframes
@@ -1125,7 +1200,7 @@ class TestUtil(
         with self.assertRaisesRegex(
             ValueError, "requested variables are not in all Samples: {'a'}"
         ):
-            choose_variables(df1, df2, variables=("a", "b", "c"))
+            choose_variables(df1, df2, variables=["a", "b", "c"])
 
         # Control order
         df1 = pd.DataFrame(
@@ -1148,7 +1223,7 @@ class TestUtil(
             ["B", "A"],
         )
 
-    def test_auto_spread(self):
+    def test_auto_spread(self) -> None:
         data = pd.DataFrame(
             {
                 "id": (1, 1, 2, 2, 3),
@@ -1207,7 +1282,7 @@ class TestUtil(
         )
         self.assertWarnsRegexp("no unique groupings", balance_util.auto_spread, data)
 
-    def test_auto_spread_multiple_groupings(self):
+    def test_auto_spread_multiple_groupings(self) -> None:
         # Multiple possible groupings
         data = pd.DataFrame(
             {
@@ -1227,7 +1302,7 @@ class TestUtil(
         self.assertEqual(expected, balance_util.auto_spread(data))
         self.assertWarnsRegexp("2 possible groupings", balance_util.auto_spread, data)
 
-    def test_auto_aggregate(self):
+    def test_auto_aggregate(self) -> None:
         r = balance_util.auto_aggregate(
             pd.DataFrame(
                 {"x": [1, 2, 3, 4], "y": [1, 1, 1, np.nan], "id": [1, 1, 2, 3]}
@@ -1259,7 +1334,7 @@ class TestUtil(
             aggfunc="not_sum",
         )
 
-    def test_fct_lump_basic_functionality(self):
+    def test_fct_lump_basic_functionality(self) -> None:
         """Test basic functionality of fct_lump for category lumping.
 
         Tests the fct_lump function's ability to:
@@ -1283,7 +1358,7 @@ class TestUtil(
             pd.Series(["a"] * 96 + ["_lumped_other"] * 4),
         )
 
-    def test_fct_lump_multiple_categories(self):
+    def test_fct_lump_multiple_categories(self) -> None:
         """Test fct_lump with multiple small categories and edge cases.
 
         Tests the fct_lump function's ability to:
@@ -1309,7 +1384,7 @@ class TestUtil(
             pd.Series(["a"] * 96 + ["_lumped_other"] * 4),
         )
 
-    def _create_wine_test_data(self):
+    def _create_wine_test_data(self) -> tuple[Sample, Sample]:
         """Helper method to create synthetic wine dataset for testing.
 
         Creates synthetic wine data that mimics the structure of the sklearn wine dataset
@@ -1368,7 +1443,7 @@ class TestUtil(
 
         return wine_survey, wine_survey_copy
 
-    def test_fct_lump_categorical_vs_string_consistency(self):
+    def test_fct_lump_categorical_vs_string_consistency(self) -> None:
         """Test that fct_lump produces consistent results for categorical vs string variables.
 
         Tests that fct_lump works identically when applied to:
@@ -1401,12 +1476,16 @@ class TestUtil(
         )
 
         # Check that model coefficients are identical
+        output_cat_var_model = output_cat_var.model()
+        output_string_var_model = output_string_var.model()
+        assert output_cat_var_model is not None
+        assert output_string_var_model is not None
         self.assertEqual(
-            output_cat_var.model()["perf"]["coefs"],
-            output_string_var.model()["perf"]["coefs"],
+            output_cat_var_model["perf"]["coefs"],
+            output_string_var_model["perf"]["coefs"],
         )
 
-    def test_fct_lump_by(self):
+    def test_fct_lump_by(self) -> None:
         """Test category lumping with grouping by another variable.
 
         Tests the fct_lump_by function's ability to:
@@ -1446,7 +1525,7 @@ class TestUtil(
         )
         self.assertEqual(r, e)
 
-    def test_one_hot_encoding_greater_2(self):
+    def test_one_hot_encoding_greater_2(self) -> None:
         """Test one-hot encoding for categorical variables with >2 categories.
 
         Tests the one_hot_encoding_greater_2 function's ability to:
@@ -1455,6 +1534,9 @@ class TestUtil(
         - Work correctly with patsy's dmatrix function
         """
         from balance.util import one_hot_encoding_greater_2  # noqa
+        from patsy import (  # pyre-ignore[21]: Import `patsy.dmatrix` is not defined as a type.
+            dmatrix,
+        )
 
         d = {
             "a": ["a1", "a2", "a1", "a1"],
@@ -1463,7 +1545,9 @@ class TestUtil(
         }
         df = pd.DataFrame(data=d)
 
-        res = dmatrix("C(a, one_hot_encoding_greater_2)", df, return_type="dataframe")
+        res = dmatrix(  # pyre-ignore[16]: Module `patsy` has no attribute `dmatrix`.
+            "C(a, one_hot_encoding_greater_2)", df, return_type="dataframe"
+        )
         expected = {
             "Intercept": [1.0, 1.0, 1.0, 1.0],
             "C(a, one_hot_encoding_greater_2)[a2]": [0.0, 1.0, 0.0, 0.0],
@@ -1471,7 +1555,9 @@ class TestUtil(
         expected = pd.DataFrame(data=expected)
         self.assertEqual(res, expected)
 
-        res = dmatrix("C(b, one_hot_encoding_greater_2)", df, return_type="dataframe")
+        res = dmatrix(  # pyre-ignore[16]: Module `patsy` has no attribute `dmatrix`.
+            "C(b, one_hot_encoding_greater_2)", df, return_type="dataframe"
+        )
         expected = {
             "Intercept": [1.0, 1.0, 1.0, 1.0],
             "C(b, one_hot_encoding_greater_2)[b1]": [1.0, 0.0, 0.0, 0.0],
@@ -1481,7 +1567,9 @@ class TestUtil(
         expected = pd.DataFrame(data=expected)
         self.assertEqual(res, expected)
 
-        res = dmatrix("C(c, one_hot_encoding_greater_2)", df, return_type="dataframe")
+        res = dmatrix(  # pyre-ignore[16]: Module `patsy` has no attribute `dmatrix`.
+            "C(c, one_hot_encoding_greater_2)", df, return_type="dataframe"
+        )
         expected = {
             "Intercept": [1.0, 1.0, 1.0, 1.0],
             "C(c, one_hot_encoding_greater_2)[c1]": [1.0, 1.0, 1.0, 1.0],
@@ -1489,19 +1577,19 @@ class TestUtil(
         expected = pd.DataFrame(data=expected)
         self.assertEqual(res, expected)
 
-    def test_truncate_text(self):
+    def test_truncate_text(self) -> None:
         self.assertEqual(
             balance_util._truncate_text("a" * 6, length=5), "a" * 5 + "..."
         )
         self.assertEqual(balance_util._truncate_text("a" * 4, length=5), "a" * 4)
         self.assertEqual(balance_util._truncate_text("a" * 5, length=5), "a" * 5)
 
-    def test__dict_intersect(self):
+    def test__dict_intersect(self) -> None:
         d1 = {"a": 1, "b": 2}
         d2 = {"c": 3, "b": 2222}
         self.assertEqual(balance_util._dict_intersect(d1, d2), {"b": 2})
 
-    def test__astype_in_df_from_dtypes(self):
+    def test__astype_in_df_from_dtypes(self) -> None:
         df = pd.DataFrame({"id": ("1", "2"), "a": (1.0, 2.0), "weight": (1.0, 2.0)})
         df_orig = pd.DataFrame(
             {"id": (1, 2), "a": (1, 2), "forest": ("tree", "banana")}
@@ -1522,7 +1610,7 @@ class TestUtil(
             {"id": dtype("int64"), "a": dtype("int64"), "weight": dtype("float64")},
         )
 
-    def test__true_false_str_to_bool(self):
+    def test__true_false_str_to_bool(self) -> None:
         self.assertFalse(balance_util._true_false_str_to_bool("falsE"))
         self.assertTrue(balance_util._true_false_str_to_bool("TrUe"))
         with self.assertRaisesRegex(
@@ -1531,7 +1619,7 @@ class TestUtil(
         ):
             balance_util._true_false_str_to_bool("Banana")
 
-    def test__are_dtypes_equal(self):
+    def test__are_dtypes_equal(self) -> None:
         df1 = pd.DataFrame({"int": np.arange(5), "flt": np.random.randn(5)})
         df2 = pd.DataFrame({"flt": np.random.randn(5), "int": np.random.randn(5)})
         df11 = pd.DataFrame(
@@ -1548,7 +1636,7 @@ class TestUtil(
             balance_util._are_dtypes_equal(df11.dtypes, df2.dtypes)["is_equal"]
         )
 
-    def test__warn_of_df_dtypes_change(self):
+    def test__warn_of_df_dtypes_change(self) -> None:
         df = pd.DataFrame({"int": np.arange(5), "flt": np.random.randn(5)})
         new_df = deepcopy(df)
         new_df.int = new_df.int.astype(float)
@@ -1561,7 +1649,7 @@ class TestUtil(
             new_df.dtypes,
         )
 
-    def test__make_df_column_names_unique(self):
+    def test__make_df_column_names_unique(self) -> None:
         # Sample DataFrame with duplicate column names
         data = {
             "A": [1, 2, 3],
@@ -1585,7 +1673,7 @@ class TestUtil(
             },
         )
 
-    def test__safe_replace_and_infer(self):
+    def test__safe_replace_and_infer(self) -> None:
         """Test safe replacement and dtype inference to avoid pandas deprecation warnings."""
         # Test with Series containing infinities
         series_with_inf = pd.Series([1.0, np.inf, 2.0, -np.inf, 3.0])
@@ -1615,7 +1703,7 @@ class TestUtil(
         expected = pd.Series(["a", "x", "c"], dtype="object")
         pd.testing.assert_series_equal(result, expected)
 
-    def test__safe_fillna_and_infer(self):
+    def test__safe_fillna_and_infer(self) -> None:
         """Test safe NA filling and dtype inference to avoid pandas deprecation warnings."""
         # Test with Series containing NaN values
         series_with_nan = pd.Series([1.0, np.nan, 2.0, np.nan, 3.0])
@@ -1641,7 +1729,7 @@ class TestUtil(
         expected = pd.Series([1.0, np.nan, 3.0])  # Type gets converted to float
         pd.testing.assert_series_equal(result, expected)
 
-    def test__safe_groupby_apply(self):
+    def test__safe_groupby_apply(self) -> None:
         """Test safe groupby apply operations that handle include_groups parameter."""
         # Create test DataFrame
         df = pd.DataFrame(
@@ -1684,7 +1772,7 @@ class TestUtil(
         expected = pd.Series([2, 2, 1], index=pd.Index(["A", "B", "C"], name="group"))
         pd.testing.assert_series_equal(result, expected)
 
-    def test__safe_show_legend(self):
+    def test__safe_show_legend(self) -> None:
         """Test safe legend display that only shows legends when there are labeled artists."""
         import matplotlib.pyplot as plt
 
@@ -1732,7 +1820,7 @@ class TestUtil(
 
         plt.close(fig)
 
-    def test__safe_divide_with_zero_handling(self):
+    def test__safe_divide_with_zero_handling(self) -> None:
         """Test safe division with proper numpy error state management."""
         # Test normal division
         result = balance_util._safe_divide_with_zero_handling(10, 2)
