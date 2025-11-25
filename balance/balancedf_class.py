@@ -1168,7 +1168,7 @@ class BalanceDF:
             aggregate_by_main_covar (bool, optional): Defaults to False.
                 If True, it will make sure to return the asmd DataFrame after averaging
                 all the columns from using the one-hot encoding for categorical variables.
-                See ::_aggregate_asmd_by_main_covar:: for more details.
+                See ::_aggregate_statistic_by_main_covar:: for more details.
 
         Raises:
             ValueError:

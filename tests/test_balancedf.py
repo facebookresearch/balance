@@ -1149,7 +1149,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
         covars = s3.covars()
 
         unaggregated = covars.kld(on_linked_samples=False)
-        expected = weighted_comparisons_stats._aggregate_asmd_by_main_covar(
+        expected = weighted_comparisons_stats._aggregate_statistic_by_main_covar(
             unaggregated.loc["covars"]
         )
 

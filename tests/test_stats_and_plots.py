@@ -932,15 +932,15 @@ class TestBalance_weighted_comparisons_stats(
         )
         self.assertTrue(all((np.round(r2, 5)) == np.array([2.82843, 0.70711, 1.76777])))
 
-    def test__aggregate_asmd_by_main_covar(self) -> None:
-        """Test aggregation of ASMD values by main covariate.
+    def test__aggregate_statistic_by_main_covar(self) -> None:
+        """Test aggregation of statistics values by main covariate.
 
-        Tests the _aggregate_asmd_by_main_covar function which groups
-        ASMD values by their main covariate names (e.g., combining
+        Tests the _aggregate_statistic_by_main_covar function which groups
+        statistic values by their main covariate names (e.g., combining
         categorical levels) and calculates appropriate aggregations.
         """
         from balance.stats_and_plots.weighted_comparisons_stats import (
-            _aggregate_asmd_by_main_covar,
+            _aggregate_statistic_by_main_covar,
         )
 
         # toy example
@@ -954,7 +954,7 @@ class TestBalance_weighted_comparisons_stats(
             }
         )
 
-        outcome = _aggregate_asmd_by_main_covar(asmd_series).to_dict()
+        outcome = _aggregate_statistic_by_main_covar(asmd_series).to_dict()
         expected = {"age": 0.5, "education": 2.5}
 
         self.assertEqual(outcome, expected)
