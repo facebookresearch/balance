@@ -68,8 +68,8 @@
     (`parent_balance/tests/test_adjust_null.py`,
     `parent_balance/tests/test_adjustment.py`,
     `parent_balance/tests/test_cbps.py`, `parent_balance/tests/test_cli.py`,
-    `parent_balance/tests/test_datasets.py`,
-    `parent_balance/tests/test_ipw.py`, `parent_balance/tests/test_logging.py`,
+    `parent_balance/tests/test_datasets.py`, `parent_balance/tests/test_ipw.py`,
+    `parent_balance/tests/test_logging.py`,
     `parent_balance/tests/test_poststratify.py`,
     `parent_balance/tests/test_rake.py`, `parent_balance/tests/test_sample.py`,
     `parent_balance/tests/test_stats_and_plots.py`,
@@ -108,6 +108,15 @@
   - Fixed type casts and narrowed types where appropriate
   - Initialized optional variables to handle pyre-fixme[61] issues
   - Updated method signatures to match parent class interfaces
+  - **Replaced assert-based type narrowing with `_verify_value_type()` helper**:
+    Refactored code to use the `_verify_value_type()` utility function instead
+    of bare `assert x is not None` statements for type narrowing. This improves
+    code clarity, provides better error messages, and follows best practices for
+    pyre-strict mode. Enhanced `_verify_value_type()` in `testutil.py` with
+    optional type checking via `isinstance()` and improved overload signatures.
+    Changes applied to test files (`test_datasets.py`, `test_sample.py`,
+    `test_stats_and_plots.py`, `test_testutil.py`, `test_util.py`,
+    `test_weighted_comparisons_plots.py`) and production code (`ipw.py`).
 
 ## Bug Fixes
 

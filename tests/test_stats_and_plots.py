@@ -13,6 +13,7 @@ import balance.testutil
 
 import numpy as np
 import pandas as pd
+from balance.testutil import _verify_value_type
 
 
 class TestBalance_weights_stats(
@@ -98,8 +99,7 @@ class TestBalance_weights_stats(
         # Test with identical values
         result1 = prop_above_and_below(pd.Series((1, 1, 1, 1)))
         self.assertIsNotNone(result1)
-        assert result1 is not None  # Type narrowing for pyre
-        assert isinstance(result1, pd.Series)  # Type narrowing for pyre
+        result1 = _verify_value_type(result1, pd.Series)  # Type narrowing for pyre
         self.assertEqual(
             result1.astype(int).to_list(),
             [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
@@ -108,8 +108,7 @@ class TestBalance_weights_stats(
         # Test with varying values
         result2 = prop_above_and_below(pd.Series((1, 2, 3, 4)))
         self.assertIsNotNone(result2)
-        assert result2 is not None  # Type narrowing for pyre
-        assert isinstance(result2, pd.Series)  # Type narrowing for pyre
+        result2 = _verify_value_type(result2, pd.Series)  # Type narrowing for pyre
         self.assertEqual(
             result2.to_list(),
             [0.0, 0.0, 0.0, 0.25, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0],
@@ -120,8 +119,7 @@ class TestBalance_weights_stats(
             pd.Series((1, 2, 3, 4)), below=(0.1, 0.5), above=(2, 3)
         )
         self.assertIsNotNone(result)
-        assert result is not None  # Type narrowing for pyre
-        assert isinstance(result, pd.Series)  # Type narrowing for pyre
+        result = _verify_value_type(result, pd.Series)  # Type narrowing for pyre
         self.assertEqual(result.to_list(), [0.0, 0.25, 0.0, 0.0])
         self.assertEqual(
             result.index.to_list(),
@@ -138,7 +136,7 @@ class TestBalance_weights_stats(
             pd.Series((1, 2, 3, 4)), return_as_series=False
         )
         self.assertIsNotNone(result_dict)
-        assert result_dict is not None  # Type narrowing for pyre
+        result_dict = _verify_value_type(result_dict)
         expected = {
             "below": [0.0, 0.0, 0.0, 0.25, 0.5],
             "above": [0.5, 0.0, 0.0, 0.0, 0.0],

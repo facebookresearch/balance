@@ -11,6 +11,7 @@ import balance.testutil
 import numpy as np
 
 from balance.datasets import load_data
+from balance.testutil import _verify_value_type
 
 
 class TestDatasets(
@@ -19,8 +20,8 @@ class TestDatasets(
     def test_load_data(self) -> None:
         target_df, sample_df = load_data()
 
-        assert sample_df is not None
-        assert target_df is not None
+        sample_df = _verify_value_type(sample_df)
+        target_df = _verify_value_type(target_df)
 
         self.assertEqual(sample_df.shape, (1000, 5))
         self.assertEqual(target_df.shape, (10000, 5))
@@ -58,8 +59,8 @@ class TestDatasets(
     def test_load_data_cbps(self) -> None:
         target_df, sample_df = load_data("sim_data_cbps")
 
-        assert sample_df is not None
-        assert target_df is not None
+        sample_df = _verify_value_type(sample_df)
+        target_df = _verify_value_type(target_df)
 
         self.assertEqual(sample_df.shape, (246, 7))
         self.assertEqual(target_df.shape, (254, 7))

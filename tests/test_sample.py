@@ -33,7 +33,7 @@ import numpy as np
 import pandas as pd
 
 from balance.sample_class import Sample
-from balance.testutil import none_throws
+from balance.testutil import _verify_value_type
 
 
 # Test sample fixtures - shared across multiple test methods
@@ -486,7 +486,7 @@ class TestSample_base_and_adjust_methods(
         a = s.adjust(t, max_de=None, method="null")
         m = a.model()
 
-        self.assertEqual(none_throws(m)["method"], "null_adjustment")
+        self.assertEqual(_verify_value_type(m)["method"], "null_adjustment")
 
     def test_Sample_model_ipw_adjustment(self) -> None:
         """Test model information for IPW adjustment method.
@@ -500,12 +500,12 @@ class TestSample_base_and_adjust_methods(
         a = s.adjust(t, max_de=None)
         m = a.model()
 
-        self.assertEqual(none_throws(m)["method"], "ipw")
+        self.assertEqual(_verify_value_type(m)["method"], "ipw")
 
         # Test structure of IPW output
-        self.assertTrue("perf" in none_throws(m).keys())
-        self.assertTrue("fit" in none_throws(m).keys())
-        self.assertTrue("coefs" in none_throws(m)["perf"].keys())
+        self.assertTrue("perf" in _verify_value_type(m).keys())
+        self.assertTrue("fit" in _verify_value_type(m).keys())
+        self.assertTrue("coefs" in _verify_value_type(m)["perf"].keys())
 
     def test_Sample_model_matrix(self) -> None:
         """Test model matrix generation for samples.

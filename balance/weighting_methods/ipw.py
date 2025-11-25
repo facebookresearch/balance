@@ -20,6 +20,7 @@ from balance.stats_and_plots.weighted_comparisons_stats import (
     asmd_improvement as compute_asmd_improvement,
 )
 from balance.stats_and_plots.weights_stats import design_effect
+from balance.testutil import _verify_value_type
 
 from scipy.sparse import csc_matrix, csr_matrix, issparse
 from sklearn.base import ClassifierMixin, clone
@@ -803,7 +804,7 @@ def ipw(
     )
 
     logger.info(f"Chosen lambda: {best_s}")
-    assert best_model is not None, "best_model should not be None at this point"
+    best_model = _verify_value_type(best_model)
     performance = model_coefs(
         best_model,
         feature_names=list(X_matrix_columns_names),

@@ -8,24 +8,63 @@
 import io
 import re
 import sys
-
 import unittest
 from contextlib import contextmanager
-from typing import Any, Callable, Generator, Optional, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Generator,
+    Optional,
+    overload,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 
-# Generic type variable used for none_throws to preserve type information
+# Generic type variable used for _verify_value_type to preserve type information
 T = TypeVar("T")
 
 
-# TODO: move to use this function throughout the tests
-def none_throws(optional: Optional[T]) -> T:
-    """Assert that optional value is not None and return it."""
+@overload
+def _verify_value_type(  # noqa: E704
+    optional: Optional[Any],
+    expected_type: Type[T],
+) -> T: ...
+
+
+@overload
+def _verify_value_type(  # noqa: E704
+    optional: Optional[T],
+    expected_type: None = None,
+) -> T: ...
+
+
+def _verify_value_type(
+    optional: Optional[T],
+    expected_type: Optional[Union[Type[Any], Tuple[Type[Any], ...]]] = None,
+) -> T:
+    """Assert that optional value is not None and return it.
+
+    Args:
+        optional: The optional value to check
+        expected_type: Optional type or tuple of types to check with isinstance()
+
+    Returns:
+        The non-None value
+
+    Raises:
+        ValueError: If optional is None
+        TypeError: If expected_type is provided and isinstance check fails
+    """
     if optional is None:
         raise ValueError("Unexpected None value")
+    if expected_type is not None and not isinstance(optional, expected_type):
+        raise TypeError(f"Expected type {expected_type}, got {type(optional).__name__}")
     return optional
 
 

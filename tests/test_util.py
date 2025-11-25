@@ -18,6 +18,7 @@ import pandas as pd
 # TODO: remove the use of balance_util in most cases, and just import the functions to be tested directly
 from balance import util as balance_util
 from balance.sample_class import Sample
+from balance.testutil import _verify_value_type
 
 from numpy import dtype
 
@@ -433,8 +434,7 @@ class TestUtil(
             }
         )
         r = balance_util.model_matrix(s)
-        sample_result_433 = r["sample"]
-        assert sample_result_433 is not None
+        sample_result_433 = _verify_value_type(r["sample"])
         self.assertEqual(sample_result_433, e, lazy=True)
         self.assertTrue(r["target"] is None)
 
@@ -449,9 +449,7 @@ class TestUtil(
             }
         )
         r = balance_util.model_matrix(s_df[["a", "b", "c"]])
-        sample_result_447 = r["sample"]
-        assert sample_result_447 is not None
-        assert isinstance(sample_result_447, pd.DataFrame)
+        sample_result_447 = _verify_value_type(r["sample"], pd.DataFrame)
         self.assertEqual(sample_result_447.sort_index(axis=1), e, lazy=True)
 
         # Tests on a single sample with a target
@@ -487,10 +485,8 @@ class TestUtil(
         )
         sample_result_480 = r["sample"]
         target_result_481 = r["target"]
-        assert sample_result_480 is not None
-        assert target_result_481 is not None
-        assert isinstance(sample_result_480, pd.DataFrame)
-        assert isinstance(target_result_481, pd.DataFrame)
+        sample_result_480 = _verify_value_type(sample_result_480, pd.DataFrame)
+        target_result_481 = _verify_value_type(target_result_481, pd.DataFrame)
         self.assertEqual(sample_result_480.sort_index(axis=1), e_s, lazy=True)
         self.assertEqual(target_result_481.sort_index(axis=1), e_t, lazy=True)
 
@@ -503,10 +499,8 @@ class TestUtil(
         )
         sample_result_494 = r["sample"]
         target_result_495 = r["target"]
-        assert sample_result_494 is not None
-        assert target_result_495 is not None
-        assert isinstance(sample_result_494, pd.DataFrame)
-        assert isinstance(target_result_495, pd.DataFrame)
+        sample_result_494 = _verify_value_type(sample_result_494, pd.DataFrame)
+        target_result_495 = _verify_value_type(target_result_495, pd.DataFrame)
         self.assertEqual(sample_result_494.sort_index(axis=1), e_s, lazy=True)
         self.assertEqual(target_result_495.sort_index(axis=1), e_t, lazy=True)
 
@@ -546,9 +540,7 @@ class TestUtil(
             "c___c[b]": {0: 0.0, 1: 1.0, 2: 0.0},
             "id": {0: 1.0, 1: 2.0, 2: 3.0},
         }
-        sample_result_536 = r["sample"]
-        assert sample_result_536 is not None
-        assert isinstance(sample_result_536, pd.DataFrame)
+        sample_result_536 = _verify_value_type(r["sample"], pd.DataFrame)
         self.assertEqual(sample_result_536.to_dict(), exp)
 
         # Tests that we can handle multiple columns what would be turned to have the same column name
@@ -584,9 +576,7 @@ class TestUtil(
             "b1__3[c]": {0: 0.0, 1: 0.0, 2: 1.0},
             "id": {0: 1.0, 1: 2.0, 2: 3.0},
         }
-        sample_result_571 = r["sample"]
-        assert sample_result_571 is not None
-        assert isinstance(sample_result_571, pd.DataFrame)
+        sample_result_571 = _verify_value_type(r["sample"], pd.DataFrame)
         self.assertEqual(sample_result_571.to_dict(), exp)
 
     def test_model_matrix_arguments(self) -> None:
@@ -634,9 +624,7 @@ class TestUtil(
         self.assertWarnsRegexp(
             "Dropping all rows with NAs", balance_util.model_matrix, s, add_na=False
         )
-        sample_add_na = r["sample"]
-        assert sample_add_na is not None
-        assert isinstance(sample_add_na, pd.DataFrame)
+        sample_add_na = _verify_value_type(r["sample"], pd.DataFrame)
         self.assertEqual(sample_add_na.sort_index(axis=1), e)
         self.assertTrue(r["target"] is None)
 
@@ -660,22 +648,19 @@ class TestUtil(
                 "c[c]": (0.0, 0.0, 0.0, 1.0),
             }
         )
-        assert r_one is not None
-        assert isinstance(r_one, pd.DataFrame)
+        r_one = _verify_value_type(r_one, pd.DataFrame)
         self.assertEqual(r_one.sort_index(axis=1), pd.concat((e_s, e_t)), lazy=True)
 
         # Test return_var_type argument
         r_df = balance_util.model_matrix(
             s, t, return_type="one", return_var_type="dataframe"
         )["model_matrix"]
-        assert r_df is not None
-        assert isinstance(r_df, pd.DataFrame)
+        r_df = _verify_value_type(r_df, pd.DataFrame)
         self.assertEqual(r_df.sort_index(axis=1), pd.concat((e_s, e_t)), lazy=True)
         r_mat = balance_util.model_matrix(
             s, t, return_type="one", return_var_type="matrix"
         )
-        model_matrix_mat = r_mat["model_matrix"]
-        assert model_matrix_mat is not None
+        model_matrix_mat = _verify_value_type(r_mat["model_matrix"])
         self.assertEqual(
             model_matrix_mat,
             pd.concat((e_s, e_t))
@@ -685,9 +670,7 @@ class TestUtil(
         r_sparse = balance_util.model_matrix(
             s, t, return_type="one", return_var_type="sparse"
         )
-        model_matrix_sparse = r_sparse["model_matrix"]
-        assert model_matrix_sparse is not None
-        assert isinstance(model_matrix_sparse, csc_matrix)
+        model_matrix_sparse = _verify_value_type(r_sparse["model_matrix"], csc_matrix)
         self.assertEqual(
             model_matrix_sparse.toarray(),
             pd.concat((e_s, e_t))
@@ -701,24 +684,24 @@ class TestUtil(
         self.assertTrue(type(model_matrix_sparse) is csc_matrix)
 
         # Test formula argument
-        result_a_plus_b = balance_util.model_matrix(s, formula="a + b")["sample"]
-        assert result_a_plus_b is not None
-        assert isinstance(result_a_plus_b, pd.DataFrame)
+        result_a_plus_b = _verify_value_type(
+            balance_util.model_matrix(s, formula="a + b")["sample"], pd.DataFrame
+        )
         self.assertEqual(
             result_a_plus_b.sort_index(axis=1),
             pd.DataFrame({"a": (0.0, 1.0, 2.0), "b": (0.0, 0.0, 2.0)}),
         )
 
-        result_b = balance_util.model_matrix(s, formula="b ")["sample"]
-        assert result_b is not None
-        assert isinstance(result_b, pd.DataFrame)
+        result_b = _verify_value_type(
+            balance_util.model_matrix(s, formula="b ")["sample"], pd.DataFrame
+        )
         self.assertEqual(
             result_b.sort_index(axis=1),
             pd.DataFrame({"b": (0.0, 0.0, 2.0)}),
         )
-        result_a_times_c = balance_util.model_matrix(s, formula="a * c ")["sample"]
-        assert result_a_times_c is not None
-        assert isinstance(result_a_times_c, pd.DataFrame)
+        result_a_times_c = _verify_value_type(
+            balance_util.model_matrix(s, formula="a * c ")["sample"], pd.DataFrame
+        )
         self.assertEqual(
             result_a_times_c.sort_index(axis=1),
             pd.DataFrame(
@@ -730,9 +713,9 @@ class TestUtil(
                 }
             ),
         )
-        result_a_b_list = balance_util.model_matrix(s, formula=["a", "b"])["sample"]
-        assert result_a_b_list is not None
-        assert isinstance(result_a_b_list, pd.DataFrame)
+        result_a_b_list = _verify_value_type(
+            balance_util.model_matrix(s, formula=["a", "b"])["sample"], pd.DataFrame
+        )
         self.assertEqual(
             result_a_b_list.sort_index(axis=1),
             pd.DataFrame({"a": (0.0, 1.0, 2.0), "b": (0.0, 0.0, 2.0)}),
@@ -774,9 +757,7 @@ class TestUtil(
             }
         )
         r = balance_util.model_matrix(s, one_hot_encoding=True)
-        sample_result_750 = r["sample"]
-        assert sample_result_750 is not None
-        assert isinstance(sample_result_750, pd.DataFrame)
+        sample_result_750 = _verify_value_type(r["sample"], pd.DataFrame)
         self.assertEqual(sample_result_750.sort_index(axis=1), e, lazy=True)
 
     def test_qcut(self) -> None:
@@ -1478,8 +1459,8 @@ class TestUtil(
         # Check that model coefficients are identical
         output_cat_var_model = output_cat_var.model()
         output_string_var_model = output_string_var.model()
-        assert output_cat_var_model is not None
-        assert output_string_var_model is not None
+        output_cat_var_model = _verify_value_type(output_cat_var_model)
+        output_string_var_model = _verify_value_type(output_string_var_model)
         self.assertEqual(
             output_cat_var_model["perf"]["coefs"],
             output_string_var_model["perf"]["coefs"],
