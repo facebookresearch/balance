@@ -1141,6 +1141,8 @@ class TestBalanceDF_asmd(BalanceTestCase):
             index=("covars",),
         )
 
+        expected.index.name = "index"
+
         self.assertEqual(output.round(6), expected)
 
     def test_BalanceDF_kld_aggregate_by_main_covar(self) -> None:

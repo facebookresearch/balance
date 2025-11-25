@@ -1273,7 +1273,7 @@ class BalanceDF:
                 .assign(index=(self.__name,))
                 .set_index("index")
             )
-            return out.rename_axis(None)
+            return out
 
     def kld(
         self: "BalanceDF",
@@ -1337,7 +1337,7 @@ class BalanceDF:
                 .assign(index=(self.__name,))
                 .set_index("index")
             )
-            return out.rename_axis(None)
+            return out
 
     def asmd_improvement(
         self: "BalanceDF",
