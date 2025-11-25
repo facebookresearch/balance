@@ -214,7 +214,7 @@ def asmd(
                 respective sample sizes (in contrast to how pooled sd is calculated in
                 Cohen's d statistic).
         aggregate_by_main_covar (bool):
-            If to use :func:`_aggregate_asmd_by_main_covar` to aggregate (average) the asmd based on variable name.
+            If to use :func:`_aggregate_statistic_by_main_covar` to aggregate (average) the asmd based on variable name.
             Default is False.
     Returns:
         pd.Series: a Series indexed on the names of the columns in the input DataFrames.
@@ -335,7 +335,7 @@ def asmd(
     out.name = None
 
     if aggregate_by_main_covar:
-        out = _aggregate_asmd_by_main_covar(out)
+        out = _aggregate_statistic_by_main_covar(out)
 
     return out
 
@@ -430,12 +430,12 @@ def kld(
     out.name = None
 
     if aggregate_by_main_covar:
-        out = _aggregate_asmd_by_main_covar(out)
+        out = _aggregate_statistic_by_main_covar(out)
 
     return out
 
 
-def _aggregate_asmd_by_main_covar(asmd_series: pd.Series) -> pd.Series:
+def _aggregate_statistic_by_main_covar(asmd_series: pd.Series) -> pd.Series:
     """
     This function helps to aggregate the ASMD, which is broken down per level for a category variable, into one value per covariate.
     This is useful since it allows us to get high level view of features such as country, locale, etc.
@@ -451,7 +451,7 @@ def _aggregate_asmd_by_main_covar(asmd_series: pd.Series) -> pd.Series:
     Examples:
         ::
 
-            from balance.stats_and_plots.weighted_comparisons_stats import _aggregate_asmd_by_main_covar
+            from balance.stats_and_plots.weighted_comparisons_stats import _aggregate_statistic_by_main_covar
 
             asmd_series = pd.Series(
             {
@@ -462,7 +462,7 @@ def _aggregate_asmd_by_main_covar(asmd_series: pd.Series) -> pd.Series:
                 'education[T.phd]': 4,
             })
 
-            _aggregate_asmd_by_main_covar(asmd_series).to_dict()
+            _aggregate_statistic_by_main_covar(asmd_series).to_dict()
 
             # output:
             # {'age': 0.5, 'education': 2.5}
