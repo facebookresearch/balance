@@ -413,6 +413,7 @@ def ipw(
     penalty_factor: list[float] | None = None,
     one_hot_encoding: bool = False,
     # TODO: This is set to be false in order to keep reproducibility of works that uses balance.
+    # The best practice is for this to be true.
     random_seed: int = 2020,
     *args: Any,
     **kwargs: Any,
