@@ -429,9 +429,14 @@ def ipw(
             If None all joint variables of sample_df and target_df are used. Defaults to None.
         model (Union[str, ClassifierMixin, None], optional): Model used for modeling the
             propensity scores. Provide "sklearn" (default) to use logistic regression,
-            or pass an sklearn classifier implementing ``fit`` and ``predict_proba``
-            (for example :class:`sklearn.ensemble.RandomForestClassifier` or
-            :class:`sklearn.linear_model.LogisticRegression`).
+            or pass an sklearn classifier implementing ``fit`` and ``predict_proba``.
+            Common choices include :class:`sklearn.linear_model.LogisticRegression`,
+            :class:`sklearn.ensemble.RandomForestClassifier`,
+            :class:`sklearn.ensemble.GradientBoostingClassifier`,
+            :class:`sklearn.ensemble.HistGradientBoostingClassifier`, and
+            :class:`sklearn.linear_model.SGDClassifier` configured with
+            ``loss="log_loss"``. Custom classifiers should expose a ``predict_proba``
+            method returning class probabilities.
         weight_trimming_mean_ratio (Optional[Union[int, float]], optional): indicating the ratio from above according to which
             the weights are trimmed by mean(weights) * ratio.
             Defaults to 20.
@@ -473,9 +478,35 @@ def ipw(
             ``logistic_regression_kwargs`` and ``penalty_factor`` are ignored.
             Defaults to None.
 
+    Examples:
+        >>> from sklearn.ensemble import RandomForestClassifier
+        >>> rf = RandomForestClassifier(n_estimators=200, random_state=0)
+        >>> ipw(
+        ...     sample_df,
+        ...     sample_weights,
+        ...     target_df,
+        ...     target_weights,
+        ...     variables=["gender", "age_group", "income"],
+        ...     model=rf,
+        ... )
+
+        >>> ipw(
+        ...     sample_df,
+        ...     sample_weights,
+        ...     target_df,
+        ...     target_weights,
+        ...     variables=["gender", "age_group", "income"],
+        ...     model="sklearn",
+        ...     logistic_regression_kwargs={"max_iter": 2000},
+        ... )
+
     Raises:
         Exception: f"Sample indicator only has value {_n_unique}. This can happen when your sample or target are empty from unknown reason"
-        NotImplementedError: if model is not "sklearn"
+        NotImplementedError: If ``model`` is a string other than "sklearn" (the
+            built-in logistic regression option) or the deprecated "glmnet".
+        TypeError: If ``model`` is neither a supported string nor an sklearn
+            classifier exposing ``predict_proba``.
+        ValueError: If both ``model`` and ``sklearn_model`` are provided.
 
     Returns:
         Dict[str, Any]: A dictionary includes:
