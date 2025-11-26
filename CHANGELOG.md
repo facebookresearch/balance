@@ -9,13 +9,6 @@
     implementation (`_run_ipf_numpy`) for iterative proportional fitting,
     resulting in significant performance improvements and eliminating external
     dependency ([#135](https://github.com/facebookresearch/balance/pull/135)).
-- **IPW method enhancements**
-  - Added `logistic_regression_kwargs` parameter to `ipw()` for customizing
-    sklearn LogisticRegression settings
-    ([#138](https://github.com/facebookresearch/balance/pull/138)).
-  - CLI now supports `--ipw_logistic_regression_kwargs` for passing custom
-    LogisticRegression parameters via JSON
-    ([#138](https://github.com/facebookresearch/balance/pull/138)).
 - **Propensity modeling flexibility**
   - `ipw()` now accepts any sklearn classifier via the `model` argument and
     deprecates the old `sklearn_model` alias, enabling the use of models like
@@ -23,6 +16,9 @@
     workflows. Dense-only estimators and models without linear coefficients are
     fully supported, and propensity probabilities are stabilized to avoid
     numerical issues.
+  - Implemented logistic regression customization by passing a configured
+    :class:`~sklearn.linear_model.LogisticRegression` instance through the
+    `model` argument.
 
 ## Documentation
 
