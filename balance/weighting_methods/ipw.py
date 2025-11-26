@@ -399,19 +399,7 @@ def ipw(
     target_df: pd.DataFrame,
     target_weights: pd.Series,
     variables: list[str] | None = None,
-    # TODO: change 'model' to be Union[Optional[ClassifierMixin], str]
-    #       in which the default will be
-    # LogisticRegression(
-    #     "penalty": "l2",
-    #     "solver": "lbfgs",
-    #     "tol": 1e-4,
-    #     "max_iter": 5000,
-    #     "warm_start": True,
-    # )
-    # This will allow us to remove logistic_regression_kwargs and sklearn_model
-    # a user could then just update the LogisticRegression by providing a different LogisticRegression implementation
-    # Or any other sklearn classifier (e.g. RandomForestClassifier)
-    model: str = "sklearn",
+    model: str | ClassifierMixin | None = "sklearn",
     weight_trimming_mean_ratio: int | float | None = 20,
     weight_trimming_percentile: float | None = None,
     balance_classes: bool = True,
@@ -424,8 +412,6 @@ def ipw(
     formula: str | list[str] | None = None,
     penalty_factor: list[float] | None = None,
     one_hot_encoding: bool = False,
-    # TODO: This is set to be false in order to keep reproducibility of works that uses balance.
-    # The best practice is for this to be true.
     logistic_regression_kwargs: Dict[str, Any] | None = None,
     random_seed: int = 2020,
     sklearn_model: ClassifierMixin | None = None,
@@ -441,8 +427,11 @@ def ipw(
         target_weights (pd.Series): design weights for target
         variables (Optional[List[str]], optional): list of variables to include in the model.
             If None all joint variables of sample_df and target_df are used. Defaults to None.
-        model (str, optional): the model used for modeling the propensity scores.
-            "sklearn" is logistic model. Defaults to "sklearn" (no current alternatives).
+        model (Union[str, ClassifierMixin, None], optional): Model used for modeling the
+            propensity scores. Provide "sklearn" (default) to use logistic regression,
+            or pass an sklearn classifier implementing ``fit`` and ``predict_proba``
+            (for example :class:`sklearn.ensemble.RandomForestClassifier` or
+            :class:`sklearn.linear_model.LogisticRegression`).
         weight_trimming_mean_ratio (Optional[Union[int, float]], optional): indicating the ratio from above according to which
             the weights are trimmed by mean(weights) * ratio.
             Defaults to 20.
@@ -478,15 +467,11 @@ def ipw(
             model defaults to ``penalty="l2"``, ``solver="lbfgs"``, ``tol=1e-4``,
             ``max_iter=5000``, and ``warm_start=True``. Defaults to None.
         random_seed (int, optional): Random seed to use. Defaults to 2020.
-        sklearn_model (Optional[ClassifierMixin], optional): Custom sklearn classifier
-            to use for propensity modeling instead of the default logistic
-            regression. The estimator must implement ``fit`` and
-            ``predict_proba``. When provided, ``logistic_regression_kwargs`` and
-            ``penalty_factor`` are ignored. Defaults to None.
-            TODO: add list of (at least some of) the supported sklearn models
-            TODO: add exampels in the docstring
-            TODO: create a new tutorial quickstart_ipw (like this https://import-balance.org/docs/tutorials/quickstart/),
-                  that will include examples of the new supported models.
+        sklearn_model (Optional[ClassifierMixin], optional): Deprecated alias for
+            providing a custom sklearn classifier. Use ``model`` instead. The
+            estimator must implement ``fit`` and ``predict_proba``. When provided,
+            ``logistic_regression_kwargs`` and ``penalty_factor`` are ignored.
+            Defaults to None.
 
     Raises:
         Exception: f"Sample indicator only has value {_n_unique}. This can happen when your sample or target are empty from unknown reason"
@@ -510,11 +495,31 @@ def ipw(
                 },
             }
     """
-    if model == "glmnet":
+    custom_model: ClassifierMixin | None = None
+    model_name: str | None
+
+    if isinstance(model, ClassifierMixin):
+        custom_model = model
+        model_name = "sklearn"
+    elif model is None:
+        model_name = "sklearn"
+    elif isinstance(model, str):
+        model_name = model
+    else:
+        raise TypeError(
+            "model must be 'sklearn', an sklearn classifier implementing predict_proba, or None"
+        )
+
+    if sklearn_model is not None:
+        if custom_model is not None:
+            raise ValueError("Provide either 'model' or 'sklearn_model', not both.")
+        custom_model = sklearn_model
+
+    if model_name == "glmnet":
         raise NotImplementedError("glmnet is no longer supported")
-    elif model != "sklearn":
+    elif model_name != "sklearn":
         raise NotImplementedError(
-            f"Model '{model}' is not supported. Only 'sklearn' is currently implemented."
+            f"Model '{model_name}' is not supported. Only 'sklearn' is currently implemented."
         )
 
     logger.info("Starting ipw function")
@@ -618,7 +623,7 @@ def ipw(
         model_weights,
     )
 
-    using_default_logistic = sklearn_model is None
+    using_default_logistic = custom_model is None
 
     if using_default_logistic:
         # Standardize columns of the X matrix and penalize the columns of the X matrix according to the penalty_factor.
@@ -705,17 +710,15 @@ def ipw(
     else:
         if logistic_regression_kwargs is not None:
             raise ValueError(
-                "logistic_regression_kwargs cannot be used when providing a custom sklearn_model"
+                "logistic_regression_kwargs cannot be used when providing a custom model"
             )
         if penalty_factor is not None:
-            logger.warning(
-                "penalty_factor is ignored when using a custom sklearn_model."
-            )
+            logger.warning("penalty_factor is ignored when using a custom model.")
 
-        custom_model = clone(cast(ClassifierMixin, sklearn_model))
+        custom_model = clone(cast(ClassifierMixin, custom_model))
         if not hasattr(custom_model, "predict_proba"):
             raise ValueError(
-                "The provided sklearn_model must implement predict_proba for propensity estimation."
+                "The provided custom model must implement predict_proba for propensity estimation."
             )
 
         X_matrix = _convert_to_dense_array(X_matrix)
@@ -732,13 +735,13 @@ def ipw(
         probas = model.predict_proba(X_matrix)
         if probas.ndim != 2 or probas.shape[1] < 2:
             raise ValueError(
-                "The provided sklearn_model.predict_proba must return probability estimates for both classes."
+                "The provided custom model predict_proba must return probability estimates for both classes."
             )
         try:
             class_index = list(model.classes_).index(1)
         except ValueError as error:
             raise ValueError(
-                "The provided sklearn_model must be trained on the binary labels {0, 1}."
+                "The provided custom model must be trained on the binary labels {0, 1}."
             ) from error
         pred = probas[:, class_index]
         dev[0] = _compute_deviance(y, pred, model_weights)
