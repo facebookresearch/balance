@@ -20,6 +20,10 @@
     :class:`~sklearn.linear_model.LogisticRegression` instance through the
     `model` argument; the CLI now accepts `--ipw_logistic_regression_kwargs`
     JSON to build that estimator directly for command-line workflows.
+- **Covariate diagnostics**
+  - Added KL divergence calculations for covariate comparisons (numeric and
+    one-hot categorical), exposed via `BalanceDF.kld()` alongside linked-sample
+    aggregation support.
 
 ## Documentation
 
