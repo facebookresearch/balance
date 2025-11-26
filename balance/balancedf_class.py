@@ -1114,6 +1114,39 @@ class BalanceDF:
             aggregate_by_main_covar=aggregate_by_main_covar,
         )
 
+    @staticmethod
+    def _kld_BalanceDF(
+        sample_BalanceDF: "BalanceDF",
+        target_BalanceDF: "BalanceDF",
+        aggregate_by_main_covar: bool = False,
+    ) -> pd.Series:
+        """Run KLD on two BalanceDF objects.
+
+        Prepares the BalanceDF objects by passing them through :func:`_get_df_and_weights`, and
+        then pass the df and weights from the two objects into :func:`weighted_comparisons_stats.kld`.
+
+        Args:
+            sample_BalanceDF (BalanceDF): Object
+            target_BalanceDF (BalanceDF): Object
+            aggregate_by_main_covar (bool, optional): See :func:`weighted_comparisons_stats.kld`. Defaults to False.
+
+        Returns:
+            pd.Series: See :func:`weighted_comparisons_stats.kld`.
+        """
+        BalanceDF._check_if_not_BalanceDF(sample_BalanceDF, "sample_BalanceDF")
+        BalanceDF._check_if_not_BalanceDF(target_BalanceDF, "target_BalanceDF")
+
+        sample_df_values, sample_weights = sample_BalanceDF._get_df_and_weights()
+        target_df_values, target_weights = target_BalanceDF._get_df_and_weights()
+
+        return weighted_comparisons_stats.kld(
+            sample_df_values,
+            target_df_values,
+            sample_weights,
+            target_weights,
+            aggregate_by_main_covar=aggregate_by_main_covar,
+        )
+
     def asmd(
         self: "BalanceDF",
         on_linked_samples: bool = True,
@@ -1135,7 +1168,7 @@ class BalanceDF:
             aggregate_by_main_covar (bool, optional): Defaults to False.
                 If True, it will make sure to return the asmd DataFrame after averaging
                 all the columns from using the one-hot encoding for categorical variables.
-                See ::_aggregate_asmd_by_main_covar:: for more details.
+                See ::_aggregate_statistic_by_main_covar:: for more details.
 
         Raises:
             ValueError:
@@ -1236,6 +1269,112 @@ class BalanceDF:
                 pd.DataFrame(
                     self._asmd_BalanceDF(self, target, aggregate_by_main_covar)
                 )
+                .transpose()
+                .assign(index=(self.__name,))
+                .set_index("index")
+            )
+            return out
+
+    def kld(
+        self: "BalanceDF",
+        on_linked_samples: bool = True,
+        target: "BalanceDF" | None = None,
+        aggregate_by_main_covar: bool = False,
+        **kwargs: Any,
+    ) -> pd.DataFrame:
+        """Calculate KL divergence (KLD) to measure distributional differences between samples and target.
+
+        KLD is the Kullback-Leibler divergence, an asymmetric measure of how one probability distribution
+        differs from a reference distribution. Unlike ASMD which measures standardized mean differences,
+        KLD captures differences in the entire distribution shape.
+
+        We can use kld to compare multiple Samples (with and without adjustment) to a target population.
+
+        Args:
+            self (BalanceDF): Object from sample (with/without adjustment, but it needs some target)
+            on_linked_samples (bool, optional): If to compare also to linked sample objects (specifically: unadjusted), or not. Defaults to True.
+                If True, then uses :func:`_call_on_linked` with method "kld".
+                If False, then uses :func:`_kld_BalanceDF` directly.
+            target (Optional["BalanceDF"], optional): A BalanceDF (of the same type as the one used in self) to compare against.
+                If None then it looks for a target in the self linked objects. Defaults to None.
+            aggregate_by_main_covar (bool, optional): Defaults to False.
+                If True, it will make sure to return the kld DataFrame after averaging
+                all the columns from using the one-hot encoding for categorical variables.
+                See :func:`_aggregate_statistic_by_main_covar` for more details.
+
+        Raises:
+            ValueError:
+                If self has no target and no target is supplied.
+
+        Returns:
+            pd.DataFrame:
+                If on_linked_samples is False, then only one row (index name depends on BalanceDF type, e.g.: covars), with kld of self vs the target.
+                If on_linked_samples is True, then two rows per source (self, unadjusted), each with the kld compared to target, and a third row for the difference (self-unadjusted).
+
+        Examples:
+            ::
+
+                import pandas as pd
+                from balance.sample_class import Sample
+
+                # Create a simple example with numeric and categorical variables
+                sample = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "id": (1, 2, 3, 4),
+                            "a": (1, 2, 3, 4),
+                            "c": ("x", "x", "y", "z"),
+                            "w": (1, 1, 1, 1),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                )
+
+                target = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "id": (1, 2, 3, 4),
+                            "a": (1, 2, 2, 3),
+                            "c": ("x", "y", "y", "z"),
+                            "w": (1, 1, 1, 1),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                )
+
+                sample_with_target = sample.set_target(target)
+
+                # Compare only self to target without linked samples
+                print(sample_with_target.covars().kld(on_linked_samples=False).round(6))
+                    #            a     c[x]     c[y]  c[z]  mean(kld)
+                    # index
+                    # covars   0.0  0.143841  0.130812   0.0   0.045776
+        """
+
+        target_from_self = self._BalanceDF_child_from_linked_samples().get("target")
+
+        if target is None:
+            target = target_from_self
+
+        if target is None:
+            raise ValueError(
+                f"Sample {object.__str__(self._sample)} has no target set, or target has no {self.__name} to compare against."
+            )
+        elif on_linked_samples:
+            return balance_util.row_pairwise_diffs(
+                self._call_on_linked(
+                    "kld",
+                    exclude=("target",),
+                    target=target,
+                    aggregate_by_main_covar=aggregate_by_main_covar,
+                    **kwargs,
+                )
+            )
+        else:
+            out = (
+                pd.DataFrame(self._kld_BalanceDF(self, target, aggregate_by_main_covar))
                 .transpose()
                 .assign(index=(self.__name,))
                 .set_index("index")

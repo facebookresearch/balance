@@ -932,15 +932,15 @@ class TestBalance_weighted_comparisons_stats(
         )
         self.assertTrue(all((np.round(r2, 5)) == np.array([2.82843, 0.70711, 1.76777])))
 
-    def test__aggregate_asmd_by_main_covar(self) -> None:
-        """Test aggregation of ASMD values by main covariate.
+    def test__aggregate_statistic_by_main_covar(self) -> None:
+        """Test aggregation of statistics values by main covariate.
 
-        Tests the _aggregate_asmd_by_main_covar function which groups
-        ASMD values by their main covariate names (e.g., combining
+        Tests the _aggregate_statistic_by_main_covar function which groups
+        statistic values by their main covariate names (e.g., combining
         categorical levels) and calculates appropriate aggregations.
         """
         from balance.stats_and_plots.weighted_comparisons_stats import (
-            _aggregate_asmd_by_main_covar,
+            _aggregate_statistic_by_main_covar,
         )
 
         # toy example
@@ -954,7 +954,7 @@ class TestBalance_weighted_comparisons_stats(
             }
         )
 
-        outcome = _aggregate_asmd_by_main_covar(asmd_series).to_dict()
+        outcome = _aggregate_statistic_by_main_covar(asmd_series).to_dict()
         expected = {"age": 0.5, "education": 2.5}
 
         self.assertEqual(outcome, expected)
@@ -1051,3 +1051,104 @@ class TestBalance_general_stats(
             ValueError, "df and df_target must have the exact same columns*"
         ):
             relative_response_rates(df, df_target.iloc[:, 0:1], per_column=True)
+
+
+class TestKLDivergence(balance.testutil.BalanceTestCase):
+    def test_discrete_normalization_and_value(self) -> None:
+        from balance.stats_and_plots.weighted_comparisons_stats import (
+            _kl_divergence_discrete,
+        )
+
+        p = np.array([2.0, 2.0])
+        q = np.array([1.0, 3.0])
+        expected = 0.5 * np.log(0.5 / 0.25) + 0.5 * np.log(0.5 / 0.75)
+
+        self.assertAlmostEqual(_kl_divergence_discrete(p, q), expected, places=6)
+
+    def test_discrete_invalid_inputs(self) -> None:
+        from balance.stats_and_plots.weighted_comparisons_stats import (
+            _kl_divergence_discrete,
+        )
+
+        cases = (
+            ((np.array([[0.1, 0.9]]), np.array([0.5, 0.5])), "1D arrays"),
+            ((np.array([]), np.array([])), "must not be empty"),
+            ((np.array([0.5]), np.array([0.5, 0.5])), "same length"),
+            (
+                (np.array([-0.1, 1.1]), np.array([0.5, 0.5])),
+                "must not contain negative",
+            ),
+            (
+                (np.array([np.nan, 1.0]), np.array([0.5, 0.5])),
+                "NaN or infinite",
+            ),
+            ((np.array([0.0, 0.0]), np.array([0.5, 0.5])), "must not sum to zero"),
+        )
+
+        for (p, q), msg in cases:
+            with self.subTest(msg=msg):
+                with self.assertRaisesRegex(ValueError, msg):
+                    _kl_divergence_discrete(p, q)
+
+    def test_continuous_invalid_inputs(self) -> None:
+        from balance.stats_and_plots.weighted_comparisons_stats import (
+            _kl_divergence_continuous_quad,
+        )
+
+        with self.assertRaisesRegex(ValueError, "p_samples must be a 1D array"):
+            _kl_divergence_continuous_quad(np.array([[1.0, 2.0]]), np.array([1.0, 2.0]))
+
+        with self.assertRaisesRegex(ValueError, "q_samples must not be empty"):
+            _kl_divergence_continuous_quad(np.array([1.0, 2.0]), np.array([]))
+
+        with self.assertRaisesRegex(
+            ValueError, "p_samples must contain at least two samples"
+        ):
+            _kl_divergence_continuous_quad(np.array([1.0]), np.array([1.0, 2.0]))
+
+        with self.assertRaisesRegex(ValueError, "weights must match"):
+            _kl_divergence_continuous_quad(
+                np.array([1.0, 2.0]),
+                np.array([1.0, 2.0]),
+                p_weights=np.array([1.0, 2.0, 3.0]),
+            )
+
+        with self.assertRaisesRegex(ValueError, "weights must sum to a positive value"):
+            _kl_divergence_continuous_quad(
+                np.array([1.0, 2.0]),
+                np.array([1.0, 2.0]),
+                p_weights=np.array([0.0, 0.0]),
+            )
+
+        with self.assertRaisesRegex(ValueError, "weights must be non-negative"):
+            _kl_divergence_continuous_quad(
+                np.array([1.0, 2.0]),
+                np.array([1.0, 2.0]),
+                q_weights=np.array([-1.0, 2.0]),
+            )
+
+    def test_continuous_matches_identical_distribution(self) -> None:
+        from balance.stats_and_plots.weighted_comparisons_stats import (
+            _kl_divergence_continuous_quad,
+        )
+
+        x = np.linspace(-1, 1, 20)
+        weights = np.linspace(1, 2, 20)
+
+        kld = _kl_divergence_continuous_quad(
+            x,
+            x,
+            p_weights=weights,
+            q_weights=weights,
+        )
+
+        self.assertLess(kld, 1e-6)
+
+    def test_kld_requires_positive_weight_mass(self) -> None:
+        from balance.stats_and_plots import weighted_comparisons_stats
+
+        df = pd.DataFrame({"cat": ["a", "a", "b"]})
+        zero_weights = np.zeros(df.shape[0])
+
+        with self.assertRaisesRegex(ValueError, "must sum to a positive value"):
+            weighted_comparisons_stats.kld(df, df, zero_weights, zero_weights)
