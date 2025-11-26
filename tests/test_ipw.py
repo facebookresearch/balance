@@ -257,6 +257,31 @@ class TestIPW(
         self.assertLessEqual(prop_dev, 1.0)
         self.assertIsNotNone(result["model"]["regularisation_perf"])
 
+    def test_ipw_supports_custom_model_parameter(self) -> None:
+        """The ``model`` parameter accepts sklearn classifiers directly."""
+
+        rng = np.random.RandomState(11)
+        sample = pd.DataFrame({"a": rng.normal(size=25), "b": rng.binomial(1, 0.3, 25)})
+        target = pd.DataFrame({"a": rng.normal(size=40), "b": rng.binomial(1, 0.6, 40)})
+
+        classifier = RandomForestClassifier(
+            n_estimators=10, max_depth=2, random_state=4
+        )
+        result = balance_ipw.ipw(
+            sample_df=sample,
+            sample_weights=pd.Series(np.ones(len(sample))),
+            target_df=target,
+            target_weights=pd.Series(np.ones(len(target))),
+            model=classifier,
+            transformations=None,
+            num_lambdas=1,
+            max_de=1.5,
+        )
+
+        self.assertIsInstance(result["model"]["fit"], RandomForestClassifier)
+        self.assertTrue(np.isnan(result["model"]["lambda"]))
+        self.assertEqual(len(result["weight"]), len(sample))
+
     def test_ipw_supports_dense_only_estimators(self) -> None:
         """Estimators that require dense matrices (e.g., GaussianNB) are supported."""
 
@@ -344,6 +369,29 @@ class TestIPW(
                 num_lambdas=1,
             )
 
+    def test_ipw_rejects_custom_models_without_binary_classes(self) -> None:
+        """Custom models must be trained on labels containing both 0 and 1."""
+
+        class ShiftedProbabilityModel(LogisticRegression):
+            def fit(self, X, y, sample_weight=None):  # type: ignore[override]
+                super().fit(X, y + 2, sample_weight=sample_weight)
+                return self
+
+        rng = np.random.RandomState(12)
+        sample = pd.DataFrame({"a": rng.normal(size=30)})
+        target = pd.DataFrame({"a": rng.normal(size=40)})
+
+        with self.assertRaisesRegex(ValueError, "must be trained on the binary labels"):
+            balance_ipw.ipw(
+                sample_df=sample,
+                sample_weights=pd.Series(np.ones(len(sample))),
+                target_df=target,
+                target_weights=pd.Series(np.ones(len(target))),
+                model=ShiftedProbabilityModel(max_iter=50),
+                transformations=None,
+                num_lambdas=1,
+            )
+
     def test_ipw_rejects_logistic_kwargs_with_custom_model(self) -> None:
         """Providing logistic_regression_kwargs with custom model raises an error."""
 
@@ -385,6 +433,41 @@ class TestIPW(
         self.assertTrue(
             any("penalty_factor is ignored" in message for message in logs.output)
         )
+
+    def test_ipw_rejects_conflicting_model_arguments(self) -> None:
+        """Supplying both model and sklearn_model triggers a clear error."""
+
+        sample = pd.DataFrame({"a": (0, 1, 1, 0)})
+        target = pd.DataFrame({"a": (1, 0, 0, 1)})
+
+        with self.assertRaisesRegex(ValueError, "either 'model' or 'sklearn_model'"):
+            balance_ipw.ipw(
+                sample_df=sample,
+                sample_weights=pd.Series((1,) * len(sample)),
+                target_df=target,
+                target_weights=pd.Series((1,) * len(target)),
+                model=LogisticRegression(),
+                sklearn_model=LogisticRegression(),
+                transformations=None,
+                num_lambdas=1,
+            )
+
+    def test_ipw_rejects_unknown_model_identifier(self) -> None:
+        """Non-supported model identifiers raise NotImplementedError."""
+
+        sample = pd.DataFrame({"a": (0, 1)})
+        target = pd.DataFrame({"a": (1, 0)})
+
+        with self.assertRaises(NotImplementedError):
+            balance_ipw.ipw(
+                sample_df=sample,
+                sample_weights=pd.Series((1,) * len(sample)),
+                target_df=target,
+                target_weights=pd.Series((1,) * len(target)),
+                model="unsupported-model",
+                transformations=None,
+                num_lambdas=1,
+            )
 
     def test_model_coefs_handles_linear_and_non_linear_estimators(self) -> None:
         """model_coefs returns coefficients for linear models and empty series otherwise."""
@@ -654,13 +737,13 @@ class TestIPW(
         # Check specific weight values for reproducibility
         # Note: Using assertAlmostEqual to handle floating point precision differences in Python 3.12
         self.maxDiff = None
-        self.assertAlmostEqual(round(weights[15], 4), 0.4575, places=3)
-        self.assertAlmostEqual(round(weights[995], 4), 0.4059, places=3)
+        self.assertAlmostEqual(round(weights[15], 4), 0.4761, places=3)
+        self.assertAlmostEqual(round(weights[995], 4), 0.4204, places=3)
 
         # Check overall weight distribution statistics
         # Note: Using assertAlmostEqual to handle floating point precision differences in Python 3.12
         expected_stats = np.array(
-            [1000, 1.0167, 0.7159, 0.0003, 0.4292, 0.8928, 1.4316, 2.5720]
+            [1000, 1.0167, 0.7143, 0.0003, 0.4319, 0.8934, 1.4310, 3.4904]
         )
         actual_stats = np.around(weights.describe().values, 4)
         np.testing.assert_allclose(actual_stats, expected_stats, rtol=1e-3, atol=1e-3)
@@ -670,15 +753,15 @@ class TestIPW(
 
         # Check propensity model performance
         prop_dev_explained = np.around(model["perf"]["prop_dev_explained"], 5)
-        self.assertAlmostEqual(prop_dev_explained, 0.27296, places=4)
+        self.assertAlmostEqual(prop_dev_explained, 0.24794, places=4)
 
         # Check regularization parameter
         lambda_value = np.around(model["lambda"], 5)
-        self.assertAlmostEqual(lambda_value, 0.52831, places=4)
+        self.assertAlmostEqual(lambda_value, 0.62399, places=4)
 
         # Check regularization performance metrics
         best_trim = model["regularisation_perf"]["best"]["trim"]
-        self.assertEqual(best_trim, 2.5)
+        self.assertEqual(best_trim, 10.0)
 
     def test_compute_deviance_without_labels(self) -> None:
         """Test _compute_deviance computes 2 * log_loss correctly without labels parameter.
@@ -806,3 +889,120 @@ class TestIPW(
 
             # Assert: Verify expected proportion
             self.assertAlmostEqual(result, expected, places=10)
+
+    def test_model_coefs_rescales_to_original_features(self) -> None:
+        lr = LogisticRegression()
+        lr.coef_ = np.array([[1.0, 2.0]])
+        lr.intercept_ = np.array([0.5])
+        lr._balance_feature_scale_factor = np.array([0.5, 2.0])
+
+        coefs = balance_ipw.model_coefs(lr, feature_names=["a", "b"])
+        expected = pd.Series({"intercept": 0.5, "a": 0.5, "b": 4.0})
+        pd.testing.assert_series_equal(coefs["coefs"], expected)
+
+    def test_link_transform_clips_probabilities(self) -> None:
+        probs = np.array([0.0, 0.5, 1.0])
+        result = balance_ipw.link_transform(probs)
+        eps = np.finfo(float).eps
+        expected = np.log(np.array([eps, 0.5, 1 - eps]) / np.array([1 - eps, 0.5, eps]))
+        np.testing.assert_allclose(result, expected)
+
+    def test_calc_dev_matches_log_loss_scaling(self) -> None:
+        X = np.array([[0.0], [1.0], [2.0], [3.0]])
+        y = np.array([0, 0, 1, 1])
+        weights = np.ones_like(y, dtype=float)
+        foldids = np.array([0, 1, 2, 3])
+        model = LogisticRegression(max_iter=200)
+        dev_mean, dev_sd = balance_ipw.calc_dev(
+            balance_ipw.csr_matrix(X),
+            y,
+            model,
+            weights,
+            foldids,
+        )
+
+        cv_devs = []
+        for fold in np.unique(foldids):
+            mask = foldids == fold
+            train_mask = ~mask
+            fitted = model.fit(
+                X[train_mask], y[train_mask], sample_weight=weights[train_mask]
+            )
+            fold_pred = fitted.predict_proba(X[mask])[:, 1]
+            cv_devs.append(
+                2
+                * log_loss(
+                    y[mask], fold_pred, sample_weight=weights[mask], labels=[0, 1]
+                )
+            )
+        expected_sd = np.std(cv_devs, ddof=1) / np.sqrt(len(cv_devs))
+
+        expected_mean = np.mean(cv_devs)
+
+        self.assertGreater(dev_mean, 0)
+        self.assertAlmostEqual(dev_sd, expected_sd)
+        self.assertAlmostEqual(dev_mean, expected_mean)
+
+    def test_weights_from_link_allows_sample_normalization(self) -> None:
+        sample_w = pd.Series(np.array([1.0, 2.0]))
+        target_w = pd.Series(np.array([2.0, 2.0]))
+        link = np.zeros_like(sample_w)
+
+        weights_target = balance_ipw.weights_from_link(
+            link,
+            balance_classes=False,
+            sample_weights=sample_w,
+            target_weights=target_w,
+            normalize_to="target",
+        )
+        weights_sample = balance_ipw.weights_from_link(
+            link,
+            balance_classes=False,
+            sample_weights=sample_w,
+            target_weights=target_w,
+            normalize_to="sample",
+        )
+
+        self.assertAlmostEqual(weights_target.sum(), target_w.sum())
+        self.assertAlmostEqual(weights_sample.sum(), sample_w.sum())
+
+    def test_weights_from_link_rejects_unknown_normalization(self) -> None:
+        sample_w = pd.Series(np.array([1.0, 2.0]))
+        target_w = pd.Series(np.array([2.0, 2.0]))
+
+        with self.assertRaisesRegex(
+            ValueError, "normalize_to must be either 'target' or 'sample'."
+        ):
+            balance_ipw.weights_from_link(
+                np.zeros_like(sample_w),
+                balance_classes=False,
+                sample_weights=sample_w,
+                target_weights=target_w,
+                normalize_to="invalid",
+            )
+
+    def test_choose_regularization_prioritizes_mean_squared_asmd(self) -> None:
+        sample_df = pd.DataFrame({"x": [0.0, 2.0]})
+        target_df = pd.DataFrame({"x": [1.0, 1.0]})
+        sample_w = pd.Series(np.ones(len(sample_df)))
+        target_w = pd.Series(np.ones(len(target_df)))
+
+        links = [np.zeros(len(sample_df)), np.array([0.5, -0.5])]
+        lambdas = np.array([0.1, 0.2])
+
+        result = balance_ipw.choose_regularization(
+            links,
+            lambdas,
+            sample_df,
+            target_df,
+            sample_w,
+            target_w,
+            balance_classes=False,
+            max_de=10,
+            normalize_to="target",
+            trim_options=(20,),
+            n_asmd_candidates=2,
+        )
+
+        self.assertEqual(result["best"]["s_index"], 0)
+        self.assertAlmostEqual(result["perf"].iloc[0].mean_squared_asmd, 0.0)

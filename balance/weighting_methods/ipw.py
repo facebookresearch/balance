@@ -15,10 +15,7 @@ import numpy as np
 import pandas as pd
 
 from balance import adjustment as balance_adjustment, util as balance_util
-from balance.stats_and_plots.weighted_comparisons_stats import (
-    asmd,
-    asmd_improvement as compute_asmd_improvement,
-)
+from balance.stats_and_plots.weighted_comparisons_stats import asmd
 from balance.stats_and_plots.weights_stats import design_effect
 from balance.testutil import _verify_value_type
 
@@ -32,8 +29,6 @@ from sklearn.preprocessing import StandardScaler
 logger: logging.Logger = logging.getLogger(__package__)
 
 
-# TODO: Add tests for model_coefs()
-# TODO: Improve interpretability of model coefficients, as variables are no longer zero-centered.
 def model_coefs(
     model: ClassifierMixin,
     feature_names: list[str] | None = None,
@@ -67,6 +62,13 @@ def model_coefs(
     if coefs.ndim > 1 and coefs.shape[0] == 1:
         coefs = coefs.reshape(-1)
 
+    # If the model was trained on scaled data, map the coefficients back to
+    # the original feature space for interpretability. When the attribute is
+    # absent, we assume the coefficients are already on the original scale.
+    scale_factor = getattr(model, "_balance_feature_scale_factor", None)
+    if scale_factor is not None and coefs.ndim == 1:
+        coefs = coefs * np.asarray(scale_factor)[: len(coefs)]
+
     if feature_names is not None and coefs.ndim == 1:
         index: List[str] = list(feature_names[: len(coefs)])
         values = coefs
@@ -84,7 +86,6 @@ def model_coefs(
     }
 
 
-# TODO: Add tests for link_transform()
 def link_transform(pred: np.ndarray) -> np.ndarray:
     """Transforms probabilities into log odds (link function).
 
@@ -167,7 +168,6 @@ def _convert_to_dense_array(
     return X_matrix
 
 
-# TODO: Add tests for calc_dev()
 def calc_dev(
     X_matrix: csr_matrix,
     y: np.ndarray,
@@ -188,29 +188,33 @@ def calc_dev(
         float, float: mean and standard deviance of holdout deviance.
 
     """
-    cv_dev = [0.0 for _ in range(10)]
+    unique_folds = np.unique(foldids)
+    cv_dev = [0.0 for _ in unique_folds]
 
-    for i in range(10):
-        X_train = X_matrix[foldids != i, :]
-        X_test = X_matrix[foldids == i, :]
-        y_train = y[foldids != i]
-        y_test = y[foldids == i]
-        model_weights_train = model_weights[foldids != i]
-        model_weights_test = model_weights[foldids == i]
+    for fold_index, fold_value in enumerate(unique_folds):
+        X_train = X_matrix[foldids != fold_value, :]
+        X_test = X_matrix[foldids == fold_value, :]
+        y_train = y[foldids != fold_value]
+        y_test = y[foldids == fold_value]
+        model_weights_train = model_weights[foldids != fold_value]
+        model_weights_test = model_weights[foldids == fold_value]
+        if X_test.shape[0] == 0:
+            raise ValueError(
+                "Cross-validation fold contains no samples; verify foldids covers all observations."
+            )
         # pyre-ignore[16]: ClassifierMixin has fit method at runtime
         model_fit = model.fit(X_train, y_train, sample_weight=model_weights_train)
         pred_test = model_fit.predict_proba(X_test)[:, 1]
-        cv_dev[i] = _compute_deviance(
+        cv_dev[fold_index] = _compute_deviance(
             y_test, pred_test, model_weights_test, labels=[0, 1]
         )
 
     logger.debug(
-        f"dev_mean: {np.mean(cv_dev)}, dev_sd: {np.std(cv_dev, ddof=1) / np.sqrt(10)}"
+        f"dev_mean: {np.mean(cv_dev)}, dev_sd: {np.std(cv_dev, ddof=1) / np.sqrt(len(unique_folds))}"
     )
-    return np.mean(cv_dev), np.std(cv_dev, ddof=1) / np.sqrt(10)
+    return np.mean(cv_dev), np.std(cv_dev, ddof=1) / np.sqrt(len(unique_folds))
 
 
-# TODO: consider add option to normalize weights to sample size
 def weights_from_link(
     link: Any,
     balance_classes: bool,
@@ -219,6 +223,7 @@ def weights_from_link(
     weight_trimming_mean_ratio: None | float | int = None,
     weight_trimming_percentile: float | None = None,
     keep_sum_of_weights: bool = True,
+    normalize_to: str = "target",
 ) -> pd.Series:
     """Transform link predictions into weights, by exponentiating them, and optionally balancing the classes and trimming
     the weights, then normalize the weights to have sum equal to the sum of the target weights.
@@ -231,6 +236,9 @@ def weights_from_link(
         weight_trimming_mean_ratio (Union[None, float, int], optional): to be used in :func:`trim_weights`. Defaults to None.
         weight_trimming_percentile (Optional[float], optional): to be used in :func:`trim_weights`. Defaults to None.
         keep_sum_of_weights (bool, optional): to be used in :func:`trim_weights`. Defaults to True.
+        normalize_to (str, optional): whether to normalize the final weights to the sum of
+            the target weights ("target") or the sample weights ("sample"). Defaults to
+            "target".
 
     Returns:
         pd.Series: A vecotr of normalized weights (for sum of target weights)
@@ -246,12 +254,16 @@ def weights_from_link(
         weight_trimming_percentile,
         keep_sum_of_weights=keep_sum_of_weights,
     )
-    # Normalize weights such that the sum will be the sum of the weights of target
-    weights = weights * np.sum(target_weights) / np.sum(weights)
+    # Normalize weights such that the sum will be aligned with the chosen population
+    if normalize_to == "target":
+        weights = weights * np.sum(target_weights) / np.sum(weights)
+    elif normalize_to == "sample":
+        weights = weights * np.sum(sample_weights) / np.sum(weights)
+    else:
+        raise ValueError("normalize_to must be either 'target' or 'sample'.")
     return weights
 
 
-# TODO: Update choose_regularization function to be based on mse (instead of grid search)
 def choose_regularization(
     links: List[Any],
     lambdas: np.ndarray,
@@ -261,17 +273,19 @@ def choose_regularization(
     target_weights: pd.Series,
     balance_classes: bool,
     max_de: float = 1.5,
+    normalize_to: str = "target",
     trim_options: Tuple[
         int, int, int, float, float, float, float, float, float, float
     ] = (20, 10, 5, 2.5, 1.25, 0.5, 0.25, 0.125, 0.05, 0.01),
     n_asmd_candidates: int = 10,
 ) -> Dict[str, Any]:
-    """Searches through the regularisation parameters of the model and weight
-    trimming levels to find the combination with the highest covariate
-    ASMD reduction (in sample_df and target_df, NOT in the model matrix used for modeling
-    the response) subject to the design effect being lower than max_de (deafults to 1.5).
-    The function preforms a grid search over the n_asmd_candidates (deafults to 10) models
-    with highest DE lower than max_de (assuming higher DE means more bias reduction).
+    """Score regularisation parameters and trimming levels by mean squared ASMD.
+
+    Each combination is evaluated on the covariate ASMD between ``sample_df``
+    and ``target_df`` using the provided weights. Candidates exceeding the
+    design effect threshold (``max_de``) are discarded. The remaining
+    configurations are ranked by mean squared ASMD and the best combination is
+    returned.
 
     Args:
         links (Links[Any]): list of link predictions from sklearn
@@ -284,6 +298,8 @@ def choose_regularization(
         max_de (float, optional): upper bound for the design effect of the computed weights.
             Used for choosing the model regularization and trimming.
             If set to None, then it uses 'lambda_1se'. Defaults to 1.5.
+        normalize_to (str, optional): population to which the weights are normalized when
+            evaluating candidates. Defaults to "target".
         trim_options (Tuple[ int, int, int, float, float, float, float, float, float, float ], optional):
             options for weight_trimming_mean_ratio. Defaults to (20, 10, 5, 2.5, 1.25, 0.5, 0.25, 0.125, 0.05, 0.01).
         n_asmd_candidates (int, optional): number of candidates for grid search.. Defaults to 10.
@@ -301,94 +317,95 @@ def choose_regularization(
     # get all non-null links
     links = [link for link in links if link is not None]
 
-    # Grid search over regularisation parameter and weight trimming
-    # First calculates design effects for all combinations, because this is cheap
-    all_perf = []
+    # Evaluate combinations with mean squared ASMD as the score while
+    # enforcing the design effect constraint. The candidate with the
+    # lowest mean squared ASMD is selected, using the same design-effect
+    # based pre-filtering as the previous grid search implementation to
+    # maintain consistency with historical behaviour.
+    design_effects: list[dict[str, Any]] = []
     for wr in trim_options:
-        for i in range(len(links)):
-            s = lambdas[i]
-            link = links[i]
+        for i, link in enumerate(links):
             weights = weights_from_link(
                 link,
                 balance_classes,
                 sample_weights,
                 target_weights,
                 weight_trimming_mean_ratio=wr,
+                normalize_to=normalize_to,
             )
-
-            deff = design_effect(weights)
-            all_perf.append(
+            design_effects.append(
                 {
-                    "s": s,
                     "s_index": i,
                     "trim": wr,
-                    "design_effect": deff,
+                    "design_effect": design_effect(weights),
                 }
             )
-    all_perf = pd.DataFrame(all_perf)
-    best = (
-        all_perf[all_perf.design_effect < max_de]
-        .sort_values("design_effect")
-        .tail(n_asmd_candidates)
-    )
-    logger.debug(f"Regularisation with design effect below {max_de}: \n {best}")
 
-    # Calculate ASMDS for best 10 candidates (assuming that higher DE means
-    #  more bias reduction)
-    all_perf = []
-    for _, r in best.iterrows():
-        wr = r.trim
-        s_index = int(r.s_index)
-        s = lambdas[s_index]
-        link = links[s_index]
+    perf = pd.DataFrame(design_effects)
+    candidates = perf[perf.design_effect < max_de]
+    if candidates.empty:
+        raise ValueError(
+            "No regularization parameters satisfy the design effect constraint."
+        )
 
+    candidates = candidates.sort_values("design_effect").tail(n_asmd_candidates)
+    scored_configs: list[dict[str, Any]] = []
+    for _, row in candidates.iterrows():
+        wr = row.trim
+        i = int(row.s_index)
+        link = links[i]
         weights = weights_from_link(
             link,
             balance_classes,
             sample_weights,
             target_weights,
             weight_trimming_mean_ratio=wr,
+            normalize_to=normalize_to,
         )
-        adjusted_df = sample_df[sample_df.index.isin(weights.index)]
 
+        adjusted_df = sample_df[sample_df.index.isin(weights.index)]
         asmd_after = asmd(
             sample_df=adjusted_df,
             target_df=target_df,
             sample_weights=weights,
             target_weights=target_weights,
         )
-        asmd_impr = compute_asmd_improvement(
-            sample_before=sample_df,
-            sample_after=adjusted_df,
-            target=target_df,
-            sample_before_weights=sample_weights,
-            sample_after_weights=weights,
-            target_weights=target_weights,
-        )
-        deff = design_effect(weights)
-        all_perf.append(
+        asmd_components = asmd_after.drop(labels=["mean(asmd)"], errors="ignore")
+        if asmd_components.empty:
+            mean_squared_asmd = np.inf
+        else:
+            asmd_array = np.asarray(asmd_components.astype(float))
+            finite_values = asmd_array[np.isfinite(asmd_array)]
+            if finite_values.size:
+                mean_squared_asmd = float(np.mean(np.square(finite_values)))
+            else:
+                mean_asmd = asmd_after.get("mean(asmd)")
+                if pd.notna(mean_asmd):
+                    mean_squared_asmd = float(mean_asmd**2)
+                else:
+                    mean_squared_asmd = np.inf
+        scored_configs.append(
             {
-                "s": s,
-                "s_index": s_index,
+                "s": lambdas[i],
+                "s_index": i,
                 "trim": wr,
-                "design_effect": deff,
-                "asmd_improvement": asmd_impr,
-                "asmd": asmd_after.loc["mean(asmd)"],
+                "design_effect": row.design_effect,
+                "mean_squared_asmd": mean_squared_asmd,
             }
         )
 
-    all_perf = pd.DataFrame(all_perf)
-    best = (
-        all_perf[all_perf.design_effect < max_de]
-        .sort_values("asmd_improvement")
-        .tail(1)
-    )
+    if not scored_configs:
+        raise ValueError(
+            "No regularization parameters satisfy the design effect constraint."
+        )
+
+    all_perf = pd.DataFrame(scored_configs).sort_values("mean_squared_asmd")
+    best = all_perf.head(1)
     logger.info(f"Best regularisation: \n {best}")
-    solution = {
-        "best": {"s_index": best.s_index.values[0], "trim": best.trim.values[0]},
-        "perf": all_perf,
+    return {
+        "best": {"s_index": int(best.s_index.values[0]), "trim": best.trim.values[0]},
+        "perf": all_perf.head(n_asmd_candidates),
     }
-    return solution
 
 
 # Lambda regularization parameters can be used to speedup the IPW algorithm,
@@ -399,22 +416,11 @@ def ipw(
     target_df: pd.DataFrame,
     target_weights: pd.Series,
     variables: list[str] | None = None,
-    # TODO: change 'model' to be Union[Optional[ClassifierMixin], str]
-    #       in which the default will be
-    # LogisticRegression(
-    #     "penalty": "l2",
-    #     "solver": "lbfgs",
-    #     "tol": 1e-4,
-    #     "max_iter": 5000,
-    #     "warm_start": True,
-    # )
-    # This will allow us to remove logistic_regression_kwargs and sklearn_model
-    # a user could then just update the LogisticRegression by providing a different LogisticRegression implementation
-    # Or any other sklearn classifier (e.g. RandomForestClassifier)
-    model: str = "sklearn",
+    model: str | ClassifierMixin | None = "sklearn",
     weight_trimming_mean_ratio: int | float | None = 20,
     weight_trimming_percentile: float | None = None,
     balance_classes: bool = True,
+    normalize_weights_to: str = "target",
     transformations: str | None = "default",
     na_action: str = "add_indicator",
     max_de: float | None = None,
@@ -424,8 +430,6 @@ def ipw(
     formula: str | list[str] | None = None,
     penalty_factor: list[float] | None = None,
     one_hot_encoding: bool = False,
-    # TODO: This is set to be false in order to keep reproducibility of works that uses balance.
-    # The best practice is for this to be true.
     logistic_regression_kwargs: Dict[str, Any] | None = None,
     random_seed: int = 2020,
     sklearn_model: ClassifierMixin | None = None,
@@ -441,8 +445,11 @@ def ipw(
         target_weights (pd.Series): design weights for target
         variables (Optional[List[str]], optional): list of variables to include in the model.
             If None all joint variables of sample_df and target_df are used. Defaults to None.
-        model (str, optional): the model used for modeling the propensity scores.
-            "sklearn" is logistic model. Defaults to "sklearn" (no current alternatives).
+        model (Union[str, ClassifierMixin, None], optional): Model used for modeling the
+            propensity scores. Provide "sklearn" (default) to use logistic regression,
+            or pass an sklearn classifier implementing ``fit`` and ``predict_proba``
+            (for example :class:`sklearn.ensemble.RandomForestClassifier` or
+            :class:`sklearn.linear_model.LogisticRegression`).
         weight_trimming_mean_ratio (Optional[Union[int, float]], optional): indicating the ratio from above according to which
             the weights are trimmed by mean(weights) * ratio.
             Defaults to 20.
@@ -451,9 +458,12 @@ def ipw(
         balance_classes (bool, optional): whether to balance the sample and target size for running the model.
             True is preferable for imbalanced cases.
             It shouldn't have an effect on the final weights as this is factored
-            into the computation of the weights. TODO: add ref. Defaults to True.
+            into the computation of the weights through the odds adjustment.
+            Defaults to True.
         transformations (str, optional): what transformations to apply to data before fitting the model.
             See apply_transformations function. Defaults to "default".
+        normalize_weights_to (str, optional): normalize final weights to either the "target" (default)
+            or "sample" population totals.
         na_action (str, optional): what to do with NAs.
             See add_na_indicator function. Defaults to "add_indicator".
         max_de (Optional[float], optional): upper bound for the design effect of the computed weights.
@@ -478,15 +488,31 @@ def ipw(
             model defaults to ``penalty="l2"``, ``solver="lbfgs"``, ``tol=1e-4``,
             ``max_iter=5000``, and ``warm_start=True``. Defaults to None.
         random_seed (int, optional): Random seed to use. Defaults to 2020.
-        sklearn_model (Optional[ClassifierMixin], optional): Custom sklearn classifier
-            to use for propensity modeling instead of the default logistic
-            regression. The estimator must implement ``fit`` and
-            ``predict_proba``. When provided, ``logistic_regression_kwargs`` and
-            ``penalty_factor`` are ignored. Defaults to None.
-            TODO: add list of (at least some of) the supported sklearn models
-            TODO: add exampels in the docstring
-            TODO: create a new tutorial quickstart_ipw (like this https://import-balance.org/docs/tutorials/quickstart/),
-                  that will include examples of the new supported models.
+        sklearn_model (Optional[ClassifierMixin], optional): Deprecated alias for
+            providing a custom sklearn classifier. Use ``model`` instead. The
+            estimator must implement ``fit`` and ``predict_proba``. When provided,
+            ``logistic_regression_kwargs`` and ``penalty_factor`` are ignored.
+            Defaults to None.
+
+    Examples:
+        Use the default logistic regression implementation::
+
+            result = ipw(sample_df, sample_w, target_df, target_w)
+            weights = result["weight"]
+
+        Fit a custom sklearn classifier (here, ``RandomForestClassifier``)::
+
+            from sklearn.ensemble import RandomForestClassifier
+
+            rf = RandomForestClassifier(n_estimators=200, random_state=123)
+            result = ipw(
+                sample_df,
+                sample_w,
+                target_df,
+                target_w,
+                model=rf,
+            )
+            rf_weights = result["weight"]
 
     Raises:
         Exception: f"Sample indicator only has value {_n_unique}. This can happen when your sample or target are empty from unknown reason"
@@ -510,11 +536,31 @@ def ipw(
                 },
             }
     """
-    if model == "glmnet":
+    custom_model: ClassifierMixin | None = None
+    model_name: str | None
+
+    if isinstance(model, ClassifierMixin):
+        custom_model = model
+        model_name = "sklearn"
+    elif model is None:
+        model_name = "sklearn"
+    elif isinstance(model, str):
+        model_name = model
+    else:
+        raise TypeError(
+            "model must be 'sklearn', an sklearn classifier implementing predict_proba, or None"
+        )
+
+    if sklearn_model is not None:
+        if custom_model is not None:
+            raise ValueError("Provide either 'model' or 'sklearn_model', not both.")
+        custom_model = sklearn_model
+
+    if model_name == "glmnet":
         raise NotImplementedError("glmnet is no longer supported")
-    elif model != "sklearn":
+    elif model_name != "sklearn":
         raise NotImplementedError(
-            f"Model '{model}' is not supported. Only 'sklearn' is currently implemented."
+            f"Model '{model_name}' is not supported. Only 'sklearn' is currently implemented."
         )
 
     logger.info("Starting ipw function")
@@ -618,7 +664,7 @@ def ipw(
         model_weights,
     )
 
-    using_default_logistic = sklearn_model is None
+    using_default_logistic = custom_model is None
 
     if using_default_logistic:
         # Standardize columns of the X matrix and penalize the columns of the X matrix according to the penalty_factor.
@@ -628,17 +674,24 @@ def ipw(
 
         scaler = StandardScaler(with_mean=False, copy=False)
 
-        # TODO: add test to verify expected behavior from model_weights
         X_matrix = scaler.fit_transform(X_matrix, sample_weight=model_weights)
 
-        if penalty_factor is not None:
-            penalties_skl = [
-                # TODO: fix 'magic numbers' that are not explained in the code
-                1 / pf if pf > 0.1 else 10
-                for pf in penalty_factor_expanded
-            ]
-            for i in range(len(penalties_skl)):
-                X_matrix[:, i] *= penalties_skl[i]
+        penalties_skl = [
+            # Clamp very small penalty factors to a fixed multiplier to avoid
+            # exploding coefficients while still keeping relative shrinkage
+            # across features. Otherwise translate glmnet-style penalties
+            # into sklearn's single "C" hyper-parameter space.
+            1 / pf if pf > 0.1 else 10
+            for pf in penalty_factor_expanded
+        ]
+
+        for i in range(len(penalties_skl)):
+            X_matrix[:, i] *= penalties_skl[i]
+
+        scale = np.asarray(scaler.scale_)
+        if np.any(scale == 0):
+            raise ValueError("Encountered zero scale during standardization.")
+        feature_scale_factor = np.asarray(penalties_skl) / scale
 
         X_matrix = csr_matrix(X_matrix)
 
@@ -656,6 +709,7 @@ def ipw(
             lr_kwargs.update(logistic_regression_kwargs)
 
         lr = LogisticRegression(**lr_kwargs)
+        lr._balance_feature_scale_factor = feature_scale_factor
         fits: list[ClassifierMixin | None] = [None for _ in range(len(lambdas))]
         links: list[np.ndarray | None] = [None for _ in range(len(lambdas))]
         prop_dev = [np.nan for _ in range(len(lambdas))]
@@ -705,17 +759,15 @@ def ipw(
     else:
         if logistic_regression_kwargs is not None:
             raise ValueError(
-                "logistic_regression_kwargs cannot be used when providing a custom sklearn_model"
+                "logistic_regression_kwargs cannot be used when providing a custom model"
             )
         if penalty_factor is not None:
-            logger.warning(
-                "penalty_factor is ignored when using a custom sklearn_model."
-            )
+            logger.warning("penalty_factor is ignored when using a custom model.")
 
-        custom_model = clone(cast(ClassifierMixin, sklearn_model))
+        custom_model = clone(cast(ClassifierMixin, custom_model))
         if not hasattr(custom_model, "predict_proba"):
             raise ValueError(
-                "The provided sklearn_model must implement predict_proba for propensity estimation."
+                "The provided custom model must implement predict_proba for propensity estimation."
             )
 
         X_matrix = _convert_to_dense_array(X_matrix)
@@ -732,13 +784,13 @@ def ipw(
         probas = model.predict_proba(X_matrix)
         if probas.ndim != 2 or probas.shape[1] < 2:
             raise ValueError(
-                "The provided sklearn_model.predict_proba must return probability estimates for both classes."
+                "The provided custom model predict_proba must return probability estimates for both classes."
             )
         try:
             class_index = list(model.classes_).index(1)
         except ValueError as error:
             raise ValueError(
-                "The provided sklearn_model must be trained on the binary labels {0, 1}."
+                "The provided custom model must be trained on the binary labels {0, 1}."
             ) from error
         pred = probas[:, class_index]
         dev[0] = _compute_deviance(y, pred, model_weights)
@@ -764,6 +816,7 @@ def ipw(
             target_weights,
             balance_classes,
             max_de,
+            normalize_to=normalize_weights_to,
         )
         best_s_index = regularisation_perf["best"]["s_index"]
         weight_trimming_mean_ratio = regularisation_perf["best"]["trim"]
@@ -801,6 +854,7 @@ def ipw(
         target_weights,
         weight_trimming_mean_ratio,
         weight_trimming_percentile,
+        normalize_to=normalize_weights_to,
     )
 
     logger.info(f"Chosen lambda: {best_s}")

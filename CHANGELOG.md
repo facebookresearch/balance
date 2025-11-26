@@ -16,12 +16,23 @@
   - CLI now supports `--ipw_logistic_regression_kwargs` for passing custom
     LogisticRegression parameters via JSON
     ([#138](https://github.com/facebookresearch/balance/pull/138)).
+  - Reworked IPW regularisation selection to minimize mean squared ASMD while
+    respecting the design effect constraint, and added optional normalization
+    of weights to either the sample or target population totals for clearer
+    diagnostics.
+  - Mean squared ASMD scoring now uses the component-level ASMD values rather
+    than squaring their average, avoiding optimistic rankings when balance
+    varies across covariates.
+  - Model coefficients are rescaled back to the original feature space when
+    training uses standardized covariates, improving interpretability of IPW
+    diagnostics.
 - **Propensity modeling flexibility**
-  - `ipw()` now accepts any sklearn classifier via the new `sklearn_model`
-    argument, enabling the use of models like random forests while preserving
-    all existing trimming and diagnostic workflows. Dense-only estimators and
-    models without linear coefficients are fully supported, and propensity
-    probabilities are stabilized to avoid numerical issues.
+  - `ipw()` now accepts any sklearn classifier via the `model` argument and
+    deprecates the old `sklearn_model` alias, enabling the use of models like
+    random forests while preserving all existing trimming and diagnostic
+    workflows. Dense-only estimators and models without linear coefficients are
+    fully supported, and propensity probabilities are stabilized to avoid
+    numerical issues.
 
 ## Documentation
 
@@ -30,6 +41,8 @@
   ([#141](https://github.com/facebookresearch/balance/pull/141),
   [#142](https://github.com/facebookresearch/balance/pull/142),
   [#143](https://github.com/facebookresearch/balance/pull/143)).
+- Added IPW quickstart tutorial showcasing default logistic regression and
+  custom sklearn classifier usage (`balance_quickstart_ipw.ipynb`).
 - Expanded poststratify docstring with clear examples and improved statistical
   methods documentation
   ([#141](https://github.com/facebookresearch/balance/pull/141)).
