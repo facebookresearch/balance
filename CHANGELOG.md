@@ -37,6 +37,8 @@
 - Added project badges to README for build status, Python version support, and
   release tracking
   ([#145](https://github.com/facebookresearch/balance/pull/145)).
+- Added IPW quickstart tutorial showcasing default logistic regression and
+  custom sklearn classifier usage (`balance_quickstart_ipw.ipynb`).
 
 ## Code Quality & Refactoring
 
