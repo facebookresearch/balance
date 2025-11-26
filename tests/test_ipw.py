@@ -737,8 +737,8 @@ class TestIPW(
         # Check specific weight values for reproducibility
         # Note: Using assertAlmostEqual to handle floating point precision differences in Python 3.12
         self.maxDiff = None
-        self.assertAlmostEqual(round(weights[15], 4), 0.4761, places=3)
-        self.assertAlmostEqual(round(weights[995], 4), 0.4204, places=3)
+        self.assertAlmostEqual(weights[15], 0.4761, places=3)
+        self.assertAlmostEqual(weights[995], 0.4204, places=3)
 
         # Check overall weight distribution statistics
         # Note: Using assertAlmostEqual to handle floating point precision differences in Python 3.12

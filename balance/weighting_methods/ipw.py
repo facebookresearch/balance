@@ -200,7 +200,7 @@ def calc_dev(
         model_weights_test = model_weights[foldids == fold_value]
         if X_test.shape[0] == 0:
             raise ValueError(
-                "Cross-validation fold contains no samples; verify foldids covers all observations."
+                f"Cross-validation fold {fold_value} contains no samples; verify foldids covers all observations."
             )
         # pyre-ignore[16]: ClassifierMixin has fit method at runtime
         model_fit = model.fit(X_train, y_train, sample_weight=model_weights_train)
@@ -323,20 +323,20 @@ def choose_regularization(
     # based pre-filtering as the previous grid search implementation to
     # maintain consistency with historical behaviour.
     design_effects: list[dict[str, Any]] = []
-    for wr in trim_options:
-        for i, link in enumerate(links):
+    for trim_ratio in trim_options:
+        for lambda_index, link in enumerate(links):
             weights = weights_from_link(
                 link,
                 balance_classes,
                 sample_weights,
                 target_weights,
-                weight_trimming_mean_ratio=wr,
+                weight_trimming_mean_ratio=trim_ratio,
                 normalize_to=normalize_to,
             )
             design_effects.append(
                 {
-                    "s_index": i,
-                    "trim": wr,
+                    "s_index": lambda_index,
+                    "trim": trim_ratio,
                     "design_effect": design_effect(weights),
                 }
             )
@@ -351,15 +351,15 @@ def choose_regularization(
     candidates = candidates.sort_values("design_effect").tail(n_asmd_candidates)
     scored_configs: list[dict[str, Any]] = []
     for _, row in candidates.iterrows():
-        wr = row.trim
-        i = int(row.s_index)
-        link = links[i]
+        trim_ratio = row.trim
+        lambda_index = int(row.s_index)
+        link = links[lambda_index]
         weights = weights_from_link(
             link,
             balance_classes,
             sample_weights,
             target_weights,
-            weight_trimming_mean_ratio=wr,
+            weight_trimming_mean_ratio=trim_ratio,
             normalize_to=normalize_to,
         )
 
@@ -386,9 +386,9 @@ def choose_regularization(
                     mean_squared_asmd = np.inf
         scored_configs.append(
             {
-                "s": lambdas[i],
-                "s_index": i,
-                "trim": wr,
+                "s": lambdas[lambda_index],
+                "s_index": lambda_index,
+                "trim": trim_ratio,
                 "design_effect": row.design_effect,
                 "mean_squared_asmd": mean_squared_asmd,
             }
@@ -676,12 +676,14 @@ def ipw(
 
         X_matrix = scaler.fit_transform(X_matrix, sample_weight=model_weights)
 
+        penalty_floor = 0.1
+        small_penalty_multiplier = 10.0
         penalties_skl = [
             # Clamp very small penalty factors to a fixed multiplier to avoid
             # exploding coefficients while still keeping relative shrinkage
             # across features. Otherwise translate glmnet-style penalties
             # into sklearn's single "C" hyper-parameter space.
-            1 / pf if pf > 0.1 else 10
+            1 / pf if pf > penalty_floor else small_penalty_multiplier
             for pf in penalty_factor_expanded
         ]
 
@@ -690,7 +692,9 @@ def ipw(
 
         scale = np.asarray(scaler.scale_)
         if np.any(scale == 0):
-            raise ValueError("Encountered zero scale during standardization.")
+            raise ValueError(
+                "Encountered zero scale during standardization; remove constant columns and retry."
+            )
         feature_scale_factor = np.asarray(penalties_skl) / scale
 
         X_matrix = csr_matrix(X_matrix)
