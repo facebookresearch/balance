@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import inspect
+import json
 import logging
 
 from argparse import ArgumentParser, Namespace
@@ -21,6 +22,8 @@ import pandas as pd
 
 from balance import __version__  # @manual
 from balance.sample_class import Sample as balance_sample_cls  # @manual
+from sklearn.base import ClassifierMixin
+from sklearn.linear_model import LogisticRegression
 
 logger: logging.Logger = logging.getLogger(__package__)
 
@@ -39,7 +42,7 @@ class BalanceCLI:
         self._lambda_max: float | None = None
         self._num_lambdas: int | None = None
         self._weight_trimming_mean_ratio: float = 20.0
-        self._logistic_regression_kwargs: Dict[str, Any] | None = None
+        self._sample_cls: Type[balance_sample_cls] = balance_sample_cls
         self._sample_package_name: str = __package__
         self._sample_package_version: str = __version__
 
@@ -136,6 +139,30 @@ class BalanceCLI:
     def weight_trimming_mean_ratio(self) -> float:
         return self.args.weight_trimming_mean_ratio
 
+    def logistic_regression_kwargs(self) -> Dict[str, Any] | None:
+        raw_kwargs = self.args.ipw_logistic_regression_kwargs
+        if raw_kwargs is None:
+            return None
+        if isinstance(raw_kwargs, dict):
+            return raw_kwargs
+        try:
+            parsed = json.loads(raw_kwargs)
+        except json.JSONDecodeError as exc:
+            raise ValueError(
+                "--ipw_logistic_regression_kwargs must be a JSON object string"
+            ) from exc
+        if not isinstance(parsed, dict):
+            raise ValueError(
+                "--ipw_logistic_regression_kwargs must decode to a JSON object"
+            )
+        return parsed
+
+    def logistic_regression_model(self) -> ClassifierMixin | None:
+        kwargs = self.logistic_regression_kwargs()
+        if kwargs is None:
+            return None
+        return LogisticRegression(**kwargs)
+
     def split_sample(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         in_sample = df[self.sample_column()] == 1
         sample_df = df[in_sample]
@@ -205,20 +232,26 @@ class BalanceCLI:
         logger.info("%s target object: %s" % (sample_package_name, str(target)))
 
         try:
-            adjusted = sample.set_target(
-                target
-            ).adjust(
-                method=self.method(),  # pyre-ignore[6] it gets str, but the function will verify internally if it's the str it should be.
-                transformations=transformations,
-                formula=formula,
-                penalty_factor=penalty_factor,
-                one_hot_encoding=one_hot_encoding,
-                max_de=max_de,
-                lambda_min=lambda_min,
-                lambda_max=lambda_max,
-                num_lambdas=num_lambdas,
-                weight_trimming_mean_ratio=weight_trimming_mean_ratio,
-            )
+            method = self.method()
+            model = self.logistic_regression_model() if method == "ipw" else None
+
+            adjusted_kwargs: Dict[str, Any] = {
+                "method": method,  # pyre-ignore[6] it gets str, but the function will verify internally if it's the str it should be.
+                "transformations": transformations,
+                "formula": formula,
+                "penalty_factor": penalty_factor,
+                "one_hot_encoding": one_hot_encoding,
+                "max_de": max_de,
+                "lambda_min": lambda_min,
+                "lambda_max": lambda_max,
+                "num_lambdas": num_lambdas,
+                "weight_trimming_mean_ratio": weight_trimming_mean_ratio,
+            }
+
+            if model is not None:
+                adjusted_kwargs["model"] = model
+
+            adjusted = sample.set_target(target).adjust(**adjusted_kwargs)
             logger.info("Succeeded with adjusting sample to target")
             logger.info("%s adjusted object: %s" % (sample_package_name, str(adjusted)))
 
@@ -692,6 +725,14 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
             "Number of elements searched over in the L1 penalty range in ipw."
             "Only used if method is ipw."
             "If not supplied it defaults to 250."
+        ),
+    )
+    parser.add_argument(
+        "--ipw_logistic_regression_kwargs",
+        required=False,
+        help=(
+            "JSON object of keyword arguments forwarded to sklearn.linear_model.LogisticRegression "
+            "when using the ipw method. Ignored for other methods."
         ),
     )
     parser.add_argument(

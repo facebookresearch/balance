@@ -18,7 +18,8 @@
     numerical issues.
   - Implemented logistic regression customization by passing a configured
     :class:`~sklearn.linear_model.LogisticRegression` instance through the
-    `model` argument.
+    `model` argument; the CLI now accepts `--ipw_logistic_regression_kwargs`
+    JSON to build that estimator directly for command-line workflows.
 
 ## Documentation
 
@@ -34,7 +35,7 @@
   release tracking
   ([#145](https://github.com/facebookresearch/balance/pull/145)).
 - Added IPW quickstart tutorial showcasing default logistic regression and
-  custom sklearn classifier usage (`balance_quickstart_ipw.ipynb`).
+  custom sklearn classifier usage in (`balance_quickstart.ipynb`).
 
 ## Code Quality & Refactoring
 

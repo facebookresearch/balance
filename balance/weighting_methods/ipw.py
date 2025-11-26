@@ -488,6 +488,12 @@ def ipw(
         ...     variables=["gender", "age_group", "income"],
         ...     model=rf,
         ... )
+        {'weight': 0    6.727622
+        1    6.811271
+        2    1.861028
+        3    5.023780
+        4    8.212948
+        dtype: float64, 'model': {...}}
 
         >>> ipw(
         ...     sample_df,
@@ -497,6 +503,12 @@ def ipw(
         ...     variables=["gender", "age_group", "income"],
         ...     model="sklearn",
         ... )
+        {'weight': 0    5.721442
+        1    7.641214
+        2    2.243185
+        3    4.943831
+        4    3.441654
+        dtype: float64, 'model': {...}}
 
     Raises:
         Exception: f"Sample indicator only has value {_n_unique}. This can happen when your sample or target are empty from unknown reason"
@@ -646,9 +658,7 @@ def ipw(
         model_weights,
     )
 
-    using_default_logistic = custom_model is None
-
-    if using_default_logistic:
+    if custom_model is None:  # using_default_logistic
         # Standardize columns of the X matrix and penalize the columns of the X matrix according to the penalty_factor.
         # Workaround for sklearn, which doesn't allow for covariate specific penalty terms.
         # Note that penalty = 0 is not truly supported, and large differences in penalty factors
@@ -788,7 +798,7 @@ def ipw(
         best_s_index = regularisation_perf["best"]["s_index"]
         weight_trimming_mean_ratio = regularisation_perf["best"]["trim"]
         weight_trimming_percentile = None
-    elif num_lambdas > 1 and using_default_logistic:
+    elif num_lambdas > 1 and custom_model is None:  # using_default_logistic
         # Cross-validation procedure
         logger.info("Starting model selection")
 
@@ -832,7 +842,9 @@ def ipw(
     performance["null_deviance"] = null_dev
     performance["deviance"] = dev[best_s_index]
     performance["prop_dev_explained"] = prop_dev[best_s_index]
-    if max_de is None and num_lambdas > 1 and using_default_logistic:
+    if (
+        max_de is None and num_lambdas > 1 and custom_model is None
+    ):  # using_default_logistic
         performance["cv_dev_mean"] = cv_dev_mean[best_s_index]
         performance["lambda_min"] = lambdas[min_s_index]
         performance["min_cv_dev_mean"] = cv_dev_mean[min_s_index]
