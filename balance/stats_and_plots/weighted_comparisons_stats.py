@@ -22,6 +22,9 @@ from balance.stats_and_plots.weighted_stats import (
 )
 from balance.stats_and_plots.weights_stats import _check_weights_are_valid
 from balance.util import _safe_groupby_apply, _safe_replace_and_infer
+from pandas import CategoricalDtype
+from scipy.integrate import quad
+from scipy.stats import gaussian_kde
 
 logger: logging.Logger = logging.getLogger(__package__)
 
@@ -117,6 +120,113 @@ def _weights_per_covars_names(covar_names: List[str]) -> pd.DataFrame:
     return pd.concat([weights.transpose(), main_covar_names], axis=1)
 
 
+def _kl_divergence_discrete(p: np.ndarray, q: np.ndarray, eps: float = 1e-12) -> float:
+    """
+    Compute the KL divergence between two discrete probability mass functions.
+
+    Args:
+        p: 1D array-like, PMF of the sample distribution (must sum to 1).
+        q: 1D array-like, PMF of the target distribution (must sum to 1).
+        eps: Small constant to avoid ``log(0)`` or division by zero.
+
+    Returns:
+        The KL divergence ``sum_i p[i] * log(p[i] / q[i])``.
+
+    Raises:
+        ValueError: If inputs are not 1D arrays, are empty, have different
+            lengths, contain invalid values, or sum to zero.
+    """
+    p = np.asarray(p, dtype=np.float64)
+    q = np.asarray(q, dtype=np.float64)
+
+    if p.ndim != 1 or q.ndim != 1:
+        raise ValueError("Both p and q must be 1D arrays.")
+    if p.size == 0 or q.size == 0:
+        raise ValueError("Input PMF arrays must not be empty.")
+    if p.size != q.size:
+        raise ValueError("Input PMF arrays must have the same length.")
+    if np.any(p < 0) or np.any(q < 0):
+        raise ValueError("PMF arrays must not contain negative values.")
+    if not np.isfinite(p).all() or not np.isfinite(q).all():
+        raise ValueError("PMF arrays must not contain NaN or infinite values.")
+
+    p_sum = np.sum(p)
+    q_sum = np.sum(q)
+    if p_sum == 0 or q_sum == 0:
+        raise ValueError("PMF arrays must not sum to zero.")
+    p = p / p_sum
+    q = q / q_sum
+
+    p = np.clip(p, eps, 1)
+    q = np.clip(q, eps, 1)
+
+    kl = np.sum(p * np.log(p / q))
+    return float(kl)
+
+
+def _kl_divergence_continuous_quad(
+    p_samples: np.ndarray,
+    q_samples: np.ndarray,
+    p_weights: np.ndarray | None = None,
+    q_weights: np.ndarray | None = None,
+    eps: float = 1e-12,
+) -> float:
+    """
+    Estimate the KL divergence between two continuous distributions using KDEs
+    integrated with adaptive quadrature.
+
+    Args:
+        p_samples: 1D array-like samples from the sample distribution.
+        q_samples: 1D array-like samples from the target distribution.
+        p_weights: Optional weights for ``p_samples``.
+        q_weights: Optional weights for ``q_samples``.
+        eps: Small constant to avoid evaluating ``log(0)`` or dividing by zero.
+
+    Returns:
+        Estimated KL divergence ``∫ p(x) log(p(x) / q(x)) dx``.
+
+    Raises:
+        ValueError: If inputs are not valid 1D arrays, empty, or have
+            insufficient samples.
+    """
+
+    def _validate_samples(
+        samples: np.ndarray, weights: np.ndarray | None, label: str
+    ) -> tuple[np.ndarray, np.ndarray | None]:
+        samples = np.asarray(samples)
+        if samples.ndim != 1:
+            raise ValueError(f"{label} must be a 1D array.")
+        if samples.size == 0:
+            raise ValueError(f"{label} must not be empty.")
+        weights_arr = None if weights is None else np.asarray(weights, dtype=float)
+        if weights_arr is not None and weights_arr.shape[0] != samples.shape[0]:
+            raise ValueError(f"{label} weights must match the number of samples.")
+        if weights_arr is not None and weights_arr.sum() <= 0:
+            raise ValueError(f"{label} weights must sum to a positive value.")
+        if samples.size < 2:
+            raise ValueError(f"{label} must contain at least two samples for KDE.")
+        if weights_arr is not None and np.any(weights_arr < 0):
+            raise ValueError(f"{label} weights must be non-negative.")
+        return samples, weights_arr
+
+    p_samples, p_weights = _validate_samples(p_samples, p_weights, "p_samples")
+    q_samples, q_weights = _validate_samples(q_samples, q_weights, "q_samples")
+
+    kde_p: gaussian_kde = gaussian_kde(p_samples, weights=p_weights)
+    kde_q: gaussian_kde = gaussian_kde(q_samples, weights=q_weights)
+
+    min_support = min(p_samples.min(), q_samples.min())
+    max_support = max(p_samples.max(), q_samples.max())
+
+    def integrand(x: float) -> float:
+        p_x = float(np.clip(kde_p(x), eps, None)[0])
+        q_x = float(np.clip(kde_q(x), eps, None)[0])
+        return float(p_x * np.log(p_x / q_x))
+
+    kl, _ = quad(integrand, float(min_support), float(max_support), limit=100)
+    return float(max(kl, 0.0))
+
+
 # TODO: add memoization
 def asmd(
     sample_df: pd.DataFrame,
@@ -172,7 +282,7 @@ def asmd(
                 respective sample sizes (in contrast to how pooled sd is calculated in
                 Cohen's d statistic).
         aggregate_by_main_covar (bool):
-            If to use :func:`_aggregate_asmd_by_main_covar` to aggregate (average) the asmd based on variable name.
+            If to use :func:`_aggregate_statistic_by_main_covar` to aggregate (average) the asmd based on variable name.
             Default is False.
     Returns:
         pd.Series: a Series indexed on the names of the columns in the input DataFrames.
@@ -293,30 +403,218 @@ def asmd(
     out.name = None
 
     if aggregate_by_main_covar:
-        out = _aggregate_asmd_by_main_covar(out)
+        out = _aggregate_statistic_by_main_covar(out)
 
     return out
 
 
-def _aggregate_asmd_by_main_covar(asmd_series: pd.Series) -> pd.Series:
+def kld(
+    sample_df: pd.DataFrame,
+    target_df: pd.DataFrame,
+    sample_weights: list[float] | pd.Series | npt.NDArray | None = None,
+    target_weights: list[float] | pd.Series | npt.NDArray | None = None,
+    aggregate_by_main_covar: bool = False,
+) -> pd.Series:
     """
-    This function helps to aggregate the ASMD, which is broken down per level for a category variable, into one value per covariate.
+    Calculate the Kullback-Leibler divergence (KLD) between the columns of two DataFrames.
+
+    Numeric columns are compared using weighted kernel density estimates integrated
+    via adaptive quadrature. Categorical (including binary/one-hot encoded)
+    columns are treated as general discrete distributions based on their weighted
+    empirical probability mass functions. Each column's contribution is aggregated
+    into ``mean(kld)`` using the same weighting scheme as ASMD.
+
+    The function omits columns that start with the name "_is_na_".
+
+    If column names of sample_df and target_df are different, it will only calculate KLD for
+    the overlapping columns (using outer join with 0 fill for missing columns).
+    The mean(kld) will be calculated using weighted averaging based on covariate structure.
+
+    Args:
+        sample_df (pd.DataFrame): source group of the KLD comparison.
+        target_df (pd.DataFrame): target group of the KLD comparison.
+            The column names should be the same as the ones from sample_df.
+        sample_weights (Union[List, pd.Series, np.ndarray], optional): weights to use.
+            The default is None. If no weights are passed (None), it will use an array
+            of 1s.
+        target_weights (Union[List, pd.Series, np.ndarray], optional): weights to use.
+            The default is None. If no weights are passed (None), it will use an array
+            of 1s.
+        aggregate_by_main_covar (bool):
+            If to use :func:`_aggregate_statistic_by_main_covar` to aggregate (average) the KLD based on variable name.
+            Default is False.
+
+    Returns:
+        pd.Series: a Series indexed on the names of the columns in the input DataFrames.
+            The values (of type np.float64) are of the KLD calculation.
+            The last element is 'mean(kld)', which is the weighted average of the calculated KLD values.
+
+    Examples:
+        ::
+
+            import pandas as pd
+            from balance.stats_and_plots import weighted_comparisons_stats
+
+            # Example with categorical data showing clear distributional differences
+            sample_df = pd.DataFrame({
+                'category': ['A', 'A', 'B', 'C'],
+            })
+            target_df = pd.DataFrame({
+                'category': ['A', 'B', 'B', 'C'],
+            })
+
+            # Calculate KLD between the two categorical distributions
+            # Sample has: 50% A, 25% B, 25% C
+            # Target has: 25% A, 50% B, 25% C
+            kld_result = weighted_comparisons_stats.kld(sample_df, target_df)
+            print(kld_result.round(6))
+            # category[A]    0.143841
+            # category[B]    0.130812
+            # category[C]    0.000000
+            # mean(kld)      0.091551
+            # dtype: float64
+
+            # Example with aggregation by main covariate name
+            # This aggregates all category levels into a single KLD value
+            kld_aggregated = weighted_comparisons_stats.kld(
+                sample_df,
+                target_df,
+                aggregate_by_main_covar=True
+            )
+            print(kld_aggregated.round(6))
+            # category      0.091551
+            # mean(kld)     0.091551
+            # dtype: float64
+    """
+
+    if not isinstance(sample_df, pd.DataFrame):
+        raise ValueError(f"sample_df must be pd.DataFrame, is {type(sample_df)}")
+    if not isinstance(target_df, pd.DataFrame):
+        raise ValueError(f"target_df must be pd.DataFrame, is {type(target_df)}")
+
+    if sample_df.columns.values.tolist() != target_df.columns.values.tolist():
+        logger.warning(
+            f"""
+            sample_df and target_df must have the same column names.
+            sample_df column names: {sample_df.columns.values.tolist()}
+            target_df column names: {target_df.columns.values.tolist()}"""
+        )
+
+    sample_df, target_df = sample_df.align(
+        target_df, join="outer", axis=1, fill_value=0
+    )
+
+    sample_weights_arr = (
+        np.asarray(sample_weights, dtype=float)
+        if sample_weights is not None
+        else np.ones(sample_df.shape[0], dtype=float)
+    )
+    target_weights_arr = (
+        np.asarray(target_weights, dtype=float)
+        if target_weights is not None
+        else np.ones(target_df.shape[0], dtype=float)
+    )
+
+    def _is_binary(series: pd.Series) -> bool:
+        uniques = pd.unique(series.dropna())
+        return len(uniques) <= 2 and set(uniques).issubset({0, 1})
+
+    def _extract_series_and_weights(
+        series: pd.Series, weights: np.ndarray
+    ) -> tuple[pd.Series, np.ndarray]:
+        if weights.shape[0] != series.shape[0]:
+            raise ValueError("Weights must match the number of observations.")
+        mask = series.notna().to_numpy()
+        return series[mask], weights[mask]
+
+    def _weighted_pmf(series: pd.Series, weights: np.ndarray) -> pd.Series:
+        df = pd.DataFrame({"value": series, "weight": weights})
+        df = df[df["value"].notna()]
+        grouped = df.groupby("value", sort=False)["weight"].sum()
+        total = grouped.sum()
+        if total <= 0:
+            raise ValueError("PMF weights must sum to a positive value.")
+        return grouped / total
+
+    out: dict[str, float] | pd.DataFrame | pd.Series = {}
+
+    for col in sample_df.columns:
+        if col.startswith("_is_na_"):
+            continue
+
+        sample_series, sample_w = _extract_series_and_weights(
+            sample_df[col], sample_weights_arr
+        )
+        target_series, target_w = _extract_series_and_weights(
+            target_df[col], target_weights_arr
+        )
+
+        is_discrete = _is_binary(sample_series) and _is_binary(target_series)
+        is_discrete = is_discrete or pd.api.types.is_object_dtype(sample_series)
+        is_discrete = is_discrete or isinstance(sample_series.dtype, CategoricalDtype)
+        is_discrete = is_discrete or pd.api.types.is_bool_dtype(sample_series)
+
+        if is_discrete:
+            sample_pmf = _weighted_pmf(sample_series, sample_w)
+            target_pmf = _weighted_pmf(target_series, target_w)
+            pmfs = pd.concat(
+                [sample_pmf.rename("sample"), target_pmf.rename("target")], axis=1
+            ).fillna(0.0)
+            out[col] = _kl_divergence_discrete(
+                pmfs["sample"].to_numpy(), pmfs["target"].to_numpy()
+            )
+        else:
+            sample_vals = pd.to_numeric(sample_series, errors="coerce").dropna()
+            target_vals = pd.to_numeric(target_series, errors="coerce").dropna()
+            sample_w_numeric = sample_w[sample_series.index.isin(sample_vals.index)]
+            target_w_numeric = target_w[target_series.index.isin(target_vals.index)]
+            out[col] = _kl_divergence_continuous_quad(
+                sample_vals.to_numpy(),
+                target_vals.to_numpy(),
+                sample_w_numeric if sample_w_numeric.size else None,
+                target_w_numeric if target_w_numeric.size else None,
+            )
+
+    out = _safe_replace_and_infer(pd.DataFrame([out]))
+
+    weights = (
+        _weights_per_covars_names(out.columns.values.tolist())["weight"]
+        .to_frame()
+        .transpose()
+    )
+    out = pd.concat((out, weights))
+    mean = weighted_mean(out.iloc[0], out.loc["weight"])
+    out["mean(kld)"] = mean
+
+    out = out.iloc[0]
+    out.name = None
+
+    if aggregate_by_main_covar:
+        out = _aggregate_statistic_by_main_covar(out)
+
+    return out
+
+
+def _aggregate_statistic_by_main_covar(statistic_series: pd.Series) -> pd.Series:
+    """
+    This function helps to aggregate statistics (e.g., ASMD, KLD), which are broken down per level for a category variable,
+    into one value per covariate.
     This is useful since it allows us to get high level view of features such as country, locale, etc.
     It also allows us to filter out variables (such as is_today) before the overall averaging of the ASMD.
 
     Args:
-        asmd_series (pd.Series): a value for each covariate. Covariate name are in the index, the values are the asmd values.
+        statistic_series (pd.Series): a value for each covariate. Covariate name are in the index, the values are the asmd values.
 
     Returns:
-        pd.Series: If asmd_series had several items broken by one-hot encoding,
+        pd.Series: If statistic_series had several items broken by one-hot encoding,
             then they would be averaged (with equal weight to each).
 
     Examples:
         ::
 
-            from balance.stats_and_plots.weighted_comparisons_stats import _aggregate_asmd_by_main_covar
+            from balance.stats_and_plots.weighted_comparisons_stats import _aggregate_statistic_by_main_covar
 
-            asmd_series = pd.Series(
+            statistic_series = pd.Series(
             {
                 'age': 0.5,
                 'education[T.high_school]': 1,
@@ -325,15 +623,15 @@ def _aggregate_asmd_by_main_covar(asmd_series: pd.Series) -> pd.Series:
                 'education[T.phd]': 4,
             })
 
-            _aggregate_asmd_by_main_covar(asmd_series).to_dict()
+            _aggregate_statistic_by_main_covar(statistic_series).to_dict()
 
             # output:
             # {'age': 0.5, 'education': 2.5}
     """
-    weights = _weights_per_covars_names(asmd_series.index.values.tolist())
+    weights = _weights_per_covars_names(statistic_series.index.values.tolist())
 
     # turn things into DataFrame to make it easy to aggregate.
-    out = pd.concat((asmd_series, weights), axis=1)
+    out = pd.concat((statistic_series, weights), axis=1)
 
     # Define the apply function for calculating weighted means
     def calculate_weighted_mean(group_data: pd.DataFrame) -> float:

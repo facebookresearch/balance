@@ -867,10 +867,12 @@ class TestSample_metrics_methods(
         s1_summ = s1.summary()
         self.assertTrue("Model performance" not in s1_summ)
         self.assertTrue("Covar ASMD" not in s1_summ)
+        self.assertTrue("Covar mean KLD" not in s1_summ)
 
         s3_summ = s3.summary()
         self.assertTrue("Model performance" not in s1_summ)
         self.assertTrue("Covar ASMD (6 variables)" in s3_summ)
+        self.assertTrue("Covar mean KLD (3 variables)" in s3_summ)
         self.assertTrue("design effect" not in s3_summ)
 
         s3_set_unadjusted = s3.set_unadjusted(s1)
@@ -878,10 +880,13 @@ class TestSample_metrics_methods(
         self.assertTrue("Covar ASMD reduction: 0.0%" in s3_summ)
         self.assertTrue("Covar ASMD (6 variables)" in s3_summ)
         self.assertTrue("->" in s3_summ)
+        self.assertTrue("Covar mean KLD reduction: 0.0%" in s3_summ)
+        self.assertTrue("Covar mean KLD (3 variables)" in s3_summ)
         self.assertTrue("design effect" in s3_summ)
 
         s3_summ = s3_adjusted_null.summary()
         self.assertTrue("Covar ASMD reduction: 0.0%" in s3_summ)
+        self.assertTrue("Covar mean KLD reduction: 0.0%" in s3_summ)
         self.assertTrue("design effect" in s3_summ)
 
     def test_Sample_invalid_outcomes(self) -> None:
