@@ -41,8 +41,6 @@
   ([#141](https://github.com/facebookresearch/balance/pull/141),
   [#142](https://github.com/facebookresearch/balance/pull/142),
   [#143](https://github.com/facebookresearch/balance/pull/143)).
-- Added IPW quickstart tutorial showcasing default logistic regression and
-  custom sklearn classifier usage (`balance_quickstart_ipw.ipynb`).
 - Expanded poststratify docstring with clear examples and improved statistical
   methods documentation
   ([#141](https://github.com/facebookresearch/balance/pull/141)).
