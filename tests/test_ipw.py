@@ -199,25 +199,27 @@ class TestIPW(
             transformations=None,
         )
 
-    def test_ipw_allows_custom_logistic_regression_kwargs(self) -> None:
-        """Users can override LogisticRegression configuration via kwargs."""
+    def test_ipw_allows_custom_logistic_regression_model(self) -> None:
+        """Users can override LogisticRegression configuration by passing an estimator."""
 
         sample = pd.DataFrame({"a": (0, 1, 1, 0), "b": (1, 2, 3, 4)})
         target = pd.DataFrame({"a": (1, 0, 0, 1), "b": (4, 3, 2, 1)})
 
+        configured_lr = LogisticRegression(solver="lbfgs", max_iter=500)
         result = balance_ipw.ipw(
             sample_df=sample,
             sample_weights=pd.Series((1,) * len(sample)),
             target_df=target,
             target_weights=pd.Series((1,) * len(target)),
-            logistic_regression_kwargs={"solver": "saga", "max_iter": 200},
+            model=configured_lr,
             max_de=None,
             num_lambdas=1,
         )
 
         fit = result["model"]["fit"]
-        self.assertEqual(fit.solver, "saga")
-        self.assertEqual(fit.max_iter, 200)
+        self.assertIsInstance(fit, LogisticRegression)
+        self.assertEqual(fit.solver, "lbfgs")
+        self.assertEqual(fit.max_iter, 500)
 
     def test_ipw_supports_custom_sklearn_model(self) -> None:
         """Custom sklearn models (e.g., RandomForest) can drive propensity scores."""
@@ -242,7 +244,7 @@ class TestIPW(
             sample_weights=pd.Series(np.ones(len(sample))),
             target_df=target,
             target_weights=pd.Series(np.ones(len(target))),
-            sklearn_model=rf,
+            model=rf,
             transformations=None,
             num_lambdas=1,
             max_de=1.5,
@@ -295,7 +297,7 @@ class TestIPW(
             sample_weights=pd.Series(np.ones(len(sample))),
             target_df=target,
             target_weights=pd.Series(np.ones(len(target))),
-            sklearn_model=model,
+            model=model,
             transformations=None,
             num_lambdas=1,
             max_de=1.5,
@@ -318,7 +320,7 @@ class TestIPW(
             sample_weights=pd.Series(np.ones(len(sample))),
             target_df=target,
             target_weights=pd.Series(np.ones(len(target))),
-            sklearn_model=tree,
+            model=tree,
             transformations=None,
             num_lambdas=1,
             max_de=1.5,
@@ -339,7 +341,7 @@ class TestIPW(
                 sample_weights=pd.Series((1,) * len(sample)),
                 target_df=target,
                 target_weights=pd.Series((1,) * len(target)),
-                sklearn_model=LinearSVC(),
+                model=LinearSVC(),
                 transformations=None,
                 num_lambdas=1,
             )
@@ -364,7 +366,7 @@ class TestIPW(
                 sample_weights=pd.Series(np.ones(len(sample))),
                 target_df=target,
                 target_weights=pd.Series(np.ones(len(target))),
-                sklearn_model=SingleColumnRF(n_estimators=5, random_state=2),
+                model=SingleColumnRF(n_estimators=5, random_state=2),
                 transformations=None,
                 num_lambdas=1,
             )
@@ -392,24 +394,6 @@ class TestIPW(
                 num_lambdas=1,
             )
 
-    def test_ipw_rejects_logistic_kwargs_with_custom_model(self) -> None:
-        """Providing logistic_regression_kwargs with custom model raises an error."""
-
-        sample = pd.DataFrame({"a": (0, 1, 1, 0)})
-        target = pd.DataFrame({"a": (1, 0, 0, 1)})
-
-        with self.assertRaisesRegex(ValueError, "logistic_regression_kwargs"):
-            balance_ipw.ipw(
-                sample_df=sample,
-                sample_weights=pd.Series((1,) * len(sample)),
-                target_df=target,
-                target_weights=pd.Series((1,) * len(target)),
-                sklearn_model=RandomForestClassifier(n_estimators=10, random_state=1),
-                logistic_regression_kwargs={"max_iter": 10},
-                transformations=None,
-                num_lambdas=1,
-            )
-
     def test_ipw_warns_when_penalty_factor_with_custom_model(self) -> None:
         """Providing penalty_factor with custom models emits a warning."""
 
@@ -423,7 +407,7 @@ class TestIPW(
                 sample_weights=pd.Series(np.ones(len(sample))),
                 target_df=target,
                 target_weights=pd.Series(np.ones(len(target))),
-                sklearn_model=RandomForestClassifier(n_estimators=5, random_state=7),
+                model=RandomForestClassifier(n_estimators=5, random_state=7),
                 penalty_factor=[1.0],
                 transformations=None,
                 num_lambdas=1,
@@ -433,24 +417,6 @@ class TestIPW(
         self.assertTrue(
             any("penalty_factor is ignored" in message for message in logs.output)
         )
-
-    def test_ipw_rejects_conflicting_model_arguments(self) -> None:
-        """Supplying both model and sklearn_model triggers a clear error."""
-
-        sample = pd.DataFrame({"a": (0, 1, 1, 0)})
-        target = pd.DataFrame({"a": (1, 0, 0, 1)})
-
-        with self.assertRaisesRegex(ValueError, "either 'model' or 'sklearn_model'"):
-            balance_ipw.ipw(
-                sample_df=sample,
-                sample_weights=pd.Series((1,) * len(sample)),
-                target_df=target,
-                target_weights=pd.Series((1,) * len(target)),
-                model=LogisticRegression(),
-                sklearn_model=LogisticRegression(),
-                transformations=None,
-                num_lambdas=1,
-            )
 
     def test_ipw_rejects_unknown_model_identifier(self) -> None:
         """Non-supported model identifiers raise NotImplementedError."""

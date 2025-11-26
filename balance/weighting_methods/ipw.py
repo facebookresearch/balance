@@ -412,9 +412,8 @@ def ipw(
     formula: str | list[str] | None = None,
     penalty_factor: list[float] | None = None,
     one_hot_encoding: bool = False,
-    logistic_regression_kwargs: Dict[str, Any] | None = None,
+    # TODO: This is set to be false in order to keep reproducibility of works that uses balance.
     random_seed: int = 2020,
-    sklearn_model: ClassifierMixin | None = None,
     *args: Any,
     **kwargs: Any,
 ) -> Dict[str, Any]:
@@ -436,8 +435,10 @@ def ipw(
             :class:`sklearn.ensemble.GradientBoostingClassifier`,
             :class:`sklearn.ensemble.HistGradientBoostingClassifier`, and
             :class:`sklearn.linear_model.SGDClassifier` configured with
-            ``loss="log_loss"``. Custom classifiers should expose a ``predict_proba``
-            method returning class probabilities.
+            ``loss="log_loss"``. To customize the built-in logistic regression
+            settings, pass a configured :class:`sklearn.linear_model.LogisticRegression`
+            instance as ``model``. Custom classifiers should expose a
+            ``predict_proba`` method returning class probabilities.
         weight_trimming_mean_ratio (Optional[Union[int, float]], optional): indicating the ratio from above according to which
             the weights are trimmed by mean(weights) * ratio.
             Defaults to 20.
@@ -468,19 +469,15 @@ def ipw(
             categorical variables with more than 2 categories (i.e. the
             number of columns will be equal to the number of categories),
             and only 1 column for variables with 2 levels (treatment contrast). Defaults to False.
-        logistic_regression_kwargs (Optional[Dict[str, Any]], optional): Additional keyword arguments
-            passed to :class:`sklearn.linear_model.LogisticRegression`. When None, the
-            model defaults to ``penalty="l2"``, ``solver="lbfgs"``, ``tol=1e-4``,
-            ``max_iter=5000``, and ``warm_start=True``. Defaults to None.
         random_seed (int, optional): Random seed to use. Defaults to 2020.
-        sklearn_model (Optional[ClassifierMixin], optional): Deprecated alias for
-            providing a custom sklearn classifier. Use ``model`` instead. The
-            estimator must implement ``fit`` and ``predict_proba``. When provided,
-            ``logistic_regression_kwargs`` and ``penalty_factor`` are ignored.
-            Defaults to None.
 
     Examples:
+        >>> import pandas as pd
+        >>> from balance.datasets import load_sim_data
         >>> from sklearn.ensemble import RandomForestClassifier
+        >>> target_df, sample_df = load_sim_data()
+        >>> sample_weights = pd.Series(1, index=sample_df.index)
+        >>> target_weights = pd.Series(1, index=target_df.index)
         >>> rf = RandomForestClassifier(n_estimators=200, random_state=0)
         >>> ipw(
         ...     sample_df,
@@ -498,7 +495,6 @@ def ipw(
         ...     target_weights,
         ...     variables=["gender", "age_group", "income"],
         ...     model="sklearn",
-        ...     logistic_regression_kwargs={"max_iter": 2000},
         ... )
 
     Raises:
@@ -507,7 +503,6 @@ def ipw(
             built-in logistic regression option) or the deprecated "glmnet".
         TypeError: If ``model`` is neither a supported string nor an sklearn
             classifier exposing ``predict_proba``.
-        ValueError: If both ``model`` and ``sklearn_model`` are provided.
 
     Returns:
         Dict[str, Any]: A dictionary includes:
@@ -541,11 +536,6 @@ def ipw(
         raise TypeError(
             "model must be 'sklearn', an sklearn classifier implementing predict_proba, or None"
         )
-
-    if sklearn_model is not None:
-        if custom_model is not None:
-            raise ValueError("Provide either 'model' or 'sklearn_model', not both.")
-        custom_model = sklearn_model
 
     if model_name == "glmnet":
         raise NotImplementedError("glmnet is no longer supported")
@@ -689,8 +679,6 @@ def ipw(
             "max_iter": 5000,
             "warm_start": True,
         }
-        if logistic_regression_kwargs is not None:
-            lr_kwargs.update(logistic_regression_kwargs)
 
         lr = LogisticRegression(**lr_kwargs)
         fits: list[ClassifierMixin | None] = [None for _ in range(len(lambdas))]
@@ -740,10 +728,6 @@ def ipw(
             fits[i] = copy.deepcopy(model)
 
     else:
-        if logistic_regression_kwargs is not None:
-            raise ValueError(
-                "logistic_regression_kwargs cannot be used when providing a custom model"
-            )
         if penalty_factor is not None:
             logger.warning("penalty_factor is ignored when using a custom model.")
 
