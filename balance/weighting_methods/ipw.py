@@ -430,7 +430,8 @@ def ipw(
         model (Union[str, ClassifierMixin, None], optional): Model used for modeling the
             propensity scores. Provide "sklearn" (default) to use logistic regression,
             or pass an sklearn classifier implementing ``fit`` and ``predict_proba``.
-            Common choices include :class:`sklearn.linear_model.LogisticRegression`,
+            Common choices include scikit-learn estimators such as
+            :class:`sklearn.linear_model.LogisticRegression`,
             :class:`sklearn.ensemble.RandomForestClassifier`,
             :class:`sklearn.ensemble.GradientBoostingClassifier`,
             :class:`sklearn.ensemble.HistGradientBoostingClassifier`, and
@@ -527,7 +528,7 @@ def ipw(
             }
     """
     custom_model: ClassifierMixin | None = None
-    model_name: str | None
+    model_name: str | None = None
 
     if isinstance(model, ClassifierMixin):
         custom_model = model
