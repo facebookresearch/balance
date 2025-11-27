@@ -374,7 +374,7 @@ class TestIPW(
     def test_ipw_rejects_custom_models_without_binary_classes(self) -> None:
         """Custom models must be trained on labels containing both 0 and 1."""
 
-        class ShiftedProbabilityModel(LogisticRegression):
+        class InvalidClassLabelModel(LogisticRegression):
             def fit(self, X, y, sample_weight=None):  # type: ignore[override]
                 super().fit(X, y + 2, sample_weight=sample_weight)
                 return self
@@ -389,7 +389,7 @@ class TestIPW(
                 sample_weights=pd.Series(np.ones(len(sample))),
                 target_df=target,
                 target_weights=pd.Series(np.ones(len(target))),
-                model=ShiftedProbabilityModel(max_iter=50),
+                model=InvalidClassLabelModel(max_iter=50),
                 transformations=None,
                 num_lambdas=1,
             )

@@ -428,9 +428,9 @@ def ipw(
         variables (Optional[List[str]], optional): list of variables to include in the model.
             If None all joint variables of sample_df and target_df are used. Defaults to None.
         model (Union[str, ClassifierMixin, None], optional): Model used for modeling the
-            propensity scores. Provide "sklearn" (default) to use logistic regression,
-            or pass an sklearn classifier implementing ``fit`` and ``predict_proba``.
-            Common choices include scikit-learn estimators such as
+            propensity scores. Provide ``"sklearn"`` (default) or ``None`` to use logistic
+            regression, or pass an sklearn classifier implementing ``fit`` and
+            ``predict_proba``. Common choices include scikit-learn estimators such as
             :class:`sklearn.linear_model.LogisticRegression`,
             :class:`sklearn.ensemble.RandomForestClassifier`,
             :class:`sklearn.ensemble.GradientBoostingClassifier`,

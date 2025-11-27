@@ -731,8 +731,9 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
         "--ipw_logistic_regression_kwargs",
         required=False,
         help=(
-            "JSON object of keyword arguments forwarded to sklearn.linear_model.LogisticRegression "
-            "when using the ipw method. Ignored for other methods."
+            "A valid JSON object string of keyword arguments forwarded to sklearn.linear_model.LogisticRegression "
+            "when using the ipw method. For example: '{\"solver\": \"liblinear\", \"max_iter\": 500}'. "
+            "Ignored for other methods."
         ),
     )
     parser.add_argument(
