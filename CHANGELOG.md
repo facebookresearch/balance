@@ -9,19 +9,17 @@
     implementation (`_run_ipf_numpy`) for iterative proportional fitting,
     resulting in significant performance improvements and eliminating external
     dependency ([#135](https://github.com/facebookresearch/balance/pull/135)).
-- **IPW method enhancements**
-  - Added `logistic_regression_kwargs` parameter to `ipw()` for customizing
-    sklearn LogisticRegression settings
-    ([#138](https://github.com/facebookresearch/balance/pull/138)).
-  - CLI now supports `--ipw_logistic_regression_kwargs` for passing custom
-    LogisticRegression parameters via JSON
-    ([#138](https://github.com/facebookresearch/balance/pull/138)).
 - **Propensity modeling flexibility**
-  - `ipw()` now accepts any sklearn classifier via the new `sklearn_model`
-    argument, enabling the use of models like random forests while preserving
-    all existing trimming and diagnostic workflows. Dense-only estimators and
-    models without linear coefficients are fully supported, and propensity
-    probabilities are stabilized to avoid numerical issues.
+  - `ipw()` now accepts any sklearn classifier via the `model` argument and
+    deprecates the old `sklearn_model` alias, enabling the use of models like
+    random forests while preserving all existing trimming and diagnostic
+    workflows. Dense-only estimators and models without linear coefficients are
+    fully supported, and propensity probabilities are stabilized to avoid
+    numerical issues.
+  - Implemented logistic regression customization by passing a configured
+    :class:`~sklearn.linear_model.LogisticRegression` instance through the
+    `model` argument; the CLI now accepts `--ipw_logistic_regression_kwargs`
+    JSON to build that estimator directly for command-line workflows.
 - **Covariate diagnostics**
   - Added KL divergence calculations for covariate comparisons (numeric and
     one-hot categorical), exposed via `BalanceDF.kld()` alongside linked-sample
@@ -40,6 +38,8 @@
 - Added project badges to README for build status, Python version support, and
   release tracking
   ([#145](https://github.com/facebookresearch/balance/pull/145)).
+- Added IPW quickstart tutorial showcasing default logistic regression and
+  custom sklearn classifier usage in (`balance_quickstart.ipynb`).
 
 ## Code Quality & Refactoring
 
