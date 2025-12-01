@@ -92,6 +92,57 @@ If None, the set target of the object is used for matching.</p></li>
 <dd class="field-odd"><p><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample">Sample</a></p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">balance</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.ensemble</span><span class="w"> </span><span class="kn">import</span> <span class="n">RandomForestClassifier</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sample</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_data</span>
+
+<span class="c1"># Load simulated data</span>
+<span class="n">target_df</span><span class="p">,</span> <span class="n">sample_df</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
+
+<span class="n">sample</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">outcome_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;happiness&quot;</span><span class="p">])</span>
+<span class="c1"># Often times we don&#39;y have the outcome for the target. In this case we&#39;ve added it just to validate later that the weights indeed help us reduce the bias</span>
+<span class="n">target</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">outcome_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;happiness&quot;</span><span class="p">])</span>
+
+<span class="n">sample_with_target</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">set_target</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+<span class="n">adjusted</span> <span class="o">=</span> <span class="n">sample_with_target</span><span class="o">.</span><span class="n">adjust</span><span class="p">()</span>
+
+<span class="n">rf</span> <span class="o">=</span> <span class="n">RandomForestClassifier</span><span class="p">(</span><span class="n">n_estimators</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">adjusted_rf</span> <span class="o">=</span> <span class="n">sample_with_target</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="n">model</span> <span class="o">=</span> <span class="n">rf</span><span class="p">)</span>
+
+<span class="c1"># Print ASMD tables for both adjusted and adjusted_rf</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">=== Adjusted ASMD ===&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">adjusted</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">asmd</span><span class="p">()</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">=== Adjusted_RF ASMD ===&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">adjusted_rf</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">asmd</span><span class="p">()</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+
+<span class="c1"># output</span>
+<span class="c1">#</span>
+<span class="c1"># === Adjusted ASMD ===</span>
+<span class="c1"># source                  self  unadjusted  unadjusted - self</span>
+<span class="c1"># age_group[T.25-34]  0.021777    0.005688          -0.016090</span>
+<span class="c1"># age_group[T.35-44]  0.055884    0.312711           0.256827</span>
+<span class="c1"># age_group[T.45+]    0.169816    0.378828           0.209013</span>
+<span class="c1"># gender[Female]      0.097916    0.375699           0.277783</span>
+<span class="c1"># gender[Male]        0.103989    0.379314           0.275324</span>
+<span class="c1"># gender[_NA]         0.010578    0.006296          -0.004282</span>
+<span class="c1"># income              0.205469    0.494217           0.288748</span>
+<span class="c1"># mean(asmd)          0.119597    0.326799           0.207202</span>
+<span class="c1">#</span>
+<span class="c1"># === Adjusted_RF ASMD ===</span>
+<span class="c1"># source                  self  unadjusted  unadjusted - self</span>
+<span class="c1"># age_group[T.25-34]  0.074491    0.005688          -0.068804</span>
+<span class="c1"># age_group[T.35-44]  0.022383    0.312711           0.290328</span>
+<span class="c1"># age_group[T.45+]    0.145628    0.378828           0.233201</span>
+<span class="c1"># gender[Female]      0.037700    0.375699           0.337999</span>
+<span class="c1"># gender[Male]        0.067392    0.379314           0.311922</span>
+<span class="c1"># gender[_NA]         0.051718    0.006296          -0.045422</span>
+<span class="c1"># income              0.140655    0.494217           0.353562</span>
+<span class="c1"># mean(asmd)          0.091253    0.326799           0.235546</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">

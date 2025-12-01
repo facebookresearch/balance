@@ -19,19 +19,21 @@ hide_title: true
     implementation (`_run_ipf_numpy`) for iterative proportional fitting,
     resulting in significant performance improvements and eliminating external
     dependency ([#135](https://github.com/facebookresearch/balance/pull/135)).
-- **IPW method enhancements**
-  - Added `logistic_regression_kwargs` parameter to `ipw()` for customizing
-    sklearn LogisticRegression settings
-    ([#138](https://github.com/facebookresearch/balance/pull/138)).
-  - CLI now supports `--ipw_logistic_regression_kwargs` for passing custom
-    LogisticRegression parameters via JSON
-    ([#138](https://github.com/facebookresearch/balance/pull/138)).
 - **Propensity modeling flexibility**
-  - `ipw()` now accepts any sklearn classifier via the new `sklearn_model`
-    argument, enabling the use of models like random forests while preserving
-    all existing trimming and diagnostic workflows. Dense-only estimators and
-    models without linear coefficients are fully supported, and propensity
-    probabilities are stabilized to avoid numerical issues.
+  - `ipw()` now accepts any sklearn classifier via the `model` argument and
+    deprecates the old `sklearn_model` alias, enabling the use of models like
+    random forests while preserving all existing trimming and diagnostic
+    workflows. Dense-only estimators and models without linear coefficients are
+    fully supported, and propensity probabilities are stabilized to avoid
+    numerical issues.
+  - Implemented logistic regression customization by passing a configured
+    :class:`~sklearn.linear_model.LogisticRegression` instance through the
+    `model` argument; the CLI now accepts `--ipw_logistic_regression_kwargs`
+    JSON to build that estimator directly for command-line workflows.
+- **Covariate diagnostics**
+  - Added KL divergence calculations for covariate comparisons (numeric and
+    one-hot categorical), exposed via `BalanceDF.kld()` alongside linked-sample
+    aggregation support.
 
 ## Documentation
 
@@ -46,6 +48,8 @@ hide_title: true
 - Added project badges to README for build status, Python version support, and
   release tracking
   ([#145](https://github.com/facebookresearch/balance/pull/145)).
+- Added IPW quickstart tutorial showcasing default logistic regression and
+  custom sklearn classifier usage in (`balance_quickstart.ipynb`).
 
 ## Code Quality & Refactoring
 
@@ -78,8 +82,8 @@ hide_title: true
     (`parent_balance/tests/test_adjust_null.py`,
     `parent_balance/tests/test_adjustment.py`,
     `parent_balance/tests/test_cbps.py`, `parent_balance/tests/test_cli.py`,
-    `parent_balance/tests/test_datasets.py`,
-    `parent_balance/tests/test_ipw.py`, `parent_balance/tests/test_logging.py`,
+    `parent_balance/tests/test_datasets.py`, `parent_balance/tests/test_ipw.py`,
+    `parent_balance/tests/test_logging.py`,
     `parent_balance/tests/test_poststratify.py`,
     `parent_balance/tests/test_rake.py`, `parent_balance/tests/test_sample.py`,
     `parent_balance/tests/test_stats_and_plots.py`,
@@ -118,6 +122,15 @@ hide_title: true
   - Fixed type casts and narrowed types where appropriate
   - Initialized optional variables to handle pyre-fixme[61] issues
   - Updated method signatures to match parent class interfaces
+  - **Replaced assert-based type narrowing with `_verify_value_type()` helper**:
+    Refactored code to use the `_verify_value_type()` utility function instead
+    of bare `assert x is not None` statements for type narrowing. This improves
+    code clarity, provides better error messages, and follows best practices for
+    pyre-strict mode. Enhanced `_verify_value_type()` in `testutil.py` with
+    optional type checking via `isinstance()` and improved overload signatures.
+    Changes applied to test files (`test_datasets.py`, `test_sample.py`,
+    `test_stats_and_plots.py`, `test_testutil.py`, `test_util.py`,
+    `test_weighted_comparisons_plots.py`) and production code (`ipw.py`).
 
 ## Bug Fixes
 

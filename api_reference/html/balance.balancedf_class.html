@@ -92,7 +92,7 @@ If None then it looks for a target in the self linked objects. Defaults to None.
 <li><p><strong>aggregate_by_main_covar</strong> (<em>bool</em><em>, </em><em>optional</em>) – Defaults to False.
 If True, it will make sure to return the asmd DataFrame after averaging
 all the columns from using the one-hot encoding for categorical variables.
-See ::_aggregate_asmd_by_main_covar:: for more details.</p></li>
+See ::_aggregate_statistic_by_main_covar:: for more details.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
@@ -374,6 +374,82 @@ print(s3_null_2.outcomes().ci_of_mean(round_ndigits = 3))</p>
 <dd class="field-odd"><p>pd.DataFrame</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.balancedf_class.BalanceDF.kld">
+<span class="sig-name descname"><span class="pre">kld</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">on_linked_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'BalanceDF'</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggregate_by_main_covar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pd.DataFrame</span></span></span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDF.kld"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDF.kld" title="Link to this definition">¶</a></dt>
+<dd><p>Calculate KL divergence (KLD) to measure distributional differences between samples and target.</p>
+<p>KLD is the Kullback-Leibler divergence, an asymmetric measure of how one probability distribution
+differs from a reference distribution. Unlike ASMD which measures standardized mean differences,
+KLD captures differences in the entire distribution shape.</p>
+<p>We can use kld to compare multiple Samples (with and without adjustment) to a target population.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> (<a class="reference internal" href="#balance.balancedf_class.BalanceDF" title="balance.balancedf_class.BalanceDF"><em>BalanceDF</em></a>) – Object from sample (with/without adjustment, but it needs some target)</p></li>
+<li><p><strong>on_linked_samples</strong> (<em>bool</em><em>, </em><em>optional</em>) – If to compare also to linked sample objects (specifically: unadjusted), or not. Defaults to True.
+If True, then uses <code class="xref py py-func docutils literal notranslate"><span class="pre">_call_on_linked()</span></code> with method “kld”.
+If False, then uses <code class="xref py py-func docutils literal notranslate"><span class="pre">_kld_BalanceDF()</span></code> directly.</p></li>
+<li><p><strong>target</strong> (<em>Optional</em><em>[</em><em>&quot;BalanceDF&quot;</em><em>]</em><em>, </em><em>optional</em>) – A BalanceDF (of the same type as the one used in self) to compare against.
+If None then it looks for a target in the self linked objects. Defaults to None.</p></li>
+<li><p><strong>aggregate_by_main_covar</strong> (<em>bool</em><em>, </em><em>optional</em>) – Defaults to False.
+If True, it will make sure to return the kld DataFrame after averaging
+all the columns from using the one-hot encoding for categorical variables.
+See <code class="xref py py-func docutils literal notranslate"><span class="pre">_aggregate_statistic_by_main_covar()</span></code> for more details.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If self has no target and no target is supplied.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If on_linked_samples is False, then only one row (index name depends on BalanceDF type, e.g.: covars), with kld of self vs the target.
+If on_linked_samples is True, then two rows per source (self, unadjusted), each with the kld compared to target, and a third row for the difference (self-unadjusted).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.DataFrame</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sample</span>
+
+<span class="c1"># Create a simple example with numeric and categorical variables</span>
+<span class="n">sample</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+            <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+            <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;w&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="p">}</span>
+    <span class="p">),</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="n">weight_column</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">target</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+            <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;w&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="p">}</span>
+    <span class="p">),</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="n">weight_column</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">sample_with_target</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">set_target</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+
+<span class="c1"># Compare only self to target without linked samples</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sample_with_target</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">kld</span><span class="p">(</span><span class="n">on_linked_samples</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">6</span><span class="p">))</span>
+    <span class="c1">#            a     c[x]     c[y]  c[z]  mean(kld)</span>
+    <span class="c1"># index</span>
+    <span class="c1"># covars   0.0  0.143841  0.130812   0.0   0.045776</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -1349,6 +1425,7 @@ from describe, ‘nonparametric_skew’, and ‘weighted_median_breakdown_point�
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDF.asmd_improvement"><code class="docutils literal notranslate"><span class="pre">BalanceDF.asmd_improvement()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDF.ci_of_mean"><code class="docutils literal notranslate"><span class="pre">BalanceDF.ci_of_mean()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDF.df"><code class="docutils literal notranslate"><span class="pre">BalanceDF.df</span></code></a></li>
+<li><a class="reference internal" href="#balance.balancedf_class.BalanceDF.kld"><code class="docutils literal notranslate"><span class="pre">BalanceDF.kld()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDF.mean"><code class="docutils literal notranslate"><span class="pre">BalanceDF.mean()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDF.mean_with_ci"><code class="docutils literal notranslate"><span class="pre">BalanceDF.mean_with_ci()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDF.model_matrix"><code class="docutils literal notranslate"><span class="pre">BalanceDF.model_matrix()</span></code></a></li>

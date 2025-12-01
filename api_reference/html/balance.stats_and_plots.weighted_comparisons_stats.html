@@ -94,7 +94,7 @@ respective sample sizes (in contrast to how pooled sd is calculated in
 Cohen’s d statistic).</p>
 </div></blockquote>
 </p></li>
-<li><p><strong>aggregate_by_main_covar</strong> (<em>bool</em>) – If to use <code class="xref py py-func docutils literal notranslate"><span class="pre">_aggregate_asmd_by_main_covar()</span></code> to aggregate (average) the asmd based on variable name.
+<li><p><strong>aggregate_by_main_covar</strong> (<em>bool</em>) – If to use <code class="xref py py-func docutils literal notranslate"><span class="pre">_aggregate_statistic_by_main_covar()</span></code> to aggregate (average) the asmd based on variable name.
 Default is False.</p></li>
 </ul>
 </dd>
@@ -202,6 +202,85 @@ Returns 0.0 when asmd_mean_before is zero or very close to zero (&lt; 1e-10).</p
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_comparisons_stats.kld">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_comparisons_stats.</span></span><span class="sig-name descname"><span class="pre">kld</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pd.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pd.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pd.Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">npt.NDArray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pd.Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">npt.NDArray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggregate_by_main_covar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pd.Series</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_comparisons_stats.html#kld"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_comparisons_stats.kld" title="Link to this definition">¶</a></dt>
+<dd><p>Calculate the Kullback-Leibler divergence (KLD) between the columns of two DataFrames.</p>
+<p>Numeric columns are compared using weighted kernel density estimates integrated
+via adaptive quadrature. Categorical (including binary/one-hot encoded)
+columns are treated as general discrete distributions based on their weighted
+empirical probability mass functions. Each column’s contribution is aggregated
+into <code class="docutils literal notranslate"><span class="pre">mean(kld)</span></code> using the same weighting scheme as ASMD.</p>
+<p>The function omits columns that start with the name “_is_na_”.</p>
+<p>If column names of sample_df and target_df are different, it will only calculate KLD for
+the overlapping columns (using outer join with 0 fill for missing columns).
+The mean(kld) will be calculated using weighted averaging based on covariate structure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sample_df</strong> (<em>pd.DataFrame</em>) – source group of the KLD comparison.</p></li>
+<li><p><strong>target_df</strong> (<em>pd.DataFrame</em>) – target group of the KLD comparison.
+The column names should be the same as the ones from sample_df.</p></li>
+<li><p><strong>sample_weights</strong> (<em>Union</em><em>[</em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>np.ndarray</em><em>]</em><em>, </em><em>optional</em>) – weights to use.
+The default is None. If no weights are passed (None), it will use an array
+of 1s.</p></li>
+<li><p><strong>target_weights</strong> (<em>Union</em><em>[</em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>np.ndarray</em><em>]</em><em>, </em><em>optional</em>) – weights to use.
+The default is None. If no weights are passed (None), it will use an array
+of 1s.</p></li>
+<li><p><strong>aggregate_by_main_covar</strong> (<em>bool</em>) – If to use <code class="xref py py-func docutils literal notranslate"><span class="pre">_aggregate_statistic_by_main_covar()</span></code> to aggregate (average) the KLD based on variable name.
+Default is False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>a Series indexed on the names of the columns in the input DataFrames.</dt><dd><p>The values (of type np.float64) are of the KLD calculation.
+The last element is ‘mean(kld)’, which is the weighted average of the calculated KLD values.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.Series</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">weighted_comparisons_stats</span>
+
+<span class="c1"># Example with categorical data showing clear distributional differences</span>
+<span class="n">sample_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s1">&#39;category&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">],</span>
+<span class="p">})</span>
+<span class="n">target_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s1">&#39;category&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">],</span>
+<span class="p">})</span>
+
+<span class="c1"># Calculate KLD between the two categorical distributions</span>
+<span class="c1"># Sample has: 50% A, 25% B, 25% C</span>
+<span class="c1"># Target has: 25% A, 50% B, 25% C</span>
+<span class="n">kld_result</span> <span class="o">=</span> <span class="n">weighted_comparisons_stats</span><span class="o">.</span><span class="n">kld</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">kld_result</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">6</span><span class="p">))</span>
+<span class="c1"># category[A]    0.143841</span>
+<span class="c1"># category[B]    0.130812</span>
+<span class="c1"># category[C]    0.000000</span>
+<span class="c1"># mean(kld)      0.091551</span>
+<span class="c1"># dtype: float64</span>
+
+<span class="c1"># Example with aggregation by main covariate name</span>
+<span class="c1"># This aggregates all category levels into a single KLD value</span>
+<span class="n">kld_aggregated</span> <span class="o">=</span> <span class="n">weighted_comparisons_stats</span><span class="o">.</span><span class="n">kld</span><span class="p">(</span>
+    <span class="n">sample_df</span><span class="p">,</span>
+    <span class="n">target_df</span><span class="p">,</span>
+    <span class="n">aggregate_by_main_covar</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">kld_aggregated</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">6</span><span class="p">))</span>
+<span class="c1"># category      0.091551</span>
+<span class="c1"># mean(kld)     0.091551</span>
+<span class="c1"># dtype: float64</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="balance.stats_and_plots.weighted_comparisons_stats.outcome_variance_ratio">
 <span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_comparisons_stats.</span></span><span class="sig-name descname"><span class="pre">outcome_variance_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df_numerator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pd.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_denominator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pd.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_numerator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pd.Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">npt.NDArray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_denominator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pd.Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">npt.NDArray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pd.Series</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_comparisons_stats.html#outcome_variance_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_comparisons_stats.outcome_variance_ratio" title="Link to this definition">¶</a></dt>
 <dd><p>Calculate ratio of weighted variances of two DataFrames</p>
@@ -242,6 +321,7 @@ of empirical weighted variance of the data.</p>
 <li><a class="reference internal" href="#">balance.stats_and_plots.weighted_comparisons_stats</a><ul>
 <li><a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_stats.asmd"><code class="docutils literal notranslate"><span class="pre">asmd()</span></code></a></li>
 <li><a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_stats.asmd_improvement"><code class="docutils literal notranslate"><span class="pre">asmd_improvement()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_stats.kld"><code class="docutils literal notranslate"><span class="pre">kld()</span></code></a></li>
 <li><a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_stats.outcome_variance_ratio"><code class="docutils literal notranslate"><span class="pre">outcome_variance_ratio()</span></code></a></li>
 </ul>
 </li>

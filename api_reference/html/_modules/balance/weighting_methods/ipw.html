@@ -57,6 +57,7 @@
     <span class="n">asmd_improvement</span> <span class="k">as</span> <span class="n">compute_asmd_improvement</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots.weights_stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">design_effect</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.testutil</span><span class="w"> </span><span class="kn">import</span> <span class="n">_verify_value_type</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.sparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">csc_matrix</span><span class="p">,</span> <span class="n">csr_matrix</span><span class="p">,</span> <span class="n">issparse</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClassifierMixin</span><span class="p">,</span> <span class="n">clone</span>
@@ -452,19 +453,7 @@
     <span class="n">target_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">target_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="n">variables</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="c1"># TODO: change &#39;model&#39; to be Union[Optional[ClassifierMixin], str]</span>
-    <span class="c1">#       in which the default will be</span>
-    <span class="c1"># LogisticRegression(</span>
-    <span class="c1">#     &quot;penalty&quot;: &quot;l2&quot;,</span>
-    <span class="c1">#     &quot;solver&quot;: &quot;lbfgs&quot;,</span>
-    <span class="c1">#     &quot;tol&quot;: 1e-4,</span>
-    <span class="c1">#     &quot;max_iter&quot;: 5000,</span>
-    <span class="c1">#     &quot;warm_start&quot;: True,</span>
-    <span class="c1"># )</span>
-    <span class="c1"># This will allow us to remove logistic_regression_kwargs and sklearn_model</span>
-    <span class="c1"># a user could then just update the LogisticRegression by providing a different LogisticRegression implementation</span>
-    <span class="c1"># Or any other sklearn classifier (e.g. RandomForestClassifier)</span>
-    <span class="n">model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;sklearn&quot;</span><span class="p">,</span>
+    <span class="n">model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">ClassifierMixin</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;sklearn&quot;</span><span class="p">,</span>
     <span class="n">weight_trimming_mean_ratio</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
     <span class="n">weight_trimming_percentile</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">balance_classes</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -479,9 +468,7 @@
     <span class="n">one_hot_encoding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="c1"># TODO: This is set to be false in order to keep reproducibility of works that uses balance.</span>
     <span class="c1"># The best practice is for this to be true.</span>
-    <span class="n">logistic_regression_kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">random_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2020</span><span class="p">,</span>
-    <span class="n">sklearn_model</span><span class="p">:</span> <span class="n">ClassifierMixin</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
@@ -494,8 +481,19 @@
 <span class="sd">        target_weights (pd.Series): design weights for target</span>
 <span class="sd">        variables (Optional[List[str]], optional): list of variables to include in the model.</span>
 <span class="sd">            If None all joint variables of sample_df and target_df are used. Defaults to None.</span>
-<span class="sd">        model (str, optional): the model used for modeling the propensity scores.</span>
-<span class="sd">            &quot;sklearn&quot; is logistic model. Defaults to &quot;sklearn&quot; (no current alternatives).</span>
+<span class="sd">        model (Union[str, ClassifierMixin, None], optional): Model used for modeling the</span>
+<span class="sd">            propensity scores. Provide ``&quot;sklearn&quot;`` (default) or ``None`` to use logistic</span>
+<span class="sd">            regression, or pass an sklearn classifier implementing ``fit`` and</span>
+<span class="sd">            ``predict_proba``. Common choices include scikit-learn estimators such as</span>
+<span class="sd">            :class:`sklearn.linear_model.LogisticRegression`,</span>
+<span class="sd">            :class:`sklearn.ensemble.RandomForestClassifier`,</span>
+<span class="sd">            :class:`sklearn.ensemble.GradientBoostingClassifier`,</span>
+<span class="sd">            :class:`sklearn.ensemble.HistGradientBoostingClassifier`, and</span>
+<span class="sd">            :class:`sklearn.linear_model.SGDClassifier` configured with</span>
+<span class="sd">            ``loss=&quot;log_loss&quot;``. To customize the built-in logistic regression</span>
+<span class="sd">            settings, pass a configured :class:`sklearn.linear_model.LogisticRegression`</span>
+<span class="sd">            instance as ``model``. Custom classifiers should expose a</span>
+<span class="sd">            ``predict_proba`` method returning class probabilities.</span>
 <span class="sd">        weight_trimming_mean_ratio (Optional[Union[int, float]], optional): indicating the ratio from above according to which</span>
 <span class="sd">            the weights are trimmed by mean(weights) * ratio.</span>
 <span class="sd">            Defaults to 20.</span>
@@ -526,24 +524,115 @@
 <span class="sd">            categorical variables with more than 2 categories (i.e. the</span>
 <span class="sd">            number of columns will be equal to the number of categories),</span>
 <span class="sd">            and only 1 column for variables with 2 levels (treatment contrast). Defaults to False.</span>
-<span class="sd">        logistic_regression_kwargs (Optional[Dict[str, Any]], optional): Additional keyword arguments</span>
-<span class="sd">            passed to :class:`sklearn.linear_model.LogisticRegression`. When None, the</span>
-<span class="sd">            model defaults to ``penalty=&quot;l2&quot;``, ``solver=&quot;lbfgs&quot;``, ``tol=1e-4``,</span>
-<span class="sd">            ``max_iter=5000``, and ``warm_start=True``. Defaults to None.</span>
 <span class="sd">        random_seed (int, optional): Random seed to use. Defaults to 2020.</span>
-<span class="sd">        sklearn_model (Optional[ClassifierMixin], optional): Custom sklearn classifier</span>
-<span class="sd">            to use for propensity modeling instead of the default logistic</span>
-<span class="sd">            regression. The estimator must implement ``fit`` and</span>
-<span class="sd">            ``predict_proba``. When provided, ``logistic_regression_kwargs`` and</span>
-<span class="sd">            ``penalty_factor`` are ignored. Defaults to None.</span>
-<span class="sd">            TODO: add list of (at least some of) the supported sklearn models</span>
-<span class="sd">            TODO: add exampels in the docstring</span>
-<span class="sd">            TODO: create a new tutorial quickstart_ipw (like this https://import-balance.org/docs/tutorials/quickstart/),</span>
-<span class="sd">                  that will include examples of the new supported models.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        Example 1: Using RandomForestClassifier</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from balance.datasets import load_sim_data</span>
+<span class="sd">            from balance.weighting_methods.ipw import ipw</span>
+<span class="sd">            from sklearn.ensemble import RandomForestClassifier</span>
+
+<span class="sd">            # Load simulated data</span>
+<span class="sd">            target_df, sample_df = load_sim_data()</span>
+
+<span class="sd">            # Assign weights</span>
+<span class="sd">            sample_weights = pd.Series(1, index=sample_df.index)</span>
+<span class="sd">            target_weights = pd.Series(1, index=target_df.index)</span>
+
+<span class="sd">            # Define model</span>
+<span class="sd">            rf = RandomForestClassifier(n_estimators=200, random_state=0)</span>
+
+<span class="sd">            # Run IPW with sklearn model</span>
+<span class="sd">            result_rf = ipw(</span>
+<span class="sd">                sample_df,</span>
+<span class="sd">                sample_weights,</span>
+<span class="sd">                target_df,</span>
+<span class="sd">                target_weights,</span>
+<span class="sd">                variables=[&quot;gender&quot;, &quot;age_group&quot;, &quot;income&quot;],</span>
+<span class="sd">                model=rf,</span>
+<span class="sd">            )</span>
+<span class="sd">            print(&quot;RandomForestClassifier result:&quot;)</span>
+<span class="sd">            print(result_rf)</span>
+
+<span class="sd">        Output::</span>
+
+<span class="sd">            RandomForestClassifier result:</span>
+<span class="sd">            {&#39;weight&#39;: 0      6.727622</span>
+<span class="sd">            1      6.811271</span>
+<span class="sd">            2      1.861028</span>
+<span class="sd">            3      5.023780</span>
+<span class="sd">            4      8.212948</span>
+<span class="sd">                     ...</span>
+<span class="sd">            995    8.302406</span>
+<span class="sd">            996    2.229000</span>
+<span class="sd">            997    8.344916</span>
+<span class="sd">            998    9.747695</span>
+<span class="sd">            999    6.018009</span>
+<span class="sd">            Length: 1000, dtype: float64, &#39;model&#39;: {&#39;method&#39;: &#39;ipw&#39;, ...}}</span>
+
+<span class="sd">        Example 2: Using default sklearn model (LogisticRegression)</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            # Run IPW with default sklearn model</span>
+<span class="sd">            result_sklearn = ipw(</span>
+<span class="sd">                sample_df,</span>
+<span class="sd">                sample_weights,</span>
+<span class="sd">                target_df,</span>
+<span class="sd">                target_weights,</span>
+<span class="sd">                variables=[&quot;gender&quot;, &quot;age_group&quot;, &quot;income&quot;],</span>
+<span class="sd">                model=&quot;sklearn&quot;,</span>
+<span class="sd">            )</span>
+<span class="sd">            print(&quot;Default sklearn model result:&quot;)</span>
+<span class="sd">            print(result_sklearn)</span>
+
+<span class="sd">        Output::</span>
+
+<span class="sd">            Default sklearn model result:</span>
+<span class="sd">            {&#39;weight&#39;: 0       6.531728</span>
+<span class="sd">            1       9.617159</span>
+<span class="sd">            2       3.562973</span>
+<span class="sd">            3       6.952117</span>
+<span class="sd">            4       5.129230</span>
+<span class="sd">                     ...</span>
+<span class="sd">            995     9.353052</span>
+<span class="sd">            996     3.973554</span>
+<span class="sd">            997     7.095483</span>
+<span class="sd">            998    11.331144</span>
+<span class="sd">            999     7.913133</span>
+<span class="sd">            Length: 1000, dtype: float64, &#39;model&#39;: {&#39;method&#39;: &#39;ipw&#39;, ...}}</span>
+
+<span class="sd">        Example 3: Comparing weights from different models</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            # Combine weights into a DataFrame</span>
+<span class="sd">            comparison_df = pd.DataFrame({</span>
+<span class="sd">                &#39;RandomForest&#39;: result_rf[&#39;weight&#39;],</span>
+<span class="sd">                &#39;Sklearn&#39;: result_sklearn[&#39;weight&#39;]</span>
+<span class="sd">            })</span>
+<span class="sd">            # Calculate difference</span>
+<span class="sd">            comparison_df[&#39;Difference&#39;] = comparison_df[&#39;RandomForest&#39;] - comparison_df[&#39;Sklearn&#39;]</span>
+<span class="sd">            # Print summary statistics</span>
+<span class="sd">            print(&quot;\nMean difference:&quot;, comparison_df[&#39;Difference&#39;].mean())</span>
+<span class="sd">            print(&quot;Std difference:&quot;, comparison_df[&#39;Difference&#39;].std())</span>
+
+<span class="sd">        Output::</span>
+
+<span class="sd">            Mean difference: -2.9416469260468146e-15</span>
+<span class="sd">            Std difference: 8.043311719328154</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        Exception: f&quot;Sample indicator only has value {_n_unique}. This can happen when your sample or target are empty from unknown reason&quot;</span>
-<span class="sd">        NotImplementedError: if model is not &quot;sklearn&quot;</span>
+<span class="sd">        NotImplementedError: If ``model`` is a string other than &quot;sklearn&quot; (the</span>
+<span class="sd">            built-in logistic regression option) or the deprecated &quot;glmnet&quot;.</span>
+<span class="sd">        TypeError: If ``model`` is neither a supported string nor an sklearn</span>
+<span class="sd">            classifier exposing ``predict_proba``.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict[str, Any]: A dictionary includes:</span>
@@ -563,11 +652,26 @@
 <span class="sd">                },</span>
 <span class="sd">            }</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;glmnet&quot;</span><span class="p">:</span>
+    <span class="n">custom_model</span><span class="p">:</span> <span class="n">ClassifierMixin</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">ClassifierMixin</span><span class="p">):</span>
+        <span class="n">custom_model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="n">model_name</span> <span class="o">=</span> <span class="s2">&quot;sklearn&quot;</span>
+    <span class="k">elif</span> <span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">model_name</span> <span class="o">=</span> <span class="s2">&quot;sklearn&quot;</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">model_name</span> <span class="o">=</span> <span class="n">model</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="s2">&quot;model must be &#39;sklearn&#39;, an sklearn classifier implementing predict_proba, or None&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s2">&quot;glmnet&quot;</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;glmnet is no longer supported&quot;</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">model</span> <span class="o">!=</span> <span class="s2">&quot;sklearn&quot;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">model_name</span> <span class="o">!=</span> <span class="s2">&quot;sklearn&quot;</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Model &#39;</span><span class="si">{</span><span class="n">model</span><span class="si">}</span><span class="s2">&#39; is not supported. Only &#39;sklearn&#39; is currently implemented.&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Model &#39;</span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s2">&#39; is not supported. Only &#39;sklearn&#39; is currently implemented.&quot;</span>
         <span class="p">)</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting ipw function&quot;</span><span class="p">)</span>
@@ -671,9 +775,7 @@
         <span class="n">model_weights</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="n">using_default_logistic</span> <span class="o">=</span> <span class="n">sklearn_model</span> <span class="ow">is</span> <span class="kc">None</span>
-
-    <span class="k">if</span> <span class="n">using_default_logistic</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">custom_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># using_default_logistic</span>
         <span class="c1"># Standardize columns of the X matrix and penalize the columns of the X matrix according to the penalty_factor.</span>
         <span class="c1"># Workaround for sklearn, which doesn&#39;t allow for covariate specific penalty terms.</span>
         <span class="c1"># Note that penalty = 0 is not truly supported, and large differences in penalty factors</span>
@@ -705,8 +807,6 @@
             <span class="s2">&quot;max_iter&quot;</span><span class="p">:</span> <span class="mi">5000</span><span class="p">,</span>
             <span class="s2">&quot;warm_start&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
         <span class="p">}</span>
-        <span class="k">if</span> <span class="n">logistic_regression_kwargs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">lr_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">logistic_regression_kwargs</span><span class="p">)</span>
 
         <span class="n">lr</span> <span class="o">=</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="o">**</span><span class="n">lr_kwargs</span><span class="p">)</span>
         <span class="n">fits</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ClassifierMixin</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lambdas</span><span class="p">))]</span>
@@ -756,19 +856,13 @@
             <span class="n">fits</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">logistic_regression_kwargs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;logistic_regression_kwargs cannot be used when providing a custom sklearn_model&quot;</span>
-            <span class="p">)</span>
         <span class="k">if</span> <span class="n">penalty_factor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">&quot;penalty_factor is ignored when using a custom sklearn_model.&quot;</span>
-            <span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;penalty_factor is ignored when using a custom model.&quot;</span><span class="p">)</span>
 
-        <span class="n">custom_model</span> <span class="o">=</span> <span class="n">clone</span><span class="p">(</span><span class="n">cast</span><span class="p">(</span><span class="n">ClassifierMixin</span><span class="p">,</span> <span class="n">sklearn_model</span><span class="p">))</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">custom_model</span><span class="p">,</span> <span class="s2">&quot;predict_proba&quot;</span><span class="p">):</span>
+        <span class="n">cloned_model</span> <span class="o">=</span> <span class="n">clone</span><span class="p">(</span><span class="n">custom_model</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">cloned_model</span><span class="p">,</span> <span class="s2">&quot;predict_proba&quot;</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;The provided sklearn_model must implement predict_proba for propensity estimation.&quot;</span>
+                <span class="s2">&quot;The provided custom model must implement predict_proba for propensity estimation.&quot;</span>
             <span class="p">)</span>
 
         <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">_convert_to_dense_array</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">)</span>
@@ -781,17 +875,17 @@
         <span class="n">cv_dev_mean</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">]</span>
         <span class="n">cv_dev_sd</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">]</span>
 
-        <span class="n">model</span> <span class="o">=</span> <span class="n">custom_model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="n">model_weights</span><span class="p">)</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">cloned_model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="n">model_weights</span><span class="p">)</span>
         <span class="n">probas</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">probas</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">probas</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;The provided sklearn_model.predict_proba must return probability estimates for both classes.&quot;</span>
+                <span class="s2">&quot;The provided custom model predict_proba must return probability estimates for both classes.&quot;</span>
             <span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">class_index</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">classes_</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;The provided sklearn_model must be trained on the binary labels {0, 1}.&quot;</span>
+                <span class="s2">&quot;The provided custom model must be trained on the binary labels {0, 1}.&quot;</span>
             <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
         <span class="n">pred</span> <span class="o">=</span> <span class="n">probas</span><span class="p">[:,</span> <span class="n">class_index</span><span class="p">]</span>
         <span class="n">dev</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">_compute_deviance</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">model_weights</span><span class="p">)</span>
@@ -821,7 +915,7 @@
         <span class="n">best_s_index</span> <span class="o">=</span> <span class="n">regularisation_perf</span><span class="p">[</span><span class="s2">&quot;best&quot;</span><span class="p">][</span><span class="s2">&quot;s_index&quot;</span><span class="p">]</span>
         <span class="n">weight_trimming_mean_ratio</span> <span class="o">=</span> <span class="n">regularisation_perf</span><span class="p">[</span><span class="s2">&quot;best&quot;</span><span class="p">][</span><span class="s2">&quot;trim&quot;</span><span class="p">]</span>
         <span class="n">weight_trimming_percentile</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="k">elif</span> <span class="n">num_lambdas</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">using_default_logistic</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">num_lambdas</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">custom_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># using_default_logistic</span>
         <span class="c1"># Cross-validation procedure</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting model selection&quot;</span><span class="p">)</span>
 
@@ -857,7 +951,7 @@
     <span class="p">)</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Chosen lambda: </span><span class="si">{</span><span class="n">best_s</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="n">best_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;best_model should not be None at this point&quot;</span>
+    <span class="n">best_model</span> <span class="o">=</span> <span class="n">_verify_value_type</span><span class="p">(</span><span class="n">best_model</span><span class="p">)</span>
     <span class="n">performance</span> <span class="o">=</span> <span class="n">model_coefs</span><span class="p">(</span>
         <span class="n">best_model</span><span class="p">,</span>
         <span class="n">feature_names</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">X_matrix_columns_names</span><span class="p">),</span>
@@ -865,7 +959,9 @@
     <span class="n">performance</span><span class="p">[</span><span class="s2">&quot;null_deviance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">null_dev</span>
     <span class="n">performance</span><span class="p">[</span><span class="s2">&quot;deviance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dev</span><span class="p">[</span><span class="n">best_s_index</span><span class="p">]</span>
     <span class="n">performance</span><span class="p">[</span><span class="s2">&quot;prop_dev_explained&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prop_dev</span><span class="p">[</span><span class="n">best_s_index</span><span class="p">]</span>
-    <span class="k">if</span> <span class="n">max_de</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">num_lambdas</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">using_default_logistic</span><span class="p">:</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">max_de</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">num_lambdas</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">custom_model</span> <span class="ow">is</span> <span class="kc">None</span>
+    <span class="p">):</span>  <span class="c1"># using_default_logistic</span>
         <span class="n">performance</span><span class="p">[</span><span class="s2">&quot;cv_dev_mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cv_dev_mean</span><span class="p">[</span><span class="n">best_s_index</span><span class="p">]</span>
         <span class="n">performance</span><span class="p">[</span><span class="s2">&quot;lambda_min&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lambdas</span><span class="p">[</span><span class="n">min_s_index</span><span class="p">]</span>
         <span class="n">performance</span><span class="p">[</span><span class="s2">&quot;min_cv_dev_mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cv_dev_mean</span><span class="p">[</span><span class="n">min_s_index</span><span class="p">]</span>
