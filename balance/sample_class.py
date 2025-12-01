@@ -446,6 +446,58 @@ class Sample:
 
         Returns:
             Sample: an adjusted Sample object
+
+        Examples:
+            ::
+
+                import balance
+                from sklearn.ensemble import RandomForestClassifier
+                from balance import Sample
+                from balance import load_data
+
+                # Load simulated data
+                target_df, sample_df = load_data()
+
+                sample = Sample.from_frame(sample_df, outcome_columns=["happiness"])
+                # Often times we don'y have the outcome for the target. In this case we've added it just to validate later that the weights indeed help us reduce the bias
+                target = Sample.from_frame(target_df, outcome_columns=["happiness"])
+
+                sample_with_target = sample.set_target(target)
+                adjusted = sample_with_target.adjust()
+
+                rf = RandomForestClassifier(n_estimators=200, random_state=0)
+                adjusted_rf = sample_with_target.adjust(model = rf)
+
+                # Print ASMD tables for both adjusted and adjusted_rf
+                print("\\n=== Adjusted ASMD ===")
+                print(adjusted.covars().asmd().T)
+
+                print("\\n=== Adjusted_RF ASMD ===")
+                print(adjusted_rf.covars().asmd().T)
+
+                # output
+                #
+                # === Adjusted ASMD ===
+                # source                  self  unadjusted  unadjusted - self
+                # age_group[T.25-34]  0.021777    0.005688          -0.016090
+                # age_group[T.35-44]  0.055884    0.312711           0.256827
+                # age_group[T.45+]    0.169816    0.378828           0.209013
+                # gender[Female]      0.097916    0.375699           0.277783
+                # gender[Male]        0.103989    0.379314           0.275324
+                # gender[_NA]         0.010578    0.006296          -0.004282
+                # income              0.205469    0.494217           0.288748
+                # mean(asmd)          0.119597    0.326799           0.207202
+                #
+                # === Adjusted_RF ASMD ===
+                # source                  self  unadjusted  unadjusted - self
+                # age_group[T.25-34]  0.074491    0.005688          -0.068804
+                # age_group[T.35-44]  0.022383    0.312711           0.290328
+                # age_group[T.45+]    0.145628    0.378828           0.233201
+                # gender[Female]      0.037700    0.375699           0.337999
+                # gender[Male]        0.067392    0.379314           0.311922
+                # gender[_NA]         0.051718    0.006296          -0.045422
+                # income              0.140655    0.494217           0.353562
+                # mean(asmd)          0.091253    0.326799           0.235546
         """
         if target is None:
             self._no_target_error()

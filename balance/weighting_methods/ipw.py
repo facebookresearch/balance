@@ -399,19 +399,7 @@ def ipw(
     target_df: pd.DataFrame,
     target_weights: pd.Series,
     variables: list[str] | None = None,
-    # TODO: change 'model' to be Union[Optional[ClassifierMixin], str]
-    #       in which the default will be
-    # LogisticRegression(
-    #     "penalty": "l2",
-    #     "solver": "lbfgs",
-    #     "tol": 1e-4,
-    #     "max_iter": 5000,
-    #     "warm_start": True,
-    # )
-    # This will allow us to remove logistic_regression_kwargs and sklearn_model
-    # a user could then just update the LogisticRegression by providing a different LogisticRegression implementation
-    # Or any other sklearn classifier (e.g. RandomForestClassifier)
-    model: str = "sklearn",
+    model: str | ClassifierMixin | None = "sklearn",
     weight_trimming_mean_ratio: int | float | None = 20,
     weight_trimming_percentile: float | None = None,
     balance_classes: bool = True,
@@ -426,9 +414,7 @@ def ipw(
     one_hot_encoding: bool = False,
     # TODO: This is set to be false in order to keep reproducibility of works that uses balance.
     # The best practice is for this to be true.
-    logistic_regression_kwargs: Dict[str, Any] | None = None,
     random_seed: int = 2020,
-    sklearn_model: ClassifierMixin | None = None,
     *args: Any,
     **kwargs: Any,
 ) -> Dict[str, Any]:
@@ -441,8 +427,19 @@ def ipw(
         target_weights (pd.Series): design weights for target
         variables (Optional[List[str]], optional): list of variables to include in the model.
             If None all joint variables of sample_df and target_df are used. Defaults to None.
-        model (str, optional): the model used for modeling the propensity scores.
-            "sklearn" is logistic model. Defaults to "sklearn" (no current alternatives).
+        model (Union[str, ClassifierMixin, None], optional): Model used for modeling the
+            propensity scores. Provide ``"sklearn"`` (default) or ``None`` to use logistic
+            regression, or pass an sklearn classifier implementing ``fit`` and
+            ``predict_proba``. Common choices include scikit-learn estimators such as
+            :class:`sklearn.linear_model.LogisticRegression`,
+            :class:`sklearn.ensemble.RandomForestClassifier`,
+            :class:`sklearn.ensemble.GradientBoostingClassifier`,
+            :class:`sklearn.ensemble.HistGradientBoostingClassifier`, and
+            :class:`sklearn.linear_model.SGDClassifier` configured with
+            ``loss="log_loss"``. To customize the built-in logistic regression
+            settings, pass a configured :class:`sklearn.linear_model.LogisticRegression`
+            instance as ``model``. Custom classifiers should expose a
+            ``predict_proba`` method returning class probabilities.
         weight_trimming_mean_ratio (Optional[Union[int, float]], optional): indicating the ratio from above according to which
             the weights are trimmed by mean(weights) * ratio.
             Defaults to 20.
@@ -473,24 +470,115 @@ def ipw(
             categorical variables with more than 2 categories (i.e. the
             number of columns will be equal to the number of categories),
             and only 1 column for variables with 2 levels (treatment contrast). Defaults to False.
-        logistic_regression_kwargs (Optional[Dict[str, Any]], optional): Additional keyword arguments
-            passed to :class:`sklearn.linear_model.LogisticRegression`. When None, the
-            model defaults to ``penalty="l2"``, ``solver="lbfgs"``, ``tol=1e-4``,
-            ``max_iter=5000``, and ``warm_start=True``. Defaults to None.
         random_seed (int, optional): Random seed to use. Defaults to 2020.
-        sklearn_model (Optional[ClassifierMixin], optional): Custom sklearn classifier
-            to use for propensity modeling instead of the default logistic
-            regression. The estimator must implement ``fit`` and
-            ``predict_proba``. When provided, ``logistic_regression_kwargs`` and
-            ``penalty_factor`` are ignored. Defaults to None.
-            TODO: add list of (at least some of) the supported sklearn models
-            TODO: add exampels in the docstring
-            TODO: create a new tutorial quickstart_ipw (like this https://import-balance.org/docs/tutorials/quickstart/),
-                  that will include examples of the new supported models.
+
+    Examples:
+        Example 1: Using RandomForestClassifier
+
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.datasets import load_sim_data
+            from balance.weighting_methods.ipw import ipw
+            from sklearn.ensemble import RandomForestClassifier
+
+            # Load simulated data
+            target_df, sample_df = load_sim_data()
+
+            # Assign weights
+            sample_weights = pd.Series(1, index=sample_df.index)
+            target_weights = pd.Series(1, index=target_df.index)
+
+            # Define model
+            rf = RandomForestClassifier(n_estimators=200, random_state=0)
+
+            # Run IPW with sklearn model
+            result_rf = ipw(
+                sample_df,
+                sample_weights,
+                target_df,
+                target_weights,
+                variables=["gender", "age_group", "income"],
+                model=rf,
+            )
+            print("RandomForestClassifier result:")
+            print(result_rf)
+
+        Output::
+
+            RandomForestClassifier result:
+            {'weight': 0      6.727622
+            1      6.811271
+            2      1.861028
+            3      5.023780
+            4      8.212948
+                     ...
+            995    8.302406
+            996    2.229000
+            997    8.344916
+            998    9.747695
+            999    6.018009
+            Length: 1000, dtype: float64, 'model': {'method': 'ipw', ...}}
+
+        Example 2: Using default sklearn model (LogisticRegression)
+
+        .. code-block:: python
+
+            # Run IPW with default sklearn model
+            result_sklearn = ipw(
+                sample_df,
+                sample_weights,
+                target_df,
+                target_weights,
+                variables=["gender", "age_group", "income"],
+                model="sklearn",
+            )
+            print("Default sklearn model result:")
+            print(result_sklearn)
+
+        Output::
+
+            Default sklearn model result:
+            {'weight': 0       6.531728
+            1       9.617159
+            2       3.562973
+            3       6.952117
+            4       5.129230
+                     ...
+            995     9.353052
+            996     3.973554
+            997     7.095483
+            998    11.331144
+            999     7.913133
+            Length: 1000, dtype: float64, 'model': {'method': 'ipw', ...}}
+
+        Example 3: Comparing weights from different models
+
+        .. code-block:: python
+
+            import pandas as pd
+            # Combine weights into a DataFrame
+            comparison_df = pd.DataFrame({
+                'RandomForest': result_rf['weight'],
+                'Sklearn': result_sklearn['weight']
+            })
+            # Calculate difference
+            comparison_df['Difference'] = comparison_df['RandomForest'] - comparison_df['Sklearn']
+            # Print summary statistics
+            print("\nMean difference:", comparison_df['Difference'].mean())
+            print("Std difference:", comparison_df['Difference'].std())
+
+        Output::
+
+            Mean difference: -2.9416469260468146e-15
+            Std difference: 8.043311719328154
 
     Raises:
         Exception: f"Sample indicator only has value {_n_unique}. This can happen when your sample or target are empty from unknown reason"
-        NotImplementedError: if model is not "sklearn"
+        NotImplementedError: If ``model`` is a string other than "sklearn" (the
+            built-in logistic regression option) or the deprecated "glmnet".
+        TypeError: If ``model`` is neither a supported string nor an sklearn
+            classifier exposing ``predict_proba``.
 
     Returns:
         Dict[str, Any]: A dictionary includes:
@@ -510,11 +598,26 @@ def ipw(
                 },
             }
     """
-    if model == "glmnet":
+    custom_model: ClassifierMixin | None = None
+    model_name: str | None = None
+
+    if isinstance(model, ClassifierMixin):
+        custom_model = model
+        model_name = "sklearn"
+    elif model is None:
+        model_name = "sklearn"
+    elif isinstance(model, str):
+        model_name = model
+    else:
+        raise TypeError(
+            "model must be 'sklearn', an sklearn classifier implementing predict_proba, or None"
+        )
+
+    if model_name == "glmnet":
         raise NotImplementedError("glmnet is no longer supported")
-    elif model != "sklearn":
+    elif model_name != "sklearn":
         raise NotImplementedError(
-            f"Model '{model}' is not supported. Only 'sklearn' is currently implemented."
+            f"Model '{model_name}' is not supported. Only 'sklearn' is currently implemented."
         )
 
     logger.info("Starting ipw function")
@@ -618,9 +721,7 @@ def ipw(
         model_weights,
     )
 
-    using_default_logistic = sklearn_model is None
-
-    if using_default_logistic:
+    if custom_model is None:  # using_default_logistic
         # Standardize columns of the X matrix and penalize the columns of the X matrix according to the penalty_factor.
         # Workaround for sklearn, which doesn't allow for covariate specific penalty terms.
         # Note that penalty = 0 is not truly supported, and large differences in penalty factors
@@ -652,8 +753,6 @@ def ipw(
             "max_iter": 5000,
             "warm_start": True,
         }
-        if logistic_regression_kwargs is not None:
-            lr_kwargs.update(logistic_regression_kwargs)
 
         lr = LogisticRegression(**lr_kwargs)
         fits: list[ClassifierMixin | None] = [None for _ in range(len(lambdas))]
@@ -703,19 +802,13 @@ def ipw(
             fits[i] = copy.deepcopy(model)
 
     else:
-        if logistic_regression_kwargs is not None:
-            raise ValueError(
-                "logistic_regression_kwargs cannot be used when providing a custom sklearn_model"
-            )
         if penalty_factor is not None:
-            logger.warning(
-                "penalty_factor is ignored when using a custom sklearn_model."
-            )
+            logger.warning("penalty_factor is ignored when using a custom model.")
 
-        custom_model = clone(cast(ClassifierMixin, sklearn_model))
-        if not hasattr(custom_model, "predict_proba"):
+        cloned_model = clone(custom_model)
+        if not hasattr(cloned_model, "predict_proba"):
             raise ValueError(
-                "The provided sklearn_model must implement predict_proba for propensity estimation."
+                "The provided custom model must implement predict_proba for propensity estimation."
             )
 
         X_matrix = _convert_to_dense_array(X_matrix)
@@ -728,17 +821,17 @@ def ipw(
         cv_dev_mean = [np.nan]
         cv_dev_sd = [np.nan]
 
-        model = custom_model.fit(X_matrix, y, sample_weight=model_weights)
+        model = cloned_model.fit(X_matrix, y, sample_weight=model_weights)
         probas = model.predict_proba(X_matrix)
         if probas.ndim != 2 or probas.shape[1] < 2:
             raise ValueError(
-                "The provided sklearn_model.predict_proba must return probability estimates for both classes."
+                "The provided custom model predict_proba must return probability estimates for both classes."
             )
         try:
             class_index = list(model.classes_).index(1)
         except ValueError as error:
             raise ValueError(
-                "The provided sklearn_model must be trained on the binary labels {0, 1}."
+                "The provided custom model must be trained on the binary labels {0, 1}."
             ) from error
         pred = probas[:, class_index]
         dev[0] = _compute_deviance(y, pred, model_weights)
@@ -768,7 +861,7 @@ def ipw(
         best_s_index = regularisation_perf["best"]["s_index"]
         weight_trimming_mean_ratio = regularisation_perf["best"]["trim"]
         weight_trimming_percentile = None
-    elif num_lambdas > 1 and using_default_logistic:
+    elif num_lambdas > 1 and custom_model is None:  # using_default_logistic
         # Cross-validation procedure
         logger.info("Starting model selection")
 
@@ -812,7 +905,9 @@ def ipw(
     performance["null_deviance"] = null_dev
     performance["deviance"] = dev[best_s_index]
     performance["prop_dev_explained"] = prop_dev[best_s_index]
-    if max_de is None and num_lambdas > 1 and using_default_logistic:
+    if (
+        max_de is None and num_lambdas > 1 and custom_model is None
+    ):  # using_default_logistic
         performance["cv_dev_mean"] = cv_dev_mean[best_s_index]
         performance["lambda_min"] = lambdas[min_s_index]
         performance["min_cv_dev_mean"] = cv_dev_mean[min_s_index]

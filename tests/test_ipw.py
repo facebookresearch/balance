@@ -199,25 +199,27 @@ class TestIPW(
             transformations=None,
         )
 
-    def test_ipw_allows_custom_logistic_regression_kwargs(self) -> None:
-        """Users can override LogisticRegression configuration via kwargs."""
+    def test_ipw_allows_custom_logistic_regression_model(self) -> None:
+        """Users can override LogisticRegression configuration by passing an estimator."""
 
         sample = pd.DataFrame({"a": (0, 1, 1, 0), "b": (1, 2, 3, 4)})
         target = pd.DataFrame({"a": (1, 0, 0, 1), "b": (4, 3, 2, 1)})
 
+        configured_lr = LogisticRegression(solver="lbfgs", max_iter=500)
         result = balance_ipw.ipw(
             sample_df=sample,
             sample_weights=pd.Series((1,) * len(sample)),
             target_df=target,
             target_weights=pd.Series((1,) * len(target)),
-            logistic_regression_kwargs={"solver": "saga", "max_iter": 200},
+            model=configured_lr,
             max_de=None,
             num_lambdas=1,
         )
 
         fit = result["model"]["fit"]
-        self.assertEqual(fit.solver, "saga")
-        self.assertEqual(fit.max_iter, 200)
+        self.assertIsInstance(fit, LogisticRegression)
+        self.assertEqual(fit.solver, "lbfgs")
+        self.assertEqual(fit.max_iter, 500)
 
     def test_ipw_supports_custom_sklearn_model(self) -> None:
         """Custom sklearn models (e.g., RandomForest) can drive propensity scores."""
@@ -242,7 +244,7 @@ class TestIPW(
             sample_weights=pd.Series(np.ones(len(sample))),
             target_df=target,
             target_weights=pd.Series(np.ones(len(target))),
-            sklearn_model=rf,
+            model=rf,
             transformations=None,
             num_lambdas=1,
             max_de=1.5,
@@ -257,6 +259,31 @@ class TestIPW(
         self.assertLessEqual(prop_dev, 1.0)
         self.assertIsNotNone(result["model"]["regularisation_perf"])
 
+    def test_ipw_supports_custom_model_parameter(self) -> None:
+        """The ``model`` parameter accepts sklearn classifiers directly."""
+
+        rng = np.random.RandomState(11)
+        sample = pd.DataFrame({"a": rng.normal(size=25), "b": rng.binomial(1, 0.3, 25)})
+        target = pd.DataFrame({"a": rng.normal(size=40), "b": rng.binomial(1, 0.6, 40)})
+
+        classifier = RandomForestClassifier(
+            n_estimators=10, max_depth=2, random_state=4
+        )
+        result = balance_ipw.ipw(
+            sample_df=sample,
+            sample_weights=pd.Series(np.ones(len(sample))),
+            target_df=target,
+            target_weights=pd.Series(np.ones(len(target))),
+            model=classifier,
+            transformations=None,
+            num_lambdas=1,
+            max_de=1.5,
+        )
+
+        self.assertIsInstance(result["model"]["fit"], RandomForestClassifier)
+        self.assertTrue(np.isnan(result["model"]["lambda"]))
+        self.assertEqual(len(result["weight"]), len(sample))
+
     def test_ipw_supports_dense_only_estimators(self) -> None:
         """Estimators that require dense matrices (e.g., GaussianNB) are supported."""
 
@@ -270,7 +297,7 @@ class TestIPW(
             sample_weights=pd.Series(np.ones(len(sample))),
             target_df=target,
             target_weights=pd.Series(np.ones(len(target))),
-            sklearn_model=model,
+            model=model,
             transformations=None,
             num_lambdas=1,
             max_de=1.5,
@@ -293,7 +320,7 @@ class TestIPW(
             sample_weights=pd.Series(np.ones(len(sample))),
             target_df=target,
             target_weights=pd.Series(np.ones(len(target))),
-            sklearn_model=tree,
+            model=tree,
             transformations=None,
             num_lambdas=1,
             max_de=1.5,
@@ -314,7 +341,7 @@ class TestIPW(
                 sample_weights=pd.Series((1,) * len(sample)),
                 target_df=target,
                 target_weights=pd.Series((1,) * len(target)),
-                sklearn_model=LinearSVC(),
+                model=LinearSVC(),
                 transformations=None,
                 num_lambdas=1,
             )
@@ -323,7 +350,7 @@ class TestIPW(
         """Custom models must return probability estimates for both classes."""
 
         class SingleColumnRF(RandomForestClassifier):
-            def predict_proba(self, X):  # type: ignore[override]
+            def predict_proba(self, X: np.ndarray) -> np.ndarray:
                 full = super().predict_proba(X)
                 return full[:, :1]
 
@@ -339,25 +366,30 @@ class TestIPW(
                 sample_weights=pd.Series(np.ones(len(sample))),
                 target_df=target,
                 target_weights=pd.Series(np.ones(len(target))),
-                sklearn_model=SingleColumnRF(n_estimators=5, random_state=2),
+                model=SingleColumnRF(n_estimators=5, random_state=2),
                 transformations=None,
                 num_lambdas=1,
             )
 
-    def test_ipw_rejects_logistic_kwargs_with_custom_model(self) -> None:
-        """Providing logistic_regression_kwargs with custom model raises an error."""
+    def test_ipw_rejects_custom_models_without_binary_classes(self) -> None:
+        """Custom models must be trained on labels containing both 0 and 1."""
 
-        sample = pd.DataFrame({"a": (0, 1, 1, 0)})
-        target = pd.DataFrame({"a": (1, 0, 0, 1)})
+        class InvalidClassLabelModel(LogisticRegression):
+            def fit(self, X, y, sample_weight=None):  # type: ignore[override]
+                super().fit(X, y + 2, sample_weight=sample_weight)
+                return self
 
-        with self.assertRaisesRegex(ValueError, "logistic_regression_kwargs"):
+        rng = np.random.RandomState(12)
+        sample = pd.DataFrame({"a": rng.normal(size=30)})
+        target = pd.DataFrame({"a": rng.normal(size=40)})
+
+        with self.assertRaisesRegex(ValueError, "must be trained on the binary labels"):
             balance_ipw.ipw(
                 sample_df=sample,
-                sample_weights=pd.Series((1,) * len(sample)),
+                sample_weights=pd.Series(np.ones(len(sample))),
                 target_df=target,
-                target_weights=pd.Series((1,) * len(target)),
-                sklearn_model=RandomForestClassifier(n_estimators=10, random_state=1),
-                logistic_regression_kwargs={"max_iter": 10},
+                target_weights=pd.Series(np.ones(len(target))),
+                model=InvalidClassLabelModel(max_iter=50),
                 transformations=None,
                 num_lambdas=1,
             )
@@ -375,7 +407,7 @@ class TestIPW(
                 sample_weights=pd.Series(np.ones(len(sample))),
                 target_df=target,
                 target_weights=pd.Series(np.ones(len(target))),
-                sklearn_model=RandomForestClassifier(n_estimators=5, random_state=7),
+                model=RandomForestClassifier(n_estimators=5, random_state=7),
                 penalty_factor=[1.0],
                 transformations=None,
                 num_lambdas=1,
@@ -385,6 +417,23 @@ class TestIPW(
         self.assertTrue(
             any("penalty_factor is ignored" in message for message in logs.output)
         )
+
+    def test_ipw_rejects_unknown_model_identifier(self) -> None:
+        """Non-supported model identifiers raise NotImplementedError."""
+
+        sample = pd.DataFrame({"a": (0, 1)})
+        target = pd.DataFrame({"a": (1, 0)})
+
+        with self.assertRaises(NotImplementedError):
+            balance_ipw.ipw(
+                sample_df=sample,
+                sample_weights=pd.Series((1,) * len(sample)),
+                target_df=target,
+                target_weights=pd.Series((1,) * len(target)),
+                model="unsupported-model",
+                transformations=None,
+                num_lambdas=1,
+            )
 
     def test_model_coefs_handles_linear_and_non_linear_estimators(self) -> None:
         """model_coefs returns coefficients for linear models and empty series otherwise."""

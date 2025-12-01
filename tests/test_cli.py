@@ -9,12 +9,16 @@ from __future__ import annotations
 
 import os.path
 import tempfile
+from argparse import Namespace
 
 import balance.testutil
 import numpy as np
 import pandas as pd
 from balance.cli import _float_or_none, BalanceCLI, make_parser
+from balance.testutil import _verify_value_type
+
 from numpy import dtype
+from sklearn.linear_model import LogisticRegression
 
 # Test constants
 SAMPLE_SIZE_SMALL = 1000
@@ -122,6 +126,53 @@ class TestCli(
         self.assertEqual(_float_or_none(None), None)
         self.assertEqual(_float_or_none("None"), None)
         self.assertEqual(_float_or_none("13.37"), 13.37)
+
+    def test_cli_builds_logistic_regression_model(self) -> None:
+        """Ensure CLI JSON kwargs are parsed into a configured LogisticRegression."""
+        args = Namespace(
+            ipw_logistic_regression_kwargs='{"solver": "liblinear", "max_iter": 321}',
+            method="ipw",
+        )
+        cli = BalanceCLI(args)
+
+        kwargs = cli.logistic_regression_kwargs()
+        assert kwargs is not None
+        self.assertEqual(kwargs["solver"], "liblinear")
+        self.assertEqual(kwargs["max_iter"], 321)
+
+        model = _verify_value_type(cli.logistic_regression_model())
+        self.assertIsInstance(model, LogisticRegression)
+        if isinstance(model, LogisticRegression):
+            self.assertEqual(model.solver, "liblinear")
+            self.assertEqual(model.max_iter, 321)
+
+    def test_cli_omits_logistic_regression_model_without_kwargs(self) -> None:
+        """No kwargs should result in no model being constructed."""
+
+        cli = BalanceCLI(Namespace(ipw_logistic_regression_kwargs=None, method="ipw"))
+
+        self.assertIsNone(cli.logistic_regression_model())
+
+    def test_cli_rejects_non_mapping_logistic_regression_kwargs(self) -> None:
+        """Invalid JSON structures should raise clear errors."""
+        cli = BalanceCLI(Namespace(ipw_logistic_regression_kwargs="[]", method="ipw"))
+
+        with self.assertRaises(ValueError):
+            cli.logistic_regression_kwargs()
+
+    def test_cli_accepts_mapping_logistic_regression_kwargs(self) -> None:
+        """Dict inputs are forwarded directly without JSON parsing."""
+        cli = BalanceCLI(
+            Namespace(
+                ipw_logistic_regression_kwargs={"solver": "saga", "max_iter": 100},
+                method="ipw",
+            )
+        )
+
+        kwargs = cli.logistic_regression_kwargs()
+        assert kwargs is not None
+        self.assertEqual(kwargs["solver"], "saga")
+        self.assertEqual(kwargs["max_iter"], 100)
 
     def test_cli_succeed_on_weighting_failure(self) -> None:
         """Test CLI behavior when weighting fails but succeed_on_weighting_failure flag is set."""

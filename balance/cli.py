@@ -22,6 +22,8 @@ import pandas as pd
 
 from balance import __version__  # @manual
 from balance.sample_class import Sample as balance_sample_cls  # @manual
+from sklearn.base import ClassifierMixin
+from sklearn.linear_model import LogisticRegression
 
 logger: logging.Logger = logging.getLogger(__package__)
 
@@ -40,7 +42,6 @@ class BalanceCLI:
         self._lambda_max: float | None = None
         self._num_lambdas: int | None = None
         self._weight_trimming_mean_ratio: float = 20.0
-        self._logistic_regression_kwargs: Dict[str, Any] | None = None
         self._sample_cls: Type[balance_sample_cls] = balance_sample_cls
         self._sample_package_name: str = __package__
         self._sample_package_version: str = __version__
@@ -156,6 +157,12 @@ class BalanceCLI:
             )
         return parsed
 
+    def logistic_regression_model(self) -> ClassifierMixin | None:
+        kwargs = self.logistic_regression_kwargs()
+        if kwargs is None:
+            return None
+        return LogisticRegression(**kwargs)
+
     def split_sample(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         in_sample = df[self.sample_column()] == 1
         sample_df = df[in_sample]
@@ -175,7 +182,6 @@ class BalanceCLI:
         lambda_max: float | None = 10,
         num_lambdas: int | None = 250,
         weight_trimming_mean_ratio: float = 20,
-        logistic_regression_kwargs: Dict[str, Any] | None = None,
         sample_cls: Type[balance_sample_cls] = balance_sample_cls,
         sample_package_name: str = __package__,
     ) -> Dict[str, pd.DataFrame]:
@@ -226,21 +232,26 @@ class BalanceCLI:
         logger.info("%s target object: %s" % (sample_package_name, str(target)))
 
         try:
-            adjusted = sample.set_target(
-                target
-            ).adjust(
-                method=self.method(),  # pyre-ignore[6] it gets str, but the function will verify internally if it's the str it should be.
-                transformations=transformations,
-                formula=formula,
-                penalty_factor=penalty_factor,
-                one_hot_encoding=one_hot_encoding,
-                max_de=max_de,
-                lambda_min=lambda_min,
-                lambda_max=lambda_max,
-                num_lambdas=num_lambdas,
-                weight_trimming_mean_ratio=weight_trimming_mean_ratio,
-                logistic_regression_kwargs=logistic_regression_kwargs,
-            )
+            method = self.method()
+            model = self.logistic_regression_model() if method == "ipw" else None
+
+            adjusted_kwargs: Dict[str, Any] = {
+                "method": method,
+                "transformations": transformations,
+                "formula": formula,
+                "penalty_factor": penalty_factor,
+                "one_hot_encoding": one_hot_encoding,
+                "max_de": max_de,
+                "lambda_min": lambda_min,
+                "lambda_max": lambda_max,
+                "num_lambdas": num_lambdas,
+                "weight_trimming_mean_ratio": weight_trimming_mean_ratio,
+            }
+
+            if model is not None:
+                adjusted_kwargs["model"] = model
+
+            adjusted = sample.set_target(target).adjust(**adjusted_kwargs)
             logger.info("Succeeded with adjusting sample to target")
             logger.info("%s adjusted object: %s" % (sample_package_name, str(adjusted)))
 
@@ -383,7 +394,6 @@ class BalanceCLI:
         )
         max_de = self.max_de()
         weight_trimming_mean_ratio = self.weight_trimming_mean_ratio()
-        logistic_regression_kwargs = self.logistic_regression_kwargs()
         sample_cls, sample_package_name, sample_package_version = (
             balance_sample_cls,
             __package__,
@@ -401,7 +411,6 @@ class BalanceCLI:
             self._lambda_max,
             self._num_lambdas,
             self._weight_trimming_mean_ratio,
-            self._logistic_regression_kwargs,
             self._sample_cls,
             self._sample_package_name,
             self._sample_package_version,
@@ -415,7 +424,6 @@ class BalanceCLI:
             lambda_max,
             num_lambdas,
             weight_trimming_mean_ratio,
-            logistic_regression_kwargs,
             sample_cls,
             sample_package_name,
             sample_package_version,
@@ -433,7 +441,6 @@ class BalanceCLI:
             lambda_max,
             num_lambdas,
             weight_trimming_mean_ratio,
-            logistic_regression_kwargs,
             sample_cls,
             sample_package_name,
             sample_package_version,
@@ -447,7 +454,6 @@ class BalanceCLI:
             self._lambda_max,
             self._num_lambdas,
             self._weight_trimming_mean_ratio,
-            self._logistic_regression_kwargs,
             self._sample_cls,
             self._sample_package_name,
             self._sample_package_version,
@@ -469,7 +475,6 @@ class BalanceCLI:
             "lambda_max",
             "num_lambdas",
             "weight_trimming_mean_ratio",
-            "logistic_regression_kwargs",
             "sample_cls",
             "sample_package_name",
             "sample_package_version",
@@ -484,7 +489,6 @@ class BalanceCLI:
             lambda_max,
             num_lambdas,
             weight_trimming_mean_ratio,
-            logistic_regression_kwargs,
             sample_cls,
             sample_package_name,
             sample_package_version,
@@ -513,7 +517,6 @@ class BalanceCLI:
                     lambda_max,
                     num_lambdas,
                     weight_trimming_mean_ratio,
-                    logistic_regression_kwargs,
                     sample_cls,
                     sample_package_name,
                 )
@@ -539,7 +542,6 @@ class BalanceCLI:
                 lambda_max,
                 num_lambdas,
                 weight_trimming_mean_ratio,
-                logistic_regression_kwargs,
                 sample_cls,
                 sample_package_name,
             )
@@ -727,12 +729,11 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
     )
     parser.add_argument(
         "--ipw_logistic_regression_kwargs",
-        type=str,
         required=False,
-        default=None,
         help=(
-            "JSON object string with additional keyword arguments passed to "
-            "sklearn.linear_model.LogisticRegression when method is ipw."
+            "A valid JSON object string of keyword arguments forwarded to sklearn.linear_model.LogisticRegression "
+            'when using the ipw method. For example: \'{"solver": "liblinear", "max_iter": 500}\'. '
+            "Ignored for other methods."
         ),
     )
     parser.add_argument(
