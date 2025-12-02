@@ -17,7 +17,7 @@ import pandas as pd
 import scipy
 
 from balance import util as balance_util
-from balance.testutil import _verify_value_type
+from balance.util import _verify_value_type
 from balance.weighting_methods import (
     adjust_null as balance_adjust_null,
     cbps as balance_cbps,

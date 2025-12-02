@@ -18,7 +18,7 @@ import pandas as pd
 # TODO: remove the use of balance_util in most cases, and just import the functions to be tested directly
 from balance import util as balance_util
 from balance.sample_class import Sample
-from balance.testutil import _verify_value_type
+from balance.util import _verify_value_type
 
 from numpy import dtype
 

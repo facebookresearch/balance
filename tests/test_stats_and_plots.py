@@ -13,7 +13,7 @@ import balance.testutil
 
 import numpy as np
 import pandas as pd
-from balance.testutil import _verify_value_type
+from balance.util import _verify_value_type
 
 
 class TestBalance_weights_stats(

@@ -15,7 +15,18 @@ import uuid
 import warnings
 from functools import reduce
 from itertools import combinations
-from typing import Any, Callable, Dict, List, Tuple
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    overload,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import numpy as np
 import pandas as pd
@@ -29,7 +40,59 @@ from scipy.sparse import csc_matrix, hstack
 
 logger: logging.Logger = logging.getLogger(__package__)
 
+T = TypeVar("T")
+
+
+@overload
+def _verify_value_type(  # noqa: E704
+    optional: Optional[Any],
+    expected_type: Type[T],
+) -> T: ...
+
+
+@overload
+def _verify_value_type(  # noqa: E704
+    optional: Optional[T],
+    expected_type: None = None,
+) -> T: ...
+
+
+def _verify_value_type(
+    optional: Optional[T],
+    expected_type: Optional[Union[Type[Any], Tuple[Type[Any], ...]]] = None,
+) -> T:
+    """Assert that optional value is not None and return it.
+
+    Args:
+        optional: The optional value to check
+        expected_type: Optional type or tuple of types to check with isinstance()
+
+    Returns:
+        The non-None value
+
+    Raises:
+        ValueError: If optional is None
+        TypeError: If expected_type is provided and isinstance check fails
+    """
+    if optional is None:
+        raise ValueError("Unexpected None value")
+    if expected_type is not None and not isinstance(optional, expected_type):
+        raise TypeError(f"Expected type {expected_type}, got {type(optional).__name__}")
+    return optional
+
+
 # TODO: split util and adjustment files into separate files: transformations, model_matrix, others..
+
+
+def _float_or_none(value: float | int | str | None) -> float | None:
+    """Return a float (if float or int) or None if it's None or "None".
+
+    This helper keeps argument parsing explicit about optional float inputs.
+    """
+
+    if value is None or value == "None":
+        return None
+    return float(value)
 
 
 def _check_weighting_methods_input(

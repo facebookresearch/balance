@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 from balance.stats_and_plots import weighted_comparisons_plots, weighted_stats
 from balance.stats_and_plots.weighted_comparisons_plots import DataFrameWithWeight
-from balance.testutil import _verify_value_type
+from balance.util import _verify_value_type
 
 
 class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):

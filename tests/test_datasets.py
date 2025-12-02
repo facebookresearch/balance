@@ -11,7 +11,7 @@ import balance.testutil
 import numpy as np
 
 from balance.datasets import load_data
-from balance.testutil import _verify_value_type
+from balance.util import _verify_value_type
 
 
 class TestDatasets(

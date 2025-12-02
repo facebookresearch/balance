@@ -20,7 +20,7 @@ from balance.stats_and_plots.weighted_comparisons_stats import (
     asmd_improvement as compute_asmd_improvement,
 )
 from balance.stats_and_plots.weights_stats import design_effect
-from balance.testutil import _verify_value_type
+from balance.util import _verify_value_type
 
 from scipy.sparse import csc_matrix, csr_matrix, issparse
 from sklearn.base import ClassifierMixin, clone
