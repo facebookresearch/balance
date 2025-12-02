@@ -279,7 +279,6 @@ def trim_weights(
             lower_limit if lower_limit not in (None, 0) else None,
             upper_limit if upper_limit not in (None, 0) else None,
         )
-
         adjusted_limits = (
             _validate_limit(lower_limit, n_weights),
             _validate_limit(upper_limit, n_weights),
@@ -307,7 +306,9 @@ def trim_weights(
         lower_bound = (
             None
             if clip_limits[0] is None
-            else np.quantile(original_weights_for_bounds, clip_limits[0], method="lower")
+            else np.quantile(
+                original_weights_for_bounds, clip_limits[0], method="lower"
+            )
         )
         upper_bound = (
             None
