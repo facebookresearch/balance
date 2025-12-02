@@ -17,8 +17,8 @@ import numpy as np
 import pandas as pd
 
 from balance.balancedf_class import (  # noqa
-    BalanceDFCovars,  # noqa
     BalanceDF,
+    BalanceDFCovars,  # noqa
     BalanceDFOutcomes,  # noqa
     BalanceDFWeights,  # noqa
 )
