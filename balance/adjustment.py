@@ -272,6 +272,14 @@ def trim_weights(
         else:
             lower_limit = upper_limit = percentile
 
+        # Keep the original requested percentiles for exact clipping bounds,
+        # but validate/adjust separately for the winsorization call so at least
+        # one value is affected at the requested edge.
+        clip_limits = (
+            lower_limit if lower_limit not in (None, 0) else None,
+            upper_limit if upper_limit not in (None, 0) else None,
+        )
+
         adjusted_limits = (
             _validate_limit(lower_limit, n_weights),
             _validate_limit(upper_limit, n_weights),
@@ -298,15 +306,15 @@ def trim_weights(
         # from scipy.stats.mstats.winsorize on certain inputs.
         lower_bound = (
             None
-            if adjusted_limits[0] in (None, 0)
-            else np.quantile(original_weights_for_bounds, adjusted_limits[0], method="lower")
+            if clip_limits[0] is None
+            else np.quantile(original_weights_for_bounds, clip_limits[0], method="lower")
         )
         upper_bound = (
             None
-            if adjusted_limits[1] in (None, 0)
+            if clip_limits[1] is None
             else np.quantile(
                 original_weights_for_bounds,
-                1 - adjusted_limits[1],
+                1 - clip_limits[1],
                 method="lower",
             )
         )
