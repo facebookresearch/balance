@@ -54,6 +54,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">util</span> <span class="k">as</span> <span class="n">balance_util</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.testutil</span><span class="w"> </span><span class="kn">import</span> <span class="n">_verify_value_type</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.weighting_methods</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">adjust_null</span> <span class="k">as</span> <span class="n">balance_adjust_null</span><span class="p">,</span>
     <span class="n">cbps</span> <span class="k">as</span> <span class="n">balance_cbps</span><span class="p">,</span>
@@ -311,10 +312,20 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">lower_limit</span> <span class="o">=</span> <span class="n">upper_limit</span> <span class="o">=</span> <span class="n">percentile</span>
 
+        <span class="c1"># Keep the original requested percentiles for exact clipping bounds,</span>
+        <span class="c1"># but validate/adjust separately for the winsorization call so at least</span>
+        <span class="c1"># one value is affected at the requested edge.</span>
+        <span class="n">clip_limits</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="kc">None</span> <span class="k">if</span> <span class="p">(</span><span class="n">lower_limit</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">lower_limit</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="k">else</span> <span class="n">lower_limit</span><span class="p">,</span>
+            <span class="kc">None</span> <span class="k">if</span> <span class="p">(</span><span class="n">upper_limit</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">upper_limit</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="k">else</span> <span class="n">upper_limit</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="n">adjusted_limits</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">_validate_limit</span><span class="p">(</span><span class="n">lower_limit</span><span class="p">,</span> <span class="n">n_weights</span><span class="p">),</span>
             <span class="n">_validate_limit</span><span class="p">(</span><span class="n">upper_limit</span><span class="p">,</span> <span class="n">n_weights</span><span class="p">),</span>
         <span class="p">)</span>
+
+        <span class="c1"># Preserve the pre-trim weights to calculate strict clipping bounds.</span>
+        <span class="n">original_weights_for_bounds</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
         <span class="n">weights</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">mstats</span><span class="o">.</span><span class="n">winsorize</span><span class="p">(</span>
             <span class="n">weights</span><span class="p">,</span> <span class="n">limits</span><span class="o">=</span><span class="n">adjusted_limits</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span>
@@ -329,6 +340,26 @@
             <span class="n">index</span><span class="o">=</span><span class="n">weights_index</span><span class="p">,</span>
             <span class="n">name</span><span class="o">=</span><span class="n">original_name</span><span class="p">,</span>
         <span class="p">)</span>
+
+        <span class="c1"># Clip to the exact percentile bounds to avoid small numerical overshoots</span>
+        <span class="c1"># from scipy.stats.mstats.winsorize on certain inputs.</span>
+        <span class="n">lower_bound</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">clip_limits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span>
+                <span class="n">original_weights_for_bounds</span><span class="p">,</span> <span class="n">clip_limits</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">upper_bound</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">clip_limits</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span>
+                <span class="n">original_weights_for_bounds</span><span class="p">,</span>
+                <span class="mi">1</span> <span class="o">-</span> <span class="n">_verify_value_type</span><span class="p">(</span><span class="n">clip_limits</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+                <span class="n">method</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">lower</span><span class="o">=</span><span class="n">lower_bound</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="n">upper_bound</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">keep_sum_of_weights</span><span class="p">:</span>
         <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">*</span> <span class="n">original_mean</span>
