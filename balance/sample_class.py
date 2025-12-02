@@ -263,7 +263,7 @@ class Sample:
                 weight_column = "weights"
             else:
                 # TODO: The current default when weights are not available is "weight", while the method in balanceDF is called "weights",
-                #       and the subclass is called BalanceWeightsDF (with and 's' at the end)
+                #       and the subclass is called BalanceDFWeights (with and 's' at the end)
                 #       In the future, it would be better to be more consistent and use the same name for all variations (e.g.: "weight").
                 #       Unless, we move to use more weights columns, and this method could be used to get all of them.
                 logger.warning(
@@ -338,62 +338,62 @@ class Sample:
 
     def outcomes(
         self: "Sample",
-    ) -> Any:  # -> "Optional[Type[BalanceOutcomesDF]]" (not imported due to circular dependency)
+    ) -> Any:  # -> "Optional[Type[BalanceDFOutcomes]]" (not imported due to circular dependency)
         """
         Produce a BalanceOutcomeDF from a Sample object.
-        See :class:BalanceOutcomesDF.
+        See :class:BalanceDFOutcomes.
 
         Args:
             self (Sample): Sample object.
 
         Returns:
-            BalanceOutcomesDF or None
+            BalanceDFOutcomes or None
         """
         if self._outcome_columns is not None:
             # NOTE: must import here so to avoid circular dependency
-            from balance.balancedf_class import BalanceOutcomesDF
+            from balance.balancedf_class import BalanceDFOutcomes
 
-            return BalanceOutcomesDF(self)
+            return BalanceDFOutcomes(self)
         else:
             return None
 
     def weights(
         self: "Sample",
-    ) -> Any:  # -> "Optional[Type[BalanceWeightsDF]]" (not imported due to circular dependency)
+    ) -> Any:  # -> "Optional[Type[BalanceDFWeights]]" (not imported due to circular dependency)
         """
-        Produce a BalanceWeightsDF from a Sample object.
-        See :class:BalanceWeightsDF.
+        Produce a BalanceDFWeights from a Sample object.
+        See :class:BalanceDFWeights.
 
         Args:
             self (Sample): Sample object.
 
         Returns:
-            BalanceWeightsDF
+            BalanceDFWeights
         """
         # NOTE: must import here so to avoid circular dependency
-        from balance.balancedf_class import BalanceWeightsDF
+        from balance.balancedf_class import BalanceDFWeights
 
-        return BalanceWeightsDF(self)
+        return BalanceDFWeights(self)
 
     def covars(
         self: "Sample",
     ) -> (
         Any
-    ):  # -> "Optional[Type[BalanceCovarsDF]]" (not imported due to circular dependency)
+    ):  # -> "Optional[Type[BalanceDFCovars]]" (not imported due to circular dependency)
         """
-        Produce a BalanceCovarsDF from a Sample object.
-        See :class:BalanceCovarsDF.
+        Produce a BalanceDFCovars from a Sample object.
+        See :class:BalanceDFCovars.
 
         Args:
             self (Sample): Sample object.
 
         Returns:
-            BalanceCovarsDF
+            BalanceDFCovars
         """
         # NOTE: must import here so to avoid circular dependency
-        from balance.balancedf_class import BalanceCovarsDF
+        from balance.balancedf_class import BalanceDFCovars
 
-        return BalanceCovarsDF(self)
+        return BalanceDFCovars(self)
 
     def model(
         self: "Sample",

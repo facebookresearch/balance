@@ -45,7 +45,7 @@ class BalanceDF:
         sample: Sample,
         name: Literal["outcomes", "weights", "covars"],
     ) -> None:
-        """A basic init method used by BalanceOutcomesDF,BalanceCovarsDF, and BalanceWeightsDF
+        """A basic init method used by BalanceDFOutcomes,BalanceDFCovars, and BalanceDFWeights
 
         Args:
             self (BalanceDF): The object that is initiated.
@@ -120,22 +120,22 @@ class BalanceDF:
         w = self._sample.weight_column
         return w.rename(None)
 
-    # NOTE: only in the case of BalanceOutcomesDF can it result in a None value.
+    # NOTE: only in the case of BalanceDFOutcomes can it result in a None value.
     def _BalanceDF_child_from_linked_samples(
         self: "BalanceDF",
     ) -> Dict[
         str,
         "BalanceDF"
-        | "BalanceCovarsDF"
-        | "BalanceWeightsDF"
-        | "BalanceOutcomesDF"
+        | "BalanceDFCovars"
+        | "BalanceDFWeights"
+        | "BalanceDFOutcomes"
         | None,
     ]:
         """Returns a dict with self and the same type of BalanceDF_child when created from the linked samples.
 
-        For example, if this function is called from a BalanceCovarsDF (originally created using `Sample.covars()`),
+        For example, if this function is called from a BalanceDFCovars (originally created using `Sample.covars()`),
         that was invoked by a Sample with a target then the return dict will have the keys 'self' and 'target',
-        with the BalanceCovarsDF of the self and that of the target.
+        with the BalanceDFCovars of the self and that of the target.
 
         If the object has nothing but self, then it will be a dict with only one key:value pair (of self).
 
@@ -144,7 +144,7 @@ class BalanceDF:
 
 
         Returns:
-            Dict[str, Union["BalanceCovarsDF", "BalanceWeightsDF", Union["BalanceOutcomesDF", None]],]:
+            Dict[str, Union["BalanceDFCovars", "BalanceDFWeights", Union["BalanceDFOutcomes", None]],]:
             A dict mapping the link relationship to the result.
                 First item is self, and it just returns it without using method on it.
                 The other items are based on the objects in _links. E.g.: it can be 'target'
@@ -196,14 +196,14 @@ class BalanceDF:
 
                 # Indeed, all are of the same BalanceDF child type:
                 s3.covars()._BalanceDF_child_from_linked_samples()
-                # {'self': (balance.balancedf_class.BalanceCovarsDF)
+                # {'self': (balance.balancedf_class.BalanceDFCovars)
                 # covars from <balance.sample_class.Sample object at 0x7f4392ea61c0>:
                 #     a   b  c
                 # 0  1 -42  x
                 # 1  2   8  y
                 # 2  3   2  z
                 # 3  1 -42  v,
-                # 'target': (balance.balancedf_class.BalanceCovarsDF)
+                # 'target': (balance.balancedf_class.BalanceDFCovars)
                 # covars from <balance.sample_class.Sample object at 0x7f43958fbd90>:
                 #     a  b  c
                 # 0  1  4  x
@@ -211,20 +211,20 @@ class BalanceDF:
                 # 2  3  8  z}
 
                 s3_null.covars()._BalanceDF_child_from_linked_samples()
-                # {'self': (balance.balancedf_class.BalanceCovarsDF)
+                # {'self': (balance.balancedf_class.BalanceDFCovars)
                 # covars from <balance.sample_class.Sample object at 0x7f4392ea60d0>:
                 #     a   b  c
                 # 0  1 -42  x
                 # 1  2   8  y
                 # 2  3   2  z
                 # 3  1 -42  v,
-                # 'target': (balance.balancedf_class.BalanceCovarsDF)
+                # 'target': (balance.balancedf_class.BalanceDFCovars)
                 # covars from <balance.sample_class.Sample object at 0x7f43958fbd90>:
                 #     a  b  c
                 # 0  1  4  x
                 # 1  2  6  y
                 # 2  3  8  z,
-                # 'unadjusted': (balance.balancedf_class.BalanceCovarsDF)
+                # 'unadjusted': (balance.balancedf_class.BalanceDFCovars)
                 # covars from <balance.sample_class.Sample object at 0x7f4392ea61c0>:
                 #     a   b  c
                 # 0  1 -42  x
@@ -234,14 +234,14 @@ class BalanceDF:
 
                 the_dict = s3_null.covars()._BalanceDF_child_from_linked_samples()
                 [v.__class__ for (k,v) in the_dict.items()]
-                [balance.balancedf_class.BalanceCovarsDF,
-                balance.balancedf_class.BalanceCovarsDF,
-                balance.balancedf_class.BalanceCovarsDF]
+                [balance.balancedf_class.BalanceDFCovars,
+                balance.balancedf_class.BalanceDFCovars,
+                balance.balancedf_class.BalanceDFCovars]
 
 
                 # This also works for outcomes (returns None if there is none):
                 s3.outcomes()._BalanceDF_child_from_linked_samples()
-                # {'self': (balance.balancedf_class.BalanceOutcomesDF)
+                # {'self': (balance.balancedf_class.BalanceDFOutcomes)
                 #  outcomes from <balance.sample_class.Sample object at 0x7f4392ea61c0>:
                 #      o
                 #  0   7
@@ -252,14 +252,14 @@ class BalanceDF:
 
                 # And also works for weights:
                 s3.weights()._BalanceDF_child_from_linked_samples()
-                # {'self': (balance.balancedf_class.BalanceWeightsDF)
+                # {'self': (balance.balancedf_class.BalanceDFWeights)
                 #  weights from <balance.sample_class.Sample object at 0x7f4392ea61c0>:
                 #       w
                 #  0  0.5
                 #  1  2.0
                 #  2  1.0
                 #  3  1.0,
-                #  'target': (balance.balancedf_class.BalanceWeightsDF)
+                #  'target': (balance.balancedf_class.BalanceDFWeights)
                 #  weights from <balance.sample_class.Sample object at 0x7f43958fbd90>:
                 #       w
                 #  0  0.5
@@ -271,9 +271,9 @@ class BalanceDF:
         d: Dict[
             str,
             "BalanceDF"
-            | "BalanceCovarsDF"
-            | "BalanceWeightsDF"
-            | "BalanceOutcomesDF"
+            | "BalanceDFCovars"
+            | "BalanceDFWeights"
+            | "BalanceDFOutcomes"
             | None,
         ] = {"self": self}
         d.update(
@@ -568,8 +568,8 @@ class BalanceDF:
         See :func:`weighted_comparisons_plots.plot_dist` for details of various arguments that can be passed.
         The default plotting engine is plotly, but seaborn can be used for static plots.
 
-        This function is inherited as is when invoking BalanceCovarsDF.plot, but some modifications are made when
-        preparing the data for BalanceOutcomesDF.plot and BalanceWeightsDF.plot.
+        This function is inherited as is when invoking BalanceDFCovars.plot, but some modifications are made when
+        preparing the data for BalanceDFOutcomes.plot and BalanceDFWeights.plot.
 
         Args:
             self (BalanceDF): Object (used in the plots as "sample" or "self")
@@ -1533,16 +1533,16 @@ class BalanceDF:
         return self._df_with_ids().to_csv(*args, path_or_buf=path_or_buf, **kwargs)
 
 
-class BalanceOutcomesDF(BalanceDF):
-    def __init__(self: "BalanceOutcomesDF", sample: Sample) -> None:
-        """A factory function to create BalanceOutcomesDF
+class BalanceDFOutcomes(BalanceDF):
+    def __init__(self: "BalanceDFOutcomes", sample: Sample) -> None:
+        """A factory function to create BalanceDFOutcomes
 
         This is used through :func:`Sample.outcomes`.
-        It initiates a BalanceOutcomesDF object by passing the relevant arguments to
+        It initiates a BalanceDFOutcomes object by passing the relevant arguments to
         :func:`BalanceDF.__init__`.
 
         Args:
-            self (BalanceOutcomesDF): Object that is initiated.
+            self (BalanceDFOutcomes): Object that is initiated.
             sample (Sample): Object
         """
         super().__init__(sample._outcome_columns, sample, name="outcomes")
@@ -1550,7 +1550,7 @@ class BalanceOutcomesDF(BalanceDF):
     # TODO: add the `relative_to` argument (with options 'self' and 'target')
     #       this will also require to update _relative_response_rates a bit.
     def relative_response_rates(
-        self: "BalanceOutcomesDF",
+        self: "BalanceDFOutcomes",
         target: bool | pd.DataFrame = False,
         per_column: bool = False,
     ) -> pd.DataFrame | None:
@@ -1559,7 +1559,7 @@ class BalanceOutcomesDF(BalanceDF):
         See :func:`general_stats.relative_response_rates`.
 
         Args:
-            self (BalanceOutcomesDF): Object
+            self (BalanceDFOutcomes): Object
             target (Union[bool, pd.DataFrame], optional): Defaults to False.
                 Determines what is passed to df_target in :func:`general_stats.relative_response_rates`
                 If False: passes None.
@@ -1650,13 +1650,13 @@ class BalanceOutcomesDF(BalanceDF):
             self.df, df_target, per_column=per_column
         )
 
-    def target_response_rates(self: "BalanceOutcomesDF") -> pd.DataFrame | None:
+    def target_response_rates(self: "BalanceDFOutcomes") -> pd.DataFrame | None:
         """Calculates relative_response_rates for the target in a Sample object.
 
         See :func:`general_stats.relative_response_rates`.
 
         Args:
-            self (BalanceOutcomesDF): Object (with/without a target set)
+            self (BalanceDFOutcomes): Object (with/without a target set)
 
         Returns:
             Optional[pd.DataFrame]: None if the object doesn't have a target.
@@ -1706,12 +1706,12 @@ class BalanceOutcomesDF(BalanceDF):
     #       The BalanceDF.summary method only returns a DataFrame. So it's a question
     #       what is the best way to structure this more generally.
     def summary(
-        self: "BalanceOutcomesDF", on_linked_samples: bool | None = None
+        self: "BalanceDFOutcomes", on_linked_samples: bool | None = None
     ) -> str:
-        """Produces summary printable string of a BalanceOutcomesDF object.
+        """Produces summary printable string of a BalanceDFOutcomes object.
 
         Args:
-            self (BalanceOutcomesDF): Object.
+            self (BalanceDFOutcomes): Object.
             on_linked_samples (Optional[bool]): Ignored. Only here since summary overrides BalanceDF.summary.
 
         Returns:
@@ -1815,36 +1815,36 @@ class BalanceOutcomesDF(BalanceDF):
         return out
 
 
-class BalanceCovarsDF(BalanceDF):
-    def __init__(self: "BalanceCovarsDF", sample: Sample) -> None:
-        """A factory function to create BalanceCovarsDF
+class BalanceDFCovars(BalanceDF):
+    def __init__(self: "BalanceDFCovars", sample: Sample) -> None:
+        """A factory function to create BalanceDFCovars
 
         This is used through :func:`Sample.covars`.
-        It initiates a BalanceCovarsDF object by passing the relevant arguments to
+        It initiates a BalanceDFCovars object by passing the relevant arguments to
         :func:`BalanceDF.__init__`.
 
         Args:
-            self (BalanceCovarsDF): Object that is initiated.
+            self (BalanceDFCovars): Object that is initiated.
             sample (Sample): Object
         """
         super().__init__(sample._covar_columns(), sample, name="covars")
 
     def from_frame(
-        self: "BalanceCovarsDF",
+        self: "BalanceDFCovars",
         df: pd.DataFrame,
         weights: pd.Series | None = None,
-    ) -> "BalanceCovarsDF":
-        """A factory function to create a BalanceCovarsDF from a df.
+    ) -> "BalanceDFCovars":
+        """A factory function to create a BalanceDFCovars from a df.
 
         Although generally the main way the object is created is through the __init__ method.
 
         Args:
-            self (BalanceCovarsDF): Object
+            self (BalanceDFCovars): Object
             df (pd.DataFrame): A df.
             weights (Optional[pd.Series], optional): _description_. Defaults to None.
 
         Returns:
-            BalanceCovarsDF: Object.
+            BalanceDFCovars: Object.
         """
         df = df.reset_index()
         concat_list: list[pd.DataFrame | pd.Series] = [
@@ -1857,31 +1857,31 @@ class BalanceCovarsDF(BalanceDF):
         return Sample.from_frame(df, id_column="id").covars()
 
 
-class BalanceWeightsDF(BalanceDF):
-    def __init__(self: "BalanceWeightsDF", sample: Sample) -> None:
-        """A factory function to create BalanceWeightsDF
+class BalanceDFWeights(BalanceDF):
+    def __init__(self: "BalanceDFWeights", sample: Sample) -> None:
+        """A factory function to create BalanceDFWeights
 
         This is used through :func:`Sample.weights`.
-        It initiates a BalanceWeightsDF object by passing the relevant arguments to
+        It initiates a BalanceDFWeights object by passing the relevant arguments to
         :func:`BalanceDF.__init__`.
 
         Args:
-            self (BalanceWeightsDF): Object that is initiated.
+            self (BalanceDFWeights): Object that is initiated.
             sample (Sample): Object
         """
         super().__init__(sample.weight_column.to_frame(), sample, name="weights")
 
     # TODO: maybe add better control if there are no weights for unadjusted or target (the current default shows them in the legend, but not in the figure)
     def plot(
-        self: "BalanceWeightsDF", on_linked_samples: bool = True, **kwargs: Any
+        self: "BalanceDFWeights", on_linked_samples: bool = True, **kwargs: Any
     ) -> list[Any] | npt.NDArray[Any] | dict[str, Figure] | None:
-        """Plots kde (kernal density estimation) of the weights in a BalanceWeightsDF object using seaborn (as default).
+        """Plots kde (kernal density estimation) of the weights in a BalanceDFWeights object using seaborn (as default).
 
         It's possible to use other plots using dist_type with arguments such as "hist", "kde" (default), "qq", and "ecdf".
         Look at :func:`plot_dist` for more details.
 
         Args:
-            self (BalanceWeightsDF): a BalanceOutcomesDF object, with a set of variables.
+            self (BalanceDFWeights): a BalanceDFOutcomes object, with a set of variables.
             on_linked_samples (bool, optional): Determines if the linked samples should be included in the plot.
                 Defaults to True.
 
@@ -1937,15 +1937,15 @@ class BalanceWeightsDF(BalanceDF):
         default_kwargs.update(kwargs)
         return super().plot(on_linked_samples=on_linked_samples, **default_kwargs)
 
-    def design_effect(self: "BalanceWeightsDF") -> np.float64:
-        """Calculates Kish's design effect (deff) on the BalanceWeightsDF weights.
+    def design_effect(self: "BalanceDFWeights") -> np.float64:
+        """Calculates Kish's design effect (deff) on the BalanceDFWeights weights.
 
         Extract the first column to get a pd.Series of the weights.
 
         See :func:`weights_stats.design_effect` for details.
 
         Args:
-            self (BalanceWeightsDF): Object.
+            self (BalanceDFWeights): Object.
 
         Returns:
             np.float64: Deff.
@@ -1955,11 +1955,11 @@ class BalanceWeightsDF(BalanceDF):
     # TODO: in the future, consider if this type of overriding is the best solution.
     #       to reconsider as part of a larger code refactoring.
     @property
-    def _weights(self: "BalanceWeightsDF") -> None:
-        """A BalanceWeightsDF has no weights (its df is that of the weights.)
+    def _weights(self: "BalanceDFWeights") -> None:
+        """A BalanceDFWeights has no weights (its df is that of the weights.)
 
         Args:
-            self (BalanceWeightsDF): Object.
+            self (BalanceDFWeights): Object.
 
         Returns:
             NoneType: None.
@@ -1967,7 +1967,7 @@ class BalanceWeightsDF(BalanceDF):
         return None
 
     def trim(
-        self: "BalanceWeightsDF",
+        self: "BalanceDFWeights",
         ratio: float | int | None = None,
         percentile: float | None = None,
         keep_sum_of_weights: bool = True,
@@ -1977,7 +1977,7 @@ class BalanceWeightsDF(BalanceDF):
         Uses :func:`adjustments.trim_weights` for the weights trimming.
 
         Args:
-            self (BalanceWeightsDF): Object.
+            self (BalanceDFWeights): Object.
             ratio (Optional[Union[float, int]], optional): Maps to weight_trimming_mean_ratio. Defaults to None.
             percentile (Optional[float], optional): Maps to weight_trimming_percentile. Defaults to None.
             keep_sum_of_weights (bool, optional): Maps to weight_trimming_percentile. Defaults to True.
@@ -1996,16 +1996,16 @@ class BalanceWeightsDF(BalanceDF):
         )
 
     def summary(
-        self: "BalanceWeightsDF", on_linked_samples: bool | None = None
+        self: "BalanceDFWeights", on_linked_samples: bool | None = None
     ) -> pd.DataFrame:
         """
-        Generates a summary of a BalanceWeightsDF object.
+        Generates a summary of a BalanceDFWeights object.
 
-        This function provides a comprehensive overview of the BalanceWeightsDF object
+        This function provides a comprehensive overview of the BalanceDFWeights object
         by calculating and returning a range of weight diagnostics.
 
         Args:
-            self (BalanceWeightsDF): The BalanceWeightsDF object to be summarized.
+            self (BalanceDFWeights): The BalanceDFWeights object to be summarized.
             on_linked_samples (Optional[bool], optional): This parameter is ignored. It is only included
                 because summary overrides BalanceDF.summary. Defaults to None.
 
