@@ -304,7 +304,7 @@
                 <span class="n">weight_column</span> <span class="o">=</span> <span class="s2">&quot;weights&quot;</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># TODO: The current default when weights are not available is &quot;weight&quot;, while the method in balanceDF is called &quot;weights&quot;,</span>
-                <span class="c1">#       and the subclass is called BalanceWeightsDF (with and &#39;s&#39; at the end)</span>
+                <span class="c1">#       and the subclass is called BalanceDFWeights (with and &#39;s&#39; at the end)</span>
                 <span class="c1">#       In the future, it would be better to be more consistent and use the same name for all variations (e.g.: &quot;weight&quot;).</span>
                 <span class="c1">#       Unless, we move to use more weights columns, and this method could be used to get all of them.</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
@@ -382,22 +382,22 @@
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.outcomes">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">outcomes</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>  <span class="c1"># -&gt; &quot;Optional[Type[BalanceOutcomesDF]]&quot; (not imported due to circular dependency)</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>  <span class="c1"># -&gt; &quot;Optional[Type[BalanceDFOutcomes]]&quot; (not imported due to circular dependency)</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Produce a BalanceOutcomeDF from a Sample object.</span>
-<span class="sd">        See :class:BalanceOutcomesDF.</span>
+<span class="sd">        See :class:BalanceDFOutcomes.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (Sample): Sample object.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            BalanceOutcomesDF or None</span>
+<span class="sd">            BalanceDFOutcomes or None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outcome_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># NOTE: must import here so to avoid circular dependency</span>
-            <span class="kn">from</span><span class="w"> </span><span class="nn">balance.balancedf_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceOutcomesDF</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">balance.balancedf_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceDFOutcomes</span>
 
-            <span class="k">return</span> <span class="n">BalanceOutcomesDF</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">BalanceDFOutcomes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span></div>
 
@@ -406,21 +406,21 @@
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.weights">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">weights</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>  <span class="c1"># -&gt; &quot;Optional[Type[BalanceWeightsDF]]&quot; (not imported due to circular dependency)</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>  <span class="c1"># -&gt; &quot;Optional[Type[BalanceDFWeights]]&quot; (not imported due to circular dependency)</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Produce a BalanceWeightsDF from a Sample object.</span>
-<span class="sd">        See :class:BalanceWeightsDF.</span>
+<span class="sd">        Produce a BalanceDFWeights from a Sample object.</span>
+<span class="sd">        See :class:BalanceDFWeights.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (Sample): Sample object.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            BalanceWeightsDF</span>
+<span class="sd">            BalanceDFWeights</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># NOTE: must import here so to avoid circular dependency</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.balancedf_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceWeightsDF</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.balancedf_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceDFWeights</span>
 
-        <span class="k">return</span> <span class="n">BalanceWeightsDF</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">BalanceDFWeights</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Sample.covars">
@@ -429,21 +429,21 @@
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span>
         <span class="n">Any</span>
-    <span class="p">):</span>  <span class="c1"># -&gt; &quot;Optional[Type[BalanceCovarsDF]]&quot; (not imported due to circular dependency)</span>
+    <span class="p">):</span>  <span class="c1"># -&gt; &quot;Optional[Type[BalanceDFCovars]]&quot; (not imported due to circular dependency)</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Produce a BalanceCovarsDF from a Sample object.</span>
-<span class="sd">        See :class:BalanceCovarsDF.</span>
+<span class="sd">        Produce a BalanceDFCovars from a Sample object.</span>
+<span class="sd">        See :class:BalanceDFCovars.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (Sample): Sample object.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            BalanceCovarsDF</span>
+<span class="sd">            BalanceDFCovars</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># NOTE: must import here so to avoid circular dependency</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.balancedf_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceCovarsDF</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.balancedf_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceDFCovars</span>
 
-        <span class="k">return</span> <span class="n">BalanceCovarsDF</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">BalanceDFCovars</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Sample.model">
