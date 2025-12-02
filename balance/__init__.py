@@ -19,20 +19,18 @@ from balance.sample_class import Sample  # noqa
 from balance.util import TruncationFormatter  # noqa
 
 global __version__
-__version__ = "0.12.x"
+__version__ = "0.13.0"
 
 WELCOME_MESSAGE = f"""
-Welcome to balance (Version {__version__})!
-An open-source Python package for balancing biased data samples.
+balance (Version {__version__}) loaded:
+    📖 Documentation: https://import-balance.org/
+    🛠️ Help / Issues: https://github.com/facebookresearch/balance/issues/
+    📄 Citation:
+        Sarig, T., Galili, T., & Eilat, R. (2023).
+        balance - a Python package for balancing biased data samples.
+        https://arxiv.org/abs/2307.06024
 
-📖 Documentation: https://import-balance.org/
-🛠️ Get Help / Report Issues: https://github.com/facebookresearch/balance/issues/
-📄 Citation:
-    Sarig, T., Galili, T., & Eilat, R. (2023).
-    balance - a Python package for balancing biased data samples.
-    https://arxiv.org/abs/2307.06024
-
-Tip: You can access this information at any time with balance.help()
+    Tip: You can view this message anytime with balance.help()
 """
 
 
