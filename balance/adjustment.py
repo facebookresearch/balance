@@ -277,6 +277,9 @@ def trim_weights(
             _validate_limit(upper_limit, n_weights),
         )
 
+        # Preserve the pre-trim weights to calculate strict clipping bounds.
+        original_weights_for_bounds = weights.copy()
+
         weights = scipy.stats.mstats.winsorize(
             weights, limits=adjusted_limits, inplace=False
         )
@@ -290,6 +293,24 @@ def trim_weights(
             index=weights_index,
             name=original_name,
         )
+
+        # Clip to the exact percentile bounds to avoid small numerical overshoots
+        # from scipy.stats.mstats.winsorize on certain inputs.
+        lower_bound = (
+            None
+            if adjusted_limits[0] in (None, 0)
+            else np.quantile(original_weights_for_bounds, adjusted_limits[0], method="lower")
+        )
+        upper_bound = (
+            None
+            if adjusted_limits[1] in (None, 0)
+            else np.quantile(
+                original_weights_for_bounds,
+                1 - adjusted_limits[1],
+                method="lower",
+            )
+        )
+        weights = weights.clip(lower=lower_bound, upper=upper_bound)
 
     if keep_sum_of_weights:
         weights = weights / np.mean(weights) * original_mean
