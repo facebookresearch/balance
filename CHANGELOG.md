@@ -24,6 +24,10 @@
   - Added KL divergence calculations for covariate comparisons (numeric and
     one-hot categorical), exposed via `BalanceDF.kld()` alongside linked-sample
     aggregation support.
+- **Renamed Balance___DF to BalanceDF___**
+  - BalanceCovarsDF to BalanceDFCovars
+  - BalanceOutcomesDF to BalanceDFOutcomes
+  - BalanceWeightsDF to BalanceDFWeights
 
 ## Documentation
 

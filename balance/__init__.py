@@ -10,9 +10,9 @@ from __future__ import annotations
 import logging
 
 from balance.balancedf_class import (  # noqa
-    BalanceCovarsDF,  # noqa
-    BalanceOutcomesDF,  # noqa
-    BalanceWeightsDF,  # noqa
+    BalanceDFCovars,  # noqa
+    BalanceDFOutcomes,  # noqa
+    BalanceDFWeights,  # noqa
 )
 from balance.datasets import load_data  # noqa
 from balance.sample_class import Sample  # noqa
