@@ -17,6 +17,7 @@ import pandas as pd
 import scipy
 
 from balance import util as balance_util
+from balance.testutil import _verify_value_type
 from balance.weighting_methods import (
     adjust_null as balance_adjust_null,
     cbps as balance_cbps,
@@ -272,10 +273,20 @@ def trim_weights(
         else:
             lower_limit = upper_limit = percentile
 
+        # Keep the original requested percentiles for exact clipping bounds,
+        # but validate/adjust separately for the winsorization call so at least
+        # one value is affected at the requested edge.
+        clip_limits = (
+            None if (lower_limit is None or lower_limit == 0) else lower_limit,
+            None if (upper_limit is None or upper_limit == 0) else upper_limit,
+        )
         adjusted_limits = (
             _validate_limit(lower_limit, n_weights),
             _validate_limit(upper_limit, n_weights),
         )
+
+        # Preserve the pre-trim weights to calculate strict clipping bounds.
+        original_weights_for_bounds = weights.copy()
 
         weights = scipy.stats.mstats.winsorize(
             weights, limits=adjusted_limits, inplace=False
@@ -290,6 +301,26 @@ def trim_weights(
             index=weights_index,
             name=original_name,
         )
+
+        # Clip to the exact percentile bounds to avoid small numerical overshoots
+        # from scipy.stats.mstats.winsorize on certain inputs.
+        lower_bound = (
+            None
+            if clip_limits[0] is None
+            else np.quantile(
+                original_weights_for_bounds, clip_limits[0], method="lower"
+            )
+        )
+        upper_bound = (
+            None
+            if clip_limits[1] is None
+            else np.quantile(
+                original_weights_for_bounds,
+                1 - _verify_value_type(clip_limits[1]),
+                method="lower",
+            )
+        )
+        weights = weights.clip(lower=lower_bound, upper=upper_bound)
 
     if keep_sum_of_weights:
         weights = weights / np.mean(weights) * original_mean
