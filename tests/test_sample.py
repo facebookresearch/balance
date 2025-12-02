@@ -33,7 +33,7 @@ import numpy as np
 import pandas as pd
 
 from balance.sample_class import Sample
-from balance.testutil import _verify_value_type
+from balance.util import _verify_value_type
 
 
 # Test sample fixtures - shared across multiple test methods

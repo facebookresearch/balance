@@ -14,8 +14,8 @@ from argparse import Namespace
 import balance.testutil
 import numpy as np
 import pandas as pd
-from balance.cli import _float_or_none, BalanceCLI, make_parser
-from balance.testutil import _verify_value_type
+from balance.cli import BalanceCLI, make_parser
+from balance.util import _float_or_none, _verify_value_type
 
 from numpy import dtype
 from sklearn.linear_model import LogisticRegression

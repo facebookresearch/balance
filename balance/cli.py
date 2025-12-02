@@ -22,6 +22,7 @@ import pandas as pd
 
 from balance import __version__  # @manual
 from balance.sample_class import Sample as balance_sample_cls  # @manual
+from balance.util import _float_or_none
 from sklearn.base import ClassifierMixin
 from sklearn.linear_model import LogisticRegression
 
@@ -554,22 +555,6 @@ class BalanceCLI:
 
         # Write output
         self.write_outputs(output_df, diagnostics_df)
-
-
-def _float_or_none(value: float | int | str | None) -> float | None:
-    """Return a float (if float or int) or None if it's None or "None"
-
-    This is so as to be clear that some input returned type is float or None.
-
-    Args:
-        value (Union[float, int, str, None]): A value to be converted.
-
-    Returns:
-        Optional[float]: None or float.
-    """
-    if (value is None) or (value == "None"):
-        return None
-    return float(value)
 
 
 def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:

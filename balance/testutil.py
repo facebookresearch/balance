@@ -10,62 +10,13 @@ import re
 import sys
 import unittest
 from contextlib import contextmanager
-from typing import (
-    Any,
-    Callable,
-    Generator,
-    Optional,
-    overload,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, Generator, Union
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 
-# Generic type variable used for _verify_value_type to preserve type information
-T = TypeVar("T")
-
-
-@overload
-def _verify_value_type(  # noqa: E704
-    optional: Optional[Any],
-    expected_type: Type[T],
-) -> T: ...
-
-
-@overload
-def _verify_value_type(  # noqa: E704
-    optional: Optional[T],
-    expected_type: None = None,
-) -> T: ...
-
-
-def _verify_value_type(
-    optional: Optional[T],
-    expected_type: Optional[Union[Type[Any], Tuple[Type[Any], ...]]] = None,
-) -> T:
-    """Assert that optional value is not None and return it.
-
-    Args:
-        optional: The optional value to check
-        expected_type: Optional type or tuple of types to check with isinstance()
-
-    Returns:
-        The non-None value
-
-    Raises:
-        ValueError: If optional is None
-        TypeError: If expected_type is provided and isinstance check fails
-    """
-    if optional is None:
-        raise ValueError("Unexpected None value")
-    if expected_type is not None and not isinstance(optional, expected_type):
-        raise TypeError(f"Expected type {expected_type}, got {type(optional).__name__}")
-    return optional
+from balance.util import _verify_value_type  # noqa: F401
 
 
 def _assert_frame_equal_lazy(
