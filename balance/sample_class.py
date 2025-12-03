@@ -100,6 +100,32 @@ class Sample:
         Returns:
             str: Multi-line description of the ``Sample`` highlighting key
                 structure and adjustment details.
+
+        Examples:
+            >>> from balance import Sample
+            >>> import pandas as pd
+            >>> df = pd.DataFrame({
+            ...     "gender": ["f", "m"],
+            ...     "age_group": ["18-24", "25-34"],
+            ...     "id": [1, 2],
+            ...     "weight": [1.2, 0.8],
+            ... })
+            >>> sample = Sample.from_frame(df, id_column="id", weight_column="weight")
+            >>> adjusted = sample.set_target(sample).adjust(method="ipw")
+            >>> print(adjusted)
+            Adjusted balance Sample object with target set using ipw
+            2 observations x 2 variables: gender,age_group
+            id_column: id, weight_column: weight,
+            outcome_columns: None
+            adjustment details:
+                method: ipw
+                design effect (Deff): 1.013, eff. sample size: 2.0
+            target:
+                 balance Sample object
+                2 observations x 2 variables: gender,age_group
+                id_column: id, weight_column: weight,
+                outcome_columns: None
+                2 common variables: age_group,gender
         """
         is_adjusted = self.is_adjusted() * "Adjusted "
         n_rows = self._df.shape[0]
