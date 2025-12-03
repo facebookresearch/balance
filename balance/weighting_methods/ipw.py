@@ -665,11 +665,13 @@ def ipw(
         target_non_na = target_series.dropna()
         sample_unique_ratio = (
             sample_non_na.nunique() / sample_non_na.shape[0]
-            if sample_non_na.shape[0] > 0 else 0.0
+            if sample_non_na.shape[0] > 0
+            else 0.0
         )
         target_unique_ratio = (
             target_non_na.nunique() / target_non_na.shape[0]
-            if target_non_na.shape[0] > 0 else 0.0
+            if target_non_na.shape[0] > 0
+            else 0.0
         )
         if column_series.isna().any() and (
             sample_unique_ratio >= 0.8 or target_unique_ratio >= 0.8
