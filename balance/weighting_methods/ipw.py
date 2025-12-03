@@ -42,8 +42,26 @@ class HighCardinalityFeature(NamedTuple):
 
 
 def _compute_cardinality_metrics(series: pd.Series) -> HighCardinalityFeature:
+    """Compute cardinality metrics for a feature series.
+
+    The function counts unique non-missing values and their proportion relative
+    to non-missing rows, while also tracking whether any missing values are
+    present.
+
+    Example:
+        >>> import pandas as pd
+        >>> s = pd.Series(["a", "b", "c", None, "c"])
+        >>> _compute_cardinality_metrics(s)
+        HighCardinalityFeature(column='', unique_count=3, unique_ratio=0.75, has_missing=True)
+
+    Args:
+        series: Feature column to evaluate.
+
+    Returns:
+        HighCardinalityFeature: Metrics describing uniqueness and missingness.
+    """
     non_missing = series.dropna()
-    unique_count = int(non_missing.nunique(dropna=True)) if not non_missing.empty else 0
+    unique_count = int(non_missing.nunique()) if not non_missing.empty else 0
     unique_ratio = (
         float(unique_count) / float(len(non_missing)) if len(non_missing) > 0 else 0.0
     )
@@ -60,6 +78,29 @@ def _detect_high_cardinality_features(
     target_df: pd.DataFrame,
     threshold: float = HIGH_CARDINALITY_RATIO_THRESHOLD,
 ) -> list[HighCardinalityFeature]:
+    """Identify columns whose non-missing values are mostly unique.
+
+    A feature is flagged when the ratio of unique non-missing values to total
+    non-missing rows meets or exceeds ``threshold`` in either the sample or
+    target dataset. Results are sorted by descending unique counts for clearer
+    reporting.
+
+    Example:
+        >>> import pandas as pd
+        >>> sample = pd.DataFrame({"id": [1, 2, 3], "group": ["a", "a", "b"]})
+        >>> target = pd.DataFrame({"id": [4, 5, 6], "group": ["a", "b", "b"]})
+        >>> _detect_high_cardinality_features(sample, target, threshold=0.8)
+        [HighCardinalityFeature(column='id', unique_count=3, unique_ratio=1.0, has_missing=False)]
+
+    Args:
+        sample_df: Sample dataframe containing candidate features.
+        target_df: Target dataframe containing candidate features.
+        threshold: Minimum unique-to-count ratio to flag a column.
+
+    Returns:
+        list[HighCardinalityFeature]: High-cardinality columns sorted by
+            descending uniqueness.
+    """
     high_cardinality_features: list[HighCardinalityFeature] = []
 
     for column in sample_df.columns:
@@ -991,18 +1032,7 @@ def ipw(
     if (np.max(weights) - np.min(weights)) / np.mean(
         weights
     ) < 1e-04:  # All weights are (essentially) the same
-        warning_message = (
-            "All weights are identical. The estimates will not be adjusted"
-        )
-        if high_cardinality_features:
-            warning_message += (
-                ". Potentially uninformative high-cardinality features: "
-                + ", ".join(
-                    f"{feature.column} (unique={feature.unique_count})"
-                    for feature in high_cardinality_features
-                )
-            )
-        logger.warning(warning_message)
+        logger.warning("All weights are identical. The estimates will not be adjusted")
 
     if dev < 0.10:
         logger.warning(
