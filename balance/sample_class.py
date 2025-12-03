@@ -219,10 +219,6 @@ class Sample:
                 adjustment_details.append(
                     f"weight trimming percentile: {trimming_percentile}"
                 )
-            elif method == "ipw":
-                adjustment_details.append(
-                    "weight trimming percentile: (not available for ipw adjustment)"
-                )
 
         if n_rows is None:
             n_rows = self._df.shape[0]
