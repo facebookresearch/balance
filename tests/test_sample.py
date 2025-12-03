@@ -119,10 +119,13 @@ class TestSample(
         self.assertTrue("target:" in s3.__str__())
         self.assertTrue("3 common variables" in s3.__str__())
 
+        adjusted_str = s3_adjusted_null.__str__()
         self.assertTrue(
-            "Adjusted balance Sample object with target set using"
-            in s3_adjusted_null.__str__()
+            "Adjusted balance Sample object with target set using" in adjusted_str
         )
+        self.assertIn("adjustment details", adjusted_str)
+        self.assertIn("method: null_adjustment", adjusted_str)
+        self.assertIn("design effect (Deff)", adjusted_str)
 
     def test_Sample__str__multiple_outcomes(self) -> None:
         """Test string representation with multiple outcome columns.

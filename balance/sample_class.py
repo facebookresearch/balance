@@ -112,6 +112,46 @@ class Sample:
         outcome_columns: {outcome_column_names}
         """
 
+        if self.is_adjusted():
+            adjustment_details = []
+            model = self.model()
+            if isinstance(model, dict):
+                method = model.get("method")
+                if isinstance(method, str):
+                    adjustment_details.append(f"method: {method}")
+
+                trimming_mean_ratio = model.get("weight_trimming_mean_ratio")
+                if trimming_mean_ratio is not None:
+                    adjustment_details.append(
+                        f"weight trimming mean ratio: {trimming_mean_ratio}"
+                    )
+
+                trimming_percentile = model.get("weight_trimming_percentile")
+                if trimming_percentile is not None:
+                    adjustment_details.append(
+                        f"weight trimming percentile: {trimming_percentile}"
+                    )
+
+            deff = None
+            if self.weight_column is not None:
+                try:
+                    deff = weights_stats.design_effect(self.weight_column)
+                except (TypeError, ValueError, ZeroDivisionError):
+                    deff = None
+
+            if deff is not None and np.isfinite(deff):
+                effective_n = n_rows / deff if deff != 0 else None
+                deff_line = f"design effect (Deff): {deff:.3f}"
+                if effective_n is not None:
+                    deff_line += f", eff. sample size: {effective_n:.1f}"
+                adjustment_details.append(deff_line)
+
+            if len(adjustment_details) > 0:
+                desc += """
+        adjustment details:
+            {details}
+                """.format(details="\n            ".join(adjustment_details))
+
         if self.has_target():
             common_variables = balance_util.choose_variables(
                 self, self._links["target"], variables=None
