@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import copy
 import logging
-from typing import Any, cast, Dict, List, Tuple, Union
+from typing import Any, cast, Dict, List, NamedTuple, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -21,8 +21,6 @@ from balance.stats_and_plots.weighted_comparisons_stats import (
 )
 from balance.stats_and_plots.weights_stats import design_effect
 from balance.util import _verify_value_type
-from pandas.api.types import is_categorical_dtype, is_object_dtype, is_string_dtype
-
 from scipy.sparse import csc_matrix, csr_matrix, issparse
 from sklearn.base import ClassifierMixin, clone
 from sklearn.linear_model import LogisticRegression
@@ -31,6 +29,65 @@ from sklearn.preprocessing import StandardScaler
 
 
 logger: logging.Logger = logging.getLogger(__package__)
+
+# TODO: Allow configuring this threshold globally if we need different sensitivity
+HIGH_CARDINALITY_RATIO_THRESHOLD: float = 0.8
+
+
+class HighCardinalityFeature(NamedTuple):
+    column: str
+    unique_count: int
+    unique_ratio: float
+    has_missing: bool
+
+
+def _compute_cardinality_metrics(series: pd.Series) -> HighCardinalityFeature:
+    non_missing = series.dropna()
+    unique_count = int(non_missing.nunique(dropna=True)) if not non_missing.empty else 0
+    unique_ratio = (
+        float(unique_count) / float(len(non_missing)) if len(non_missing) > 0 else 0.0
+    )
+    return HighCardinalityFeature(
+        column="",
+        unique_count=unique_count,
+        unique_ratio=unique_ratio,
+        has_missing=series.isna().any(),
+    )
+
+
+def _detect_high_cardinality_features(
+    sample_df: pd.DataFrame,
+    target_df: pd.DataFrame,
+    threshold: float = HIGH_CARDINALITY_RATIO_THRESHOLD,
+) -> list[HighCardinalityFeature]:
+    high_cardinality_features: list[HighCardinalityFeature] = []
+
+    for column in sample_df.columns:
+        sample_metrics = _compute_cardinality_metrics(sample_df[column])
+        target_metrics = _compute_cardinality_metrics(target_df[column])
+
+        if sample_metrics.unique_count == 0 and target_metrics.unique_count == 0:
+            continue
+
+        max_unique_ratio = max(sample_metrics.unique_ratio, target_metrics.unique_ratio)
+        if max_unique_ratio < threshold:
+            continue
+
+        high_cardinality_features.append(
+            HighCardinalityFeature(
+                column=column,
+                unique_count=max(
+                    sample_metrics.unique_count, target_metrics.unique_count
+                ),
+                unique_ratio=max_unique_ratio,
+                has_missing=sample_metrics.has_missing or target_metrics.has_missing,
+            )
+        )
+
+    high_cardinality_features.sort(
+        key=lambda feature: feature.unique_count, reverse=True
+    )
+    return high_cardinality_features
 
 
 # TODO: Add tests for model_coefs()
@@ -635,48 +692,19 @@ def ipw(
     sample_df = sample_df.loc[:, variables]
     target_df = target_df.loc[:, variables]
 
-    original_sample_n = sample_df.shape[0]
-    high_cardinality_na_columns: list[str] = []
-    combined_raw_df = pd.concat((sample_df, target_df), ignore_index=True)
-
-    def _is_categorical_like(series: pd.Series) -> bool:
-        return (
-            is_object_dtype(series)
-            or is_string_dtype(series)
-            or is_categorical_dtype(series)
+    high_cardinality_features = _detect_high_cardinality_features(sample_df, target_df)
+    if high_cardinality_features:
+        formatted_details = ", ".join(
+            f"{feature.column} (unique={feature.unique_count}; "
+            f"unique_ratio={feature.unique_ratio:.2f}"
+            f"{'; missing values present' if feature.has_missing else ''}"
+            f")"
+            for feature in high_cardinality_features
         )
-
-    def _has_high_cardinality_na(series: pd.Series) -> bool:
-        non_na_series = series.dropna()
-        if non_na_series.empty:
-            return False
-        unique_ratio = non_na_series.nunique() / non_na_series.shape[0]
-        return unique_ratio >= 0.8
-
-    for column in combined_raw_df.columns:
-        column_series = combined_raw_df[column]
-        if not _is_categorical_like(column_series):
-            continue
-
-        sample_series = column_series.iloc[:original_sample_n]
-        target_series = column_series.iloc[original_sample_n:]
-        # Only process NA and cardinality once per slice
-        sample_non_na = sample_series.dropna()
-        target_non_na = target_series.dropna()
-        sample_unique_ratio = (
-            sample_non_na.nunique() / sample_non_na.shape[0]
-            if sample_non_na.shape[0] > 0
-            else 0.0
+        logger.warning(
+            "High-cardinality features detected that may not provide signal: "
+            + formatted_details
         )
-        target_unique_ratio = (
-            target_non_na.nunique() / target_non_na.shape[0]
-            if target_non_na.shape[0] > 0
-            else 0.0
-        )
-        if column_series.isna().any() and (
-            sample_unique_ratio >= 0.8 or target_unique_ratio >= 0.8
-        ):
-            high_cardinality_na_columns.append(column)
 
     if na_action == "drop":
         (sample_df, sample_weights) = balance_util.drop_na_rows(
@@ -966,10 +994,13 @@ def ipw(
         warning_message = (
             "All weights are identical. The estimates will not be adjusted"
         )
-        if high_cardinality_na_columns:
+        if high_cardinality_features:
             warning_message += (
-                ". High-cardinality categorical features containing missing values "
-                "that may not provide signal: " + ", ".join(high_cardinality_na_columns)
+                ". Potentially uninformative high-cardinality features: "
+                + ", ".join(
+                    f"{feature.column} (unique={feature.unique_count})"
+                    for feature in high_cardinality_features
+                )
             )
         logger.warning(warning_message)
 

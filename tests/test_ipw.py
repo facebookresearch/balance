@@ -188,7 +188,7 @@ class TestIPW(
         self.assertTrue(np.allclose(result["weight"], np.ones(len(sample_df))))
         self.assertTrue(
             any(
-                "High-cardinality categorical features containing missing values" in log
+                "High-cardinality features detected" in log and "unique=10" in log
                 for log in logs.output
             )
         )
@@ -216,7 +216,7 @@ class TestIPW(
         self.assertTrue(np.allclose(result["weight"], np.ones(len(sample_df) - 1)))
         self.assertTrue(
             any(
-                "High-cardinality categorical features containing missing values" in log
+                "High-cardinality features detected" in log and "unique=10" in log
                 for log in logs.output
             )
         )
@@ -246,7 +246,7 @@ class TestIPW(
         self.assertTrue(np.allclose(result["weight"], np.ones(len(sample_df))))
         self.assertTrue(
             any(
-                "High-cardinality categorical features containing missing values" in log
+                "High-cardinality features detected" in log and "unique=9" in log
                 for log in logs.output
             )
         )
@@ -273,10 +273,99 @@ class TestIPW(
 
         self.assertTrue(np.allclose(result["weight"], np.ones(len(sample_df))))
         self.assertFalse(
+            any("High-cardinality features detected" in log for log in logs.output)
+        )
+
+    def test_ipw_warns_for_high_cardinality_features_without_nas(self) -> None:
+        """High-cardinality categoricals should be reported even without missing values."""
+
+        identifiers = [f"user_{i}" for i in range(8)]
+        sample_df = pd.DataFrame(
+            {
+                "identifier": identifiers,
+                "signal": np.concatenate((np.zeros(4), np.ones(4))),
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "identifier": identifiers[::-1],
+                "signal": np.concatenate((np.ones(4), np.zeros(4))),
+            }
+        )
+
+        with self.assertLogs(balance_ipw.logger, level="WARNING") as logs:
+            balance_ipw.ipw(
+                sample_df=sample_df,
+                sample_weights=pd.Series(np.ones(len(sample_df))),
+                target_df=target_df,
+                target_weights=pd.Series(np.ones(len(target_df))),
+                variables=["identifier", "signal"],
+                num_lambdas=1,
+            )
+
+        self.assertTrue(
             any(
-                "High-cardinality categorical features containing missing values" in log
+                "High-cardinality features detected" in log
+                and "identifier (unique=8" in log
                 for log in logs.output
             )
+        )
+
+    def test_ipw_warns_for_high_cardinality_numeric_features(self) -> None:
+        """High-cardinality numeric features (e.g., IDs) should be reported."""
+
+        identifiers = np.arange(12)
+        sample_df = pd.DataFrame({"identifier": identifiers})
+        target_df = pd.DataFrame({"identifier": identifiers})
+
+        with self.assertLogs(balance_ipw.logger, level="WARNING") as logs:
+            balance_ipw.ipw(
+                sample_df=sample_df,
+                sample_weights=pd.Series(np.ones(len(sample_df))),
+                target_df=target_df,
+                target_weights=pd.Series(np.ones(len(target_df))),
+                variables=["identifier"],
+                num_lambdas=1,
+            )
+
+        self.assertTrue(
+            any(
+                "High-cardinality features detected" in log
+                and "identifier (unique=12" in log
+                for log in logs.output
+            ),
+            "Expected high-cardinality numeric feature to be reported.",
+        )
+
+    def test_ipw_high_cardinality_warning_sorts_by_cardinality(self) -> None:
+        """Warnings should list columns from highest to lowest cardinality."""
+
+        sample_df = pd.DataFrame(
+            {
+                "higher": [f"user_{i}" for i in range(7)],
+                "high": [f"alias_{i}" for i in range(6)] + ["alias_0"],
+            }
+        )
+        target_df = sample_df.copy()
+
+        with self.assertLogs(balance_ipw.logger, level="WARNING") as logs:
+            balance_ipw.ipw(
+                sample_df=sample_df,
+                sample_weights=pd.Series(np.ones(len(sample_df))),
+                target_df=target_df,
+                target_weights=pd.Series(np.ones(len(target_df))),
+                variables=["higher", "high"],
+                num_lambdas=1,
+            )
+
+        warning_logs = [
+            log for log in logs.output if "High-cardinality features detected" in log
+        ]
+        self.assertTrue(warning_logs)
+        self.assertTrue(
+            warning_logs[0].find("higher (unique")
+            < warning_logs[0].find(", high (unique"),
+            "Expected higher-cardinality column to appear first in warning.",
         )
 
     def test_ipw_na_drop_behavior(self) -> None:
