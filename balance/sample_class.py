@@ -84,6 +84,23 @@ class Sample:
         )
 
     def __str__(self: "Sample", pkg_source: str = __package__) -> str:
+        """Return a readable summary of the sample and any applied adjustment.
+
+        The summary reports the number of observations, covariate names, id and
+        weight columns, available outcome columns, and whether a target has been
+        set. When an adjustment is present, quick diagnostics are included such
+        as the adjustment method, trimming configuration, and weight summaries
+        (design effect and implied effective sample size when available).
+
+        Args:
+            pkg_source: Package namespace used in the header of the printed
+                object. Defaults to ``balance`` and is primarily useful for
+                subclasses that wish to identify their own module.
+
+        Returns:
+            str: Multi-line description of the ``Sample`` highlighting key
+                structure and adjustment details.
+        """
         is_adjusted = self.is_adjusted() * "Adjusted "
         n_rows = self._df.shape[0]
         n_variables = self._covar_columns().shape[1]
