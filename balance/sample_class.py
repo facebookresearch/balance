@@ -159,7 +159,7 @@ class Sample:
             adjustment_details = self._quick_adjustment_details(n_rows)
             if len(adjustment_details) > 0:
                 desc += """
-        Adjustment details:
+        adjustment details:
             {details}
                 """.format(details="\n            ".join(adjustment_details))
 
