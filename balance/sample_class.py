@@ -191,6 +191,14 @@ class Sample:
         Returns:
             List[str]: Human-readable lines describing adjustment method,
             trimming configuration, and weight diagnostics when available.
+
+        Examples:
+            The ``__str__`` example above shows these details rendered as part
+            of the adjusted sample printout. You can also retrieve them
+            directly for custom displays:
+
+            >>> sample._quick_adjustment_details()  # doctest: +SKIP
+            ['method: ipw', 'design effect (Deff): 1.013, eff. sample size: 2.0']
         """
 
         adjustment_details: List[str] = []
@@ -217,7 +225,7 @@ class Sample:
 
         if self.weight_column is not None:
             try:
-                deff = weights_stats.design_effect(self.weight_column)
+                deff = self.design_effect()
             except (TypeError, ValueError, ZeroDivisionError) as exc:
                 logger.debug("Unable to compute design effect for __str__: %s", exc)
                 deff = None
@@ -941,6 +949,11 @@ class Sample:
             if self.is_adjusted() and kld_before > 0:
                 kld_reduction = 100 * (kld_before - kld_now) / kld_before
 
+        # quick, lightweight adjustment details reused with __str__
+        quick_adjustment_details: List[str] = []
+        if self.is_adjusted():
+            quick_adjustment_details = self._quick_adjustment_details(self._df.shape[0])
+
         # design effect
         design_effect = self.design_effect()
 
@@ -962,8 +975,15 @@ class Sample:
         else:
             model_summary = None
 
+        quick_adjustment_section = (
+            "Adjustment details:\n    " + "\n    ".join(quick_adjustment_details) + "\n"
+            if quick_adjustment_details
+            else ""
+        )
+
         out = (
-            (
+            quick_adjustment_section
+            + (
                 f"Covar ASMD reduction: {asmd_improvement:.1f}%, design effect: {design_effect:.3f}\n"
                 if self.is_adjusted()
                 else ""
