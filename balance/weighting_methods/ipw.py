@@ -635,16 +635,7 @@ def ipw(
     sample_df = sample_df.loc[:, variables]
     target_df = target_df.loc[:, variables]
 
-    if na_action == "drop":
-        (sample_df, sample_weights) = balance_util.drop_na_rows(
-            sample_df, sample_weights, "sample"
-        )
-        (target_df, target_weights) = balance_util.drop_na_rows(
-            target_df, target_weights, "target"
-        )
-    sample_n = sample_df.shape[0]
-    target_n = target_df.shape[0]
-
+    original_sample_n = sample_df.shape[0]
     high_cardinality_na_columns: list[str] = []
     combined_raw_df = pd.concat((sample_df, target_df), ignore_index=True)
 
@@ -659,7 +650,7 @@ def ipw(
         non_na_series = series.dropna()
         if non_na_series.empty:
             return False
-        unique_ratio = non_na_series.nunique(dropna=True) / non_na_series.shape[0]
+        unique_ratio = non_na_series.nunique() / non_na_series.shape[0]
         return unique_ratio >= 0.8
 
     for column in combined_raw_df.columns:
@@ -667,13 +658,23 @@ def ipw(
         if not _is_categorical_like(column_series):
             continue
 
-        sample_series = column_series.iloc[:sample_n]
-        target_series = column_series.iloc[sample_n:]
+        sample_series = column_series.iloc[:original_sample_n]
+        target_series = column_series.iloc[original_sample_n:]
         if column_series.isna().any() and (
             _has_high_cardinality_na(sample_series)
             or _has_high_cardinality_na(target_series)
         ):
             high_cardinality_na_columns.append(column)
+
+    if na_action == "drop":
+        (sample_df, sample_weights) = balance_util.drop_na_rows(
+            sample_df, sample_weights, "sample"
+        )
+        (target_df, target_weights) = balance_util.drop_na_rows(
+            target_df, target_weights, "target"
+        )
+    sample_n = sample_df.shape[0]
+    target_n = target_df.shape[0]
 
     # Applying transformations
     # Important! Variables that don't need transformations

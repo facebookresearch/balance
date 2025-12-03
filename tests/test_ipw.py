@@ -193,6 +193,34 @@ class TestIPW(
             )
         )
 
+    def test_ipw_warns_for_high_cardinality_features_with_nas_when_dropping(
+        self,
+    ) -> None:
+        """The high-cardinality NA warning should surface even when NAs are dropped."""
+
+        unique_values = [f"user_{i}" for i in range(10)]
+        sample_df = pd.DataFrame({"identifier": unique_values + [np.nan]})
+        target_df = pd.DataFrame({"identifier": unique_values + [np.nan]})
+
+        with self.assertLogs(balance_ipw.logger, level="WARNING") as logs:
+            result = balance_ipw.ipw(
+                sample_df=sample_df,
+                sample_weights=pd.Series(np.ones(len(sample_df))),
+                target_df=target_df,
+                target_weights=pd.Series(np.ones(len(target_df))),
+                variables=["identifier"],
+                num_lambdas=1,
+                na_action="drop",
+            )
+
+        self.assertTrue(np.allclose(result["weight"], np.ones(len(sample_df) - 1)))
+        self.assertTrue(
+            any(
+                "High-cardinality categorical features containing missing values" in log
+                for log in logs.output
+            )
+        )
+
     def test_ipw_warns_for_high_cardinality_categoricals_with_nas(self) -> None:
         """Categorical dtype columns with high cardinality and NAs should be flagged."""
 
