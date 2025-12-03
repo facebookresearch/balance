@@ -156,39 +156,7 @@ class Sample:
         """
 
         if self.is_adjusted():
-            adjustment_details = []
-            model = self.model()
-            if isinstance(model, dict):
-                method = model.get("method")
-                if isinstance(method, str):
-                    adjustment_details.append(f"method: {method}")
-
-                trimming_mean_ratio = model.get("weight_trimming_mean_ratio")
-                if trimming_mean_ratio is not None:
-                    adjustment_details.append(
-                        f"weight trimming mean ratio: {trimming_mean_ratio}"
-                    )
-
-                trimming_percentile = model.get("weight_trimming_percentile")
-                if trimming_percentile is not None:
-                    adjustment_details.append(
-                        f"weight trimming percentile: {trimming_percentile}"
-                    )
-
-            deff = None
-            if self.weight_column is not None:
-                try:
-                    deff = weights_stats.design_effect(self.weight_column)
-                except (TypeError, ValueError, ZeroDivisionError):
-                    deff = None
-
-            if deff is not None and np.isfinite(deff):
-                effective_n = n_rows / deff if deff != 0 else None
-                deff_line = f"design effect (Deff): {deff:.3f}"
-                if effective_n is not None:
-                    deff_line += f", eff. sample size: {effective_n:.1f}"
-                adjustment_details.append(deff_line)
-
+            adjustment_details = self._quick_adjustment_details(n_rows)
             if len(adjustment_details) > 0:
                 desc += """
         adjustment details:
@@ -208,6 +176,59 @@ class Sample:
             {n_common} common variables: {common_variables}
             """
         return desc
+
+    def _quick_adjustment_details(self, n_rows: int | None = None) -> List[str]:
+        """Collect quick-to-compute adjustment diagnostics for display.
+
+        This helper centralizes the lightweight adjustment-related statistics
+        surfaced in ``__str__`` so they can be reused by other presentation
+        helpers (for example, :meth:`summary`) without duplicating logic.
+
+        Args:
+            n_rows: Optional row count to use for effective sample size
+                calculations. Defaults to the current sample's row count.
+
+        Returns:
+            List[str]: Human-readable lines describing adjustment method,
+            trimming configuration, and weight diagnostics when available.
+        """
+
+        adjustment_details: List[str] = []
+        model = self.model()
+        if isinstance(model, dict):
+            method = model.get("method")
+            if isinstance(method, str):
+                adjustment_details.append(f"method: {method}")
+
+            trimming_mean_ratio = model.get("weight_trimming_mean_ratio")
+            if trimming_mean_ratio is not None:
+                adjustment_details.append(
+                    f"weight trimming mean ratio: {trimming_mean_ratio}"
+                )
+
+            trimming_percentile = model.get("weight_trimming_percentile")
+            if trimming_percentile is not None:
+                adjustment_details.append(
+                    f"weight trimming percentile: {trimming_percentile}"
+                )
+
+        if n_rows is None:
+            n_rows = self._df.shape[0]
+
+        if self.weight_column is not None:
+            try:
+                deff = weights_stats.design_effect(self.weight_column)
+            except (TypeError, ValueError, ZeroDivisionError) as exc:
+                logger.debug("Unable to compute design effect for __str__: %s", exc)
+                deff = None
+            if deff is not None and np.isfinite(deff):
+                effective_n = n_rows / deff if deff != 0 else None
+                deff_line = f"design effect (Deff): {deff:.3f}"
+                if effective_n is not None:
+                    deff_line += f", eff. sample size: {effective_n:.1f}"
+                adjustment_details.append(deff_line)
+
+        return adjustment_details
 
     ################################################################################
     #  Public API
