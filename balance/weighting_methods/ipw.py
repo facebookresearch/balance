@@ -660,9 +660,19 @@ def ipw(
 
         sample_series = column_series.iloc[:original_sample_n]
         target_series = column_series.iloc[original_sample_n:]
+        # Only process NA and cardinality once per slice
+        sample_non_na = sample_series.dropna()
+        target_non_na = target_series.dropna()
+        sample_unique_ratio = (
+            sample_non_na.nunique() / sample_non_na.shape[0]
+            if sample_non_na.shape[0] > 0 else 0.0
+        )
+        target_unique_ratio = (
+            target_non_na.nunique() / target_non_na.shape[0]
+            if target_non_na.shape[0] > 0 else 0.0
+        )
         if column_series.isna().any() and (
-            _has_high_cardinality_na(sample_series)
-            or _has_high_cardinality_na(target_series)
+            sample_unique_ratio >= 0.8 or target_unique_ratio >= 0.8
         ):
             high_cardinality_na_columns.append(column)
 
