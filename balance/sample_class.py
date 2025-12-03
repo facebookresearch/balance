@@ -159,7 +159,7 @@ class Sample:
             adjustment_details = self._quick_adjustment_details(n_rows)
             if len(adjustment_details) > 0:
                 desc += """
-        adjustment details:
+        Adjustment details:
             {details}
                 """.format(details="\n            ".join(adjustment_details))
 
@@ -218,6 +218,10 @@ class Sample:
             if trimming_percentile is not None:
                 adjustment_details.append(
                     f"weight trimming percentile: {trimming_percentile}"
+                )
+            elif method == "ipw":
+                adjustment_details.append(
+                    "weight trimming percentile: (not available for ipw adjustment)"
                 )
 
         if n_rows is None:
