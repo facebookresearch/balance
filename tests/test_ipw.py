@@ -160,6 +160,97 @@ class TestIPW(
             balance_classes=False,
         )
 
+    def test_ipw_warns_for_high_cardinality_features_with_nas(self) -> None:
+        """IPW should warn when high-cardinality features with NAs lead to equal weights."""
+
+        unique_values = [f"user_{i}" for i in range(10)]
+        sample_df = pd.DataFrame(
+            {
+                "identifier": unique_values + [np.nan],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "identifier": unique_values + [np.nan],
+            }
+        )
+
+        with self.assertLogs(balance_ipw.logger, level="WARNING") as logs:
+            result = balance_ipw.ipw(
+                sample_df=sample_df,
+                sample_weights=pd.Series(np.ones(len(sample_df))),
+                target_df=target_df,
+                target_weights=pd.Series(np.ones(len(target_df))),
+                variables=["identifier"],
+                num_lambdas=1,
+            )
+
+        self.assertTrue(np.allclose(result["weight"], np.ones(len(sample_df))))
+        self.assertTrue(
+            any(
+                "High-cardinality categorical features containing missing values" in log
+                for log in logs.output
+            )
+        )
+
+    def test_ipw_warns_for_high_cardinality_categoricals_with_nas(self) -> None:
+        """Categorical dtype columns with high cardinality and NAs should be flagged."""
+
+        sample_df = pd.DataFrame(
+            {
+                "identifier": pd.Series(
+                    [f"user_{i}" for i in range(9)] + [np.nan], dtype="category"
+                ),
+            }
+        )
+        target_df = sample_df.copy()
+
+        with self.assertLogs(balance_ipw.logger, level="WARNING") as logs:
+            result = balance_ipw.ipw(
+                sample_df=sample_df,
+                sample_weights=pd.Series(np.ones(len(sample_df))),
+                target_df=target_df,
+                target_weights=pd.Series(np.ones(len(target_df))),
+                variables=["identifier"],
+                num_lambdas=1,
+            )
+
+        self.assertTrue(np.allclose(result["weight"], np.ones(len(sample_df))))
+        self.assertTrue(
+            any(
+                "High-cardinality categorical features containing missing values" in log
+                for log in logs.output
+            )
+        )
+
+    def test_ipw_does_not_flag_low_cardinality_categoricals_with_nas(self) -> None:
+        """Low-cardinality categoricals with NAs should not be reported as a cause."""
+
+        sample_df = pd.DataFrame(
+            {
+                "identifier": pd.Series(["a", "a", "b", np.nan], dtype="category"),
+            }
+        )
+        target_df = sample_df.copy()
+
+        with self.assertLogs(balance_ipw.logger, level="WARNING") as logs:
+            result = balance_ipw.ipw(
+                sample_df=sample_df,
+                sample_weights=pd.Series(np.ones(len(sample_df))),
+                target_df=target_df,
+                target_weights=pd.Series(np.ones(len(target_df))),
+                variables=["identifier"],
+                num_lambdas=1,
+            )
+
+        self.assertTrue(np.allclose(result["weight"], np.ones(len(sample_df))))
+        self.assertFalse(
+            any(
+                "High-cardinality categorical features containing missing values" in log
+                for log in logs.output
+            )
+        )
+
     def test_ipw_na_drop_behavior(self) -> None:
         """Test that IPW correctly handles and warns about dropping NA values.
 
