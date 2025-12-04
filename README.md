@@ -244,7 +244,7 @@ You are welcome to:
 ## Citing *balance*
 Sarig, T., Galili, T., & Eilat, R. (2023). balance – a Python package for balancing biased data samples. [https://arxiv.org/abs/2307.06024](https://arxiv.org/abs/2307.06024)
 
-```BibTeX
+```bibtex
 @misc{sarig2023balance,
       title={balance - a Python package for balancing biased data samples},
       author={Tal Sarig and Tal Galili and Roee Eilat},
