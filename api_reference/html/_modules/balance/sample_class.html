@@ -58,6 +58,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots.weighted_comparisons_stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">outcome_variance_ratio</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">FilePathOrBuffer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">_detect_high_cardinality_features</span><span class="p">,</span> <span class="n">HighCardinalityFeature</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.lib.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileLink</span>
 
@@ -506,6 +507,13 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Sample: an adjusted Sample object</span>
 
+<span class="sd">        Note:</span>
+<span class="sd">            During adjustment, the method automatically detects and warns about high-cardinality</span>
+<span class="sd">            categorical features (features where most values are unique). These features</span>
+<span class="sd">            typically don&#39;t provide meaningful signal for adjustment and may lead to</span>
+<span class="sd">            unstable or uniform weights. The warning helps identify features that should be</span>
+<span class="sd">            reviewed or excluded from the adjustment.</span>
+
 <span class="sd">        Examples:</span>
 <span class="sd">            ::</span>
 
@@ -570,11 +578,47 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Method should be one of existing weighting methods&quot;</span><span class="p">)</span>
 
+        <span class="c1"># Detect high cardinality features in both sample and target covariates</span>
+        <span class="n">sample_covars_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span>
+        <span class="n">target_covars_df</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span>
+
+        <span class="n">sample_high_card</span> <span class="o">=</span> <span class="n">_detect_high_cardinality_features</span><span class="p">(</span><span class="n">sample_covars_df</span><span class="p">)</span>
+        <span class="n">target_high_card</span> <span class="o">=</span> <span class="n">_detect_high_cardinality_features</span><span class="p">(</span><span class="n">target_covars_df</span><span class="p">)</span>
+
+        <span class="c1"># Merge the results, taking the maximum unique_count for each column</span>
+        <span class="n">high_cardinality_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">HighCardinalityFeature</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">sample_high_card</span> <span class="o">+</span> <span class="n">target_high_card</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">feature</span><span class="o">.</span><span class="n">column</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">high_cardinality_dict</span>
+                <span class="ow">or</span> <span class="n">feature</span><span class="o">.</span><span class="n">unique_count</span>
+                <span class="o">&gt;</span> <span class="n">high_cardinality_dict</span><span class="p">[</span><span class="n">feature</span><span class="o">.</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">unique_count</span>
+            <span class="p">):</span>
+                <span class="n">high_cardinality_dict</span><span class="p">[</span><span class="n">feature</span><span class="o">.</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">feature</span>
+
+        <span class="n">high_cardinality_features</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="n">high_cardinality_dict</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
+            <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">f</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">unique_count</span><span class="p">,</span>
+            <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">high_cardinality_features</span><span class="p">:</span>
+            <span class="n">formatted_details</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">feature</span><span class="o">.</span><span class="n">column</span><span class="si">}</span><span class="s2"> (unique=</span><span class="si">{</span><span class="n">feature</span><span class="o">.</span><span class="n">unique_count</span><span class="si">}</span><span class="s2">; &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;unique_ratio=</span><span class="si">{</span><span class="n">feature</span><span class="o">.</span><span class="n">unique_ratio</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;; missing values present&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">feature</span><span class="o">.</span><span class="n">has_missing</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;)&quot;</span>
+                <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">high_cardinality_features</span>
+            <span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;High-cardinality features detected that may not provide signal: &quot;</span>
+                <span class="o">+</span> <span class="n">formatted_details</span>
+            <span class="p">)</span>
+
         <span class="n">adjusted</span> <span class="o">=</span> <span class="n">adjustment_function</span><span class="p">(</span>
             <span class="o">*</span><span class="n">args</span><span class="p">,</span>
-            <span class="n">sample_df</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="p">,</span>
+            <span class="n">sample_df</span><span class="o">=</span><span class="n">sample_covars_df</span><span class="p">,</span>
             <span class="n">sample_weights</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="p">,</span>
-            <span class="n">target_df</span><span class="o">=</span><span class="n">target</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="p">,</span>
+            <span class="n">target_df</span><span class="o">=</span><span class="n">target_covars_df</span><span class="p">,</span>
             <span class="n">target_weights</span><span class="o">=</span><span class="n">target</span><span class="o">.</span><span class="n">weight_column</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span>

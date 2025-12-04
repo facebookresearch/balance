@@ -92,6 +92,14 @@ If None, the set target of the object is used for matching.</p></li>
 <dd class="field-odd"><p><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample">Sample</a></p>
 </dd>
 </dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>During adjustment, the method automatically detects and warns about high-cardinality
+categorical features (features where most values are unique). These features
+typically don’t provide meaningful signal for adjustment and may lead to
+unstable or uniform weights. The warning helps identify features that should be
+reviewed or excluded from the adjustment.</p>
+</div>
 <p class="rubric">Examples</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">balance</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.ensemble</span><span class="w"> </span><span class="kn">import</span> <span class="n">RandomForestClassifier</span>

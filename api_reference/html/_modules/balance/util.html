@@ -57,6 +57,7 @@
     <span class="n">Callable</span><span class="p">,</span>
     <span class="n">Dict</span><span class="p">,</span>
     <span class="n">List</span><span class="p">,</span>
+    <span class="n">NamedTuple</span><span class="p">,</span>
     <span class="n">Optional</span><span class="p">,</span>
     <span class="n">overload</span><span class="p">,</span>
     <span class="n">Tuple</span><span class="p">,</span>
@@ -68,9 +69,10 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas.api.types</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd_types</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.lib.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileLink</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pandas.api.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_bool_dtype</span><span class="p">,</span> <span class="n">is_numeric_dtype</span>
-
 <span class="kn">from</span><span class="w"> </span><span class="nn">patsy.contrasts</span><span class="w"> </span><span class="kn">import</span> <span class="n">ContrastMatrix</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">patsy.highlevel</span><span class="w"> </span><span class="kn">import</span> <span class="n">dmatrix</span><span class="p">,</span> <span class="n">ModelDesc</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.sparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">csc_matrix</span><span class="p">,</span> <span class="n">hstack</span>
@@ -78,6 +80,107 @@
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
 
 <span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">)</span>
+
+<span class="c1"># TODO: Allow configuring this threshold globally if we need different sensitivity</span>
+<span class="n">HIGH_CARDINALITY_RATIO_THRESHOLD</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.8</span>
+
+
+<div class="viewcode-block" id="HighCardinalityFeature">
+<a class="viewcode-back" href="../../balance.util.html#balance.util.HighCardinalityFeature">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">HighCardinalityFeature</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+    <span class="n">column</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">unique_count</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">unique_ratio</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">has_missing</span><span class="p">:</span> <span class="nb">bool</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_compute_cardinality_metrics</span><span class="p">(</span><span class="n">series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HighCardinalityFeature</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute cardinality metrics for a feature series.</span>
+
+<span class="sd">    The function counts unique non-missing values and their proportion relative</span>
+<span class="sd">    to non-missing rows, while also tracking whether any missing values are</span>
+<span class="sd">    present.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        series: Feature column to evaluate.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        HighCardinalityFeature: Metrics describing uniqueness and missingness.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">        &gt;&gt;&gt; s = pd.Series([&quot;a&quot;, &quot;b&quot;, &quot;c&quot;, None, &quot;c&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; _compute_cardinality_metrics(s)</span>
+<span class="sd">        HighCardinalityFeature(column=&#39;&#39;, unique_count=3, unique_ratio=0.75, has_missing=True)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">non_missing</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+    <span class="n">unique_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">non_missing</span><span class="o">.</span><span class="n">nunique</span><span class="p">())</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">non_missing</span><span class="o">.</span><span class="n">empty</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="n">unique_ratio</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">float</span><span class="p">(</span><span class="n">unique_count</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">non_missing</span><span class="p">))</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">non_missing</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.0</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">HighCardinalityFeature</span><span class="p">(</span>
+        <span class="n">column</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">unique_count</span><span class="o">=</span><span class="n">unique_count</span><span class="p">,</span>
+        <span class="n">unique_ratio</span><span class="o">=</span><span class="n">unique_ratio</span><span class="p">,</span>
+        <span class="n">has_missing</span><span class="o">=</span><span class="n">series</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">(),</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_detect_high_cardinality_features</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">HIGH_CARDINALITY_RATIO_THRESHOLD</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">HighCardinalityFeature</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Identify categorical columns whose non-missing values are mostly unique.</span>
+
+<span class="sd">    A feature is flagged when the ratio of unique non-missing values to total</span>
+<span class="sd">    non-missing rows meets or exceeds ``threshold``. Only categorical columns</span>
+<span class="sd">    (object, category, string dtypes) are checked, as high cardinality in</span>
+<span class="sd">    numeric columns is expected and not problematic. Results are sorted by</span>
+<span class="sd">    descending unique counts for clearer reporting.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Dataframe containing candidate features.</span>
+<span class="sd">        threshold: Minimum unique-to-count ratio to flag a column.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list[HighCardinalityFeature]: High-cardinality categorical columns</span>
+<span class="sd">            sorted by descending uniqueness.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">        &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;a&quot;, &quot;b&quot;, &quot;c&quot;], &quot;group&quot;: [&quot;a&quot;, &quot;a&quot;, &quot;b&quot;]})</span>
+<span class="sd">        &gt;&gt;&gt; _detect_high_cardinality_features(df, threshold=0.8)</span>
+<span class="sd">        [HighCardinalityFeature(column=&#39;id&#39;, unique_count=3, unique_ratio=1.0, has_missing=False)]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">high_cardinality_features</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">HighCardinalityFeature</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="c1"># Only check categorical columns (object, category, string dtypes)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_is_categorical_dtype</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">column</span><span class="p">]):</span>
+            <span class="k">continue</span>
+
+        <span class="n">metrics</span> <span class="o">=</span> <span class="n">_compute_cardinality_metrics</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">column</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">metrics</span><span class="o">.</span><span class="n">unique_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="k">if</span> <span class="n">metrics</span><span class="o">.</span><span class="n">unique_ratio</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="n">high_cardinality_features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">HighCardinalityFeature</span><span class="p">(</span>
+                <span class="n">column</span><span class="o">=</span><span class="n">column</span><span class="p">,</span>
+                <span class="n">unique_count</span><span class="o">=</span><span class="n">metrics</span><span class="o">.</span><span class="n">unique_count</span><span class="p">,</span>
+                <span class="n">unique_ratio</span><span class="o">=</span><span class="n">metrics</span><span class="o">.</span><span class="n">unique_ratio</span><span class="p">,</span>
+                <span class="n">has_missing</span><span class="o">=</span><span class="n">metrics</span><span class="o">.</span><span class="n">has_missing</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="n">high_cardinality_features</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span>
+        <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">feature</span><span class="p">:</span> <span class="n">feature</span><span class="o">.</span><span class="n">unique_count</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">high_cardinality_features</span>
 
 
 <span class="nd">@overload</span>
@@ -116,6 +219,33 @@
     <span class="k">if</span> <span class="n">expected_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">optional</span><span class="p">,</span> <span class="n">expected_type</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected type </span><span class="si">{</span><span class="n">expected_type</span><span class="si">}</span><span class="s2">, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">optional</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">optional</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_is_categorical_dtype</span><span class="p">(</span><span class="n">series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if a pandas Series has a categorical dtype.</span>
+
+<span class="sd">    A dtype is considered categorical if it is object, category, or string type.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        series: A pandas Series to check the dtype of.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: True if the Series dtype is categorical (object, category, or string),</span>
+<span class="sd">            False otherwise.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">        &gt;&gt;&gt; _is_categorical_dtype(pd.Series([&quot;a&quot;, &quot;b&quot;]))</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; _is_categorical_dtype(pd.Series([1, 2]))</span>
+<span class="sd">        False</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dtype</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">dtype</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">pd_types</span><span class="o">.</span><span class="n">is_object_dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="n">pd_types</span><span class="o">.</span><span class="n">is_categorical_dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="n">pd_types</span><span class="o">.</span><span class="n">is_string_dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="p">)</span>
 
 
 <span class="c1"># TODO: split util and adjustment files into separate files: transformations, model_matrix, others..</span>
