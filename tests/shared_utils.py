@@ -27,4 +27,5 @@ def tempfile_path() -> ContextManager[str]:
         try:
             os.unlink(tmp.name)
         except FileNotFoundError:
+            # File may have already been deleted; safe to ignore.
             pass
