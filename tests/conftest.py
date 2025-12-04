@@ -5,6 +5,8 @@
 
 # pyre-strict
 
+"""Test configuration shared across pytest runs"""
+
 import matplotlib
 
 # Force a non-interactive backend so tests do not require a Tk installation.
