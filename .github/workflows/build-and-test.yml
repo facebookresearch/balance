@@ -13,16 +13,17 @@ on:
 
 jobs:
   tests:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
       fail-fast: false
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v5
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Pkg + Dependencies
@@ -39,9 +40,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v5
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: 3.9
     - name: Install dependencies
@@ -58,14 +59,14 @@ jobs:
     name: Test website build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 18
           cache: yarn
           cache-dependency-path: "./website/yarn.lock"
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: 3.9
       - name: Install Pkg + Dependencies
