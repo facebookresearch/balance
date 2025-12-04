@@ -20,6 +20,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    NamedTuple,
     Optional,
     overload,
     Tuple,
@@ -31,9 +32,10 @@ from typing import (
 import numpy as np
 import pandas as pd
 
+import pandas.api.types as pd_types
+
 from IPython.lib.display import FileLink
 from pandas.api.types import is_bool_dtype, is_numeric_dtype
-
 from patsy.contrasts import ContrastMatrix
 from patsy.highlevel import dmatrix, ModelDesc
 from scipy.sparse import csc_matrix, hstack
@@ -41,6 +43,104 @@ from scipy.sparse import csc_matrix, hstack
 logger: logging.Logger = logging.getLogger(__package__)
 
 T = TypeVar("T")
+
+# TODO: Allow configuring this threshold globally if we need different sensitivity
+HIGH_CARDINALITY_RATIO_THRESHOLD: float = 0.8
+
+
+class HighCardinalityFeature(NamedTuple):
+    column: str
+    unique_count: int
+    unique_ratio: float
+    has_missing: bool
+
+
+def _compute_cardinality_metrics(series: pd.Series) -> HighCardinalityFeature:
+    """Compute cardinality metrics for a feature series.
+
+    The function counts unique non-missing values and their proportion relative
+    to non-missing rows, while also tracking whether any missing values are
+    present.
+
+    Args:
+        series: Feature column to evaluate.
+
+    Returns:
+        HighCardinalityFeature: Metrics describing uniqueness and missingness.
+
+    Example:
+        >>> import pandas as pd
+        >>> s = pd.Series(["a", "b", "c", None, "c"])
+        >>> _compute_cardinality_metrics(s)
+        HighCardinalityFeature(column='', unique_count=3, unique_ratio=0.75, has_missing=True)
+    """
+    non_missing = series.dropna()
+    unique_count = int(non_missing.nunique()) if not non_missing.empty else 0
+    unique_ratio = (
+        float(unique_count) / float(len(non_missing)) if len(non_missing) > 0 else 0.0
+    )
+    return HighCardinalityFeature(
+        column="",
+        unique_count=unique_count,
+        unique_ratio=unique_ratio,
+        has_missing=series.isna().any(),
+    )
+
+
+def _detect_high_cardinality_features(
+    df: pd.DataFrame,
+    threshold: float = HIGH_CARDINALITY_RATIO_THRESHOLD,
+) -> list[HighCardinalityFeature]:
+    """Identify categorical columns whose non-missing values are mostly unique.
+
+    A feature is flagged when the ratio of unique non-missing values to total
+    non-missing rows meets or exceeds ``threshold``. Only categorical columns
+    (object, category, string dtypes) are checked, as high cardinality in
+    numeric columns is expected and not problematic. Results are sorted by
+    descending unique counts for clearer reporting.
+
+    Args:
+        df: Dataframe containing candidate features.
+        threshold: Minimum unique-to-count ratio to flag a column.
+
+    Returns:
+        list[HighCardinalityFeature]: High-cardinality categorical columns
+            sorted by descending uniqueness.
+
+    Example:
+        >>> import pandas as pd
+        >>> df = pd.DataFrame({"id": ["a", "b", "c"], "group": ["a", "a", "b"]})
+        >>> _detect_high_cardinality_features(df, threshold=0.8)
+        [HighCardinalityFeature(column='id', unique_count=3, unique_ratio=1.0, has_missing=False)]
+    """
+    high_cardinality_features: list[HighCardinalityFeature] = []
+
+    for column in df.columns:
+        # Only check categorical columns (object, category, string dtypes)
+        if not _is_categorical_dtype(df[column]):
+            continue
+
+        metrics = _compute_cardinality_metrics(df[column])
+
+        if metrics.unique_count == 0:
+            continue
+
+        if metrics.unique_ratio < threshold:
+            continue
+
+        high_cardinality_features.append(
+            HighCardinalityFeature(
+                column=column,
+                unique_count=metrics.unique_count,
+                unique_ratio=metrics.unique_ratio,
+                has_missing=metrics.has_missing,
+            )
+        )
+
+    high_cardinality_features.sort(
+        key=lambda feature: feature.unique_count, reverse=True
+    )
+    return high_cardinality_features
 
 
 @overload
@@ -79,6 +179,33 @@ def _verify_value_type(
     if expected_type is not None and not isinstance(optional, expected_type):
         raise TypeError(f"Expected type {expected_type}, got {type(optional).__name__}")
     return optional
+
+
+def _is_categorical_dtype(series: pd.Series) -> bool:
+    """Check if a pandas Series has a categorical dtype.
+
+    A dtype is considered categorical if it is object, category, or string type.
+
+    Args:
+        series: A pandas Series to check the dtype of.
+
+    Returns:
+        bool: True if the Series dtype is categorical (object, category, or string),
+            False otherwise.
+
+    Example:
+        >>> import pandas as pd
+        >>> _is_categorical_dtype(pd.Series(["a", "b"]))
+        True
+        >>> _is_categorical_dtype(pd.Series([1, 2]))
+        False
+    """
+    dtype = series.dtype
+    return (
+        pd_types.is_object_dtype(dtype)
+        or pd_types.is_categorical_dtype(dtype)
+        or pd_types.is_string_dtype(dtype)
+    )
 
 
 # TODO: split util and adjustment files into separate files: transformations, model_matrix, others..

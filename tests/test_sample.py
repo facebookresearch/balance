@@ -1473,3 +1473,190 @@ class TestSample_NA_behavior(balance.testutil.BalanceTestCase):
             df.iloc[0, 1] = pd.NA
             smpl_to_adj = get_sample_to_adjust(df, standardize_types=False)
             smpl_to_adj.adjust(method="ipw")
+
+
+class TestSample_high_cardinality_warnings(balance.testutil.BalanceTestCase):
+    """Tests for high-cardinality feature warnings during adjustment."""
+
+    def test_warns_for_high_cardinality_features_with_nas(self) -> None:
+        """Adjust should warn when high-cardinality features with NAs lead to equal weights."""
+        unique_values = [f"user_{i}" for i in range(10)]
+        sample_df = pd.DataFrame(
+            {
+                "identifier": unique_values + [np.nan],
+                "id": range(11),
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "identifier": unique_values + [np.nan],
+                "id": range(11),
+            }
+        )
+
+        sample = Sample.from_frame(sample_df)
+        target = Sample.from_frame(target_df)
+
+        with self.assertLogs("balance", level="WARNING") as logs:
+            result = sample.adjust(target, variables=["identifier"], num_lambdas=1)
+
+        self.assertTrue(np.allclose(result.weight_column, np.ones(len(sample_df))))
+        self.assertTrue(
+            any(
+                "High-cardinality features detected" in log and "unique=10" in log
+                for log in logs.output
+            )
+        )
+
+    def test_warns_for_high_cardinality_features_with_nas_when_dropping(
+        self,
+    ) -> None:
+        """The high-cardinality NA warning should surface even when NAs are dropped."""
+        unique_values = [f"user_{i}" for i in range(10)]
+        sample_df = pd.DataFrame(
+            {"identifier": unique_values + [np.nan], "id": range(11)}
+        )
+        target_df = pd.DataFrame(
+            {"identifier": unique_values + [np.nan], "id": range(11)}
+        )
+
+        sample = Sample.from_frame(sample_df)
+        target = Sample.from_frame(target_df)
+
+        with self.assertLogs("balance", level="WARNING") as logs:
+            result = sample.adjust(
+                target, variables=["identifier"], num_lambdas=1, na_action="drop"
+            )
+
+        # Filter out NaN weights before comparing (dropped rows may have NaN weights)
+        valid_weights = result.weight_column[~pd.isna(result.weight_column)]
+        self.assertTrue(np.allclose(valid_weights, np.ones(len(sample_df) - 1)))
+        self.assertTrue(
+            any(
+                "High-cardinality features detected" in log and "unique=10" in log
+                for log in logs.output
+            )
+        )
+
+    def test_warns_for_high_cardinality_categoricals_with_nas(self) -> None:
+        """Categorical dtype columns with high cardinality and NAs should be flagged."""
+        sample_df = pd.DataFrame(
+            {
+                "identifier": pd.Series(
+                    [f"user_{i}" for i in range(9)] + [np.nan], dtype="category"
+                ),
+                "id": range(10),
+            }
+        )
+        target_df = sample_df.copy()
+
+        sample = Sample.from_frame(sample_df)
+        target = Sample.from_frame(target_df)
+
+        with self.assertLogs("balance", level="WARNING") as logs:
+            result = sample.adjust(target, variables=["identifier"], num_lambdas=1)
+
+        self.assertTrue(np.allclose(result.weight_column, np.ones(len(sample_df))))
+        self.assertTrue(
+            any(
+                "High-cardinality features detected" in log and "unique=9" in log
+                for log in logs.output
+            )
+        )
+
+    def test_does_not_flag_low_cardinality_categoricals_with_nas(self) -> None:
+        """Low-cardinality categoricals with NAs should not be reported as a cause."""
+        sample_df = pd.DataFrame(
+            {
+                "identifier": pd.Series(["a", "a", "b", np.nan], dtype="category"),
+                "id": range(4),
+            }
+        )
+        target_df = sample_df.copy()
+
+        sample = Sample.from_frame(sample_df)
+        target = Sample.from_frame(target_df)
+
+        with self.assertLogs("balance", level="WARNING") as logs:
+            result = sample.adjust(target, variables=["identifier"], num_lambdas=1)
+
+        self.assertTrue(np.allclose(result.weight_column, np.ones(len(sample_df))))
+        self.assertFalse(
+            any("High-cardinality features detected" in log for log in logs.output)
+        )
+
+    def test_warns_for_high_cardinality_features_without_nas(self) -> None:
+        """High-cardinality categoricals should be reported even without missing values."""
+        identifiers = [f"user_{i}" for i in range(8)]
+        sample_df = pd.DataFrame(
+            {
+                "identifier": identifiers,
+                "signal": np.concatenate((np.zeros(4), np.ones(4))),
+                "id": range(8),
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "identifier": identifiers[::-1],
+                "signal": np.concatenate((np.ones(4), np.zeros(4))),
+                "id": range(8),
+            }
+        )
+
+        sample = Sample.from_frame(sample_df)
+        target = Sample.from_frame(target_df)
+
+        with self.assertLogs("balance", level="WARNING") as logs:
+            sample.adjust(target, variables=["identifier", "signal"], num_lambdas=1)
+
+        self.assertTrue(
+            any(
+                "High-cardinality features detected" in log
+                and "identifier (unique=8" in log
+                for log in logs.output
+            )
+        )
+
+    def test_does_not_warn_for_high_cardinality_numeric_features(self) -> None:
+        """High-cardinality numeric features (e.g., IDs) should NOT be reported."""
+        identifiers = np.arange(12)
+        sample_df = pd.DataFrame({"identifier": identifiers, "id": range(12)})
+        target_df = pd.DataFrame({"identifier": identifiers, "id": range(12)})
+
+        sample = Sample.from_frame(sample_df)
+        target = Sample.from_frame(target_df)
+
+        with self.assertLogs("balance", level="WARNING") as logs:
+            sample.adjust(target, variables=["identifier"], num_lambdas=1)
+
+        self.assertFalse(
+            any("High-cardinality features detected" in log for log in logs.output),
+            "Numeric features should not be flagged as high-cardinality.",
+        )
+
+    def test_high_cardinality_warning_sorts_by_cardinality(self) -> None:
+        """Warnings should list columns from highest to lowest cardinality."""
+        sample_df = pd.DataFrame(
+            {
+                "higher": [f"user_{i}" for i in range(7)],
+                "high": [f"alias_{i}" for i in range(6)] + ["alias_0"],
+                "id": range(7),
+            }
+        )
+        target_df = sample_df.copy()
+
+        sample = Sample.from_frame(sample_df)
+        target = Sample.from_frame(target_df)
+
+        with self.assertLogs("balance", level="WARNING") as logs:
+            sample.adjust(target, variables=["higher", "high"], num_lambdas=1)
+
+        warning_logs = [
+            log for log in logs.output if "High-cardinality features detected" in log
+        ]
+        self.assertTrue(warning_logs)
+        self.assertTrue(
+            warning_logs[0].find("higher (unique")
+            < warning_logs[0].find(", high (unique"),
+            "Expected higher-cardinality column to appear first in warning.",
+        )

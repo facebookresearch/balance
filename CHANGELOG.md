@@ -1,17 +1,37 @@
-# 0.13.x (???)
+# 0.13.x (TBD)
 
 > TODO: update to final version
+
+## New Features
+
+- **Warning of high-cardinality categorical features used as coveriates in
+  .adjust()**
+  - Added detection and warnings for high-cardinality categorical features
+    (object, category, string dtypes) before weight fitting when using
+    .adjust(). Categorical features where ≥80% of non-missing values are unique
+    are flagged as potentially not providing meaningful signal. This helps
+    identify problematic columns such as user IDs or other high-cardinality
+    identifiers that may lead to poor weighting performance. Numeric features
+    are not checked, as high cardinality is expected and not problematic for
+    them ([#195](https://github.com/facebookresearch/balance/pull/195),
+    [#65](https://github.com/facebookresearch/balance/issues/65)). Tests are
+    added.
+
+## Contributors
+
+@neuralsorcerer, @talgalili, @wesleytlee
 
 # 0.13.0 (2025-12-02)
 
 ## New Features
 
 - **Propensity modeling beyond static logistic regression**
-  - `ipw()` now accepts any sklearn classifier via the `model` argument,
-    enabling the use of models like random forests and gradient boosting while
-    preserving all existing trimming and diagnostic features. Dense-only
-    estimators and models without linear coefficients are fully supported.
-    Propensity probabilities are stabilized to avoid numerical issues.
+  - `.adjust(method='ipw')` now accepts any sklearn classifier via the `model`
+    argument, enabling the use of models like random forests and gradient
+    boosting while preserving all existing trimming and diagnostic features.
+    Dense-only estimators and models without linear coefficients are fully
+    supported. Propensity probabilities are stabilized to avoid numerical
+    issues.
   - Allow customization of logistic regression by passing a configured
     :class:`~sklearn.linear_model.LogisticRegression` instance through the
     `model` argument. Also, the CLI now accepts
@@ -19,8 +39,8 @@
     command-line workflows.
 - **Covariate diagnostics**
   - Added KL divergence calculations for covariate comparisons (numeric and
-    one-hot categorical), exposed via `BalanceDF.kld()` alongside linked-sample
-    aggregation support.
+    one-hot categorical), exposed via `sample.covars().kld()` alongside
+    linked-sample aggregation support.
 - **Weighting Methods**
   - `rake()` and `poststratify()` now honour `weight_trimming_mean_ratio` and
     `weight_trimming_percentile`, trimming and renormalising weights through the
@@ -41,8 +61,8 @@
 - Added project badges to README for build status, Python version support, and
   release tracking
   ([#145](https://github.com/facebookresearch/balance/pull/145)).
-- Added IPW quickstart tutorial showcasing default logistic regression and
-  custom sklearn classifier usage in (`balance_quickstart.ipynb`).
+- Added example of using custom logistic regression and custom sklearn
+  classifier usage in (`balance_quickstart.ipynb`).
 - Shorten the welcome message (for when importing the package).
 
 ## Code Quality & Refactoring
@@ -125,7 +145,7 @@
 - Fixed plotly figures in all the tutorials.
   https://import-balance.org/docs/tutorials/
 
-  # 0.12.0 (2025-10-14)
+# 0.12.0 (2025-10-14)
 
 ## New Features
 

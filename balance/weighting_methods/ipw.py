@@ -21,7 +21,6 @@ from balance.stats_and_plots.weighted_comparisons_stats import (
 )
 from balance.stats_and_plots.weights_stats import design_effect
 from balance.util import _verify_value_type
-
 from scipy.sparse import csc_matrix, csr_matrix, issparse
 from sklearn.base import ClassifierMixin, clone
 from sklearn.linear_model import LogisticRegression
