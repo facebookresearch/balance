@@ -8,13 +8,13 @@
 from __future__ import annotations
 
 import logging
-import os
 from typing import Any, Dict, Literal, Tuple
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from balance import util as balance_util
+from balance.csv_utils import to_csv_with_defaults
 from balance.adjustment import trim_weights
 from balance.sample_class import Sample
 from balance.stats_and_plots import (
@@ -1529,16 +1529,7 @@ class BalanceDF:
         Returns:
             Optional[str]: If path_or_buf is None, returns the resulting csv format as a string. Otherwise returns None.
         """
-        if "index" not in kwargs:
-            kwargs["index"] = False
-        if "lineterminator" not in kwargs and "line_terminator" not in kwargs:
-            kwargs["lineterminator"] = "\n"
-
-        if isinstance(path_or_buf, (str, os.PathLike)):
-            with open(path_or_buf, "w", newline="") as buffer:
-                return self._df_with_ids().to_csv(*args, path_or_buf=buffer, **kwargs)
-
-        return self._df_with_ids().to_csv(*args, path_or_buf=path_or_buf, **kwargs)
+        return to_csv_with_defaults(self._df_with_ids(), path_or_buf, *args, **kwargs)
 
 
 class BalanceDFOutcomes(BalanceDF):

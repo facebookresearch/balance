@@ -10,14 +10,14 @@ from __future__ import annotations
 import collections
 import inspect
 import logging
-import os
 from copy import deepcopy
 from typing import Any, Callable, Dict, List, Literal
 
 import numpy as np
 import pandas as pd
-
 from balance import adjustment as balance_adjustment, util as balance_util
+
+from balance.csv_utils import to_csv_with_defaults
 from balance.stats_and_plots import weights_stats
 
 from balance.stats_and_plots.weighted_comparisons_stats import outcome_variance_ratio
@@ -1456,16 +1456,7 @@ class Sample:
         Returns:
             str | None: If path_or_buf is None, returns the resulting csv format as a string. Otherwise returns None.
         """
-        if "index" not in kwargs:
-            kwargs["index"] = False
-        if "lineterminator" not in kwargs and "line_terminator" not in kwargs:
-            kwargs["lineterminator"] = "\n"
-
-        if isinstance(path_or_buf, (str, os.PathLike)):
-            with open(path_or_buf, "w", newline="") as buffer:
-                return self.df.to_csv(path_or_buf=buffer, **kwargs)
-
-        return self.df.to_csv(path_or_buf=path_or_buf, **kwargs)
+        return to_csv_with_defaults(self.df, path_or_buf, **kwargs)
 
     ################################################################################
     #  Private API

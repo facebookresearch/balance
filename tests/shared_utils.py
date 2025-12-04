@@ -12,10 +12,11 @@ from __future__ import annotations
 import os
 import tempfile
 from contextlib import contextmanager
+from typing import ContextManager
 
 
 @contextmanager
-def tempfile_path():
+def tempfile_path() -> ContextManager[str]:
     """Yield a cross-platform temporary file path and remove it afterwards."""
 
     tmp = tempfile.NamedTemporaryFile(delete=False)
@@ -23,4 +24,7 @@ def tempfile_path():
         tmp.close()
         yield tmp.name
     finally:
-        os.unlink(tmp.name)
+        try:
+            os.unlink(tmp.name)
+        except FileNotFoundError:
+            pass
