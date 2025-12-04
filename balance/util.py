@@ -203,7 +203,7 @@ def _is_categorical_dtype(series: pd.Series) -> bool:
     dtype = series.dtype
     return (
         pd_types.is_object_dtype(dtype)
-        or pd_types.is_categorical_dtype(dtype)
+        or isinstance(dtype, pd.CategoricalDtype)
         or pd_types.is_string_dtype(dtype)
     )
 
