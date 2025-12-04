@@ -5,6 +5,8 @@
 
 # pyre-strict
 
+from __future__ import annotations
+
 import io
 import re
 import sys
@@ -19,7 +21,6 @@ import numpy.typing as npt
 import pandas as pd
 
 from balance.util import _verify_value_type  # noqa: F401
-from __future__ import annotations
 
 
 @contextmanager
