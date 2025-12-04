@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any, Dict, Literal, Tuple
 
 import numpy as np
@@ -1530,6 +1531,13 @@ class BalanceDF:
         """
         if "index" not in kwargs:
             kwargs["index"] = False
+        if "lineterminator" not in kwargs and "line_terminator" not in kwargs:
+            kwargs["lineterminator"] = "\n"
+
+        if isinstance(path_or_buf, (str, os.PathLike)):
+            with open(path_or_buf, "w", newline="") as buffer:
+                return self._df_with_ids().to_csv(*args, path_or_buf=buffer, **kwargs)
+
         return self._df_with_ids().to_csv(*args, path_or_buf=path_or_buf, **kwargs)
 
 

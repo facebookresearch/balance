@@ -10,6 +10,7 @@ from __future__ import annotations
 import collections
 import inspect
 import logging
+import os
 from copy import deepcopy
 from typing import Any, Callable, Dict, List, Literal
 
@@ -1457,6 +1458,13 @@ class Sample:
         """
         if "index" not in kwargs:
             kwargs["index"] = False
+        if "lineterminator" not in kwargs and "line_terminator" not in kwargs:
+            kwargs["lineterminator"] = "\n"
+
+        if isinstance(path_or_buf, (str, os.PathLike)):
+            with open(path_or_buf, "w", newline="") as buffer:
+                return self.df.to_csv(path_or_buf=buffer, **kwargs)
+
         return self.df.to_csv(path_or_buf=path_or_buf, **kwargs)
 
     ################################################################################
