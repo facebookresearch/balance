@@ -12,11 +12,11 @@ from __future__ import annotations
 import os
 import tempfile
 from contextlib import contextmanager
-from typing import ContextManager
+from typing import Generator
 
 
 @contextmanager
-def tempfile_path() -> ContextManager[str]:
+def tempfile_path() -> Generator[str, None, None]:
     """Yield a cross-platform temporary file path and remove it afterwards."""
 
     tmp = tempfile.NamedTemporaryFile(delete=False)
