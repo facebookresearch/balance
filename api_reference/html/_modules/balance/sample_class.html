@@ -124,6 +124,49 @@
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span> <span class="n">pkg_source</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">__package__</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a readable summary of the sample and any applied adjustment.</span>
+
+<span class="sd">        The summary reports the number of observations, covariate names, id and</span>
+<span class="sd">        weight columns, available outcome columns, and whether a target has been</span>
+<span class="sd">        set. When an adjustment is present, quick diagnostics are included such</span>
+<span class="sd">        as the adjustment method, trimming configuration, and weight summaries</span>
+<span class="sd">        (design effect and implied effective sample size when available).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pkg_source: Package namespace used in the header of the printed</span>
+<span class="sd">                object. Defaults to ``balance`` and is primarily useful for</span>
+<span class="sd">                subclasses that wish to identify their own module.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Multi-line description of the ``Sample`` highlighting key</span>
+<span class="sd">                structure and adjustment details.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; from balance import Sample</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({</span>
+<span class="sd">            ...     &quot;gender&quot;: [&quot;f&quot;, &quot;m&quot;],</span>
+<span class="sd">            ...     &quot;age_group&quot;: [&quot;18-24&quot;, &quot;25-34&quot;],</span>
+<span class="sd">            ...     &quot;id&quot;: [1, 2],</span>
+<span class="sd">            ...     &quot;weight&quot;: [1.2, 0.8],</span>
+<span class="sd">            ... })</span>
+<span class="sd">            &gt;&gt;&gt; sample = Sample.from_frame(df, id_column=&quot;id&quot;, weight_column=&quot;weight&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; adjusted = sample.set_target(sample).adjust(method=&quot;ipw&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(adjusted)</span>
+<span class="sd">            Adjusted balance Sample object with target set using ipw</span>
+<span class="sd">            2 observations x 2 variables: gender,age_group</span>
+<span class="sd">            id_column: id, weight_column: weight,</span>
+<span class="sd">            outcome_columns: None</span>
+<span class="sd">            adjustment details:</span>
+<span class="sd">                method: ipw</span>
+<span class="sd">                design effect (Deff): 1.013, eff. sample size: 2.0</span>
+<span class="sd">            target:</span>
+<span class="sd">                 balance Sample object</span>
+<span class="sd">                2 observations x 2 variables: gender,age_group</span>
+<span class="sd">                id_column: id, weight_column: weight,</span>
+<span class="sd">                outcome_columns: None</span>
+<span class="sd">                2 common variables: age_group,gender</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">is_adjusted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">()</span> <span class="o">*</span> <span class="s2">&quot;Adjusted &quot;</span>
         <span class="n">n_rows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">n_variables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_covar_columns</span><span class="p">()</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -152,6 +195,14 @@
 <span class="s2">        outcome_columns: </span><span class="si">{</span><span class="n">outcome_column_names</span><span class="si">}</span>
 <span class="s2">        &quot;&quot;&quot;</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">():</span>
+            <span class="n">adjustment_details</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quick_adjustment_details</span><span class="p">(</span><span class="n">n_rows</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">adjustment_details</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">desc</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        adjustment details:</span>
+<span class="s2">            </span><span class="si">{details}</span>
+<span class="s2">                &quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">details</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">            &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">adjustment_details</span><span class="p">))</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_target</span><span class="p">():</span>
             <span class="n">common_variables</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">choose_variables</span><span class="p">(</span>
                 <span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">],</span> <span class="n">variables</span><span class="o">=</span><span class="kc">None</span>
@@ -165,6 +216,69 @@
 <span class="s2">            </span><span class="si">{</span><span class="n">n_common</span><span class="si">}</span><span class="s2"> common variables: </span><span class="si">{</span><span class="n">common_variables</span><span class="si">}</span>
 <span class="s2">            &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">desc</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_quick_adjustment_details</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span> <span class="n">n_rows</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Collect quick-to-compute adjustment diagnostics for display.</span>
+
+<span class="sd">        This helper centralizes the lightweight adjustment-related statistics</span>
+<span class="sd">        surfaced in ``__str__`` so they can be reused by other presentation</span>
+<span class="sd">        helpers (for example, :meth:`summary`) without duplicating logic.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            n_rows: Optional row count to use for effective sample size</span>
+<span class="sd">                calculations. Defaults to the current sample&#39;s row count.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]: Human-readable lines describing adjustment method,</span>
+<span class="sd">            trimming configuration, and weight diagnostics when available.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            The ``__str__`` example above shows these details rendered as part</span>
+<span class="sd">            of the adjusted sample printout. You can also retrieve them</span>
+<span class="sd">            directly for custom displays:</span>
+
+<span class="sd">            &gt;&gt;&gt; sample._quick_adjustment_details()  # doctest: +SKIP</span>
+<span class="sd">            [&#39;method: ipw&#39;, &#39;design effect (Deff): 1.013, eff. sample size: 2.0&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">adjustment_details</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">method</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;method&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">adjustment_details</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;method: </span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="n">trimming_mean_ratio</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;weight_trimming_mean_ratio&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">trimming_mean_ratio</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">adjustment_details</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;weight trimming mean ratio: </span><span class="si">{</span><span class="n">trimming_mean_ratio</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+            <span class="n">trimming_percentile</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;weight_trimming_percentile&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">trimming_percentile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">adjustment_details</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;weight trimming percentile: </span><span class="si">{</span><span class="n">trimming_percentile</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">n_rows</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">n_rows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">deff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">design_effect</span><span class="p">()</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="ne">ZeroDivisionError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Unable to compute design effect for __str__: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+                <span class="n">deff</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">deff</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">deff</span><span class="p">):</span>
+                <span class="n">effective_n</span> <span class="o">=</span> <span class="n">n_rows</span> <span class="o">/</span> <span class="n">deff</span> <span class="k">if</span> <span class="n">deff</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="n">deff_line</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;design effect (Deff): </span><span class="si">{</span><span class="n">deff</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">if</span> <span class="n">effective_n</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">deff_line</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, eff. sample size: </span><span class="si">{</span><span class="n">effective_n</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">adjustment_details</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">deff_line</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">adjustment_details</span>
 
     <span class="c1">################################################################################</span>
     <span class="c1">#  Public API</span>
@@ -976,6 +1090,11 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">()</span> <span class="ow">and</span> <span class="n">kld_before</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">kld_reduction</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">*</span> <span class="p">(</span><span class="n">kld_before</span> <span class="o">-</span> <span class="n">kld_now</span><span class="p">)</span> <span class="o">/</span> <span class="n">kld_before</span>
 
+        <span class="c1"># quick, lightweight adjustment details reused with __str__</span>
+        <span class="n">quick_adjustment_details</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">():</span>
+            <span class="n">quick_adjustment_details</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quick_adjustment_details</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
         <span class="c1"># design effect</span>
         <span class="n">design_effect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">design_effect</span><span class="p">()</span>
 
@@ -997,8 +1116,15 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">model_summary</span> <span class="o">=</span> <span class="kc">None</span>
 
+        <span class="n">quick_adjustment_section</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;Adjustment details:</span><span class="se">\n</span><span class="s2">    &quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">    &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">quick_adjustment_details</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="k">if</span> <span class="n">quick_adjustment_details</span>
+            <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="p">)</span>
+
         <span class="n">out</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="p">(</span>
+            <span class="n">quick_adjustment_section</span>
+            <span class="o">+</span> <span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Covar ASMD reduction: </span><span class="si">{</span><span class="n">asmd_improvement</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%, design effect: </span><span class="si">{</span><span class="n">design_effect</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">()</span>
                 <span class="k">else</span> <span class="s2">&quot;&quot;</span>
