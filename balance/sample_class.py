@@ -177,7 +177,9 @@ class Sample:
             """
         return desc
 
-    def _quick_adjustment_details(self, n_rows: int | None = None) -> List[str]:
+    def _quick_adjustment_details(
+        self: "Sample", n_rows: int | None = None
+    ) -> List[str]:
         """Collect quick-to-compute adjustment diagnostics for display.
 
         This helper centralizes the lightweight adjustment-related statistics
