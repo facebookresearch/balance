@@ -57,7 +57,7 @@ def setup_package() -> None:
         author="Facebook, Inc.",
         license="MIT",
         url="https://github.com/facebookresearch/balance",
-        keywords=[""],
+        keywords=["balance", "statistics", "bias"],
         long_description=long_description,
         long_description_content_type="text/markdown",
         python_requires=">=3.9",
@@ -73,7 +73,7 @@ def setup_package() -> None:
         },
         setup_requires=["setuptools_scm"],
         classifiers=[
-            "Development Status :: 3 - Alpha",
+            "Development Status :: 4 - Beta",
             "Intended Audience :: Science/Research",
             "Topic :: Scientific/Engineering",
             "Programming Language :: Python :: 3",
