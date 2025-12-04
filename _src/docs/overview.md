@@ -26,7 +26,8 @@ hide_title: true
 
 </div>
 
-*balance* is currently **in beta** and is actively supported. Follow us [on github](https://github.com/facebookresearch/balance).
+> [!NOTE]
+> *balance* is currently **in beta** and is actively supported. Follow us [on github](https://github.com/facebookresearch/balance).
 
 ## What is *balance*?
 
@@ -70,14 +71,14 @@ REQUIRES = [
 ```
 
 
-See [setup.py](https://github.com/facebookresearch/balance/blob/main/setup.py) for more details.
+See [setup.py](https://github.com/facebookresearch/balance/blob/main/setup.py) or [pyproject.toml](https://github.com/facebookresearch/balance/blob/main/pyproject.toml) for more details.
 
 ## Installing *balance*
 
 ### Installing via PyPi
 We recommend installing *balance* from PyPi via pip for the latest stable version:
 
-```
+```bash
 python -m pip install balance
 ```
 
@@ -87,17 +88,23 @@ Installation will use Python wheels from PyPI, available for [OSX, Linux, and Wi
 
 You can install the latest (bleeding edge) version from Git:
 
-```
+```bash
 python -m pip install git+https://github.com/facebookresearch/balance.git
 ```
 
 Alternatively, if you have a local clone of the repo:
 
-```
+```bash
 cd balance
 python -m pip install .
 ```
 
+Or using dev-dependencies:
+
+```bash
+cd balance
+python -m pip install .[dev]
+```
 
 # Getting started
 
@@ -247,8 +254,7 @@ You are welcome to:
 ## Citing *balance*
 Sarig, T., Galili, T., & Eilat, R. (2023). balance – a Python package for balancing biased data samples. [https://arxiv.org/abs/2307.06024](https://arxiv.org/abs/2307.06024)
 
-
-BibTeX:
+```bibtex
 @misc{sarig2023balance,
       title={balance - a Python package for balancing biased data samples},
       author={Tal Sarig and Tal Galili and Roee Eilat},
@@ -257,6 +263,7 @@ BibTeX:
       archivePrefix={arXiv},
       primaryClass={stat.CO}
 }
+```
 
 ## License
 The *balance* package is licensed under the [MIT license](https://github.com/facebookresearch/balance/blob/main/LICENSE), and all the documentation on the site (including text and images) is under [CC-BY](https://github.com/facebookresearch/balance/blob/main/LICENSE-DOCUMENTATION).
