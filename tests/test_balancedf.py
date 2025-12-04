@@ -24,7 +24,7 @@ from balance.balancedf_class import (  # noqa
 )
 from balance.sample_class import Sample
 from balance.stats_and_plots import weighted_comparisons_stats
-from balance.testutil import BalanceTestCase
+from balance.testutil import BalanceTestCase, tempfile_path
 
 
 class TestDataFactory:
@@ -1314,18 +1314,20 @@ class TestBalanceDF_to_download(BalanceTestCase):
 
 class TestBalanceDF_to_csv(BalanceTestCase):
     def test_BalanceDF_to_csv(self) -> None:
-        with tempfile.NamedTemporaryFile() as tf:
-            s1.weights().to_csv(path_or_buf=tf.name)
-            r = tf.read()
-            e = b"id,w\n1,0.5\n2,2.0\n3,1.0\n4,1.0\n"
-            self.assertEqual(r, e)
+        with tempfile_path() as tmp_path:
+            s1.weights().to_csv(path_or_buf=tmp_path)
+            with open(tmp_path, "rb") as output:
+                r = output.read()
+        e = b"id,w\n1,0.5\n2,2.0\n3,1.0\n4,1.0\n"
+        self.assertEqual(r, e)
 
     def test_BalanceDF_to_csv_first_default_argument_is_path(self) -> None:
-        with tempfile.NamedTemporaryFile() as tf:
-            s1.weights().to_csv(tf.name)
-            r = tf.read()
-            e = b"id,w\n1,0.5\n2,2.0\n3,1.0\n4,1.0\n"
-            self.assertEqual(r, e)
+        with tempfile_path() as tmp_path:
+            s1.weights().to_csv(tmp_path)
+            with open(tmp_path, "rb") as output:
+                r = output.read()
+        e = b"id,w\n1,0.5\n2,2.0\n3,1.0\n4,1.0\n"
+        self.assertEqual(r, e)
 
     def test_BalanceDF_to_csv_output_with_no_path(self) -> None:
         with tempfile.NamedTemporaryFile():
@@ -1333,8 +1335,8 @@ class TestBalanceDF_to_csv(BalanceTestCase):
         self.assertEqual(out, "id,w\n1,0.5\n2,2.0\n3,1.0\n4,1.0\n")
 
     def test_BalanceDF_to_csv_output_with_path(self) -> None:
-        with tempfile.NamedTemporaryFile() as tf:
-            out = s1.weights().to_csv(path_or_buf=tf.name)
+        with tempfile_path() as tmp_path:
+            out = s1.weights().to_csv(path_or_buf=tmp_path)
         self.assertEqual(out, None)
 
 

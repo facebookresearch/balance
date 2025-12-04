@@ -15,6 +15,7 @@ import numpy.typing as npt
 import pandas as pd
 from balance import util as balance_util
 from balance.adjustment import trim_weights
+from balance.csv_utils import to_csv_with_defaults
 from balance.sample_class import Sample
 from balance.stats_and_plots import (
     general_stats,
@@ -1528,9 +1529,7 @@ class BalanceDF:
         Returns:
             Optional[str]: If path_or_buf is None, returns the resulting csv format as a string. Otherwise returns None.
         """
-        if "index" not in kwargs:
-            kwargs["index"] = False
-        return self._df_with_ids().to_csv(*args, path_or_buf=path_or_buf, **kwargs)
+        return to_csv_with_defaults(self._df_with_ids(), path_or_buf, *args, **kwargs)
 
 
 class BalanceDFOutcomes(BalanceDF):
