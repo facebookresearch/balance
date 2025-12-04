@@ -16,12 +16,12 @@ hide_title: true
 
 - **Enhanced adjusted sample summary output**
   - The `Sample.__str__()` method now displays adjustment details when a sample
-    is adjusted, including adjustment method, weight trimming parameters
-    (mean ratio and percentile), design effect (Deff), and effective sample size
-    when available. This provides quick diagnostics at a glance when printing
-    adjusted samples. The helper method `_quick_adjustment_details()` centralizes
-    this logic for reuse across presentation helpers like `summary()`
-    ([#194](https://github.com/facebookresearch/balance/pull/194),
+    is adjusted, including adjustment method, weight trimming parameters (mean
+    ratio and percentile), design effect (Deff), and effective sample size when
+    available. This provides quick diagnostics at a glance when printing
+    adjusted samples. The helper method `_quick_adjustment_details()`
+    centralizes this logic for reuse across presentation helpers like
+    `summary()` ([#194](https://github.com/facebookresearch/balance/pull/194),
     [#57](https://github.com/facebookresearch/balance/issues/57)). Tests are
     added.
 
@@ -37,6 +37,24 @@ hide_title: true
     them ([#195](https://github.com/facebookresearch/balance/pull/195),
     [#65](https://github.com/facebookresearch/balance/issues/65)). Tests are
     added.
+
+## Tests
+
+- **Added Windows and macOS CI testing support**
+  - Expanded GitHub Actions test matrix to run on `ubuntu-latest`,
+    `macos-latest`, and `windows-latest` for all supported Python versions
+    (3.9-3.14), ensuring cross-platform compatibility.
+  - Upgraded GitHub Actions versions (`actions/checkout@v5`,
+    `actions/setup-python@v5`, `actions/setup-node@v5`) for improved reliability
+    and security.
+  - **Cross-platform test fixes to enable Windows and macOS support:**
+    - Added a shared `tempfile_path()` context manager in `testutil.py` that
+      properly handles temporary file creation and cleanup across platforms,
+      resolving Windows file-locking issues in CSV-related tests for both
+      `BalanceDF` and `Sample`.
+    - Configured tests to use the non-interactive matplotlib Agg backend via
+      `conftest.py`, eliminating Tk dependencies and display requirements in
+      plotting tests.
 
 ## Contributors
 
