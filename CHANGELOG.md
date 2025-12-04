@@ -28,6 +28,15 @@
     [#65](https://github.com/facebookresearch/balance/issues/65)). Tests are
     added.
 
+## Tests
+
+- **Cross-platform CSV and plotting test stability**
+  - Added a shared `tempfile_path()` helper used by CSV-related tests to avoid
+    Windows file-locking issues when writing to temporary paths across
+    `BalanceDF` and `Sample` CSV workflows.
+  - Configured tests to prefer the non-interactive matplotlib Agg backend to
+    eliminate Tk dependencies in plotting checks.
+
 ## Contributors
 
 @neuralsorcerer, @talgalili, @wesleytlee

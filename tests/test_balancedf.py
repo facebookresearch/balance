@@ -7,9 +7,7 @@
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-import os
 import tempfile
-from contextlib import contextmanager
 
 from copy import deepcopy
 
@@ -27,6 +25,7 @@ from balance.balancedf_class import (  # noqa
 from balance.sample_class import Sample
 from balance.stats_and_plots import weighted_comparisons_stats
 from balance.testutil import BalanceTestCase
+from tests.shared_utils import tempfile_path
 
 
 class TestDataFactory:
@@ -1314,26 +1313,9 @@ class TestBalanceDF_to_download(BalanceTestCase):
         self.assertIsInstance(r, IPython.display.FileLink)
 
 
-@contextmanager
-def _tempfile_path():
-    """Cross-platform temporary path context manager.
-
-    Windows cannot reopen a named temporary file created with the default
-    settings while it is still open. Using ``delete=False`` with an explicit
-    cleanup keeps the tests portable across platforms.
-    """
-
-    tmp = tempfile.NamedTemporaryFile(delete=False)
-    try:
-        tmp.close()
-        yield tmp.name
-    finally:
-        os.unlink(tmp.name)
-
-
 class TestBalanceDF_to_csv(BalanceTestCase):
     def test_BalanceDF_to_csv(self) -> None:
-        with _tempfile_path() as tmp_path:
+        with tempfile_path() as tmp_path:
             s1.weights().to_csv(path_or_buf=tmp_path)
             with open(tmp_path, "rb") as output:
                 r = output.read()
@@ -1341,7 +1323,7 @@ class TestBalanceDF_to_csv(BalanceTestCase):
         self.assertEqual(r, e)
 
     def test_BalanceDF_to_csv_first_default_argument_is_path(self) -> None:
-        with _tempfile_path() as tmp_path:
+        with tempfile_path() as tmp_path:
             s1.weights().to_csv(tmp_path)
             with open(tmp_path, "rb") as output:
                 r = output.read()
@@ -1354,7 +1336,7 @@ class TestBalanceDF_to_csv(BalanceTestCase):
         self.assertEqual(out, "id,w\n1,0.5\n2,2.0\n3,1.0\n4,1.0\n")
 
     def test_BalanceDF_to_csv_output_with_path(self) -> None:
-        with _tempfile_path() as tmp_path:
+        with tempfile_path() as tmp_path:
             out = s1.weights().to_csv(path_or_buf=tmp_path)
         self.assertEqual(out, None)
 
