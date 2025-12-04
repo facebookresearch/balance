@@ -119,10 +119,33 @@ class TestSample(
         self.assertTrue("target:" in s3.__str__())
         self.assertTrue("3 common variables" in s3.__str__())
 
+        adjusted_str = s3_adjusted_null.__str__()
         self.assertTrue(
-            "Adjusted balance Sample object with target set using"
-            in s3_adjusted_null.__str__()
+            "Adjusted balance Sample object with target set using" in adjusted_str
         )
+        self.assertIn("adjustment details", adjusted_str)
+        self.assertIn("method: null_adjustment", adjusted_str)
+        self.assertIn("design effect (Deff)", adjusted_str)
+
+    def test_Sample__str__ipw_and_cbps_examples(self) -> None:
+        """Ensure adjustment summaries show method names for ipw and cbps."""
+
+        sample_data = (1, 2, 3, 4, 5, 6, 7, 8, 9, 1)
+        target_data = (1, 2, 3, 4, 5, 6, 7, 8, 9, 9)
+
+        sample = Sample.from_frame(pd.DataFrame({"a": sample_data, "id": range(0, 10)}))
+        target = Sample.from_frame(pd.DataFrame({"a": target_data, "id": range(0, 10)}))
+        sample_with_target = sample.set_target(target)
+
+        ipw_adjusted = sample_with_target.adjust(method="ipw")
+        ipw_output = ipw_adjusted.__str__()
+        self.assertIn("adjustment details", ipw_output)
+        self.assertIn("method: ipw", ipw_output)
+
+        cbps_adjusted = sample_with_target.adjust(method="cbps", transformations=None)
+        cbps_output = cbps_adjusted.__str__()
+        self.assertIn("adjustment details", cbps_output)
+        self.assertIn("method: cbps", cbps_output)
 
     def test_Sample__str__multiple_outcomes(self) -> None:
         """Test string representation with multiple outcome columns.

@@ -85,6 +85,49 @@ class Sample:
         )
 
     def __str__(self: "Sample", pkg_source: str = __package__) -> str:
+        """Return a readable summary of the sample and any applied adjustment.
+
+        The summary reports the number of observations, covariate names, id and
+        weight columns, available outcome columns, and whether a target has been
+        set. When an adjustment is present, quick diagnostics are included such
+        as the adjustment method, trimming configuration, and weight summaries
+        (design effect and implied effective sample size when available).
+
+        Args:
+            pkg_source: Package namespace used in the header of the printed
+                object. Defaults to ``balance`` and is primarily useful for
+                subclasses that wish to identify their own module.
+
+        Returns:
+            str: Multi-line description of the ``Sample`` highlighting key
+                structure and adjustment details.
+
+        Examples:
+            >>> from balance import Sample
+            >>> import pandas as pd
+            >>> df = pd.DataFrame({
+            ...     "gender": ["f", "m"],
+            ...     "age_group": ["18-24", "25-34"],
+            ...     "id": [1, 2],
+            ...     "weight": [1.2, 0.8],
+            ... })
+            >>> sample = Sample.from_frame(df, id_column="id", weight_column="weight")
+            >>> adjusted = sample.set_target(sample).adjust(method="ipw")
+            >>> print(adjusted)
+            Adjusted balance Sample object with target set using ipw
+            2 observations x 2 variables: gender,age_group
+            id_column: id, weight_column: weight,
+            outcome_columns: None
+            adjustment details:
+                method: ipw
+                design effect (Deff): 1.013, eff. sample size: 2.0
+            target:
+                 balance Sample object
+                2 observations x 2 variables: gender,age_group
+                id_column: id, weight_column: weight,
+                outcome_columns: None
+                2 common variables: age_group,gender
+        """
         is_adjusted = self.is_adjusted() * "Adjusted "
         n_rows = self._df.shape[0]
         n_variables = self._covar_columns().shape[1]
@@ -113,6 +156,14 @@ class Sample:
         outcome_columns: {outcome_column_names}
         """
 
+        if self.is_adjusted():
+            adjustment_details = self._quick_adjustment_details(n_rows)
+            if len(adjustment_details) > 0:
+                desc += """
+        adjustment details:
+            {details}
+                """.format(details="\n            ".join(adjustment_details))
+
         if self.has_target():
             common_variables = balance_util.choose_variables(
                 self, self._links["target"], variables=None
@@ -126,6 +177,69 @@ class Sample:
             {n_common} common variables: {common_variables}
             """
         return desc
+
+    def _quick_adjustment_details(
+        self: "Sample", n_rows: int | None = None
+    ) -> List[str]:
+        """Collect quick-to-compute adjustment diagnostics for display.
+
+        This helper centralizes the lightweight adjustment-related statistics
+        surfaced in ``__str__`` so they can be reused by other presentation
+        helpers (for example, :meth:`summary`) without duplicating logic.
+
+        Args:
+            n_rows: Optional row count to use for effective sample size
+                calculations. Defaults to the current sample's row count.
+
+        Returns:
+            List[str]: Human-readable lines describing adjustment method,
+            trimming configuration, and weight diagnostics when available.
+
+        Examples:
+            The ``__str__`` example above shows these details rendered as part
+            of the adjusted sample printout. You can also retrieve them
+            directly for custom displays:
+
+            >>> sample._quick_adjustment_details()  # doctest: +SKIP
+            ['method: ipw', 'design effect (Deff): 1.013, eff. sample size: 2.0']
+        """
+
+        adjustment_details: List[str] = []
+        model = self.model()
+        if isinstance(model, dict):
+            method = model.get("method")
+            if isinstance(method, str):
+                adjustment_details.append(f"method: {method}")
+
+            trimming_mean_ratio = model.get("weight_trimming_mean_ratio")
+            if trimming_mean_ratio is not None:
+                adjustment_details.append(
+                    f"weight trimming mean ratio: {trimming_mean_ratio}"
+                )
+
+            trimming_percentile = model.get("weight_trimming_percentile")
+            if trimming_percentile is not None:
+                adjustment_details.append(
+                    f"weight trimming percentile: {trimming_percentile}"
+                )
+
+        if n_rows is None:
+            n_rows = self._df.shape[0]
+
+        if self.weight_column is not None:
+            try:
+                deff = self.design_effect()
+            except (TypeError, ValueError, ZeroDivisionError) as exc:
+                logger.debug("Unable to compute design effect for __str__: %s", exc)
+                deff = None
+            if deff is not None and np.isfinite(deff):
+                effective_n = n_rows / deff if deff != 0 else None
+                deff_line = f"design effect (Deff): {deff:.3f}"
+                if effective_n is not None:
+                    deff_line += f", eff. sample size: {effective_n:.1f}"
+                adjustment_details.append(deff_line)
+
+        return adjustment_details
 
     ################################################################################
     #  Public API
@@ -881,6 +995,11 @@ class Sample:
             if self.is_adjusted() and kld_before > 0:
                 kld_reduction = 100 * (kld_before - kld_now) / kld_before
 
+        # quick, lightweight adjustment details reused with __str__
+        quick_adjustment_details: List[str] = []
+        if self.is_adjusted():
+            quick_adjustment_details = self._quick_adjustment_details(self._df.shape[0])
+
         # design effect
         design_effect = self.design_effect()
 
@@ -902,8 +1021,15 @@ class Sample:
         else:
             model_summary = None
 
+        quick_adjustment_section = (
+            "Adjustment details:\n    " + "\n    ".join(quick_adjustment_details) + "\n"
+            if quick_adjustment_details
+            else ""
+        )
+
         out = (
-            (
+            quick_adjustment_section
+            + (
                 f"Covar ASMD reduction: {asmd_improvement:.1f}%, design effect: {design_effect:.3f}\n"
                 if self.is_adjusted()
                 else ""
