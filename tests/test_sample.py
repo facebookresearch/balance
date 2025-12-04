@@ -21,7 +21,9 @@ of Sample functionality.
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import os
 import tempfile
+from contextlib import contextmanager
 
 from copy import deepcopy
 from typing import Any
@@ -34,6 +36,16 @@ import pandas as pd
 
 from balance.sample_class import Sample
 from balance.util import _verify_value_type
+
+
+@contextmanager
+def _tempfile_path():
+    tmp = tempfile.NamedTemporaryFile(delete=False)
+    try:
+        tmp.close()
+        yield tmp.name
+    finally:
+        os.unlink(tmp.name)
 
 
 # Test sample fixtures - shared across multiple test methods
@@ -1319,14 +1331,15 @@ class TestSample_to_download(balance.testutil.BalanceTestCase):
         self.assertIsInstance(r, IPython.display.FileLink)
 
     def test_Sample_to_csv(self) -> None:
-        with tempfile.NamedTemporaryFile() as tf:
-            s1.to_csv(path_or_buf=tf.name)
-            r = tf.read()
-            e = (
-                b"id,a,b,c,o,w\n1,1,-42,x,7,0.5\n"
-                b"2,2,8,y,8,2.0\n3,3,2,z,9,1.0\n4,1,-42,v,10,1.0\n"
-            )
-            self.assertTrue(r, e)
+        with _tempfile_path() as tmp_path:
+            s1.to_csv(path_or_buf=tmp_path)
+            with open(tmp_path, "rb") as output:
+                r = output.read()
+        e = (
+            b"id,a,b,c,o,w\n1,1,-42,x,7,0.5\n"
+            b"2,2,8,y,8,2.0\n3,3,2,z,9,1.0\n4,1,-42,v,10,1.0\n"
+        )
+        self.assertTrue(r, e)
 
 
 class TestSamplePrivateAPI(balance.testutil.BalanceTestCase):
