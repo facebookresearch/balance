@@ -14,8 +14,8 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from balance import util as balance_util
-from balance.csv_utils import to_csv_with_defaults
 from balance.adjustment import trim_weights
+from balance.csv_utils import to_csv_with_defaults
 from balance.sample_class import Sample
 from balance.stats_and_plots import (
     general_stats,
