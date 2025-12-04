@@ -21,6 +21,7 @@ from balance.stats_and_plots import weights_stats
 
 from balance.stats_and_plots.weighted_comparisons_stats import outcome_variance_ratio
 from balance.typing import FilePathOrBuffer
+from balance.util import _detect_high_cardinality_features, HighCardinalityFeature
 
 from IPython.lib.display import FileLink
 
@@ -447,6 +448,13 @@ class Sample:
         Returns:
             Sample: an adjusted Sample object
 
+        Note:
+            During adjustment, the method automatically detects and warns about high-cardinality
+            categorical features (features where most values are unique). These features
+            typically don't provide meaningful signal for adjustment and may lead to
+            unstable or uniform weights. The warning helps identify features that should be
+            reviewed or excluded from the adjustment.
+
         Examples:
             ::
 
@@ -511,11 +519,47 @@ class Sample:
         else:
             raise ValueError("Method should be one of existing weighting methods")
 
+        # Detect high cardinality features in both sample and target covariates
+        sample_covars_df = self.covars().df
+        target_covars_df = target.covars().df
+
+        sample_high_card = _detect_high_cardinality_features(sample_covars_df)
+        target_high_card = _detect_high_cardinality_features(target_covars_df)
+
+        # Merge the results, taking the maximum unique_count for each column
+        high_cardinality_dict: dict[str, HighCardinalityFeature] = {}
+        for feature in sample_high_card + target_high_card:
+            if (
+                feature.column not in high_cardinality_dict
+                or feature.unique_count
+                > high_cardinality_dict[feature.column].unique_count
+            ):
+                high_cardinality_dict[feature.column] = feature
+
+        high_cardinality_features = sorted(
+            high_cardinality_dict.values(),
+            key=lambda f: f.unique_count,
+            reverse=True,
+        )
+
+        if high_cardinality_features:
+            formatted_details = ", ".join(
+                f"{feature.column} (unique={feature.unique_count}; "
+                f"unique_ratio={feature.unique_ratio:.2f}"
+                f"{'; missing values present' if feature.has_missing else ''}"
+                f")"
+                for feature in high_cardinality_features
+            )
+            logger.warning(
+                "High-cardinality features detected that may not provide signal: "
+                + formatted_details
+            )
+
         adjusted = adjustment_function(
             *args,
-            sample_df=self.covars().df,
+            sample_df=sample_covars_df,
             sample_weights=self.weight_column,
-            target_df=target.covars().df,
+            target_df=target_covars_df,
             target_weights=target.weight_column,
             **kwargs,
         )

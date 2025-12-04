@@ -49,10 +49,83 @@ class TestUtil(
             TypeError,
             "sample_weights must be a pandas Series",
             balance_util._check_weighting_methods_input,
-            df=pd.DataFrame({"a": [1]}),
-            weights="a",
+            df=pd.DataFrame({"a": (1, 2)}),
+            weights=1,
             object_name="sample",
         )
+
+    def test__is_categorical_dtype_object(self) -> None:
+        """Test _is_categorical_dtype when series dtype is object.
+
+        Verifies that the function returns True when series dtype is an object type (common for string columns).
+        """
+        # Setup: Create an object dtype series
+        series = pd.Series(["a", "b", "c"])
+
+        # Execute: Check if dtype is categorical
+        result = balance_util._is_categorical_dtype(series)
+
+        # Assert: Object type should return True
+        self.assertTrue(result)
+
+    def test__is_categorical_dtype_numeric(self) -> None:
+        """Test _is_categorical_dtype when series dtype is numeric.
+
+        Verifies that the function returns False when series dtype is a numeric type (int or float).
+        """
+        # Setup: Create numeric dtype series
+        int_series = pd.Series([1, 2, 3])
+        float_series = pd.Series([4.0, 5.0, 6.0])
+
+        # Execute: Check if dtypes are categorical
+        int_result = balance_util._is_categorical_dtype(int_series)
+        float_result = balance_util._is_categorical_dtype(float_series)
+
+        # Assert: Numeric types should return False
+        self.assertFalse(int_result)
+        self.assertFalse(float_result)
+
+    def test__is_categorical_dtype_with_category_dtype(self) -> None:
+        """Test _is_categorical_dtype with pandas categorical dtype.
+
+        Verifies that the function correctly identifies pandas categorical dtype as categorical.
+        """
+        # Setup: Create pandas categorical dtype series
+        series = pd.Series(pd.Categorical(["a", "b", "c"]))
+
+        # Execute: Check if dtype is categorical
+        result = balance_util._is_categorical_dtype(series)
+
+        # Assert: Categorical dtype should return True
+        self.assertTrue(result)
+
+    def test__is_categorical_dtype_with_string_dtype(self) -> None:
+        """Test _is_categorical_dtype with pandas string dtype.
+
+        Verifies that the function correctly identifies pandas string dtype (StringDtype) as categorical.
+        """
+        # Setup: Create pandas string dtype series
+        series = pd.Series(["a", "b", "c"], dtype="string")
+
+        # Execute: Check if dtype is categorical
+        result = balance_util._is_categorical_dtype(series)
+
+        # Assert: String dtype should return True
+        self.assertTrue(result)
+
+    def test__is_categorical_dtype_bool(self) -> None:
+        """Test _is_categorical_dtype when dtype is boolean.
+
+        Verifies that the function returns False for boolean dtypes, as they are not considered categorical for this purpose.
+        """
+        # Setup: Create boolean dtype series
+        series = pd.Series([True, False, True])
+
+        # Execute: Check if dtype is categorical
+        result = balance_util._is_categorical_dtype(series)
+
+        # Assert: Boolean types are not categorical, should return False
+        self.assertFalse(result)
 
         self.assertRaisesRegex(
             ValueError,
@@ -1820,3 +1893,188 @@ class TestUtil(
         result = balance_util._safe_divide_with_zero_handling(num_series, den_series)
         expected = pd.Series([5.0, np.inf, 6.0])
         pd.testing.assert_series_equal(result, expected)
+
+
+class TestSample_high_cardinality_warnings(balance.testutil.BalanceTestCase):
+    """Tests for high-cardinality feature warnings during adjustment."""
+
+    def test_warns_for_high_cardinality_features_with_nas(self) -> None:
+        """Adjust should warn when high-cardinality features with NAs lead to equal weights."""
+        unique_values = [f"user_{i}" for i in range(10)]
+        sample_df = pd.DataFrame(
+            {
+                "identifier": unique_values + [np.nan],
+                "id": range(11),
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "identifier": unique_values + [np.nan],
+                "id": range(11),
+            }
+        )
+
+        sample = Sample.from_frame(sample_df)
+        target = Sample.from_frame(target_df)
+
+        with self.assertLogs("balance", level="WARNING") as logs:
+            result = sample.adjust(target, variables=["identifier"], num_lambdas=1)
+
+        self.assertTrue(np.allclose(result.weight_column, np.ones(len(sample_df))))
+        self.assertTrue(
+            any(
+                "High-cardinality features detected" in log and "unique=10" in log
+                for log in logs.output
+            )
+        )
+
+    def test_warns_for_high_cardinality_features_with_nas_when_dropping(
+        self,
+    ) -> None:
+        """The high-cardinality NA warning should surface even when NAs are dropped."""
+        unique_values = [f"user_{i}" for i in range(10)]
+        sample_df = pd.DataFrame(
+            {"identifier": unique_values + [np.nan], "id": range(11)}
+        )
+        target_df = pd.DataFrame(
+            {"identifier": unique_values + [np.nan], "id": range(11)}
+        )
+
+        sample = Sample.from_frame(sample_df)
+        target = Sample.from_frame(target_df)
+
+        with self.assertLogs("balance", level="WARNING") as logs:
+            sample.adjust(
+                target, variables=["identifier"], num_lambdas=1, na_action="drop"
+            )
+
+        # The main assertion: verify the high-cardinality warning appears
+        self.assertTrue(
+            any(
+                "High-cardinality features detected" in log and "unique=10" in log
+                for log in logs.output
+            )
+        )
+
+    def test_warns_for_high_cardinality_categoricals_with_nas(self) -> None:
+        """Categorical dtype columns with high cardinality and NAs should be flagged."""
+        sample_df = pd.DataFrame(
+            {
+                "identifier": pd.Series(
+                    [f"user_{i}" for i in range(9)] + [np.nan], dtype="category"
+                ),
+                "id": range(10),
+            }
+        )
+        target_df = sample_df.copy()
+
+        sample = Sample.from_frame(sample_df)
+        target = Sample.from_frame(target_df)
+
+        with self.assertLogs("balance", level="WARNING") as logs:
+            result = sample.adjust(target, variables=["identifier"], num_lambdas=1)
+
+        self.assertTrue(np.allclose(result.weight_column, np.ones(len(sample_df))))
+        self.assertTrue(
+            any(
+                "High-cardinality features detected" in log and "unique=9" in log
+                for log in logs.output
+            )
+        )
+
+    def test_does_not_flag_low_cardinality_categoricals_with_nas(self) -> None:
+        """Low-cardinality categoricals with NAs should not be reported as a cause."""
+        sample_df = pd.DataFrame(
+            {
+                "identifier": pd.Series(["a", "a", "b", np.nan], dtype="category"),
+                "id": range(4),
+            }
+        )
+        target_df = sample_df.copy()
+
+        sample = Sample.from_frame(sample_df)
+        target = Sample.from_frame(target_df)
+
+        with self.assertLogs("balance", level="WARNING") as logs:
+            result = sample.adjust(target, variables=["identifier"], num_lambdas=1)
+
+        self.assertTrue(np.allclose(result.weight_column, np.ones(len(sample_df))))
+        self.assertFalse(
+            any("High-cardinality features detected" in log for log in logs.output)
+        )
+
+    def test_warns_for_high_cardinality_features_without_nas(self) -> None:
+        """High-cardinality categoricals should be reported even without missing values."""
+        identifiers = [f"user_{i}" for i in range(8)]
+        sample_df = pd.DataFrame(
+            {
+                "identifier": identifiers,
+                "signal": np.concatenate((np.zeros(4), np.ones(4))),
+                "id": range(8),
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "identifier": identifiers[::-1],
+                "signal": np.concatenate((np.ones(4), np.zeros(4))),
+                "id": range(8),
+            }
+        )
+
+        sample = Sample.from_frame(sample_df)
+        target = Sample.from_frame(target_df)
+
+        with self.assertLogs("balance", level="WARNING") as logs:
+            sample.adjust(target, variables=["identifier", "signal"], num_lambdas=1)
+
+        self.assertTrue(
+            any(
+                "High-cardinality features detected" in log
+                and "identifier (unique=8" in log
+                for log in logs.output
+            )
+        )
+
+    def test_does_not_warn_for_high_cardinality_numeric_features(self) -> None:
+        """High-cardinality numeric features (e.g., IDs) should NOT be reported."""
+        identifiers = np.arange(12)
+        sample_df = pd.DataFrame({"identifier": identifiers, "id": range(12)})
+        target_df = pd.DataFrame({"identifier": identifiers, "id": range(12)})
+
+        sample = Sample.from_frame(sample_df)
+        target = Sample.from_frame(target_df)
+
+        with self.assertLogs("balance", level="WARNING") as logs:
+            sample.adjust(target, variables=["identifier"], num_lambdas=1)
+
+        self.assertFalse(
+            any("High-cardinality features detected" in log for log in logs.output),
+            "Numeric features should not be flagged as high-cardinality.",
+        )
+
+    def test_high_cardinality_warning_sorts_by_cardinality(self) -> None:
+        """Warnings should list columns from highest to lowest cardinality."""
+        sample_df = pd.DataFrame(
+            {
+                "higher": [f"user_{i}" for i in range(7)],
+                "high": [f"alias_{i}" for i in range(6)] + ["alias_0"],
+                "id": range(7),
+            }
+        )
+        target_df = sample_df.copy()
+
+        sample = Sample.from_frame(sample_df)
+        target = Sample.from_frame(target_df)
+
+        with self.assertLogs("balance", level="WARNING") as logs:
+            sample.adjust(target, variables=["higher", "high"], num_lambdas=1)
+
+        warning_logs = [
+            log for log in logs.output if "High-cardinality features detected" in log
+        ]
+        self.assertTrue(warning_logs)
+        self.assertTrue(
+            warning_logs[0].find("higher (unique")
+            < warning_logs[0].find(", high (unique"),
+            "Expected higher-cardinality column to appear first in warning.",
+        )
