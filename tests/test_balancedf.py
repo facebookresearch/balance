@@ -24,8 +24,7 @@ from balance.balancedf_class import (  # noqa
 )
 from balance.sample_class import Sample
 from balance.stats_and_plots import weighted_comparisons_stats
-from balance.testutil import BalanceTestCase
-from tests.shared_utils import tempfile_path
+from balance.testutil import BalanceTestCase, tempfile_path
 
 
 class TestDataFactory:

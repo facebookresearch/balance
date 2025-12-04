@@ -8,6 +8,8 @@
 import io
 import re
 import sys
+import os
+import tempfile
 import unittest
 from contextlib import contextmanager
 from typing import Any, Callable, Generator, Union
@@ -17,6 +19,23 @@ import numpy.typing as npt
 import pandas as pd
 
 from balance.util import _verify_value_type  # noqa: F401
+from __future__ import annotations
+
+
+@contextmanager
+def tempfile_path() -> Generator[str, None, None]:
+    """Yield a cross-platform temporary file path and remove it afterwards."""
+
+    tmp = tempfile.NamedTemporaryFile(delete=False)
+    try:
+        tmp.close()
+        yield tmp.name
+    finally:
+        try:
+            os.unlink(tmp.name)
+        except FileNotFoundError:
+            # File may have already been deleted; safe to ignore.
+            pass
 
 
 def _assert_frame_equal_lazy(

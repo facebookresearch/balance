@@ -7,4 +7,5 @@
 
 import matplotlib
 
+# Force a non-interactive backend so tests do not require a Tk installation.
 matplotlib.use("Agg", force=True)

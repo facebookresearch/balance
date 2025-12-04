@@ -33,7 +33,7 @@ import pandas as pd
 
 from balance.sample_class import Sample
 from balance.util import _verify_value_type
-from tests.shared_utils import tempfile_path
+from balance.testutil import tempfile_path
 
 
 # Test sample fixtures - shared across multiple test methods
