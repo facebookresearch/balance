@@ -4,6 +4,17 @@
 
 ## New Features
 
+- **Enhanced adjusted sample summary output**
+  - The `Sample.__str__()` method now displays adjustment details when a sample
+    is adjusted, including adjustment method, weight trimming parameters
+    (mean ratio and percentile), design effect (Deff), and effective sample size
+    when available. This provides quick diagnostics at a glance when printing
+    adjusted samples. The helper method `_quick_adjustment_details()` centralizes
+    this logic for reuse across presentation helpers like `summary()`
+    ([#194](https://github.com/facebookresearch/balance/pull/194),
+    [#57](https://github.com/facebookresearch/balance/issues/57)). Tests are
+    added.
+
 - **Warning of high-cardinality categorical features used as coveriates in
   .adjust()**
   - Added detection and warnings for high-cardinality categorical features
