@@ -315,7 +315,7 @@ class TestSample(
             df, outcome_columns="out", ignore_columns="note", weight_column=None
         )
 
-        self.assertEqual(sample.covars().names(), ["a", "b"])
+        self.assertListEqual(sample.covars().names(), ["a", "b"])
         self.assertListEqual(sample.outcomes().df.columns.tolist(), ["out"])
         ignored = sample.ignored_columns()
         assert ignored is not None
@@ -360,7 +360,7 @@ class TestSample(
             ignore_columns=["a", "a", "meta"],
             weight_column=None,
         )
-        self.assertEqual(sample.ignored_columns().columns.tolist(), ["a", "meta"])
+        self.assertListEqual(sample.ignored_columns().columns.tolist(), ["a", "meta"])
         self.assertListEqual(sample.covars().names(), [])
 
         sample_no_ignored = Sample.from_frame(
