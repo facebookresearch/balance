@@ -298,6 +298,76 @@ class TestSample(
             Sample.from_frame(df).weight_column, pd.Series((0.0, 2.0), name="weight")
         )
 
+    def test_Sample_from_frame_ignore_columns(self) -> None:
+        """Ensure ignored columns are preserved but excluded from outcomes/covars."""
+
+        df = pd.DataFrame(
+            {
+                "id": (1, 2, 3),
+                "a": (1, 2, 3),
+                "b": (4, 5, 6),
+                "note": ("x", "y", "z"),
+                "out": (7, 8, 9),
+            }
+        )
+
+        sample = Sample.from_frame(
+            df, outcome_columns="out", ignore_columns="note", weight_column=None
+        )
+
+        self.assertEqual(sample.covars().names(), ["a", "b"])
+        self.assertListEqual(sample.outcomes().df.columns.tolist(), ["out"])
+        ignored = sample.ignored_columns()
+        assert ignored is not None
+        self.assertListEqual(ignored.columns.tolist(), ["note"])
+
+    def test_Sample_from_frame_ignore_column_validation(self) -> None:
+        """Validate ignore column handling against reserved and invalid inputs."""
+
+        df = pd.DataFrame(
+            {
+                "id": (1, 2),
+                "weight": (1.0, 2.0),
+                "a": (3, 4),
+                "meta": ("x", "y"),
+                "out": (5, 6),
+            }
+        )
+
+        with self.assertRaisesRegex(ValueError, "cannot include id/weight"):
+            Sample.from_frame(df, weight_column="weight", ignore_columns=["id"])
+
+        with self.assertRaisesRegex(ValueError, "cannot include id/weight"):
+            Sample.from_frame(df, ignore_columns=["weight"])
+
+        with self.assertRaisesRegex(ValueError, "both ignored and outcomes"):
+            Sample.from_frame(
+                df,
+                outcome_columns=["out"],
+                ignore_columns=["out"],
+                weight_column=None,
+            )
+
+        with self.assertRaisesRegex(ValueError, "must be strings"):
+            Sample.from_frame(df, ignore_columns=["a", 3])
+
+        with self.assertRaisesRegex(ValueError, "not in df columns"):
+            Sample.from_frame(df, ignore_columns=["missing"])
+
+        sample = Sample.from_frame(
+            df,
+            outcome_columns="out",
+            ignore_columns=["a", "a", "meta"],
+            weight_column=None,
+        )
+        self.assertEqual(sample.ignored_columns().columns.tolist(), ["a", "meta"])
+        self.assertListEqual(sample.covars().names(), [])
+
+        sample_no_ignored = Sample.from_frame(
+            df, outcome_columns="out", weight_column=None
+        )
+        self.assertIsNone(sample_no_ignored.ignored_columns())
+
     def test_Sample_from_frame_type_conversion(self) -> None:
         """Test automatic type conversion for different numeric types.
 
