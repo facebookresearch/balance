@@ -1,7 +1,7 @@
 [build-system]
 requires = [
-    "setuptools>=45",
-    "setuptools_scm[toml]>=6.2",
+    "setuptools>=77",
+    "setuptools_scm[toml]",
     "wheel",
 ]
 build-backend = "setuptools.build_meta"
@@ -11,6 +11,7 @@ name = "balance"
 description = "balance is a Python package offering a simple workflow and methods for dealing with biased data samples when looking to infer from them to some target population of interest."
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.9"
+license = {file = "LICENSE"}
 authors = [
     { name = "Facebook, Inc." },
 ]
@@ -63,7 +64,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/facebookresearch/balance"
+homepage = "https://import-balance.org/"
+repository = "https://github.com/facebookresearch/balance"
+changelog = "https://github.com/facebookresearch/balance/blob/main/CHANGELOG.md"
 
 [tool.setuptools]
 package-data = { "*" = ["*.csv"] }
