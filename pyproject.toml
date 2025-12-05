@@ -1,7 +1,7 @@
 [build-system]
 requires = [
     "setuptools>=77",
-    "setuptools_scm[toml]>=8",
+    "setuptools_scm[toml]",
     "wheel",
 ]
 build-backend = "setuptools.build_meta"
@@ -11,11 +11,7 @@ name = "balance"
 description = "balance is a Python package offering a simple workflow and methods for dealing with biased data samples when looking to infer from them to some target population of interest."
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.9"
-license = "MIT AND CC-BY-4.0"
-license-files = [
-  "LICENSE",
-  "LICENSE-DOCUMENTATION",
-]
+license = {file = "LICENSE"}
 authors = [
     { name = "Facebook, Inc." },
 ]
