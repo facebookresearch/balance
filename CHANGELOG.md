@@ -37,6 +37,9 @@
     overlaps with id/weight/outcome columns, enforces string column names, and
     raises clear errors for missing columns while deduplicating ignore lists in
     order-preserving fashion.
+  - The `Sample.df` view now includes ignored columns (after outcomes and
+    before weights) so downstream consumers receive the full annotated input
+    when pulling the consolidated dataframe.
 
 ## Tests
 

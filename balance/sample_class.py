@@ -488,6 +488,7 @@ class Sample:
                 self.id_column,
                 self.covars().df if self.covars() is not None else None,
                 self.outcomes().df if self.outcomes() is not None else None,
+                self.ignored_columns() if self.ignored_columns() is not None else None,
                 self.weights().df if self.weights() is not None else None,
             ),
             axis=1,
@@ -561,6 +562,17 @@ class Sample:
         Returns:
             Optional[pd.DataFrame]: DataFrame of ignored columns, or None when
             no ignored columns are defined.
+
+        Examples:
+            >>> import pandas as pd
+            >>> df = pd.DataFrame(
+            ...     {"id": [1, 2], "note": ["x", "y"], "age": [20, 21], "out": [0, 1]}
+            ... )
+            >>> sample = Sample.from_frame(
+            ...     df, id_column="id", outcome_columns="out", ignore_columns=["note"], weight_column=None
+            ... )
+            >>> sample.ignored_columns().columns.tolist()
+            ['note']
         """
 
         if len(getattr(self, "_ignored_column_names", [])) == 0:

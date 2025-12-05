@@ -317,6 +317,9 @@ class TestSample(
 
         self.assertListEqual(sample.covars().names(), ["a", "b"])
         self.assertListEqual(sample.outcomes().df.columns.tolist(), ["out"])
+        self.assertListEqual(
+            sample.df.columns.tolist(), ["id", "a", "b", "out", "note", "weight"]
+        )
         ignored = sample.ignored_columns()
         assert ignored is not None
         self.assertListEqual(ignored.columns.tolist(), ["note"])
