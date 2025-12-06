@@ -45,6 +45,7 @@ class Sample:
         a column representing the weights of the units in sample
     """
 
+    # TODO: fix the following missing pyre-strict issues:
     # The following attributes are updated when initiating Sample using Sample.from_frame
     # pyre-fixme[4]: Attributes are initialized in from_frame()
     _df = None
@@ -52,6 +53,8 @@ class Sample:
     id_column = None
     # pyre-fixme[4]: Attributes are initialized in from_frame()
     _outcome_columns = None
+    # pyre-fixme[4]: Attributes are initialized in from_frame()
+    _ignored_column_names = None
     # pyre-fixme[4]: Attributes are initialized in from_frame()
     weight_column = None
     # pyre-fixme[4]: Attributes are initialized in from_frame()
@@ -246,6 +249,7 @@ class Sample:
     #  Public API
     ################################################################################
 
+    # TODO: add examples to the docstring
     @classmethod
     def from_frame(
         cls: type["Sample"],
@@ -253,6 +257,7 @@ class Sample:
         id_column: str | None = None,
         outcome_columns: List[str] | tuple[str, ...] | str | None = None,
         weight_column: str | None = None,
+        ignore_columns: List[str] | tuple[str, ...] | str | None = None,
         check_id_uniqueness: bool = True,
         standardize_types: bool = True,
         use_deepcopy: bool = True,
@@ -278,6 +283,9 @@ class Sample:
             outcome_columns (list | tuple | str | None): names of columns to treat as outcome
             weight_column (str | None): name of column to treat as weight. If not specified, will
                 be guessed (either "weight" or "weights"). If not found, a new column will be created ("weight") and filled with 1.0.
+            ignore_columns (list | tuple | str | None): names of columns to keep on the
+                underlying dataframe but ignore in covariate/outcome handling. These columns
+                are excluded from outcome statistics and covariate selections. Defaults to None.
             check_id_uniqueness (bool): Whether to check if ids are unique. Defaults to True.
             standardize_types (bool): Whether to standardize types. Defaults to True.
                 Int64/int64 -> float64
@@ -412,12 +420,47 @@ class Sample:
 
         sample.weight_column = sample._df[weight_column]
 
+        # ignore columns
+        if ignore_columns is None:
+            sample._ignored_column_names = []
+        else:
+            if isinstance(ignore_columns, str):
+                ignore_columns = [ignore_columns]
+
+            if not all(isinstance(col, str) for col in ignore_columns):
+                raise ValueError("ignore_columns must be strings")
+
+            missing_ignore = set(ignore_columns).difference(sample._df.columns)
+            if missing_ignore:
+                raise ValueError(
+                    f"ignore columns {missing_ignore} not in df columns {sample._df.columns.values.tolist()}"
+                )
+
+            duplicate_preserving_order = list(dict.fromkeys(ignore_columns))
+            reserved_columns = {id_column, weight_column} - {None}
+            overlap_reserved = set(duplicate_preserving_order).intersection(
+                reserved_columns
+            )
+            if overlap_reserved:
+                raise ValueError(
+                    f"ignore columns cannot include id/weight columns: {overlap_reserved}"
+                )
+            sample._ignored_column_names = duplicate_preserving_order
+
         # outcome columns
         if outcome_columns is None:
             sample._outcome_columns = None
         else:
             if isinstance(outcome_columns, str):
                 outcome_columns = [outcome_columns]
+
+            overlapping_columns = set(outcome_columns).intersection(
+                getattr(sample, "_ignored_column_names", [])
+            )
+            if overlapping_columns:
+                raise ValueError(
+                    f"Columns cannot be both ignored and outcomes: {overlapping_columns}"
+                )
             try:
                 sample._outcome_columns = sample._df.loc[:, outcome_columns]
             except KeyError:
@@ -448,6 +491,7 @@ class Sample:
                 self.covars().df if self.covars() is not None else None,
                 self.outcomes().df if self.outcomes() is not None else None,
                 self.weights().df if self.weights() is not None else None,
+                self.ignored_columns() if self.ignored_columns() is not None else None,
             ),
             axis=1,
         )
@@ -510,6 +554,32 @@ class Sample:
         from balance.balancedf_class import BalanceDFCovars
 
         return BalanceDFCovars(self)
+
+    def ignored_columns(self: "Sample") -> pd.DataFrame | None:
+        """Return columns marked as ignored on the sample.
+
+        These columns stay on the underlying dataframe for tracking purposes
+        but are excluded from covariate selection and outcome statistics.
+
+        Returns:
+            Optional[pd.DataFrame]: DataFrame of ignored columns, or None when
+            no ignored columns are defined.
+
+        Examples:
+            >>> import pandas as pd
+            >>> df = pd.DataFrame(
+            ...     {"id": [1, 2], "note": ["x", "y"], "age": [20, 21], "out": [0, 1]}
+            ... )
+            >>> sample = Sample.from_frame(
+            ...     df, id_column="id", outcome_columns="out", ignore_columns=["note"], weight_column=None
+            ... )
+            >>> sample.ignored_columns().columns.tolist()
+            ['note']
+        """
+
+        if len(getattr(self, "_ignored_column_names", [])) == 0:
+            return None
+        return self._df[self._ignored_column_names]
 
     def model(
         self: "Sample",
@@ -1468,19 +1538,22 @@ class Sample:
     def _special_columns_names(self: "Sample") -> List[str]:
         """
         Returns names of all special columns (id column,
-        wegiht column and outcome columns) in Sample.
+        weight column, outcome columns, and ignored columns) in Sample.
 
         Returns:
             List[str]: names of special columns
         """
-        return [
-            i.name for i in [self.id_column, self.weight_column] if i is not None
-        ] + (
-            self._outcome_columns.columns.tolist()
-            if self._outcome_columns is not None
-            else []
+        return (
+            [i.name for i in [self.id_column, self.weight_column] if i is not None]
+            + (
+                self._outcome_columns.columns.tolist()
+                if self._outcome_columns is not None
+                else []
+            )
+            + getattr(self, "_ignored_column_names", [])
         )
 
+    # TODO: _special_columns is just like df. Unclear if we need both or not, and why.
     def _special_columns(self: "Sample") -> pd.DataFrame:
         """
         Returns dataframe of all special columns (id column,
