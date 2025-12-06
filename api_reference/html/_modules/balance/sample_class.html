@@ -84,6 +84,7 @@
 <span class="sd">        a column representing the weights of the units in sample</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="c1"># TODO: fix the following missing pyre-strict issues:</span>
     <span class="c1"># The following attributes are updated when initiating Sample using Sample.from_frame</span>
     <span class="c1"># pyre-fixme[4]: Attributes are initialized in from_frame()</span>
     <span class="n">_df</span> <span class="o">=</span> <span class="kc">None</span>
@@ -91,6 +92,8 @@
     <span class="n">id_column</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="c1"># pyre-fixme[4]: Attributes are initialized in from_frame()</span>
     <span class="n">_outcome_columns</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># pyre-fixme[4]: Attributes are initialized in from_frame()</span>
+    <span class="n">_ignored_column_names</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="c1"># pyre-fixme[4]: Attributes are initialized in from_frame()</span>
     <span class="n">weight_column</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="c1"># pyre-fixme[4]: Attributes are initialized in from_frame()</span>
@@ -285,6 +288,7 @@
     <span class="c1">#  Public API</span>
     <span class="c1">################################################################################</span>
 
+    <span class="c1"># TODO: add examples to the docstring</span>
 <div class="viewcode-block" id="Sample.from_frame">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.from_frame">[docs]</a>
     <span class="nd">@classmethod</span>
@@ -294,6 +298,7 @@
         <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">outcome_columns</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">weight_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">ignore_columns</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">check_id_uniqueness</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">standardize_types</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">use_deepcopy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -319,6 +324,9 @@
 <span class="sd">            outcome_columns (list | tuple | str | None): names of columns to treat as outcome</span>
 <span class="sd">            weight_column (str | None): name of column to treat as weight. If not specified, will</span>
 <span class="sd">                be guessed (either &quot;weight&quot; or &quot;weights&quot;). If not found, a new column will be created (&quot;weight&quot;) and filled with 1.0.</span>
+<span class="sd">            ignore_columns (list | tuple | str | None): names of columns to keep on the</span>
+<span class="sd">                underlying dataframe but ignore in covariate/outcome handling. These columns</span>
+<span class="sd">                are excluded from outcome statistics and covariate selections. Defaults to None.</span>
 <span class="sd">            check_id_uniqueness (bool): Whether to check if ids are unique. Defaults to True.</span>
 <span class="sd">            standardize_types (bool): Whether to standardize types. Defaults to True.</span>
 <span class="sd">                Int64/int64 -&gt; float64</span>
@@ -453,12 +461,47 @@
 
         <span class="n">sample</span><span class="o">.</span><span class="n">weight_column</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">weight_column</span><span class="p">]</span>
 
+        <span class="c1"># ignore columns</span>
+        <span class="k">if</span> <span class="n">ignore_columns</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sample</span><span class="o">.</span><span class="n">_ignored_column_names</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ignore_columns</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">ignore_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">ignore_columns</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">ignore_columns</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;ignore_columns must be strings&quot;</span><span class="p">)</span>
+
+            <span class="n">missing_ignore</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">ignore_columns</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">missing_ignore</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;ignore columns </span><span class="si">{</span><span class="n">missing_ignore</span><span class="si">}</span><span class="s2"> not in df columns </span><span class="si">{</span><span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+            <span class="n">duplicate_preserving_order</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">ignore_columns</span><span class="p">))</span>
+            <span class="n">reserved_columns</span> <span class="o">=</span> <span class="p">{</span><span class="n">id_column</span><span class="p">,</span> <span class="n">weight_column</span><span class="p">}</span> <span class="o">-</span> <span class="p">{</span><span class="kc">None</span><span class="p">}</span>
+            <span class="n">overlap_reserved</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">duplicate_preserving_order</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span>
+                <span class="n">reserved_columns</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">overlap_reserved</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;ignore columns cannot include id/weight columns: </span><span class="si">{</span><span class="n">overlap_reserved</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="n">sample</span><span class="o">.</span><span class="n">_ignored_column_names</span> <span class="o">=</span> <span class="n">duplicate_preserving_order</span>
+
         <span class="c1"># outcome columns</span>
         <span class="k">if</span> <span class="n">outcome_columns</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">sample</span><span class="o">.</span><span class="n">_outcome_columns</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">outcome_columns</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
                 <span class="n">outcome_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">outcome_columns</span><span class="p">]</span>
+
+            <span class="n">overlapping_columns</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">outcome_columns</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span>
+                <span class="nb">getattr</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="s2">&quot;_ignored_column_names&quot;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">overlapping_columns</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Columns cannot be both ignored and outcomes: </span><span class="si">{</span><span class="n">overlapping_columns</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">sample</span><span class="o">.</span><span class="n">_outcome_columns</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">outcome_columns</span><span class="p">]</span>
             <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
@@ -490,6 +533,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">df</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">()</span><span class="o">.</span><span class="n">df</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ignored_columns</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignored_columns</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
             <span class="p">),</span>
             <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="p">)</span>
@@ -560,6 +604,35 @@
         <span class="kn">from</span><span class="w"> </span><span class="nn">balance.balancedf_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceDFCovars</span>
 
         <span class="k">return</span> <span class="n">BalanceDFCovars</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Sample.ignored_columns">
+<a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.ignored_columns">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ignored_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return columns marked as ignored on the sample.</span>
+
+<span class="sd">        These columns stay on the underlying dataframe for tracking purposes</span>
+<span class="sd">        but are excluded from covariate selection and outcome statistics.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Optional[pd.DataFrame]: DataFrame of ignored columns, or None when</span>
+<span class="sd">            no ignored columns are defined.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame(</span>
+<span class="sd">            ...     {&quot;id&quot;: [1, 2], &quot;note&quot;: [&quot;x&quot;, &quot;y&quot;], &quot;age&quot;: [20, 21], &quot;out&quot;: [0, 1]}</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; sample = Sample.from_frame(</span>
+<span class="sd">            ...     df, id_column=&quot;id&quot;, outcome_columns=&quot;out&quot;, ignore_columns=[&quot;note&quot;], weight_column=None</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; sample.ignored_columns().columns.tolist()</span>
+<span class="sd">            [&#39;note&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_ignored_column_names&quot;</span><span class="p">,</span> <span class="p">[]))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_ignored_column_names</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="Sample.model">
@@ -1576,19 +1649,22 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_special_columns_names</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns names of all special columns (id column,</span>
-<span class="sd">        wegiht column and outcome columns) in Sample.</span>
+<span class="sd">        weight column, outcome columns, and ignored columns) in Sample.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[str]: names of special columns</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">[</span>
-            <span class="n">i</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">id_column</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-        <span class="p">]</span> <span class="o">+</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_outcome_columns</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outcome_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-            <span class="k">else</span> <span class="p">[]</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="p">[</span><span class="n">i</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">id_column</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+            <span class="o">+</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_outcome_columns</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outcome_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="k">else</span> <span class="p">[]</span>
+            <span class="p">)</span>
+            <span class="o">+</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_ignored_column_names&quot;</span><span class="p">,</span> <span class="p">[])</span>
         <span class="p">)</span>
 
+    <span class="c1"># TODO: _special_columns is just like df. Unclear if we need both or not, and why.</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_special_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns dataframe of all special columns (id column,</span>

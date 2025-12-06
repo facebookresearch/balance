@@ -38,6 +38,19 @@ hide_title: true
     [#65](https://github.com/facebookresearch/balance/issues/65)). Tests are
     added.
 
+- **Ignored column handling for Sample inputs**
+  - `Sample.from_frame` now accepts an `ignore_columns` parameter for columns
+    that should remain on the underlying dataframe but be excluded from
+    covariate selection and outcome statistics. Ignored columns can be retrieved
+    via the new `Sample.ignored_columns()` helper, enabling metadata passthrough
+    without affecting adjustment or outcome calculations. Validation prevents
+    overlaps with id/weight/outcome columns, enforces string column names, and
+    raises clear errors for missing columns while deduplicating ignore lists in
+    order-preserving fashion.
+  - The `Sample.df` view now includes ignored columns (after outcomes and
+    weights) so downstream consumers receive the full annotated input when
+    pulling the consolidated dataframe.
+
 ## Tests
 
 - **Added Windows and macOS CI testing support**
