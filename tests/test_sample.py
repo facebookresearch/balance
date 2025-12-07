@@ -260,13 +260,35 @@ class TestSample(
         )
 
         # Test error for null weight values
-        df = pd.DataFrame({"id": (1, 2, 3), "weight": (None, 3, 1.1)})
-        with self.assertRaisesRegex(ValueError, "Null values are not allowed"):
+        df = pd.DataFrame(
+            {"id": (1, 2, 3), "weight": (None, 3, 1.1), "feature": ("x", "y", "z")}
+        )
+        with self.assertRaises(ValueError) as context:
             Sample.from_frame(df)
+        self.assertIn("Found 1 row(s) with null weights", str(context.exception))
+        self.assertIn("x", str(context.exception))
+        self.assertIn("1", str(context.exception))
 
         df = pd.DataFrame({"id": (1, 2, 3), "weight": (None, None, None)})
-        with self.assertRaisesRegex(ValueError, "Null values are not allowed"):
+        with self.assertRaisesRegex(
+            ValueError, r"Null values \(including None\) are not allowed"
+        ) as null_context:
             Sample.from_frame(df)
+        self.assertIn("Found 3 row(s) with null weights", str(null_context.exception))
+
+        df = pd.DataFrame(
+            {
+                "id": (1, 2, 3, 4),
+                "weight": (np.nan, pd.NA, None, 1.0),
+                "extra": ("a", "b", "c", "d"),
+            }
+        )
+        with self.assertRaises(ValueError) as mixed_null_context:
+            Sample.from_frame(df)
+        self.assertIn(
+            "Found 3 row(s) with null weights", str(mixed_null_context.exception)
+        )
+        self.assertIn("b", str(mixed_null_context.exception))
 
     def test_Sample_from_frame_weight_validation(self) -> None:
         """Test weight value validation for numeric and non-negative constraints.

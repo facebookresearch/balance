@@ -404,10 +404,15 @@ class Sample:
                     )
 
         # verify that the weights are not null
-        if any(sample._df[weight_column].isnull()):
+        null_weights = sample._df[weight_column].isnull()
+        if any(null_weights):
+            null_weight_rows = sample._df.loc[null_weights].head()
+            null_weight_rows_count = int(null_weights.sum())
             raise ValueError(
-                "Null values are not allowed in the weight_column. "
-                + "If you wish to remove an observation, either remove it from the df, or use a weight of 0."
+                "Null values (including None) are not allowed in the weight_column. "
+                + "If you wish to remove an observation, either remove it from the df, or use a weight of 0. "
+                + f"Found {null_weight_rows_count} row(s) with null weights. Preview (up to 5 rows):\n"
+                + null_weight_rows.to_string(index=False)
             )
 
         # verify that the weights are numeric
