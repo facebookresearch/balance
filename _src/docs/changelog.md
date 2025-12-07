@@ -51,6 +51,14 @@ hide_title: true
     weights) so downstream consumers receive the full annotated input when
     pulling the consolidated dataframe.
 
+## Bug Fixes
+
+- **Early validation of null weight inputs**
+  - `Sample.from_frame` now raises a descriptive `ValueError` when weights
+    contain `None`, `NaN`, or `pd.NA` values. The error includes the total count
+    of offending rows and a preview of the affected observations to simplify
+    debugging bad inputs.
+
 ## Tests
 
 - **Added Windows and macOS CI testing support**

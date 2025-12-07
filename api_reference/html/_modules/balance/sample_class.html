@@ -445,10 +445,15 @@
                     <span class="p">)</span>
 
         <span class="c1"># verify that the weights are not null</span>
-        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">weight_column</span><span class="p">]</span><span class="o">.</span><span class="n">isnull</span><span class="p">()):</span>
+        <span class="n">null_weights</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">weight_column</span><span class="p">]</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">null_weights</span><span class="p">):</span>
+            <span class="n">null_weight_rows</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">null_weights</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+            <span class="n">null_weight_rows_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">null_weights</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Null values are not allowed in the weight_column. &quot;</span>
-                <span class="o">+</span> <span class="s2">&quot;If you wish to remove an observation, either remove it from the df, or use a weight of 0.&quot;</span>
+                <span class="s2">&quot;Null values (including None) are not allowed in the weight_column. &quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;If you wish to remove an observation, either remove it from the df, or use a weight of 0. &quot;</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="n">null_weight_rows_count</span><span class="si">}</span><span class="s2"> row(s) with null weights. Preview (up to 5 rows):</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="o">+</span> <span class="n">null_weight_rows</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="p">)</span>
 
         <span class="c1"># verify that the weights are numeric</span>
