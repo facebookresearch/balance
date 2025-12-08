@@ -87,7 +87,25 @@ def _validate_limit(limit: float | int | None, n_weights: int) -> float | None:
 def _quantile_with_method(
     data: pd.Series | npt.NDArray, q: float, method: str
 ) -> float:
-    """Compute quantiles with compatibility for older NumPy versions."""
+    """Compute a quantile with explicit method selection.
+
+    Args:
+        data: Array-like input that can be consumed by ``np.asarray``.
+        q: Quantile to compute in the inclusive range ``[0, 1]``.
+        method: Quantile algorithm to use. Typical values include
+            ``"higher"``/``"lower"`` (step functions) and ``"linear"``
+            (default continuous interpolation). The value is forwarded to
+            ``np.quantile`` via the ``method`` argument when available.
+
+    Returns:
+        ``float``: The computed quantile value converted to ``float``.
+
+    Examples:
+        >>> _quantile_with_method([1, 2, 3, 4], 0.25, "higher")
+        2.0
+        >>> _quantile_with_method([1, 2, 3, 4], 0.75, "lower")
+        3.0
+    """
 
     array_data = np.asarray(data, dtype=np.float64)
     try:
@@ -202,9 +220,13 @@ def trim_weights(
                 # 99    80.640316
                 # Length: 100, dtype: float64
 
-            print(pd.DataFrame(trim_weights(pd.Series(range(1, 101)), weight_trimming_percentile=.01)))
-                # 0    2.0
-                # 1    2.0
+            print(pd.DataFrame(trim_weights(
+                pd.Series(range(1, 101)),
+                weight_trimming_percentile=.01,
+                keep_sum_of_weights=False,
+            )))
+                # 0    3.0
+                # 1    3.0
                 # 2    3.0
                 # 3    4.0
                 # 4    5.0
@@ -212,22 +234,26 @@ def trim_weights(
                 # 95  96.0
                 # 96  97.0
                 # 97  98.0
-                # 98  99.0
-                # 99  99.0
+                # 98  98.0
+                # 99  98.0
                 # [100 rows x 1 columns]
 
-            print(pd.DataFrame(trim_weights(pd.Series(range(1, 101)), weight_trimming_percentile=(0., .05))))
-                # 0    1.002979
-                # 1    2.005958
-                # 2    3.008937
-                # 3    4.011917
-                # 4    5.014896
-                # ..        ...
-                # 95  95.283019
-                # 96  95.283019
-                # 97  95.283019
-                # 98  95.283019
-                # 99  95.283019
+            print(pd.DataFrame(trim_weights(
+                pd.Series(range(1, 101)),
+                weight_trimming_percentile=(0., .05),
+                keep_sum_of_weights=False,
+            )))
+                # 0     1.0
+                # 1     2.0
+                # 2     3.0
+                # 3     4.0
+                # 4     5.0
+                # ..    ...
+                # 95   94.0
+                # 96   94.0
+                # 97   94.0
+                # 98   94.0
+                # 99   94.0
     """
 
     original_name = getattr(weights, "name", None)
