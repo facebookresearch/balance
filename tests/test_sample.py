@@ -1004,9 +1004,9 @@ class TestSample_metrics_methods(
         self.assertTrue("->" in s3_summ)
         self.assertTrue("Covar mean KLD reduction: 0.0%" in s3_summ)
         self.assertTrue("Covar mean KLD (3 variables)" in s3_summ)
-        self.assertTrue("design effect (Deff)" in s3_summ)
-        self.assertTrue("effective sample proportion" in s3_summ)
-        self.assertTrue("effective sample size" in s3_summ)
+        self.assertIn("design effect (Deff)", s3_summ)
+        self.assertIn("effective sample proportion", s3_summ)
+        self.assertIn("effective sample size", s3_summ)
         self.assertIn("Outcome weighted means", s3_summ)
 
         s3_summ = s3_adjusted_null.summary()

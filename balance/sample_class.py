@@ -230,29 +230,58 @@ class Sample:
         if n_rows is None:
             n_rows = self._df.shape[0]
 
-        if self.weight_column is not None:
-            try:
-                deff = self.design_effect()
-            except (TypeError, ValueError, ZeroDivisionError) as exc:
-                logger.debug("Unable to compute design effect for __str__: %s", exc)
-                deff = None
-            if deff is not None and np.isfinite(deff):
-                effective_n = n_rows / deff if deff != 0 else None
-                effective_sample_proportion = (
-                    (effective_n / n_rows)
-                    if effective_n is not None and n_rows
-                    else None
+        design_effect, effective_n, effective_sample_proportion = (
+            self._design_effect_diagnostics(n_rows)
+        )
+        if design_effect is not None:
+            deff_line = f"design effect (Deff): {design_effect:.3f}"
+            if effective_sample_proportion is not None:
+                deff_line += (
+                    f", eff. sample proportion: {effective_sample_proportion:.3f}"
                 )
-                deff_line = f"design effect (Deff): {deff:.3f}"
-                if effective_sample_proportion is not None:
-                    deff_line += (
-                        f", eff. sample proportion: {effective_sample_proportion:.3f}"
-                    )
-                if effective_n is not None:
-                    deff_line += f", eff. sample size: {effective_n:.1f}"
-                adjustment_details.append(deff_line)
+            if effective_n is not None:
+                deff_line += f", eff. sample size: {effective_n:.1f}"
+            adjustment_details.append(deff_line)
 
         return adjustment_details
+
+    def _design_effect_diagnostics(
+        self, n_rows: int | None = None
+    ) -> tuple[float | None, float | None, float | None]:
+        """
+        Compute design effect and related effective sample statistics.
+
+        Args:
+            n_rows: Optional number of rows to use for scaling. Defaults to the
+                sample size when not provided.
+
+        Returns:
+            Tuple of (design_effect, effective_sample_size, effective_sample_proportion).
+            If the design effect is unavailable or invalid, all values are ``None``.
+        """
+
+        if n_rows is None:
+            n_rows = self._df.shape[0]
+
+        if self.weight_column is None:
+            return None, None, None
+
+        try:
+            design_effect = self.design_effect()
+        except (TypeError, ValueError, ZeroDivisionError) as exc:
+            logger.debug("Unable to compute design effect: %s", exc)
+            return None, None, None
+
+        if design_effect is None or not np.isfinite(design_effect):
+            return None, None, None
+
+        effective_sample_size = None
+        effective_sample_proportion = None
+        if n_rows and design_effect != 0:
+            effective_sample_size = n_rows / design_effect
+            effective_sample_proportion = effective_sample_size / n_rows
+
+        return design_effect, effective_sample_size, effective_sample_proportion
 
     ################################################################################
     #  Public API
@@ -1122,16 +1151,12 @@ class Sample:
             quick_adjustment_details = self._quick_adjustment_details(self._df.shape[0])
 
         # design effect and effective sample diagnostics
-        design_effect = self.design_effect()
-        has_valid_design_effect = design_effect is not None and np.isfinite(
-            design_effect
+        design_effect, effective_sample_size, effective_sample_proportion = (
+            self._design_effect_diagnostics(self._df.shape[0])
         )
-        has_positive_design_effect = bool(has_valid_design_effect and design_effect > 0)
-        effective_sample_size: float | None = None
-        effective_sample_proportion: float | None = None
-        if has_positive_design_effect and self._df.shape[0] > 0:
-            effective_sample_size = self._df.shape[0] / design_effect
-            effective_sample_proportion = effective_sample_size / self._df.shape[0]
+        has_positive_design_effect = bool(
+            design_effect is not None and design_effect > 0
+        )
 
         # model performance
         if self.model() is not None:
