@@ -22,6 +22,7 @@ of Sample functionality.
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 from copy import deepcopy
+from textwrap import dedent
 from types import MethodType
 from typing import Any
 
@@ -1023,6 +1024,56 @@ class TestSample_metrics_methods(
         self.assertIn("Weight diagnostics:", summary)
         self.assertIn("design effect (Deff): unavailable", summary)
         self.assertNotIn("effective sample", summary)
+
+    def test_Sample_summary_doc_example_matches_output(self) -> None:
+        survey = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "x": (0, 1, 1, 0),
+                    "id": range(4),
+                    "y": (0.1, 0.5, 0.4, 0.9),
+                    "w": (1, 2, 1, 1),
+                }
+            ),
+            id_column="id",
+            outcome_columns="y",
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame({"x": (0, 0, 1, 1), "id": range(4)}),
+            id_column="id",
+        )
+
+        adjusted = survey.set_target(target).adjust(method="null")
+
+        expected_lines = (
+            dedent(
+                """
+            Adjustment details:
+                method: null_adjustment
+            Covariate diagnostics:
+                Covar ASMD reduction: 0.0%
+                Covar ASMD (1 variables): 0.173 -> 0.173
+                Covar mean KLD reduction: 0.0%
+                Covar mean KLD (1 variables): 0.020 -> 0.020
+            Weight diagnostics:
+                design effect (Deff): 1.120
+                effective sample proportion (ESSP): 0.893
+                effective sample size (ESS): 3.6
+            Outcome weighted means:
+                           y
+            source
+            self       0.480
+            unadjusted 0.480
+            """
+            )
+            .strip()
+            .splitlines()
+        )
+
+        summary_lines = [line.rstrip() for line in adjusted.summary().splitlines()]
+
+        self.assertEqual(summary_lines, expected_lines)
 
     def test_Sample_invalid_outcomes(self) -> None:
         with self.assertRaisesRegex(

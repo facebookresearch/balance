@@ -1098,20 +1098,22 @@ class Sample:
             ... )
             >>> adjusted = survey.set_target(target).adjust(method="null")
             >>> print(adjusted.summary())
+            Adjustment details:
+                method: null_adjustment
             Covariate diagnostics:
                 Covar ASMD reduction: 0.0%
-                Covar ASMD (1 variables): 0.577 -> 0.577
+                Covar ASMD (1 variables): 0.173 -> 0.173
                 Covar mean KLD reduction: 0.0%
-                Covar mean KLD (1 variables): 0.216 -> 0.216
+                Covar mean KLD (1 variables): 0.020 -> 0.020
             Weight diagnostics:
-                design effect (Deff): 1.333
-                effective sample proportion (ESSP): 0.750
-                effective sample size (ESS): 3.0
+                design effect (Deff): 1.120
+                effective sample proportion (ESSP): 0.893
+                effective sample size (ESS): 3.6
             Outcome weighted means:
                            y
             source
-            self        0.475
-            unadjusted   0.475
+            self       0.480
+            unadjusted 0.480
         """
         # Initialize variables
         n_asmd_covars: int = 0
