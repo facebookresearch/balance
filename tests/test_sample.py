@@ -22,7 +22,9 @@ of Sample functionality.
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 from copy import deepcopy
+from textwrap import dedent
 from typing import Any
+from unittest.mock import MagicMock
 
 import balance.testutil
 
@@ -988,6 +990,7 @@ class TestSample_metrics_methods(
         self.assertTrue("Model performance" not in s1_summ)
         self.assertTrue("Covar ASMD" not in s1_summ)
         self.assertTrue("Covar mean KLD" not in s1_summ)
+        self.assertIn("Outcome weighted means", s1_summ)
 
         s3_summ = s3.summary()
         self.assertTrue("Model performance" not in s1_summ)
@@ -1002,12 +1005,75 @@ class TestSample_metrics_methods(
         self.assertTrue("->" in s3_summ)
         self.assertTrue("Covar mean KLD reduction: 0.0%" in s3_summ)
         self.assertTrue("Covar mean KLD (3 variables)" in s3_summ)
-        self.assertTrue("design effect" in s3_summ)
+        self.assertIn("design effect (Deff)", s3_summ)
+        self.assertIn("effective sample size proportion", s3_summ)
+        self.assertIn("effective sample size", s3_summ)
+        self.assertIn("Outcome weighted means", s3_summ)
 
         s3_summ = s3_adjusted_null.summary()
         self.assertTrue("Covar ASMD reduction: 0.0%" in s3_summ)
         self.assertTrue("Covar mean KLD reduction: 0.0%" in s3_summ)
         self.assertTrue("design effect" in s3_summ)
+
+    def test_Sample_summary_handles_nonfinite_design_effect(self) -> None:
+        adjusted = deepcopy(s3_adjusted_null)
+        adjusted.design_effect = MagicMock(return_value=np.nan)
+
+        summary = adjusted.summary()
+
+        self.assertIn("Weight diagnostics:", summary)
+        self.assertIn("design effect (Deff): unavailable", summary)
+        self.assertNotIn("effective sample", summary)
+
+    def test_Sample_summary_doc_example_matches_output(self) -> None:
+        survey = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "x": (0, 1, 1, 0),
+                    "id": range(4),
+                    "y": (0.1, 0.5, 0.4, 0.9),
+                    "w": (1, 2, 1, 1),
+                }
+            ),
+            id_column="id",
+            outcome_columns="y",
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame({"x": (0, 0, 1, 1), "id": range(4)}),
+            id_column="id",
+        )
+
+        adjusted = survey.set_target(target).adjust(method="null")
+
+        expected_lines = (
+            dedent(
+                """
+            Adjustment details:
+                method: null_adjustment
+            Covariate diagnostics:
+                Covar ASMD reduction: 0.0%
+                Covar ASMD (1 variables): 0.173 -> 0.173
+                Covar mean KLD reduction: 0.0%
+                Covar mean KLD (1 variables): 0.020 -> 0.020
+            Weight diagnostics:
+                design effect (Deff): 1.120
+                effective sample size proportion (ESSP): 0.893
+                effective sample size (ESS): 3.6
+            Outcome weighted means:
+                           y
+            source
+            self       0.480
+            unadjusted 0.480
+            """
+            )
+            .strip()
+            .splitlines()
+        )
+
+        summary_lines = [line.rstrip() for line in adjusted.summary().splitlines()]
+
+        self.assertEqual(summary_lines, expected_lines)
 
     def test_Sample_invalid_outcomes(self) -> None:
         with self.assertRaisesRegex(
