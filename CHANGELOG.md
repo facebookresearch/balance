@@ -48,6 +48,11 @@
     contain `None`, `NaN`, or `pd.NA` values. The error includes the total count
     of offending rows and a preview of the affected observations to simplify
     debugging bad inputs.
+- **Percentile weight trimming enforces requested lower bounds across platforms**
+  - `trim_weights()` now computes winsorization thresholds directly via
+    percentile quantiles with explicit clipping bounds, ensuring lower-tail
+    trimming respects the requested cutoff on all supported Python and NumPy
+    versions.
 
 ## Tests
 

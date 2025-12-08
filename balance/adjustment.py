@@ -14,10 +14,8 @@ from typing import Any, Callable, Dict, Literal, Tuple
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-import scipy
 
 from balance import util as balance_util
-from balance.util import _verify_value_type
 from balance.weighting_methods import (
     adjust_null as balance_adjust_null,
     cbps as balance_cbps,
@@ -40,7 +38,7 @@ BALANCE_WEIGHTING_METHODS: Dict[str, Callable[..., Any]] = {
 
 
 def _validate_limit(limit: float | int | None, n_weights: int) -> float | None:
-    """Validate and adjust a percentile limit for use with scipy.stats.mstats.winsorize.
+    """Validate and adjust a percentile limit for use when clipping percentiles.
 
     This function prepares percentile limits for winsorization by:
     1. Validating that finite limits are within valid bounds (0-1)
@@ -86,6 +84,19 @@ def _validate_limit(limit: float | int | None, n_weights: int) -> float | None:
     return adjusted
 
 
+def _quantile_with_method(
+    data: pd.Series | npt.NDArray, q: float, method: str
+) -> float:
+    """Compute quantiles with compatibility for older NumPy versions."""
+
+    array_data = np.asarray(data, dtype=np.float64)
+    try:
+        return float(np.quantile(array_data, q, method=method))
+    except TypeError:
+        # Older NumPy versions (<1.22) use the ``interpolation`` kwarg.
+        return float(np.quantile(array_data, q, interpolation=method))
+
+
 def trim_weights(
     weights: pd.Series | npt.NDArray,
     # TODO: add support to more types of input weights? (e.g. list? other?)
@@ -108,9 +119,9 @@ def trim_weights(
 
     **Percentile-Based Winsorization (weight_trimming_percentile)**:
     When specified, extreme weights are replaced with less extreme values using
-    scipy.stats.mstats.winsorize. By default, winsorization affects both tails
-    of the distribution symmetrically, unlike mean ratio trimming which only
-    clips from above.
+    percentile clipping. By default, winsorization affects both tails of the
+    distribution symmetrically, unlike mean ratio trimming which only clips from
+    above.
 
     Behavior:
     - Single value (e.g., 0.1): Winsorizes below 10th AND above 90th percentile
@@ -262,7 +273,7 @@ def trim_weights(
             name=original_name,
         )
     elif weight_trimming_percentile is not None:
-        # Winsorize
+        # Winsorize using percentile clipping
         percentile = weight_trimming_percentile
         if isinstance(percentile, (list, tuple, np.ndarray)):
             if len(percentile) != 2:
@@ -273,53 +284,33 @@ def trim_weights(
         else:
             lower_limit = upper_limit = percentile
 
-        # Keep the original requested percentiles for exact clipping bounds,
-        # but validate/adjust separately for the winsorization call so at least
-        # one value is affected at the requested edge.
-        clip_limits = (
-            None if (lower_limit is None or lower_limit == 0) else lower_limit,
-            None if (upper_limit is None or upper_limit == 0) else upper_limit,
+        # Treat 0 or None as "no winsorization" for that side before applying
+        # validation adjustments that guarantee at least one affected value.
+        normalized_limits = (
+            None if (lower_limit is None or lower_limit == 0) else float(lower_limit),
+            None if (upper_limit is None or upper_limit == 0) else float(upper_limit),
         )
         adjusted_limits = (
-            _validate_limit(lower_limit, n_weights),
-            _validate_limit(upper_limit, n_weights),
+            _validate_limit(normalized_limits[0], n_weights),
+            _validate_limit(normalized_limits[1], n_weights),
         )
 
-        # Preserve the pre-trim weights to calculate strict clipping bounds.
-        original_weights_for_bounds = weights.copy()
-
-        weights = scipy.stats.mstats.winsorize(
-            weights, limits=adjusted_limits, inplace=False
+        lower_bound = (
+            None
+            if adjusted_limits[0] is None
+            else _quantile_with_method(weights, adjusted_limits[0], "higher")
         )
+        upper_bound = (
+            None
+            if adjusted_limits[1] is None
+            else _quantile_with_method(weights, 1 - adjusted_limits[1], "lower")
+        )
+
         if verbose:
             logger.debug(
                 "Winsorizing weights to %s percentile" % str(weight_trimming_percentile)
             )
 
-        weights = pd.Series(
-            np.asarray(weights, dtype=np.float64),
-            index=weights_index,
-            name=original_name,
-        )
-
-        # Clip to the exact percentile bounds to avoid small numerical overshoots
-        # from scipy.stats.mstats.winsorize on certain inputs.
-        lower_bound = (
-            None
-            if clip_limits[0] is None
-            else np.quantile(
-                original_weights_for_bounds, clip_limits[0], method="lower"
-            )
-        )
-        upper_bound = (
-            None
-            if clip_limits[1] is None
-            else np.quantile(
-                original_weights_for_bounds,
-                1 - _verify_value_type(clip_limits[1]),
-                method="lower",
-            )
-        )
         weights = weights.clip(lower=lower_bound, upper=upper_bound)
 
     if keep_sum_of_weights:
