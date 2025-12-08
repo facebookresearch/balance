@@ -38,7 +38,7 @@ This repo contains the **balance** Python package: weighting and balancing utili
 
 ### 4) Types and docs (Pyre strict)
 - The codebase is Pyre-typed (`# pyre-strict`): new/modified public APIs must have complete type hints.
-- New/modified public functions/classes must include a docstring with at least one concrete usage example since there are too many changes to easily follow. Also, this new version ignores the need to check tests. It also doesn't mention helper functions should have docstrings. It should also mention the need to describe arguments.
+- New/modified public functions/classes must include a docstring with at least one concrete usage example.
 - Avoid returning `Any` or widening types unless justified.
 
 ### 5) Backward compatibility and deprecations
