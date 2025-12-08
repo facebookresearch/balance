@@ -668,6 +668,9 @@ If None or float values, the same weight (or None) will be assigned to all units
 <span class="sig-name descname"><span class="pre">summary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.summary" title="Link to this definition">¶</a></dt>
 <dd><p>Provides a summary of covariate balance, design effect and model properties (if applicable)
 of a sample.</p>
+<p>The summary consolidates high-level diagnostics that are most helpful after adjustment,
+including covariate balance, weight health, outcome behavior, and basic model fit when
+available.</p>
 <p>For more details see: <code class="xref py py-func docutils literal notranslate"><span class="pre">BalanceDF.asmd()</span></code>, <code class="xref py py-func docutils literal notranslate"><span class="pre">BalanceDF.asmd_improvement()</span></code>
 and <code class="xref py py-func docutils literal notranslate"><span class="pre">weights_stats.design_effect()</span></code></p>
 <dl class="field-list simple">
@@ -678,6 +681,41 @@ and <code class="xref py py-func docutils literal notranslate"><span class="pre"
 <dd class="field-even"><p>str</p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sample</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">survey</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+<span class="gp">... </span>        <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">),</span> <span class="s2">&quot;w&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)}</span>
+<span class="gp">... </span>    <span class="p">),</span>
+<span class="gp">... </span>    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">outcome_columns</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">weight_column</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">target</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)}),</span>
+<span class="gp">... </span>    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">adjusted</span> <span class="o">=</span> <span class="n">survey</span><span class="o">.</span><span class="n">set_target</span><span class="p">(</span><span class="n">target</span><span class="p">)</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;null&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">adjusted</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
+<span class="go">Adjustment details:</span>
+<span class="go">    method: null_adjustment</span>
+<span class="go">Covariate diagnostics:</span>
+<span class="go">    Covar ASMD reduction: 0.0%</span>
+<span class="go">    Covar ASMD (1 variables): 0.173 -&gt; 0.173</span>
+<span class="go">    Covar mean KLD reduction: 0.0%</span>
+<span class="go">    Covar mean KLD (1 variables): 0.020 -&gt; 0.020</span>
+<span class="go">Weight diagnostics:</span>
+<span class="go">    design effect (Deff): 1.120</span>
+<span class="go">    effective sample proportion (ESSP): 0.893</span>
+<span class="go">    effective sample size (ESS): 3.6</span>
+<span class="go">Outcome weighted means:</span>
+<span class="go">               y</span>
+<span class="go">source</span>
+<span class="go">self       0.480</span>
+<span class="go">unadjusted 0.480</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">

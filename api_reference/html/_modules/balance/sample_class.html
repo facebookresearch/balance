@@ -269,20 +269,58 @@
         <span class="k">if</span> <span class="n">n_rows</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">n_rows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">deff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">design_effect</span><span class="p">()</span>
-            <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="ne">ZeroDivisionError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Unable to compute design effect for __str__: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
-                <span class="n">deff</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="k">if</span> <span class="n">deff</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">deff</span><span class="p">):</span>
-                <span class="n">effective_n</span> <span class="o">=</span> <span class="n">n_rows</span> <span class="o">/</span> <span class="n">deff</span> <span class="k">if</span> <span class="n">deff</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
-                <span class="n">deff_line</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;design effect (Deff): </span><span class="si">{</span><span class="n">deff</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="k">if</span> <span class="n">effective_n</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">deff_line</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, eff. sample size: </span><span class="si">{</span><span class="n">effective_n</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="n">adjustment_details</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">deff_line</span><span class="p">)</span>
+        <span class="n">design_effect</span><span class="p">,</span> <span class="n">effective_n</span><span class="p">,</span> <span class="n">effective_sample_proportion</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_design_effect_diagnostics</span><span class="p">(</span><span class="n">n_rows</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">design_effect</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">deff_line</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;design effect (Deff): </span><span class="si">{</span><span class="n">design_effect</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">if</span> <span class="n">effective_sample_proportion</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">deff_line</span> <span class="o">+=</span> <span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;, eff. sample size proportion: </span><span class="si">{</span><span class="n">effective_sample_proportion</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">effective_n</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">deff_line</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, eff. sample size: </span><span class="si">{</span><span class="n">effective_n</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">adjustment_details</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">deff_line</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">adjustment_details</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_design_effect_diagnostics</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">n_rows</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute design effect and related effective sample statistics.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            n_rows: Optional number of rows to use for scaling. Defaults to the</span>
+<span class="sd">                sample size when not provided.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple of (design_effect, effective_sample_size, effective_sample_proportion).</span>
+<span class="sd">            If the design effect is unavailable or invalid, all values are ``None``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">n_rows</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">n_rows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">design_effect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">design_effect</span><span class="p">()</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="ne">ZeroDivisionError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Unable to compute design effect: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">design_effect</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">design_effect</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+        <span class="n">effective_sample_size</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">effective_sample_proportion</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">n_rows</span> <span class="ow">and</span> <span class="n">design_effect</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">effective_sample_size</span> <span class="o">=</span> <span class="n">n_rows</span> <span class="o">/</span> <span class="n">design_effect</span>
+            <span class="n">effective_sample_proportion</span> <span class="o">=</span> <span class="n">effective_sample_size</span> <span class="o">/</span> <span class="n">n_rows</span>
+
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">design_effect</span><span class="p">),</span> <span class="n">effective_sample_size</span><span class="p">,</span> <span class="n">effective_sample_proportion</span>
 
     <span class="c1">################################################################################</span>
     <span class="c1">#  Public API</span>
@@ -1131,11 +1169,49 @@
 <span class="sd">        Provides a summary of covariate balance, design effect and model properties (if applicable)</span>
 <span class="sd">        of a sample.</span>
 
+<span class="sd">        The summary consolidates high-level diagnostics that are most helpful after adjustment,</span>
+<span class="sd">        including covariate balance, weight health, outcome behavior, and basic model fit when</span>
+<span class="sd">        available.</span>
+
 <span class="sd">        For more details see: :func:`BalanceDF.asmd`, :func:`BalanceDF.asmd_improvement`</span>
 <span class="sd">        and :func:`weights_stats.design_effect`</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            str: a summary description of properties of an adjusted sample.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_class import Sample</span>
+<span class="sd">            &gt;&gt;&gt; survey = Sample.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame(</span>
+<span class="sd">            ...         {&quot;x&quot;: (0, 1, 1, 0), &quot;id&quot;: range(4), &quot;y&quot;: (0.1, 0.5, 0.4, 0.9), &quot;w&quot;: (1, 2, 1, 1)}</span>
+<span class="sd">            ...     ),</span>
+<span class="sd">            ...     id_column=&quot;id&quot;,</span>
+<span class="sd">            ...     outcome_columns=&quot;y&quot;,</span>
+<span class="sd">            ...     weight_column=&quot;w&quot;,</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; target = Sample.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;x&quot;: (0, 0, 1, 1), &quot;id&quot;: range(4)}),</span>
+<span class="sd">            ...     id_column=&quot;id&quot;,</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; adjusted = survey.set_target(target).adjust(method=&quot;null&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; print(adjusted.summary())</span>
+<span class="sd">            Adjustment details:</span>
+<span class="sd">                method: null_adjustment</span>
+<span class="sd">            Covariate diagnostics:</span>
+<span class="sd">                Covar ASMD reduction: 0.0%</span>
+<span class="sd">                Covar ASMD (1 variables): 0.173 -&gt; 0.173</span>
+<span class="sd">                Covar mean KLD reduction: 0.0%</span>
+<span class="sd">                Covar mean KLD (1 variables): 0.020 -&gt; 0.020</span>
+<span class="sd">            Weight diagnostics:</span>
+<span class="sd">                design effect (Deff): 1.120</span>
+<span class="sd">                effective sample proportion (ESSP): 0.893</span>
+<span class="sd">                effective sample size (ESS): 3.6</span>
+<span class="sd">            Outcome weighted means:</span>
+<span class="sd">                           y</span>
+<span class="sd">            source</span>
+<span class="sd">            self       0.480</span>
+<span class="sd">            unadjusted 0.480</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Initialize variables</span>
         <span class="n">n_asmd_covars</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
@@ -1174,8 +1250,10 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">():</span>
             <span class="n">quick_adjustment_details</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quick_adjustment_details</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 
-        <span class="c1"># design effect</span>
-        <span class="n">design_effect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">design_effect</span><span class="p">()</span>
+        <span class="c1"># design effect and effective sample diagnostics</span>
+        <span class="n">design_effect</span><span class="p">,</span> <span class="n">effective_sample_size</span><span class="p">,</span> <span class="n">effective_sample_proportion</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_design_effect_diagnostics</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="p">)</span>
 
         <span class="c1"># model performance</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1195,41 +1273,65 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">model_summary</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="n">quick_adjustment_section</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;Adjustment details:</span><span class="se">\n</span><span class="s2">    &quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">    &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">quick_adjustment_details</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="k">if</span> <span class="n">quick_adjustment_details</span>
-            <span class="k">else</span> <span class="s2">&quot;&quot;</span>
-        <span class="p">)</span>
+        <span class="n">sections</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="n">out</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">quick_adjustment_section</span>
-            <span class="o">+</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Covar ASMD reduction: </span><span class="si">{</span><span class="n">asmd_improvement</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%, design effect: </span><span class="si">{</span><span class="n">design_effect</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">()</span>
-                <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">adjustment_lines</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">quick_adjustment_details</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">d</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;design effect&quot;</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">adjustment_lines</span><span class="p">:</span>
+            <span class="n">sections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="s2">&quot;Adjustment details:</span><span class="se">\n</span><span class="s2">    &quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">    &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">adjustment_lines</span><span class="p">)</span>
             <span class="p">)</span>
-            <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Covar ASMD (</span><span class="si">{</span><span class="n">n_asmd_covars</span><span class="si">}</span><span class="s2"> variables): &quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_target</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-            <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">asmd_before</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> -&gt; &quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-            <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">asmd_now</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_target</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-            <span class="o">+</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Covar mean KLD reduction: </span><span class="si">{</span><span class="n">kld_reduction</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">()</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_target</span><span class="p">()</span>
-                <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="n">covar_lines</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_target</span><span class="p">():</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">():</span>
+                <span class="n">covar_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Covar ASMD reduction: </span><span class="si">{</span><span class="n">asmd_improvement</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+            <span class="n">covar_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Covar ASMD (</span><span class="si">{</span><span class="n">n_asmd_covars</span><span class="si">}</span><span class="s2"> variables): &quot;</span>
+                <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">asmd_before</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> -&gt; &quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">asmd_now</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
-            <span class="o">+</span> <span class="p">(</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">()</span> <span class="ow">and</span> <span class="n">kld_before</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">covar_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Covar mean KLD reduction: </span><span class="si">{</span><span class="n">kld_reduction</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+            <span class="n">covar_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Covar mean KLD (</span><span class="si">{</span><span class="n">n_kld_covars</span><span class="si">}</span><span class="s2"> variables): &quot;</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_target</span><span class="p">()</span>
-                <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+                <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">kld_before</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> -&gt; &quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">kld_now</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
-            <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">kld_before</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> -&gt; &quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-            <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">kld_now</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_target</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-            <span class="o">+</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Model performance: </span><span class="si">{</span><span class="n">model_summary</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="k">if</span> <span class="p">(</span><span class="n">model_summary</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
-                <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">covar_lines</span><span class="p">:</span>
+            <span class="n">sections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Covariate diagnostics:</span><span class="se">\n</span><span class="s2">    &quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">    &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">covar_lines</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">():</span>
+            <span class="n">weights_lines</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="n">design_effect</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">weights_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;design effect (Deff): </span><span class="si">{</span><span class="n">design_effect</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">effective_sample_proportion</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">weights_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;effective sample size proportion (ESSP): </span><span class="si">{</span><span class="n">effective_sample_proportion</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">if</span> <span class="n">effective_sample_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">weights_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;effective sample size (ESS): </span><span class="si">{</span><span class="n">effective_sample_size</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">weights_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;design effect (Deff): unavailable&quot;</span><span class="p">)</span>
+
+            <span class="n">sections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Weight diagnostics:</span><span class="se">\n</span><span class="s2">    &quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">    &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">weights_lines</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outcome_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">outcome_means</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+            <span class="n">sections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="s2">&quot;Outcome weighted means:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="o">+</span> <span class="n">outcome_means</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">float_format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{:.3f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">)</span>
             <span class="p">)</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">out</span></div>
+
+        <span class="k">if</span> <span class="n">model_summary</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Model performance: </span><span class="si">{</span><span class="n">model_summary</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">sections</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="Sample.diagnostics">
