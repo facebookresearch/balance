@@ -1,24 +1,80 @@
-# Copilot Code Review Instructions
+# Copilot Code Review Instructions: `balance` (Python)
 
-Use this checklist when reviewing pull requests for the **balance** Python package, which provides weighting and balancing utilities for correcting bias in tabular datasets (for example, via IPW, CBPS, rake, and poststratification routines built on pandas and NumPy).
+When performing a Copilot code review for this repository, follow the instructions below and prioritize correctness, statistical validity, reproducibility, and backward compatibility.
 
-## Core expectations
-1. **Tests are present and meaningful.** Confirm new or changed behavior is covered by `pytest` tests under `tests/`. Edge cases (e.g., missing columns, unexpected dtypes, boundary weights, zero/negative/infinite weights, NaN handling) should be exercised, and tests should be deterministic. Aim for >90% code coverage on new code (verify with `pytest --cov`). Prefer to use `from balance import load_data` when possible.
-2. **Changelog updates accompany user-visible changes.** Require `CHANGELOG.md` entries for fixes or features. If backward-incompatible behavior is introduced, the entry must clearly flag the breaking change and migration notes.
-3. **Typed, example-rich docs for new APIs.** The codebase is Pyre-typed (`# pyre-strict`); ensure new or modified public functions/classes include complete type hints and a docstring with at least one concrete usage example, ideally mirroring the test plan (including for helper functions).
-4. **Backward compatibility.** Watch for changes to defaults, return shapes, or CLI flags that could break existing users. If intentional, the pull request summary and changelog should call this out explicitly. For deprecations, use proper warnings with clear timeline, update migration guides in `CHANGELOG.md`, and provide old vs. new usage examples.
-5. **Dependency discipline.** New dependencies should be rare, lightweight, and justified. When touching `requirements` files or setup metadata, verify compatibility with supported Python versions and existing dependency pins.
-6. **Documentation and examples.** When behavior changes, ensure tutorials, README snippets, and inline examples stay accurate (especially around dataset loading, weighting methods, and plotting utilities). Document any randomness (sampling, initialization) and ensure seed handling is consistent.
+## Project context
+This repo contains the **balance** Python package: weighting and balancing utilities for correcting bias in tabular datasets (e.g., IPW, CBPS, raking, poststratification), built on pandas and NumPy.
 
-## Performance and memory considerations
-- **Flag performance regressions:** Test with representative dataset sizes; iterative methods should not degrade significantly.
-- **Memory efficiency:** Avoid unnecessary dataframe copies, prefer in-place operations when safe, and watch for chained operations that create intermediate copies.
-- **Vectorize when possible:** Prefer vectorized operations (e.g., `numpy` or `pandas`) over
-## Style and implementation notes
-- Favor clear, pandas-friendly code that avoids mutating input data structures in-place unless documented.
-- **Input validation:** Check column existence, dtype expectations, and weight constraints early with clear error messages. Prefer using existing functions from utils.py to avoid duplication.
-- **Error messages:** Make them actionable—tell users *how* to fix the issue (e.g., "Column 'age' not found in dataframe. Available columns: [...]").
-- Maintain existing logging patterns for consistent user experience.
-- Keep tests fast and avoid large fixtures; prefer factory helpers in `tests/` when possible.
+## Review checklist
 
-Keep comments concise and actionable, pointing authors to exact lines that need updates.
+### 1) Correctness and statistical soundness
+- Verify the implementation matches the intended method (IPW / CBPS / rake / poststratification).
+- Confirm assumptions and constraints are handled explicitly (e.g., positivity, normalization, convergence criteria).
+- Check output semantics: shapes, index alignment, column names, and dtype stability.
+- Ensure missingness and invalid inputs have well-defined behavior (error vs. warning vs. coercion).
+
+### 2) Input validation and actionable errors
+- Validate early: required columns exist, dtypes are supported, and parameter ranges are enforced.
+- Weights: explicitly handle/forbid zero, negative, infinite, or NaN weights (as appropriate for the API).
+- Make error messages actionable:
+  - name the missing/invalid column
+  - list available columns when relevant
+  - state how to fix it
+- Prefer existing helpers in `utils.py` instead of duplicating validation logic.
+
+### 3) Tests (pytest) — required for behavior changes
+- New or changed behavior MUST be covered by deterministic `pytest` tests under `tests/`.
+- Exercise edge cases when applicable:
+  - missing columns / schema mismatch
+  - unexpected dtypes (object/category/int/float/bool)
+  - NaN/inf handling in inputs and outputs
+  - extreme/boundary weights, clipping, normalization
+  - empty dataframes / single-row inputs
+- Keep tests stable:
+  - avoid order/time dependence and uncontrolled randomness
+  - if randomness is necessary, fix seeds and assert with tolerances
+- Coverage expectation: aim for >90% coverage on new code (`pytest --cov`).
+- Prefer using `from balance import load_data` in tests when appropriate.
+
+### 4) Types and docs (Pyre strict)
+- The codebase is Pyre-typed (`# pyre-strict`): new/modified public APIs must have complete type hints.
+- New/modified public functions/classes must include a docstring with at least one concrete usage example.
+- Avoid returning `Any` or widening types unless justified.
+
+### 5) Backward compatibility and deprecations
+- Do not silently change defaults, return shapes, column names, or CLI flags.
+- If a breaking change is intentional:
+  - call it out clearly in the PR summary
+  - add migration guidance and “before → after” examples
+- For deprecations:
+  - use proper warnings
+  - document timeline and replacement usage
+  - update changelog accordingly
+
+### 6) Changelog discipline
+- User-visible fixes/features MUST include an entry in `CHANGELOG.md`.
+- Breaking changes MUST be explicitly labeled and include migration notes.
+
+### 7) Dependencies and packaging
+- New dependencies should be rare, lightweight, and justified.
+- If touching requirements/setup metadata:
+  - verify supported Python versions
+  - avoid unnecessary pin churn
+  - consider transitive impact
+
+### 8) Performance and memory
+- Flag performance regressions using representative dataset sizes.
+- Avoid unnecessary dataframe copies and large intermediate objects.
+- Prefer vectorized operations (NumPy/pandas) over Python loops.
+- For iterative/optimization routines: ensure stopping criteria, max iterations, and tolerances are documented and tested.
+
+### 9) Style, logging, and UX consistency
+- Favor clear, pandas-friendly code.
+- Avoid mutating user-provided inputs in-place unless explicitly documented.
+- Preserve existing logging patterns and verbosity conventions.
+- Keep tests fast; prefer small fixtures and shared factories/helpers in `tests/`.
+
+## Review comment style
+- Keep feedback concise and actionable.
+- Point to exact lines/files and propose concrete fixes and/or specific missing tests.
+- If uncertain, ask for a small reproducible example or an additional test to clarify behavior.

@@ -140,6 +140,27 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         self.assertTrue(min(both_trimmed) > 0.1)
         self.assertTrue(max(both_trimmed) < 0.9)
 
+    def test_trim_weights_doc_examples(self) -> None:
+        """Docstring examples stay synchronized with implementation results."""
+
+        weights = pd.Series(range(1, 101))
+
+        symmetric_trim = trim_weights(
+            weights,
+            weight_trimming_percentile=0.01,
+            keep_sum_of_weights=False,
+        )
+        expected_symmetric = pd.Series(range(1, 101)).clip(3, 98).astype(float)
+        pd.testing.assert_series_equal(symmetric_trim, expected_symmetric)
+
+        upper_trim = trim_weights(
+            weights,
+            weight_trimming_percentile=(0.0, 0.05),
+            keep_sum_of_weights=False,
+        )
+        expected_upper = pd.Series(range(1, 101)).clip(upper=94).astype(float)
+        pd.testing.assert_series_equal(upper_trim, expected_upper)
+
     def test_trim_weights_return_type_consistency(self) -> None:
         """
         Test that both weight_trimming_mean_ratio and weight_trimming_percentile
