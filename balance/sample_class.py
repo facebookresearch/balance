@@ -238,7 +238,16 @@ class Sample:
                 deff = None
             if deff is not None and np.isfinite(deff):
                 effective_n = n_rows / deff if deff != 0 else None
+                effective_sample_proportion = (
+                    (effective_n / n_rows)
+                    if effective_n is not None and n_rows
+                    else None
+                )
                 deff_line = f"design effect (Deff): {deff:.3f}"
+                if effective_sample_proportion is not None:
+                    deff_line += (
+                        f", eff. sample proportion: {effective_sample_proportion:.3f}"
+                    )
                 if effective_n is not None:
                     deff_line += f", eff. sample size: {effective_n:.1f}"
                 adjustment_details.append(deff_line)
@@ -1033,11 +1042,47 @@ class Sample:
         Provides a summary of covariate balance, design effect and model properties (if applicable)
         of a sample.
 
+        The summary consolidates high-level diagnostics that are most helpful after adjustment,
+        including covariate balance, weight health, outcome behavior, and basic model fit when
+        available.
+
         For more details see: :func:`BalanceDF.asmd`, :func:`BalanceDF.asmd_improvement`
         and :func:`weights_stats.design_effect`
 
         Returns:
             str: a summary description of properties of an adjusted sample.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_class import Sample
+            >>> survey = Sample.from_frame(
+            ...     pd.DataFrame(
+            ...         {"x": (0, 1, 1, 0), "id": range(4), "y": (0.1, 0.5, 0.4, 0.9), "w": (1, 2, 1, 1)}
+            ...     ),
+            ...     id_column="id",
+            ...     outcome_columns="y",
+            ...     weight_column="w",
+            ... )
+            >>> target = Sample.from_frame(
+            ...     pd.DataFrame({"x": (0, 0, 1, 1), "id": range(4)}),
+            ...     id_column="id",
+            ... )
+            >>> adjusted = survey.set_target(target).adjust(method="null")
+            >>> print(adjusted.summary())
+            Covariate diagnostics:
+                Covar ASMD reduction: 0.0%
+                Covar ASMD (1 variables): 0.577 -> 0.577
+                Covar mean KLD reduction: 0.0%
+                Covar mean KLD (1 variables): 0.216 -> 0.216
+            Weight diagnostics:
+                design effect (Deff): 1.333
+                effective sample proportion (ESSP): 0.750
+                effective sample size (ESS): 3.0
+            Outcome weighted means:
+                           y
+            source
+            self        0.475
+            unadjusted   0.475
         """
         # Initialize variables
         n_asmd_covars: int = 0
@@ -1076,8 +1121,17 @@ class Sample:
         if self.is_adjusted():
             quick_adjustment_details = self._quick_adjustment_details(self._df.shape[0])
 
-        # design effect
+        # design effect and effective sample diagnostics
         design_effect = self.design_effect()
+        has_valid_design_effect = design_effect is not None and np.isfinite(
+            design_effect
+        )
+        has_positive_design_effect = bool(has_valid_design_effect and design_effect > 0)
+        effective_sample_size: float | None = None
+        effective_sample_proportion: float | None = None
+        if has_positive_design_effect and self._df.shape[0] > 0:
+            effective_sample_size = self._df.shape[0] / design_effect
+            effective_sample_proportion = effective_sample_size / self._df.shape[0]
 
         # model performance
         if self.model() is not None:
@@ -1097,41 +1151,65 @@ class Sample:
         else:
             model_summary = None
 
-        quick_adjustment_section = (
-            "Adjustment details:\n    " + "\n    ".join(quick_adjustment_details) + "\n"
-            if quick_adjustment_details
-            else ""
-        )
+        sections: List[str] = []
 
-        out = (
-            quick_adjustment_section
-            + (
-                f"Covar ASMD reduction: {asmd_improvement:.1f}%, design effect: {design_effect:.3f}\n"
-                if self.is_adjusted()
-                else ""
+        adjustment_lines = [
+            d for d in quick_adjustment_details if not d.startswith("design effect")
+        ]
+        if adjustment_lines:
+            sections.append(
+                "Adjustment details:\n    " + "\n    ".join(adjustment_lines)
             )
-            + (f"Covar ASMD ({n_asmd_covars} variables): " if self.has_target() else "")
-            + (f"{asmd_before:.3f} -> " if self.is_adjusted() else "")
-            + (f"{asmd_now:.3f}\n" if self.has_target() else "")
-            + (
-                f"Covar mean KLD reduction: {kld_reduction:.1f}%\n"
-                if self.is_adjusted() and self.has_target()
-                else ""
+
+        covar_lines: List[str] = []
+        if self.has_target():
+            if self.is_adjusted():
+                covar_lines.append(f"Covar ASMD reduction: {asmd_improvement:.1f}%")
+            covar_lines.append(
+                f"Covar ASMD ({n_asmd_covars} variables): "
+                + (f"{asmd_before:.3f} -> " if self.is_adjusted() else "")
+                + f"{asmd_now:.3f}"
             )
-            + (
+
+            if self.is_adjusted() and kld_before > 0:
+                covar_lines.append(f"Covar mean KLD reduction: {kld_reduction:.1f}%")
+            covar_lines.append(
                 f"Covar mean KLD ({n_kld_covars} variables): "
-                if self.has_target()
-                else ""
+                + (f"{kld_before:.3f} -> " if self.is_adjusted() else "")
+                + f"{kld_now:.3f}"
             )
-            + (f"{kld_before:.3f} -> " if self.is_adjusted() else "")
-            + (f"{kld_now:.3f}\n" if self.has_target() else "")
-            + (
-                f"Model performance: {model_summary}"
-                if (model_summary is not None)
-                else ""
+
+        if covar_lines:
+            sections.append("Covariate diagnostics:\n    " + "\n    ".join(covar_lines))
+
+        if self.is_adjusted():
+            weights_lines: List[str] = []
+            if has_positive_design_effect:
+                weights_lines.append(f"design effect (Deff): {design_effect:.3f}")
+                if effective_sample_proportion is not None:
+                    weights_lines.append(
+                        f"effective sample proportion (ESSP): {effective_sample_proportion:.3f}"
+                    )
+                if effective_sample_size is not None:
+                    weights_lines.append(
+                        f"effective sample size (ESS): {effective_sample_size:.1f}"
+                    )
+            else:
+                weights_lines.append("design effect (Deff): unavailable")
+
+            sections.append("Weight diagnostics:\n    " + "\n    ".join(weights_lines))
+
+        if self._outcome_columns is not None:
+            outcome_means = self.outcomes().mean()
+            sections.append(
+                "Outcome weighted means:\n"
+                + outcome_means.to_string(float_format="{:.3f}".format)
             )
-        )
-        return out
+
+        if model_summary is not None:
+            sections.append(f"Model performance: {model_summary}")
+
+        return "\n".join(filter(None, sections))
 
     def diagnostics(self: "Sample") -> pd.DataFrame:
         # TODO: mention the other diagnostics

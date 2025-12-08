@@ -15,6 +15,16 @@
     [#57](https://github.com/facebookresearch/balance/issues/57)). Tests are
     added.
 
+- **Richer `Sample.summary()` diagnostics**
+  - The adjusted sample summary now groups covariate diagnostics together,
+    expands weight diagnostics to report design effect alongside effective
+    sample proportion (ESSP) and effective sample size (ESS), and surfaces
+    weighted outcome means when available. This makes the printed summary a
+    concise snapshot of covariate balance, weight health, and outcome behavior
+    post-adjustment. When the design effect cannot be computed reliably, the
+    summary now reports it as unavailable instead of emitting misleading
+    effective sample diagnostics.
+
 - **Warning of high-cardinality categorical features used as coveriates in
   .adjust()**
   - Added detection and warnings for high-cardinality categorical features

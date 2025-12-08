@@ -22,6 +22,7 @@ of Sample functionality.
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 from copy import deepcopy
+from types import MethodType
 from typing import Any
 
 import balance.testutil
@@ -988,6 +989,7 @@ class TestSample_metrics_methods(
         self.assertTrue("Model performance" not in s1_summ)
         self.assertTrue("Covar ASMD" not in s1_summ)
         self.assertTrue("Covar mean KLD" not in s1_summ)
+        self.assertIn("Outcome weighted means", s1_summ)
 
         s3_summ = s3.summary()
         self.assertTrue("Model performance" not in s1_summ)
@@ -1002,12 +1004,25 @@ class TestSample_metrics_methods(
         self.assertTrue("->" in s3_summ)
         self.assertTrue("Covar mean KLD reduction: 0.0%" in s3_summ)
         self.assertTrue("Covar mean KLD (3 variables)" in s3_summ)
-        self.assertTrue("design effect" in s3_summ)
+        self.assertTrue("design effect (Deff)" in s3_summ)
+        self.assertTrue("effective sample proportion" in s3_summ)
+        self.assertTrue("effective sample size" in s3_summ)
+        self.assertIn("Outcome weighted means", s3_summ)
 
         s3_summ = s3_adjusted_null.summary()
         self.assertTrue("Covar ASMD reduction: 0.0%" in s3_summ)
         self.assertTrue("Covar mean KLD reduction: 0.0%" in s3_summ)
         self.assertTrue("design effect" in s3_summ)
+
+    def test_Sample_summary_handles_nonfinite_design_effect(self) -> None:
+        adjusted = deepcopy(s3_adjusted_null)
+        adjusted.design_effect = MethodType(lambda self: np.nan, adjusted)
+
+        summary = adjusted.summary()
+
+        self.assertIn("Weight diagnostics:", summary)
+        self.assertIn("design effect (Deff): unavailable", summary)
+        self.assertNotIn("effective sample", summary)
 
     def test_Sample_invalid_outcomes(self) -> None:
         with self.assertRaisesRegex(
