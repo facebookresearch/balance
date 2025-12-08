@@ -25,7 +25,7 @@
     summary now reports it as unavailable instead of emitting misleading
     effective sample diagnostics.
 
-- **Warning of high-cardinality categorical features used as coveriates in
+- **Warning of high-cardinality categorical features used as covariates in
   .adjust()**
   - Added detection and warnings for high-cardinality categorical features
     (object, category, string dtypes) before weight fitting when using
