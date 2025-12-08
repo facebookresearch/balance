@@ -51,10 +51,8 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">npt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">util</span> <span class="k">as</span> <span class="n">balance_util</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">_verify_value_type</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.weighting_methods</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">adjust_null</span> <span class="k">as</span> <span class="n">balance_adjust_null</span><span class="p">,</span>
     <span class="n">cbps</span> <span class="k">as</span> <span class="n">balance_cbps</span><span class="p">,</span>
@@ -77,7 +75,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_validate_limit</span><span class="p">(</span><span class="n">limit</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">n_weights</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate and adjust a percentile limit for use with scipy.stats.mstats.winsorize.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate and adjust a percentile limit for use when clipping percentiles.</span>
 
 <span class="sd">    This function prepares percentile limits for winsorization by:</span>
 <span class="sd">    1. Validating that finite limits are within valid bounds (0-1)</span>
@@ -123,6 +121,37 @@
     <span class="k">return</span> <span class="n">adjusted</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_quantile_with_method</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute a quantile with explicit method selection.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data: Array-like input that can be consumed by ``np.asarray``.</span>
+<span class="sd">        q: Quantile to compute in the inclusive range ``[0, 1]``.</span>
+<span class="sd">        method: Quantile algorithm to use. Typical values include</span>
+<span class="sd">            ``&quot;higher&quot;``/``&quot;lower&quot;`` (step functions) and ``&quot;linear&quot;``</span>
+<span class="sd">            (default continuous interpolation). The value is forwarded to</span>
+<span class="sd">            ``np.quantile`` via the ``method`` argument when available.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        ``float``: The computed quantile value converted to ``float``.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; _quantile_with_method([1, 2, 3, 4], 0.25, &quot;higher&quot;)</span>
+<span class="sd">        2.0</span>
+<span class="sd">        &gt;&gt;&gt; _quantile_with_method([1, 2, 3, 4], 0.75, &quot;lower&quot;)</span>
+<span class="sd">        3.0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">array_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">array_data</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">))</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="c1"># Older NumPy versions (&lt;1.22) use the ``interpolation`` kwarg.</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">array_data</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">method</span><span class="p">))</span>
+
+
 <div class="viewcode-block" id="trim_weights">
 <a class="viewcode-back" href="../../balance.adjustment.html#balance.adjustment.trim_weights">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">trim_weights</span><span class="p">(</span>
@@ -147,9 +176,9 @@
 
 <span class="sd">    **Percentile-Based Winsorization (weight_trimming_percentile)**:</span>
 <span class="sd">    When specified, extreme weights are replaced with less extreme values using</span>
-<span class="sd">    scipy.stats.mstats.winsorize. By default, winsorization affects both tails</span>
-<span class="sd">    of the distribution symmetrically, unlike mean ratio trimming which only</span>
-<span class="sd">    clips from above.</span>
+<span class="sd">    percentile clipping. By default, winsorization affects both tails of the</span>
+<span class="sd">    distribution symmetrically, unlike mean ratio trimming which only clips from</span>
+<span class="sd">    above.</span>
 
 <span class="sd">    Behavior:</span>
 <span class="sd">    - Single value (e.g., 0.1): Winsorizes below 10th AND above 90th percentile</span>
@@ -230,9 +259,13 @@
 <span class="sd">                # 99    80.640316</span>
 <span class="sd">                # Length: 100, dtype: float64</span>
 
-<span class="sd">            print(pd.DataFrame(trim_weights(pd.Series(range(1, 101)), weight_trimming_percentile=.01)))</span>
-<span class="sd">                # 0    2.0</span>
-<span class="sd">                # 1    2.0</span>
+<span class="sd">            print(pd.DataFrame(trim_weights(</span>
+<span class="sd">                pd.Series(range(1, 101)),</span>
+<span class="sd">                weight_trimming_percentile=.01,</span>
+<span class="sd">                keep_sum_of_weights=False,</span>
+<span class="sd">            )))</span>
+<span class="sd">                # 0    3.0</span>
+<span class="sd">                # 1    3.0</span>
 <span class="sd">                # 2    3.0</span>
 <span class="sd">                # 3    4.0</span>
 <span class="sd">                # 4    5.0</span>
@@ -240,22 +273,26 @@
 <span class="sd">                # 95  96.0</span>
 <span class="sd">                # 96  97.0</span>
 <span class="sd">                # 97  98.0</span>
-<span class="sd">                # 98  99.0</span>
-<span class="sd">                # 99  99.0</span>
+<span class="sd">                # 98  98.0</span>
+<span class="sd">                # 99  98.0</span>
 <span class="sd">                # [100 rows x 1 columns]</span>
 
-<span class="sd">            print(pd.DataFrame(trim_weights(pd.Series(range(1, 101)), weight_trimming_percentile=(0., .05))))</span>
-<span class="sd">                # 0    1.002979</span>
-<span class="sd">                # 1    2.005958</span>
-<span class="sd">                # 2    3.008937</span>
-<span class="sd">                # 3    4.011917</span>
-<span class="sd">                # 4    5.014896</span>
-<span class="sd">                # ..        ...</span>
-<span class="sd">                # 95  95.283019</span>
-<span class="sd">                # 96  95.283019</span>
-<span class="sd">                # 97  95.283019</span>
-<span class="sd">                # 98  95.283019</span>
-<span class="sd">                # 99  95.283019</span>
+<span class="sd">            print(pd.DataFrame(trim_weights(</span>
+<span class="sd">                pd.Series(range(1, 101)),</span>
+<span class="sd">                weight_trimming_percentile=(0., .05),</span>
+<span class="sd">                keep_sum_of_weights=False,</span>
+<span class="sd">            )))</span>
+<span class="sd">                # 0     1.0</span>
+<span class="sd">                # 1     2.0</span>
+<span class="sd">                # 2     3.0</span>
+<span class="sd">                # 3     4.0</span>
+<span class="sd">                # 4     5.0</span>
+<span class="sd">                # ..    ...</span>
+<span class="sd">                # 95   94.0</span>
+<span class="sd">                # 96   94.0</span>
+<span class="sd">                # 97   94.0</span>
+<span class="sd">                # 98   94.0</span>
+<span class="sd">                # 99   94.0</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">original_name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -301,7 +338,7 @@
             <span class="n">name</span><span class="o">=</span><span class="n">original_name</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">elif</span> <span class="n">weight_trimming_percentile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="c1"># Winsorize</span>
+        <span class="c1"># Winsorize using percentile clipping</span>
         <span class="n">percentile</span> <span class="o">=</span> <span class="n">weight_trimming_percentile</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">percentile</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)):</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">percentile</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
@@ -312,53 +349,36 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">lower_limit</span> <span class="o">=</span> <span class="n">upper_limit</span> <span class="o">=</span> <span class="n">percentile</span>
 
-        <span class="c1"># Keep the original requested percentiles for exact clipping bounds,</span>
-        <span class="c1"># but validate/adjust separately for the winsorization call so at least</span>
-        <span class="c1"># one value is affected at the requested edge.</span>
-        <span class="n">clip_limits</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="kc">None</span> <span class="k">if</span> <span class="p">(</span><span class="n">lower_limit</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">lower_limit</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="k">else</span> <span class="n">lower_limit</span><span class="p">,</span>
-            <span class="kc">None</span> <span class="k">if</span> <span class="p">(</span><span class="n">upper_limit</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">upper_limit</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="k">else</span> <span class="n">upper_limit</span><span class="p">,</span>
+        <span class="c1"># Treat 0 or None as &quot;no winsorization&quot; for that side before applying</span>
+        <span class="c1"># validation adjustments that guarantee at least one affected value.</span>
+        <span class="n">normalized_limits</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="kc">None</span> <span class="k">if</span> <span class="p">(</span><span class="n">lower_limit</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">lower_limit</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">lower_limit</span><span class="p">),</span>
+            <span class="kc">None</span> <span class="k">if</span> <span class="p">(</span><span class="n">upper_limit</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">upper_limit</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">upper_limit</span><span class="p">),</span>
         <span class="p">)</span>
         <span class="n">adjusted_limits</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">_validate_limit</span><span class="p">(</span><span class="n">lower_limit</span><span class="p">,</span> <span class="n">n_weights</span><span class="p">),</span>
-            <span class="n">_validate_limit</span><span class="p">(</span><span class="n">upper_limit</span><span class="p">,</span> <span class="n">n_weights</span><span class="p">),</span>
+            <span class="n">_validate_limit</span><span class="p">(</span><span class="n">normalized_limits</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">n_weights</span><span class="p">),</span>
+            <span class="n">_validate_limit</span><span class="p">(</span><span class="n">normalized_limits</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">n_weights</span><span class="p">),</span>
         <span class="p">)</span>
 
-        <span class="c1"># Preserve the pre-trim weights to calculate strict clipping bounds.</span>
-        <span class="n">original_weights_for_bounds</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">lower_limit_adjusted</span> <span class="o">=</span> <span class="n">adjusted_limits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">upper_limit_adjusted</span> <span class="o">=</span> <span class="n">adjusted_limits</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
-        <span class="n">weights</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">mstats</span><span class="o">.</span><span class="n">winsorize</span><span class="p">(</span>
-            <span class="n">weights</span><span class="p">,</span> <span class="n">limits</span><span class="o">=</span><span class="n">adjusted_limits</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span>
+        <span class="n">lower_bound</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">lower_limit_adjusted</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="n">_quantile_with_method</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">lower_limit_adjusted</span><span class="p">,</span> <span class="s2">&quot;higher&quot;</span><span class="p">)</span>
         <span class="p">)</span>
+        <span class="n">upper_bound</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">upper_limit_adjusted</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="n">_quantile_with_method</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">upper_limit_adjusted</span><span class="p">,</span> <span class="s2">&quot;lower&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
                 <span class="s2">&quot;Winsorizing weights to </span><span class="si">%s</span><span class="s2"> percentile&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">weight_trimming_percentile</span><span class="p">)</span>
             <span class="p">)</span>
 
-        <span class="n">weights</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
-            <span class="n">index</span><span class="o">=</span><span class="n">weights_index</span><span class="p">,</span>
-            <span class="n">name</span><span class="o">=</span><span class="n">original_name</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="c1"># Clip to the exact percentile bounds to avoid small numerical overshoots</span>
-        <span class="c1"># from scipy.stats.mstats.winsorize on certain inputs.</span>
-        <span class="n">lower_bound</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="kc">None</span>
-            <span class="k">if</span> <span class="n">clip_limits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span>
-            <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span>
-                <span class="n">original_weights_for_bounds</span><span class="p">,</span> <span class="n">clip_limits</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span>
-            <span class="p">)</span>
-        <span class="p">)</span>
-        <span class="n">upper_bound</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="kc">None</span>
-            <span class="k">if</span> <span class="n">clip_limits</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span>
-            <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span>
-                <span class="n">original_weights_for_bounds</span><span class="p">,</span>
-                <span class="mi">1</span> <span class="o">-</span> <span class="n">_verify_value_type</span><span class="p">(</span><span class="n">clip_limits</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
-                <span class="n">method</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span>
-            <span class="p">)</span>
-        <span class="p">)</span>
         <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">lower</span><span class="o">=</span><span class="n">lower_bound</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="n">upper_bound</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">keep_sum_of_weights</span><span class="p">:</span>
