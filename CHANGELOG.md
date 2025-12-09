@@ -86,6 +86,9 @@
     - Configured tests to use the non-interactive matplotlib Agg backend via
       `conftest.py`, eliminating Tk dependencies and display requirements in
       plotting tests.
+- **Static type checking with Pyre in CI**
+  - GitHub Actions now includes a Pyre job so type regressions are caught in
+    upstream workflows, aligning local and hosted checks.
 
 ## Contributors
 
