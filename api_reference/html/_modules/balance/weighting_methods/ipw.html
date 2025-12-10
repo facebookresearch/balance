@@ -799,8 +799,10 @@
         <span class="n">lambdas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">lambda_max</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">lambda_min</span><span class="p">),</span> <span class="n">num_lambdas</span><span class="p">)</span>
 
         <span class="c1"># Using L2 regression since L1 is too slow. Observed &quot;lbfgs&quot; was the most computationally efficient solver.</span>
+        <span class="c1"># NOTE: default uses &quot;penalty&quot;: &quot;l2&quot;, for sklearn &lt; 1.18</span>
+        <span class="c1">#       and &quot;l1_ratio&quot;: -.0, for sklearn &gt;= 1.18</span>
+        <span class="c1">#       see: https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html</span>
         <span class="n">lr_kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;penalty&quot;</span><span class="p">:</span> <span class="s2">&quot;l2&quot;</span><span class="p">,</span>
             <span class="s2">&quot;solver&quot;</span><span class="p">:</span> <span class="s2">&quot;lbfgs&quot;</span><span class="p">,</span>
             <span class="s2">&quot;tol&quot;</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">,</span>
             <span class="s2">&quot;max_iter&quot;</span><span class="p">:</span> <span class="mi">5000</span><span class="p">,</span>

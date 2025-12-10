@@ -1470,49 +1470,99 @@
             <span class="p">)</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;ipw&quot;</span><span class="p">:</span>
-            <span class="c1">#  Attributes of LogisticRegression class</span>
-            <span class="n">fit_list</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;fit&quot;</span><span class="p">]</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="n">v</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,):</span>
-                    <span class="n">fit_list</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
-                        <span class="p">[</span>
-                            <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-                                <span class="p">{</span><span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;ipw_model_glance&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">,</span> <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">}</span>
-                            <span class="p">)</span>
-                        <span class="p">]</span>
-                    <span class="p">)</span>
-                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
-                    <span class="n">fit_list</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
-                        <span class="p">[</span>
-                            <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-                                <span class="p">{</span><span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;model_glance&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">v</span><span class="p">,),</span> <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">}</span>
-                            <span class="p">)</span>
-                        <span class="p">]</span>
-                    <span class="p">)</span>
-                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-                    <span class="n">fit_list</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
-                        <span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;ipw_&quot;</span> <span class="o">+</span> <span class="n">k</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,),</span> <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">})]</span>
+            <span class="n">fit</span> <span class="o">=</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;fit&quot;</span><span class="p">]</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">fit</span><span class="o">.</span><span class="n">get_params</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="n">fit_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="c1"># TODO: Move this function to utils.py, add docstring, and tests.</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">_coerce_scalar</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+                        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)</span>
+
+            <span class="c1"># TODO: add tests checking these values</span>
+            <span class="k">for</span> <span class="n">array_key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;n_iter_&quot;</span><span class="p">,</span> <span class="s2">&quot;intercept_&quot;</span><span class="p">):</span>
+                <span class="n">array_val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">fit</span><span class="p">,</span> <span class="n">array_key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">array_val</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="n">array_val</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,):</span>
+                    <span class="n">fit_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                            <span class="p">{</span>
+                                <span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;ipw_model_glance&quot;</span><span class="p">,</span>
+                                <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="n">array_val</span><span class="p">,</span>
+                                <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">array_key</span><span class="p">,</span>
+                            <span class="p">}</span>
+                        <span class="p">)</span>
                     <span class="p">)</span>
 
+            <span class="c1"># TODO: add tests checking these values</span>
+            <span class="k">for</span> <span class="n">param_key</span><span class="p">,</span> <span class="n">metric_name</span> <span class="ow">in</span> <span class="p">(</span>
+                <span class="p">(</span><span class="s2">&quot;penalty&quot;</span><span class="p">,</span> <span class="s2">&quot;ipw_penalty&quot;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">&quot;solver&quot;</span><span class="p">,</span> <span class="s2">&quot;ipw_solver&quot;</span><span class="p">),</span>
+            <span class="p">):</span>
+                <span class="n">param_val</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">param_key</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">fit</span><span class="p">,</span> <span class="n">param_key</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">param_val</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="n">fit_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                            <span class="p">{</span><span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="n">metric_name</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,),</span> <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">param_val</span><span class="p">}</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">scalar_key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;tol&quot;</span><span class="p">,</span> <span class="s2">&quot;l1_ratio&quot;</span><span class="p">):</span>
+                <span class="n">scalar_value</span> <span class="o">=</span> <span class="n">_coerce_scalar</span><span class="p">(</span>
+                    <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">scalar_key</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">fit</span><span class="p">,</span> <span class="n">scalar_key</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+                <span class="p">)</span>
+                <span class="n">fit_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                        <span class="p">{</span>
+                            <span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;model_glance&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">scalar_value</span><span class="p">,),</span>
+                            <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">scalar_key</span><span class="p">,</span>
+                        <span class="p">}</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+
+            <span class="c1"># TODO: add tests checking these values</span>
+            <span class="n">multi_class</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;multi_class&quot;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">fit</span><span class="p">,</span> <span class="s2">&quot;multi_class&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">multi_class</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">multi_class</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span>
+            <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">multi_class</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">multi_class</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">multi_class</span><span class="p">)</span>
+
+            <span class="n">fit_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                    <span class="p">{</span><span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;ipw_multi_class&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,),</span> <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">multi_class</span><span class="p">}</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fit_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">fit_single_values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">fit_list</span><span class="p">)</span>
+                <span class="n">fit_single_values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">fit_list</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">fit_single_values</span> <span class="o">=</span> <span class="n">fit_single_values</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span>
+                    <span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;metric&quot;</span><span class="p">,</span> <span class="s2">&quot;var&quot;</span><span class="p">],</span> <span class="n">keep</span><span class="o">=</span><span class="s2">&quot;first&quot;</span>
+                <span class="p">)</span>
                 <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">diagnostics</span><span class="p">,</span> <span class="n">fit_single_values</span><span class="p">))</span>
 
             <span class="c1">#  Extract info about the regularisation parameter</span>
+            <span class="n">lambda_value</span> <span class="o">=</span> <span class="n">_coerce_scalar</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;lambda&quot;</span><span class="p">])</span>
             <span class="n">lambda_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-                <span class="p">{</span><span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;model_glance&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;lambda&quot;</span><span class="p">],),</span> <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="s2">&quot;lambda&quot;</span><span class="p">}</span>
+                <span class="p">{</span><span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;model_glance&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">lambda_value</span><span class="p">,),</span> <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="s2">&quot;lambda&quot;</span><span class="p">}</span>
             <span class="p">)</span>
             <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">diagnostics</span><span class="p">,</span> <span class="n">lambda_df</span><span class="p">))</span>
 
             <span class="c1">#  Scalar values from &#39;perf&#39; key of dictionary</span>
-            <span class="n">perf_single_values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
-                <span class="p">[</span>
-                    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;model_glance&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">v</span><span class="p">,),</span> <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">})</span>
-                    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;perf&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-                    <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span>
-                <span class="p">]</span>
-            <span class="p">)</span>
-            <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">diagnostics</span><span class="p">,</span> <span class="n">perf_single_values</span><span class="p">))</span>
+            <span class="n">perf_entries</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;model_glance&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">),),</span> <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">})</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;perf&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="ow">and</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">&quot;coefs&quot;</span>
+            <span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">perf_entries</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">perf_single_values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">perf_entries</span><span class="p">)</span>
+                <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">diagnostics</span><span class="p">,</span> <span class="n">perf_single_values</span><span class="p">))</span>
 
             <span class="c1"># Model coefficients</span>
             <span class="n">coefs</span> <span class="o">=</span> <span class="p">(</span>
