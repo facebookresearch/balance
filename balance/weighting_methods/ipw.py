@@ -745,8 +745,10 @@ def ipw(
         lambdas = np.logspace(np.log10(lambda_max), np.log10(lambda_min), num_lambdas)
 
         # Using L2 regression since L1 is too slow. Observed "lbfgs" was the most computationally efficient solver.
+        # NOTE: default uses "penalty": "l2", for sklearn < 1.18
+        #       and "l1_ratio": -.0, for sklearn >= 1.18
+        #       see: https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html
         lr_kwargs: Dict[str, Any] = {
-            "penalty": "l2",
             "solver": "lbfgs",
             "tol": 1e-4,
             "max_iter": 5000,
