@@ -1380,7 +1380,7 @@ class Sample:
                 if np.isscalar(value):
                     try:
                         return float(value)
-                    except Exception:
+                    except (TypeError, ValueError):
                         return float("nan")
                 return float("nan")
 
@@ -1426,6 +1426,8 @@ class Sample:
             multi_class = params.get("multi_class", getattr(fit, "multi_class", None))
             if multi_class is None:
                 multi_class = "auto"
+            elif not isinstance(multi_class, str):
+                multi_class = str(multi_class)
 
             fit_list.append(
                 pd.DataFrame(
@@ -1441,9 +1443,7 @@ class Sample:
                 diagnostics = pd.concat((diagnostics, fit_single_values))
 
             #  Extract info about the regularisation parameter
-            lambda_value = model["lambda"]
-            if np.isscalar(lambda_value):
-                lambda_value = float(lambda_value)
+            lambda_value = _coerce_scalar(model["lambda"])
             lambda_df = pd.DataFrame(
                 {"metric": "model_glance", "val": (lambda_value,), "var": "lambda"}
             )
