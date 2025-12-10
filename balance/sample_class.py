@@ -1393,15 +1393,15 @@ class Sample:
             # than in __dict__
             multi_class = getattr(model["fit"], "multi_class", None)
             if not isinstance(multi_class, str):
-                multi_class = model["fit"].get_params().get("multi_class", "auto")
+                multi_class = model["fit"].get_params().get("multi_class")
             if multi_class is None:
                 multi_class = "auto"
-            if multi_class is not None:
-                fit_list.append(
-                    pd.DataFrame(
-                        {"metric": "ipw_multi_class", "val": (0,), "var": multi_class}
-                    )
+
+            fit_list.append(
+                pd.DataFrame(
+                    {"metric": "ipw_multi_class", "val": (0,), "var": multi_class}
                 )
+            )
 
             if len(fit_list) > 0:
                 fit_single_values = pd.concat(fit_list)
