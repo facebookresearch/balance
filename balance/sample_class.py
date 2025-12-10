@@ -1369,49 +1369,99 @@ class Sample:
             )
         )
         if model["method"] == "ipw":
-            #  Attributes of LogisticRegression class
-            fit_list = []
-            for k, v in model["fit"].__dict__.items():
-                if isinstance(v, np.ndarray) and v.shape == (1,):
-                    fit_list.extend(
-                        [
-                            pd.DataFrame(
-                                {"metric": "ipw_model_glance", "val": v, "var": k}
-                            )
-                        ]
-                    )
-                elif isinstance(v, float):
-                    fit_list.extend(
-                        [
-                            pd.DataFrame(
-                                {"metric": "model_glance", "val": (v,), "var": k}
-                            )
-                        ]
-                    )
-                elif isinstance(v, str):
-                    fit_list.extend(
-                        [pd.DataFrame({"metric": "ipw_" + k, "val": (0,), "var": v})]
+            fit = model["fit"]
+            params = fit.get_params(deep=False)
+
+            fit_list: List[pd.DataFrame] = []
+
+            # TODO: Move this function to utils.py, add docstring, and tests.
+            def _coerce_scalar(value: Any) -> float:
+                if value is None:
+                    return float("nan")
+                if np.isscalar(value):
+                    try:
+                        return float(value)
+                    except (TypeError, ValueError):
+                        return float("nan")
+                return float("nan")
+
+            # TODO: add tests checking these values
+            for array_key in ("n_iter_", "intercept_"):
+                array_val = getattr(fit, array_key, None)
+                if isinstance(array_val, np.ndarray) and array_val.shape == (1,):
+                    fit_list.append(
+                        pd.DataFrame(
+                            {
+                                "metric": "ipw_model_glance",
+                                "val": array_val,
+                                "var": array_key,
+                            }
+                        )
                     )
 
+            # TODO: add tests checking these values
+            for param_key, metric_name in (
+                ("penalty", "ipw_penalty"),
+                ("solver", "ipw_solver"),
+            ):
+                param_val = params.get(param_key, getattr(fit, param_key, None))
+                if isinstance(param_val, str):
+                    fit_list.append(
+                        pd.DataFrame(
+                            {"metric": metric_name, "val": (0,), "var": param_val}
+                        )
+                    )
+
+            for scalar_key in ("tol", "l1_ratio"):
+                scalar_value = _coerce_scalar(
+                    params.get(scalar_key, getattr(fit, scalar_key, None))
+                )
+                fit_list.append(
+                    pd.DataFrame(
+                        {
+                            "metric": "model_glance",
+                            "val": (scalar_value,),
+                            "var": scalar_key,
+                        }
+                    )
+                )
+
+            # TODO: add tests checking these values
+            multi_class = params.get("multi_class", getattr(fit, "multi_class", None))
+            if multi_class is None:
+                multi_class = "auto"
+            elif not isinstance(multi_class, str):
+                multi_class = str(multi_class)
+
+            fit_list.append(
+                pd.DataFrame(
+                    {"metric": "ipw_multi_class", "val": (0,), "var": multi_class}
+                )
+            )
+
             if len(fit_list) > 0:
-                fit_single_values = pd.concat(fit_list)
+                fit_single_values = pd.concat(fit_list, ignore_index=True)
+                fit_single_values = fit_single_values.drop_duplicates(
+                    subset=["metric", "var"], keep="first"
+                )
                 diagnostics = pd.concat((diagnostics, fit_single_values))
 
             #  Extract info about the regularisation parameter
+            lambda_value = _coerce_scalar(model["lambda"])
             lambda_df = pd.DataFrame(
-                {"metric": "model_glance", "val": (model["lambda"],), "var": "lambda"}
+                {"metric": "model_glance", "val": (lambda_value,), "var": "lambda"}
             )
             diagnostics = pd.concat((diagnostics, lambda_df))
 
             #  Scalar values from 'perf' key of dictionary
-            perf_single_values = pd.concat(
-                [
-                    pd.DataFrame({"metric": "model_glance", "val": (v,), "var": k})
-                    for k, v in model["perf"].items()
-                    if (isinstance(v, float))
-                ]
-            )
-            diagnostics = pd.concat((diagnostics, perf_single_values))
+            perf_entries = [
+                pd.DataFrame({"metric": "model_glance", "val": (float(v),), "var": k})
+                for k, v in model["perf"].items()
+                if np.isscalar(v) and k != "coefs"
+            ]
+            if len(perf_entries) > 0:
+                perf_single_values = pd.concat(perf_entries)
+                diagnostics = pd.concat((diagnostics, perf_single_values))
 
             # Model coefficients
             coefs = (
