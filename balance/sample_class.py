@@ -1370,48 +1370,61 @@ class Sample:
         )
         if model["method"] == "ipw":
             #  Attributes of LogisticRegression class
-            fit_list = []
+            fit_list: List[pd.DataFrame] = []
+            fit_scalar_keys = {"tol", "l1_ratio"}
+
             for k, v in model["fit"].__dict__.items():
                 if isinstance(v, np.ndarray) and v.shape == (1,):
-                    fit_list.extend(
-                        [
-                            pd.DataFrame(
-                                {"metric": "ipw_model_glance", "val": v, "var": k}
-                            )
-                        ]
+                    fit_list.append(
+                        pd.DataFrame({"metric": "ipw_model_glance", "val": v, "var": k})
                     )
-                elif isinstance(v, float):
-                    fit_list.extend(
-                        [
-                            pd.DataFrame(
-                                {"metric": "model_glance", "val": (v,), "var": k}
-                            )
-                        ]
+                elif isinstance(v, (float, np.floating)) and k in fit_scalar_keys:
+                    fit_list.append(
+                        pd.DataFrame(
+                            {"metric": "model_glance", "val": (float(v),), "var": k}
+                        )
                     )
                 elif isinstance(v, str):
-                    fit_list.extend(
-                        [pd.DataFrame({"metric": "ipw_" + k, "val": (0,), "var": v})]
+                    fit_list.append(
+                        pd.DataFrame({"metric": f"ipw_{k}", "val": (0,), "var": v})
                     )
+
+            # Include multi_class even though sklearn keeps it as an attribute rather
+            # than in __dict__
+            multi_class = getattr(model["fit"], "multi_class", None)
+            if not isinstance(multi_class, str):
+                multi_class = model["fit"].get_params().get("multi_class", "auto")
+            if multi_class is None:
+                multi_class = "auto"
+            if multi_class is not None:
+                fit_list.append(
+                    pd.DataFrame(
+                        {"metric": "ipw_multi_class", "val": (0,), "var": multi_class}
+                    )
+                )
 
             if len(fit_list) > 0:
                 fit_single_values = pd.concat(fit_list)
                 diagnostics = pd.concat((diagnostics, fit_single_values))
 
             #  Extract info about the regularisation parameter
+            lambda_value = model["lambda"]
+            if np.isscalar(lambda_value):
+                lambda_value = float(lambda_value)
             lambda_df = pd.DataFrame(
-                {"metric": "model_glance", "val": (model["lambda"],), "var": "lambda"}
+                {"metric": "model_glance", "val": (lambda_value,), "var": "lambda"}
             )
             diagnostics = pd.concat((diagnostics, lambda_df))
 
             #  Scalar values from 'perf' key of dictionary
-            perf_single_values = pd.concat(
-                [
-                    pd.DataFrame({"metric": "model_glance", "val": (v,), "var": k})
-                    for k, v in model["perf"].items()
-                    if (isinstance(v, float))
-                ]
-            )
-            diagnostics = pd.concat((diagnostics, perf_single_values))
+            perf_entries = [
+                pd.DataFrame({"metric": "model_glance", "val": (float(v),), "var": k})
+                for k, v in model["perf"].items()
+                if np.isscalar(v) and k != "coefs"
+            ]
+            if len(perf_entries) > 0:
+                perf_single_values = pd.concat(perf_entries)
+                diagnostics = pd.concat((diagnostics, perf_single_values))
 
             # Model coefficients
             coefs = (

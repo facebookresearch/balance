@@ -746,7 +746,6 @@ def ipw(
 
         # Using L2 regression since L1 is too slow. Observed "lbfgs" was the most computationally efficient solver.
         lr_kwargs: Dict[str, Any] = {
-            "penalty": "l2",
             "solver": "lbfgs",
             "tol": 1e-4,
             "max_iter": 5000,
