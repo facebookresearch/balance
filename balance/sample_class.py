@@ -1374,26 +1374,39 @@ class Sample:
             fit_scalar_keys = {"tol", "l1_ratio"}
 
             for k, v in model["fit"].__dict__.items():
+                if k in fit_scalar_keys or k == "multi_class":
+                    continue
+
                 if isinstance(v, np.ndarray) and v.shape == (1,):
                     fit_list.append(
                         pd.DataFrame({"metric": "ipw_model_glance", "val": v, "var": k})
-                    )
-                elif isinstance(v, (float, np.floating)) and k in fit_scalar_keys:
-                    fit_list.append(
-                        pd.DataFrame(
-                            {"metric": "model_glance", "val": (float(v),), "var": k}
-                        )
                     )
                 elif isinstance(v, str):
                     fit_list.append(
                         pd.DataFrame({"metric": f"ipw_{k}", "val": (0,), "var": v})
                     )
 
-            # Include multi_class even though sklearn keeps it as an attribute rather
-            # than in __dict__
-            multi_class = getattr(model["fit"], "multi_class", None)
-            if not isinstance(multi_class, str):
-                multi_class = model["fit"].get_params().get("multi_class")
+            params = model["fit"].get_params(deep=False)
+            for scalar_key in fit_scalar_keys:
+                scalar_value = params.get(
+                    scalar_key, getattr(model["fit"], scalar_key, None)
+                )
+                scalar_value = (
+                    float(scalar_value) if np.isscalar(scalar_value) else np.nan
+                )
+                fit_list.append(
+                    pd.DataFrame(
+                        {
+                            "metric": "model_glance",
+                            "val": (scalar_value,),
+                            "var": scalar_key,
+                        }
+                    )
+                )
+
+            multi_class = params.get(
+                "multi_class", getattr(model["fit"], "multi_class", None)
+            )
             if multi_class is None:
                 multi_class = "auto"
 
