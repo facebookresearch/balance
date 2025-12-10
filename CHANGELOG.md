@@ -69,14 +69,18 @@
     previous behavior, lower the requested percentiles slightly to reproduce
     earlier cut points.
 - **IPW diagnostics reflect model settings and avoid deprecated penalties**
-  - The IPW diagnostics now always report the classifier's ``multi_class``
-    setting and exclude the derived ``C`` hyperparameter to match expected
-    metric counts. The default sklearn logistic regression is also initialized
-    without the deprecated ``penalty`` argument, eliminating noisy
+  - The IPW diagnostics now report the classifier's ``multi_class`` setting
+    exactly once and pull key scalar hyperparameters from estimator
+    parameters (including ``l1_ratio`` even when older sklearn versions store
+    it as ``None``). The default sklearn logistic regression is also
+    initialized without the deprecated ``penalty`` argument, eliminating noisy
     deprecation warnings during test runs.
   - Diagnostics now normalize scalar values (including the regularization
     strength) to floats and avoid emitting empty performance sections when no
     scalar performance metrics are present.
+  - IPW model summaries now explicitly record only deterministic attributes
+    (like ``n_iter_`` and ``intercept_``) and deduplicate metric entries so
+    metric counts remain stable across supported sklearn versions.
 
 ## Tests
 
