@@ -99,6 +99,12 @@ def _concat_metric_val_var(
     """
 
     def _normalize(value: Union[Any, Iterable[Any]]) -> tuple[list[Any], bool]:
+        """Return a list form and sequence flag for ``value``.
+
+        Strings and bytes are treated as scalars to avoid per-character
+        expansion when broadcasting inputs.
+        """
+
         is_sequence = _is_sequence_like(value)
         normalized = list(value) if is_sequence else [value]
         return normalized, is_sequence
@@ -122,11 +128,7 @@ def _concat_metric_val_var(
     )
 
     if diagnostics.empty:
-        extra_columns = [col for col in diagnostics.columns if col not in rows.columns]
-        if extra_columns:
-            rows = rows.reindex(
-                columns=[*rows.columns, *extra_columns], fill_value=pd.NA
-            )
+        rows = rows.reindex(columns=diagnostics.columns, fill_value=pd.NA)
         return rows.reset_index(drop=True)
 
     return pd.concat((diagnostics, rows), ignore_index=True)
@@ -1472,9 +1474,13 @@ class Sample:
             for array_key in ("n_iter_", "intercept_"):
                 array_val = getattr(fit, array_key, None)
                 if isinstance(array_val, np.ndarray) and array_val.shape == (1,):
+                    scalar_array_val = array_val.item()
                     fit_list.append(
                         _concat_metric_val_var(
-                            pd.DataFrame(), "ipw_model_glance", array_val, array_key
+                            pd.DataFrame(),
+                            "ipw_model_glance",
+                            scalar_array_val,
+                            array_key,
                         )
                     )
 

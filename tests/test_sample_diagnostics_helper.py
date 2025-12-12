@@ -105,7 +105,9 @@ def test_concat_treats_strings_as_scalars() -> None:
 def test_concat_mismatched_sequence_lengths() -> None:
     diagnostics = pd.DataFrame(columns=["metric", "val", "var"])
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="val and var must have the same length when sequences"
+    ):
         _concat_metric_val_var(diagnostics, "size", [1, 2, 3], ["a", "b"])
 
 
@@ -187,6 +189,23 @@ def test_concat_respects_empty_frame_column_order() -> None:
             "val": [1],
             "var": ["bar"],
             "note": [pd.NA],
+        }
+    )
+
+    pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
+
+
+def test_concat_preserves_nonstandard_column_order() -> None:
+    diagnostics = pd.DataFrame(columns=["metric", "note", "val", "var"])
+
+    result = _concat_metric_val_var(diagnostics, "size", [1, 2], ["bar", "baz"])
+
+    expected = pd.DataFrame(
+        {
+            "metric": ["size", "size"],
+            "note": [pd.NA, pd.NA],
+            "val": [1, 2],
+            "var": ["bar", "baz"],
         }
     )
 
