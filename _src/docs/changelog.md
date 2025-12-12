@@ -61,6 +61,19 @@ hide_title: true
     weights) so downstream consumers receive the full annotated input when
     pulling the consolidated dataframe.
 
+- **Consolidated diagnostics row construction**
+  - Added a `_concat_metric_val_var()` helper to build diagnostics rows with
+    consistent broadcasting of scalar values, reducing repeated DataFrame
+    concatenation patterns inside `Sample.diagnostics()`. The helper now
+    documents common usage patterns, preserves existing diagnostics when no new
+    rows are supplied, and is covered by unit tests including edge cases such as
+    generator inputs and byte strings.
+  - **Breaking change:** ``Sample.diagnostics()`` for IPW now always emits
+    single-element iteration and intercept summaries plus hyperparameter
+    settings (penalty, solver, and multi-class mode). Downstream consumers
+    expecting the earlier, shorter diagnostics output should update metric
+    counts accordingly.
+
 ## Bug Fixes
 
 - **Early validation of null weight inputs**
