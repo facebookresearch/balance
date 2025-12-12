@@ -108,7 +108,10 @@ def _concat_metric_val_var(
     var_list, var_is_seq = _normalize(var)
 
     if val_is_seq and var_is_seq and len(val_list) != len(var_list):
-        raise ValueError("val and var must have the same length when sequences")
+        raise ValueError(
+            "val and var must have the same length when sequences, got val "
+            f"length {len(val_list)} and var length {len(var_list)}"
+        )
 
     if val_is_seq and not var_is_seq:
         var_list = [var] * len(val_list)

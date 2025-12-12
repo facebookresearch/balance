@@ -241,3 +241,22 @@ def test_concat_preserves_nonstandard_column_order() -> None:
     )
 
     pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
+
+
+def test_concat_accepts_numpy_arrays() -> None:
+    diagnostics = pd.DataFrame(columns=["metric", "val", "var"])
+
+    vals = np.array([1.5, 2.5])
+    vars = np.array(["mean", "std"])
+
+    result = _concat_metric_val_var(diagnostics, "array_metric", vals, vars)
+
+    expected = pd.DataFrame(
+        {
+            "metric": ["array_metric", "array_metric"],
+            "val": [1.5, 2.5],
+            "var": ["mean", "std"],
+        }
+    )
+
+    pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
