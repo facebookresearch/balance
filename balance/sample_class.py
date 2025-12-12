@@ -11,7 +11,7 @@ import collections
 import inspect
 import logging
 from copy import deepcopy
-from typing import Any, Callable, Dict, Iterable, List, Literal, Union
+from typing import Any, Callable, Dict, List, Literal
 
 import numpy as np
 import pandas as pd
