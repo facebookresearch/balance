@@ -33,8 +33,8 @@ logger: logging.Logger = logging.getLogger(__package__)
 def _concat_metric_val_var(
     diagnostics: pd.DataFrame,
     metric: str,
-    val: Union[Any, Iterable[Any]],
-    var: Union[Any, Iterable[Any]],
+    val: Any,
+    var: Any,
 ) -> pd.DataFrame:
     """Append metric/val/var rows to a diagnostics table.
 
@@ -91,7 +91,7 @@ def _concat_metric_val_var(
         )
     """
 
-    def _normalize(value: Union[Any, Iterable[Any]]) -> tuple[list[Any], bool]:
+    def _normalize(value: Any) -> tuple[list[Any], bool]:
         """Return a list form and sequence flag for ``value``.
 
         Strings and bytes are treated as scalars to avoid per-character
@@ -1545,7 +1545,7 @@ class Sample:
                     )
 
             if perf_entries:
-                diagnostics = pd.concat((diagnostics, *perf_entries), ignore_index=True)
+                diagnostics = pd.concat([diagnostics] + perf_entries, ignore_index=True)
 
             # Model coefficients
             coefs = (
