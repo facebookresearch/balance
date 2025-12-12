@@ -30,13 +30,6 @@ from IPython.lib.display import FileLink
 logger: logging.Logger = logging.getLogger(__package__)
 
 
-def _is_sequence_like(obj: object) -> bool:
-    """Return True when ``obj`` behaves like a non-string iterable."""
-    return isinstance(obj, collections.abc.Iterable) and not isinstance(
-        obj, (str, bytes)
-    )
-
-
 def _concat_metric_val_var(
     diagnostics: pd.DataFrame,
     metric: str,
@@ -105,7 +98,9 @@ def _concat_metric_val_var(
         expansion when broadcasting inputs.
         """
 
-        is_sequence = _is_sequence_like(value)
+        is_sequence = isinstance(value, collections.abc.Iterable) and not isinstance(
+            value, (str, bytes)
+        )
         normalized = list(value) if is_sequence else [value]
         return normalized, is_sequence
 
@@ -1476,13 +1471,16 @@ class Sample:
             # TODO: add tests checking these values
             for array_key in ("n_iter_", "intercept_"):
                 array_val = getattr(fit, array_key, None)
-                if isinstance(array_val, np.ndarray) and array_val.shape == (1,):
-                    scalar_array_val = array_val.item()
+                if array_val is None:
+                    continue
+
+                array_as_np = np.asarray(array_val)
+                if array_as_np.size == 1:
                     fit_list.append(
                         _concat_metric_val_var(
                             pd.DataFrame(),
                             "ipw_model_glance",
-                            scalar_array_val,
+                            array_as_np.reshape(-1),
                             array_key,
                         )
                     )
@@ -1537,17 +1535,17 @@ class Sample:
             )
 
             #  Scalar values from 'perf' key of dictionary
-            perf_list = []
+            perf_entries: List[pd.DataFrame] = []
             for k, v in model["perf"].items():
                 if np.isscalar(v) and k != "coefs":
-                    perf_list.append(
+                    perf_entries.append(
                         _concat_metric_val_var(
                             pd.DataFrame(), "model_glance", float(v), k
                         )
                     )
-            if perf_list:
-                perf_single_values = pd.concat(perf_list, ignore_index=True)
-                diagnostics = pd.concat((diagnostics, perf_single_values))
+
+            if perf_entries:
+                diagnostics = pd.concat((diagnostics, *perf_entries), ignore_index=True)
 
             # Model coefficients
             coefs = (

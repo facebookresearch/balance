@@ -207,6 +207,25 @@ def test_concat_appends_when_no_columns_present() -> None:
     pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
 
 
+def test_concat_accepts_pandas_series_inputs() -> None:
+    diagnostics = pd.DataFrame(columns=["metric", "val", "var"])
+
+    vals = pd.Series([10, 20], index=["x", "y"])
+    vars = pd.Series(["alpha", "beta"], index=["x", "y"])
+
+    result = _concat_metric_val_var(diagnostics, "series_metric", vals, vars)
+
+    expected = pd.DataFrame(
+        {
+            "metric": ["series_metric", "series_metric"],
+            "val": [10, 20],
+            "var": ["alpha", "beta"],
+        }
+    )
+
+    pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
+
+
 def test_concat_preserves_nonstandard_column_order() -> None:
     diagnostics = pd.DataFrame(columns=["metric", "note", "val", "var"])
 
