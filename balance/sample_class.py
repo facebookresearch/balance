@@ -31,6 +31,7 @@ logger: logging.Logger = logging.getLogger(__package__)
 
 
 def _is_sequence_like(obj: object) -> bool:
+    """Return True when ``obj`` behaves like a non-string iterable."""
     return isinstance(obj, collections.abc.Iterable) and not isinstance(
         obj, (str, bytes)
     )
@@ -54,6 +55,18 @@ def _concat_metric_val_var(
     - If only one argument is a sequence, the scalar counterpart is broadcast to
       the same length.
     - If neither is a sequence, a single row is appended.
+
+    Args:
+        diagnostics: Existing diagnostics table.
+        metric: Name for the ``metric`` column to repeat for each appended row.
+        val: Scalar or iterable providing values for the ``val`` column.
+        var: Scalar or iterable providing values for the ``var`` column.
+
+    Returns:
+        A new DataFrame with the appended rows (input is not modified).
+
+    Raises:
+        ValueError: If both inputs are sequences of different lengths.
 
     Examples
     --------
@@ -83,18 +96,6 @@ def _concat_metric_val_var(
             "success",
             "optimizer",
         )
-
-    Args:
-        diagnostics: Existing diagnostics table.
-        metric: Name for the ``metric`` column to repeat for each appended row.
-        val: Scalar or iterable providing values for the ``val`` column.
-        var: Scalar or iterable providing values for the ``var`` column.
-
-    Returns:
-        A new DataFrame with the appended rows (input is not modified).
-
-    Raises:
-        ValueError: If both inputs are sequences of different lengths.
     """
 
     def _normalize(value: Union[Any, Iterable[Any]]) -> tuple[list[Any], bool]:

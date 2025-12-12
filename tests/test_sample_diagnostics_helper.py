@@ -174,3 +174,20 @@ def test_concat_retains_existing_columns() -> None:
     )
 
     pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
+
+
+def test_concat_respects_empty_frame_column_order() -> None:
+    diagnostics = pd.DataFrame(columns=["metric", "val", "var", "note"])
+
+    result = _concat_metric_val_var(diagnostics, "size", [1], ["bar"])
+
+    expected = pd.DataFrame(
+        {
+            "metric": ["size"],
+            "val": [1],
+            "var": ["bar"],
+            "note": [pd.NA],
+        }
+    )
+
+    pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
