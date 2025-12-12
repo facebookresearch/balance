@@ -195,6 +195,18 @@ def test_concat_respects_empty_frame_column_order() -> None:
     pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
 
 
+def test_concat_appends_when_no_columns_present() -> None:
+    diagnostics = pd.DataFrame()
+
+    result = _concat_metric_val_var(diagnostics, "size", [1, 2], ["bar", "baz"])
+
+    expected = pd.DataFrame(
+        {"metric": ["size", "size"], "val": [1, 2], "var": ["bar", "baz"]}
+    )
+
+    pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
+
+
 def test_concat_preserves_nonstandard_column_order() -> None:
     diagnostics = pd.DataFrame(columns=["metric", "note", "val", "var"])
 

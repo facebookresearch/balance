@@ -128,6 +128,9 @@ def _concat_metric_val_var(
     )
 
     if diagnostics.empty:
+        if diagnostics.columns.empty:
+            return rows.reset_index(drop=True)
+
         rows = rows.reindex(columns=diagnostics.columns, fill_value=pd.NA)
         return rows.reset_index(drop=True)
 
@@ -1534,11 +1537,17 @@ class Sample:
             )
 
             #  Scalar values from 'perf' key of dictionary
+            perf_list = []
             for k, v in model["perf"].items():
                 if np.isscalar(v) and k != "coefs":
-                    diagnostics = _concat_metric_val_var(
-                        diagnostics, "model_glance", float(v), k
+                    perf_list.append(
+                        _concat_metric_val_var(
+                            pd.DataFrame(), "model_glance", float(v), k
+                        )
                     )
+            if perf_list:
+                perf_single_values = pd.concat(perf_list, ignore_index=True)
+                diagnostics = pd.concat((diagnostics, perf_single_values))
 
             # Model coefficients
             coefs = (
