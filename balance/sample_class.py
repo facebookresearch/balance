@@ -23,6 +23,7 @@ from balance.stats_and_plots import weights_stats
 from balance.stats_and_plots.weighted_comparisons_stats import outcome_variance_ratio
 from balance.typing import DiagnosticScalar, FilePathOrBuffer
 from balance.util import (
+    _coerce_scalar,
     _detect_high_cardinality_features,
     _verify_value_type,
     HighCardinalityFeature,
@@ -1417,17 +1418,6 @@ class Sample:
 
             fit_list: List[pd.DataFrame] = []
 
-            # TODO: Move this function to utils.py, add docstring, and tests.
-            def _coerce_scalar(value: Any) -> float:
-                if value is None:
-                    return float("nan")
-                if np.isscalar(value):
-                    try:
-                        return float(value)
-                    except (TypeError, ValueError):
-                        return float("nan")
-                return float("nan")
-
             # TODO: add tests checking these values
             for array_key in ("n_iter_", "intercept_"):
                 array_val = getattr(fit, array_key, None)
@@ -1500,7 +1490,7 @@ class Sample:
                 if np.isscalar(v) and k != "coefs":
                     perf_entries.append(
                         _concat_metric_val_var(
-                            pd.DataFrame(), "model_glance", [float(v)], [k]
+                            pd.DataFrame(), "model_glance", [_coerce_scalar(v)], [k]
                         )
                     )
 

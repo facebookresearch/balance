@@ -181,6 +181,48 @@ def _verify_value_type(
     return optional
 
 
+def _coerce_scalar(value: Any) -> float:
+    """Safely convert a scalar value to ``float`` for diagnostics.
+
+    ``None`` and non-scalar inputs are converted to ``NaN``. Scalar inputs are
+    coerced to ``float`` when possible; otherwise, ``NaN`` is returned instead
+    of raising a ``TypeError`` or ``ValueError``. Arrays and sequences return
+    ``NaN`` so callers do not need to special-case these inputs.
+
+    Args:
+        value: Candidate value to coerce.
+
+    Returns:
+        float: ``float`` representation of ``value`` when possible, otherwise
+        ``NaN``.
+
+    Example:
+        >>> _coerce_scalar(3)
+        3.0
+        >>> _coerce_scalar("7.125")
+        7.125
+        >>> _coerce_scalar(True)
+        1.0
+        >>> _coerce_scalar(complex(1, 2))
+        nan
+        >>> _coerce_scalar(())
+        nan
+        >>> _coerce_scalar([1, 2, 3])
+        nan
+    """
+
+    if value is None:
+        return float("nan")
+
+    if np.isscalar(value):
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return float("nan")
+
+    return float("nan")
+
+
 def _is_categorical_dtype(series: pd.Series) -> bool:
     """Check if a pandas Series has a categorical dtype.
 
