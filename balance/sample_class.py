@@ -1487,11 +1487,10 @@ class Sample:
             #  Scalar values from 'perf' key of dictionary
             perf_entries: List[pd.DataFrame] = []
             for k, v in model["perf"].items():
-                perf_value = _coerce_scalar(v)
                 if np.isscalar(v) and k != "coefs":
                     perf_entries.append(
                         _concat_metric_val_var(
-                            pd.DataFrame(), "model_glance", [perf_value], [k]
+                            pd.DataFrame(), "model_glance", [_coerce_scalar(v)], [k]
                         )
                     )
 

@@ -199,7 +199,13 @@ def _coerce_scalar(value: Any) -> float:
     Example:
         >>> _coerce_scalar(3)
         3.0
-        >>> _coerce_scalar("invalid")
+        >>> _coerce_scalar("7.125")
+        7.125
+        >>> _coerce_scalar(True)
+        1.0
+        >>> _coerce_scalar(complex(1, 2))
+        nan
+        >>> _coerce_scalar(())
         nan
         >>> _coerce_scalar([1, 2, 3])
         nan
