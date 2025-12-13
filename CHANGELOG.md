@@ -64,6 +64,11 @@
     expecting the earlier, shorter diagnostics output should update metric
     counts accordingly.
 
+- **Robust scalar coercion for diagnostics**
+  - Centralized scalar-to-float conversion into `balance.util._coerce_scalar`,
+    adding coverage and using it in IPW diagnostics to avoid crashes from
+    unexpected values while still surfacing ``NaN`` for non-coercible inputs.
+
 ## Bug Fixes
 
 - **Early validation of null weight inputs**

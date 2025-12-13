@@ -18,7 +18,7 @@ import pandas as pd
 # TODO: remove the use of balance_util in most cases, and just import the functions to be tested directly
 from balance import util as balance_util
 from balance.sample_class import Sample
-from balance.util import _verify_value_type
+from balance.util import _coerce_scalar, _verify_value_type
 
 from numpy import dtype
 
@@ -188,6 +188,20 @@ class TestUtil(
             "Cannot guess id column name for this DataFrame. Please provide a value in id_column",
         ):
             balance_util.guess_id_column(df)
+
+    def test__coerce_scalar(self) -> None:
+        """Ensure scalar coercion handles edge cases without raising errors."""
+
+        self.assertTrue(np.isnan(_coerce_scalar(None)))
+        self.assertTrue(np.isnan(_coerce_scalar([1, 2, 3])))
+        self.assertEqual(_coerce_scalar(5), 5.0)
+        self.assertEqual(_coerce_scalar(np.float64(2.5)), 2.5)
+        self.assertTrue(np.isnan(_coerce_scalar("not-a-number")))
+        self.assertEqual(_coerce_scalar(True), 1.0)
+        self.assertEqual(_coerce_scalar("7.125"), 7.125)
+        self.assertTrue(np.isnan(_coerce_scalar(complex(1, 2))))
+        self.assertTrue(np.isnan(_coerce_scalar(())))
+        self.assertTrue(np.isnan(_coerce_scalar(np.array([4.5]))))
 
     def test__isinstance_sample(self) -> None:
         """Test type checking for Sample objects.
