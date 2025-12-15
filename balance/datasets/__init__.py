@@ -27,6 +27,9 @@ def load_sim_data(
 ) -> Tuple[pd.DataFrame | None, pd.DataFrame | None]:
     """Load simulated data for target and sample of interest
 
+    This function generates reproducible simulated datasets using fixed random seeds
+    to ensure consistent results across multiple calls and different environments.
+
     Version 01 returns two dataframes containing the columns gender ("Male", "Female" and nan),
     age_group ("18-24", "25-34", "35-44", "45+"), income (some numbers from a normal distribution), and id.
     The sample_df also has a column called happiness with a value from 0 to 100 that depends on the covariates.
