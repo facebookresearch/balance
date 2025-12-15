@@ -19,6 +19,8 @@ logger: logging.Logger = logging.getLogger(__package__)
 
 ##########################################
 # Weights diagnostics - functions for analyzing weights
+# These functions provide statistical measures for evaluating
+# the quality and distribution of survey weights
 ##########################################
 
 

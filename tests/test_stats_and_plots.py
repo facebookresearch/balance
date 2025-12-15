@@ -164,6 +164,116 @@ class TestBalance_weights_stats(
             weighted_median_breakdown_point(pd.Series((1, 1, 1, 1, 10))), 0.2
         )
 
+    def test_design_effect_with_two_values(self) -> None:
+        """Test design effect with two weight values.
+
+        Tests the simplest non-trivial case with two different weights.
+        """
+        from balance.stats_and_plots.weights_stats import design_effect
+
+        result = design_effect(pd.Series([1, 3]))
+        # E[W^2] = ((1^2 + 3^2) / 2) = 5
+        # E[W]^2 = ((1 + 3) / 2)^2 = 4
+        # Deff = 5 / 4 = 1.25
+        self.assertEqual(result, 1.25)
+
+    def test_nonparametric_skew_with_two_elements(self) -> None:
+        """Test nonparametric skew with two elements.
+
+        Tests the simplest non-trivial case with two different weights.
+        """
+        from balance.stats_and_plots.weights_stats import nonparametric_skew
+
+        # For [1, 3]: mean=2, median=2, so skew should be 0
+        self.assertEqual(nonparametric_skew(pd.Series([1, 3])), 0.0)
+
+        # For [1, 2]: mean=1.5, median=1.5, so skew should be 0
+        self.assertEqual(nonparametric_skew(pd.Series([1, 2])), 0.0)
+
+    def test_nonparametric_skew_with_left_skewed_distribution(self) -> None:
+        """Test nonparametric skew with left-skewed (negative) distribution.
+
+        Verifies that left-skewed distributions produce negative skew values.
+        For left skew with positive weights, we need mean < median.
+        """
+        from balance.stats_and_plots.weights_stats import nonparametric_skew
+
+        # Left-skewed: one small value, rest larger values
+        # [1, 10, 10, 10] -> mean = 31/4 = 7.75, median = 10, skew = (7.75-10)/std < 0
+        result = nonparametric_skew(pd.Series([1, 10, 10, 10]))
+        self.assertLess(result, 0)
+
+    def test_nonparametric_skew_with_large_positive_skew(self) -> None:
+        """Test nonparametric skew with highly right-skewed distribution.
+
+        Verifies calculation with extreme right skew.
+        """
+        from balance.stats_and_plots.weights_stats import nonparametric_skew
+
+        # Extreme right skew: many small values, one very large
+        result = nonparametric_skew(pd.Series([1, 1, 1, 1, 1, 100]))
+        # Result should be positive for right-skewed distribution
+        self.assertGreater(result, 0)
+
+    def test_weighted_median_breakdown_point_with_two_weights(self) -> None:
+        """Test breakdown point with two equal weights.
+
+        With two equal weights [1,1], normalized is [0.5, 0.5].
+        Cumsum of sorted: [0.5, 1.0]. Count <= 0.5 is 1, so 1/2 = 0.5.
+        """
+        from balance.stats_and_plots.weights_stats import (
+            weighted_median_breakdown_point,
+        )
+
+        result = weighted_median_breakdown_point(pd.Series([1, 1]))
+        self.assertEqual(result, 0.5)
+
+    def test_weighted_median_breakdown_point_with_one_weight_above_50_percent(
+        self,
+    ) -> None:
+        """Test breakdown point when one weight exceeds 50%.
+
+        When single weight is > 50% of total, breakdown point is 1/n.
+        """
+        from balance.stats_and_plots.weights_stats import (
+            weighted_median_breakdown_point,
+        )
+
+        # One weight has 60% of total
+        result = weighted_median_breakdown_point(pd.Series([60, 20, 20]))
+        # 60/(60+20+20) = 60/100 = 0.6 > 0.5, so need 1 observation = 1/3
+        self.assertAlmostEqual(result, 1 / 3, places=10)
+
+    def test_weighted_median_breakdown_point_with_all_zeros_except_one(self) -> None:
+        """Test breakdown point when only one weight is non-zero.
+
+        When only one weight is non-zero, it has 100% of weight.
+        """
+        from balance.stats_and_plots.weights_stats import (
+            weighted_median_breakdown_point,
+        )
+
+        result = weighted_median_breakdown_point(pd.Series([0, 0, 0, 10]))
+        # Single non-zero weight has 100% > 50%, need 1 obs out of 4
+        self.assertEqual(result, 0.25)
+
+    def test_weighted_median_breakdown_point_with_gradual_distribution(self) -> None:
+        """Test breakdown point with gradually increasing weights.
+
+        Verifies calculation with a more complex weight distribution.
+        """
+        from balance.stats_and_plots.weights_stats import (
+            weighted_median_breakdown_point,
+        )
+
+        # Weights: [10, 8, 6, 4, 2], total = 30
+        # Normalized: [1/3, 4/15, 1/5, 2/15, 1/15]
+        # Sorted desc cumsum: [1/3≈0.33, 0.6, 0.8, 0.93, 1.0]
+        # Count where cumsum <= 0.5: only first element (1/3) is <= 0.5, so count = 1
+        # So breakdown point = 1/5 = 0.2
+        result = weighted_median_breakdown_point(pd.Series([10, 8, 6, 4, 2]))
+        self.assertEqual(result, 0.2)
+
 
 class TestBalance_weighted_stats(
     balance.testutil.BalanceTestCase,
