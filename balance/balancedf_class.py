@@ -36,6 +36,9 @@ logger: "logging.Logger" = logging.getLogger(__package__)
 class BalanceDF:
     """
     Wrapper class around a Sample which provides additional balance-specific functionality
+
+    This class encapsulates a pandas DataFrame along with a Sample object reference,
+    providing methods for statistical analysis, plotting, and data transformation.
     """
 
     _model_matrix: Any = None
