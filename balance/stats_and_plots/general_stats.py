@@ -17,6 +17,8 @@ def relative_response_rates(
 ) -> pd.DataFrame:
     """Produces a summary table of number of responses and proportion of completed responses.
 
+    This function calculates response rates by analyzing non-null values in the DataFrame.
+
     Args:
         df (pd.DataFrame): A DataFrame to calculate aggregated response rates for.
         df_target (Optional[pd.DataFrame], optional): Defaults to None.

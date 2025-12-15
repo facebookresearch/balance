@@ -1052,6 +1052,99 @@ class TestBalance_general_stats(
         ):
             relative_response_rates(df, df_target.iloc[:, 0:1], per_column=True)
 
+    def test_relative_response_rates_edge_cases(self) -> None:
+        """Test relative_response_rates with edge cases like empty and all-NaN DataFrames.
+
+        This consolidated test validates the function's behavior with edge cases that
+        represent real-world scenarios where data might be completely missing or empty.
+        """
+        from balance.stats_and_plots.general_stats import relative_response_rates
+
+        # Test case 1: Empty DataFrame
+        df_empty = pd.DataFrame({"a": [], "b": []})
+        result_empty = relative_response_rates(df_empty)
+
+        self.assertEqual(result_empty.shape, (2, 2))
+        self.assertEqual(result_empty.loc["n", "a"], 0.0)
+        self.assertEqual(result_empty.loc["n", "b"], 0.0)
+        # When dividing by 0, we get NaN
+        self.assertTrue(pd.isna(result_empty.loc["%", "a"]))
+        self.assertTrue(pd.isna(result_empty.loc["%", "b"]))
+
+        # Test case 2: All NaN values
+        df_all_nan = pd.DataFrame(
+            {"a": [np.nan, np.nan, np.nan], "b": [np.nan, np.nan, np.nan]}
+        )
+        result_nan = relative_response_rates(df_all_nan)
+
+        self.assertEqual(result_nan.loc["n", "a"], 0.0)
+        self.assertEqual(result_nan.loc["n", "b"], 0.0)
+        self.assertEqual(result_nan.loc["%", "a"], 0.0)
+        self.assertEqual(result_nan.loc["%", "b"], 0.0)
+
+    def test_relative_response_rates_validation_errors(self) -> None:
+        """Test validation logic that protects against invalid inputs.
+
+        This consolidated test ensures the function properly validates inputs
+        and raises appropriate errors when constraints are violated, which is
+        crucial for data integrity in statistical analysis.
+        """
+        from balance.stats_and_plots.general_stats import relative_response_rates
+
+        # Test case 1: More non-null values in df than df_target
+        df_more_values = pd.DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
+        df_target_fewer = pd.DataFrame(
+            {"a": [1, 2, np.nan, np.nan], "b": [5, np.nan, np.nan, np.nan]}
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "The number of \\(notnull\\) rows in df MUST be smaller or equal*",
+        ):
+            relative_response_rates(df_more_values, df_target_fewer, per_column=True)
+
+        # Test case 2: Different columns between df and df_target
+        df_abc = pd.DataFrame({"a": [1, 2], "b": [3, 4], "c": [5, 6]})
+        df_target_ab = pd.DataFrame({"a": [1, 2], "b": [3, 4]})
+
+        with self.assertRaisesRegex(
+            ValueError, "df and df_target must have the exact same columns*"
+        ):
+            relative_response_rates(df_abc, df_target_ab, per_column=True)
+
+        # Test case 3: per_column=False with no complete rows in target
+        df_complete = pd.DataFrame({"a": [1], "b": [2]})
+        # df_target has no complete rows (each row has at least one NaN)
+        df_target_incomplete = pd.DataFrame({"a": [1, np.nan], "b": [np.nan, 2]})
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "The number of \\(notnull\\) rows in df MUST be smaller or equal*",
+        ):
+            relative_response_rates(df_complete, df_target_incomplete, per_column=False)
+
+    def test_relative_response_rates_per_column_false_valid_case(self) -> None:
+        """Test relative_response_rates with per_column=False and valid complete rows.
+
+        Verifies correct calculation when comparing to total complete rows in target.
+        """
+        from balance.stats_and_plots.general_stats import relative_response_rates
+
+        # df_target has 2 complete rows
+        df_target = pd.DataFrame({"a": [1, 2, np.nan, 4], "b": [5, 6, 7, np.nan]})
+        # df has 1 row with both values
+        df = pd.DataFrame({"a": [1], "b": [5]})
+
+        result = relative_response_rates(df, df_target, per_column=False)
+
+        # df_target has 2 complete rows (first two)
+        # df has 1 complete observation per column
+        # So for column "a": 1/2 = 50%, for column "b": 1/2 = 50%
+        self.assertEqual(result.loc["n", "a"], 1.0)
+        self.assertEqual(result.loc["%", "a"], 50.0)
+        self.assertEqual(result.loc["n", "b"], 1.0)
+        self.assertEqual(result.loc["%", "b"], 50.0)
+
 
 class TestKLDivergence(balance.testutil.BalanceTestCase):
     def test_discrete_normalization_and_value(self) -> None:
