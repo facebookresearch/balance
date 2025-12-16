@@ -35,7 +35,11 @@ balance (Version {__version__}) loaded:
 
 
 def help() -> None:
-    """Display information about documentation, help, and citation."""
+    """Display information about documentation, help, and citation.
+
+    This function provides users with quick access to important resources
+    including documentation links, issue tracking, and citation information.
+    """
     print(WELCOME_MESSAGE)
 
 
