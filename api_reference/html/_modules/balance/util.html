@@ -1970,7 +1970,6 @@
 
 
 
-<span class="c1"># TODO: add tests</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_pd_convert_all_types</span><span class="p">(</span>
     <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">input_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">output_type</span><span class="p">:</span> <span class="nb">str</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
@@ -2021,7 +2020,6 @@
     <span class="k">return</span> <span class="n">df</span>
 
 
-<span class="c1"># TODO: add tests</span>
 <div class="viewcode-block" id="find_items_index_in_list">
 <a class="viewcode-back" href="../../balance.util.html#balance.util.find_items_index_in_list">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">find_items_index_in_list</span><span class="p">(</span><span class="n">a_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">items</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
@@ -2058,13 +2056,12 @@
 <span class="sd">            type(find_items_index_in_list(l, items)[0])</span>
 <span class="sd">                # int</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># TODO: checking that i is in set each time is expensive -</span>
-    <span class="c1">#       there are probably faster ways to do it.</span>
+    <span class="c1"># TODO: (p2) Optimization note: checking that i is in set each time is expensive -</span>
+    <span class="c1">#       there are probably faster ways to do it. Consider using a dict-based approach for large lists.</span>
     <span class="k">return</span> <span class="p">[</span><span class="n">a_list</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">items</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">a_list</span><span class="p">)]</span></div>
 
 
 
-<span class="c1"># TODO: add tests</span>
 <div class="viewcode-block" id="get_items_from_list_via_indices">
 <a class="viewcode-back" href="../../balance.util.html#balance.util.get_items_from_list_via_indices">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_items_from_list_via_indices</span><span class="p">(</span><span class="n">a_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">indices</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
