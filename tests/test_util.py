@@ -7,6 +7,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from copy import deepcopy
 
 import balance.testutil
@@ -2092,3 +2094,232 @@ class TestSample_high_cardinality_warnings(balance.testutil.BalanceTestCase):
             < warning_logs[0].find(", high (unique"),
             "Expected higher-cardinality column to appear first in warning.",
         )
+
+    def test__verify_value_type(self) -> None:
+        """Test _verify_value_type with various inputs including error cases."""
+        # Test successful cases
+        success_cases = [
+            # (value, expected_type, description)
+            (
+                pd.DataFrame({"a": [1, 2, 3]}),
+                pd.DataFrame,
+                "DataFrame with correct type",
+            ),
+            ("test", str, "String with correct type"),
+            (123, int, "Integer with correct type"),
+            ([1, 2, 3], list, "List with correct type"),
+            ("test", (str, int), "String with tuple of types"),
+            (42, (str, int), "Integer with tuple of types"),
+            ("test", None, "String without type check"),
+            (123, None, "Integer without type check"),
+            ([1, 2, 3], None, "List without type check"),
+        ]
+
+        for value, expected_type, description in success_cases:
+            with self.subTest(description=description):
+                # pyre-ignore[6]: Testing runtime behavior with various types
+                result = _verify_value_type(value, expected_type)
+                self.assertEqual(result, value)
+
+        # Test error cases
+        error_cases = [
+            # (value, expected_type, expected_exception, description)
+            (None, None, ValueError, "None value raises ValueError"),
+            (None, str, ValueError, "None with type check raises ValueError"),
+            ("not an int", int, TypeError, "Wrong type raises TypeError"),
+            (
+                [1, 2, 3],
+                (str, int),
+                TypeError,
+                "List with tuple types raises TypeError",
+            ),
+        ]
+
+        for value, expected_type, expected_exception, description in error_cases:
+            with self.subTest(description=description):
+                with self.assertRaises(expected_exception):
+                    # pyre-ignore[6]: Testing runtime behavior with various types
+                    _verify_value_type(value, expected_type)
+
+    def test__float_or_none(self) -> None:
+        """Test _float_or_none with various inputs."""
+        test_cases = [
+            # (input_value, expected_result, description)
+            (None, None, "None input returns None"),
+            ("None", None, "String 'None' returns None"),
+            (3.14, 3.14, "Float returns same float"),
+            (42, 42.0, "Int returns float"),
+            ("3.14", 3.14, "Numeric string returns float"),
+        ]
+
+        for input_value, expected_result, description in test_cases:
+            with self.subTest(description=description):
+                result = balance_util._float_or_none(input_value)
+                self.assertEqual(result, expected_result)
+                if expected_result is not None:
+                    self.assertIsInstance(result, float)
+
+    def test__process_series_for_missing_mask(self) -> None:
+        """Test _process_series_for_missing_mask with various input scenarios."""
+        test_cases = [
+            # (input_series, expected_mask, description)
+            (
+                pd.Series([1.0, 2.0, np.inf, -np.inf, np.nan, 5.0]),
+                pd.Series([False, False, True, True, True, False]),
+                "Series with inf, -inf, nan, and regular values",
+            ),
+            (
+                pd.Series([1.0, 2.0, 3.0, 4.0]),
+                pd.Series([False, False, False, False]),
+                "Series with no missing values",
+            ),
+            (
+                pd.Series([np.inf, -np.inf, np.nan]),
+                pd.Series([True, True, True]),
+                "Series with only missing values",
+            ),
+        ]
+
+        for input_series, expected_mask, description in test_cases:
+            with self.subTest(description=description):
+                result = balance_util._process_series_for_missing_mask(input_series)
+                pd.testing.assert_series_equal(result, expected_mask)
+
+    def test__pd_convert_all_types(self) -> None:
+        """Test _pd_convert_all_types with various conversion scenarios."""
+        # Test 1: Convert pandas Int64 to float64, keeping other types unchanged
+        df1 = pd.DataFrame(
+            {
+                "a": pd.array([1, 2, 3], dtype=pd.Int64Dtype()),
+                "b": pd.array([4.0, 5.0, 6.0], dtype=np.float64),
+            }
+        )
+        result1 = balance_util._pd_convert_all_types(df1, "Int64", "float64")
+        self.assertEqual(result1["a"].dtype, np.float64)  # Int64 -> float64
+        self.assertEqual(result1["b"].dtype, np.float64)  # float64 unchanged
+
+        # Test 2: Multiple Int64 columns and column order preservation
+        df2 = pd.DataFrame(
+            {
+                "z": pd.array([1, 2], dtype=pd.Int64Dtype()),
+                "a": pd.array([3, 4], dtype=np.float64),
+                "m": pd.array([5, 6], dtype=pd.Int64Dtype()),
+            }
+        )
+        result2 = balance_util._pd_convert_all_types(df2, "Int64", "float64")
+        # Check conversions
+        self.assertEqual(result2["z"].dtype, np.float64)
+        self.assertEqual(result2["a"].dtype, np.float64)  # Already float64
+        self.assertEqual(result2["m"].dtype, np.float64)
+        # Check column order preserved
+        self.assertEqual(list(result2.columns), ["z", "a", "m"])
+
+    def test_find_items_index_in_list(self) -> None:
+        """Test find_items_index_in_list with various input scenarios."""
+        test_cases_numeric = [
+            ([1, 2, 3, 4, 5, 6, 7], [2, 7], [1, 6], "Numeric list with found items"),
+            ([1, 2, 3, 4, 5, 6, 7], [1000], [], "Numeric list with missing items"),
+            ([10, 20, 30, 40], [20, 100, 40, 200], [1, 3], "Mixed found and missing"),
+        ]
+
+        test_cases_string = [
+            (
+                ["a", "b", "c"],
+                ["c", "c", "a"],
+                [2, 2, 0],
+                "String list with duplicates",
+            ),
+        ]
+
+        test_cases_edge = [
+            ([1, 2, 3], [], [], "Empty items list"),
+        ]
+
+        all_test_cases = test_cases_numeric + test_cases_string + test_cases_edge
+
+        for a_list, items, expected, description in all_test_cases:
+            with self.subTest(description=description):
+                result = balance_util.find_items_index_in_list(a_list, items)
+                self.assertEqual(result, expected)
+                if result:  # Check type only if result is not empty
+                    self.assertIsInstance(result[0], int)
+
+    def test_get_items_from_list_via_indices(self) -> None:
+        """Test get_items_from_list_via_indices with various input scenarios."""
+        test_cases = [
+            # (a_list, indices, expected, description)
+            (["a", "b", "c", "d"], [2, 0], ["c", "a"], "String valid indices"),
+            ([10, 20, 30, 40, 50], [0, 2, 4], [10, 30, 50], "Numeric list"),
+            ([1, 2, 3], [], [], "Empty indices"),
+            (["x", "y", "z"], [1], ["y"], "Single index"),
+            (["a", "b", "c"], [0, 0, 2, 0], ["a", "a", "c", "a"], "Duplicate indices"),
+        ]
+
+        for a_list, indices, expected, description in test_cases:
+            with self.subTest(description=description):
+                result = balance_util.get_items_from_list_via_indices(a_list, indices)
+                self.assertEqual(result, expected)
+
+        # Test IndexError case separately
+        with self.assertRaises(IndexError):
+            balance_util.get_items_from_list_via_indices(["a", "b", "c"], [100])
+
+    def test__truncate_text(self) -> None:
+        """Test _truncate_text with various string lengths."""
+        test_cases = [
+            # (input_text, length, expected_result, description)
+            ("Hello", 10, "Hello", "Short string not truncated"),
+            (
+                "This is a very long string that needs truncation",
+                10,
+                "This is a ...",
+                "Long string truncated with ellipsis",
+            ),
+            ("1234567890", 10, "1234567890", "Exact length string not truncated"),
+        ]
+
+        for input_text, length, expected_result, description in test_cases:
+            with self.subTest(description=description):
+                result = balance_util._truncate_text(input_text, length)
+                self.assertEqual(result, expected_result)
+                if len(input_text) > length:
+                    self.assertEqual(len(result), length + 3)  # length + '...'
+
+    def test_TruncationFormatter(self) -> None:
+        """Test TruncationFormatter with long and short log messages."""
+        formatter = balance_util.TruncationFormatter("%(message)s")
+        MAX_MESSAGE_LENGTH = 2000  # TruncationFormatter truncates at 2000 characters
+        ELLIPSIS_LENGTH = 3
+
+        test_cases = [
+            # (message, should_truncate, description)
+            (
+                "x" * (MAX_MESSAGE_LENGTH + 1000),
+                True,
+                "Long message gets truncated",
+            ),
+            (
+                "This is a short message",
+                False,
+                "Short message remains unchanged",
+            ),
+        ]
+
+        for message, should_truncate, description in test_cases:
+            with self.subTest(description=description):
+                record = logging.LogRecord(
+                    name="test",
+                    level=logging.INFO,
+                    pathname="",
+                    lineno=0,
+                    msg=message,
+                    args=(),
+                    exc_info=None,
+                )
+                result = formatter.format(record)
+
+                if should_truncate:
+                    self.assertEqual(len(result), MAX_MESSAGE_LENGTH + ELLIPSIS_LENGTH)
+                    self.assertTrue(result.endswith("..."))
+                else:
+                    self.assertEqual(result, message)

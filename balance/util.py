@@ -1879,7 +1879,6 @@ def fct_lump_by(s: pd.Series, by: pd.Series, prop: float = 0.05) -> pd.Series:
     return res
 
 
-# TODO: add tests
 def _pd_convert_all_types(
     df: pd.DataFrame, input_type: str, output_type: str
 ) -> pd.DataFrame:
@@ -1930,7 +1929,6 @@ def _pd_convert_all_types(
     return df
 
 
-# TODO: add tests
 def find_items_index_in_list(a_list: List[Any], items: List[Any]) -> List[int]:
     """Finds the index location of a given item in an array.
 
@@ -1965,12 +1963,11 @@ def find_items_index_in_list(a_list: List[Any], items: List[Any]) -> List[int]:
             type(find_items_index_in_list(l, items)[0])
                 # int
     """
-    # TODO: checking that i is in set each time is expensive -
-    #       there are probably faster ways to do it.
+    # TODO: (p2) Optimization note: checking that i is in set each time is expensive -
+    #       there are probably faster ways to do it. Consider using a dict-based approach for large lists.
     return [a_list.index(i) for i in items if i in set(a_list)]
 
 
-# TODO: add tests
 def get_items_from_list_via_indices(a_list: List[Any], indices: List[int]) -> List[Any]:
     """Gets a subset of items from a list via indices
 
