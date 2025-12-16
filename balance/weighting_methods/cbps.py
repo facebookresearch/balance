@@ -27,6 +27,7 @@ import statsmodels.api as sm
 from balance import adjustment as balance_adjustment, util as balance_util
 from balance.stats_and_plots.weights_stats import design_effect
 from scipy.sparse import csc_matrix
+from scipy.special import expit
 
 logger: logging.Logger = logging.getLogger(__package__)
 
@@ -48,7 +49,7 @@ def logit_truncated(
     Returns:
         np.ndarray: numpy array of computed probablities
     """
-    probs = 1.0 / (1 + np.exp(-1 * (np.matmul(X, beta))))
+    probs = expit(np.matmul(X, beta))
     return np.minimum(np.maximum(probs, truncation_value), 1 - truncation_value)
 
 
