@@ -2,6 +2,12 @@
 
 > TODO: update to final version
 
+## Bug Fixes
+
+- **Numerically stable CBPS probabilities**
+  - The CBPS helper now uses a stable logistic transform to avoid exponential
+    overflow warnings during probability computation in constraint checks.
+
 # 0.14.0 (2025-12-14)
 
 ## New Features
