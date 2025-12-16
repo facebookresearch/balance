@@ -7,6 +7,9 @@
 - **Numerically stable CBPS probabilities**
   - The CBPS helper now uses a stable logistic transform to avoid exponential
     overflow warnings during probability computation in constraint checks.
+- **Silenced pandas observed default warning**
+  - Explicitly sets `observed=False` in weighted categorical KLD calculations
+    to retain current behavior and avoid future pandas default changes.
 
 # 0.14.0 (2025-12-14)
 
