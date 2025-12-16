@@ -418,6 +418,8 @@ def kld(
     """
     Calculate the Kullback-Leibler divergence (KLD) between the columns of two DataFrames.
 
+    This function supports both discrete (categorical, binary, boolean) and continuous (numeric) data.
+
     Numeric columns are compared using weighted kernel density estimates integrated
     via adaptive quadrature. Categorical (including binary/one-hot encoded)
     columns are treated as general discrete distributions based on their weighted
