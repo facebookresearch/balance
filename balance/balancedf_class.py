@@ -1839,6 +1839,7 @@ class BalanceDFCovars(BalanceDF):
         """A factory function to create a BalanceDFCovars from a df.
 
         Although generally the main way the object is created is through the __init__ method.
+        This method is useful when you need to create a BalanceDFCovars object directly from a DataFrame.
 
         Args:
             self (BalanceDFCovars): Object
