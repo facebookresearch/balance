@@ -479,8 +479,6 @@ class TestBalanceDFWeights(BalanceTestCase):
             weight_column="w",
         )
         s.weights().trim(percentile=(0, 0.11), keep_sum_of_weights=False)
-        print(s.weights().df)
-        print(max(s.weights().df.iloc[:, 0]))
         self.assertTrue(max(s.weights().df.iloc[:, 0]) < 0.9)
 
     def test_BalanceDFWeights_summary(self) -> None:
