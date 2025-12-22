@@ -41,6 +41,9 @@ def logit_truncated(
     Given an X matrx and avector of coeeficients beta, it computes the truncated
     version of the logit function.
 
+    Truncation prevents numerical instabilities by bounding probabilities away from 0 and 1,
+    which is essential for stable weight computation in propensity score methods.
+
     Args:
         X (Union[np.ndarray, pd.DataFrame]): Covariate matrix
         beta (np.ndarray): vector of coefficients
@@ -129,6 +132,14 @@ def gmm_function(
             loss (float) computed gmm loss
             invV (np.ndarray) the weighting matrix for GMM
     """
+    # Convert inputs to numpy arrays to avoid pandas indexing issues
+    if isinstance(X, pd.DataFrame):
+        X = X.values
+    if isinstance(design_weights, (pd.Series, pd.DataFrame)):
+        design_weights = np.asarray(design_weights).flatten()
+    if isinstance(in_pop, (pd.Series, pd.DataFrame)):
+        in_pop = np.asarray(in_pop).flatten()
+
     probs = logit_truncated(X, beta)
     N = np.sum(design_weights)
     N_target = np.sum(design_weights[in_pop == 1.0])
