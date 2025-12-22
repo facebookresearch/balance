@@ -80,6 +80,9 @@
 <span class="sd">    Given an X matrx and avector of coeeficients beta, it computes the truncated</span>
 <span class="sd">    version of the logit function.</span>
 
+<span class="sd">    Truncation prevents numerical instabilities by bounding probabilities away from 0 and 1,</span>
+<span class="sd">    which is essential for stable weight computation in propensity score methods.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        X (Union[np.ndarray, pd.DataFrame]): Covariate matrix</span>
 <span class="sd">        beta (np.ndarray): vector of coefficients</span>
@@ -177,6 +180,14 @@
 <span class="sd">            loss (float) computed gmm loss</span>
 <span class="sd">            invV (np.ndarray) the weighting matrix for GMM</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Convert inputs to numpy arrays to avoid pandas indexing issues</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">values</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">design_weights</span><span class="p">,</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)):</span>
+        <span class="n">design_weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">design_weights</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">in_pop</span><span class="p">,</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)):</span>
+        <span class="n">in_pop</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">in_pop</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
     <span class="n">probs</span> <span class="o">=</span> <span class="n">logit_truncated</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
     <span class="n">N</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">design_weights</span><span class="p">)</span>
     <span class="n">N_target</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">design_weights</span><span class="p">[</span><span class="n">in_pop</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">])</span>

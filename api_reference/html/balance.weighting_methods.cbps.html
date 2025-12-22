@@ -291,6 +291,8 @@ See gmm_function for detials.</p>
 <dd><p>This is a helper function for cbps.
 Given an X matrx and avector of coeeficients beta, it computes the truncated
 version of the logit function.</p>
+<p>Truncation prevents numerical instabilities by bounding probabilities away from 0 and 1,
+which is essential for stable weight computation in propensity score methods.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
