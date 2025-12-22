@@ -383,6 +383,10 @@ def _lcm(a: int, b: int) -> int:
 
     Returns:
         The least common multiple of the two integers.
+
+    Implementation note:
+        Uses the mathematical relationship between LCM and GCD to efficiently compute the result.
+        The absolute value ensures the LCM is always positive, even for negative inputs.
     """
     # NOTE: this function uses math.gcd which calculates the greatest common divisor (GCD) of two integers.
     # The greatest common divisor (GCD) of two or more integers is the largest positive integer that divides each of the given integers without leaving a remainder.

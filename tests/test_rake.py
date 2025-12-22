@@ -21,6 +21,8 @@ import pandas as pd
 from balance import adjustment as balance_adjustment
 from balance.sample_class import Sample
 from balance.weighting_methods.rake import (
+    _find_lcm_of_array_lengths,
+    _lcm,
     _proportional_array_from_dict,
     _realize_dicts_of_proportions,
     _run_ipf_numpy,
@@ -907,3 +909,170 @@ class Testrake(
 
         self.assertAlmostEqual(level_totals.loc["q"], 0.0)
         pd.testing.assert_series_equal(level_totals.sort_index(), expected.sort_index())
+
+    def test__lcm(self) -> None:
+        """
+        Test the _lcm function with various input cases.
+
+        The _lcm function is used internally by _find_lcm_of_array_lengths
+        to ensure proportional representation across variables in raking.
+        """
+        test_cases = [
+            # (a, b, expected_lcm, description)
+            (4, 6, 12, "basic case"),
+            (7, 11, 77, "coprime numbers"),
+            (3, 9, 9, "one divides other"),
+            (5, 5, 5, "same numbers"),
+            (1, 5, 5, "LCM with 1"),
+            (0, 5, 0, "LCM with 0"),
+            (-4, 6, 12, "negative numbers"),
+            (100, 150, 300, "larger numbers"),
+        ]
+
+        for a, b, expected, description in test_cases:
+            with self.subTest(a=a, b=b, description=description):
+                self.assertEqual(_lcm(a, b), expected)
+
+    def test__find_lcm_of_array_lengths(self) -> None:
+        """
+        Test _find_lcm_of_array_lengths with various array configurations.
+
+        This function finds the LCM of array lengths to ensure proportional
+        representation across variables in raking operations.
+        """
+        test_cases = [
+            # (arrays, expected_lcm, description)
+            (
+                {"v1": ["a", "b", "b", "c"], "v2": ["aa", "bb"]},
+                4,
+                "basic case: lengths 4 and 2",
+            ),
+            (
+                {
+                    "v1": ["a", "b", "b", "c"],
+                    "v2": ["aa", "bb"],
+                    "v3": ["a1", "a2", "a3"],
+                },
+                12,
+                "three arrays: lengths 4, 2, 3",
+            ),
+            (
+                {"v1": ["a", "b", "c"], "v2": ["x", "y", "z"], "v3": ["1", "2", "3"]},
+                3,
+                "all same length",
+            ),
+            (
+                {"v1": ["a"]},
+                1,
+                "single array of length 1",
+            ),
+            (
+                {"v1": ["a", "b", "c", "d", "e"]},
+                5,
+                "single array of length 5",
+            ),
+            (
+                {"v1": ["a", "b", "c"], "v2": ["1", "2", "3", "4", "5"]},
+                15,
+                "coprime lengths 3 and 5",
+            ),
+            (
+                {
+                    "v1": ["a", "b"],
+                    "v2": ["x", "y", "z"],
+                    "v3": ["1", "2", "3", "4", "5"],
+                },
+                30,
+                "coprime lengths 2, 3, and 5",
+            ),
+            (
+                {
+                    "v1": ["a", "b"],
+                    "v2": ["w", "x", "y", "z"],
+                    "v3": ["1", "2", "3", "4", "5", "6", "7", "8"],
+                },
+                8,
+                "divisible lengths 2, 4, 8",
+            ),
+        ]
+
+        for arrays, expected, description in test_cases:
+            with self.subTest(description=description):
+                self.assertEqual(_find_lcm_of_array_lengths(arrays), expected)
+
+    def test__proportional_array_from_dict_edge_cases(self) -> None:
+        """
+        Test _proportional_array_from_dict with additional edge cases.
+
+        This extends the existing test coverage with edge cases like:
+        - Dictionary with zero values
+        - Single key dictionary
+        - Values that don't sum to 1
+        - Empty arrays after filtering
+        """
+        # Single key should return array with just that key
+        self.assertEqual(
+            _proportional_array_from_dict({"a": 1.0}),
+            ["a"],
+        )
+
+        # Values that don't sum to 1 should be normalized
+        self.assertEqual(
+            _proportional_array_from_dict({"a": 2, "b": 2}),
+            ["a", "b"],
+        )
+        self.assertEqual(
+            _proportional_array_from_dict({"a": 3, "b": 6}),
+            ["a", "b", "b"],
+        )
+
+        # Dictionary with zero values should filter them out
+        self.assertEqual(
+            _proportional_array_from_dict({"a": 0.5, "b": 0.5, "c": 0.0}),
+            ["a", "b"],
+        )
+        self.assertEqual(
+            _proportional_array_from_dict({"a": 0.0, "b": 1.0}),
+            ["b"],
+        )
+
+    def test__run_ipf_numpy_zero_dimensional_array(self) -> None:
+        """
+        Test that _run_ipf_numpy raises ValueError for 0-dimensional arrays.
+
+        The IPF algorithm requires at least one dimension to operate on.
+        """
+        with self.assertRaises(ValueError):
+            _run_ipf_numpy(
+                np.array(5.0),  # 0-dimensional array
+                [],
+                convergence_rate=0.01,
+                max_iteration=100,
+                rate_tolerance=1e-8,
+            )
+
+    def test__run_ipf_numpy_convergence_rate_tolerance(self) -> None:
+        """
+        Test that _run_ipf_numpy respects rate_tolerance convergence criterion.
+
+        The algorithm should stop when the change in convergence rate between
+        iterations is less than rate_tolerance, even if convergence_rate is not met.
+        """
+        # Create a simple 2x2 table that converges slowly
+        original = np.array([[10.0, 20.0], [30.0, 40.0]])
+        target_rows = np.array([35.0, 65.0])
+        target_cols = np.array([45.0, 55.0])
+
+        # With high rate_tolerance, should converge quickly
+        _, converged, iterations = _run_ipf_numpy(
+            original,
+            [target_rows, target_cols],
+            convergence_rate=1e-10,  # Very strict convergence
+            max_iteration=1000,
+            rate_tolerance=0.1,  # But allow early stopping
+        )
+
+        # Should converge (rate_tolerance allows it)
+        self.assertEqual(converged, 1)
+        # Should take relatively few iterations due to rate_tolerance
+        self.assertLess(len(iterations), 100)
