@@ -472,6 +472,7 @@ class TestBalanceDFWeights(BalanceTestCase):
         self.assertTrue(s.weights().design_effect(), 7 / 3)
 
     def test_BalanceDFWeights_trim(self) -> None:
+        np.random.seed(42)  # Fix seed for reproducibility
         s = Sample.from_frame(
             pd.DataFrame({"w": np.random.uniform(0, 1, 10000), "id": range(0, 10000)}),
             id_column="id",
