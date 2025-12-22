@@ -264,6 +264,8 @@ class Sample:
         surfaced in ``__str__`` so they can be reused by other presentation
         helpers (for example, :meth:`summary`) without duplicating logic.
 
+        Note: This method formats diagnostics for human-readable output.
+
         Args:
             n_rows: Optional row count to use for effective sample size
                 calculations. Defaults to the current sample's row count.

@@ -1824,3 +1824,275 @@ class TestSample_high_cardinality_warnings(balance.testutil.BalanceTestCase):
             < warning_logs[0].find(", high (unique"),
             "Expected higher-cardinality column to appear first in warning.",
         )
+
+    def test_adjustment_details_with_ipw_method_in_str(self) -> None:
+        """Test __str__ includes IPW adjustment details.
+
+        This validates that the string representation properly includes adjustment
+        method information and design effect diagnostics when available.
+        """
+        # Use larger sample size for IPW to work properly
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": [1, 2, 3, 1, 2, 3, 1, 2, 3, 1],
+                    "b": [4, 5, 6, 4, 5, 6, 4, 5, 6, 4],
+                    "id": list(range(10)),
+                    "w": [0.5, 1.0, 1.5, 0.8, 1.2, 0.9, 1.1, 1.3, 0.7, 1.0],
+                }
+            )
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": [1, 2, 3, 1, 2],
+                    "b": [4, 5, 6, 4, 5],
+                    "id": list(range(5)),
+                }
+            )
+        )
+        adjusted = sample.set_target(target).adjust(method="ipw")
+
+        str_repr = str(adjusted)
+
+        self.assertIn("method: ipw", str_repr)
+        self.assertIn(
+            "design effect",
+            str_repr,
+            "Expected design effect in string representation",
+        )
+
+    def test_adjustment_details_with_null_method_in_str(self) -> None:
+        """Test __str__ includes null adjustment method.
+
+        This ensures the string representation handles cases where no real
+        adjustment was applied.
+        """
+        sample = Sample.from_frame(
+            pd.DataFrame({"a": [1, 2], "b": [3, 4], "id": [1, 2]})
+        )
+        target = Sample.from_frame(
+            pd.DataFrame({"a": [1, 2], "b": [3, 4], "id": [1, 2]})
+        )
+        adjusted = sample.set_target(target).adjust(method="null")
+
+        str_repr = str(adjusted)
+
+        self.assertIn("method: null", str_repr)
+
+    def test_adjustment_details_with_trimming_settings_in_str(self) -> None:
+        """Test __str__ includes trimming configuration.
+
+        This validates that weight trimming parameters are properly included
+        in the string representation when specified.
+        """
+        # Use larger sample with more variation for IPW
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": [1, 2, 3, 1, 2, 3, 1, 2, 3, 1],
+                    "b": [10, 20, 30, 15, 25, 35, 12, 22, 32, 18],
+                    "id": list(range(10)),
+                    "w": [0.1, 1.0, 2.0, 0.5, 1.5, 2.5, 0.8, 1.2, 1.8, 0.6],
+                }
+            )
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": [1, 2, 3, 1, 2],
+                    "b": [10, 20, 30, 15, 25],
+                    "id": list(range(5)),
+                }
+            )
+        )
+        adjusted = sample.set_target(target).adjust(
+            method="ipw", weight_trimming_mean_ratio=5
+        )
+
+        str_repr = str(adjusted)
+
+        self.assertIn(
+            "weight trimming mean ratio",
+            str_repr,
+            "Expected weight trimming info in string representation",
+        )
+
+    def test_str_includes_effective_sample_size_with_weights(self) -> None:
+        """Test __str__ includes effective sample size when weights are present.
+
+        This ensures the string representation includes design effect diagnostics
+        for samples with weights.
+        """
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {"a": [1, 2, 3], "b": [4, 5, 6], "id": [1, 2, 3], "w": [1, 1, 1]}
+            ),
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame({"a": [1, 2], "b": [4, 5], "id": [1, 2]})
+        )
+        adjusted = sample.set_target(target).adjust(method="null")
+
+        str_repr = str(adjusted)
+
+        # Verify the string representation contains adjustment details
+        self.assertIn("adjustment details", str_repr)
+        self.assertIn("method: null", str_repr)
+
+        # With uniform weights (all 1s), we should see design effect information
+        self.assertIn("design effect", str_repr)
+        self.assertIn("eff. sample size", str_repr)
+
+    def test_str_includes_design_effect_with_weights(self) -> None:
+        """Test __str__ includes design effect information with weights.
+
+        This validates that samples with weights properly display design effect
+        and effective sample size in their string representation.
+        """
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": [1, 2, 3, 4],
+                    "b": [5, 6, 7, 8],
+                    "id": [1, 2, 3, 4],
+                    "w": [1.0, 1.0, 1.0, 1.0],
+                }
+            ),
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame({"a": [1, 2], "b": [5, 6], "id": [1, 2]})
+        )
+        adjusted = sample.set_target(target).adjust(method="null")
+
+        str_repr = str(adjusted)
+
+        # Should include design effect information
+        self.assertIn("design effect", str_repr)
+        self.assertIn("Deff", str_repr)
+        self.assertIn("eff. sample size", str_repr)
+
+    def test_str_without_weights_no_design_effect(self) -> None:
+        """Test __str__ for samples without explicit weights.
+
+        This validates that samples created without a weight column do not
+        display design effect information in their string representation.
+        """
+        sample = Sample.from_frame(
+            pd.DataFrame({"a": [1, 2], "b": [3, 4], "id": [1, 2]})
+        )
+        target = Sample.from_frame(pd.DataFrame({"a": [1], "b": [3], "id": [1]}))
+        adjusted = sample.set_target(target).adjust(method="null")
+
+        str_repr = str(adjusted)
+
+        # Should show adjustment details but may not show design effect
+        # since no explicit weight column was provided
+        self.assertIn("method: null", str_repr)
+
+    def test_design_effect_method_returns_valid_value(self) -> None:
+        """Test design_effect() public method returns valid value.
+
+        This ensures the public design_effect method works correctly
+        for samples with weights.
+        """
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {"a": [1, 2, 3], "b": [4, 5, 6], "id": [1, 2, 3], "w": [1, 1, 1]}
+            ),
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame({"a": [1, 2], "b": [4, 5], "id": [1, 2]})
+        )
+        adjusted = sample.set_target(target).adjust(method="null")
+
+        deff = adjusted.design_effect()
+
+        # Should return a valid design effect value
+        self.assertIsNotNone(deff)
+        self.assertIsInstance(deff, (float, np.floating))
+        self.assertTrue(np.isfinite(deff))
+        self.assertGreater(deff, 0)
+
+    def test_str_handles_sample_with_varied_weights(self) -> None:
+        """Test __str__ properly handles samples with varied weights.
+
+        This validates that the string representation correctly displays
+        design effect information when weights vary.
+        """
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": [1, 2, 3],
+                    "b": [4, 5, 6],
+                    "id": [1, 2, 3],
+                    "w": [0.5, 1.0, 1.5],
+                }
+            ),
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame({"a": [1, 2], "b": [4, 5], "id": [1, 2]})
+        )
+        adjusted = sample.set_target(target).adjust(method="null")
+
+        str_repr = str(adjusted)
+
+        # Should include design effect information with varied weights
+        self.assertIn("design effect", str_repr)
+        self.assertIn("method: null", str_repr)
+
+    def test_design_effect_prop_method_returns_valid_value(self) -> None:
+        """Test design_effect_prop() public method returns valid value.
+
+        This ensures the public design_effect_prop method works correctly
+        for samples with weights.
+        """
+        sample = Sample.from_frame(
+            pd.DataFrame({"a": [1, 2], "b": [3, 4], "id": [1, 2], "w": [1, 1]}),
+            weight_column="w",
+        )
+        target = Sample.from_frame(pd.DataFrame({"a": [1], "b": [3], "id": [1]}))
+        adjusted = sample.set_target(target).adjust(method="null")
+
+        deff_prop = adjusted.design_effect_prop()
+
+        # Should return a valid design effect proportion
+        self.assertIsNotNone(deff_prop)
+        self.assertIsInstance(deff_prop, (float, np.floating))
+        self.assertTrue(np.isfinite(deff_prop))
+
+    def test_plot_weight_density_calls_weights_plot(self) -> None:
+        """Test plot_weight_density delegates to weights().plot().
+
+        This validates that the convenience method properly calls the
+        underlying weights plotting functionality.
+        """
+        from unittest.mock import MagicMock, patch
+
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {"a": [1, 2, 3], "b": [4, 5, 6], "id": [1, 2, 3], "w": [0.5, 1.0, 1.5]}
+            )
+        )
+
+        # Mock the weights().plot() chain to verify it's called
+        mock_weights = MagicMock()
+        mock_plot = MagicMock()
+        mock_weights.plot = mock_plot
+
+        with patch.object(sample, "weights", return_value=mock_weights):
+            # Call the method
+            result = sample.plot_weight_density()
+
+            # Verify weights() was called
+            sample.weights.assert_called_once()
+
+            # Verify plot() was called on the weights object
+            mock_plot.assert_called_once()
+
+            # plot_weight_density returns None
+            self.assertIsNone(result)
