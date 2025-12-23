@@ -714,8 +714,8 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         weighted_patches = ax_weighted.patches
         num_bars_per_dataset = len(weighted_patches) // 2
         weighted_heights_self = [
-            p.get_height()
-            for p in weighted_patches[:num_bars_per_dataset]  # pyre-ignore[16]
+            p.get_height()  # pyre-ignore[16]
+            for p in weighted_patches[:num_bars_per_dataset]
         ]
         weighted_heights_target = [
             p.get_height() for p in weighted_patches[num_bars_per_dataset:]
@@ -823,7 +823,8 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
             # because the weights are very different
             max_y_diff_weighted = max(
                 abs(y_self - y_target)
-                for y_self, y_target in zip(  # pyre-ignore[6]
+                # pyre-ignore[6]
+                for y_self, y_target in zip(
                     kde_y_values_self_weighted, kde_y_values_target_weighted
                 )
             )
@@ -852,7 +853,8 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
 
             # When weighted=False, both datasets should have identical KDE curves
             # (weights are ignored, so same DataFrame = same KDE)
-            for y_self, y_target in zip(  # pyre-ignore[6]
+            # pyre-ignore[6]
+            for y_self, y_target in zip(
                 kde_y_values_self_unweighted, kde_y_values_target_unweighted
             ):
                 self.assertAlmostEqual(y_self, y_target, places=5)

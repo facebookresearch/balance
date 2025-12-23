@@ -1045,7 +1045,6 @@ class TestUtil(
         pd.core.arrays.base.ExtensionArray,
         pd.core.arrays.base.ExtensionArray,
         pd.core.arrays.base.ExtensionArray,
-        # pyre-ignore[11]
         npt.NDArray[Any],
         npt.NDArray[Any],
         list[int | float | str],
