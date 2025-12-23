@@ -319,7 +319,9 @@ class TestUtil(
             sample_df,
             sample_weights,
         ) = balance_util.drop_na_rows(sample_df, sample_weights, "sample")
-        self.assertEqual(sample_df, pd.DataFrame({"a": (2.0), "b": ("c")}, index=[2]))  # pyre-ignore[6]
+        self.assertEqual(
+            sample_df, pd.DataFrame({"a": (2.0), "b": ("c")}, index=[2])
+        )  # pyre-ignore[6]
         self.assertEqual(sample_weights, pd.Series([3], index=[2]))
 
         # check exceptions
@@ -914,7 +916,9 @@ class TestUtil(
 
         result = balance_util.quantize(df, q=4, variables=["first", "third"])
 
-        self.assertListEqual(list(result.columns), ["first", "second", "third"])  # pyre-ignore[16]
+        self.assertListEqual(
+            list(result.columns), ["first", "second", "third"]
+        )  # pyre-ignore[16]
         self.assertIsInstance(result.loc[0, "first"], pd.Interval)  # pyre-ignore[16]
         self.assertEqual(result.loc[0, "second"], "a")  # pyre-ignore[16]
         self.assertIsInstance(result.loc[0, "third"], pd.Interval)  # pyre-ignore[16]
@@ -1582,7 +1586,9 @@ class TestUtil(
         )
 
         # test fct_lump_by doesn't affect indices when combining dataframes
-        s = pd.DataFrame({"d": [1, 1, 1], "e": ["a1", "a2", "a1"]}, index=(0, 6, 7))  # pyre-ignore[6]
+        s = pd.DataFrame(
+            {"d": [1, 1, 1], "e": ["a1", "a2", "a1"]}, index=(0, 6, 7)
+        )  # pyre-ignore[6]
         t = pd.DataFrame(
             {"d": [2, 3, 1, 2], "e": ["a2", "a2", "a1", "a2"]}, index=(0, 1, 2, 3)
         )

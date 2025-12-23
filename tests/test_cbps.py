@@ -386,7 +386,9 @@ class Testcbps(
         # Create continuous variables for sample
         continuous_vars_sample = pd.concat(
             [
-                pd.DataFrame(np.random.uniform(0, 10, size=SAMPLE_SIZE), columns=[0]),  # pyre-ignore[6]
+                pd.DataFrame(
+                    np.random.uniform(0, 10, size=SAMPLE_SIZE), columns=[0]
+                ),  # pyre-ignore[6]
                 pd.DataFrame(
                     np.random.uniform(0, 1, size=(SAMPLE_SIZE, 4)), columns=range(1, 5)
                 ),

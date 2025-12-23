@@ -30,6 +30,7 @@ from typing import (
 )
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 
 import pandas.api.types as pd_types

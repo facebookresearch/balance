@@ -121,7 +121,9 @@ def _weights_per_covars_names(covar_names: List[str]) -> pd.DataFrame:
 
 
 def _kl_divergence_discrete(
-    p: npt.NDArray[np.floating[Any]], q: npt.NDArray[np.floating[Any]], eps: float = 1e-12
+    p: npt.NDArray[np.floating[Any]],
+    q: npt.NDArray[np.floating[Any]],
+    eps: float = 1e-12,
 ) -> float:
     """
     Compute the KL divergence between two discrete probability mass functions.
