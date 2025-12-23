@@ -10,7 +10,6 @@ from __future__ import annotations
 from typing import Any, cast
 
 import balance.testutil
-
 import numpy as np
 import pandas as pd
 from balance.util import _verify_value_type
@@ -460,8 +459,7 @@ class TestBalance_weighted_stats(
         # np.array v (replacing np.matrix)
         d = np.array([(-1, 2, 1, 2), (1, 2, 3, 4)]).transpose()
         pd.testing.assert_series_equal(
-            weighted_mean(d),  # pyre-ignore[6]
-            pd.Series((1, 2.5))
+            weighted_mean(d), pd.Series((1, 2.5))  # pyre-ignore[6]
         )
         pd.testing.assert_series_equal(
             weighted_mean(d, w=pd.Series((1, 2, 3, 4))),  # pyre-ignore[6]

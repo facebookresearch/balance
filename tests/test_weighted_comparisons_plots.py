@@ -10,7 +10,6 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 from typing import List
 
 import balance.testutil
-
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -715,7 +714,8 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         weighted_patches = ax_weighted.patches
         num_bars_per_dataset = len(weighted_patches) // 2
         weighted_heights_self = [
-            p.get_height() for p in weighted_patches[:num_bars_per_dataset]  # pyre-ignore[16]
+            p.get_height()
+            for p in weighted_patches[:num_bars_per_dataset]  # pyre-ignore[16]
         ]
         weighted_heights_target = [
             p.get_height() for p in weighted_patches[num_bars_per_dataset:]
@@ -823,8 +823,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
             # because the weights are very different
             max_y_diff_weighted = max(
                 abs(y_self - y_target)
-                # pyre-ignore[6]
-                for y_self, y_target in zip(
+                for y_self, y_target in zip(  # pyre-ignore[6]
                     kde_y_values_self_weighted, kde_y_values_target_weighted
                 )
             )
@@ -853,8 +852,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
 
             # When weighted=False, both datasets should have identical KDE curves
             # (weights are ignored, so same DataFrame = same KDE)
-            # pyre-ignore[6]
-            for y_self, y_target in zip(
+            for y_self, y_target in zip(  # pyre-ignore[6]
                 kde_y_values_self_unweighted, kde_y_values_target_unweighted
             ):
                 self.assertAlmostEqual(y_self, y_target, places=5)
