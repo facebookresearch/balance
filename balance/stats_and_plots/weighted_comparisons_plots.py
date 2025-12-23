@@ -544,7 +544,7 @@ def plot_qq_categorical(
             plot_qq_categorical(dfs1, names=["self", "unadjusted", "target"], column="v1", axis=axs[2], weighted=True, label_threshold=3)
     """
     target = dfs[-1]["df"]
-    target_weights = dfs[-1]["weight"]
+    target_weights = dfs[-1]["weight"] if weighted else None
     dfs = dfs[:-1]
 
     target_plot_data = relative_frequency_table(target, column, target_weights)
