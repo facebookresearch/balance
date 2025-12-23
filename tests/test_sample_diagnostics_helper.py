@@ -12,7 +12,7 @@ from balance.sample_class import _concat_metric_val_var
 
 
 def test_concat_sequence_lengths_match() -> None:
-    diagnostics = pd.DataFrame(columns=["metric", "val", "var"])
+    diagnostics = pd.DataFrame(columns=["metric", "val", "var"])  # pyre-ignore[6]
 
     result = _concat_metric_val_var(
         diagnostics,
@@ -53,7 +53,7 @@ def test_concat_single_row() -> None:
 
 
 def test_concat_multiple_rows() -> None:
-    diagnostics = pd.DataFrame(columns=["metric", "val", "var"])
+    diagnostics = pd.DataFrame(columns=["metric", "val", "var"])  # pyre-ignore[6]
 
     result = _concat_metric_val_var(
         diagnostics,
@@ -76,7 +76,7 @@ def test_concat_multiple_rows() -> None:
 
 
 def test_concat_scalar_pair() -> None:
-    diagnostics = pd.DataFrame(columns=["metric", "val", "var"])
+    diagnostics = pd.DataFrame(columns=["metric", "val", "var"])  # pyre-ignore[6]
 
     result = _concat_metric_val_var(diagnostics, "model_glance", [0.1], ["lambda"])
 
@@ -90,7 +90,7 @@ def test_concat_scalar_pair() -> None:
 
 
 def test_concat_string_values() -> None:
-    diagnostics = pd.DataFrame(columns=["metric", "val", "var"])
+    diagnostics = pd.DataFrame(columns=["metric", "val", "var"])  # pyre-ignore[6]
 
     result = _concat_metric_val_var(
         diagnostics, "ipw_solver", ["lbfgs", "saga"], ["solver", "fused"]
@@ -109,7 +109,8 @@ def test_concat_string_values() -> None:
 
 def test_concat_empty_list_returns_copy() -> None:
     diagnostics = pd.DataFrame(
-        {"metric": ["existing"], "val": [1], "var": ["foo"]}, index=[5]
+        {"metric": ["existing"], "val": [1], "var": ["foo"]},
+        index=[5],  # pyre-ignore[6]
     )
 
     result = _concat_metric_val_var(diagnostics, "size", [], [])
@@ -118,7 +119,7 @@ def test_concat_empty_list_returns_copy() -> None:
 
 
 def test_concat_bytes_values() -> None:
-    diagnostics = pd.DataFrame(columns=["metric", "val", "var"])
+    diagnostics = pd.DataFrame(columns=["metric", "val", "var"])  # pyre-ignore[6]
 
     result = _concat_metric_val_var(diagnostics, "encoding", [b"abc", b"def"], [1, 2])
 
@@ -158,7 +159,9 @@ def test_concat_retains_existing_columns() -> None:
 
 
 def test_concat_respects_empty_frame_column_order() -> None:
-    diagnostics = pd.DataFrame(columns=["metric", "val", "var", "note"])
+    diagnostics = pd.DataFrame(
+        columns=["metric", "val", "var", "note"]
+    )  # pyre-ignore[6]
 
     result = _concat_metric_val_var(diagnostics, "size", [1], ["bar"])
 
@@ -187,7 +190,7 @@ def test_concat_appends_when_no_columns_present() -> None:
 
 
 def test_concat_accepts_series() -> None:
-    diagnostics = pd.DataFrame(columns=["metric", "val", "var"])
+    diagnostics = pd.DataFrame(columns=["metric", "val", "var"])  # pyre-ignore[6]
 
     vals = pd.Series([10, 20], index=["x", "y"])
     vars_series = pd.Series(["alpha", "beta"], index=["x", "y"])
@@ -208,7 +211,7 @@ def test_concat_accepts_series() -> None:
 
 
 def test_concat_accepts_numpy_arrays() -> None:
-    diagnostics = pd.DataFrame(columns=["metric", "val", "var"])
+    diagnostics = pd.DataFrame(columns=["metric", "val", "var"])  # pyre-ignore[6]
 
     vals = np.array([1.5, 2.5])
     vars_arr = np.array(["mean", "std"])
@@ -229,7 +232,9 @@ def test_concat_accepts_numpy_arrays() -> None:
 
 
 def test_concat_preserves_nonstandard_column_order() -> None:
-    diagnostics = pd.DataFrame(columns=["metric", "note", "val", "var"])
+    diagnostics = pd.DataFrame(
+        columns=["metric", "note", "val", "var"]
+    )  # pyre-ignore[6]
 
     result = _concat_metric_val_var(diagnostics, "size", [1, 2], ["bar", "baz"])
 
@@ -246,7 +251,7 @@ def test_concat_preserves_nonstandard_column_order() -> None:
 
 
 def test_concat_mismatched_lengths_raises_error() -> None:
-    diagnostics = pd.DataFrame(columns=["metric", "val", "var"])
+    diagnostics = pd.DataFrame(columns=["metric", "val", "var"])  # pyre-ignore[6]
 
     try:
         _concat_metric_val_var(diagnostics, "size", [1, 2, 3], ["a", "b"])
