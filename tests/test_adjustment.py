@@ -13,8 +13,6 @@ from __future__ import (
     unicode_literals,
 )
 
-import random
-
 import balance
 
 import balance.testutil
@@ -77,7 +75,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         self.assertEqual(result_weights.dtype, np.float64)
 
         # Test that no trimming parameters preserves original weights
-        random.seed(42)
+        np.random.seed(42)
         random_weights = np.random.uniform(0, 1, 10000)
         untrimmed_result = trim_weights(
             random_weights,
@@ -99,7 +97,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
             trim_weights(np.array([0, 1, 2]), 1, 1)
 
         # Test weight_trimming_mean_ratio functionality
-        random.seed(42)
+        np.random.seed(42)
         original_weights = np.random.uniform(0, 1, 10000)
         mean_ratio_result = trim_weights(original_weights, weight_trimming_mean_ratio=1)
 
@@ -114,7 +112,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         )
 
         # Test weight_trimming_percentile functionality
-        random.seed(42)
+        np.random.seed(42)
         test_weights = np.random.uniform(0, 1, 10000)
 
         # Test upper percentile trimming
