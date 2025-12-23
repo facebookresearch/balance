@@ -125,7 +125,6 @@ def _quantile_with_method(
 
     array_data = np.asarray(data, dtype=np.float64)
     try:
-        # pyre-ignore[6]: method is a valid literal for np.quantile
         return float(np.quantile(array_data, q, method=method))
     except TypeError:
         # Older NumPy versions (<1.22) use the ``interpolation`` kwarg.

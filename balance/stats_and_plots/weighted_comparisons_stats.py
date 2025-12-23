@@ -218,15 +218,15 @@ def _kl_divergence_continuous_quad(
     p_samples, p_weights = _validate_samples(p_samples, p_weights, "p_samples")
     q_samples, q_weights = _validate_samples(q_samples, q_weights, "q_samples")
 
-    kde_p = gaussian_kde(p_samples, weights=p_weights)  # pyre-ignore[29]
-    kde_q = gaussian_kde(q_samples, weights=q_weights)  # pyre-ignore[29]
+    kde_p = gaussian_kde(p_samples, weights=p_weights)
+    kde_q = gaussian_kde(q_samples, weights=q_weights)
 
     min_support = min(p_samples.min(), q_samples.min())
     max_support = max(p_samples.max(), q_samples.max())
 
     def integrand(x: float) -> float:
-        p_x = float(np.clip(kde_p(x), eps, None)[0])
-        q_x = float(np.clip(kde_q(x), eps, None)[0])
+        p_x: float = float(np.clip(kde_p(x), eps, None)[0])
+        q_x: float = float(np.clip(kde_q(x), eps, None)[0])
         return float(p_x * np.log(p_x / q_x))
 
     kl, _ = quad(integrand, float(min_support), float(max_support), limit=100)

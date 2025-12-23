@@ -417,9 +417,9 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
     def test_apply_transformations_index_handling(self) -> None:
         """Test that dataframe indices are properly handled during transformations."""
         source_df = pd.DataFrame({"d": [1, 2, 3]}, index=(5, 6, 7))  # pyre-ignore[6]
-        target_df = pd.DataFrame(
+        target_df = pd.DataFrame(  # pyre-ignore[6]
             {"d": [4, 5, 6, 7]}, index=(0, 1, 2, 3)
-        )  # pyre-ignore[6]
+        )
         transformations = {"d": lambda x: x}
         result = apply_transformations((source_df, target_df), transformations)
         expected = (source_df, target_df)

@@ -1376,7 +1376,7 @@ class Sample:
         """
         logger.info("Starting computation of diagnostics of the fitting")
         self._check_if_adjusted()
-        diagnostics = pd.DataFrame(columns=["metric", "val", "var"])
+        diagnostics = pd.DataFrame(columns=["metric", "val", "var"])  # pyre-ignore[6]
 
         # ----------------------------------------------------
         # Properties of the Sample object (dimensions of the data)
