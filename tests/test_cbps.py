@@ -420,7 +420,7 @@ class Testcbps(
                             np.random.uniform(8, 10, size=int(TARGET_SIZE / 2)),
                         )
                     ),
-                    columns=[0],
+                    columns=[0],  # pyre-ignore[6]
                 ),
                 pd.DataFrame(
                     np.random.uniform(0, 1, size=(TARGET_SIZE, 4)), columns=range(1, 5)

@@ -497,7 +497,7 @@ class TestSample_base_and_adjust_methods(
                 "id": ("1", "2", "3", "4"),
                 "w": (0.5, 2, 1, 1),
             },
-            columns=("id", "a", "b", "c", "o", "w"),
+            columns=("id", "a", "b", "c", "o", "w"),  # pyre-ignore[6]
         )
         self.assertEqual(s1.df, e)
 
@@ -521,7 +521,7 @@ class TestSample_base_and_adjust_methods(
                 "w": (0.5, 1, 2),
                 "c": ("x", "y", "z"),
             },
-            columns=("id", "a", "b", "c", "w"),
+            columns=("id", "a", "b", "c", "w"),  # pyre-ignore[6]
         )
         self.assertEqual(s2.df, e)
 
@@ -536,7 +536,7 @@ class TestSample_base_and_adjust_methods(
             {
                 "o": (7.0, 8.0, 9.0, 10.0),
             },
-            columns=["o"],
+            columns=["o"],  # pyre-ignore[6]
         )
         self.assertEqual(s1.outcomes().df, e)
 
@@ -550,7 +550,7 @@ class TestSample_base_and_adjust_methods(
             {
                 "w": (0.5, 2, 1, 1),
             },
-            columns=["w"],
+            columns=["w"],  # pyre-ignore[6]
         )
         self.assertEqual(s1.weights().df, e)
 
