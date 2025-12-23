@@ -142,7 +142,7 @@ class TestUtil(
             ValueError,
             "sample_df index must be the same as sample_weights index",
             balance_util._check_weighting_methods_input,
-            df=pd.DataFrame({"a": [1, 2]}, index=[1, 2]),
+            df=pd.DataFrame({"a": [1, 2]}, index=[1, 2]),  # pyre-ignore[6]
             weights=pd.Series([1, 1], index=[3, 4]),
             object_name="sample",
         )
@@ -319,11 +319,11 @@ class TestUtil(
             sample_df,
             sample_weights,
         ) = balance_util.drop_na_rows(sample_df, sample_weights, "sample")
-        self.assertEqual(sample_df, pd.DataFrame({"a": (2.0), "b": ("c")}, index=[2]))
+        self.assertEqual(sample_df, pd.DataFrame({"a": (2.0), "b": ("c")}, index=[2]))  # pyre-ignore[6]
         self.assertEqual(sample_weights, pd.Series([3], index=[2]))
 
         # check exceptions
-        sample_df = pd.DataFrame({"a": (None), "b": ("b")}, index=[1])
+        sample_df = pd.DataFrame({"a": (None), "b": ("b")}, index=[1])  # pyre-ignore[6]
         sample_weights = pd.Series([1])
         self.assertRaisesRegex(
             ValueError,
@@ -1582,7 +1582,7 @@ class TestUtil(
         )
 
         # test fct_lump_by doesn't affect indices when combining dataframes
-        s = pd.DataFrame({"d": [1, 1, 1], "e": ["a1", "a2", "a1"]}, index=(0, 6, 7))
+        s = pd.DataFrame({"d": [1, 1, 1], "e": ["a1", "a2", "a1"]}, index=(0, 6, 7))  # pyre-ignore[6]
         t = pd.DataFrame(
             {"d": [2, 3, 1, 2], "e": ["a2", "a2", "a1", "a2"]}, index=(0, 1, 2, 3)
         )

@@ -12,7 +12,6 @@ import logging
 from typing import Any, cast, Dict, List, Tuple, Union
 
 import numpy as np
-import numpy.typing as npt
 import pandas as pd
 
 from balance import adjustment as balance_adjustment, util as balance_util
@@ -85,27 +84,27 @@ def model_coefs(
 
 
 # TODO: Add tests for link_transform()
-def link_transform(pred: npt.NDArray[Any]) -> npt.NDArray[Any]:
+def link_transform(pred: np.ndarray) -> np.ndarray:
     """Transforms probabilities into log odds (link function).
 
     Args:
-        pred (npt.NDArray[Any]): LogisticRegression probability predictions from sklearn.
+        pred (np.ndarray): LogisticRegression probability predictions from sklearn.
 
     Returns:
-        npt.NDArray[Any]: Array of log odds.
+        np.ndarray: Array of log odds.
 
     """
     pred = np.asarray(pred, dtype=float)
     # Clip probabilities to avoid dividing by zero or taking log of zero
-    eps = float(np.finfo(float).eps)
+    eps = np.finfo(float).eps
     pred = np.clip(pred, eps, 1 - eps)
     return np.log(pred / (1 - pred))
 
 
 def _compute_deviance(
-    y: npt.NDArray[Any],
-    pred: npt.NDArray[Any],
-    model_weights: npt.NDArray[Any],
+    y: np.ndarray,
+    pred: np.ndarray,
+    model_weights: np.ndarray,
     labels: list[int] | None = None,
 ) -> float:
     """Compute deviance (2 * log loss).
@@ -113,9 +112,9 @@ def _compute_deviance(
     Used multiple times throughout ipw() and calc_dev() functions.
 
     Args:
-        y (npt.NDArray[Any]): True labels.
-        pred (npt.NDArray[Any]): Predicted probabilities.
-        model_weights (npt.NDArray[Any]): Sample weights.
+        y (np.ndarray): True labels.
+        pred (np.ndarray): Predicted probabilities.
+        model_weights (np.ndarray): Sample weights.
         labels (Optional[List[int]], optional): Label specification. Defaults to None.
 
     Returns:
@@ -142,8 +141,8 @@ def _compute_proportion_deviance(dev: float, null_dev: float) -> float:
 
 
 def _convert_to_dense_array(
-    X_matrix: Union[csc_matrix, csr_matrix, npt.NDArray[Any], pd.DataFrame],
-) -> npt.NDArray[Any]:
+    X_matrix: Union[csc_matrix, csr_matrix, np.ndarray, pd.DataFrame],
+) -> np.ndarray:
     """Convert sparse matrix or DataFrame to dense numpy array.
 
     If the input is a CSC matrix, first convert to CSR for efficiency,
@@ -156,7 +155,7 @@ def _convert_to_dense_array(
             dense numpy array, or pandas DataFrame.
 
     Returns:
-        npt.NDArray[Any]: Dense numpy array (or DataFrame if input was DataFrame).
+        np.ndarray: Dense numpy array (or DataFrame if input was DataFrame).
     """
     if isinstance(X_matrix, csc_matrix):
         X_matrix = X_matrix.tocsr()
@@ -170,19 +169,19 @@ def _convert_to_dense_array(
 # TODO: Add tests for calc_dev()
 def calc_dev(
     X_matrix: csr_matrix,
-    y: npt.NDArray[Any],
+    y: np.ndarray,
     model: ClassifierMixin,
-    model_weights: npt.NDArray[Any],
-    foldids: npt.NDArray[Any],
+    model_weights: np.ndarray,
+    foldids: np.ndarray,
 ) -> Tuple[float, float]:
     """10 fold cross validation to calculate holdout deviance.
 
     Args:
         X_matrix (csr_matrix): Model matrix,
-        y (npt.NDArray[Any]): Vector of sample inclusion (1=sample, 0=target),
+        y (np.ndarray): Vector of sample inclusion (1=sample, 0=target),
         model (_type_): LogisticRegression object from sklearn,
-        model_weights (npt.NDArray[Any]): Vector of sample and target weights,
-        foldids (npt.NDArray[Any]): Vector of cross-validation fold indices.
+        model_weights (np.ndarray): Vector of sample and target weights,
+        foldids (np.ndarray): Vector of cross-validation fold indices.
 
     Returns:
         float, float: mean and standard deviance of holdout deviance.
@@ -207,7 +206,7 @@ def calc_dev(
     logger.debug(
         f"dev_mean: {np.mean(cv_dev)}, dev_sd: {np.std(cv_dev, ddof=1) / np.sqrt(10)}"
     )
-    return float(np.mean(cv_dev)), float(np.std(cv_dev, ddof=1) / np.sqrt(10))
+    return np.mean(cv_dev), np.std(cv_dev, ddof=1) / np.sqrt(10)
 
 
 # TODO: consider add option to normalize weights to sample size
@@ -254,7 +253,7 @@ def weights_from_link(
 # TODO: Update choose_regularization function to be based on mse (instead of grid search)
 def choose_regularization(
     links: List[Any],
-    lambdas: npt.NDArray[Any],
+    lambdas: np.ndarray,
     sample_df: pd.DataFrame,
     target_df: pd.DataFrame,
     sample_weights: pd.Series,
@@ -275,7 +274,7 @@ def choose_regularization(
 
     Args:
         links (Links[Any]): list of link predictions from sklearn
-        lambdas (npt.NDArray[Any]): the lambda values for regularization
+        lambdas (np.ndarray): the lambda values for regularization
         sample_df (pd.DataFrame): a dataframe representing the sample
         target_df (pd.DataFrame): a dataframe representing the target
         sample_weights (pd.Series): design weights for sample
@@ -758,7 +757,7 @@ def ipw(
 
         lr = LogisticRegression(**lr_kwargs)
         fits: list[ClassifierMixin | None] = [None for _ in range(len(lambdas))]
-        links: list[npt.NDArray[Any] | None] = [None for _ in range(len(lambdas))]
+        links: list[np.ndarray | None] = [None for _ in range(len(lambdas))]
         prop_dev = [np.nan for _ in range(len(lambdas))]
         dev = [np.nan for _ in range(len(lambdas))]
         cv_dev_mean = [np.nan for _ in range(len(lambdas))]
@@ -817,7 +816,7 @@ def ipw(
 
         lambdas = np.array([np.nan])
         fits: list[ClassifierMixin | None] = [None]
-        links: list[npt.NDArray[Any] | None] = [None]
+        links: list[np.ndarray | None] = [None]
         prop_dev = [np.nan]
         dev = [np.nan]
         cv_dev_mean = [np.nan]

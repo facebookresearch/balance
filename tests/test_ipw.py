@@ -644,7 +644,7 @@ class TestIPW(
         # Combine continuous, numerical, and categorical features
         mixed_df = pd.concat(
             [
-                pd.DataFrame(continuous_data, columns=[0]),
+                pd.DataFrame(continuous_data, columns=[0]),  # pyre-ignore[6]
                 pd.DataFrame(
                     np.random.uniform(0, 1, size=(size, 4)), columns=range(1, 5)
                 ),
@@ -719,11 +719,11 @@ class TestIPW(
 
         # Check propensity model performance
         prop_dev_explained = np.around(model["perf"]["prop_dev_explained"], 5)
-        self.assertAlmostEqual(prop_dev_explained, 0.27296, places=4)
+        self.assertAlmostEqual(prop_dev_explained, 0.27296, places=4)  # pyre-ignore[6]
 
         # Check regularization parameter
         lambda_value = np.around(model["lambda"], 5)
-        self.assertAlmostEqual(lambda_value, 0.52831, places=4)
+        self.assertAlmostEqual(lambda_value, 0.52831, places=4)  # pyre-ignore[6]
 
         # Check regularization performance metrics
         best_trim = model["regularisation_perf"]["best"]["trim"]

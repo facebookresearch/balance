@@ -166,7 +166,7 @@ class Testcbps(
         expected_loss = 91665.75
 
         self.assertEqual(
-            round(result["loss"], 2),
+            round(result["loss"], 2),  # pyre-ignore[6]
             expected_loss,
             msg="GMM loss should be computed correctly with automatic covariance estimation",
         )
@@ -182,7 +182,7 @@ class Testcbps(
         expected_loss_with_invV = 45967903.9923
 
         self.assertEqual(
-            round(result_with_invV["loss"], 4),
+            round(result_with_invV["loss"], 4),  # pyre-ignore[6]
             expected_loss_with_invV,
             msg="GMM loss should be computed correctly with provided inverse covariance matrix",
         )
@@ -208,7 +208,7 @@ class Testcbps(
         expected_loss = 91665.75
 
         self.assertEqual(
-            round(result, 2),
+            round(result, 2),  # pyre-ignore[6]
             expected_loss,
             msg="GMM loss should match expected value with automatic covariance estimation",
         )
@@ -224,7 +224,7 @@ class Testcbps(
         expected_loss_with_invV = 45967903.9923
 
         self.assertEqual(
-            round(result_with_invV, 4),
+            round(result_with_invV, 4),  # pyre-ignore[6]
             expected_loss_with_invV,
             msg="GMM loss should match expected value with provided inverse covariance",
         )
@@ -386,7 +386,7 @@ class Testcbps(
         # Create continuous variables for sample
         continuous_vars_sample = pd.concat(
             [
-                pd.DataFrame(np.random.uniform(0, 10, size=SAMPLE_SIZE), columns=[0]),
+                pd.DataFrame(np.random.uniform(0, 10, size=SAMPLE_SIZE), columns=[0]),  # pyre-ignore[6]
                 pd.DataFrame(
                     np.random.uniform(0, 1, size=(SAMPLE_SIZE, 4)), columns=range(1, 5)
                 ),
@@ -633,7 +633,7 @@ class Testcbps(
         )
 
         # Weights should be nearly identical (very low variance)
-        weight_variance = np.var(result["weight"])
+        weight_variance = np.var(result["weight"])  # pyre-ignore[6]
         self.assertTrue(
             weight_variance < TOLERANCE,
             msg=f"Weights should be nearly identical when sample=target, variance={weight_variance}",

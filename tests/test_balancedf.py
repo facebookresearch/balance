@@ -253,7 +253,7 @@ class TestBalanceDFOutcomes(BalanceTestCase):
         """
         self.assertEqual(
             s_o.outcomes().relative_response_rates(),
-            pd.DataFrame({"o1": [100.0, 4], "o2": [75.0, 3]}, index=["%", "n"]),
+            pd.DataFrame({"o1": [100.0, 4], "o2": [75.0, 3]}, index=["%", "n"]),  # pyre-ignore[6]
             lazy=True,
         )
 

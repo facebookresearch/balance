@@ -631,7 +631,7 @@ class Sample:
             # NOTE: must import here so to avoid circular dependency
             from balance.balancedf_class import BalanceDFOutcomes
 
-            return BalanceDFOutcomes(self)  # pyre-ignore[6]
+            return BalanceDFOutcomes(self)
         else:
             return None
 
@@ -651,7 +651,7 @@ class Sample:
         # NOTE: must import here so to avoid circular dependency
         from balance.balancedf_class import BalanceDFWeights
 
-        return BalanceDFWeights(self)  # pyre-ignore[6]
+        return BalanceDFWeights(self)
 
     def covars(
         self: "Sample",
@@ -671,7 +671,7 @@ class Sample:
         # NOTE: must import here so to avoid circular dependency
         from balance.balancedf_class import BalanceDFCovars
 
-        return BalanceDFCovars(self)  # pyre-ignore[6]
+        return BalanceDFCovars(self)
 
     def ignored_columns(self: "Sample") -> pd.DataFrame | None:
         """Return columns marked as ignored on the sample.

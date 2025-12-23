@@ -29,7 +29,7 @@ logger: logging.Logger = logging.getLogger(__package__)
 
 
 def _prepare_weighted_stat_args(
-    v: list[Any] | pd.Series | pd.DataFrame | npt.NDArray | np.matrix[Any, Any],
+    v: list[Any] | pd.Series | pd.DataFrame | npt.NDArray | np.matrix,
     w: list[Any] | pd.Series | npt.NDArray | None = None,
     inf_rm: bool = False,
 ) -> Tuple[pd.DataFrame, pd.Series]:
@@ -37,7 +37,7 @@ def _prepare_weighted_stat_args(
     Checks that the values (v) and weights (w) are of the supported types and of the same length. Can also replace np.Inf to np.nan.
 
     Args:
-        v (Union[List, pd.Series, pd.DataFrame, np.ndarray, np.matrix[Any, Any],]): a series of values. Notice that pd.DataFrame and np.matrix should store the Series/np.ndarry as columns (not rows).
+        v (Union[List, pd.Series, pd.DataFrame, np.ndarray, np.matrix,]): a series of values. Notice that pd.DataFrame and np.matrix should store the Series/np.ndarry as columns (not rows).
         w (Union[List, pd.Series, np.ndarray, None]): a series of weights to be used with v (could also be none). Defaults to None.
         inf_rm (bool, optional): should np.inf values be replaced by np.nan? Defaults to False.
 
@@ -54,7 +54,7 @@ def _prepare_weighted_stat_args(
 
     tmp_supported_types = supported_types + (
         pd.DataFrame,
-        np.matrix[Any, Any],
+        np.matrix,
     )
     if type(v) not in tmp_supported_types:
         raise TypeError(f"argument must be {tmp_supported_types}, is {type(v)}")
@@ -109,7 +109,7 @@ def _prepare_weighted_stat_args(
 
 
 def weighted_mean(
-    v: list[Any] | pd.Series | pd.DataFrame | np.matrix[Any, Any],
+    v: list[Any] | pd.Series | pd.DataFrame | np.matrix,
     w: list[Any] | pd.Series | npt.NDArray | None = None,
     inf_rm: bool = False,
 ) -> pd.Series:
@@ -124,7 +124,7 @@ def weighted_mean(
     Uses :func:`_prepare_weighted_stat_args`.
 
     Args:
-        v (Union[ List, pd.Series, pd.DataFrame, np.matrix[Any, Any], ]): values to average. None (or np.nan) values are treated like 0.
+        v (Union[ List, pd.Series, pd.DataFrame, np.matrix, ]): values to average. None (or np.nan) values are treated like 0.
             If v is a DataFrame than the average of the values from each column will be returned, all using the same set of weights from w.
         w (Union[ List, pd.Series], optional): weights. Defaults to None.
             If there is None value in the weights, that value will be ignored from the calculation.
@@ -163,7 +163,7 @@ def weighted_mean(
 
 
 def var_of_weighted_mean(
-    v: list[Any] | pd.Series | pd.DataFrame | np.matrix[Any, Any],
+    v: list[Any] | pd.Series | pd.DataFrame | np.matrix,
     w: list[Any] | pd.Series | npt.NDArray | None = None,
     inf_rm: bool = False,
 ) -> pd.Series:
@@ -176,7 +176,7 @@ def var_of_weighted_mean(
 
     Uses :func:`_prepare_weighted_stat_args`.
 
-    v (Union[List, pd.Series, pd.DataFrame, np.matrix[Any, Any]]): A series of values. If v is a DataFrame, the weighted variance will be calculated for each column using the same set of weights from `w`.
+    v (Union[List, pd.Series, pd.DataFrame, np.matrix]): A series of values. If v is a DataFrame, the weighted variance will be calculated for each column using the same set of weights from `w`.
     w (Optional[Union[List, pd.Series, np.ndarray]]): A series of weights to be used with `v`. If None, all values will be weighted equally.
     inf_rm (bool, optional): Whether to remove infinite (from weights or values) from the computation. Defaults to False.
 
@@ -307,7 +307,7 @@ def ci_of_weighted_mean(
 
 
 def weighted_var(
-    v: list[Any] | pd.Series | pd.DataFrame | npt.NDArray | np.matrix[Any, Any],
+    v: list[Any] | pd.Series | pd.DataFrame | npt.NDArray | np.matrix,
     w: list[Any] | pd.Series | npt.NDArray | None = None,
     inf_rm: bool = False,
 ) -> pd.Series:
@@ -321,7 +321,7 @@ def weighted_var(
     Uses :func:`weighted_mean` and :func:`_prepare_weighted_stat_args`.
 
     Args:
-        v (Union[ List, pd.Series, pd.DataFrame, np.matrix[Any, Any], ]): values to get the weighted variance for. None values are treated like 0.
+        v (Union[ List, pd.Series, pd.DataFrame, np.matrix, ]): values to get the weighted variance for. None values are treated like 0.
             If v is a DataFrame than the average of the values from each column will be returned, all using the same set of weights from w.
         w (Union[ List, pd.Series], optional): weights. Defaults to None.
             If there is None value in the weights, that value will be ignored from the calculation.
@@ -346,7 +346,7 @@ def weighted_var(
 
 
 def weighted_sd(
-    v: list[Any] | pd.Series | pd.DataFrame | np.matrix[Any, Any],
+    v: list[Any] | pd.Series | pd.DataFrame | np.matrix,
     w: list[Any] | pd.Series | npt.NDArray | None = None,
     inf_rm: bool = False,
 ) -> pd.Series:
@@ -355,7 +355,7 @@ def weighted_sd(
     See :func:`weighted_var` for details.
 
     Args:
-        v (Union[ List, pd.Series, pd.DataFrame, np.matrix[Any, Any], ]): Values.
+        v (Union[ List, pd.Series, pd.DataFrame, np.matrix, ]): Values.
         w (Union[ List, pd.Series, np.ndarray, None, ], optional): Weights. Defaults to None.
         inf_rm (bool, optional): Remove inf. Defaults to False.
 
@@ -366,7 +366,7 @@ def weighted_sd(
 
 
 def weighted_quantile(
-    v: list[Any] | pd.Series | pd.DataFrame | npt.NDArray | np.matrix[Any, Any],
+    v: list[Any] | pd.Series | pd.DataFrame | npt.NDArray | np.matrix,
     quantiles: list[Any] | pd.Series | npt.NDArray,
     w: list[Any] | pd.Series | npt.NDArray | None = None,
     inf_rm: bool = False,
@@ -379,7 +379,7 @@ def weighted_quantile(
     Based on :func:`statsmodels.stats.weightstats.DescrStatsW`.
 
     Args:
-        v (Union[ List, pd.Series, pd.DataFrame, np.array, np.matrix[Any, Any], ]): values to get the weighted quantiles for.
+        v (Union[ List, pd.Series, pd.DataFrame, np.array, np.matrix, ]): values to get the weighted quantiles for.
         quantiles (Union[ List, pd.Series, ]): the quantiles to calculate.
         w (Union[ List, pd.Series, np.array, ] optional): weights. Defaults to None.
         inf_rm (bool, optional): whether to remove infinite (from weights or values) from the computation. Defaults to False.

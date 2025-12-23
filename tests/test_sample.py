@@ -1583,7 +1583,7 @@ class TestSample_NA_behavior(balance.testutil.BalanceTestCase):
         ) -> Sample:
             s1 = Sample.from_frame(df, standardize_types=standardize_types)
             s2 = deepcopy(s1)
-            s2.set_weights(np.ones(100))
+            s2.set_weights(np.ones(100))  # pyre-ignore[6]
             return s1.set_target(s2)
 
         np.random.seed(123)

@@ -2086,8 +2086,8 @@ class BalanceDFWeights(BalanceDF):
         weights_diag_value.extend(
             [
                 the_weights_de,
-                1.0 / float(the_weights_de),
-                float(len(the_weights)) / float(the_weights_de),
+                1.0 / the_weights_de,
+                float(len(the_weights)) / the_weights_de,
             ]
         )
 

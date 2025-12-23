@@ -10,7 +10,7 @@ from __future__ import annotations
 import collections
 import logging
 import re
-from typing import Any, List, Literal
+from typing import List, Literal
 
 import numpy as np
 import numpy.typing as npt
@@ -107,22 +107,20 @@ def _weights_per_covars_names(covar_names: List[str]) -> pd.DataFrame:
     counts = collections.Counter(columns_to_original_variable.values())
     weights = pd.DataFrame(
         {k: 1 / counts[v] for k, v in columns_to_original_variable.items()},
-        index=["weight"],  # pyre-ignore[6]
+        index=["weight"],
     )
     _check_weights_are_valid(weights)  # verify nothing odd has occurred.
     main_covar_names = pd.DataFrame.from_dict(
         columns_to_original_variable,
         orient="index",
-        columns=[  # pyre-ignore[6]
+        columns=[
             "main_covar_names",
         ],
     )
     return pd.concat([weights.transpose(), main_covar_names], axis=1)
 
 
-def _kl_divergence_discrete(
-    p: npt.NDArray[np.floating[Any]], q: npt.NDArray[np.floating[Any]], eps: float = 1e-12
-) -> float:
+def _kl_divergence_discrete(p: np.ndarray, q: np.ndarray, eps: float = 1e-12) -> float:
     """
     Compute the KL divergence between two discrete probability mass functions.
 
@@ -167,10 +165,10 @@ def _kl_divergence_discrete(
 
 
 def _kl_divergence_continuous_quad(
-    p_samples: npt.NDArray[np.floating[Any]],
-    q_samples: npt.NDArray[np.floating[Any]],
-    p_weights: npt.NDArray[np.floating[Any]] | None = None,
-    q_weights: npt.NDArray[np.floating[Any]] | None = None,
+    p_samples: np.ndarray,
+    q_samples: np.ndarray,
+    p_weights: np.ndarray | None = None,
+    q_weights: np.ndarray | None = None,
     eps: float = 1e-12,
 ) -> float:
     """
@@ -193,10 +191,8 @@ def _kl_divergence_continuous_quad(
     """
 
     def _validate_samples(
-        samples: npt.NDArray[np.floating[Any]],
-        weights: npt.NDArray[np.floating[Any]] | None,
-        label: str,
-    ) -> tuple[npt.NDArray[np.floating[Any]], npt.NDArray[np.floating[Any]] | None]:
+        samples: np.ndarray, weights: np.ndarray | None, label: str
+    ) -> tuple[np.ndarray, np.ndarray | None]:
         samples = np.asarray(samples)
         if samples.ndim != 1:
             raise ValueError(f"{label} must be a 1D array.")
@@ -216,8 +212,8 @@ def _kl_divergence_continuous_quad(
     p_samples, p_weights = _validate_samples(p_samples, p_weights, "p_samples")
     q_samples, q_weights = _validate_samples(q_samples, q_weights, "q_samples")
 
-    kde_p = gaussian_kde(p_samples, weights=p_weights)  # pyre-ignore[29]
-    kde_q = gaussian_kde(q_samples, weights=q_weights)  # pyre-ignore[29]
+    kde_p: gaussian_kde = gaussian_kde(p_samples, weights=p_weights)
+    kde_q: gaussian_kde = gaussian_kde(q_samples, weights=q_weights)
 
     min_support = min(p_samples.min(), q_samples.min())
     max_support = max(p_samples.max(), q_samples.max())
@@ -526,16 +522,14 @@ def kld(
         return len(uniques) <= 2 and set(uniques).issubset({0, 1})
 
     def _extract_series_and_weights(
-        series: pd.Series, weights: npt.NDArray[np.floating[Any]]
-    ) -> tuple[pd.Series, npt.NDArray[np.floating[Any]]]:
+        series: pd.Series, weights: np.ndarray
+    ) -> tuple[pd.Series, np.ndarray]:
         if weights.shape[0] != series.shape[0]:
             raise ValueError("Weights must match the number of observations.")
         mask = series.notna().to_numpy()
         return series[mask], weights[mask]
 
-    def _weighted_pmf(
-        series: pd.Series, weights: npt.NDArray[np.floating[Any]]
-    ) -> pd.Series:
+    def _weighted_pmf(series: pd.Series, weights: np.ndarray) -> pd.Series:
         df = pd.DataFrame({"value": series, "weight": weights})
         df = df[df["value"].notna()]
         grouped = df.groupby("value", sort=False, observed=False)["weight"].sum()

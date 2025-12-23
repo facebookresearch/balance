@@ -511,7 +511,7 @@ class Testrake(
         # Create sample DataFrame with mixed data types
         sample_df = pd.concat(
             [
-                pd.DataFrame(np.random.uniform(0, 10, size=n_sample), columns=[0]),
+                pd.DataFrame(np.random.uniform(0, 10, size=n_sample), columns=[0]),  # pyre-ignore[6]
                 pd.DataFrame(
                     np.random.uniform(0, 1, size=(n_sample, 4)), columns=range(1, 5)
                 ),
@@ -529,7 +529,7 @@ class Testrake(
         # Create target DataFrame with mixed data types
         target_df = pd.concat(
             [
-                pd.DataFrame(np.random.uniform(0, 18, size=n_target), columns=[0]),
+                pd.DataFrame(np.random.uniform(0, 18, size=n_target), columns=[0]),  # pyre-ignore[6]
                 pd.DataFrame(
                     np.random.uniform(0, 1, size=(n_target, 4)), columns=range(1, 5)
                 ),

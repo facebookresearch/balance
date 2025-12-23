@@ -928,7 +928,7 @@ def model_matrix(
     formula: str | List[str] | None = None,
     penalty_factor: List[float] | None = None,
     one_hot_encoding: bool = False,
-) -> Dict[str, List[Any] | npt.NDArray[Any] | pd.DataFrame | csc_matrix | None]:
+) -> Dict[str, List[Any] | np.ndarray | pd.DataFrame | csc_matrix | None]:
     """Create a model matrix from a sample (and target).
     The default is to use an additive formula for all variables (or the ones specified).
     Can also create a custom model matrix if a formula is provided.
@@ -1162,11 +1162,11 @@ def model_matrix(
 
 # TODO: add type hinting
 def qcut(
-    s: npt.NDArray[Any] | pd.Series,
+    s: np.ndarray | pd.Series,
     q: int | float,
     duplicates: str = "drop",
     **kwargs: Any,
-) -> npt.NDArray[Any] | pd.Series:
+) -> np.ndarray | pd.Series:
     """Discretize variable into equal-sized buckets based quantiles.
     This is a wrapper to pandas qcut function.
 
@@ -1190,7 +1190,7 @@ def quantize(
     df: pd.DataFrame | pd.Series,
     q: int = 10,
     variables: List[str] | None = None,
-) -> pd.DataFrame | npt.NDArray[Any] | pd.Series:
+) -> pd.DataFrame | np.ndarray | pd.Series:
     """Cut numeric variables of a DataFrame into quantiles buckets
 
     Args:
