@@ -160,8 +160,8 @@ def test_concat_retains_existing_columns() -> None:
 
 def test_concat_respects_empty_frame_column_order() -> None:
     diagnostics = pd.DataFrame(
-        columns=["metric", "val", "var", "note"]
-    )  # pyre-ignore[6]
+        columns=["metric", "val", "var", "note"]  # pyre-ignore[6]
+    )
 
     result = _concat_metric_val_var(diagnostics, "size", [1], ["bar"])
 
@@ -233,8 +233,8 @@ def test_concat_accepts_numpy_arrays() -> None:
 
 def test_concat_preserves_nonstandard_column_order() -> None:
     diagnostics = pd.DataFrame(
-        columns=["metric", "note", "val", "var"]
-    )  # pyre-ignore[6]
+        columns=["metric", "note", "val", "var"]  # pyre-ignore[6]
+    )
 
     result = _concat_metric_val_var(diagnostics, "size", [1, 2], ["bar", "baz"])
 

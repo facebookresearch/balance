@@ -243,7 +243,7 @@ class TestUtil(
                 "_is_na_a": (False, True, False, True),
                 "_is_na_b": (True, False, False, True),
             },
-            columns=("a", "b", "_is_na_a", "_is_na_b"),
+            columns=("a", "b", "_is_na_a", "_is_na_b"),  # pyre-ignore[6]
         )
         r = balance_util.add_na_indicator(df)
         self.assertEqual(r, e)
@@ -269,7 +269,7 @@ class TestUtil(
                 ),
                 "_is_na_d": (False, False, True, True),
             },
-            columns=("c", "d", "_is_na_d"),
+            columns=("c", "d", "_is_na_d"),  # pyre-ignore[6]
         )
         self.assertEqual(balance_util.add_na_indicator(df), e)
 
@@ -282,7 +282,7 @@ class TestUtil(
                 "_is_na_a": (False, True, False, True),
                 "_is_na_b": (True, False, False, True),
             },
-            columns=("a", "b", "_is_na_a", "_is_na_b"),
+            columns=("a", "b", "_is_na_a", "_is_na_b"),  # pyre-ignore[6]
         )
         r = balance_util.add_na_indicator(df, replace_val_obj="AAA", replace_val_num=42)
         self.assertEqual(r, e)
@@ -320,7 +320,8 @@ class TestUtil(
             sample_weights,
         ) = balance_util.drop_na_rows(sample_df, sample_weights, "sample")
         self.assertEqual(
-            sample_df, pd.DataFrame({"a": (2.0), "b": ("c")}, index=[2])  # pyre-ignore[6]
+            sample_df,
+            pd.DataFrame({"a": (2.0), "b": ("c")}, index=[2]),  # pyre-ignore[6]
         )
         self.assertEqual(sample_weights, pd.Series([3], index=[2]))
 
@@ -1312,7 +1313,7 @@ class TestUtil(
                 "key_a_value": (1.0, 2.0, 4.0),
                 "key_b_value": (1.0, 2.0, np.nan),
             },
-            columns=("id", "key_a_value", "key_b_value"),
+            columns=("id", "key_a_value", "key_b_value"),  # pyre-ignore[6]
         )
         self.assertEqual(expected, balance_util.auto_spread(data))
 
@@ -1337,7 +1338,7 @@ class TestUtil(
                 "key_a_other_value": (2.0, 4.0, 6.0),
                 "key_b_other_value": (2.0, 4.0, np.nan),
             },
-            columns=(
+            columns=(  # pyre-ignore[6]
                 "id",
                 "key_a_other_value",
                 "key_b_other_value",
@@ -1371,7 +1372,7 @@ class TestUtil(
                 "key_a_value": (1.0, 4.0, 1.0),
                 "key_b_value": (3.0, 2.0, np.nan),
             },
-            columns=("id", "key_a_value", "key_b_value"),
+            columns=("id", "key_a_value", "key_b_value"),  # pyre-ignore[6]
         )
         self.assertEqual(expected, balance_util.auto_spread(data))
         self.assertWarnsRegexp("2 possible groupings", balance_util.auto_spread, data)
