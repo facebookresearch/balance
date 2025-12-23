@@ -329,8 +329,8 @@ class TestBalance_weighted_stats(
             v, w = pd.Series([1, 2]), (1, 2)  # type: ignore[assignment]
             v2, w2 = _prepare_weighted_stat_args(v, w)  # type: ignore[arg-type]
         with self.assertRaises(TypeError):
-            v, w = (1, 2), pd.Series([1, 2])  # pyre-ignore[6]
-            v2, w2 = _prepare_weighted_stat_args(v, w)
+            v, w = (1, 2), pd.Series([1, 2])
+            v2, w2 = _prepare_weighted_stat_args(v, w)  # pyre-ignore[6]
         with self.assertRaises(ValueError):
             v, w = pd.Series([1, 2, 3]), pd.Series([1, 2])
             v2, w2 = _prepare_weighted_stat_args(v, w)
@@ -460,8 +460,9 @@ class TestBalance_weighted_stats(
         # np.array v (replacing np.matrix)
         d = np.array([(-1, 2, 1, 2), (1, 2, 3, 4)]).transpose()
         pd.testing.assert_series_equal(
-            weighted_mean(d), pd.Series((1, 2.5))
-        )  # pyre-ignore[6]
+            weighted_mean(d),  # pyre-ignore[6]
+            pd.Series((1, 2.5))
+        )
         pd.testing.assert_series_equal(
             weighted_mean(d, w=pd.Series((1, 2, 3, 4))),  # pyre-ignore[6]
             pd.Series((1.4, 3)),

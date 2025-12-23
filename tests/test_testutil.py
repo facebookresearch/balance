@@ -29,7 +29,7 @@ class TestTestUtil(
         """
         df_original = pd.DataFrame({"a": (1, 2, 3), "b": (4, 5, 6)})
         df_reordered = pd.DataFrame(
-            {"a": (1, 2, 3), "b": (4, 5, 6)}, columns=("b", "a")
+            {"a": (1, 2, 3), "b": (4, 5, 6)}, columns=("b", "a")  # pyre-ignore[6]
         )
         return df_original, df_reordered
 
@@ -140,7 +140,7 @@ class TestTestUtil_BalanceTestCase_Equal(
         """Test assertEqual method with DataFrames in strict mode (default behavior)."""
         df_original = pd.DataFrame({"a": (1, 2, 3), "b": (4, 5, 6)})
         df_reordered = pd.DataFrame(
-            {"a": (1, 2, 3), "b": (4, 5, 6)}, columns=("b", "a")
+            {"a": (1, 2, 3), "b": (4, 5, 6)}, columns=("b", "a")  # pyre-ignore[6]
         )
 
         # Should raise error by default (strict mode)
@@ -155,7 +155,7 @@ class TestTestUtil_BalanceTestCase_Equal(
         """Test assertEqual method with DataFrames in lazy mode."""
         df_original = pd.DataFrame({"a": (1, 2, 3), "b": (4, 5, 6)})
         df_reordered = pd.DataFrame(
-            {"a": (1, 2, 3), "b": (4, 5, 6)}, columns=("b", "a")
+            {"a": (1, 2, 3), "b": (4, 5, 6)}, columns=("b", "a")  # pyre-ignore[6]
         )
 
         # Should not raise error in lazy mode

@@ -710,7 +710,7 @@ class TestUtil(
         # Test add_na argument
         e = pd.DataFrame(
             {"a": (0.0, 2.0), "b": (0.0, 2.0), "c[a]": (1.0, 1.0), "c[b]": (0.0, 0.0)},
-            index=(0, 2),
+            index=(0, 2),  # pyre-ignore[6]
         )
         r = balance_util.model_matrix(s, add_na=False)
         self.assertWarnsRegexp(
@@ -936,7 +936,7 @@ class TestUtil(
         d = pd.DataFrame({"a": (1, 2, 3), "b": (-42, 8, 2)})
         e = pd.DataFrame(
             {"a": (1, 2, 3, 1, 2, 1), "b": (-42, 8, 2, 50, 44, -6)},
-            index=(0, 1, 2, "1 - 0", "2 - 0", "2 - 1"),
+            index=(0, 1, 2, "1 - 0", "2 - 0", "2 - 1"),  # pyre-ignore[6]
         )
         self.assertEqual(balance_util.row_pairwise_diffs(d), e)
 
