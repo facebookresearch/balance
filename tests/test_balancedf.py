@@ -474,14 +474,13 @@ class TestBalanceDFWeights(BalanceTestCase):
         self.assertTrue(s.weights().design_effect(), 7 / 3)
 
     def test_BalanceDFWeights_trim(self) -> None:
+        np.random.seed(112358)  # Fix seed for reproducibility
         s = Sample.from_frame(
             pd.DataFrame({"w": np.random.uniform(0, 1, 10000), "id": range(0, 10000)}),
             id_column="id",
             weight_column="w",
         )
         s.weights().trim(percentile=(0, 0.11), keep_sum_of_weights=False)
-        print(s.weights().df)
-        print(max(s.weights().df.iloc[:, 0]))
         self.assertTrue(max(s.weights().df.iloc[:, 0]) < 0.9)
 
     def test_BalanceDFWeights_summary(self) -> None:
