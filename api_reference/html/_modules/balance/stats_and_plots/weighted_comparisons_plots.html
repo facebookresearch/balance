@@ -595,7 +595,7 @@
 <span class="sd">            plot_qq_categorical(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], column=&quot;v1&quot;, axis=axs[2], weighted=True, label_threshold=3)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">target</span> <span class="o">=</span> <span class="n">dfs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;df&quot;</span><span class="p">]</span>
-    <span class="n">target_weights</span> <span class="o">=</span> <span class="n">dfs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
+    <span class="n">target_weights</span> <span class="o">=</span> <span class="n">dfs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">weighted</span> <span class="k">else</span> <span class="kc">None</span>
     <span class="n">dfs</span> <span class="o">=</span> <span class="n">dfs</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
     <span class="n">target_plot_data</span> <span class="o">=</span> <span class="n">relative_frequency_table</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">column</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">)</span>
