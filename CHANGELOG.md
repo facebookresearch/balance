@@ -10,6 +10,10 @@
 - **Silenced pandas observed default warning**
   - Explicitly sets `observed=False` in weighted categorical KLD calculations
     to retain current behavior and avoid future pandas default changes.
+- **Fixed `plot_qq_categorical` to respect the `weighted` parameter for target data**
+  - Previously, the target weights were always applied regardless of the
+    `weighted=False` setting, causing inconsistent behavior between sample
+    and target proportions in categorical QQ plots.
 
 # 0.14.0 (2025-12-14)
 
