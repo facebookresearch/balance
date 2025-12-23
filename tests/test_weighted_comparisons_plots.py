@@ -823,8 +823,8 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
             # because the weights are very different
             max_y_diff_weighted = max(
                 abs(y_self - y_target)
-                # pyre-ignore[6]
-                for y_self, y_target in zip(
+                # pyre-ignore[6]: zip() parameter type mismatch
+                for y_self, y_target in zip(  # pyre-ignore[6]
                     kde_y_values_self_weighted, kde_y_values_target_weighted
                 )
             )
@@ -853,8 +853,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
 
             # When weighted=False, both datasets should have identical KDE curves
             # (weights are ignored, so same DataFrame = same KDE)
-            # pyre-ignore[6]
-            for y_self, y_target in zip(
+            for y_self, y_target in zip(  # pyre-ignore[6]
                 kde_y_values_self_unweighted, kde_y_values_target_unweighted
             ):
                 self.assertAlmostEqual(y_self, y_target, places=5)
@@ -905,7 +904,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
             # because the weights are very different
             max_y_diff_weighted = max(
                 abs(y_self - y_target)
-                for y_self, y_target in zip(
+                for y_self, y_target in zip(  # pyre-ignore[6]
                     ecdf_y_values_self_weighted, ecdf_y_values_target_weighted
                 )
             )
@@ -934,7 +933,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
 
             # When weighted=False, both datasets should have identical ECDF curves
             # (weights are ignored, so same DataFrame = same ECDF)
-            for y_self, y_target in zip(
+            for y_self, y_target in zip(  # pyre-ignore[6]
                 ecdf_y_values_self_unweighted, ecdf_y_values_target_unweighted
             ):
                 self.assertAlmostEqual(y_self, y_target, places=5)
