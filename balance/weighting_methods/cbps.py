@@ -27,6 +27,7 @@ import statsmodels.api as sm
 from balance import adjustment as balance_adjustment, util as balance_util
 from balance.stats_and_plots.weights_stats import design_effect
 from scipy.sparse import csc_matrix
+from scipy.special import expit
 
 logger: logging.Logger = logging.getLogger(__package__)
 
@@ -40,6 +41,9 @@ def logit_truncated(
     Given an X matrx and avector of coeeficients beta, it computes the truncated
     version of the logit function.
 
+    Truncation prevents numerical instabilities by bounding probabilities away from 0 and 1,
+    which is essential for stable weight computation in propensity score methods.
+
     Args:
         X (Union[np.ndarray, pd.DataFrame]): Covariate matrix
         beta (np.ndarray): vector of coefficients
@@ -48,7 +52,7 @@ def logit_truncated(
     Returns:
         np.ndarray: numpy array of computed probablities
     """
-    probs = 1.0 / (1 + np.exp(-1 * (np.matmul(X, beta))))
+    probs = expit(np.matmul(X, beta))
     return np.minimum(np.maximum(probs, truncation_value), 1 - truncation_value)
 
 
@@ -128,6 +132,14 @@ def gmm_function(
             loss (float) computed gmm loss
             invV (np.ndarray) the weighting matrix for GMM
     """
+    # Convert inputs to numpy arrays to avoid pandas indexing issues
+    if isinstance(X, pd.DataFrame):
+        X = X.values
+    if isinstance(design_weights, (pd.Series, pd.DataFrame)):
+        design_weights = np.asarray(design_weights).flatten()
+    if isinstance(in_pop, (pd.Series, pd.DataFrame)):
+        in_pop = np.asarray(in_pop).flatten()
+
     probs = logit_truncated(X, beta)
     N = np.sum(design_weights)
     N_target = np.sum(design_weights[in_pop == 1.0])

@@ -22,6 +22,7 @@ import balance.testutil
 import numpy as np
 import pandas as pd
 from balance.adjustment import (
+    _quantile_with_method,
     _validate_limit,
     apply_transformations,
     default_transformations,
@@ -711,3 +712,212 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         # Extra is min(2.0/max(1, 1), 0.5/10) = min(2.0, 0.05) = 0.05
         expected = limit + 0.05
         self.assertAlmostEqual(result, expected, delta=EPSILON)
+
+    def test_quantile_with_method_backward_compatibility(self) -> None:
+        """
+        Test _quantile_with_method's backward compatibility handling.
+
+        This test verifies that the function correctly handles the transition
+        between NumPy versions that use 'method' parameter (>=1.22) and those
+        that use 'interpolation' parameter (<1.22).
+        """
+        import unittest.mock as mock
+
+        data = np.array([1, 2, 3, 4, 5])
+
+        # Test 1: Simulate modern NumPy (>= 1.22) where 'method' parameter works
+        with mock.patch("numpy.quantile") as mock_quantile:
+            mock_quantile.return_value = 3.0
+            result = _quantile_with_method(data, 0.5, "linear")
+
+            # Verify it was called with 'method' parameter
+            mock_quantile.assert_called_once()
+            args, kwargs = mock_quantile.call_args
+            self.assertIn("method", kwargs)
+            self.assertEqual(kwargs["method"], "linear")
+            self.assertEqual(result, 3.0)
+            self.assertEqual(type(result), float)
+
+        # Test 2: Simulate old NumPy (< 1.22) where 'method' raises TypeError
+        def __quantile_side_effect(*args: object, **kwargs: object) -> float:
+            if "method" in kwargs:
+                raise TypeError(
+                    "quantile() got an unexpected keyword argument 'method'"
+                )
+            elif "interpolation" in kwargs:
+                return 3.0
+            else:
+                raise ValueError("Neither 'method' nor 'interpolation' provided")
+
+        with mock.patch(
+            "numpy.quantile", side_effect=__quantile_side_effect
+        ) as mock_quantile:
+            result = _quantile_with_method(data, 0.5, "linear")
+
+            # Verify it was called twice: first with 'method' (failed), then with 'interpolation'
+            self.assertEqual(mock_quantile.call_count, 2)
+
+            # First call should have 'method'
+            first_call_args, first_call_kwargs = mock_quantile.call_args_list[0]
+            self.assertIn("method", first_call_kwargs)
+
+            # Second call should have 'interpolation'
+            second_call_args, second_call_kwargs = mock_quantile.call_args_list[1]
+            self.assertIn("interpolation", second_call_kwargs)
+            self.assertEqual(second_call_kwargs["interpolation"], "linear")
+
+            self.assertEqual(result, 3.0)
+            self.assertEqual(type(result), float)
+
+    def test_quantile_with_method_dtype_conversion(self) -> None:
+        """
+        Test that _quantile_with_method converts input to float64 dtype.
+
+        This test verifies the wrapper's data type handling, ensuring that
+        input data is converted to float64 before calling np.quantile.
+        """
+        import unittest.mock as mock
+
+        # Test with integer input
+        data_int = np.array([1, 2, 3, 4, 5])
+
+        with mock.patch("numpy.quantile", return_value=3.0) as mock_quantile:
+            result = _quantile_with_method(data_int, 0.5, "linear")
+
+            # Verify np.asarray was used to convert to float64
+            args, kwargs = mock_quantile.call_args
+            array_arg = args[0]
+            self.assertIsInstance(array_arg, np.ndarray)
+            self.assertEqual(array_arg.dtype, np.float64)
+            self.assertEqual(result, 3.0)
+
+    def test_quantile_with_method_return_type(self) -> None:
+        """
+        Test that _quantile_with_method always returns Python float type.
+
+        This test verifies that the wrapper converts the NumPy scalar result
+        to a Python float, which is important for type consistency.
+        """
+        import unittest.mock as mock
+
+        # Mock np.quantile to return a numpy float64 scalar
+        np_scalar = np.float64(3.14159)
+
+        with mock.patch("numpy.quantile", return_value=np_scalar):
+            data = np.array([1, 2, 3, 4, 5])
+            result = _quantile_with_method(data, 0.5, "linear")
+
+            # Verify the result is a Python float, not a numpy scalar
+            self.assertEqual(type(result), float)
+            self.assertNotEqual(type(result), np.float64)
+            self.assertAlmostEqual(result, 3.14159, delta=EPSILON)
+
+    def test_quantile_with_method_basic_numpy_array(self) -> None:
+        """
+        Test _quantile_with_method with numpy array input verifies dtype conversion.
+
+        This test ensures the wrapper properly handles numpy array input and
+        converts it to float64 dtype as expected.
+        """
+        import unittest.mock as mock
+
+        # Test with integer numpy array
+        data_int = np.array([1, 2, 3, 4, 5], dtype=np.int32)
+
+        with mock.patch("numpy.quantile", return_value=3.0) as mock_quantile:
+            result = _quantile_with_method(data_int, 0.5, "linear")
+
+            # Verify the input was converted to float64
+            args, kwargs = mock_quantile.call_args
+            array_arg = args[0]
+            self.assertEqual(array_arg.dtype, np.float64)
+            self.assertEqual(type(result), float)
+            self.assertEqual(result, 3.0)
+
+    def test_quantile_with_method_basic_pandas_series(self) -> None:
+        """
+        Test _quantile_with_method with pandas Series input verifies dtype conversion.
+
+        This test ensures the wrapper properly handles pandas Series input and
+        converts it to float64 dtype as expected.
+        """
+        import unittest.mock as mock
+
+        # Test with integer pandas Series
+        data_series = pd.Series([1, 2, 3, 4, 5], dtype=np.int64)
+
+        with mock.patch("numpy.quantile", return_value=3.0) as mock_quantile:
+            result = _quantile_with_method(data_series, 0.5, "linear")
+
+            # Verify the input was converted to float64 numpy array
+            args, kwargs = mock_quantile.call_args
+            array_arg = args[0]
+            self.assertIsInstance(array_arg, np.ndarray)
+            self.assertEqual(array_arg.dtype, np.float64)
+            self.assertEqual(type(result), float)
+            self.assertEqual(result, 3.0)
+
+    def test_quantile_with_method_integration_with_trim_weights(self) -> None:
+        """
+        Test _quantile_with_method integration with trim_weights function.
+
+        This test verifies that _quantile_with_method works correctly when
+        called from trim_weights with 'higher' and 'lower' methods, which
+        are the only methods actually used in production code.
+
+        The trim_weights function performs winsorization (clipping values to
+        percentile bounds), not setting values to 0.
+        """
+        # Test data - using a range similar to the documented examples
+        # This ensures predictable winsorization behavior
+        weights = pd.Series(range(1, 101))  # 1 to 100
+
+        # Test with weight_trimming_percentile using tuple (lower, upper)
+        # This will use 'higher' for lower bound and 'lower' for upper bound
+        trimmed = trim_weights(
+            weights, weight_trimming_percentile=(0.05, 0.05), keep_sum_of_weights=False
+        )
+
+        # Verify that winsorization occurred (some values should be clipped)
+        self.assertTrue(any(trimmed != weights))
+
+        # Verify that extreme values were winsorized (clipped to percentile bounds)
+        # The max should be less than the original max (100)
+        self.assertLess(trimmed.max(), weights.max())
+
+        # Verify no values were set to zero (winsorization clips, doesn't zero)
+        self.assertTrue(all(trimmed > 0))
+
+        # Verify the number of weights remains the same
+        self.assertEqual(len(trimmed), len(weights))
+
+        # Verify that all trimmed values are within the clipped range
+        # No value should exceed the original range after clipping
+        self.assertGreaterEqual(trimmed.min(), weights.min())
+        self.assertLessEqual(trimmed.max(), weights.max())
+
+        # Test with single percentile (symmetric trimming)
+        # Using 0.01 like in the documented example
+        trimmed_symmetric = trim_weights(
+            weights, weight_trimming_percentile=0.01, keep_sum_of_weights=False
+        )
+
+        # Verify trimming occurred via winsorization
+        self.assertEqual(len(trimmed_symmetric), len(weights))
+
+        # Verify that extreme values were clipped (not zeroed)
+        # With 0.01 percentile on 100 values, both tails should be clipped
+        self.assertLess(trimmed_symmetric.max(), weights.max())
+
+        # Verify no values were set to zero (winsorization clips, doesn't zero)
+        self.assertTrue(all(trimmed_symmetric > 0))
+
+        # Verify some values were actually modified (clipped to bounds)
+        self.assertTrue(any(trimmed_symmetric != weights))
+
+        # Verify that multiple values can be clipped to the same bound
+        # This is characteristic of winsorization
+        lower_bound_count = (trimmed_symmetric == trimmed_symmetric.min()).sum()
+        upper_bound_count = (trimmed_symmetric == trimmed_symmetric.max()).sum()
+        # At least one tail should have multiple values clipped to the same bound
+        self.assertTrue(lower_bound_count > 1 or upper_bound_count > 1)

@@ -418,6 +418,8 @@ def kld(
     """
     Calculate the Kullback-Leibler divergence (KLD) between the columns of two DataFrames.
 
+    This function supports both discrete (categorical, binary, boolean) and continuous (numeric) data.
+
     Numeric columns are compared using weighted kernel density estimates integrated
     via adaptive quadrature. Categorical (including binary/one-hot encoded)
     columns are treated as general discrete distributions based on their weighted
@@ -530,7 +532,7 @@ def kld(
     def _weighted_pmf(series: pd.Series, weights: np.ndarray) -> pd.Series:
         df = pd.DataFrame({"value": series, "weight": weights})
         df = df[df["value"].notna()]
-        grouped = df.groupby("value", sort=False)["weight"].sum()
+        grouped = df.groupby("value", sort=False, observed=False)["weight"].sum()
         total = grouped.sum()
         if total <= 0:
             raise ValueError("PMF weights must sum to a positive value.")

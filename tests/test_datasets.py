@@ -9,8 +9,9 @@ from __future__ import annotations
 
 import balance.testutil
 import numpy as np
+import pandas as pd
 
-from balance.datasets import load_data
+from balance.datasets import load_cbps_data, load_data, load_sim_data
 from balance.util import _verify_value_type
 
 
@@ -98,3 +99,254 @@ class TestDatasets(
             "id": {1: 2, 3: 4, 11: 12, 12: 13, 13: 14},
         }
         self.assertEqual(o.__str__(), e.__str__())
+
+    # Comprehensive tests for load_sim_data function
+    def test_load_sim_data_structure_and_types(self) -> None:
+        """Test that load_sim_data returns DataFrames with correct structure and types."""
+        target_df, sample_df = load_sim_data(version="01")
+
+        # Verify we got DataFrames
+        self.assertIsNotNone(target_df)
+        self.assertIsNotNone(sample_df)
+        self.assertIsInstance(target_df, pd.DataFrame)
+        self.assertIsInstance(sample_df, pd.DataFrame)
+
+        target_df = _verify_value_type(target_df)
+        sample_df = _verify_value_type(sample_df)
+
+        # Check dimensions
+        self.assertEqual(target_df.shape, (10000, 5))
+        self.assertEqual(sample_df.shape, (1000, 5))
+
+        # Check column names
+        expected_columns = ["id", "gender", "age_group", "income", "happiness"]
+        self.assertEqual(target_df.columns.tolist(), expected_columns)
+        self.assertEqual(sample_df.columns.tolist(), expected_columns)
+
+        # Check column types for both dataframes
+        for df in [target_df, sample_df]:
+            self.assertEqual(df["id"].dtype, object)  # String type
+            self.assertTrue(
+                df["gender"].dtype == object
+                or pd.api.types.is_string_dtype(df["gender"])
+            )
+            self.assertTrue(
+                df["age_group"].dtype == object
+                or pd.api.types.is_string_dtype(df["age_group"])
+            )
+            self.assertTrue(pd.api.types.is_numeric_dtype(df["income"]))
+            self.assertTrue(pd.api.types.is_numeric_dtype(df["happiness"]))
+
+    def test_load_sim_data_reproducibility(self) -> None:
+        """Test that load_sim_data returns identical results on multiple calls."""
+        target_df1, sample_df1 = load_sim_data(version="01")
+        target_df2, sample_df2 = load_sim_data(version="01")
+
+        target_df1 = _verify_value_type(target_df1)
+        sample_df1 = _verify_value_type(sample_df1)
+        target_df2 = _verify_value_type(target_df2)
+        sample_df2 = _verify_value_type(sample_df2)
+
+        # Check that the DataFrames are identical
+        pd.testing.assert_frame_equal(target_df1, target_df2)
+        pd.testing.assert_frame_equal(sample_df1, sample_df2)
+
+    def test_load_sim_data_data_validity(self) -> None:
+        """Test that load_sim_data returns data with valid values and expected properties."""
+        target_df, sample_df = load_sim_data(version="01")
+
+        target_df = _verify_value_type(target_df)
+        sample_df = _verify_value_type(sample_df)
+
+        # Test gender values and missing data
+        expected_gender_values = {"Male", "Female"}
+        self.assertEqual(
+            set(target_df["gender"].dropna().unique()), expected_gender_values
+        )
+        self.assertEqual(
+            set(sample_df["gender"].dropna().unique()), expected_gender_values
+        )
+
+        # Test that some reasonable proportion of gender values are missing (not exact counts)
+        target_missing_prop = target_df["gender"].isna().sum() / len(target_df)
+        sample_missing_prop = sample_df["gender"].isna().sum() / len(sample_df)
+        self.assertGreater(target_missing_prop, 0.05)  # At least 5% missing
+        self.assertLess(target_missing_prop, 0.15)  # Less than 15% missing
+        self.assertGreater(sample_missing_prop, 0.05)  # At least 5% missing
+        self.assertLess(sample_missing_prop, 0.15)  # Less than 15% missing
+
+        # Test age group values
+        expected_age_groups = {"18-24", "25-34", "35-44", "45+"}
+        self.assertEqual(
+            set(target_df["age_group"].dropna().unique()), expected_age_groups
+        )
+        self.assertEqual(
+            set(sample_df["age_group"].dropna().unique()), expected_age_groups
+        )
+
+        # Test value ranges
+        # Happiness should be between 0 and 100
+        self.assertTrue((target_df["happiness"] >= 0).all())
+        self.assertTrue((target_df["happiness"] <= 100).all())
+        self.assertTrue((sample_df["happiness"] >= 0).all())
+        self.assertTrue((sample_df["happiness"] <= 100).all())
+
+        # Income should be non-negative (squared normal distribution)
+        self.assertTrue((target_df["income"] >= 0).all())
+        self.assertTrue((sample_df["income"] >= 0).all())
+
+        # Test ID uniqueness and format
+        self.assertEqual(len(target_df["id"]), len(target_df["id"].unique()))
+        self.assertEqual(len(sample_df["id"]), len(sample_df["id"].unique()))
+
+        # Test that IDs are strings and have reasonable lengths
+        self.assertTrue(all(isinstance(id_val, str) for id_val in target_df["id"]))
+        self.assertTrue(all(isinstance(id_val, str) for id_val in sample_df["id"]))
+
+    def test_load_sim_data_invalid_versions(self) -> None:
+        """Test that invalid versions return (None, None)."""
+        invalid_versions = ["invalid", "", "02", "2", "v1", None]
+
+        for version in invalid_versions:
+            if version is None:
+                # Skip None as it's not a valid string argument
+                continue
+            target_df, sample_df = load_sim_data(version=version)
+            self.assertIsNone(target_df, f"Expected None for version '{version}'")
+            self.assertIsNone(sample_df, f"Expected None for version '{version}'")
+
+    # Comprehensive tests for load_cbps_data function
+    def test_load_cbps_data_structure_and_types(self) -> None:
+        """Test that load_cbps_data returns DataFrames with correct structure and types."""
+        target_df, sample_df = load_cbps_data()
+
+        # Verify we got DataFrames
+        self.assertIsNotNone(target_df)
+        self.assertIsNotNone(sample_df)
+        self.assertIsInstance(target_df, pd.DataFrame)
+        self.assertIsInstance(sample_df, pd.DataFrame)
+
+        target_df = _verify_value_type(target_df)
+        sample_df = _verify_value_type(sample_df)
+
+        # Check dimensions
+        self.assertEqual(target_df.shape, (254, 7))
+        self.assertEqual(sample_df.shape, (246, 7))
+
+        # Check column names
+        expected_columns = ["X1", "X2", "X3", "X4", "cbps_weights", "y", "id"]
+        self.assertEqual(target_df.columns.tolist(), expected_columns)
+        self.assertEqual(sample_df.columns.tolist(), expected_columns)
+
+        # Check column types - all should be numeric
+        for col in ["X1", "X2", "X3", "X4", "cbps_weights", "y", "id"]:
+            self.assertTrue(pd.api.types.is_numeric_dtype(target_df[col]))
+            self.assertTrue(pd.api.types.is_numeric_dtype(sample_df[col]))
+
+    def test_load_cbps_data_reproducibility(self) -> None:
+        """Test that load_cbps_data returns identical results on multiple calls."""
+        target_df1, sample_df1 = load_cbps_data()
+        target_df2, sample_df2 = load_cbps_data()
+
+        target_df1 = _verify_value_type(target_df1)
+        sample_df1 = _verify_value_type(sample_df1)
+        target_df2 = _verify_value_type(target_df2)
+        sample_df2 = _verify_value_type(sample_df2)
+
+        # Check that the DataFrames are identical
+        pd.testing.assert_frame_equal(target_df1, target_df2)
+        pd.testing.assert_frame_equal(sample_df1, sample_df2)
+
+    def test_load_cbps_data_data_validity(self) -> None:
+        """Test that load_cbps_data returns data with valid values and properties."""
+        target_df, sample_df = load_cbps_data()
+
+        target_df = _verify_value_type(target_df)
+        sample_df = _verify_value_type(sample_df)
+
+        # No missing values should be present
+        self.assertEqual(target_df.isna().sum().sum(), 0)
+        self.assertEqual(sample_df.isna().sum().sum(), 0)
+
+        # All IDs should be unique within each DataFrame
+        self.assertEqual(len(target_df["id"]), len(target_df["id"].unique()))
+        self.assertEqual(len(sample_df["id"]), len(sample_df["id"].unique()))
+
+        # CBPS weights should be non-negative
+        self.assertTrue((target_df["cbps_weights"] >= 0).all())
+        self.assertTrue((sample_df["cbps_weights"] >= 0).all())
+
+        # Verify that dataframes have substantial number of rows (not testing exact count)
+        self.assertGreater(
+            len(target_df), 100, "Target DataFrame should have substantial data"
+        )
+        self.assertGreater(
+            len(sample_df), 100, "Sample DataFrame should have substantial data"
+        )
+
+    # Comprehensive tests for load_data wrapper function
+    def test_load_data_routing(self) -> None:
+        """Test that load_data correctly routes to appropriate data loading functions."""
+        # Test default (should return sim_data_01)
+        target_df, sample_df = load_data()
+        self.assertIsNotNone(target_df)
+        self.assertIsNotNone(sample_df)
+        target_df = _verify_value_type(target_df)
+        sample_df = _verify_value_type(sample_df)
+        self.assertEqual(target_df.shape, (10000, 5))
+        self.assertEqual(sample_df.shape, (1000, 5))
+
+        # Test explicit sim_data_01
+        target_df, sample_df = load_data(source="sim_data_01")
+        self.assertIsNotNone(target_df)
+        self.assertIsNotNone(sample_df)
+        target_df = _verify_value_type(target_df)
+        sample_df = _verify_value_type(sample_df)
+        self.assertEqual(target_df.shape, (10000, 5))
+        self.assertEqual(sample_df.shape, (1000, 5))
+
+        # Test sim_data_cbps
+        target_df, sample_df = load_data(source="sim_data_cbps")
+        self.assertIsNotNone(target_df)
+        self.assertIsNotNone(sample_df)
+        target_df = _verify_value_type(target_df)
+        sample_df = _verify_value_type(sample_df)
+        self.assertEqual(target_df.shape, (254, 7))
+        self.assertEqual(sample_df.shape, (246, 7))
+
+    def test_load_data_consistency_with_load_sim_data(self) -> None:
+        """Test that load_data returns same results as load_sim_data."""
+        target_df1, sample_df1 = load_data(source="sim_data_01")
+        target_df2, sample_df2 = load_sim_data(version="01")
+
+        target_df1 = _verify_value_type(target_df1)
+        sample_df1 = _verify_value_type(sample_df1)
+        target_df2 = _verify_value_type(target_df2)
+        sample_df2 = _verify_value_type(sample_df2)
+
+        # Should be identical
+        pd.testing.assert_frame_equal(target_df1, target_df2)
+        pd.testing.assert_frame_equal(sample_df1, sample_df2)
+
+    def test_load_data_consistency_with_load_cbps_data(self) -> None:
+        """Test that load_data returns same results as load_cbps_data."""
+        target_df1, sample_df1 = load_data(source="sim_data_cbps")
+        target_df2, sample_df2 = load_cbps_data()
+
+        target_df1 = _verify_value_type(target_df1)
+        sample_df1 = _verify_value_type(sample_df1)
+        target_df2 = _verify_value_type(target_df2)
+        sample_df2 = _verify_value_type(sample_df2)
+
+        # Should be identical
+        pd.testing.assert_frame_equal(target_df1, target_df2)
+        pd.testing.assert_frame_equal(sample_df1, sample_df2)
+
+    def test_load_data_invalid_source(self) -> None:
+        """Test that load_data returns (None, None) for invalid source."""
+        invalid_sources = ["invalid", "sim_data_02", "", "cbps", "sim_01"]
+
+        for source in invalid_sources:
+            target_df, sample_df = load_data(source=source)  # type: ignore
+            self.assertIsNone(target_df, f"Expected None for source '{source}'")
+            self.assertIsNone(sample_df, f"Expected None for source '{source}'")

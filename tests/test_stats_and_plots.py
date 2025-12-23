@@ -164,6 +164,116 @@ class TestBalance_weights_stats(
             weighted_median_breakdown_point(pd.Series((1, 1, 1, 1, 10))), 0.2
         )
 
+    def test_design_effect_with_two_values(self) -> None:
+        """Test design effect with two weight values.
+
+        Tests the simplest non-trivial case with two different weights.
+        """
+        from balance.stats_and_plots.weights_stats import design_effect
+
+        result = design_effect(pd.Series([1, 3]))
+        # E[W^2] = ((1^2 + 3^2) / 2) = 5
+        # E[W]^2 = ((1 + 3) / 2)^2 = 4
+        # Deff = 5 / 4 = 1.25
+        self.assertEqual(result, 1.25)
+
+    def test_nonparametric_skew_with_two_elements(self) -> None:
+        """Test nonparametric skew with two elements.
+
+        Tests the simplest non-trivial case with two different weights.
+        """
+        from balance.stats_and_plots.weights_stats import nonparametric_skew
+
+        # For [1, 3]: mean=2, median=2, so skew should be 0
+        self.assertEqual(nonparametric_skew(pd.Series([1, 3])), 0.0)
+
+        # For [1, 2]: mean=1.5, median=1.5, so skew should be 0
+        self.assertEqual(nonparametric_skew(pd.Series([1, 2])), 0.0)
+
+    def test_nonparametric_skew_with_left_skewed_distribution(self) -> None:
+        """Test nonparametric skew with left-skewed (negative) distribution.
+
+        Verifies that left-skewed distributions produce negative skew values.
+        For left skew with positive weights, we need mean < median.
+        """
+        from balance.stats_and_plots.weights_stats import nonparametric_skew
+
+        # Left-skewed: one small value, rest larger values
+        # [1, 10, 10, 10] -> mean = 31/4 = 7.75, median = 10, skew = (7.75-10)/std < 0
+        result = nonparametric_skew(pd.Series([1, 10, 10, 10]))
+        self.assertLess(result, 0)
+
+    def test_nonparametric_skew_with_large_positive_skew(self) -> None:
+        """Test nonparametric skew with highly right-skewed distribution.
+
+        Verifies calculation with extreme right skew.
+        """
+        from balance.stats_and_plots.weights_stats import nonparametric_skew
+
+        # Extreme right skew: many small values, one very large
+        result = nonparametric_skew(pd.Series([1, 1, 1, 1, 1, 100]))
+        # Result should be positive for right-skewed distribution
+        self.assertGreater(result, 0)
+
+    def test_weighted_median_breakdown_point_with_two_weights(self) -> None:
+        """Test breakdown point with two equal weights.
+
+        With two equal weights [1,1], normalized is [0.5, 0.5].
+        Cumsum of sorted: [0.5, 1.0]. Count <= 0.5 is 1, so 1/2 = 0.5.
+        """
+        from balance.stats_and_plots.weights_stats import (
+            weighted_median_breakdown_point,
+        )
+
+        result = weighted_median_breakdown_point(pd.Series([1, 1]))
+        self.assertEqual(result, 0.5)
+
+    def test_weighted_median_breakdown_point_with_one_weight_above_50_percent(
+        self,
+    ) -> None:
+        """Test breakdown point when one weight exceeds 50%.
+
+        When single weight is > 50% of total, breakdown point is 1/n.
+        """
+        from balance.stats_and_plots.weights_stats import (
+            weighted_median_breakdown_point,
+        )
+
+        # One weight has 60% of total
+        result = weighted_median_breakdown_point(pd.Series([60, 20, 20]))
+        # 60/(60+20+20) = 60/100 = 0.6 > 0.5, so need 1 observation = 1/3
+        self.assertAlmostEqual(result, 1 / 3, places=10)
+
+    def test_weighted_median_breakdown_point_with_all_zeros_except_one(self) -> None:
+        """Test breakdown point when only one weight is non-zero.
+
+        When only one weight is non-zero, it has 100% of weight.
+        """
+        from balance.stats_and_plots.weights_stats import (
+            weighted_median_breakdown_point,
+        )
+
+        result = weighted_median_breakdown_point(pd.Series([0, 0, 0, 10]))
+        # Single non-zero weight has 100% > 50%, need 1 obs out of 4
+        self.assertEqual(result, 0.25)
+
+    def test_weighted_median_breakdown_point_with_gradual_distribution(self) -> None:
+        """Test breakdown point with gradually increasing weights.
+
+        Verifies calculation with a more complex weight distribution.
+        """
+        from balance.stats_and_plots.weights_stats import (
+            weighted_median_breakdown_point,
+        )
+
+        # Weights: [10, 8, 6, 4, 2], total = 30
+        # Normalized: [1/3, 4/15, 1/5, 2/15, 1/15]
+        # Sorted desc cumsum: [1/3≈0.33, 0.6, 0.8, 0.93, 1.0]
+        # Count where cumsum <= 0.5: only first element (1/3) is <= 0.5, so count = 1
+        # So breakdown point = 1/5 = 0.2
+        result = weighted_median_breakdown_point(pd.Series([10, 8, 6, 4, 2]))
+        self.assertEqual(result, 0.2)
+
 
 class TestBalance_weighted_stats(
     balance.testutil.BalanceTestCase,
@@ -1052,6 +1162,99 @@ class TestBalance_general_stats(
         ):
             relative_response_rates(df, df_target.iloc[:, 0:1], per_column=True)
 
+    def test_relative_response_rates_edge_cases(self) -> None:
+        """Test relative_response_rates with edge cases like empty and all-NaN DataFrames.
+
+        This consolidated test validates the function's behavior with edge cases that
+        represent real-world scenarios where data might be completely missing or empty.
+        """
+        from balance.stats_and_plots.general_stats import relative_response_rates
+
+        # Test case 1: Empty DataFrame
+        df_empty = pd.DataFrame({"a": [], "b": []})
+        result_empty = relative_response_rates(df_empty)
+
+        self.assertEqual(result_empty.shape, (2, 2))
+        self.assertEqual(result_empty.loc["n", "a"], 0.0)
+        self.assertEqual(result_empty.loc["n", "b"], 0.0)
+        # When dividing by 0, we get NaN
+        self.assertTrue(pd.isna(result_empty.loc["%", "a"]))
+        self.assertTrue(pd.isna(result_empty.loc["%", "b"]))
+
+        # Test case 2: All NaN values
+        df_all_nan = pd.DataFrame(
+            {"a": [np.nan, np.nan, np.nan], "b": [np.nan, np.nan, np.nan]}
+        )
+        result_nan = relative_response_rates(df_all_nan)
+
+        self.assertEqual(result_nan.loc["n", "a"], 0.0)
+        self.assertEqual(result_nan.loc["n", "b"], 0.0)
+        self.assertEqual(result_nan.loc["%", "a"], 0.0)
+        self.assertEqual(result_nan.loc["%", "b"], 0.0)
+
+    def test_relative_response_rates_validation_errors(self) -> None:
+        """Test validation logic that protects against invalid inputs.
+
+        This consolidated test ensures the function properly validates inputs
+        and raises appropriate errors when constraints are violated, which is
+        crucial for data integrity in statistical analysis.
+        """
+        from balance.stats_and_plots.general_stats import relative_response_rates
+
+        # Test case 1: More non-null values in df than df_target
+        df_more_values = pd.DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
+        df_target_fewer = pd.DataFrame(
+            {"a": [1, 2, np.nan, np.nan], "b": [5, np.nan, np.nan, np.nan]}
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "The number of \\(notnull\\) rows in df MUST be smaller or equal*",
+        ):
+            relative_response_rates(df_more_values, df_target_fewer, per_column=True)
+
+        # Test case 2: Different columns between df and df_target
+        df_abc = pd.DataFrame({"a": [1, 2], "b": [3, 4], "c": [5, 6]})
+        df_target_ab = pd.DataFrame({"a": [1, 2], "b": [3, 4]})
+
+        with self.assertRaisesRegex(
+            ValueError, "df and df_target must have the exact same columns*"
+        ):
+            relative_response_rates(df_abc, df_target_ab, per_column=True)
+
+        # Test case 3: per_column=False with no complete rows in target
+        df_complete = pd.DataFrame({"a": [1], "b": [2]})
+        # df_target has no complete rows (each row has at least one NaN)
+        df_target_incomplete = pd.DataFrame({"a": [1, np.nan], "b": [np.nan, 2]})
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "The number of \\(notnull\\) rows in df MUST be smaller or equal*",
+        ):
+            relative_response_rates(df_complete, df_target_incomplete, per_column=False)
+
+    def test_relative_response_rates_per_column_false_valid_case(self) -> None:
+        """Test relative_response_rates with per_column=False and valid complete rows.
+
+        Verifies correct calculation when comparing to total complete rows in target.
+        """
+        from balance.stats_and_plots.general_stats import relative_response_rates
+
+        # df_target has 2 complete rows
+        df_target = pd.DataFrame({"a": [1, 2, np.nan, 4], "b": [5, 6, 7, np.nan]})
+        # df has 1 row with both values
+        df = pd.DataFrame({"a": [1], "b": [5]})
+
+        result = relative_response_rates(df, df_target, per_column=False)
+
+        # df_target has 2 complete rows (first two)
+        # df has 1 complete observation per column
+        # So for column "a": 1/2 = 50%, for column "b": 1/2 = 50%
+        self.assertEqual(result.loc["n", "a"], 1.0)
+        self.assertEqual(result.loc["%", "a"], 50.0)
+        self.assertEqual(result.loc["n", "b"], 1.0)
+        self.assertEqual(result.loc["%", "b"], 50.0)
+
 
 class TestKLDivergence(balance.testutil.BalanceTestCase):
     def test_discrete_normalization_and_value(self) -> None:
@@ -1152,3 +1355,388 @@ class TestKLDivergence(balance.testutil.BalanceTestCase):
 
         with self.assertRaisesRegex(ValueError, "must sum to a positive value"):
             weighted_comparisons_stats.kld(df, df, zero_weights, zero_weights)
+
+    def test_kld_with_categorical_data_basic(self) -> None:
+        """Test KLD calculation with basic categorical data.
+
+        This test verifies KLD calculation with known expected values
+        for categorical distributions.
+        """
+        import math
+
+        from balance.stats_and_plots import weighted_comparisons_stats
+
+        # Create test case with known distribution
+        # P(A)=0.5, P(B)=0.25, P(C)=0.25 in sample
+        # P(A)=0.25, P(B)=0.5, P(C)=0.25 in target
+        sample_df = pd.DataFrame(
+            {
+                "category": ["A", "A", "B", "C"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "category": ["A", "B", "B", "C"],
+            }
+        )
+
+        kld_result = weighted_comparisons_stats.kld(sample_df, target_df)
+
+        # Verify result structure
+        self.assertIn("category", kld_result.index)
+        self.assertIn("mean(kld)", kld_result.index)
+
+        # Calculate expected KLD manually
+        # KLD = 0.5 * log(0.5/0.25) + 0.25 * log(0.25/0.5) + 0.25 * log(0.25/0.25)
+        #     = 0.5 * log(2) + 0.25 * log(0.5) + 0.25 * 0
+        #     = 0.5 * 0.693 + 0.25 * (-0.693) + 0
+        #     ≈ 0.173
+        expected_kld = 0.5 * math.log(2) + 0.25 * math.log(0.5)
+
+        # Verify KLD is positive and reasonably close to expected
+        self.assertGreater(kld_result["category"], 0)
+        # Allow some tolerance for numerical computation
+        self.assertAlmostEqual(kld_result["category"], abs(expected_kld), places=2)
+
+    def test_kld_with_numeric_continuous_data(self) -> None:
+        """Test KLD calculation with continuous numeric data.
+
+        Tests that continuous distributions are properly handled using
+        kernel density estimation and numerical integration.
+        """
+        from balance.stats_and_plots import weighted_comparisons_stats
+
+        np.random.seed(42)
+        sample_df = pd.DataFrame(
+            {
+                "age": np.random.normal(30, 5, 50),
+                "income": np.random.normal(50000, 10000, 50),
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "age": np.random.normal(35, 5, 50),
+                "income": np.random.normal(55000, 10000, 50),
+            }
+        )
+
+        kld_result = weighted_comparisons_stats.kld(sample_df, target_df)
+
+        # Verify result structure
+        self.assertIn("age", kld_result.index)
+        self.assertIn("income", kld_result.index)
+        self.assertIn("mean(kld)", kld_result.index)
+
+        # Verify all values are non-negative
+        self.assertTrue(all(kld_result >= 0))
+
+        # Different distributions should have positive KLD
+        self.assertGreater(kld_result["age"], 0)
+        self.assertGreater(kld_result["income"], 0)
+
+    def test_kld_with_various_data_types(self) -> None:
+        """Test KLD calculation with various data types using parameterized approach.
+
+        Tests multiple data type scenarios with meaningful assertions about
+        KLD calculation correctness.
+        """
+        from balance.stats_and_plots import weighted_comparisons_stats
+
+        # Test cases with different data types
+        test_cases = [
+            {
+                "name": "binary_columns",
+                "sample_data": {"binary": [0, 0, 1, 1]},
+                "target_data": {"binary": [0, 1, 1, 1]},
+                "expected_behavior": "positive_kld",  # Different distributions
+            },
+            {
+                "name": "boolean_columns",
+                "sample_data": {"is_active": [True, True, False, False]},
+                "target_data": {"is_active": [True, False, False, False]},
+                "expected_behavior": "positive_kld",  # Different distributions
+            },
+            {
+                "name": "object_dtype_categorical",
+                "sample_data": {
+                    "country": pd.Series(["US", "UK", "DE", "FR"], dtype=object)
+                },
+                "target_data": {
+                    "country": pd.Series(["US", "US", "UK", "FR"], dtype=object)
+                },
+                "expected_behavior": "positive_kld",  # Different distributions
+            },
+            {
+                "name": "pandas_categorical",
+                "sample_data": {"size": pd.Categorical(["S", "M", "L", "M"])},
+                "target_data": {"size": pd.Categorical(["S", "S", "M", "L"])},
+                "expected_behavior": "positive_kld",  # Different distributions
+            },
+            {
+                "name": "identical_distributions",
+                "sample_data": {"value": [1, 1, 2, 2]},
+                "target_data": {"value": [1, 1, 2, 2]},
+                "expected_behavior": "zero_kld",  # Identical distributions
+            },
+        ]
+
+        for test_case in test_cases:
+            with self.subTest(test_case=test_case["name"]):
+                sample_df = pd.DataFrame(test_case["sample_data"])
+                target_df = pd.DataFrame(test_case["target_data"])
+
+                kld_result = weighted_comparisons_stats.kld(sample_df, target_df)
+
+                # Verify structure
+                sample_data = test_case["sample_data"]
+                assert isinstance(sample_data, dict)  # Type narrowing for mypy
+                col_name = list(sample_data.keys())[0]
+                # For pandas categorical, the column name might be encoded differently
+                if test_case["name"] == "pandas_categorical":
+                    self.assertTrue(any("size" in str(idx) for idx in kld_result.index))
+                else:
+                    self.assertIn(col_name, kld_result.index)
+                self.assertIn("mean(kld)", kld_result.index)
+
+                # Verify expected behavior
+                if test_case["expected_behavior"] == "zero_kld":
+                    # For identical distributions, KLD should be very close to zero
+                    kld_value = kld_result.get(col_name, kld_result.iloc[0])
+                    self.assertLess(
+                        kld_value,
+                        1e-5,
+                        f"KLD should be near zero for identical distributions in {test_case['name']}",
+                    )
+                elif test_case["expected_behavior"] == "positive_kld":
+                    # For different distributions, KLD should be positive
+                    kld_value = kld_result.get(col_name, kld_result.iloc[0])
+                    self.assertGreater(
+                        kld_value,
+                        0,
+                        f"KLD should be positive for different distributions in {test_case['name']}",
+                    )
+
+    def test_kld_with_weights(self) -> None:
+        """Test KLD calculation with weighted samples.
+
+        Verifies that sample and target weights are properly incorporated
+        into the KLD calculation and produce predictable effects.
+        """
+        from balance.stats_and_plots import weighted_comparisons_stats
+
+        sample_df = pd.DataFrame(
+            {
+                "category": ["A", "A", "B", "C"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "category": ["A", "B", "B", "C"],
+            }
+        )
+
+        # Test 1: Weights that make distributions more similar
+        # Weight A more heavily in sample to match target's A proportion
+        sample_weights_similar = np.array([0.5, 0.5, 2.0, 2.0])  # Makes P(A)≈0.2
+        target_weights_uniform = np.array([1.0, 1.0, 1.0, 1.0])
+
+        # Test 2: Weights that make distributions more different
+        sample_weights_different = np.array([2.0, 2.0, 0.5, 0.5])  # Makes P(A)≈0.67
+
+        kld_similar = weighted_comparisons_stats.kld(
+            sample_df, target_df, sample_weights_similar, target_weights_uniform
+        )
+        kld_different = weighted_comparisons_stats.kld(
+            sample_df, target_df, sample_weights_different, target_weights_uniform
+        )
+        kld_unweighted = weighted_comparisons_stats.kld(sample_df, target_df)
+
+        # Weights that make distributions more similar should reduce KLD
+        self.assertLess(kld_similar["category"], kld_unweighted["category"])
+
+        # Weights that make distributions more different should increase KLD
+        self.assertGreater(kld_different["category"], kld_unweighted["category"])
+
+        # The different-weighted KLD should be larger than similar-weighted
+        self.assertGreater(kld_different["category"], kld_similar["category"])
+
+    def test_kld_with_aggregate_by_main_covar(self) -> None:
+        """Test KLD calculation with aggregate_by_main_covar option.
+
+        Tests that categorical variables with multiple levels are properly
+        aggregated into a single KLD value per covariate.
+        """
+        from balance.stats_and_plots import weighted_comparisons_stats
+
+        sample_df = pd.DataFrame(
+            {
+                "age": [25, 30, 35, 40],
+                "education[T.high_school]": [1, 0, 0, 0],
+                "education[T.bachelor]": [0, 1, 0, 0],
+                "education[T.masters]": [0, 0, 1, 1],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "age": [28, 32, 36, 42],
+                "education[T.high_school]": [0, 1, 0, 0],
+                "education[T.bachelor]": [1, 0, 0, 0],
+                "education[T.masters]": [0, 0, 1, 1],
+            }
+        )
+
+        kld_aggregated = weighted_comparisons_stats.kld(
+            sample_df, target_df, aggregate_by_main_covar=True
+        )
+
+        # Should have aggregated education levels
+        self.assertIn("age", kld_aggregated.index)
+        self.assertIn("education", kld_aggregated.index)
+        self.assertIn("mean(kld)", kld_aggregated.index)
+
+        # Should NOT have individual education levels
+        self.assertNotIn("education[T.high_school]", kld_aggregated.index)
+        self.assertNotIn("education[T.bachelor]", kld_aggregated.index)
+        self.assertNotIn("education[T.masters]", kld_aggregated.index)
+
+    def test_kld_validation_errors(self) -> None:
+        """Test KLD function raises appropriate errors for invalid inputs.
+
+        Verifies that kld properly validates input DataFrame types and
+        raises descriptive errors for invalid arguments.
+        """
+        from typing import Any
+
+        from balance.stats_and_plots import weighted_comparisons_stats
+
+        valid_df = pd.DataFrame({"a": [1, 2, 3]})
+        invalid_series: Any = pd.Series(
+            [1, 2, 3]
+        )  # Use Any to allow testing invalid types
+
+        # Test invalid sample_df type
+        with self.assertRaisesRegex(ValueError, "sample_df must be pd.DataFrame"):
+            weighted_comparisons_stats.kld(
+                invalid_series,
+                valid_df,
+            )
+
+        # Test invalid target_df type
+        with self.assertRaisesRegex(ValueError, "target_df must be pd.DataFrame"):
+            weighted_comparisons_stats.kld(
+                valid_df,
+                invalid_series,
+            )
+
+    def test_kld_with_na_indicator_columns(self) -> None:
+        """Test KLD handling of NA indicator columns.
+
+        Verifies that columns starting with '_is_na_' are properly excluded
+        from the KLD calculation as specified in the function documentation.
+        """
+        from balance.stats_and_plots import weighted_comparisons_stats
+
+        sample_df = pd.DataFrame(
+            {
+                "value": [1, 2, 3, 4],
+                "_is_na_value": [0, 0, 1, 0],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "value": [2, 3, 4, 5],
+                "_is_na_value": [0, 1, 0, 0],
+            }
+        )
+
+        kld_result = weighted_comparisons_stats.kld(sample_df, target_df)
+
+        # _is_na_ columns should be excluded
+        self.assertNotIn("_is_na_value", kld_result.index)
+        self.assertIn("value", kld_result.index)
+        self.assertIn("mean(kld)", kld_result.index)
+
+    def test_kld_identical_distributions(self) -> None:
+        """Test KLD with identical sample and target distributions.
+
+        When distributions are identical, KLD should be zero or very close
+        to zero for all columns.
+        """
+        from balance.stats_and_plots import weighted_comparisons_stats
+
+        df = pd.DataFrame(
+            {
+                "category": ["A", "A", "B", "C"],
+                "numeric": [1.0, 2.0, 3.0, 4.0],
+            }
+        )
+
+        kld_result = weighted_comparisons_stats.kld(df, df)
+
+        # All KLD values should be very close to zero
+        for col in ["category", "numeric"]:
+            self.assertLess(kld_result[col], 1e-5)
+
+        # Mean should also be close to zero
+        self.assertLess(kld_result["mean(kld)"], 1e-5)
+
+    def test_kld_with_known_values(self) -> None:
+        """Test KLD calculation against manually calculated expected values.
+
+        Uses simple distributions where KLD can be calculated by hand
+        to verify the implementation correctness.
+        """
+        import math
+
+        from balance.stats_and_plots import weighted_comparisons_stats
+
+        # Test case 1: Binary distribution with known KLD
+        # P = [0.75, 0.25], Q = [0.5, 0.5]
+        # KLD = 0.75*log(0.75/0.5) + 0.25*log(0.25/0.5) = 0.75*log(1.5) + 0.25*log(0.5)
+        sample_df = pd.DataFrame({"binary": [0, 0, 0, 1]})  # 75% 0s, 25% 1s
+        target_df = pd.DataFrame({"binary": [0, 0, 1, 1]})  # 50% 0s, 50% 1s
+
+        kld_result = weighted_comparisons_stats.kld(sample_df, target_df)
+
+        expected_kld = 0.75 * math.log(0.75 / 0.5) + 0.25 * math.log(0.25 / 0.5)
+        self.assertAlmostEqual(kld_result["binary"], expected_kld, places=3)
+
+        # Test case 2: Three category distribution
+        # P = [0.5, 0.25, 0.25], Q = [0.33, 0.33, 0.34]
+        sample_df2 = pd.DataFrame({"cat": ["A", "A", "B", "C"]})
+        target_df2 = pd.DataFrame({"cat": ["A", "B", "C", "C"]})  # Close to uniform
+
+        kld_result2 = weighted_comparisons_stats.kld(sample_df2, target_df2)
+
+        # KLD should be positive for different distributions
+        self.assertGreater(kld_result2["cat"], 0)
+        # For this specific case, KLD should be relatively small (< 0.5) since distributions are not too different
+        self.assertLess(kld_result2["cat"], 0.5)
+
+    def test_kld_with_single_category_column(self) -> None:
+        """Test KLD with categorical column having single unique value.
+
+        Edge case where a categorical variable has only one level should
+        still be processed without errors.
+        """
+        from balance.stats_and_plots import weighted_comparisons_stats
+
+        sample_df = pd.DataFrame(
+            {
+                "constant": ["A", "A", "A", "A"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "constant": ["A", "A", "A", "A"],
+            }
+        )
+
+        kld_result = weighted_comparisons_stats.kld(sample_df, target_df)
+
+        # Should produce result without error
+        self.assertIn("constant", kld_result.index)
+        self.assertIn("mean(kld)", kld_result.index)
+
+        # Identical single-category should have zero KLD
+        self.assertAlmostEqual(kld_result["constant"], 0.0, places=5)

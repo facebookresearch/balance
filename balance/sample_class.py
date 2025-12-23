@@ -21,13 +21,87 @@ from balance.csv_utils import to_csv_with_defaults
 from balance.stats_and_plots import weights_stats
 
 from balance.stats_and_plots.weighted_comparisons_stats import outcome_variance_ratio
-from balance.typing import FilePathOrBuffer
-from balance.util import _detect_high_cardinality_features, HighCardinalityFeature
+from balance.typing import DiagnosticScalar, FilePathOrBuffer
+from balance.util import (
+    _coerce_scalar,
+    _detect_high_cardinality_features,
+    _verify_value_type,
+    HighCardinalityFeature,
+)
 
 from IPython.lib.display import FileLink
 
 
 logger: logging.Logger = logging.getLogger(__package__)
+
+
+def _concat_metric_val_var(
+    diagnostics: pd.DataFrame,
+    metric: str,
+    vals: list[DiagnosticScalar],
+    vars: list[DiagnosticScalar],
+) -> pd.DataFrame:
+    """Append metric/val/var rows to a diagnostics table.
+
+    This helper centralizes concatenating new diagnostics rows from separate
+    val and var lists. The function internally zips these lists together,
+    so callers only need to provide aligned sequences.
+
+    Args:
+        diagnostics: Existing diagnostics table.
+        metric: Name for the ``metric`` column to repeat for each appended row.
+        vals: List of values for the ``val`` column. Must have the same length
+            as ``vars``.
+        vars: List of variable names for the ``var`` column. Must have the same
+            length as ``vals``.
+
+    Returns:
+        A new DataFrame with the appended rows (input is not modified).
+
+    Raises:
+        ValueError: If ``vals`` and ``vars`` have different lengths.
+
+    Examples
+    --------
+    A typical usage pattern when both ``val`` and ``var`` are sequences::
+
+        diagnostics = _concat_metric_val_var(
+            diagnostics,
+            "weights_diagnostics",
+            the_weights_summary["val"].tolist(),
+            the_weights_summary["var"].tolist(),
+        )
+
+    With a single row::
+
+        diagnostics = _concat_metric_val_var(
+            diagnostics,
+            "adjustment_method",
+            [0],
+            [model["method"]],
+        )
+    """
+    if len(vals) != len(vars):
+        raise ValueError(
+            f"vals and vars must have the same length, got {len(vals)} and {len(vars)}"
+        )
+
+    if len(vals) == 0:
+        return diagnostics.copy()
+
+    rows = pd.DataFrame(
+        {"metric": [metric] * len(vals), "val": list(vals), "var": list(vars)}
+    )
+
+    # Append rows to diagnostics with column alignment
+    if diagnostics.empty:
+        if diagnostics.columns.empty:
+            return rows.reset_index(drop=True)
+        rows = rows.reindex(columns=diagnostics.columns, fill_value=pd.NA)
+        return rows.reset_index(drop=True)
+
+    rows = rows.reindex(columns=diagnostics.columns, fill_value=pd.NA)
+    return pd.concat((diagnostics, rows), ignore_index=True)
 
 
 class Sample:
@@ -137,8 +211,7 @@ class Sample:
         n_variables = self._covar_columns().shape[1]
         has_target = self.has_target() * " with target set"
         adjustment_method = (
-            " using " + self.model()["method"]  # pyre-ignore[16]
-            # (None is eliminated by if statement)
+            " using " + _verify_value_type(self.model())["method"]
             if self.model() is not None
             else ""
         )
@@ -190,6 +263,8 @@ class Sample:
         This helper centralizes the lightweight adjustment-related statistics
         surfaced in ``__str__`` so they can be reused by other presentation
         helpers (for example, :meth:`summary`) without duplicating logic.
+
+        Note: This method formats diagnostics for human-readable output.
 
         Args:
             n_rows: Optional row count to use for effective sample size
@@ -650,8 +725,10 @@ class Sample:
         Returns:
             pd.DataFrame: model matrix of sample
         """
-        res = balance_util.model_matrix(self, add_na=True)["sample"]
-        return res  # pyre-ignore[7]: ["sample"] only chooses the DataFrame
+        res = _verify_value_type(
+            balance_util.model_matrix(self, add_na=True)["sample"], pd.DataFrame
+        )
+        return res
 
     ############################################
     # Adjusting and adapting weights of a sample
@@ -1158,15 +1235,13 @@ class Sample:
         )
 
         # model performance
+
         if self.model() is not None:
-            if (
-                self.model()["method"]  # pyre-ignore[16]
-                # (None is eliminated by if statement)
-                == "ipw"
-            ):
+            self_model = _verify_value_type(self.model())
+            if self_model["method"] == "ipw":
                 model_summary = (
                     "Model proportion deviance explained: {dev_exp:.3f}".format(
-                        dev_exp=self.model()["perf"]["prop_dev_explained"]
+                        dev_exp=self_model["perf"]["prop_dev_explained"]
                     )
                 )
             else:
@@ -1309,27 +1384,11 @@ class Sample:
         n_sample_obs, n_sample_covars = self.covars().df.shape
         n_target_obs, n_target_covars = self._links["target"].covars().df.shape
 
-        diagnostics = pd.concat(
-            (
-                diagnostics,
-                pd.DataFrame(
-                    {
-                        "metric": "size",
-                        "val": [
-                            n_sample_obs,
-                            n_sample_covars,
-                            n_target_obs,
-                            n_target_covars,
-                        ],
-                        "var": [
-                            "sample_obs",
-                            "sample_covars",
-                            "target_obs",
-                            "target_covars",
-                        ],
-                    }
-                ),
-            )
+        diagnostics = _concat_metric_val_var(
+            diagnostics,
+            "size",
+            [n_sample_obs, n_sample_covars, n_target_obs, n_target_covars],
+            ["sample_obs", "sample_covars", "target_obs", "target_covars"],
         )
 
         # ----------------------------------------------------
@@ -1338,35 +1397,22 @@ class Sample:
         the_weights_summary = self.weights().summary()
 
         # Add all the weights_diagnostics to diagnostics
-        diagnostics = pd.concat(
-            (
-                diagnostics,
-                pd.DataFrame(
-                    {
-                        "metric": "weights_diagnostics",
-                        "val": the_weights_summary["val"],
-                        "var": the_weights_summary["var"],
-                    }
-                ),
-            )
+        diagnostics = _concat_metric_val_var(
+            diagnostics,
+            "weights_diagnostics",
+            list(the_weights_summary["val"]),  # passing a list instead of a pd.Series
+            list(the_weights_summary["var"]),
         )
 
         # ----------------------------------------------------
         # Diagnostics on the model
         # ----------------------------------------------------
-        model = self.model()
-        diagnostics = pd.concat(
-            (
-                diagnostics,
-                pd.DataFrame(
-                    {
-                        "metric": "adjustment_method",
-                        "val": (0,),
-                        "var": model["method"],  # pyre-ignore[16]
-                        # (None is eliminated by if statement)
-                    }
-                ),
-            )
+        model = _verify_value_type(self.model())
+        diagnostics = _concat_metric_val_var(
+            diagnostics,
+            "adjustment_method",
+            [0],
+            [model["method"]],
         )
         if model["method"] == "ipw":
             fit = model["fit"]
@@ -1374,28 +1420,20 @@ class Sample:
 
             fit_list: List[pd.DataFrame] = []
 
-            # TODO: Move this function to utils.py, add docstring, and tests.
-            def _coerce_scalar(value: Any) -> float:
-                if value is None:
-                    return float("nan")
-                if np.isscalar(value):
-                    try:
-                        return float(value)
-                    except (TypeError, ValueError):
-                        return float("nan")
-                return float("nan")
-
             # TODO: add tests checking these values
             for array_key in ("n_iter_", "intercept_"):
                 array_val = getattr(fit, array_key, None)
-                if isinstance(array_val, np.ndarray) and array_val.shape == (1,):
+                if array_val is None:
+                    continue
+
+                array_as_np = np.asarray(array_val)
+                if array_as_np.size == 1:
                     fit_list.append(
-                        pd.DataFrame(
-                            {
-                                "metric": "ipw_model_glance",
-                                "val": array_val,
-                                "var": array_key,
-                            }
+                        _concat_metric_val_var(
+                            pd.DataFrame(),
+                            "ipw_model_glance",
+                            [array_as_np.item()],
+                            [array_key],
                         )
                     )
 
@@ -1407,8 +1445,8 @@ class Sample:
                 param_val = params.get(param_key, getattr(fit, param_key, None))
                 if isinstance(param_val, str):
                     fit_list.append(
-                        pd.DataFrame(
-                            {"metric": metric_name, "val": (0,), "var": param_val}
+                        _concat_metric_val_var(
+                            pd.DataFrame(), metric_name, [0], [param_val]
                         )
                     )
 
@@ -1417,12 +1455,8 @@ class Sample:
                     params.get(scalar_key, getattr(fit, scalar_key, None))
                 )
                 fit_list.append(
-                    pd.DataFrame(
-                        {
-                            "metric": "model_glance",
-                            "val": (scalar_value,),
-                            "var": scalar_key,
-                        }
+                    _concat_metric_val_var(
+                        pd.DataFrame(), "model_glance", [scalar_value], [scalar_key]
                     )
                 )
 
@@ -1434,8 +1468,8 @@ class Sample:
                 multi_class = str(multi_class)
 
             fit_list.append(
-                pd.DataFrame(
-                    {"metric": "ipw_multi_class", "val": (0,), "var": multi_class}
+                _concat_metric_val_var(
+                    pd.DataFrame(), "ipw_multi_class", [0], [multi_class]
                 )
             )
 
@@ -1448,20 +1482,22 @@ class Sample:
 
             #  Extract info about the regularisation parameter
             lambda_value = _coerce_scalar(model["lambda"])
-            lambda_df = pd.DataFrame(
-                {"metric": "model_glance", "val": (lambda_value,), "var": "lambda"}
+            diagnostics = _concat_metric_val_var(
+                diagnostics, "model_glance", [lambda_value], ["lambda"]
             )
-            diagnostics = pd.concat((diagnostics, lambda_df))
 
             #  Scalar values from 'perf' key of dictionary
-            perf_entries = [
-                pd.DataFrame({"metric": "model_glance", "val": (float(v),), "var": k})
-                for k, v in model["perf"].items()
-                if np.isscalar(v) and k != "coefs"
-            ]
-            if len(perf_entries) > 0:
-                perf_single_values = pd.concat(perf_entries)
-                diagnostics = pd.concat((diagnostics, perf_single_values))
+            perf_entries: List[pd.DataFrame] = []
+            for k, v in model["perf"].items():
+                if np.isscalar(v) and k != "coefs":
+                    perf_entries.append(
+                        _concat_metric_val_var(
+                            pd.DataFrame(), "model_glance", [_coerce_scalar(v)], [k]
+                        )
+                    )
+
+            if perf_entries:
+                diagnostics = pd.concat([diagnostics] + perf_entries, ignore_index=True)
 
             # Model coefficients
             coefs = (

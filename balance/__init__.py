@@ -19,7 +19,7 @@ from balance.sample_class import Sample  # noqa
 from balance.util import TruncationFormatter  # noqa
 
 global __version__
-__version__ = "0.13.x"
+__version__ = "0.14.0"
 
 WELCOME_MESSAGE = f"""
 balance (Version {__version__}) loaded:
@@ -35,7 +35,11 @@ balance (Version {__version__}) loaded:
 
 
 def help() -> None:
-    """Display information about documentation, help, and citation."""
+    """Display information about documentation, help, and citation.
+
+    This function provides users with quick access to important resources
+    including documentation links, issue tracking, and citation information.
+    """
     print(WELCOME_MESSAGE)
 
 

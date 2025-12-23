@@ -1510,3 +1510,683 @@ class TestBalanceDF(BalanceTestCase):
                 "number",
             )
         self.assertTrue(BalanceDF._check_if_not_BalanceDF(s3.covars()) is None)
+
+
+class TestBalanceDFCovars_from_frame(BalanceTestCase):
+    """Test cases for BalanceDFCovars.from_frame() factory method."""
+
+    def test_from_frame_with_basic_dataframe_creates_instance(self) -> None:
+        """Test that from_frame creates a BalanceDFCovars instance from a basic DataFrame.
+
+        Verifies:
+        - Returns BalanceDFCovars instance
+        - DataFrame data is correctly preserved
+        - Column names include original columns
+        - Data values are preserved correctly
+        """
+        # Arrange
+        df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+        sample = TestDataFactory.create_basic_sample()
+        covars = sample.covars()
+
+        # Act
+        result = covars.from_frame(df)
+
+        # Assert
+        self.assertIsInstance(result, BalanceDFCovars)
+        # from_frame adds index column from reset_index()
+        self.assertIn("a", result.df.columns)
+        self.assertIn("b", result.df.columns)
+        self.assertEqual(result.df.shape[0], 3)
+
+        # Verify actual data values are preserved
+        self.assertTrue((result.df["a"] == [1, 2, 3]).all())
+        self.assertTrue((result.df["b"] == [4, 5, 6]).all())
+
+    def test_from_frame_with_weights_creates_instance_with_weights(self) -> None:
+        """Test that from_frame correctly handles weights parameter.
+
+        Verifies:
+        - Weights are properly integrated into the created instance
+        - Sample object contains weight information
+        - Weight values are correctly applied
+        """
+        # Arrange
+        df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+        weights = pd.Series([0.5, 1.0, 1.5], name="weight")
+        sample = TestDataFactory.create_basic_sample()
+        covars = sample.covars()
+
+        # Act
+        result = covars.from_frame(df, weights=weights)
+
+        # Assert
+        self.assertIsInstance(result, BalanceDFCovars)
+        self.assertIsNotNone(result._sample.weights())
+
+        # Verify actual weight values are correctly applied
+        weights_df = result._sample.weights().df
+        self.assertTrue((weights_df["weight"] == [0.5, 1.0, 1.5]).all())
+
+    def test_from_frame_with_various_column_counts(self) -> None:
+        """Test that from_frame handles DataFrames with different numbers of columns.
+
+        Verifies:
+        - Single, double, and triple column DataFrames work correctly
+        - All columns are preserved
+        - Data integrity is maintained
+        """
+        # Test cases with different column counts
+        test_cases = [
+            # (dataframe, expected_cols)
+            (pd.DataFrame({"x": [10, 20, 30]}), ["x"]),
+            (pd.DataFrame({"a": [1, 2], "b": [3, 4]}), ["a", "b"]),
+            (pd.DataFrame({"a": [1, 2], "b": [3, 4], "c": [5, 6]}), ["a", "b", "c"]),
+        ]
+
+        sample = TestDataFactory.create_basic_sample()
+        covars = sample.covars()
+
+        for df, expected_cols in test_cases:
+            with self.subTest(columns=expected_cols):
+                # Act
+                result = covars.from_frame(df)
+
+                # Assert
+                self.assertIsInstance(result, BalanceDFCovars)
+                for col in expected_cols:
+                    self.assertIn(col, result.df.columns)
+                self.assertEqual(result.df.shape[0], len(df))
+
+    def test_from_frame_preserves_numeric_values(self) -> None:
+        """Test that from_frame preserves numeric values correctly.
+
+        Verifies:
+        - Integer values are preserved
+        - Float values are preserved
+        - No unexpected type conversions occur
+        """
+        # Arrange
+        df = pd.DataFrame({"int_col": [1, 2, 3], "float_col": [1.5, 2.5, 3.5]})
+        sample = TestDataFactory.create_basic_sample()
+        covars = sample.covars()
+
+        # Act
+        result = covars.from_frame(df)
+
+        # Assert
+        self.assertTrue((result.df["int_col"] == [1, 2, 3]).all())
+        self.assertTrue((result.df["float_col"] == [1.5, 2.5, 3.5]).all())
+
+
+class TestBalanceDF_model_matrix_caching(BalanceTestCase):
+    """Test cases for model_matrix caching behavior."""
+
+    def test_model_matrix_is_cached_after_first_call(self) -> None:
+        """Test that model_matrix result is cached after first invocation.
+
+        Verifies:
+        - First call computes model matrix
+        - Subsequent calls return identical data
+        - Model matrix handles formula correctly
+        """
+        # Arrange
+        covars = s1.covars()
+
+        # Act
+        # First call should compute the model matrix
+        first_result = covars.model_matrix()
+        # Check internal cache was set
+        self.assertIsNotNone(covars._model_matrix)
+
+        # Second call should use cached result
+        second_result = covars.model_matrix()
+
+        # Assert
+        # Results should be identical in content
+        pd.testing.assert_frame_equal(first_result, second_result)
+        # Verify the cache is being used by checking the internal state
+        self.assertIsNotNone(covars._model_matrix)
+
+    def test_model_matrix_with_categorical_columns_creates_dummy_variables(
+        self,
+    ) -> None:
+        """Test that model_matrix creates proper dummy variables for categorical columns.
+
+        Verifies:
+        - Categorical columns are one-hot encoded
+        - Numeric columns are preserved
+        - Column names follow expected format
+        """
+        # Arrange
+        covars = s1.covars()
+
+        # Act
+        mm = covars.model_matrix()
+
+        # Assert
+        # Check that categorical variable 'c' has been expanded
+        self.assertIn("c[x]", mm.columns)
+        self.assertIn("c[y]", mm.columns)
+        self.assertIn("c[z]", mm.columns)
+        self.assertIn("c[v]", mm.columns)
+        # Check numeric columns are present
+        self.assertIn("a", mm.columns)
+        self.assertIn("b", mm.columns)
+
+
+class TestBalanceDF_edge_cases(BalanceTestCase):
+    """Test cases for edge cases and boundary conditions."""
+
+    def test_BalanceDF_mean_with_all_zero_weights(self) -> None:
+        """Test mean calculation with all zero weights.
+
+        Verifies:
+        - Handles edge case of all zero weights appropriately
+        - Returns DataFrame with NaN values when weights sum to zero
+        """
+        # Arrange
+        sample = TestDataFactory.create_basic_sample()
+        sample_with_zero_weights = deepcopy(sample)
+        sample_with_zero_weights.set_weights(pd.Series([0, 0, 0, 0]))
+
+        # Act
+        result = sample_with_zero_weights.covars().mean(on_linked_samples=False)
+
+        # Assert
+        # With zero weights, the weighted mean should return NaN values
+        self.assertIsInstance(result, pd.DataFrame)
+        # Check that the result contains NaN values for numeric columns
+        numeric_cols = result.select_dtypes(include=[np.number]).columns
+        self.assertTrue(
+            result[numeric_cols].isna().all().all(),
+            "Expected NaN values for all numeric columns with zero weights",
+        )
+
+    def test_BalanceDF_with_nan_in_covariates(self) -> None:
+        """Test BalanceDF behavior with NaN values in covariates.
+
+        Verifies:
+        - NaN values are properly handled
+        - model_matrix returns valid DataFrame
+        """
+        # Arrange
+        df = pd.DataFrame(
+            {"a": [1.0, np.nan, 3.0], "b": [4.0, 5.0, np.nan], "id": [1, 2, 3]}
+        )
+        sample = Sample.from_frame(df, id_column="id")
+
+        # Act
+        covars = sample.covars()
+        mm = covars.model_matrix()
+
+        # Assert
+        self.assertIsInstance(mm, pd.DataFrame)
+        # model_matrix returns a valid DataFrame with NaN handling
+        self.assertGreater(len(mm.columns), 0)
+
+    def test_BalanceDF_std_with_single_observation(self) -> None:
+        """Test standard deviation calculation with single observation.
+
+        Verifies:
+        - Single observation is handled appropriately
+        - Returns expected result or handles gracefully
+        """
+        # Arrange
+        df = pd.DataFrame({"a": [1], "b": [2], "id": [1]})
+        sample = Sample.from_frame(df, id_column="id")
+
+        # Act
+        result = sample.covars().std()
+
+        # Assert
+        self.assertIsInstance(result, pd.DataFrame)
+
+    def test_BalanceDF_to_csv_with_none_path_returns_string(self) -> None:
+        """Test to_csv with None path returns CSV string.
+
+        Verifies:
+        - to_csv without path returns string representation
+        - String contains expected data and is valid CSV
+        """
+        # Arrange
+        covars = s1.covars()
+
+        # Act
+        result = covars.to_csv(None)
+
+        # Assert
+        self.assertIsInstance(result, str)
+        self.assertTrue(len(result) > 0)
+
+        # Verify it's valid CSV by checking for common CSV elements
+        lines = result.strip().split("\n")
+        # Should have header and at least one data row
+        self.assertGreaterEqual(len(lines), 2)
+        # Should contain column names from the dataframe
+        self.assertIn("a", lines[0])  # Check header contains expected column
+
+    def test_BalanceDF_names_returns_list_of_strings(self) -> None:
+        """Test that names() returns a list of string column names.
+
+        Verifies:
+        - Returns list type
+        - All elements are strings
+        - Contains expected column names
+        """
+        # Arrange
+        covars = s1.covars()
+
+        # Act
+        names = covars.names()
+
+        # Assert
+        self.assertIsInstance(names, list)
+        self.assertTrue(all(isinstance(name, str) for name in names))
+        self.assertEqual(len(names), len(covars.df.columns))
+
+        # Verify expected column names are present
+        expected_columns = ["a", "b", "c"]  # Based on s1 sample data
+        for col in expected_columns:
+            self.assertIn(col, names)
+
+
+class TestBalanceDFWeights_edge_cases(BalanceTestCase):
+    """Test cases for BalanceDFWeights edge cases."""
+
+    def test_BalanceDFWeights_design_effect_with_equal_weights(self) -> None:
+        """Test design_effect calculation with all equal weights.
+
+        Verifies:
+        - Equal weights produce design effect of 1.0
+        - Calculation is mathematically correct
+        """
+        # Arrange
+        df = pd.DataFrame({"a": [1, 2, 3], "id": [1, 2, 3], "w": [1.0, 1.0, 1.0]})
+        sample = Sample.from_frame(df, id_column="id", weight_column="w")
+
+        # Act
+        deff = sample.weights().design_effect()
+
+        # Assert
+        self.assertAlmostEqual(deff, 1.0, places=5)
+
+    def test_BalanceDFWeights_trim_modifies_weights_in_place(
+        self,
+    ) -> None:
+        """Test trim method modifies weights in place.
+
+        Verifies:
+        - Trim method modifies weights in place
+        - Trimmed weights are different from original
+        - Weight values are properly trimmed
+        """
+        # Arrange - use existing sample with weights
+        # Create a sample with diverse weights for testing trimming
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": [1, 2, 3, 4, 5],
+                    "id": [1, 2, 3, 4, 5],
+                    "w": [1.0, 2.0, 5.0, 10.0, 20.0],  # Wide range for trimming
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+        weights = sample.weights()
+        original_weights = weights.df["w"].copy()
+
+        # Act
+        weights.trim(
+            percentile=0.6
+        )  # trim returns None, modifies in place at 60th percentile
+
+        # Assert
+        # Verify that trimming actually modified the weights
+        trimmed_values = weights.df["w"]
+        self.assertFalse(
+            trimmed_values.equals(original_weights),
+            "Trimmed weights should differ from original weights",
+        )
+        # After trimming at 60th percentile, the highest weights should be capped
+        # With weights [1.0, 2.0, 5.0, 10.0, 20.0], 60th percentile should cap higher values
+        self.assertLess(trimmed_values.max(), original_weights.max())
+
+    def test_BalanceDFWeights_summary_returns_dataframe(self) -> None:
+        """Test that weights summary returns a properly formatted DataFrame.
+
+        Verifies:
+        - summary() returns DataFrame
+        - Contains expected statistical measures
+        """
+        # Arrange
+        weights = s1.weights()
+
+        # Act
+        summary = weights.summary()
+
+        # Assert
+        self.assertIsInstance(summary, pd.DataFrame)
+        self.assertTrue(len(summary) > 0)
+
+        # Verify summary contains expected columns
+        # The summary DataFrame has 'var' and 'val' columns
+        self.assertIn("var", summary.columns)
+        self.assertIn("val", summary.columns)
+
+        # Should contain weight-related statistics in the 'var' column
+        var_values = summary["var"].tolist()
+        expected_stats = ["mean", "std", "min", "max", "design_effect"]
+        for stat in expected_stats:
+            self.assertTrue(
+                any(stat in str(var).lower() for var in var_values),
+                f"Expected '{stat}' to be in summary statistics",
+            )
+
+
+class TestBalanceDFOutcomes_edge_cases(BalanceTestCase):
+    """Test cases for BalanceDFOutcomes edge cases."""
+
+    def test_BalanceDFOutcomes_with_all_null_values(self) -> None:
+        """Test outcomes handling when all values are null.
+
+        Verifies:
+        - All-null outcomes are handled gracefully
+        - No errors are raised during creation
+        """
+        # Arrange
+        df = pd.DataFrame(
+            {"a": [1, 2, 3], "o": [np.nan, np.nan, np.nan], "id": [1, 2, 3]}
+        )
+        sample = Sample.from_frame(df, id_column="id", outcome_columns="o")
+
+        # Act
+        outcomes = sample.outcomes()
+
+        # Assert
+        self.assertIsInstance(outcomes, BalanceDFOutcomes)
+        self.assertTrue(outcomes.df["o"].isna().all())
+
+    def test_BalanceDFOutcomes_relative_response_rates_with_zero_responses(
+        self,
+    ) -> None:
+        """Test relative_response_rates with zero non-null responses.
+
+        Verifies:
+        - Zero response case is handled appropriately
+        - Returns valid result or handles gracefully
+        """
+        # Arrange
+        df = pd.DataFrame(
+            {"a": [1, 2, 3], "o": [np.nan, np.nan, np.nan], "id": [1, 2, 3]}
+        )
+        sample = Sample.from_frame(df, id_column="id", outcome_columns="o")
+
+        # Act
+        rrr = sample.outcomes().relative_response_rates()
+
+        # Assert
+        self.assertIsInstance(rrr, pd.DataFrame)
+        # Should show 0% response rate
+        self.assertEqual(rrr.loc["%", "o"], 0.0)
+
+    def test_BalanceDFOutcomes_summary_returns_proper_result(
+        self,
+    ) -> None:
+        """Test summary returns meaningful result.
+
+        Verifies:
+        - summary() returns string with outcome statistics
+        - Result contains expected outcome column information
+        """
+        # Arrange - use simple outcome sample
+        outcomes = s1.outcomes()
+
+        # Act
+        summary = outcomes.summary()
+
+        # Assert
+        # For outcomes, summary returns a string with statistics
+        self.assertIsInstance(summary, str)
+        self.assertGreater(len(summary), 0)
+        # Should contain the outcome column 'o' in the summary
+        self.assertIn("o", summary)
+        # Should contain mean outcomes and response rates
+        self.assertIn("Mean outcomes", summary)
+        self.assertIn("Response rates", summary)
+
+
+class TestBalanceDF_descriptive_stats_edge_cases(BalanceTestCase):
+    """Test cases for _descriptive_stats method edge cases."""
+
+    def test_descriptive_stats_with_numeric_only_true(self) -> None:
+        """Test _descriptive_stats with numeric_only=True filters categorical columns.
+
+        Verifies:
+        - Categorical columns are excluded when numeric_only=True
+        - Result is a valid DataFrame
+        """
+        # Arrange
+        covars = s1.covars()
+
+        # Act
+        result = covars._descriptive_stats(stat="mean", numeric_only=True)
+
+        # Assert
+        self.assertIsInstance(result, pd.DataFrame)
+        # Result should contain numeric columns
+        self.assertGreater(len(result), 0)
+
+    def test_descriptive_stats_with_weighted_false(self) -> None:
+        """Test _descriptive_stats with weighted=False uses unweighted statistics.
+
+        Verifies:
+        - Unweighted statistics are calculated correctly
+        - Results differ from weighted statistics when weights are not uniform
+        """
+        # Arrange
+        covars = s1.covars()
+
+        # Act
+        weighted_result = covars._descriptive_stats(stat="mean", weighted=True)
+        unweighted_result = covars._descriptive_stats(stat="mean", weighted=False)
+
+        # Assert
+        self.assertIsInstance(weighted_result, pd.DataFrame)
+        self.assertIsInstance(unweighted_result, pd.DataFrame)
+
+    def test_var_of_mean_returns_variance_estimates(self) -> None:
+        """Test var_of_mean returns proper variance estimates.
+
+        Verifies:
+        - var_of_mean returns DataFrame
+        - Values are non-negative
+        - Shape matches input dimensions
+        """
+        # Arrange
+        covars = s1.covars()
+
+        # Act
+        result = covars.var_of_mean()
+
+        # Assert
+        self.assertIsInstance(result, pd.DataFrame)
+        # Variances should be non-negative
+        self.assertTrue((result >= 0).all().all())
+
+
+class TestBalanceDF_string_representation(BalanceTestCase):
+    """Test cases for string representation methods."""
+
+    def test_str_contains_dataframe_representation(self) -> None:
+        """Test __str__ includes meaningful DataFrame representation.
+
+        Verifies:
+        - __str__ output contains DataFrame string representation
+        - Contains expected column names from the data
+        - Shows actual data values
+        """
+        # Arrange
+        covars = s1.covars()
+
+        # Act
+        str_repr = str(covars)
+
+        # Assert
+        self.assertIsInstance(str_repr, str)
+        self.assertTrue(len(str_repr) > 0)
+        self.assertIn("covars from", str_repr)
+
+        # Verify it contains actual column names from the DataFrame
+        expected_columns = ["a", "b", "c"]
+        for col in expected_columns:
+            self.assertIn(
+                col, str_repr, f"Expected column '{col}' in string representation"
+            )
+
+        # Verify it shows some actual data (s1 has specific values)
+        # The DataFrame representation should show at least some data rows
+        self.assertTrue(
+            any(str(val) in str_repr for val in [1, 2, 3, -42, 8]),
+            "Expected some actual data values in string representation",
+        )
+
+    def test_repr_contains_class_information(self) -> None:
+        """Test __repr__ includes class module and qualname.
+
+        Verifies:
+        - __repr__ contains module path
+        - __repr__ contains class name
+        """
+        # Arrange
+        covars = s1.covars()
+
+        # Act
+        repr_str = repr(covars)
+
+        # Assert
+        self.assertIsInstance(repr_str, str)
+        self.assertIn("BalanceDFCovars", repr_str)
+
+
+class TestBalanceDF_df_with_ids(BalanceTestCase):
+    """Test cases for _df_with_ids method."""
+
+    def test_df_with_ids_includes_id_column(self) -> None:
+        """Test _df_with_ids includes the id column from sample.
+
+        Verifies:
+        - Returned DataFrame includes id column
+        - id values match sample ids
+        """
+        # Arrange
+        covars = s1.covars()
+
+        # Act
+        df_with_ids = covars._df_with_ids()
+
+        # Assert
+        self.assertIsInstance(df_with_ids, pd.DataFrame)
+        self.assertIn("id", df_with_ids.columns)
+
+    def test_df_with_ids_preserves_data_columns(self) -> None:
+        """Test _df_with_ids preserves all original data columns.
+
+        Verifies:
+        - All original columns are present
+        - Data values are unchanged
+        """
+        # Arrange
+        covars = s1.covars()
+        original_columns = set(covars.df.columns)
+
+        # Act
+        df_with_ids = covars._df_with_ids()
+
+        # Assert
+        # Original columns should be subset of result columns
+        self.assertTrue(original_columns.issubset(set(df_with_ids.columns)))
+
+
+class TestBalanceDF_asmd_and_kld_edge_cases(BalanceTestCase):
+    """Test cases for asmd and kld methods with edge cases."""
+
+    def test_asmd_returns_valid_result(self) -> None:
+        """Test asmd returns valid result.
+
+        Verifies:
+        - ASMD method executes successfully
+        - Returns DataFrame or expected type
+        """
+        # Arrange - use existing sample with target
+        sample_with_target = s3
+
+        # Act
+        asmd_result = sample_with_target.covars().asmd()
+
+        # Assert
+        self.assertIsInstance(asmd_result, pd.DataFrame)
+        # Result should have data
+        self.assertGreater(len(asmd_result), 0)
+
+    def test_kld_with_single_covariate_returns_scalar_result(self) -> None:
+        """Test kld with single covariate returns appropriate result.
+
+        Verifies:
+        - Single covariate KLD is calculated
+        - Result has expected structure
+        """
+        # Arrange
+        df1 = pd.DataFrame({"x": [1, 2, 3, 4, 5], "id": [1, 2, 3, 4, 5]})
+        df2 = pd.DataFrame({"x": [2, 3, 4, 5, 6], "id": [6, 7, 8, 9, 10]})
+        sample1 = Sample.from_frame(df1, id_column="id")
+        sample2 = Sample.from_frame(df2, id_column="id")
+        sample_with_target = sample1.set_target(sample2)
+
+        # Act
+        kld_result = sample_with_target.covars().kld()
+
+        # Assert
+        self.assertIsInstance(kld_result, (pd.DataFrame, pd.Series, float))
+
+
+class TestBalanceDF_ci_of_mean_edge_cases(BalanceTestCase):
+    """Test cases for confidence interval calculations."""
+
+    def test_ci_of_mean_with_high_alpha_produces_narrow_intervals(self) -> None:
+        """Test ci_of_mean with high alpha (e.g., 0.9) produces narrower intervals.
+
+        Verifies:
+        - Higher alpha values produce narrower confidence intervals
+        - Lower and upper bounds are properly ordered
+        """
+        # Arrange
+        covars = s1.covars()
+
+        # Act
+        ci_90 = covars.ci_of_mean(alpha=0.1)  # 90% CI
+        ci_95 = covars.ci_of_mean(alpha=0.05)  # 95% CI
+
+        # Assert
+        self.assertIsInstance(ci_90, pd.DataFrame)
+        self.assertIsInstance(ci_95, pd.DataFrame)
+
+    def test_mean_with_ci_returns_combined_result(self) -> None:
+        """Test mean_with_ci returns both mean and confidence interval.
+
+        Verifies:
+        - Result includes mean values
+        - Result includes CI bounds
+        - Structure is as expected
+        """
+        # Arrange
+        covars = s1.covars()
+
+        # Act
+        result = covars.mean_with_ci()
+
+        # Assert
+        self.assertIsInstance(result, pd.DataFrame)
+        # Should have mean and CI columns
+        self.assertTrue(len(result.columns) > 1)

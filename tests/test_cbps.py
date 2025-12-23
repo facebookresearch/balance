@@ -828,3 +828,443 @@ class Testcbps(
             log_correlation > 0.99,
             msg=f"Python CBPS should very highly correlate with R CBPS on log scale (>0.99), got {log_correlation}",
         )
+
+    def test_cbps_exact_method_with_constraint_violation(self) -> None:
+        """Test CBPS 'exact' method when constraints cannot be satisfied.
+
+        This test verifies that the 'exact' method handles cases where
+        the design effect constraint results in all weights becoming identical,
+        which indicates the constraint is too tight for meaningful balancing.
+        """
+        # Create data that requires high design effect for balance
+        sample_df = pd.DataFrame({"a": [-30] * 5 + [1] * 10})
+        sample_weights = pd.Series((1,) * 15)
+        target_df = pd.DataFrame({"a": [15] * 15})
+        target_weights = pd.Series((1,) * 15)
+
+        # Test that 'exact' method with tight constraint produces identical weights
+        # (which means the balancing essentially fails)
+        result = balance_cbps.cbps(
+            sample_df,
+            sample_weights,
+            target_df,
+            target_weights,
+            transformations=None,
+            cbps_method="exact",
+            max_de=1.01,  # Very tight constraint
+            weight_trimming_mean_ratio=None,
+        )
+
+        # When constraints are too tight, all weights become identical
+        # This is indicated by very low standard deviation
+        weights = result["weight"].values
+        self.assertTrue(
+            np.std(weights) < 1e-4,
+            msg="With tight constraints, weights should become identical (std < 1e-4)",
+        )
+
+    def test_cbps_invalid_method(self) -> None:
+        """Test that CBPS raises appropriate error for invalid method parameter.
+
+        This test verifies input validation for the cbps_method parameter,
+        ensuring only 'over' and 'exact' are accepted.
+        """
+        sample_df = pd.DataFrame({"a": (1, 2, 3, 4, 5)})
+        sample_weights = pd.Series((1,) * 5)
+        target_df = pd.DataFrame({"a": (1, 2, 3, 4, 6)})
+        target_weights = pd.Series((1,) * 5)
+
+        # Test invalid method parameter
+        with self.assertRaises(Exception) as context:
+            balance_cbps.cbps(
+                sample_df,
+                sample_weights,
+                target_df,
+                target_weights,
+                transformations=None,
+                cbps_method="invalid_method",
+            )
+
+        self.assertIn(
+            "not a valid option",
+            str(context.exception).lower(),
+            msg="Should raise exception for invalid cbps_method",
+        )
+
+    def test_cbps_balance_classes_false(self) -> None:
+        """Test CBPS with balance_classes=False parameter.
+
+        This test verifies that CBPS correctly handles the balance_classes=False
+        option, which uses unbalanced design weights instead of balancing sample
+        and target sizes. This is useful when the original size difference between
+        sample and target should be preserved.
+        """
+        sample_df = pd.DataFrame({"a": (1, 2, 3, 4, 5, 6, 7, 8, 9)})
+        sample_weights = pd.Series((1,) * 9)
+        target_df = pd.DataFrame({"a": (5, 6, 7, 8, 9, 10, 11, 12, 13)})
+        target_weights = pd.Series((2,) * 9)  # Different weights to test
+
+        # Test with balance_classes=False
+        result_unbalanced = balance_cbps.cbps(
+            sample_df,
+            sample_weights,
+            target_df,
+            target_weights,
+            transformations=None,
+            balance_classes=False,
+        )
+
+        # Test with balance_classes=True for comparison
+        result_balanced = balance_cbps.cbps(
+            sample_df,
+            sample_weights,
+            target_df,
+            target_weights,
+            transformations=None,
+            balance_classes=True,
+        )
+
+        # Results should be different
+        self.assertIn("weight", result_unbalanced)
+        self.assertIn("weight", result_balanced)
+        self.assertEqual(len(result_unbalanced["weight"]), 9)
+        self.assertEqual(len(result_balanced["weight"]), 9)
+
+        # Verify that weights differ between balanced and unbalanced approaches
+        weights_diff = np.sum(
+            np.abs(
+                result_unbalanced["weight"].values - result_balanced["weight"].values
+            )
+        )
+        self.assertTrue(
+            weights_diff > 0.01,
+            msg="balance_classes=False should produce different weights than balance_classes=True",
+        )
+
+    def test_logit_truncated_with_dataframe_input(self) -> None:
+        """Test logit_truncated function with pandas DataFrame input.
+
+        This test verifies that the function handles both numpy array and
+        pandas DataFrame inputs correctly, which is important for flexibility
+        in different contexts.
+        """
+        # Test with DataFrame input
+        X_df = pd.DataFrame([[1, 2, 3], [4, 5, 6], [0, 0, -100]])
+        beta = np.array([1, 0.5, 1])
+
+        result_df = balance_cbps.logit_truncated(X_df, beta)
+        expected = np.array([0.993307, 0.99999, 1.00000000e-05])
+
+        np.testing.assert_array_equal(
+            np.around(result_df, 6),
+            expected,
+            err_msg="logit_truncated should work with DataFrame input",
+        )
+
+        # Test with array input for comparison
+        X_array = X_df.values
+        result_array = balance_cbps.logit_truncated(X_array, beta)
+
+        np.testing.assert_array_almost_equal(
+            result_df,
+            result_array,
+            err_msg="DataFrame and array inputs should produce identical results",
+        )
+
+    def test_compute_pseudo_weights_with_dataframe_inputs(self) -> None:
+        """Test compute_pseudo_weights_from_logit_probs with DataFrame inputs.
+
+        This test ensures the function handles both numpy arrays and pandas
+        DataFrames for design_weights and in_pop parameters.
+        """
+        probs = np.array([0.1, 0.6, 0.2])
+
+        # Test with array inputs (baseline)
+        design_weights_array = np.array([1, 8, 3])
+        in_pop_array = np.array([1.0, 0, 1.0])
+        result_array = balance_cbps.compute_pseudo_weights_from_logit_probs(
+            probs, design_weights_array, in_pop_array
+        )
+
+        # Test with DataFrame inputs (convert from Series)
+        design_weights_df = pd.DataFrame([1, 8, 3])
+        in_pop_df = pd.DataFrame([1.0, 0, 1.0])
+        result_df = balance_cbps.compute_pseudo_weights_from_logit_probs(
+            probs, design_weights_df.values.flatten(), in_pop_df.values.flatten()
+        )
+
+        expected = np.array([3.0, -4.5, 3.0])
+        np.testing.assert_array_equal(
+            np.around(result_array, 1),
+            expected,
+            err_msg="Should work with array inputs",
+        )
+        np.testing.assert_array_equal(
+            np.around(result_df, 1),
+            expected,
+            err_msg="Should work with DataFrame-derived inputs",
+        )
+
+    def test_cbps_with_different_optimization_methods(self) -> None:
+        """Test CBPS with different scipy optimization methods.
+
+        This test verifies that CBPS works with various optimization algorithms,
+        which is important for robustness and allows users to choose methods
+        based on their specific needs.
+        """
+        sample_df = pd.DataFrame({"a": (1, 2, 3, 4, 5, 6, 7, 8, 9)})
+        sample_weights = pd.Series((1,) * 9)
+        target_df = pd.DataFrame({"a": (3, 4, 5, 6, 7, 8, 9, 10, 11)})
+        target_weights = pd.Series((1,) * 9)
+
+        # Test with different optimization methods
+        methods_to_test = ["COBYLA", "SLSQP"]
+
+        results = {}
+        for method in methods_to_test:
+            result = balance_cbps.cbps(
+                sample_df,
+                sample_weights,
+                target_df,
+                target_weights,
+                transformations=None,
+                opt_method=method,
+            )
+            results[method] = result
+
+            # Verify result structure
+            self.assertIn("weight", result)
+            self.assertEqual(len(result["weight"]), 9)
+            self.assertIn("model", result)
+
+        # Both methods should produce valid results
+        self.assertTrue(
+            len(results) == len(methods_to_test),
+            msg="All optimization methods should produce results",
+        )
+
+    def test_cbps_exact_method_success(self) -> None:
+        """Test CBPS 'exact' method with feasible constraints.
+
+        This test verifies that the 'exact' method (which uses only balance
+        conditions without propensity score conditions) works correctly when
+        constraints can be satisfied.
+        """
+        sample_df = pd.DataFrame({"a": (1, 2, 3, 4, 5, 6, 7, 8, 9)})
+        sample_weights = pd.Series((1,) * 9)
+        target_df = pd.DataFrame({"a": (2, 3, 4, 5, 6, 7, 8, 9, 10)})
+        target_weights = pd.Series((1,) * 9)
+
+        # Test 'exact' method with reasonable data
+        result = balance_cbps.cbps(
+            sample_df,
+            sample_weights,
+            target_df,
+            target_weights,
+            transformations=None,
+            cbps_method="exact",
+            weight_trimming_mean_ratio=None,
+        )
+
+        # Verify result structure
+        self.assertIn("weight", result)
+        self.assertEqual(len(result["weight"]), 9)
+        self.assertIn("model", result)
+
+        # Verify that 'exact' method returns appropriate model info
+        self.assertEqual(result["model"]["method"], "cbps")
+        self.assertIsNone(
+            result["model"]["gmm_optimize_result_glm_init"],
+            msg="'exact' method should not have GMM optimization results",
+        )
+        self.assertIsNone(
+            result["model"]["gmm_optimize_result_bal_init"],
+            msg="'exact' method should not have GMM optimization results",
+        )
+
+    def test_cbps_over_method_gmm_selection(self) -> None:
+        """Test CBPS 'over' method selects best GMM optimization result.
+
+        This test verifies that when using the 'over' method, both GLM-initialized
+        and balance-initialized optimizations are run, and the best result is selected
+        based on the GMM loss function.
+        """
+        # Create simple test data
+        sample_df = pd.DataFrame({"a": (1, 2, 3, 4, 5, 6, 7, 8, 9)})
+        sample_weights = pd.Series((1,) * 9)
+        target_df = pd.DataFrame({"a": (3, 4, 5, 6, 7, 8, 9, 10, 11)})
+        target_weights = pd.Series((1,) * 9)
+
+        # Test 'over' method
+        result = balance_cbps.cbps(
+            sample_df,
+            sample_weights,
+            target_df,
+            target_weights,
+            transformations=None,
+            cbps_method="over",
+            weight_trimming_mean_ratio=None,
+        )
+
+        # Verify both GMM optimization results exist for 'over' method
+        self.assertIsNotNone(result["model"]["gmm_optimize_result_glm_init"])
+        self.assertIsNotNone(result["model"]["gmm_optimize_result_bal_init"])
+        self.assertIn("weight", result)
+        self.assertEqual(len(result["weight"]), 9)
+
+    def test_gmm_function_with_dataframe_inputs(self) -> None:
+        """Test gmm_function with pandas DataFrame inputs.
+
+        This test verifies that the GMM function handles DataFrame inputs
+        correctly, which is important for integration with pandas-based
+        workflows.
+        """
+        X_df = pd.DataFrame([[1, 2, 3], [4, 5, 6], [0, 0, -100]])
+        beta = np.array([1, 0.5, 1])
+        design_weights_array = np.array([1, 8, 3])
+        in_pop_array = np.array([1.0, 0, 1.0])
+
+        # Test with DataFrame input for X
+        result = balance_cbps.gmm_function(
+            beta, X_df, design_weights_array, in_pop_array
+        )
+
+        # Verify result structure
+        self.assertIn("loss", result)
+        self.assertIn("invV", result)
+        self.assertTrue(isinstance(result["loss"], (float, np.floating)))
+        self.assertTrue(isinstance(result["invV"], np.ndarray))
+
+        # Test with array input for comparison
+        result_array = balance_cbps.gmm_function(
+            beta, X_df.values, design_weights_array, in_pop_array
+        )
+        # Results should be similar
+        self.assertAlmostEqual(
+            float(result["loss"]), float(result_array["loss"]), places=5
+        )
+
+    def test_cbps_with_custom_opt_opts(self) -> None:
+        """Test CBPS with custom optimization options.
+
+        This test verifies that users can pass custom options to the
+        scipy optimizer through the opt_opts parameter.
+        """
+        sample_df = pd.DataFrame({"a": (1, 2, 3, 4, 5, 6, 7, 8, 9)})
+        sample_weights = pd.Series((1,) * 9)
+        target_df = pd.DataFrame({"a": (2, 3, 4, 5, 6, 7, 8, 9, 10)})
+        target_weights = pd.Series((1,) * 9)
+
+        # Test with custom optimization options
+        custom_opts = {"maxiter": 50, "rhobeg": 0.5}
+        result = balance_cbps.cbps(
+            sample_df,
+            sample_weights,
+            target_df,
+            target_weights,
+            transformations=None,
+            opt_method="COBYLA",
+            opt_opts=custom_opts,
+        )
+
+        # Verify result structure
+        self.assertIn("weight", result)
+        self.assertEqual(len(result["weight"]), 9)
+
+    def test_alpha_function_with_different_values(self) -> None:
+        """Test alpha_function with various alpha values.
+
+        This test verifies that the alpha function correctly interpolates
+        between efficiency and balance for different alpha values, which is
+        used in the rescaling step of CBPS.
+        """
+        X = np.array([[1, 2, 3], [4, 5, 6], [0, 0, -100]])
+        beta = np.array([1, 0.5, 1])
+        design_weights = np.array([1, 8, 3])
+        in_pop = np.array([1.0, 0, 1.0])
+
+        # Test with alpha=0.8
+        alpha_08 = np.array([0.8])
+        result_08 = balance_cbps.alpha_function(
+            alpha_08, beta, X, design_weights, in_pop
+        )
+
+        # Test with alpha=0.9
+        alpha_09 = np.array([0.9])
+        result_09 = balance_cbps.alpha_function(
+            alpha_09, beta, X, design_weights, in_pop
+        )
+
+        # Test with alpha=1.0
+        alpha_10 = np.array([1.0])
+        result_10 = balance_cbps.alpha_function(
+            alpha_10, beta, X, design_weights, in_pop
+        )
+
+        # Verify monotonicity: larger alpha should give larger or equal loss
+        # Handle both float and np.ndarray return types
+        val_08 = result_08[0] if isinstance(result_08, np.ndarray) else result_08
+        val_09 = result_09[0] if isinstance(result_09, np.ndarray) else result_09
+        val_10 = result_10[0] if isinstance(result_10, np.ndarray) else result_10
+
+        self.assertTrue(
+            val_08 <= val_09,
+            msg="Loss should increase (or stay same) with larger alpha",
+        )
+        self.assertTrue(
+            val_09 <= val_10,
+            msg="Loss should increase (or stay same) with larger alpha",
+        )
+
+    def test_cbps_with_weight_trimming_percentile(self) -> None:
+        """Test CBPS with weight_trimming_percentile (winsorization).
+
+        This test verifies that CBPS correctly applies winsorization when
+        weight_trimming_percentile is specified instead of weight_trimming_mean_ratio.
+        """
+        sample_df = pd.DataFrame({"a": [-20] + [1] * 13 + [10] * 1})
+        sample_weights = pd.Series((1,) * 15)
+        target_df = pd.DataFrame({"a": [10] * 10 + [11] * 5})
+        target_weights = pd.Series((1,) * 15)
+
+        # Test with percentile trimming (winsorization)
+        result_percentile = balance_cbps.cbps(
+            sample_df,
+            sample_weights,
+            target_df,
+            target_weights,
+            transformations=None,
+            weight_trimming_mean_ratio=None,
+            weight_trimming_percentile=0.95,
+        )
+
+        # Test without any trimming to verify trimming is actually applied
+        result_no_trim = balance_cbps.cbps(
+            sample_df,
+            sample_weights,
+            target_df,
+            target_weights,
+            transformations=None,
+            weight_trimming_mean_ratio=None,
+            weight_trimming_percentile=None,
+        )
+
+        # Both should produce valid results
+        self.assertIn("weight", result_percentile)
+        self.assertIn("weight", result_no_trim)
+        self.assertEqual(len(result_percentile["weight"]), 15)
+        self.assertEqual(len(result_no_trim["weight"]), 15)
+
+        # Verify that percentile trimming is applied correctly
+        # The weights should be valid (positive and finite)
+        weights_percentile = result_percentile["weight"].values
+        self.assertTrue(np.all(weights_percentile > 0))
+        self.assertTrue(np.all(np.isfinite(weights_percentile)))
+
+        # Verify that both methods produce normalized weights (sum to target size)
+        self.assertAlmostEqual(
+            np.sum(weights_percentile),
+            np.sum(target_weights),
+            places=5,
+            msg="Percentile-trimmed weights should sum to target weight sum",
+        )

@@ -36,6 +36,9 @@ logger: "logging.Logger" = logging.getLogger(__package__)
 class BalanceDF:
     """
     Wrapper class around a Sample which provides additional balance-specific functionality
+
+    This class encapsulates a pandas DataFrame along with a Sample object reference,
+    providing methods for statistical analysis, plotting, and data transformation.
     """
 
     _model_matrix: Any = None
@@ -1836,6 +1839,7 @@ class BalanceDFCovars(BalanceDF):
         """A factory function to create a BalanceDFCovars from a df.
 
         Although generally the main way the object is created is through the __init__ method.
+        This method is useful when you need to create a BalanceDFCovars object directly from a DataFrame.
 
         Args:
             self (BalanceDFCovars): Object

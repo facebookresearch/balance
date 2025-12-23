@@ -181,6 +181,48 @@ def _verify_value_type(
     return optional
 
 
+def _coerce_scalar(value: Any) -> float:
+    """Safely convert a scalar value to ``float`` for diagnostics.
+
+    ``None`` and non-scalar inputs are converted to ``NaN``. Scalar inputs are
+    coerced to ``float`` when possible; otherwise, ``NaN`` is returned instead
+    of raising a ``TypeError`` or ``ValueError``. Arrays and sequences return
+    ``NaN`` so callers do not need to special-case these inputs.
+
+    Args:
+        value: Candidate value to coerce.
+
+    Returns:
+        float: ``float`` representation of ``value`` when possible, otherwise
+        ``NaN``.
+
+    Example:
+        >>> _coerce_scalar(3)
+        3.0
+        >>> _coerce_scalar("7.125")
+        7.125
+        >>> _coerce_scalar(True)
+        1.0
+        >>> _coerce_scalar(complex(1, 2))
+        nan
+        >>> _coerce_scalar(())
+        nan
+        >>> _coerce_scalar([1, 2, 3])
+        nan
+    """
+
+    if value is None:
+        return float("nan")
+
+    if np.isscalar(value):
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return float("nan")
+
+    return float("nan")
+
+
 def _is_categorical_dtype(series: pd.Series) -> bool:
     """Check if a pandas Series has a categorical dtype.
 
@@ -1837,7 +1879,6 @@ def fct_lump_by(s: pd.Series, by: pd.Series, prop: float = 0.05) -> pd.Series:
     return res
 
 
-# TODO: add tests
 def _pd_convert_all_types(
     df: pd.DataFrame, input_type: str, output_type: str
 ) -> pd.DataFrame:
@@ -1888,7 +1929,6 @@ def _pd_convert_all_types(
     return df
 
 
-# TODO: add tests
 def find_items_index_in_list(a_list: List[Any], items: List[Any]) -> List[int]:
     """Finds the index location of a given item in an array.
 
@@ -1923,12 +1963,11 @@ def find_items_index_in_list(a_list: List[Any], items: List[Any]) -> List[int]:
             type(find_items_index_in_list(l, items)[0])
                 # int
     """
-    # TODO: checking that i is in set each time is expensive -
-    #       there are probably faster ways to do it.
+    # TODO: (p2) Optimization note: checking that i is in set each time is expensive -
+    #       there are probably faster ways to do it. Consider using a dict-based approach for large lists.
     return [a_list.index(i) for i in items if i in set(a_list)]
 
 
-# TODO: add tests
 def get_items_from_list_via_indices(a_list: List[Any], indices: List[int]) -> List[Any]:
     """Gets a subset of items from a list via indices
 
