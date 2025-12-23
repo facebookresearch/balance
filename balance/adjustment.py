@@ -126,11 +126,11 @@ def _quantile_with_method(
     array_data = np.asarray(data, dtype=np.float64)
     try:
         # pyre-ignore[6]: method is a valid literal for np.quantile
-        return float(np.quantile(array_data, q, method=method))  # type: ignore[call-overload]
+        return float(np.quantile(array_data, q, method=method))
     except TypeError:
         # Older NumPy versions (<1.22) use the ``interpolation`` kwarg.
         # pyre-ignore[28]: interpolation is valid for older NumPy versions
-        return float(np.quantile(array_data, q, interpolation=method))  # type: ignore[call-arg]
+        return float(np.quantile(array_data, q, interpolation=method))
 
 
 def trim_weights(

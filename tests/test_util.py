@@ -895,15 +895,15 @@ class TestUtil(
 
         # Test on Series input
         r = balance_util.quantize(pd.Series(np.random.uniform(0, 1, 100)), 7)
-        self.assertTrue(len(set(r.values)) == 7)  # pyre-ignore[16]
+        self.assertEqual(len(set(r.values)), 7)  # pyre-ignore[16]
 
         # Test on numpy array input
         r = balance_util.quantize(np.random.uniform(0, 1, 100), 7)
-        self.assertTrue(len(set(r.values)) == 7)  # pyre-ignore[16]
+        self.assertEqual(len(set(r.values)), 7)  # pyre-ignore[16]
 
         # Test on single integer input
         r = balance_util.quantize(pd.Series([1]), 1)
-        self.assertTrue(len(set(r.values)) == 1)  # pyre-ignore[16]
+        self.assertEqual(len(set(r.values)), 1)  # pyre-ignore[16]
 
     def test_quantize_preserves_column_order(self) -> None:
         df = pd.DataFrame(
