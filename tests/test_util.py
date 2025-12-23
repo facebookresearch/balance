@@ -918,8 +918,9 @@ class TestUtil(
         result = balance_util.quantize(df, q=4, variables=["first", "third"])
 
         self.assertListEqual(
-            list(result.columns), ["first", "second", "third"]
-        )  # pyre-ignore[16]
+            list(result.columns),  # pyre-ignore[16]
+            ["first", "second", "third"],
+        )
         self.assertIsInstance(result.loc[0, "first"], pd.Interval)  # pyre-ignore[16]
         self.assertEqual(result.loc[0, "second"], "a")  # pyre-ignore[16]
         self.assertIsInstance(result.loc[0, "third"], pd.Interval)  # pyre-ignore[16]
@@ -973,7 +974,7 @@ class TestUtil(
         # Test with None argument
         r = rm_mutual_nas(d, d2, None)
         for i, j in zip(r, (d, d2, None)):
-            numpy.testing.assert_array_equal(i, j)
+            numpy.testing.assert_array_equal(i, j)  # pyre-ignore[6]
 
     def test_rm_mutual_nas_with_na_values(self) -> None:
         """Test rm_mutual_nas behavior with various NA values."""
@@ -1047,7 +1048,7 @@ class TestUtil(
         pd.core.arrays.base.ExtensionArray,
         pd.core.arrays.base.ExtensionArray,
         pd.core.arrays.base.ExtensionArray,
-        np.ndarray,
+        npt.NDArray[Any],
         np.ndarray,
         list[int | float | str],
     ]:
@@ -1588,10 +1589,11 @@ class TestUtil(
 
         # test fct_lump_by doesn't affect indices when combining dataframes
         s = pd.DataFrame(
-            {"d": [1, 1, 1], "e": ["a1", "a2", "a1"]}, index=(0, 6, 7)
-        )  # pyre-ignore[6]
+            {"d": [1, 1, 1], "e": ["a1", "a2", "a1"]}, index=(0, 6, 7)  # pyre-ignore[6]
+        )
         t = pd.DataFrame(
-            {"d": [2, 3, 1, 2], "e": ["a2", "a2", "a1", "a2"]}, index=(0, 1, 2, 3)
+            {"d": [2, 3, 1, 2], "e": ["a2", "a2", "a1", "a2"]},
+            index=(0, 1, 2, 3),  # pyre-ignore[6]
         )
         df = pd.concat([s, t])
         r = balance_util.fct_lump_by(df.d, df.e, 0.5)
@@ -1908,7 +1910,7 @@ class TestUtil(
         denominator = np.array([1, 0, 3, 2])
         result = balance_util._safe_divide_with_zero_handling(numerator, denominator)
         expected = np.array([1.0, np.inf, 1.0, 2.0])
-        np.testing.assert_array_equal(result, expected)  # pyre-ignore[6]
+        np.testing.assert_array_equal(result, expected)
 
         # Test with pandas Series
         num_series = pd.Series([10, 20, 30])

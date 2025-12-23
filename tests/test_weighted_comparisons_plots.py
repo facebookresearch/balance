@@ -715,7 +715,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         weighted_patches = ax_weighted.patches
         num_bars_per_dataset = len(weighted_patches) // 2
         weighted_heights_self = [
-            p.get_height() for p in weighted_patches[:num_bars_per_dataset]
+            p.get_height() for p in weighted_patches[:num_bars_per_dataset]  # pyre-ignore[16]
         ]
         weighted_heights_target = [
             p.get_height() for p in weighted_patches[num_bars_per_dataset:]
@@ -823,7 +823,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
             # because the weights are very different
             max_y_diff_weighted = max(
                 abs(y_self - y_target)
-                for y_self, y_target in zip(
+                for y_self, y_target in zip(  # pyre-ignore[6]
                     kde_y_values_self_weighted, kde_y_values_target_weighted
                 )
             )
