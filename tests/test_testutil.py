@@ -335,7 +335,7 @@ class TestNoneThrows(
         arr = np.array([1, 2, 3])
         result = balance.testutil._verify_value_type(arr, np.ndarray)
         self.assertIsInstance(result, np.ndarray)
-        np.testing.assert_array_equal(result, arr)
+        np.testing.assert_array_equal(result, arr)  # pyre-ignore[6]
 
     def test__verify_value_type_with_pandas_series(self) -> None:
         """Test that _verify_value_type works with pandas Series."""

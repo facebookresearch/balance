@@ -893,15 +893,15 @@ class TestUtil(
 
         # Test on Series input
         r = balance_util.quantize(pd.Series(np.random.uniform(0, 1, 100)), 7)
-        self.assertTrue(len(set(r.values)) == 7)
+        self.assertTrue(len(set(r.values)) == 7)  # pyre-ignore[16]
 
         # Test on numpy array input
         r = balance_util.quantize(np.random.uniform(0, 1, 100), 7)
-        self.assertTrue(len(set(r.values)) == 7)
+        self.assertTrue(len(set(r.values)) == 7)  # pyre-ignore[16]
 
         # Test on single integer input
         r = balance_util.quantize(pd.Series([1]), 1)
-        self.assertTrue(len(set(r.values)) == 1)
+        self.assertTrue(len(set(r.values)) == 1)  # pyre-ignore[16]
 
     def test_quantize_preserves_column_order(self) -> None:
         df = pd.DataFrame(
@@ -914,10 +914,10 @@ class TestUtil(
 
         result = balance_util.quantize(df, q=4, variables=["first", "third"])
 
-        self.assertListEqual(list(result.columns), ["first", "second", "third"])
-        self.assertIsInstance(result.loc[0, "first"], pd.Interval)
-        self.assertEqual(result.loc[0, "second"], "a")
-        self.assertIsInstance(result.loc[0, "third"], pd.Interval)
+        self.assertListEqual(list(result.columns), ["first", "second", "third"])  # pyre-ignore[16]
+        self.assertIsInstance(result.loc[0, "first"], pd.Interval)  # pyre-ignore[16]
+        self.assertEqual(result.loc[0, "second"], "a")  # pyre-ignore[16]
+        self.assertIsInstance(result.loc[0, "third"], pd.Interval)  # pyre-ignore[16]
 
     def test_quantize_non_numeric_series_raises(self) -> None:
         self.assertRaisesRegex(
@@ -1901,7 +1901,7 @@ class TestUtil(
         denominator = np.array([1, 0, 3, 2])
         result = balance_util._safe_divide_with_zero_handling(numerator, denominator)
         expected = np.array([1.0, np.inf, 1.0, 2.0])
-        np.testing.assert_array_equal(result, expected)
+        np.testing.assert_array_equal(result, expected)  # pyre-ignore[6]
 
         # Test with pandas Series
         num_series = pd.Series([10, 20, 30])
