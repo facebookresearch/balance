@@ -320,8 +320,8 @@ class TestUtil(
             sample_weights,
         ) = balance_util.drop_na_rows(sample_df, sample_weights, "sample")
         self.assertEqual(
-            sample_df, pd.DataFrame({"a": (2.0), "b": ("c")}, index=[2])
-        )  # pyre-ignore[6]
+            sample_df, pd.DataFrame({"a": (2.0), "b": ("c")}, index=[2])  # pyre-ignore[6]
+        )
         self.assertEqual(sample_weights, pd.Series([3], index=[2]))
 
         # check exceptions

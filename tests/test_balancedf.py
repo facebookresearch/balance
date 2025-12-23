@@ -253,8 +253,9 @@ class TestBalanceDFOutcomes(BalanceTestCase):
         """
         self.assertEqual(
             s_o.outcomes().relative_response_rates(),
-            pd.DataFrame(  # pyre-ignore[6]
-                {"o1": [100.0, 4], "o2": [75.0, 3]}, index=["%", "n"]
+            pd.DataFrame(
+                {"o1": [100.0, 4], "o2": [75.0, 3]},
+                index=["%", "n"],  # pyre-ignore[6]
             ),
             lazy=True,
         )
@@ -1139,7 +1140,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
                 "c[z]": 0.0,
                 "mean(kld)": 0.045776,
             },
-            index=("covars",),
+            index=("covars",),  # pyre-ignore[6]
         )
 
         expected.index.name = "index"
@@ -1192,7 +1193,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
                 expected_unadjusted,
                 expected_unadjusted - expected_self,
             ],
-            index=["self", "unadjusted", "unadjusted - self"],
+            index=["self", "unadjusted", "unadjusted - self"],  # pyre-ignore[6]
         )
 
         output = covars.kld(aggregate_by_main_covar=True)
