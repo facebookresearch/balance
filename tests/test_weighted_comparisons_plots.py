@@ -823,7 +823,8 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
             # because the weights are very different
             max_y_diff_weighted = max(
                 abs(y_self - y_target)
-                for y_self, y_target in zip(  # pyre-ignore[6]
+                # pyre-ignore[6]
+                for y_self, y_target in zip(
                     kde_y_values_self_weighted, kde_y_values_target_weighted
                 )
             )
@@ -852,6 +853,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
 
             # When weighted=False, both datasets should have identical KDE curves
             # (weights are ignored, so same DataFrame = same KDE)
+            # pyre-ignore[6]
             for y_self, y_target in zip(
                 kde_y_values_self_unweighted, kde_y_values_target_unweighted
             ):

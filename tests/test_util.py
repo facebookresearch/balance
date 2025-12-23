@@ -15,6 +15,7 @@ import balance.testutil
 
 import numpy as np
 import numpy.testing
+import numpy.typing as npt
 import pandas as pd
 
 # TODO: remove the use of balance_util in most cases, and just import the functions to be tested directly
@@ -23,6 +24,7 @@ from balance.sample_class import Sample
 from balance.util import _coerce_scalar, _verify_value_type
 
 from numpy import dtype
+from typing import Any
 
 from scipy.sparse import csc_matrix
 
@@ -1048,7 +1050,7 @@ class TestUtil(
         pd.core.arrays.base.ExtensionArray,
         pd.core.arrays.base.ExtensionArray,
         pd.core.arrays.base.ExtensionArray,
-        npt.NDArray[Any],
+        npt.NDArray[Any],  # pyre-ignore[11]
         np.ndarray,
         list[int | float | str],
     ]:
