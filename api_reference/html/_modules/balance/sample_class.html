@@ -237,7 +237,8 @@
 <span class="sd">            outcome_columns: None</span>
 <span class="sd">            adjustment details:</span>
 <span class="sd">                method: ipw</span>
-<span class="sd">                design effect (Deff): 1.013, eff. sample size: 2.0</span>
+<span class="sd">                design effect (Deff): 1.013</span>
+<span class="sd">                effective sample size (ESS): 2.0</span>
 <span class="sd">            target:</span>
 <span class="sd">                 balance Sample object</span>
 <span class="sd">                2 observations x 2 variables: gender,age_group</span>
@@ -319,7 +320,7 @@
 <span class="sd">            directly for custom displays:</span>
 
 <span class="sd">            &gt;&gt;&gt; sample._quick_adjustment_details()  # doctest: +SKIP</span>
-<span class="sd">            [&#39;method: ipw&#39;, &#39;design effect (Deff): 1.013, eff. sample size: 2.0&#39;]</span>
+<span class="sd">            [&#39;method: ipw&#39;, &#39;design effect (Deff): 1.013&#39;, &#39;effective sample size (ESS): 2.0&#39;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">adjustment_details</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -348,14 +349,15 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_design_effect_diagnostics</span><span class="p">(</span><span class="n">n_rows</span><span class="p">)</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">design_effect</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">deff_line</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;design effect (Deff): </span><span class="si">{</span><span class="n">design_effect</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">adjustment_details</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;design effect (Deff): </span><span class="si">{</span><span class="n">design_effect</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">effective_sample_proportion</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">deff_line</span> <span class="o">+=</span> <span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;, eff. sample size proportion: </span><span class="si">{</span><span class="n">effective_sample_proportion</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">adjustment_details</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;effective sample size proportion (ESSP): </span><span class="si">{</span><span class="n">effective_sample_proportion</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
             <span class="k">if</span> <span class="n">effective_n</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">deff_line</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, eff. sample size: </span><span class="si">{</span><span class="n">effective_n</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="n">adjustment_details</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">deff_line</span><span class="p">)</span>
+                <span class="n">adjustment_details</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;effective sample size (ESS): </span><span class="si">{</span><span class="n">effective_n</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">adjustment_details</span>
 
@@ -1351,7 +1353,15 @@
         <span class="n">sections</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="n">adjustment_lines</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">quick_adjustment_details</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">d</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;design effect&quot;</span><span class="p">)</span>
+            <span class="n">d</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">quick_adjustment_details</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">d</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span>
+                <span class="p">(</span>
+                    <span class="s2">&quot;design effect&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;effective sample size proportion&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;effective sample size (ESS)&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
         <span class="p">]</span>
         <span class="k">if</span> <span class="n">adjustment_lines</span><span class="p">:</span>
             <span class="n">sections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>

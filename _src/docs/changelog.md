@@ -14,6 +14,11 @@ hide_title: true
 
 ## Bug Fixes
 
+- **Updated `Sample.__str__()` to format weight diagnostics like `Sample.summary()`**
+  - Weight diagnostics (design effect, effective sample size proportion, effective sample size)
+    are now displayed on separate lines instead of comma-separated on one line.
+  - Replaced "eff." abbreviations with full "effective" word for better readability.
+  - Improves consistency with `Sample.summary()` output format.
 - **Numerically stable CBPS probabilities**
   - The CBPS helper now uses a stable logistic transform to avoid exponential
     overflow warnings during probability computation in constraint checks.
