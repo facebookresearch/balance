@@ -1257,7 +1257,9 @@ class Sample:
         adjustment_lines = [
             d
             for d in quick_adjustment_details
-            if not d.startswith(("design effect", "effective sample"))
+            if not d.startswith(
+                ("design effect", "effective sample size proportion", "effective sample size (ESS)")
+            )
         ]
         if adjustment_lines:
             sections.append(
