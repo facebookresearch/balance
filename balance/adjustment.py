@@ -85,7 +85,23 @@ def _validate_limit(limit: float | int | None, n_weights: int) -> float | None:
 
 
 def _quantile_with_method(
-    data: pd.Series | npt.NDArray, q: float, method: str
+    data: pd.Series | npt.NDArray,
+    q: float,
+    method: Literal[
+        "inverted_cdf",
+        "averaged_inverted_cdf",
+        "closest_observation",
+        "interpolated_inverted_cdf",
+        "hazen",
+        "weibull",
+        "linear",
+        "lower",
+        "higher",
+        "midpoint",
+        "nearest",
+        "median_unbiased",
+        "normal_unbiased",
+    ],
 ) -> float:
     """Compute a quantile with explicit method selection.
 
@@ -112,6 +128,7 @@ def _quantile_with_method(
         return float(np.quantile(array_data, q, method=method))
     except TypeError:
         # Older NumPy versions (<1.22) use the ``interpolation`` kwarg.
+        # pyre-ignore[28]: interpolation is valid for older NumPy versions
         return float(np.quantile(array_data, q, interpolation=method))
 
 
@@ -122,7 +139,7 @@ def trim_weights(
     weight_trimming_percentile: float | Tuple[float, float] | None = None,
     verbose: bool = False,
     keep_sum_of_weights: bool = True,
-    target_sum_weights: float | int | np.floating | None = None,
+    target_sum_weights: float | int | np.floating[Any] | None = None,
 ) -> pd.Series:
     """Trim extreme weights using mean ratio clipping or percentile-based winsorization.
 

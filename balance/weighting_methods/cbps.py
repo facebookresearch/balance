@@ -530,8 +530,7 @@ def cbps(  # noqa
 
     # balance classes
     if balance_classes:
-        design_weights = cast(
-            npt.NDArray,
+        design_weights = (
             total_n
             / 2
             * np.concatenate(
@@ -539,7 +538,7 @@ def cbps(  # noqa
                     sample_weights / np.sum(sample_weights),
                     target_weights / np.sum(target_weights),
                 )
-            ),
+            )
         )
 
         XtXinv = np.linalg.pinv(
@@ -558,7 +557,7 @@ def cbps(  # noqa
             {
                 "type": "ineq",
                 "fun": lambda x: (
-                    max_de - compute_deff_from_beta(U, x, design_weights, in_pop)
+                    max_de - float(compute_deff_from_beta(U, x, design_weights, in_pop))
                 ),
             }
         ]

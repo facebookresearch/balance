@@ -8,22 +8,19 @@
 from __future__ import annotations
 
 import logging
-
 from copy import deepcopy
+from typing import Any
 
 import balance.testutil
-
 import numpy as np
 import numpy.testing
+import numpy.typing as npt
 import pandas as pd
-
 # TODO: remove the use of balance_util in most cases, and just import the functions to be tested directly
 from balance import util as balance_util
 from balance.sample_class import Sample
 from balance.util import _coerce_scalar, _verify_value_type
-
 from numpy import dtype
-
 from scipy.sparse import csc_matrix
 
 
@@ -142,7 +139,7 @@ class TestUtil(
             ValueError,
             "sample_df index must be the same as sample_weights index",
             balance_util._check_weighting_methods_input,
-            df=pd.DataFrame({"a": [1, 2]}, index=[1, 2]),
+            df=pd.DataFrame({"a": [1, 2]}, index=[1, 2]),  # pyre-ignore[6]
             weights=pd.Series([1, 1], index=[3, 4]),
             object_name="sample",
         )
@@ -243,7 +240,7 @@ class TestUtil(
                 "_is_na_a": (False, True, False, True),
                 "_is_na_b": (True, False, False, True),
             },
-            columns=("a", "b", "_is_na_a", "_is_na_b"),
+            columns=("a", "b", "_is_na_a", "_is_na_b"),  # pyre-ignore[6]
         )
         r = balance_util.add_na_indicator(df)
         self.assertEqual(r, e)
@@ -269,7 +266,7 @@ class TestUtil(
                 ),
                 "_is_na_d": (False, False, True, True),
             },
-            columns=("c", "d", "_is_na_d"),
+            columns=("c", "d", "_is_na_d"),  # pyre-ignore[6]
         )
         self.assertEqual(balance_util.add_na_indicator(df), e)
 
@@ -282,7 +279,7 @@ class TestUtil(
                 "_is_na_a": (False, True, False, True),
                 "_is_na_b": (True, False, False, True),
             },
-            columns=("a", "b", "_is_na_a", "_is_na_b"),
+            columns=("a", "b", "_is_na_a", "_is_na_b"),  # pyre-ignore[6]
         )
         r = balance_util.add_na_indicator(df, replace_val_obj="AAA", replace_val_num=42)
         self.assertEqual(r, e)
@@ -319,11 +316,14 @@ class TestUtil(
             sample_df,
             sample_weights,
         ) = balance_util.drop_na_rows(sample_df, sample_weights, "sample")
-        self.assertEqual(sample_df, pd.DataFrame({"a": (2.0), "b": ("c")}, index=[2]))
+        self.assertEqual(
+            sample_df,
+            pd.DataFrame({"a": (2.0), "b": ("c")}, index=[2]),  # pyre-ignore[6]
+        )
         self.assertEqual(sample_weights, pd.Series([3], index=[2]))
 
         # check exceptions
-        sample_df = pd.DataFrame({"a": (None), "b": ("b")}, index=[1])
+        sample_df = pd.DataFrame({"a": (None), "b": ("b")}, index=[1])  # pyre-ignore[6]
         sample_weights = pd.Series([1])
         self.assertRaisesRegex(
             ValueError,
@@ -707,7 +707,7 @@ class TestUtil(
         # Test add_na argument
         e = pd.DataFrame(
             {"a": (0.0, 2.0), "b": (0.0, 2.0), "c[a]": (1.0, 1.0), "c[b]": (0.0, 0.0)},
-            index=(0, 2),
+            index=(0, 2),  # pyre-ignore[6]
         )
         r = balance_util.model_matrix(s, add_na=False)
         self.assertWarnsRegexp(
@@ -893,15 +893,15 @@ class TestUtil(
 
         # Test on Series input
         r = balance_util.quantize(pd.Series(np.random.uniform(0, 1, 100)), 7)
-        self.assertTrue(len(set(r.values)) == 7)
+        self.assertEqual(len(set(r.values)), 7)  # pyre-ignore[16]
 
         # Test on numpy array input
         r = balance_util.quantize(np.random.uniform(0, 1, 100), 7)
-        self.assertTrue(len(set(r.values)) == 7)
+        self.assertEqual(len(set(r.values)), 7)  # pyre-ignore[16]
 
         # Test on single integer input
         r = balance_util.quantize(pd.Series([1]), 1)
-        self.assertTrue(len(set(r.values)) == 1)
+        self.assertEqual(len(set(r.values)), 1)  # pyre-ignore[16]
 
     def test_quantize_preserves_column_order(self) -> None:
         df = pd.DataFrame(
@@ -914,10 +914,13 @@ class TestUtil(
 
         result = balance_util.quantize(df, q=4, variables=["first", "third"])
 
-        self.assertListEqual(list(result.columns), ["first", "second", "third"])
-        self.assertIsInstance(result.loc[0, "first"], pd.Interval)
-        self.assertEqual(result.loc[0, "second"], "a")
-        self.assertIsInstance(result.loc[0, "third"], pd.Interval)
+        self.assertListEqual(
+            list(result.columns),  # pyre-ignore[16]
+            ["first", "second", "third"],
+        )
+        self.assertIsInstance(result.loc[0, "first"], pd.Interval)  # pyre-ignore[16]
+        self.assertEqual(result.loc[0, "second"], "a")  # pyre-ignore[16]
+        self.assertIsInstance(result.loc[0, "third"], pd.Interval)  # pyre-ignore[16]
 
     def test_quantize_non_numeric_series_raises(self) -> None:
         self.assertRaisesRegex(
@@ -931,7 +934,7 @@ class TestUtil(
         d = pd.DataFrame({"a": (1, 2, 3), "b": (-42, 8, 2)})
         e = pd.DataFrame(
             {"a": (1, 2, 3, 1, 2, 1), "b": (-42, 8, 2, 50, 44, -6)},
-            index=(0, 1, 2, "1 - 0", "2 - 0", "2 - 1"),
+            index=(0, 1, 2, "1 - 0", "2 - 0", "2 - 1"),  # pyre-ignore[6]
         )
         self.assertEqual(balance_util.row_pairwise_diffs(d), e)
 
@@ -968,7 +971,7 @@ class TestUtil(
         # Test with None argument
         r = rm_mutual_nas(d, d2, None)
         for i, j in zip(r, (d, d2, None)):
-            numpy.testing.assert_array_equal(i, j)
+            numpy.testing.assert_array_equal(i, j)  # pyre-ignore[6]
 
     def test_rm_mutual_nas_with_na_values(self) -> None:
         """Test rm_mutual_nas behavior with various NA values."""
@@ -1042,8 +1045,8 @@ class TestUtil(
         pd.core.arrays.base.ExtensionArray,
         pd.core.arrays.base.ExtensionArray,
         pd.core.arrays.base.ExtensionArray,
-        np.ndarray,
-        np.ndarray,
+        npt.NDArray[Any],
+        npt.NDArray[Any],
         list[int | float | str],
     ]:
         """Helper method to create test arrays for rm_mutual_nas testing.
@@ -1308,7 +1311,7 @@ class TestUtil(
                 "key_a_value": (1.0, 2.0, 4.0),
                 "key_b_value": (1.0, 2.0, np.nan),
             },
-            columns=("id", "key_a_value", "key_b_value"),
+            columns=("id", "key_a_value", "key_b_value"),  # pyre-ignore[6]
         )
         self.assertEqual(expected, balance_util.auto_spread(data))
 
@@ -1333,7 +1336,7 @@ class TestUtil(
                 "key_a_other_value": (2.0, 4.0, 6.0),
                 "key_b_other_value": (2.0, 4.0, np.nan),
             },
-            columns=(
+            columns=(  # pyre-ignore[6]
                 "id",
                 "key_a_other_value",
                 "key_b_other_value",
@@ -1367,7 +1370,7 @@ class TestUtil(
                 "key_a_value": (1.0, 4.0, 1.0),
                 "key_b_value": (3.0, 2.0, np.nan),
             },
-            columns=("id", "key_a_value", "key_b_value"),
+            columns=("id", "key_a_value", "key_b_value"),  # pyre-ignore[6]
         )
         self.assertEqual(expected, balance_util.auto_spread(data))
         self.assertWarnsRegexp("2 possible groupings", balance_util.auto_spread, data)
@@ -1582,9 +1585,12 @@ class TestUtil(
         )
 
         # test fct_lump_by doesn't affect indices when combining dataframes
-        s = pd.DataFrame({"d": [1, 1, 1], "e": ["a1", "a2", "a1"]}, index=(0, 6, 7))
+        s = pd.DataFrame(
+            {"d": [1, 1, 1], "e": ["a1", "a2", "a1"]}, index=(0, 6, 7)  # pyre-ignore[6]
+        )
         t = pd.DataFrame(
-            {"d": [2, 3, 1, 2], "e": ["a2", "a2", "a1", "a2"]}, index=(0, 1, 2, 3)
+            {"d": [2, 3, 1, 2], "e": ["a2", "a2", "a1", "a2"]},
+            index=(0, 1, 2, 3),  # pyre-ignore[6]
         )
         df = pd.concat([s, t])
         r = balance_util.fct_lump_by(df.d, df.e, 0.5)

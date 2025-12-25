@@ -10,7 +10,6 @@ from __future__ import annotations
 from typing import Any, cast
 
 import balance.testutil
-
 import numpy as np
 import pandas as pd
 from balance.util import _verify_value_type
@@ -242,7 +241,7 @@ class TestBalance_weights_stats(
         # One weight has 60% of total
         result = weighted_median_breakdown_point(pd.Series([60, 20, 20]))
         # 60/(60+20+20) = 60/100 = 0.6 > 0.5, so need 1 observation = 1/3
-        self.assertAlmostEqual(result, 1 / 3, places=10)
+        self.assertAlmostEqual(result, 1 / 3, places=10)  # pyre-ignore[6]
 
     def test_weighted_median_breakdown_point_with_all_zeros_except_one(self) -> None:
         """Test breakdown point when only one weight is non-zero.
@@ -330,7 +329,7 @@ class TestBalance_weighted_stats(
             v2, w2 = _prepare_weighted_stat_args(v, w)  # type: ignore[arg-type]
         with self.assertRaises(TypeError):
             v, w = (1, 2), pd.Series([1, 2])
-            v2, w2 = _prepare_weighted_stat_args(v, w)
+            v2, w2 = _prepare_weighted_stat_args(v, w)  # pyre-ignore[6]
         with self.assertRaises(ValueError):
             v, w = pd.Series([1, 2, 3]), pd.Series([1, 2])
             v2, w2 = _prepare_weighted_stat_args(v, w)
@@ -459,9 +458,11 @@ class TestBalance_weighted_stats(
 
         # np.array v (replacing np.matrix)
         d = np.array([(-1, 2, 1, 2), (1, 2, 3, 4)]).transpose()
-        pd.testing.assert_series_equal(weighted_mean(d), pd.Series((1, 2.5)))
         pd.testing.assert_series_equal(
-            weighted_mean(d, w=pd.Series((1, 2, 3, 4))),
+            weighted_mean(d), pd.Series((1, 2.5))  # pyre-ignore[6]
+        )
+        pd.testing.assert_series_equal(
+            weighted_mean(d, w=pd.Series((1, 2, 3, 4))),  # pyre-ignore[6]
             pd.Series((1.4, 3)),
         )
 
@@ -799,7 +800,7 @@ class TestBalance_weighted_comparisons_stats(
                 "education[T. masters]": 1,
                 "education[T. phd]": 1,
             },
-            index=("self",),
+            index=("self",),  # pyre-ignore[6]
         )
 
         outcome = _weights_per_covars_names(asmd_df.columns.values.tolist()).to_dict()

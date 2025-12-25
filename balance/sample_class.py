@@ -633,7 +633,7 @@ class Sample:
             # NOTE: must import here so to avoid circular dependency
             from balance.balancedf_class import BalanceDFOutcomes
 
-            return BalanceDFOutcomes(self)
+            return BalanceDFOutcomes(self)  # pyre-ignore[6]
         else:
             return None
 
@@ -653,7 +653,7 @@ class Sample:
         # NOTE: must import here so to avoid circular dependency
         from balance.balancedf_class import BalanceDFWeights
 
-        return BalanceDFWeights(self)
+        return BalanceDFWeights(self)  # pyre-ignore[6]
 
     def covars(
         self: "Sample",
@@ -673,7 +673,7 @@ class Sample:
         # NOTE: must import here so to avoid circular dependency
         from balance.balancedf_class import BalanceDFCovars
 
-        return BalanceDFCovars(self)
+        return BalanceDFCovars(self)  # pyre-ignore[6]
 
     def ignored_columns(self: "Sample") -> pd.DataFrame | None:
         """Return columns marked as ignored on the sample.
@@ -1386,7 +1386,7 @@ class Sample:
         """
         logger.info("Starting computation of diagnostics of the fitting")
         self._check_if_adjusted()
-        diagnostics = pd.DataFrame(columns=["metric", "val", "var"])
+        diagnostics = pd.DataFrame(columns=["metric", "val", "var"])  # pyre-ignore[6]
 
         # ----------------------------------------------------
         # Properties of the Sample object (dimensions of the data)
