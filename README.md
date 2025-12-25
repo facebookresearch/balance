@@ -15,7 +15,7 @@
 
 </div>
 
-> [!NOTE] _balance_ is currently **in beta** and is actively supported. Follow
+> [NOTE] _balance_ is currently **in beta** and is actively supported. Follow
 > us [on github](https://github.com/facebookresearch/balance).
 
 ## What is _balance_?
