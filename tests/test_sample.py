@@ -1943,7 +1943,7 @@ class TestSample_high_cardinality_warnings(balance.testutil.BalanceTestCase):
 
         # With uniform weights (all 1s), we should see design effect information
         self.assertIn("design effect", str_repr)
-        self.assertIn("eff. sample size", str_repr)
+        self.assertIn("effective sample size", str_repr)
 
     def test_str_includes_design_effect_with_weights(self) -> None:
         """Test __str__ includes design effect information with weights.
@@ -1972,7 +1972,7 @@ class TestSample_high_cardinality_warnings(balance.testutil.BalanceTestCase):
         # Should include design effect information
         self.assertIn("design effect", str_repr)
         self.assertIn("Deff", str_repr)
-        self.assertIn("eff. sample size", str_repr)
+        self.assertIn("effective sample size", str_repr)
 
     def test_str_without_weights_no_design_effect(self) -> None:
         """Test __str__ for samples without explicit weights.

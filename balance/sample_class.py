@@ -198,7 +198,8 @@ class Sample:
             outcome_columns: None
             adjustment details:
                 method: ipw
-                design effect (Deff): 1.013, eff. sample size: 2.0
+                design effect (Deff): 1.013
+                effective sample size (ESS): 2.0
             target:
                  balance Sample object
                 2 observations x 2 variables: gender,age_group
@@ -280,7 +281,7 @@ class Sample:
             directly for custom displays:
 
             >>> sample._quick_adjustment_details()  # doctest: +SKIP
-            ['method: ipw', 'design effect (Deff): 1.013, eff. sample size: 2.0']
+            ['method: ipw', 'design effect (Deff): 1.013', 'effective sample size (ESS): 2.0']
         """
 
         adjustment_details: List[str] = []
@@ -309,14 +310,15 @@ class Sample:
             self._design_effect_diagnostics(n_rows)
         )
         if design_effect is not None:
-            deff_line = f"design effect (Deff): {design_effect:.3f}"
+            adjustment_details.append(f"design effect (Deff): {design_effect:.3f}")
             if effective_sample_proportion is not None:
-                deff_line += (
-                    f", eff. sample size proportion: {effective_sample_proportion:.3f}"
+                adjustment_details.append(
+                    f"effective sample size proportion (ESSP): {effective_sample_proportion:.3f}"
                 )
             if effective_n is not None:
-                deff_line += f", eff. sample size: {effective_n:.1f}"
-            adjustment_details.append(deff_line)
+                adjustment_details.append(
+                    f"effective sample size (ESS): {effective_n:.1f}"
+                )
 
         return adjustment_details
 
@@ -1253,7 +1255,15 @@ class Sample:
         sections: List[str] = []
 
         adjustment_lines = [
-            d for d in quick_adjustment_details if not d.startswith("design effect")
+            d
+            for d in quick_adjustment_details
+            if not d.startswith(
+                (
+                    "design effect",
+                    "effective sample size proportion",
+                    "effective sample size (ESS)",
+                )
+            )
         ]
         if adjustment_lines:
             sections.append(
