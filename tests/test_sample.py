@@ -1880,6 +1880,7 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
             [],
             "Expected no WARNING logs from 'balance' when target is not large enough",
         )
+
     def test_adjustment_details_with_ipw_method_in_str(self) -> None:
         """Test __str__ includes IPW adjustment details.
 
