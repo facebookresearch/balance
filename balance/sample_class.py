@@ -830,6 +830,21 @@ class Sample:
         sample_covars_df = self.covars().df
         target_covars_df = target.covars().df
 
+        sample_rows = sample_covars_df.shape[0]
+        target_rows = target_covars_df.shape[0]
+        if (
+            sample_rows > 0
+            and target_rows > 100_000
+            and target_rows >= 10 * sample_rows
+        ):
+            logger.warning(
+                "Large target detected for adjustment: target has %s rows versus %s "
+                "in the sample (>10x, >100k). Standard errors will likely be dominated "
+                "by the sample (akin to a one-sample comparison).",
+                target_rows,
+                sample_rows,
+            )
+
         sample_high_card = _detect_high_cardinality_features(sample_covars_df)
         target_high_card = _detect_high_cardinality_features(target_covars_df)
 

@@ -1825,6 +1825,56 @@ class TestSample_high_cardinality_warnings(balance.testutil.BalanceTestCase):
             "Expected higher-cardinality column to appear first in warning.",
         )
 
+
+class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
+    def test_warns_when_target_is_large_and_imbalanced(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "x": np.arange(1000, dtype=float),
+                "id": [f"s{i}" for i in range(1000)],
+                "weight": np.ones(1000),
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "x": np.arange(100_001, dtype=float),
+                "id": [f"t{i}" for i in range(100_001)],
+                "weight": np.ones(100_001),
+            }
+        )
+
+        sample = Sample.from_frame(sample_df, id_column="id", weight_column="weight")
+        target = Sample.from_frame(target_df, id_column="id", weight_column="weight")
+
+        with self.assertLogs("balance", level="WARNING") as logs:
+            sample.adjust(target, method="null")
+
+        self.assertTrue(
+            any("Large target detected for adjustment" in log for log in logs.output)
+        )
+
+    def test_no_warning_when_target_not_large_enough(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "x": np.arange(1000, dtype=float),
+                "id": [f"s{i}" for i in range(1000)],
+                "weight": np.ones(1000),
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "x": np.arange(100_000, dtype=float),
+                "id": [f"t{i}" for i in range(100_000)],
+                "weight": np.ones(100_000),
+            }
+        )
+
+        sample = Sample.from_frame(sample_df, id_column="id", weight_column="weight")
+        target = Sample.from_frame(target_df, id_column="id", weight_column="weight")
+
+        with self.assertNoLogs("balance", level="WARNING"):
+            sample.adjust(target, method="null")
+
     def test_adjustment_details_with_ipw_method_in_str(self) -> None:
         """Test __str__ includes IPW adjustment details.
 
