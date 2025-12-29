@@ -830,6 +830,25 @@ class Sample:
         sample_covars_df = self.covars().df
         target_covars_df = target.covars().df
 
+        num_rows_sample = sample_covars_df.shape[0]
+        num_rows_target = target_covars_df.shape[0]
+        if (
+            num_rows_sample > 0
+            # TODO: the values of 100_000 and 10 are arbitrary,
+            #       and should be replaced with a more principled approach (in the far future)
+            and num_rows_target > 100_000
+            and num_rows_target >= 10 * num_rows_sample
+        ):
+            logger.warning(
+                "Large target detected: %s target rows vs %s sample rows. "
+                "When the target is much larger than the sample (here >10x and >100k rows), "
+                "the target's contribution to variance becomes negligible. "
+                "Standard errors will be driven almost entirely by the sample, "
+                "similar to a one-sample inference setting.",
+                num_rows_target,
+                num_rows_sample,
+            )
+
         sample_high_card = _detect_high_cardinality_features(sample_covars_df)
         target_high_card = _detect_high_cardinality_features(target_covars_df)
 

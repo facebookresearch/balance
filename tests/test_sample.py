@@ -21,9 +21,11 @@ of Sample functionality.
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import logging
+
 from copy import deepcopy
 from textwrap import dedent
-from typing import Any
+from typing import Any, Callable
 from unittest.mock import MagicMock
 
 import balance.testutil
@@ -1824,6 +1826,116 @@ class TestSample_high_cardinality_warnings(balance.testutil.BalanceTestCase):
             < warning_logs[0].find(", high (unique"),
             "Expected higher-cardinality column to appear first in warning.",
         )
+
+
+class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
+    @staticmethod
+    def _build_frame(prefix: str, rows: int) -> pd.DataFrame:
+        return pd.DataFrame(
+            {
+                "x": np.arange(rows, dtype=float),
+                "id": [f"{prefix}{i}" for i in range(rows)],
+                "weight": np.ones(rows),
+            }
+        )
+
+    @staticmethod
+    def _collect_warnings(callable_fn: Callable[[], object]) -> list[str]:
+        logger = logging.getLogger("balance")
+        handler = logging.Handler()
+        records: list[logging.LogRecord] = []
+
+        def _emit(record: logging.LogRecord) -> None:
+            records.append(record)
+
+        handler.emit = _emit  # type: ignore[assignment]
+        previous_level = logger.level
+        logger.addHandler(handler)
+        logger.setLevel(logging.WARNING)
+        try:
+            callable_fn()
+        finally:
+            logger.removeHandler(handler)
+            logger.setLevel(previous_level)
+        return [record.getMessage() for record in records]
+
+    def test_warns_when_target_is_large_and_imbalanced(self) -> None:
+        sample_df = self._build_frame("s", 1000)
+        target_df = self._build_frame("t", 100_001)
+
+        sample = Sample.from_frame(sample_df, id_column="id", weight_column="weight")
+        target = Sample.from_frame(target_df, id_column="id", weight_column="weight")
+
+        logs = self._collect_warnings(
+            lambda: _verify_value_type(sample.adjust(target, method="null"))
+        )
+
+        self.assertTrue(any("Large target detected" in log for log in logs))
+
+    def test_no_warning_when_target_not_large_enough(self) -> None:
+        sample_df = self._build_frame("s", 1000)
+        target_df = self._build_frame("t", 100_000)
+
+        sample = Sample.from_frame(sample_df, id_column="id", weight_column="weight")
+        target = Sample.from_frame(target_df, id_column="id", weight_column="weight")
+
+        logs = self._collect_warnings(
+            lambda: _verify_value_type(sample.adjust(target, method="null"))
+        )
+
+        self.assertFalse(any("Large target detected" in log for log in logs))
+
+    def test_warns_at_exact_ten_to_one_ratio(self) -> None:
+        sample_df = self._build_frame("s", 10_000)
+        target_df = self._build_frame("t", 100_001)
+
+        sample = Sample.from_frame(sample_df, id_column="id", weight_column="weight")
+        target = Sample.from_frame(target_df, id_column="id", weight_column="weight")
+
+        logs = self._collect_warnings(
+            lambda: _verify_value_type(sample.adjust(target, method="null"))
+        )
+
+        self.assertTrue(any("Large target detected" in log for log in logs))
+
+    def test_no_warning_when_target_under_ten_to_one_ratio(self) -> None:
+        sample_df = self._build_frame("s", 10_001)
+        target_df = self._build_frame("t", 100_001)
+
+        sample = Sample.from_frame(sample_df, id_column="id", weight_column="weight")
+        target = Sample.from_frame(target_df, id_column="id", weight_column="weight")
+
+        logs = self._collect_warnings(
+            lambda: _verify_value_type(sample.adjust(target, method="null"))
+        )
+
+        self.assertFalse(any("Large target detected" in log for log in logs))
+
+    def test_no_warning_when_target_equals_sample(self) -> None:
+        sample_df = self._build_frame("s", 100_001)
+        target_df = self._build_frame("t", 100_001)
+
+        sample = Sample.from_frame(sample_df, id_column="id", weight_column="weight")
+        target = Sample.from_frame(target_df, id_column="id", weight_column="weight")
+
+        logs = self._collect_warnings(
+            lambda: _verify_value_type(sample.adjust(target, method="null"))
+        )
+
+        self.assertFalse(any("Large target detected" in log for log in logs))
+
+    def test_no_warning_when_sample_empty(self) -> None:
+        sample_df = self._build_frame("s", 0)
+        target_df = self._build_frame("t", 100_001)
+
+        sample = Sample.from_frame(sample_df, id_column="id", weight_column="weight")
+        target = Sample.from_frame(target_df, id_column="id", weight_column="weight")
+
+        logs = self._collect_warnings(
+            lambda: _verify_value_type(sample.adjust(target, method="null"))
+        )
+
+        self.assertFalse(any("Large target detected" in log for log in logs))
 
     def test_adjustment_details_with_ipw_method_in_str(self) -> None:
         """Test __str__ includes IPW adjustment details.
