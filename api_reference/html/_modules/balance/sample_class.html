@@ -892,6 +892,25 @@
         <span class="n">sample_covars_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span>
         <span class="n">target_covars_df</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span>
 
+        <span class="n">num_rows_sample</span> <span class="o">=</span> <span class="n">sample_covars_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">num_rows_target</span> <span class="o">=</span> <span class="n">target_covars_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">num_rows_sample</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="c1"># TODO: the values of 100_000 and 10 are arbitrary,</span>
+            <span class="c1">#       and should be replaced with a more principled approach (in the far future)</span>
+            <span class="ow">and</span> <span class="n">num_rows_target</span> <span class="o">&gt;</span> <span class="mi">100_000</span>
+            <span class="ow">and</span> <span class="n">num_rows_target</span> <span class="o">&gt;=</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">num_rows_sample</span>
+        <span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Large target detected: </span><span class="si">%s</span><span class="s2"> target rows vs </span><span class="si">%s</span><span class="s2"> sample rows. &quot;</span>
+                <span class="s2">&quot;When the target is much larger than the sample (here &gt;10x and &gt;100k rows), &quot;</span>
+                <span class="s2">&quot;the target&#39;s contribution to variance becomes negligible. &quot;</span>
+                <span class="s2">&quot;Standard errors will be driven almost entirely by the sample, &quot;</span>
+                <span class="s2">&quot;similar to a one-sample inference setting.&quot;</span><span class="p">,</span>
+                <span class="n">num_rows_target</span><span class="p">,</span>
+                <span class="n">num_rows_sample</span><span class="p">,</span>
+            <span class="p">)</span>
+
         <span class="n">sample_high_card</span> <span class="o">=</span> <span class="n">_detect_high_cardinality_features</span><span class="p">(</span><span class="n">sample_covars_df</span><span class="p">)</span>
         <span class="n">target_high_card</span> <span class="o">=</span> <span class="n">_detect_high_cardinality_features</span><span class="p">(</span><span class="n">target_covars_df</span><span class="p">)</span>
 

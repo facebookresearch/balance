@@ -12,6 +12,13 @@ hide_title: true
 
 > TODO: update to final version
 
+## New Features
+
+- **Warn when adjustment target dwarfs sample size**
+  - `Sample.adjust()` now warns when the target exceeds 100k rows and is at
+    least 10x larger than the sample, highlighting that uncertainty is
+    dominated by the sample (akin to a one-sample comparison).
+
 ## Bug Fixes
 
 - **Updated `Sample.__str__()` to format weight diagnostics like `Sample.summary()`**
