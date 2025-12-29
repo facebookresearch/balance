@@ -1875,10 +1875,9 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
         with self.assertLogs("balance", level="WARNING") as cm:
             sample.adjust(target, method="null")
 
-        self.assertEqual(
-            cm.output,
-            [],
-            "Expected no WARNING logs from 'balance' when target is not large enough",
+        self.assertFalse(
+            any("Large target detected" in log for log in cm.output),
+            "Did not expect 'Large target detected' warning when target is not large enough",
         )
 
     def test_adjustment_details_with_ipw_method_in_str(self) -> None:
