@@ -1872,9 +1872,14 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
         sample = Sample.from_frame(sample_df, id_column="id", weight_column="weight")
         target = Sample.from_frame(target_df, id_column="id", weight_column="weight")
 
-        with self.assertNoLogs("balance", level="WARNING"):
+        with self.assertLogs("balance", level="WARNING") as cm:
             sample.adjust(target, method="null")
 
+        self.assertEqual(
+            cm.output,
+            [],
+            "Expected no WARNING logs from 'balance' when target is not large enough",
+        )
     def test_adjustment_details_with_ipw_method_in_str(self) -> None:
         """Test __str__ includes IPW adjustment details.
 
