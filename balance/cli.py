@@ -61,6 +61,10 @@ class BalanceCLI:
                 needed_columns.extend(keep_cols)
         if self.has_keep_row_column():
             needed_columns.append(self.keep_row_column())
+        if self.has_outcome_columns():
+            outcome_columns = self.outcome_columns()
+            if outcome_columns is not None:
+                needed_columns.extend(outcome_columns)
 
         for nc in needed_columns:
             assert nc in columns, f"{nc} not in input colums"
@@ -107,6 +111,14 @@ class BalanceCLI:
 
     def keep_row_column(self) -> str:
         return self.args.keep_row_column
+
+    def has_outcome_columns(self) -> bool:
+        return self.args.outcome_columns is not None
+
+    def outcome_columns(self) -> list[str] | None:
+        if self.args.outcome_columns:
+            return self.args.outcome_columns.split(",")
+        return None
 
     def max_de(self) -> float | None:
         return self.args.max_de
@@ -202,11 +214,19 @@ class BalanceCLI:
             }
 
         # Stuff everything that is not id, weight, or covariate into outcomes
-        outcome_columns = tuple(
-            set(batch_df.columns)
-            - {self.id_column(), self.weight_column()}
-            - set(self.covariate_columns())
-        )
+        outcome_columns = self.outcome_columns()
+        if outcome_columns is None:
+            outcome_columns = [
+                column
+                for column in batch_df.columns
+                if column
+                not in {
+                    self.id_column(),
+                    self.weight_column(),
+                    *self.covariate_columns(),
+                }
+            ]
+        outcome_columns = tuple(outcome_columns)
 
         # definitions for diagnostics
         covariate_columns_for_diagnostics = self.covariate_columns_for_diagnostics()
@@ -598,6 +618,15 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
     )
     parser.add_argument(
         "--covariate_columns", required=True, help="Set of columns used for adjustment"
+    )
+    parser.add_argument(
+        "--outcome_columns",
+        required=False,
+        default=None,
+        help=(
+            "Set of columns used as outcomes. If not supplied, all columns that are "
+            "not in id, weight, or covariate columns are treated as outcomes."
+        ),
     )
     parser.add_argument(
         "--covariate_columns_for_diagnostics",

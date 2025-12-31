@@ -109,6 +109,114 @@ def _create_sample_and_target_data() -> pd.DataFrame:
 class TestCli(
     balance.testutil.BalanceTestCase,
 ):
+    def _make_cli(self, **overrides: str | None) -> BalanceCLI:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            input_file = os.path.join(temp_dir, "input.csv")
+            output_file = os.path.join(temp_dir, "output.csv")
+            parser = make_parser()
+            args_to_parse = [
+                "--input_file",
+                input_file,
+                "--output_file",
+                output_file,
+                "--covariate_columns",
+                "covar_a,covar_b",
+            ]
+            if overrides.get("outcome_columns") is not None:
+                args_to_parse.extend(
+                    ["--outcome_columns", str(overrides["outcome_columns"])]
+                )
+            args = parser.parse_args(args_to_parse)
+        return BalanceCLI(args)
+
+    def _make_batch_df(self) -> pd.DataFrame:
+        return pd.DataFrame(
+            {
+                "is_respondent": [1, 0],
+                "id": [1, 2],
+                "weight": [1.0, 1.0],
+                "covar_a": [1.0, 2.0],
+                "covar_b": [3.0, 4.0],
+                "outcome_b": [10.0, 20.0],
+                "outcome_a": [30.0, 40.0],
+                "extra": [5.0, 6.0],
+            }
+        )
+
+    def _recording_sample_cls(self) -> type:
+        class RecordingSample:
+            calls: list[tuple[str, ...]] = []
+
+            def __init__(self, df: pd.DataFrame) -> None:
+                self.df = df
+                self._df_dtypes = df.dtypes
+
+            @classmethod
+            def from_frame(
+                cls,
+                df: pd.DataFrame,
+                id_column: str | None = None,
+                weight_column: str | None = None,
+                outcome_columns: tuple[str, ...] | None = None,
+                **kwargs: object,
+            ) -> "RecordingSample":
+                if outcome_columns is None:
+                    raise AssertionError("Expected outcome_columns to be provided.")
+                cls.calls.append(outcome_columns)
+                return cls(df)
+
+            def set_target(self, target: "RecordingSample") -> "RecordingSample":
+                return self
+
+            def adjust(self, **kwargs: object) -> "RecordingSample":
+                return self
+
+            def keep_only_some_rows_columns(
+                self,
+                rows_to_keep: str | None = None,
+                columns_to_keep: list[str] | None = None,
+            ) -> "RecordingSample":
+                return self
+
+            def diagnostics(self) -> pd.DataFrame:
+                return pd.DataFrame()
+
+        return RecordingSample
+
+    def test_cli_outcome_columns_default_inference_preserves_order(self) -> None:
+        RecordingSample = self._recording_sample_cls()
+        cli = self._make_cli()
+        cli.process_batch(
+            self._make_batch_df(),
+            sample_cls=RecordingSample,
+            sample_package_name="recording",
+        )
+        self.assertEqual(
+            RecordingSample.calls,
+            [
+                ("is_respondent", "outcome_b", "outcome_a", "extra"),
+                ("is_respondent", "outcome_b", "outcome_a", "extra"),
+            ],
+        )
+
+    def test_cli_outcome_columns_explicit_selection(self) -> None:
+        RecordingSample = self._recording_sample_cls()
+        cli = self._make_cli(outcome_columns="outcome_a,outcome_b")
+        cli.process_batch(
+            self._make_batch_df(),
+            sample_cls=RecordingSample,
+            sample_package_name="recording",
+        )
+        self.assertEqual(
+            RecordingSample.calls,
+            [("outcome_a", "outcome_b"), ("outcome_a", "outcome_b")],
+        )
+
+    def test_cli_outcome_columns_missing_column_raises(self) -> None:
+        cli = self._make_cli(outcome_columns="missing")
+        with self.assertRaises(AssertionError):
+            cli.check_input_columns(self._make_batch_df().columns)
+
     def test_cli_help(self) -> None:
         """Test that CLI help command executes without errors."""
         parser = make_parser()
