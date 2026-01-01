@@ -8,6 +8,9 @@
   - `Sample.adjust()` now warns when the target exceeds 100k rows and is at
     least 10x larger than the sample, highlighting that uncertainty is
     dominated by the sample (akin to a one-sample comparison).
+- **Expose outcome columns selection in the CLI**
+  - Added `--outcome_columns` to choose which columns are treated as outcomes
+    instead of defaulting to all non-id/weight/covariate columns. Remaining columns are moved to `ignored_columns`.
 
 ## Bug Fixes
 
