@@ -499,7 +499,7 @@ class TestSample_base_and_adjust_methods(
                 "id": ("1", "2", "3", "4"),
                 "w": (0.5, 2, 1, 1),
             },
-            columns=("id", "a", "b", "c", "o", "w"),
+            columns=("id", "a", "b", "c", "o", "w"),  # pyre-ignore[6]
         )
         self.assertEqual(s1.df, e)
 
@@ -523,7 +523,7 @@ class TestSample_base_and_adjust_methods(
                 "w": (0.5, 1, 2),
                 "c": ("x", "y", "z"),
             },
-            columns=("id", "a", "b", "c", "w"),
+            columns=("id", "a", "b", "c", "w"),  # pyre-ignore[6]
         )
         self.assertEqual(s2.df, e)
 
@@ -538,7 +538,7 @@ class TestSample_base_and_adjust_methods(
             {
                 "o": (7.0, 8.0, 9.0, 10.0),
             },
-            columns=["o"],
+            columns=["o"],  # pyre-ignore[6]
         )
         self.assertEqual(s1.outcomes().df, e)
 
@@ -552,7 +552,7 @@ class TestSample_base_and_adjust_methods(
             {
                 "w": (0.5, 2, 1, 1),
             },
-            columns=["w"],
+            columns=["w"],  # pyre-ignore[6]
         )
         self.assertEqual(s1.weights().df, e)
 
@@ -1585,7 +1585,7 @@ class TestSample_NA_behavior(balance.testutil.BalanceTestCase):
         ) -> Sample:
             s1 = Sample.from_frame(df, standardize_types=standardize_types)
             s2 = deepcopy(s1)
-            s2.set_weights(np.ones(100))
+            s2.set_weights(np.ones(100))  # pyre-ignore[6]
             return s1.set_target(s2)
 
         np.random.seed(123)

@@ -18,6 +18,7 @@ from functools import reduce
 from typing import Any, Callable, Dict, List, Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 
 from balance import adjustment as balance_adjustment, util as balance_util
@@ -27,12 +28,12 @@ logger: logging.Logger = logging.getLogger(__package__)
 
 # TODO: Add options for only marginal distributions input
 def _run_ipf_numpy(
-    original: np.ndarray,
-    target_margins: List[np.ndarray],
+    original: npt.NDArray[Any],
+    target_margins: List[npt.NDArray[Any]],
     convergence_rate: float,
     max_iteration: int,
     rate_tolerance: float,
-) -> Tuple[np.ndarray, int, pd.DataFrame]:
+) -> Tuple[npt.NDArray[Any], int, pd.DataFrame]:
     """Run iterative proportional fitting on a NumPy array.
 
     This reimplements the minimal subset of the :mod:`ipfn` package that is
@@ -318,7 +319,7 @@ def rake(
         logger.warning("Maximum iterations reached, convergence was not achieved")
 
     combos = list(itertools.product(*categories))
-    fit = pd.DataFrame(combos, columns=alphabetized_variables)
+    fit = pd.DataFrame(combos, columns=alphabetized_variables)  # pyre-ignore[6]
     fit["rake_weight"] = m_fit.flatten()
 
     raked = pd.merge(

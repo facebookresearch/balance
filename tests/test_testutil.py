@@ -11,7 +11,6 @@ import logging
 import sys
 
 import balance.testutil
-
 import numpy as np
 import pandas as pd
 
@@ -29,7 +28,7 @@ class TestTestUtil(
         """
         df_original = pd.DataFrame({"a": (1, 2, 3), "b": (4, 5, 6)})
         df_reordered = pd.DataFrame(
-            {"a": (1, 2, 3), "b": (4, 5, 6)}, columns=("b", "a")
+            {"a": (1, 2, 3), "b": (4, 5, 6)}, columns=("b", "a")  # pyre-ignore[6]
         )
         return df_original, df_reordered
 
@@ -140,7 +139,7 @@ class TestTestUtil_BalanceTestCase_Equal(
         """Test assertEqual method with DataFrames in strict mode (default behavior)."""
         df_original = pd.DataFrame({"a": (1, 2, 3), "b": (4, 5, 6)})
         df_reordered = pd.DataFrame(
-            {"a": (1, 2, 3), "b": (4, 5, 6)}, columns=("b", "a")
+            {"a": (1, 2, 3), "b": (4, 5, 6)}, columns=("b", "a")  # pyre-ignore[6]
         )
 
         # Should raise error by default (strict mode)
@@ -155,7 +154,7 @@ class TestTestUtil_BalanceTestCase_Equal(
         """Test assertEqual method with DataFrames in lazy mode."""
         df_original = pd.DataFrame({"a": (1, 2, 3), "b": (4, 5, 6)})
         df_reordered = pd.DataFrame(
-            {"a": (1, 2, 3), "b": (4, 5, 6)}, columns=("b", "a")
+            {"a": (1, 2, 3), "b": (4, 5, 6)}, columns=("b", "a")  # pyre-ignore[6]
         )
 
         # Should not raise error in lazy mode
@@ -335,7 +334,7 @@ class TestNoneThrows(
         arr = np.array([1, 2, 3])
         result = balance.testutil._verify_value_type(arr, np.ndarray)
         self.assertIsInstance(result, np.ndarray)
-        np.testing.assert_array_equal(result, arr)
+        np.testing.assert_array_equal(result, arr)  # pyre-ignore[6]
 
     def test__verify_value_type_with_pandas_series(self) -> None:
         """Test that _verify_value_type works with pandas Series."""
