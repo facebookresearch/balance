@@ -146,6 +146,7 @@ class TestCli(
     def _recording_sample_cls(self) -> type:
         class RecordingSample:
             calls: list[tuple[str, ...]] = []
+            ignore_calls: list[list[str] | None] = []
 
             def __init__(self, df: pd.DataFrame) -> None:
                 self.df = df
@@ -158,11 +159,13 @@ class TestCli(
                 id_column: str | None = None,
                 weight_column: str | None = None,
                 outcome_columns: tuple[str, ...] | None = None,
+                ignore_columns: list[str] | None = None,
                 **kwargs: object,
             ) -> "RecordingSample":
                 if outcome_columns is None:
                     raise AssertionError("Expected outcome_columns to be provided.")
                 cls.calls.append(outcome_columns)
+                cls.ignore_calls.append(ignore_columns)
                 return cls(df)
 
             def set_target(self, target: "RecordingSample") -> "RecordingSample":
@@ -198,6 +201,7 @@ class TestCli(
                 ("is_respondent", "outcome_b", "outcome_a", "extra"),
             ],
         )
+        self.assertEqual(RecordingSample.ignore_calls, [None, None])
 
     def test_cli_outcome_columns_explicit_selection(self) -> None:
         RecordingSample = self._recording_sample_cls()
@@ -210,6 +214,10 @@ class TestCli(
         self.assertEqual(
             RecordingSample.calls,
             [("outcome_a", "outcome_b"), ("outcome_a", "outcome_b")],
+        )
+        self.assertEqual(
+            RecordingSample.ignore_calls,
+            [["is_respondent", "extra"], ["is_respondent", "extra"]],
         )
 
     def test_cli_outcome_columns_missing_column_raises(self) -> None:

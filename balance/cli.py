@@ -215,6 +215,7 @@ class BalanceCLI:
 
         # Stuff everything that is not id, weight, or covariate into outcomes
         outcome_columns = self.outcome_columns()
+        ignore_columns = None
         if outcome_columns is None:
             outcome_columns = [
                 column
@@ -224,6 +225,18 @@ class BalanceCLI:
                     self.id_column(),
                     self.weight_column(),
                     *self.covariate_columns(),
+                }
+            ]
+        else:
+            ignore_columns = [
+                column
+                for column in batch_df.columns
+                if column
+                not in {
+                    self.id_column(),
+                    self.weight_column(),
+                    *self.covariate_columns(),
+                    *outcome_columns,
                 }
             ]
         outcome_columns = tuple(outcome_columns)
@@ -237,6 +250,7 @@ class BalanceCLI:
             id_column=self.id_column(),
             weight_column=self.weight_column(),
             outcome_columns=outcome_columns,
+            ignore_columns=ignore_columns,
             check_id_uniqueness=False,
             standardize_types=self.standardize_types(),
         )
@@ -247,6 +261,7 @@ class BalanceCLI:
             id_column=self.id_column(),
             weight_column=self.weight_column(),
             outcome_columns=outcome_columns,
+            ignore_columns=ignore_columns,
             check_id_uniqueness=False,
             standardize_types=self.standardize_types(),
         )
