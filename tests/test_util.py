@@ -918,29 +918,29 @@ class TestUtil(
         r = balance_util.quantize(d, variables=["a"])
         self.assertTrue(isinstance(r["a"][0], pd.Interval))
         self.assertTrue(isinstance(r["b"][0], float))
-        self.assertEqual(r["c"][0] == "x")
+        self.assertEqual(r["c"][0], "x")
 
         r = balance_util.quantize(d)
         self.assertTrue(isinstance(r["a"][0], pd.Interval))
         self.assertTrue(isinstance(r["b"][0], pd.Interval))
-        self.assertEqual(r["c"][0] == "x")
+        self.assertEqual(r["c"][0], "x")
 
         # Test that it does not affect categorical columns
         d["d"] = pd.Categorical(["y"] * 1000)
         r = balance_util.quantize(d)
-        self.assertEqual(r["d"][0] == "y")
+        self.assertEqual(r["d"][0], "y")
 
         # Test on Series input
         r = balance_util.quantize(pd.Series(np.random.uniform(0, 1, 100)), 7)
-        self.assertEqual(len(set(r.values)) == 7)
+        self.assertEqual(len(set(r.values)), 7)
 
         # Test on numpy array input
         r = balance_util.quantize(np.random.uniform(0, 1, 100), 7)
-        self.assertEqual(len(set(r.values)) == 7)
+        self.assertEqual(len(set(r.values)), 7)
 
         # Test on single integer input
         r = balance_util.quantize(pd.Series([1]), 1)
-        self.assertEqual(len(set(r.values)) == 1)
+        self.assertEqual(len(set(r.values)), 1)
 
     def test_quantize_preserves_column_order(self) -> None:
         df = pd.DataFrame(
