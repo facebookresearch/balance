@@ -12,14 +12,14 @@ from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
-from pandas.api.types import is_bool_dtype, is_numeric_dtype
-from patsy.contrasts import ContrastMatrix
-from patsy.highlevel import ModelDesc, dmatrix
-from scipy.sparse import csc_matrix, hstack
 
 from balance.utils.data_transformation import add_na_indicator
-from balance.utils.input_validation import choose_variables, _isinstance_sample
+from balance.utils.input_validation import _isinstance_sample, choose_variables
 from balance.utils.pandas_utils import _make_df_column_names_unique
+from pandas.api.types import is_bool_dtype, is_numeric_dtype
+from patsy.contrasts import ContrastMatrix
+from patsy.highlevel import dmatrix, ModelDesc
+from scipy.sparse import csc_matrix, hstack
 
 logger: logging.Logger = logging.getLogger(__package__)
 

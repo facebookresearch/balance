@@ -68,6 +68,7 @@ class TestUtil(
             [],
             msg=f"balance.util is missing re-exports: {missing}",
         )
+
     def test__check_weighting_methods_input(self) -> None:
         """Test input validation for weighting methods.
 
