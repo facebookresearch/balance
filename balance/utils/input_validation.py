@@ -10,7 +10,7 @@ from __future__ import annotations
 import collections
 import logging
 from functools import reduce
-from typing import Any, Callable, List, Optional, overload, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, List, Optional, Tuple, Type, TypeVar, Union, overload
 
 import numpy as np
 import pandas as pd

@@ -36,8 +36,7 @@
 ## Code Quality & Refactoring
 
 - **Split util helpers into focused modules**
-  - Broke `balance.util` into `balance.utils` submodules and split
-    the util test suite into smaller, topic-based files for easier navigation.
+  - Broke `balance.util` into `balance.utils` submodules for easier navigation.
 
 # 0.14.0 (2025-12-14)
 
