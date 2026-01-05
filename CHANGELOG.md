@@ -33,6 +33,11 @@
   - Re-enabled scatter plots in the CBPS comparison tutorial notebook while
     avoiding GitHub Pages rendering errors and pandas colormap warnings.
 
+## Code Quality & Refactoring
+
+- **Split util helpers into focused modules**
+  - Broke `balance.util` into `balance.utils` submodules for easier navigation.
+
 # 0.14.0 (2025-12-14)
 
 ## New Features
