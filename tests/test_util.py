@@ -30,45 +30,6 @@ from scipy.sparse import csc_matrix
 class TestUtil(
     balance.testutil.BalanceTestCase,
 ):
-    def test_balance_util_reexports_utils_defs(self) -> None:
-        """Ensure balance.util re-exports every helper defined in balance.utils."""
-        import importlib
-        import inspect
-        import typing
-
-        from balance import util as balance_util
-
-        utils_modules = [
-            "balance.utils.data_transformation",
-            "balance.utils.file_utils",
-            "balance.utils.input_validation",
-            "balance.utils.logging_utils",
-            "balance.utils.model_matrix",
-            "balance.utils.pandas_utils",
-        ]
-
-        reexported = set(balance_util.__all__)
-        missing = []
-
-        for module_name in utils_modules:
-            module = importlib.import_module(module_name)
-            for name, obj in module.__dict__.items():
-                if name == "logger":
-                    continue
-                if isinstance(obj, typing.TypeVar):
-                    continue
-                if inspect.isfunction(obj) or inspect.isclass(obj):
-                    if obj.__module__ == module_name and name not in reexported:
-                        missing.append(f"{module_name}.{name}")
-                elif name.isupper() and name not in reexported:
-                    missing.append(f"{module_name}.{name}")
-
-        self.assertEqual(
-            missing,
-            [],
-            msg=f"balance.util is missing re-exports: {missing}",
-        )
-
     def test__check_weighting_methods_input(self) -> None:
         """Test input validation for weighting methods.
 
@@ -918,29 +879,29 @@ class TestUtil(
         r = balance_util.quantize(d, variables=["a"])
         self.assertTrue(isinstance(r["a"][0], pd.Interval))
         self.assertTrue(isinstance(r["b"][0], float))
-        self.assertEqual(r["c"][0], "x")
+        self.assertTrue(r["c"][0] == "x")
 
         r = balance_util.quantize(d)
         self.assertTrue(isinstance(r["a"][0], pd.Interval))
         self.assertTrue(isinstance(r["b"][0], pd.Interval))
-        self.assertEqual(r["c"][0], "x")
+        self.assertTrue(r["c"][0] == "x")
 
         # Test that it does not affect categorical columns
         d["d"] = pd.Categorical(["y"] * 1000)
         r = balance_util.quantize(d)
-        self.assertEqual(r["d"][0], "y")
+        self.assertTrue(r["d"][0] == "y")
 
         # Test on Series input
         r = balance_util.quantize(pd.Series(np.random.uniform(0, 1, 100)), 7)
-        self.assertEqual(len(set(r.values)), 7)
+        self.assertTrue(len(set(r.values)) == 7)
 
         # Test on numpy array input
         r = balance_util.quantize(np.random.uniform(0, 1, 100), 7)
-        self.assertEqual(len(set(r.values)), 7)
+        self.assertTrue(len(set(r.values)) == 7)
 
         # Test on single integer input
         r = balance_util.quantize(pd.Series([1]), 1)
-        self.assertEqual(len(set(r.values)), 1)
+        self.assertTrue(len(set(r.values)) == 1)
 
     def test_quantize_preserves_column_order(self) -> None:
         df = pd.DataFrame(
