@@ -32,6 +32,10 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
     visualization functions.
     """
 
+    def tearDown(self) -> None:
+        plt.close("all")
+        super().tearDown()
+
     def _create_concentrated_weight_test_data(self) -> DataFrameWithWeight:
         """Helper method to create test data with concentrated weights."""
         return {

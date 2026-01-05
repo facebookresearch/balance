@@ -401,6 +401,8 @@ def plot_hist_kde(
     }
     if dist_type != "ecdf":
         kwargs_for_dist_function["common_norm"] = False
+    if dist_type == "hist" and weighted:
+        kwargs_for_dist_function["bins"] = 10
     ax = dist_function(**kwargs_for_dist_function)
     ax.set_title(title)
 

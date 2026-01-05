@@ -640,7 +640,7 @@ class TestSample_base_and_adjust_methods(
         - Preserves numeric variables
         - Returns properly formatted model matrix
 
-        Note: Main tests for model_matrix are in test_util.py
+        Note: Main tests for model_matrix are in test_util_model_matrix.py
         """
         s = Sample.from_frame(
             pd.DataFrame(
