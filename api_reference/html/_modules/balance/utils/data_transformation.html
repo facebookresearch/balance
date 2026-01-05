@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>balance.utils.data_transformation &#8212; balance  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=fb9458d3" />
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../../balance.html" accesskey="U">balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.utils.data_transformation</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for balance.utils.data_transformation</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) Meta Platforms, Inc. and affiliates.</span>
+<span class="c1">#</span>
+<span class="c1"># This source code is licensed under the MIT license found in the</span>
+<span class="c1"># LICENSE file in the root directory of this source tree.</span>
+
+<span class="c1"># pyre-strict</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">combinations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.input_validation</span><span class="w"> </span><span class="kn">import</span> <span class="n">choose_variables</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.pandas_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_safe_fillna_and_infer</span>
+
+<span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="add_na_indicator">
+<a class="viewcode-back" href="../../../balance.util.html#balance.util.add_na_indicator">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_na_indicator</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">replace_val_obj</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;_NA&quot;</span><span class="p">,</span> <span class="n">replace_val_num</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;If a column in the DataFrame contains NAs, replace these with 0 for</span>
+<span class="sd">    numerical columns or &quot;_NA&quot; for non-numerical columns,</span>
+<span class="sd">    and add another column of an indicator variable for which rows were NA.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df (pd.DataFrame): The input DataFrame</span>
+<span class="sd">        replace_val_obj (str, optional): The value to put instead of nulls for object columns. Defaults to &quot;_NA&quot;.</span>
+<span class="sd">        replace_val_num (int, optional): The value to put instead of nulls for numeric columns. Defaults to 0.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        Exception: Can&#39;t add NA indicator to DataFrame which contains columns which start with &#39;_is_na_&#39;</span>
+<span class="sd">        Exception: Can&#39;t add NA indicator to columns containing NAs and the value &#39;{replace_val_obj}&#39;,</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.DataFrame: New dataframe with additional columns</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">already_na_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_is_na_&quot;</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">already_na_cols</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># TODO: change to ValueError?!</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+            <span class="s2">&quot;Can&#39;t add NA indicator to DataFrame which contains&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;columns which start with &#39;_is_na_&#39;: </span><span class="si">{</span><span class="n">already_na_cols</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">na</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span>
+    <span class="n">na_cols</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">na</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;index&quot;</span><span class="p">)])</span>
+    <span class="n">na_indicators</span> <span class="o">=</span> <span class="n">na</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">na_cols</span><span class="p">]</span>
+    <span class="n">na_indicators</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;_is_na_&quot;</span> <span class="o">+</span> <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">na_indicators</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+
+    <span class="n">categorical_cols</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">dtypes</span> <span class="o">==</span> <span class="s2">&quot;category&quot;</span><span class="p">])</span>
+    <span class="n">non_numeric_cols</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[(</span><span class="n">df</span><span class="o">.</span><span class="n">dtypes</span> <span class="o">==</span> <span class="s2">&quot;object&quot;</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">dtypes</span> <span class="o">==</span> <span class="s2">&quot;string&quot;</span><span class="p">)]</span>
+    <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">na_cols</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">replace_val_obj</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">c</span><span class="p">]):</span>
+            <span class="c1"># TODO: change to ValueError?!</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Can&#39;t add NA indicator to columns containing NAs and the value &#39;</span><span class="si">{</span><span class="n">replace_val_obj</span><span class="si">}</span><span class="s2">&#39;, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;i.e. column: </span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">categorical_cols</span><span class="p">:</span>
+            <span class="n">filled_col</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">df</span><span class="p">[</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">add_categories</span><span class="p">(</span><span class="n">replace_val_obj</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">replace_val_obj</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">df</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">filled_col</span><span class="o">.</span><span class="n">infer_objects</span><span class="p">(</span><span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">non_numeric_cols</span><span class="p">:</span>
+            <span class="n">df</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">_safe_fillna_and_infer</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">c</span><span class="p">],</span> <span class="n">replace_val_obj</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">df</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">_safe_fillna_and_infer</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">c</span><span class="p">],</span> <span class="n">replace_val_num</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">df</span><span class="p">,</span> <span class="n">na_indicators</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="drop_na_rows">
+<a class="viewcode-back" href="../../../balance.util.html#balance.util.drop_na_rows">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">drop_na_rows</span><span class="p">(</span>
+    <span class="n">sample_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;sample object&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Drop rows with missing values in sample_df and their corresponding weights, and the same in target_df.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sample_df (pd.DataFrame): a dataframe representing the sample or target</span>
+<span class="sd">        sample_weights (pd.Series): design weights for sample or target</span>
+<span class="sd">        name (str, optional): name of object checked (used for warnings prints). Defaults to &quot;sample object&quot;.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: Dropping rows led to empty {name}. Maybe try na_action=&#39;add_indicator&#39;?</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple[pd.DataFrame, pd.Series]: sample_df, sample_weights without NAs rows</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sample_n</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+    <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">sample_weights</span><span class="p">[</span><span class="n">sample_df</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+    <span class="n">sample_n_after</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">_sample_rate</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sample_n</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sample_n_after</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">sample_n</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dropped </span><span class="si">{</span><span class="n">_sample_rate</span><span class="si">}</span><span class="s2"> rows of </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">sample_n_after</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Dropping rows led to empty </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">. Maybe try na_action=&#39;add_indicator&#39;?&quot;</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="qcut">
+<a class="viewcode-back" href="../../../balance.util.html#balance.util.qcut">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">qcut</span><span class="p">(</span>
+    <span class="n">s</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">q</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">duplicates</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;drop&quot;</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Discretize variable into equal-sized buckets based quantiles.</span>
+<span class="sd">    This is a wrapper to pandas qcut function.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        s (_type_): 1d ndarray or Series.</span>
+<span class="sd">        q (_type_): Number of quantiles (int or float).</span>
+<span class="sd">        duplicates (str, optional): whether to drop non unique bin edges or raise error (&quot;raise&quot; or &quot;drop&quot;).</span>
+<span class="sd">            Defaults to &quot;drop&quot;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Series of type object with intervals.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">q</span><span class="p">:</span>  <span class="c1"># pyre-ignore[58]: Comparison is valid in practice</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Not quantizing, too few values&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">s</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">qcut</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">duplicates</span><span class="o">=</span><span class="n">duplicates</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;O&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="quantize">
+<a class="viewcode-back" href="../../../balance.util.html#balance.util.quantize">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">quantize</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">q</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="n">variables</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Cut numeric variables of a DataFrame into quantiles buckets</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df (Union[pd.DataFrame, pd.Series]): a DataFrame to transform</span>
+<span class="sd">        q (int, optional): Number of buckets to create for each variable. Defaults to 10.</span>
+<span class="sd">        variables (optional): variables to transform.</span>
+<span class="sd">                    If None, all numeric variables are transformed. Defaults to None.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.DataFrame: DataFrame after quantization. numpy.nan values are kept as is.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)):</span>
+        <span class="c1"># Necessary because pandas calls the function on the first item on its own</span>
+        <span class="c1">#  https://stackoverflow.com/questions/21635915/</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_numeric_dtype</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">dtype</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;series must be numeric&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">qcut</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">duplicates</span><span class="o">=</span><span class="s2">&quot;drop&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;df must be a pandas DataFrame&quot;</span><span class="p">)</span>
+
+    <span class="n">variables</span> <span class="o">=</span> <span class="n">choose_variables</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">)</span>
+    <span class="n">numeric_columns</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+
+    <span class="n">variables</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">variables</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">numeric_columns</span><span class="p">]</span>
+
+    <span class="n">original_columns</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+    <span class="n">transformed_data</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="n">qcut</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">duplicates</span><span class="o">=</span><span class="s2">&quot;drop&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">untransformed_columns</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
+    <span class="n">transformed_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">untransformed_columns</span><span class="p">],</span> <span class="n">transformed_data</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">transformed_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">original_columns</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="row_pairwise_diffs">
+<a class="viewcode-back" href="../../../balance.util.html#balance.util.row_pairwise_diffs">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">row_pairwise_diffs</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Produce the differences between every pair of rows of df</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df (pd.DataFrame): DataFrame</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.DataFrame: DataFrame with differences between all combinations of rows</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">combinations</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">diffs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">c</span><span class="p">:</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">source</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;source&quot;</span><span class="p">)</span>
+        <span class="n">diffs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df</span><span class="p">]</span> <span class="o">+</span> <span class="n">diffs</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="auto_spread">
+<a class="viewcode-back" href="../../../balance.util.html#balance.util.auto_spread">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">auto_spread</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">features</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">id_</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;id&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Automatically transform a &#39;long&#39; DataFrame into a &#39;wide&#39; DataFrame</span>
+<span class="sd">    by guessing which column should be used as a key, treating all</span>
+<span class="sd">    other columns as values. At the moment, this will only find a single key column</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data (pd.DataFrame):</span>
+<span class="sd">        features (Optional[list], optional): Defaults to None.</span>
+<span class="sd">        id_ (str, optional): Defaults to &quot;id&quot;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.DataFrame</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">features</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span> <span class="k">if</span> <span class="n">c</span> <span class="o">!=</span> <span class="n">id_</span><span class="p">]</span>
+
+    <span class="n">is_unique</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">features</span><span class="p">:</span>
+        <span class="c1"># Use include_groups=False to avoid FutureWarning about operating on grouping columns</span>
+        <span class="c1"># Fall back to old behavior if include_groups parameter is not supported</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">unique_userids</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">include_groups</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="n">id_</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="c1"># Fallback for older pandas versions that don&#39;t support include_groups parameter</span>
+            <span class="n">unique_userids</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">c</span><span class="p">)[</span><span class="n">id_</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="n">is_unique</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="nb">all</span><span class="p">(</span><span class="n">unique_userids</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+
+    <span class="n">unique_groupings</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">is_unique</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_groupings</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;no unique groupings </span><span class="si">{</span><span class="n">is_unique</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_groupings</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">unique_groupings</span><span class="p">)</span><span class="si">}</span><span class="s2"> possible groupings: </span><span class="si">{</span><span class="n">unique_groupings</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Always chooses the first unique grouping</span>
+    <span class="n">unique_grouping</span> <span class="o">=</span> <span class="n">unique_groupings</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Grouping by </span><span class="si">{</span><span class="n">unique_grouping</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">features</span> <span class="o">+</span> <span class="p">[</span><span class="n">id_</span><span class="p">]]</span><span class="o">.</span><span class="n">pivot</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">id_</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">unique_grouping</span><span class="p">)</span>
+    <span class="n">data</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="p">((</span><span class="n">unique_grouping</span><span class="p">,)</span> <span class="o">+</span> <span class="n">c</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="n">c</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])))</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span>
+    <span class="p">]</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">data</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">auto_aggregate</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">features</span><span class="p">:</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="c1"># NOTE: we use str as default since using a lambda function directly would make this argument mutable -</span>
+    <span class="c1"># so if one function call would change it, another function call would get the revised aggfunc argument.</span>
+    <span class="c1"># Thus, using str is important so to keep our function idempotent.</span>
+    <span class="n">aggfunc</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Any</span> <span class="o">=</span> <span class="s2">&quot;sum&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="c1"># The default aggregation function is a lambda around sum(x), because as of</span>
+    <span class="c1"># Pandas 0.22.0, Series.sum of an all-na Series is 0, not nan</span>
+
+    <span class="k">if</span> <span class="n">features</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;features argument is unused, it will be removed in the future&quot;</span><span class="p">,</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">DeprecationWarning</span><span class="p">,</span>
+            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">aggfunc</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">aggfunc</span> <span class="o">==</span> <span class="s2">&quot;sum&quot;</span><span class="p">:</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">_f</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+            <span class="n">aggfunc</span> <span class="o">=</span> <span class="n">_f</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;unknown aggregate function name </span><span class="si">{</span><span class="n">aggfunc</span><span class="si">}</span><span class="s2">, accepted values are (&#39;sum&#39;,).&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">data_without_id</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="n">_id</span><span class="p">])</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data must have a column named </span><span class="si">{</span><span class="n">_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">all_columns</span> <span class="o">=</span> <span class="n">data_without_id</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+
+    <span class="n">numeric_columns</span> <span class="o">=</span> <span class="n">data_without_id</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span>
+        <span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">]</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">all_columns</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="n">numeric_columns</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Not all covariates are numeric. The function will not aggregate automatically.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">pivot_table</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">_id</span><span class="p">,</span> <span class="n">aggfunc</span><span class="o">=</span><span class="n">aggfunc</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="fct_lump">
+<a class="viewcode-back" href="../../../balance.util.html#balance.util.fct_lump">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fct_lump</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">prop</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Lumps infrequent levels into &#39;_lumped_other&#39;.</span>
+<span class="sd">    Note that all values with proportion less than prop output the same value &#39;_lumped_other&#39;.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        s (pd.Series): pd.series to lump, with dtype of integer, numeric, object, or category (category will be converted to object)</span>
+<span class="sd">        prop (float, optional): the proportion of infrequent levels to lump. Defaults to 0.05.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.Series: pd.series (with category dtype converted to object, if applicable)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Handle value_counts with object-dtype to maintain consistent behavior</span>
+    <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span>
+            <span class="s2">&quot;ignore&quot;</span><span class="p">,</span>
+            <span class="n">message</span><span class="o">=</span><span class="s2">&quot;The behavior of value_counts with object-dtype is deprecated.*&quot;</span><span class="p">,</span>
+            <span class="n">category</span><span class="o">=</span><span class="ne">FutureWarning</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">props</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span> <span class="o">/</span> <span class="n">s</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Ensure proper dtype inference on the index</span>
+    <span class="n">props</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">props</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">infer_objects</span><span class="p">(</span><span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">small_categories</span> <span class="o">=</span> <span class="n">props</span><span class="p">[</span><span class="n">props</span> <span class="o">&lt;</span> <span class="n">prop</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+    <span class="n">remainder_category_name</span> <span class="o">=</span> <span class="s2">&quot;_lumped_other&quot;</span>
+    <span class="k">while</span> <span class="n">remainder_category_name</span> <span class="ow">in</span> <span class="n">props</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+        <span class="n">remainder_category_name</span> <span class="o">=</span> <span class="n">remainder_category_name</span> <span class="o">*</span> <span class="mi">2</span>
+
+    <span class="c1"># Convert to object dtype</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;object&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Replace small categories with the remainder category name</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">small_categories</span><span class="p">)]</span> <span class="o">=</span> <span class="n">remainder_category_name</span>
+    <span class="k">return</span> <span class="n">s</span></div>
+
+
+
+<div class="viewcode-block" id="fct_lump_by">
+<a class="viewcode-back" href="../../../balance.util.html#balance.util.fct_lump_by">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fct_lump_by</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">by</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">prop</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Lumps infrequent levels into &#39;_lumped_other, only does so per</span>
+<span class="sd">    value of the grouping variable `by`. Useful, for example, for keeping the</span>
+<span class="sd">    most important interactions in a model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        s (pd.Series): pd.series to lump</span>
+<span class="sd">        by (pd.Series): pd.series according to which group the data</span>
+<span class="sd">        prop (float, optional): the proportion of infrequent levels to lump. Defaults to 0.05.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.Series: pd.series, we keep the index of s as the index of the result.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">mode</span><span class="o">.</span><span class="n">copy_on_write</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="c1"># pandas groupby doesnt preserve order</span>
+    <span class="k">for</span> <span class="n">subgroup</span> <span class="ow">in</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">by</span><span class="p">):</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">by</span> <span class="o">==</span> <span class="n">subgroup</span>
+        <span class="n">grouped_res</span> <span class="o">=</span> <span class="n">fct_lump</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">prop</span><span class="o">=</span><span class="n">prop</span><span class="p">)</span>
+        <span class="c1"># Ensure dtype compatibility before assignment</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;object&quot;</span><span class="p">)</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">grouped_res</span>
+    <span class="k">return</span> <span class="n">res</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../../balance.html" >balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.utils.data_transformation</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

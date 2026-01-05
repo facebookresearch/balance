@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>balance.utils.input_validation &#8212; balance  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=fb9458d3" />
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../../balance.html" accesskey="U">balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.utils.input_validation</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for balance.utils.input_validation</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) Meta Platforms, Inc. and affiliates.</span>
+<span class="c1">#</span>
+<span class="c1"># This source code is licensed under the MIT license found in the</span>
+<span class="c1"># LICENSE file in the root directory of this source tree.</span>
+
+<span class="c1"># pyre-strict</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">collections</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">reduce</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">overload</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.pandas_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_process_series_for_missing_mask</span>
+
+<span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
+
+<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">)</span>
+
+
+<span class="nd">@overload</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_verify_value_type</span><span class="p">(</span>  <span class="c1"># noqa: E704</span>
+    <span class="n">optional</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span>
+    <span class="n">expected_type</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="nd">@overload</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_verify_value_type</span><span class="p">(</span>  <span class="c1"># noqa: E704</span>
+    <span class="n">optional</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">T</span><span class="p">],</span>
+    <span class="n">expected_type</span><span class="p">:</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_verify_value_type</span><span class="p">(</span>
+    <span class="n">optional</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">T</span><span class="p">],</span>
+    <span class="n">expected_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="o">...</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Assert that optional value is not None and return it.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        optional: The optional value to check</span>
+<span class="sd">        expected_type: Optional type or tuple of types to check with isinstance()</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The non-None value</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If optional is None</span>
+<span class="sd">        TypeError: If expected_type is provided and isinstance check fails</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">optional</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unexpected None value&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">expected_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">optional</span><span class="p">,</span> <span class="n">expected_type</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected type </span><span class="si">{</span><span class="n">expected_type</span><span class="si">}</span><span class="s2">, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">optional</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">optional</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_float_or_none</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a float (if float or int) or None if it&#39;s None or &quot;None&quot;.</span>
+
+<span class="sd">    This helper keeps argument parsing explicit about optional float inputs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">value</span> <span class="o">==</span> <span class="s2">&quot;None&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_check_weighting_methods_input</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">object_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is a helper function fo weighting methods functions.</span>
+<span class="sd">    It checks the inputs are of the correct type and shapes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df (pd.DataFrame):</span>
+<span class="sd">        weights (pd.Series):</span>
+<span class="sd">        object_name (str):</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        TypeError: if df is not a DataFrame</span>
+<span class="sd">        TypeError: if weights is not a pd.Series</span>
+<span class="sd">        ValueError: {object_name}_weights must be the same length as {object_name}_df</span>
+<span class="sd">        ValueError: {object_name}_df index must be the same as {object_name}_weights index</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">object_name</span><span class="si">}</span><span class="s2">_df must be a pandas DataFrame, is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">object_name</span><span class="si">}</span><span class="s2">_weights must be a pandas Series, is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">object_name</span><span class="si">}</span><span class="s2">_weights must be the same length as </span><span class="si">{</span><span class="n">object_name</span><span class="si">}</span><span class="s2">_df: &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">object_name</span><span class="si">}</span><span class="s2">_df index must be the same as </span><span class="si">{</span><span class="n">object_name</span><span class="si">}</span><span class="s2">_weights index&quot;</span>
+        <span class="p">)</span>
+
+
+<span class="c1"># This is so to avoid various cyclic imports (since various files call sample_class, and then sample_class also calls these files)</span>
+<span class="c1"># TODO: (p2) move away from this method once we restructure Sample and BalanceDF objects...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_isinstance_sample</span><span class="p">(</span><span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample_class</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">sample_class</span><span class="o">.</span><span class="n">Sample</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="guess_id_column">
+<a class="viewcode-back" href="../../../balance.util.html#balance.util.guess_id_column">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">guess_id_column</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">column_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Guess the id column of a given dataset.</span>
+<span class="sd">    Possible values for guess: &#39;id&#39;.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dataset (pd.DataFrame): dataset to guess id column</span>
+<span class="sd">        column_name (str, optional): Given id column name. Defaults to None,</span>
+<span class="sd">            which will guess the id column or raise exception.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: name of guessed id column</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TODO: add a general argument for the user so they could set</span>
+    <span class="c1"># a list of possible userid column names instead of only &quot;id&quot;.</span>
+    <span class="c1"># This should go as an input into Sample.from_frame as well.</span>
+    <span class="n">columns</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">column_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">column_name</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">column_name</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dataframe does not have column &#39;</span><span class="si">{</span><span class="n">column_name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">possible_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">possible_columns</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Cannot guess id column name for this DataFrame. &quot;</span>
+                <span class="s2">&quot;Please provide a value in id_column&quot;</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">column_name</span> <span class="o">=</span> <span class="n">possible_columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Guessed id column name </span><span class="si">{</span><span class="n">column_name</span><span class="si">}</span><span class="s2"> for the data&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">column_name</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_is_arraylike</span><span class="p">(</span><span class="n">o</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test (returns True) if an object is an array-ish type (a numpy array, or</span>
+<span class="sd">    a sequence, but not a string). Not the same as numpy&#39;s arraylike,</span>
+<span class="sd">    which also applies to scalars which can be turned into arrays.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        o: Object to test.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: returns True if an object is an array-ish type.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="p">(</span>
+            <span class="nb">hasattr</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">arrays</span><span class="p">,</span> <span class="s2">&quot;NumpyExtensionArray&quot;</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">arrays</span><span class="o">.</span><span class="n">NumpyExtensionArray</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">arrays</span><span class="o">.</span><span class="n">StringArray</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">arrays</span><span class="o">.</span><span class="n">IntegerArray</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">arrays</span><span class="o">.</span><span class="n">BooleanArray</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="s2">&quot;pandas.core.arrays&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">o</span><span class="p">))</span>  <span class="c1"># support any pandas array type.</span>
+        <span class="ow">or</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Sequence</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="nb">str</span><span class="p">))</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="rm_mutual_nas">
+<a class="viewcode-back" href="../../../balance.util.html#balance.util.rm_mutual_nas">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">rm_mutual_nas</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Remove entries in a position which is na or infinite in any of the arguments.</span>
+
+<span class="sd">    Ignores args which are None.</span>
+
+<span class="sd">    Can accept multiple array-like arguments or a single array-like argument. Handles pandas and numpy arrays.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If any argument is not array-like. (see: :func:`_is_arraylike`)</span>
+<span class="sd">        ValueError: If arguments include arrays of different lengths.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List: A list containing the original input arrays, after removing elements that have a missing or infinite value in the same position as any of the other arrays.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="ow">not</span> <span class="p">(</span><span class="n">a</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">_is_arraylike</span><span class="p">(</span><span class="n">a</span><span class="p">))</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;All arguments must be arraylike&quot;</span><span class="p">)</span>
+    <span class="c1"># create a set of lengths of all arrays, and see if there are is more than</span>
+    <span class="c1"># one array length: (we shouldn&#39;t, since we expect all arrays to have the same length)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">({</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span> <span class="k">if</span> <span class="n">a</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">})</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;All arrays must be of same length&quot;</span><span class="p">)</span>
+
+    <span class="n">missing_mask</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">x</span> <span class="o">|</span> <span class="n">y</span><span class="p">,</span>
+        <span class="p">[</span>
+            <span class="n">_process_series_for_missing_mask</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;object&quot;</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">args</span>
+            <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">],</span>
+    <span class="p">)</span>
+    <span class="n">nonmissing_mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">missing_mask</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_return_type_creation_function</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span> <span class="o">|</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="c1"># The numpy.ndarray constructor doesn&#39;t take the same arguments as np.array</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">return</span> <span class="k">lambda</span> <span class="n">obj</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="c1"># same with pd.arrays.PandasArray, pd.arrays.StringArray, etc.</span>
+        <span class="k">elif</span> <span class="s2">&quot;pandas.core.arrays&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="k">lambda</span> <span class="n">obj</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="c1">#  Need to convert each argument to a type that can be indexed and then</span>
+    <span class="c1">#  convert back</span>
+    <span class="n">original_types</span> <span class="o">=</span> <span class="p">[</span><span class="n">_return_type_creation_function</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">args</span><span class="p">]</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">x</span><span class="p">)[</span><span class="n">nonmissing_mask</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">args</span><span class="p">]</span>
+
+    <span class="c1"># Reapply the index for pd.Series</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span>
+            <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">orig_data</span><span class="p">)[</span><span class="n">nonmissing_mask</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">orig_data</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span>
+            <span class="k">else</span> <span class="n">data</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">data</span><span class="p">,</span> <span class="n">orig_data</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+    <span class="p">]</span>
+
+    <span class="c1"># reproduce the type of each array in the result</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="p">[(</span><span class="n">t</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">original_types</span><span class="p">,</span> <span class="n">r</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">r</span></div>
+
+
+
+<span class="c1"># TODO: (p2) create choose_variables_df that only works with pd.DataFrames as input, and wrap it with something that deals with Sample.</span>
+<span class="c1">#       This would help clarify the logic of each function.</span>
+<div class="viewcode-block" id="choose_variables">
+<a class="viewcode-back" href="../../../balance.util.html#balance.util.choose_variables">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">choose_variables</span><span class="p">(</span>
+    <span class="o">*</span><span class="n">dfs</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">variables</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">df_for_var_order</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Returns a list of joint (intersection of) variables present in all the input dataframes and also in the `variables` set or list</span>
+<span class="sd">     if provided. The order of the returned variables is conditional on the input:</span>
+<span class="sd">         - If a `variables` argument is supplied as a list - the order will be based on the order in the variables list.</span>
+<span class="sd">         - If a `variables` is not a list (e.g.: set or None), the order is determined by the order of the columns in the dataframes</span>
+<span class="sd">             supplied. The dataframe chosen for the order is determined by the `df_for_var_order` argument. 0 means the order from the first df,</span>
+<span class="sd">             1 means the order from the second df, etc.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">         *dfs (pd.DataFrame | Any): One or more pandas.DataFrames or balance.Samples.</span>
+<span class="sd">         variables (List[str] | set[str] | None): The variables to choose from. If None, returns all joint variables found</span>
+<span class="sd">             in the input dataframes. Defaults to None.</span>
+<span class="sd">         df_for_var_order (int): Index of the dataframe used to determine the order of the variables in the output list.</span>
+<span class="sd">             Defaults to 0. This is used only if the `variables` argument is not a list (e.g.: a set or None).</span>
+
+<span class="sd">     Raises:</span>
+<span class="sd">         ValueError: If one or more requested variables are not present in all dataframes.</span>
+
+<span class="sd">     Returns:</span>
+<span class="sd">         List[str]: A list of the joint variables present in all dataframes and in the `variables` set or list, ordered</span>
+<span class="sd">             based on the input conditions specified.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># This is a list of lists with the variable names of the input dataframes</span>
+    <span class="n">dfs_variables</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">d</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">names</span><span class="p">()</span> <span class="k">if</span> <span class="n">_isinstance_sample</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">else</span> <span class="n">d</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dfs</span>
+        <span class="k">if</span> <span class="n">d</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="p">]</span>
+
+    <span class="n">var_list_for_order</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">variables</span> <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="nb">list</span><span class="p">))</span> <span class="k">else</span> <span class="n">dfs_variables</span><span class="p">[</span><span class="n">df_for_var_order</span><span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="n">intersection_variables</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span>
+        <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">set</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">y</span><span class="p">)),</span> <span class="n">dfs_variables</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">union_variables</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">set</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">y</span><span class="p">)),</span> <span class="n">dfs_variables</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">union_variables</span><span class="p">)</span><span class="o">.</span><span class="n">symmetric_difference</span><span class="p">(</span><span class="n">intersection_variables</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Ignoring variables not present in all Samples: </span><span class="si">{</span><span class="n">union_variables</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">intersection_variables</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">variables</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="n">intersection_variables</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
+        <span class="n">variables_not_in_df</span> <span class="o">=</span> <span class="n">variables</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">intersection_variables</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">variables_not_in_df</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;These variables are not included in the dataframes: </span><span class="si">{</span><span class="n">variables_not_in_df</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">variables_not_in_df</span><span class="p">)</span><span class="si">}</span><span class="s2"> requested variables are not in all Samples: &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">variables_not_in_df</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="n">intersection_variables</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Joint variables in all dataframes: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">variables</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Sample and target have no variables in common&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="n">ordered_variables</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">var_list_for_order</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">variables</span> <span class="ow">and</span> <span class="n">val</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ordered_variables</span><span class="p">:</span>
+            <span class="n">ordered_variables</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+    <span class="c1"># NOTE: the above is just like:</span>
+    <span class="c1"># seen = set()</span>
+    <span class="c1"># ordered_variables = [val for val in dfs_variables[df_for_var_order] if val in variables and val not in seen and not seen.add(val)]</span>
+
+    <span class="c1"># TODO: consider changing the return form list to a tuple. But doing so would require to deal with various edge cases around the codebase.</span>
+    <span class="k">return</span> <span class="n">ordered_variables</span></div>
+
+
+
+<div class="viewcode-block" id="find_items_index_in_list">
+<a class="viewcode-back" href="../../../balance.util.html#balance.util.find_items_index_in_list">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_items_index_in_list</span><span class="p">(</span><span class="n">a_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">items</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Finds the index location of a given item in an array.</span>
+
+<span class="sd">    Helpful references:</span>
+<span class="sd">        - https://stackoverflow.com/a/48898363</span>
+<span class="sd">        - https://stackoverflow.com/a/176921</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x (List[Any]): a list of items to find their index</span>
+<span class="sd">        items (List[Any]): a list of items to search for</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List[int]: a list of indices of the items in x that appear in the items list.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TODO: (p2) Optimization note: checking that i is in set each time is expensive -</span>
+    <span class="c1">#       there are probably faster ways to do it. Consider using a dict-based approach for large lists.</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">a_list</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">items</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">a_list</span><span class="p">)]</span></div>
+
+
+
+<div class="viewcode-block" id="get_items_from_list_via_indices">
+<a class="viewcode-back" href="../../../balance.util.html#balance.util.get_items_from_list_via_indices">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_items_from_list_via_indices</span><span class="p">(</span><span class="n">a_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">indices</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gets a subset of items from a list via indices</span>
+
+<span class="sd">    Source code (there doesn&#39;t seem to be a better solution): https://stackoverflow.com/a/6632209</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        a_list (List[Any]): a list of items to extract a list from</span>
+<span class="sd">        indices (List[int]): a list of indexes of items to get</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List[Any]: a list of extracted items</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">a_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">]</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_true_false_str_to_bool</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Changes strings such as &#39;false&#39; to False and &#39;true&#39; to True.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x (str): String to be converted (ideally &#39;true&#39; or &#39;false&#39; - case is ignored).</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If x is not &#39;true&#39; or &#39;false&#39;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: True if x is &#39;true&#39;, False if x is &#39;false&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;false&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">elif</span> <span class="n">x</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;true&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2"> is not an accepted value, please pass either &#39;True&#39; or &#39;False&#39; (lower/upper case is ignored)&quot;</span>
+        <span class="p">)</span>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../../balance.html" >balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.utils.input_validation</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>
