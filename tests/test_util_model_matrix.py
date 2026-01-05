@@ -7,12 +7,10 @@
 
 from __future__ import annotations
 
-from numpy import dtype
+import balance.testutil
 
 import numpy as np
 import pandas as pd
-
-import balance.testutil
 from balance import util as balance_util
 from balance.sample_class import Sample
 from balance.util import _verify_value_type
@@ -514,9 +512,7 @@ class TestUtilModelMatrix(balance.testutil.BalanceTestCase):
         }
         df = pd.DataFrame(data=d)
 
-        res = dmatrix(
-            "C(a, one_hot_encoding_greater_2)", df, return_type="dataframe"
-        )
+        res = dmatrix("C(a, one_hot_encoding_greater_2)", df, return_type="dataframe")
         expected = {
             "Intercept": [1.0, 1.0, 1.0, 1.0],
             "C(a, one_hot_encoding_greater_2)[a2]": [0.0, 1.0, 0.0, 0.0],
@@ -524,9 +520,7 @@ class TestUtilModelMatrix(balance.testutil.BalanceTestCase):
         expected = pd.DataFrame(data=expected)
         self.assertEqual(res, expected)
 
-        res = dmatrix(
-            "C(b, one_hot_encoding_greater_2)", df, return_type="dataframe"
-        )
+        res = dmatrix("C(b, one_hot_encoding_greater_2)", df, return_type="dataframe")
         expected = {
             "Intercept": [1.0, 1.0, 1.0, 1.0],
             "C(b, one_hot_encoding_greater_2)[b1]": [1.0, 0.0, 0.0, 0.0],
@@ -536,9 +530,7 @@ class TestUtilModelMatrix(balance.testutil.BalanceTestCase):
         expected = pd.DataFrame(data=expected)
         self.assertEqual(res, expected)
 
-        res = dmatrix(
-            "C(c, one_hot_encoding_greater_2)", df, return_type="dataframe"
-        )
+        res = dmatrix("C(c, one_hot_encoding_greater_2)", df, return_type="dataframe")
         expected = {
             "Intercept": [1.0, 1.0, 1.0, 1.0],
             "C(c, one_hot_encoding_greater_2)[c1]": [1.0, 1.0, 1.0, 1.0],

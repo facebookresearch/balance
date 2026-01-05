@@ -7,11 +7,11 @@
 
 from __future__ import annotations
 
+import balance.testutil
+
 import numpy as np
 import numpy.testing
 import pandas as pd
-
-import balance.testutil
 from balance import util as balance_util
 from balance.sample_class import Sample
 from balance.util import _verify_value_type

@@ -11,10 +11,10 @@ import logging
 
 from copy import deepcopy
 
+import balance.testutil
+
 import numpy as np
 import pandas as pd
-
-import balance.testutil
 from balance import util as balance_util
 from balance.sample_class import Sample
 from balance.util import _coerce_scalar
@@ -66,7 +66,9 @@ class TestUtilPandasUtils(balance.testutil.BalanceTestCase):
         self.assertFalse(result)
 
     def test_truncate_text(self) -> None:
-        self.assertEqual(balance_util._truncate_text("a" * 6, length=5), "a" * 5 + "...")
+        self.assertEqual(
+            balance_util._truncate_text("a" * 6, length=5), "a" * 5 + "..."
+        )
         self.assertEqual(balance_util._truncate_text("a" * 4, length=5), "a" * 4)
         self.assertEqual(balance_util._truncate_text("a" * 5, length=5), "a" * 5)
 
@@ -83,7 +85,11 @@ class TestUtilPandasUtils(balance.testutil.BalanceTestCase):
 
         self.assertEqual(
             df.dtypes.to_dict(),
-            {"id": np.dtype("O"), "a": np.dtype("float64"), "weight": np.dtype("float64")},
+            {
+                "id": np.dtype("O"),
+                "a": np.dtype("float64"),
+                "weight": np.dtype("float64"),
+            },
         )
         self.assertEqual(
             df_orig.dtypes.to_dict(),
@@ -93,7 +99,11 @@ class TestUtilPandasUtils(balance.testutil.BalanceTestCase):
         df_fixed = balance_util._astype_in_df_from_dtypes(df, df_orig.dtypes)
         self.assertEqual(
             df_fixed.dtypes.to_dict(),
-            {"id": np.dtype("int64"), "a": np.dtype("int64"), "weight": np.dtype("float64")},
+            {
+                "id": np.dtype("int64"),
+                "a": np.dtype("int64"),
+                "weight": np.dtype("float64"),
+            },
         )
 
     def test__are_dtypes_equal(self) -> None:
@@ -160,12 +170,16 @@ class TestUtilPandasUtils(balance.testutil.BalanceTestCase):
         pd.testing.assert_frame_equal(result, expected)
 
         series_test = pd.Series([1, 2, 3, 4])
-        result = balance_util._safe_replace_and_infer(series_test, to_replace=2, value=99)
+        result = balance_util._safe_replace_and_infer(
+            series_test, to_replace=2, value=99
+        )
         expected = pd.Series([1, 99, 3, 4])
         pd.testing.assert_series_equal(result, expected)
 
         series_obj = pd.Series(["a", "b", "c"], dtype="object")
-        result = balance_util._safe_replace_and_infer(series_obj, to_replace="b", value="x")
+        result = balance_util._safe_replace_and_infer(
+            series_obj, to_replace="b", value="x"
+        )
         expected = pd.Series(["a", "x", "c"], dtype="object")
         pd.testing.assert_series_equal(result, expected)
 
