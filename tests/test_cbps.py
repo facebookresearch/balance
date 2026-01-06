@@ -17,7 +17,9 @@ import balance.testutil
 
 import numpy as np
 import pandas as pd
+import pytest
 import scipy
+import warnings
 
 from balance.datasets import load_data
 from balance.sample_class import Sample
@@ -844,16 +846,23 @@ class Testcbps(
 
         # Test that 'exact' method with tight constraint produces identical weights
         # (which means the balancing essentially fails)
-        result = balance_cbps.cbps(
-            sample_df,
-            sample_weights,
-            target_df,
-            target_weights,
-            transformations=None,
-            cbps_method="exact",
-            max_de=1.01,  # Very tight constraint
-            weight_trimming_mean_ratio=None,
-        )
+        # Suppress PerfectSeparationWarning as it's expected with this extreme test data
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message="Perfect separation or prediction detected",
+                category=Warning,
+            )
+            result = balance_cbps.cbps(
+                sample_df,
+                sample_weights,
+                target_df,
+                target_weights,
+                transformations=None,
+                cbps_method="exact",
+                max_de=1.01,  # Very tight constraint
+                weight_trimming_mean_ratio=None,
+            )
 
         # When constraints are too tight, all weights become identical
         # This is indicated by very low standard deviation
