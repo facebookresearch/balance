@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkstaticdocs_starter=self.webpackChunkstaticdocs_starter||[]).push([[8188],{38188:(e,s,t)=>{t.d(s,{createPieServices:()=>c.f});var c=t(19786);t(35817)}}]);
