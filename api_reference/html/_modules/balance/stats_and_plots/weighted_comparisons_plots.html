@@ -446,6 +446,10 @@
     <span class="p">}</span>
     <span class="k">if</span> <span class="n">dist_type</span> <span class="o">!=</span> <span class="s2">&quot;ecdf&quot;</span><span class="p">:</span>
         <span class="n">kwargs_for_dist_function</span><span class="p">[</span><span class="s2">&quot;common_norm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1"># Set explicit bins for histplot when using weights to avoid seaborn &#39;bins cannot be auto&#39; warning.</span>
+    <span class="c1"># Use Freedman-Diaconis rule which adapts to data distribution.</span>
+    <span class="k">if</span> <span class="n">dist_type</span> <span class="o">==</span> <span class="s2">&quot;hist&quot;</span> <span class="ow">and</span> <span class="n">weighted</span><span class="p">:</span>
+        <span class="n">kwargs_for_dist_function</span><span class="p">[</span><span class="s2">&quot;bins&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;fd&quot;</span>
     <span class="n">ax</span> <span class="o">=</span> <span class="n">dist_function</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs_for_dist_function</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span></div>
 
