@@ -7,10 +7,6 @@
 
 from __future__ import annotations
 
-import logging
-
-from copy import deepcopy
-
 import balance.testutil
 
 import numpy as np
@@ -20,12 +16,7 @@ import pandas as pd
 # TODO: remove the use of balance_util in most cases, and just import the functions to be tested directly
 from balance import util as balance_util
 from balance.sample_class import Sample
-from balance.util import _coerce_scalar, _verify_value_type
-
-from numpy import dtype
-
-from scipy.sparse import csc_matrix
-
+from balance.util import _verify_value_type
 
 
 class TestUtil(
@@ -56,7 +47,6 @@ class TestUtil(
             weights=1,
             object_name="sample",
         )
-
 
     def test_guess_id_column(self) -> None:
         """Test automatic identification of ID columns in DataFrames.
@@ -102,7 +92,6 @@ class TestUtil(
         ):
             balance_util.guess_id_column(df)
 
-
     def test__isinstance_sample(self) -> None:
         """Test type checking for Sample objects.
 
@@ -124,7 +113,6 @@ class TestUtil(
         self.assertFalse(_isinstance_sample(s_df))
         self.assertTrue(_isinstance_sample(s))
 
-
     def test_isarraylike(self) -> None:
         self.assertFalse(balance_util._is_arraylike(""))
         self.assertFalse(balance_util._is_arraylike("test"))
@@ -135,7 +123,6 @@ class TestUtil(
         self.assertTrue(balance_util._is_arraylike(np.array([1, 2, "a"])))
         self.assertTrue(balance_util._is_arraylike(pd.Series((1, 2, 3))))
 
-
     def test_rm_mutual_nas_basic_functionality(self) -> None:
         """Test basic functionality of rm_mutual_nas with simple arrays."""
         from balance.util import rm_mutual_nas
@@ -143,7 +130,6 @@ class TestUtil(
         # Test with lists containing None values
         result = rm_mutual_nas([1, 2, 3], [2, 3, None])
         self.assertEqual(result, [[1, 2], [2.0, 3.0]])
-
 
     def test_rm_mutual_nas_single_arrays(self) -> None:
         """Test rm_mutual_nas with single arrays of various types."""
@@ -161,7 +147,6 @@ class TestUtil(
         r = rm_mutual_nas(d, d2, None)
         for i, j in zip(r, (d, d2, None)):
             numpy.testing.assert_array_equal(i, j)
-
 
     def test_rm_mutual_nas_with_na_values(self) -> None:
         """Test rm_mutual_nas behavior with various NA values."""
@@ -191,7 +176,6 @@ class TestUtil(
         result = rm_mutual_nas(d4, d5)
         for i, j in zip(result, expected_mixed):
             numpy.testing.assert_array_equal(i, j)
-
 
     def test_rm_mutual_nas_single_array_with_na(self) -> None:
         """Test rm_mutual_nas with single arrays containing NA values."""
@@ -256,7 +240,6 @@ class TestUtil(
 
         return x1, x2, x3, x4, x5, x6, x7, x8
 
-
     def test_rm_mutual_nas_pandas_arrays(self) -> None:
         """Test rm_mutual_nas with various pandas array types."""
         from balance.util import rm_mutual_nas
@@ -279,7 +262,6 @@ class TestUtil(
             [list(x) for x in rm_mutual_nas(x1, x2, x3, x4, x5, x6, x7, x8)],
             expected_values,
         )
-
 
     def test_rm_mutual_nas_type_preservation(self) -> None:
         """Test that rm_mutual_nas preserves input types."""
@@ -326,7 +308,6 @@ class TestUtil(
             [type(x) for x in rm_mutual_nas(x2, x3)], expected_floating_types
         )
 
-
     def test_rm_mutual_nas_dtype_preservation(self) -> None:
         """Test that rm_mutual_nas preserves dtypes for numpy and pandas arrays."""
         from balance.util import rm_mutual_nas
@@ -338,7 +319,6 @@ class TestUtil(
         input_dtypes = [x.dtype for x in (x1, x2, x3, x4, x5, x6, x7)]
         result_dtypes = [x.dtype for x in rm_mutual_nas(x1, x2, x3, x4, x5, x6, x7)]
         self.assertEqual(result_dtypes, input_dtypes)
-
 
     def test_rm_mutual_nas_pandas_series_index_preservation(self) -> None:
         """Test that rm_mutual_nas preserves pandas Series indexes."""
@@ -369,7 +349,6 @@ class TestUtil(
         assert isinstance(result_3, pd.Series)
         self.assertEqual(result_3.to_dict(), {3: 4, 2: 3, 1: 2})
 
-
     def test_rm_mutual_nas_error_handling(self) -> None:
         """Test that rm_mutual_nas properly handles error conditions."""
         from balance.util import rm_mutual_nas
@@ -398,7 +377,6 @@ class TestUtil(
 
         # Test mixed arraylike and non-arraylike arguments
         self.assertRaises(ValueError, rm_mutual_nas, d, "a")
-
 
     def test_choose_variables(self) -> None:
         from balance.util import choose_variables
@@ -493,7 +471,6 @@ class TestUtil(
             ["B", "A"],
         )
 
-
     def test__true_false_str_to_bool(self) -> None:
         self.assertFalse(balance_util._true_false_str_to_bool("falsE"))
         self.assertTrue(balance_util._true_false_str_to_bool("TrUe"))
@@ -502,7 +479,6 @@ class TestUtil(
             "Banana is not an accepted value, please pass either 'True' or 'False'*",
         ):
             balance_util._true_false_str_to_bool("Banana")
-
 
     def test__verify_value_type(self) -> None:
         """Test _verify_value_type with various inputs including error cases."""
@@ -550,7 +526,6 @@ class TestUtil(
                     # pyre-ignore[6]: Testing runtime behavior with various types
                     _verify_value_type(value, expected_type)
 
-
     def test__float_or_none(self) -> None:
         """Test _float_or_none with various inputs."""
         test_cases = [
@@ -568,7 +543,6 @@ class TestUtil(
                 self.assertEqual(result, expected_result)
                 if expected_result is not None:
                     self.assertIsInstance(result, float)
-
 
     def test_find_items_index_in_list(self) -> None:
         """Test find_items_index_in_list with various input scenarios."""
@@ -600,7 +574,6 @@ class TestUtil(
                 if result:  # Check type only if result is not empty
                     self.assertIsInstance(result[0], int)
 
-
     def test_get_items_from_list_via_indices(self) -> None:
         """Test get_items_from_list_via_indices with various input scenarios."""
         test_cases = [
@@ -620,5 +593,3 @@ class TestUtil(
         # Test IndexError case separately
         with self.assertRaises(IndexError):
             balance_util.get_items_from_list_via_indices(["a", "b", "c"], [100])
-
-

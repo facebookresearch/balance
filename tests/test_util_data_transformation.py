@@ -7,25 +7,14 @@
 
 from __future__ import annotations
 
-import logging
-
-from copy import deepcopy
-
 import balance.testutil
 
 import numpy as np
-import numpy.testing
 import pandas as pd
-
 # TODO: remove the use of balance_util in most cases, and just import the functions to be tested directly
 from balance import util as balance_util
 from balance.sample_class import Sample
-from balance.util import _coerce_scalar, _verify_value_type
-
-from numpy import dtype
-
-from scipy.sparse import csc_matrix
-
+from balance.util import _verify_value_type
 
 
 class TestUtil(
@@ -108,7 +97,6 @@ class TestUtil(
             d,
         )
 
-
     def test_drop_na_rows(self) -> None:
         """Test removal of rows containing NA values from DataFrames.
 
@@ -140,7 +128,6 @@ class TestUtil(
             "sample",
         )
 
-
     def test_qcut(self) -> None:
         d = pd.Series([0, 1, 2, 3, 4])
         self.assertEqual(
@@ -162,7 +149,6 @@ class TestUtil(
             d,
             6,
         )
-
 
     def test_quantize(self) -> None:
         d = pd.DataFrame(np.random.rand(1000, 2))
@@ -196,7 +182,6 @@ class TestUtil(
         r = balance_util.quantize(pd.Series([1]), 1)
         self.assertEqual(len(set(r.values)), 1)
 
-
     def test_quantize_preserves_column_order(self) -> None:
         df = pd.DataFrame(
             {
@@ -213,7 +198,6 @@ class TestUtil(
         self.assertEqual(result.loc[0, "second"], "a")
         self.assertIsInstance(result.loc[0, "third"], pd.Interval)
 
-
     def test_quantize_non_numeric_series_raises(self) -> None:
         self.assertRaisesRegex(
             TypeError,
@@ -222,7 +206,6 @@ class TestUtil(
             pd.Series(["x", "y", "z"]),
         )
 
-
     def test_row_pairwise_diffs(self) -> None:
         d = pd.DataFrame({"a": (1, 2, 3), "b": (-42, 8, 2)})
         e = pd.DataFrame(
@@ -230,7 +213,6 @@ class TestUtil(
             index=(0, 1, 2, "1 - 0", "2 - 0", "2 - 1"),
         )
         self.assertEqual(balance_util.row_pairwise_diffs(d), e)
-
 
     def test_auto_spread(self) -> None:
         data = pd.DataFrame(
@@ -291,7 +273,6 @@ class TestUtil(
         )
         self.assertWarnsRegexp("no unique groupings", balance_util.auto_spread, data)
 
-
     def test_auto_spread_multiple_groupings(self) -> None:
         # Multiple possible groupings
         data = pd.DataFrame(
@@ -311,7 +292,6 @@ class TestUtil(
         )
         self.assertEqual(expected, balance_util.auto_spread(data))
         self.assertWarnsRegexp("2 possible groupings", balance_util.auto_spread, data)
-
 
     def test_auto_aggregate(self) -> None:
         r = balance_util.auto_aggregate(
@@ -345,7 +325,6 @@ class TestUtil(
             aggfunc="not_sum",
         )
 
-
     def test_fct_lump_basic_functionality(self) -> None:
         """Test basic functionality of fct_lump for category lumping.
 
@@ -369,7 +348,6 @@ class TestUtil(
             balance_util.fct_lump(pd.Series(["a"] * 96 + ["b"] * 4)),
             pd.Series(["a"] * 96 + ["_lumped_other"] * 4),
         )
-
 
     def test_fct_lump_multiple_categories(self) -> None:
         """Test fct_lump with multiple small categories and edge cases.
@@ -456,7 +434,6 @@ class TestUtil(
 
         return wine_survey, wine_survey_copy
 
-
     def test_fct_lump_categorical_vs_string_consistency(self) -> None:
         """Test that fct_lump produces consistent results for categorical vs string variables.
 
@@ -499,7 +476,6 @@ class TestUtil(
             output_string_var_model["perf"]["coefs"],
         )
 
-
     def test_fct_lump_by(self) -> None:
         """Test category lumping with grouping by another variable.
 
@@ -539,5 +515,3 @@ class TestUtil(
             name="d",
         )
         self.assertEqual(r, e)
-
-

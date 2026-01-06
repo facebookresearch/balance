@@ -7,25 +7,18 @@
 
 from __future__ import annotations
 
-import logging
-
 from copy import deepcopy
 
 import balance.testutil
 
 import numpy as np
-import numpy.testing
 import pandas as pd
-
 # TODO: remove the use of balance_util in most cases, and just import the functions to be tested directly
 from balance import util as balance_util
 from balance.sample_class import Sample
-from balance.util import _coerce_scalar, _verify_value_type
+from balance.util import _coerce_scalar
 
 from numpy import dtype
-
-from scipy.sparse import csc_matrix
-
 
 
 class TestUtil(
@@ -45,7 +38,6 @@ class TestUtil(
         # Assert: Object type should return True
         self.assertTrue(result)
 
-
     def test__is_categorical_dtype_numeric(self) -> None:
         """Test _is_categorical_dtype when series dtype is numeric.
 
@@ -63,7 +55,6 @@ class TestUtil(
         self.assertFalse(int_result)
         self.assertFalse(float_result)
 
-
     def test__is_categorical_dtype_with_category_dtype(self) -> None:
         """Test _is_categorical_dtype with pandas categorical dtype.
 
@@ -78,7 +69,6 @@ class TestUtil(
         # Assert: Categorical dtype should return True
         self.assertTrue(result)
 
-
     def test__is_categorical_dtype_with_string_dtype(self) -> None:
         """Test _is_categorical_dtype with pandas string dtype.
 
@@ -92,7 +82,6 @@ class TestUtil(
 
         # Assert: String dtype should return True
         self.assertTrue(result)
-
 
     def test__is_categorical_dtype_bool(self) -> None:
         """Test _is_categorical_dtype when dtype is boolean.
@@ -126,7 +115,6 @@ class TestUtil(
             object_name="sample",
         )
 
-
     def test__coerce_scalar(self) -> None:
         """Ensure scalar coercion handles edge cases without raising errors."""
 
@@ -141,12 +129,10 @@ class TestUtil(
         self.assertTrue(np.isnan(_coerce_scalar(())))
         self.assertTrue(np.isnan(_coerce_scalar(np.array([4.5]))))
 
-
     def test__dict_intersect(self) -> None:
         d1 = {"a": 1, "b": 2}
         d2 = {"c": 3, "b": 2222}
         self.assertEqual(balance_util._dict_intersect(d1, d2), {"b": 2})
-
 
     def test__astype_in_df_from_dtypes(self) -> None:
         df = pd.DataFrame({"id": ("1", "2"), "a": (1.0, 2.0), "weight": (1.0, 2.0)})
@@ -169,7 +155,6 @@ class TestUtil(
             {"id": dtype("int64"), "a": dtype("int64"), "weight": dtype("float64")},
         )
 
-
     def test__are_dtypes_equal(self) -> None:
         df1 = pd.DataFrame({"int": np.arange(5), "flt": np.random.randn(5)})
         df2 = pd.DataFrame({"flt": np.random.randn(5), "int": np.random.randn(5)})
@@ -187,7 +172,6 @@ class TestUtil(
             balance_util._are_dtypes_equal(df11.dtypes, df2.dtypes)["is_equal"]
         )
 
-
     def test__warn_of_df_dtypes_change(self) -> None:
         df = pd.DataFrame({"int": np.arange(5), "flt": np.random.randn(5)})
         new_df = deepcopy(df)
@@ -200,7 +184,6 @@ class TestUtil(
             df.dtypes,
             new_df.dtypes,
         )
-
 
     def test__make_df_column_names_unique(self) -> None:
         # Sample DataFrame with duplicate column names
@@ -225,7 +208,6 @@ class TestUtil(
                 "A_2": {0: 10, 1: 11, 2: 12},
             },
         )
-
 
     def test__safe_replace_and_infer(self) -> None:
         """Test safe replacement and dtype inference to avoid pandas deprecation warnings."""
@@ -257,7 +239,6 @@ class TestUtil(
         expected = pd.Series(["a", "x", "c"], dtype="object")
         pd.testing.assert_series_equal(result, expected)
 
-
     def test__safe_fillna_and_infer(self) -> None:
         """Test safe NA filling and dtype inference to avoid pandas deprecation warnings."""
         # Test with Series containing NaN values
@@ -283,7 +264,6 @@ class TestUtil(
         result = balance_util._safe_fillna_and_infer(series_test)
         expected = pd.Series([1.0, np.nan, 3.0])  # Type gets converted to float
         pd.testing.assert_series_equal(result, expected)
-
 
     def test__safe_groupby_apply(self) -> None:
         """Test safe groupby apply operations that handle include_groups parameter."""
@@ -327,7 +307,6 @@ class TestUtil(
         result = balance_util._safe_groupby_apply(df, "group", lambda x: len(x))
         expected = pd.Series([2, 2, 1], index=pd.Index(["A", "B", "C"], name="group"))
         pd.testing.assert_series_equal(result, expected)
-
 
     def test__safe_show_legend(self) -> None:
         """Test safe legend display that only shows legends when there are labeled artists."""
@@ -377,7 +356,6 @@ class TestUtil(
 
         plt.close(fig)
 
-
     def test__safe_divide_with_zero_handling(self) -> None:
         """Test safe division with proper numpy error state management."""
         # Test normal division
@@ -397,8 +375,6 @@ class TestUtil(
         result = balance_util._safe_divide_with_zero_handling(num_series, den_series)
         expected = pd.Series([5.0, np.inf, 6.0])
         pd.testing.assert_series_equal(result, expected)
-
-
 
     def test__process_series_for_missing_mask(self) -> None:
         """Test _process_series_for_missing_mask with various input scenarios."""
@@ -425,7 +401,6 @@ class TestUtil(
             with self.subTest(description=description):
                 result = balance_util._process_series_for_missing_mask(input_series)
                 pd.testing.assert_series_equal(result, expected_mask)
-
 
     def test__pd_convert_all_types(self) -> None:
         """Test _pd_convert_all_types with various conversion scenarios."""
@@ -455,7 +430,6 @@ class TestUtil(
         self.assertEqual(result2["m"].dtype, np.float64)
         # Check column order preserved
         self.assertEqual(list(result2.columns), ["z", "a", "m"])
-
 
 
 class TestSample_high_cardinality_warnings(balance.testutil.BalanceTestCase):
@@ -641,5 +615,3 @@ class TestSample_high_cardinality_warnings(balance.testutil.BalanceTestCase):
             < warning_logs[0].find(", high (unique"),
             "Expected higher-cardinality column to appear first in warning.",
         )
-
-

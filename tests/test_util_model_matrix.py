@@ -7,25 +7,16 @@
 
 from __future__ import annotations
 
-import logging
-
-from copy import deepcopy
-
 import balance.testutil
 
 import numpy as np
-import numpy.testing
 import pandas as pd
-
 # TODO: remove the use of balance_util in most cases, and just import the functions to be tested directly
 from balance import util as balance_util
 from balance.sample_class import Sample
-from balance.util import _coerce_scalar, _verify_value_type
-
-from numpy import dtype
+from balance.util import _verify_value_type
 
 from scipy.sparse import csc_matrix
-
 
 
 class TestUtil(
@@ -49,7 +40,6 @@ class TestUtil(
             ["aa"],
             "interaction",
         )
-
 
     def test_dot_expansion(self) -> None:
         self.assertEqual(
@@ -79,7 +69,6 @@ class TestUtil(
             ".",
             df,
         )
-
 
     def test_process_formula(self) -> None:
         from patsy import EvalFactor, Term  # pyre-ignore[21]
@@ -127,7 +116,6 @@ class TestUtil(
             variables=["a", "b", "aab"],
             factor_variables="c",
         )
-
 
     def test_build_model_matrix(self) -> None:
         df = pd.DataFrame(
@@ -200,7 +188,6 @@ class TestUtil(
         x_matrix = balance_util.build_model_matrix(df, "a")
         self.assertEqual(x_matrix["model_matrix"], res)
         self.assertEqual(x_matrix["model_matrix_columns"], res.columns.tolist())
-
 
     def test_model_matrix(self) -> None:
         s_df = pd.DataFrame(
@@ -368,7 +355,6 @@ class TestUtil(
         }
         sample_result_571 = _verify_value_type(r["sample"], pd.DataFrame)
         self.assertEqual(sample_result_571.to_dict(), exp)
-
 
     def test_model_matrix_arguments(self) -> None:
         s_df = pd.DataFrame(
@@ -551,7 +537,6 @@ class TestUtil(
         sample_result_750 = _verify_value_type(r["sample"], pd.DataFrame)
         self.assertEqual(sample_result_750.sort_index(axis=1), e, lazy=True)
 
-
     def test_one_hot_encoding_greater_2(self) -> None:
         """Test one-hot encoding for categorical variables with >2 categories.
 
@@ -603,5 +588,3 @@ class TestUtil(
         }
         expected = pd.DataFrame(data=expected)
         self.assertEqual(res, expected)
-
-

@@ -9,23 +9,10 @@ from __future__ import annotations
 
 import logging
 
-from copy import deepcopy
-
 import balance.testutil
-
-import numpy as np
-import numpy.testing
-import pandas as pd
 
 # TODO: remove the use of balance_util in most cases, and just import the functions to be tested directly
 from balance import util as balance_util
-from balance.sample_class import Sample
-from balance.util import _coerce_scalar, _verify_value_type
-
-from numpy import dtype
-
-from scipy.sparse import csc_matrix
-
 
 
 class TestUtil(
@@ -37,7 +24,6 @@ class TestUtil(
         )
         self.assertEqual(balance_util._truncate_text("a" * 4, length=5), "a" * 4)
         self.assertEqual(balance_util._truncate_text("a" * 5, length=5), "a" * 5)
-
 
     def test__truncate_text(self) -> None:
         """Test _truncate_text with various string lengths."""
@@ -59,7 +45,6 @@ class TestUtil(
                 self.assertEqual(result, expected_result)
                 if len(input_text) > length:
                     self.assertEqual(len(result), length + 3)  # length + '...'
-
 
     def test_TruncationFormatter(self) -> None:
         """Test TruncationFormatter with long and short log messages."""
@@ -99,4 +84,3 @@ class TestUtil(
                     self.assertTrue(result.endswith("..."))
                 else:
                     self.assertEqual(result, message)
-
