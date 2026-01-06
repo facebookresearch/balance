@@ -8,14 +8,13 @@
 from __future__ import annotations
 
 import balance.testutil
-
 import numpy as np
 import pandas as pd
+
 # TODO: remove the use of balance_util in most cases, and just import the functions to be tested directly
 from balance import util as balance_util
 from balance.sample_class import Sample
 from balance.util import _verify_value_type
-
 from scipy.sparse import csc_matrix
 
 
@@ -159,7 +158,7 @@ class TestUtil(
         res = [[1.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 0.0]]
         self.assertEqual(x_matrix["model_matrix"].toarray(), res)
         self.assertEqual(x_matrix["model_matrix_columns"], ["a[a1]", "a[a2]"])
-        self.assertTrue(type(x_matrix["model_matrix"]) is csc_matrix)
+        self.assertIs(type(x_matrix["model_matrix"]), csc_matrix)
 
         # Check exceptions
         self.assertRaisesRegex(
@@ -213,7 +212,7 @@ class TestUtil(
         r = balance_util.model_matrix(s)
         sample_result_433 = _verify_value_type(r["sample"])
         self.assertEqual(sample_result_433, e, lazy=True)
-        self.assertTrue(r["target"] is None)
+        self.assertIsNone(r["target"])
 
         # Tests on a single sample dataframe
         e = pd.DataFrame(
@@ -380,7 +379,7 @@ class TestUtil(
         r = balance_util.model_matrix(s, variables=["c"])
         e = pd.DataFrame({"c[a]": (1.0, 0.0, 1.0), "c[b]": (0.0, 1.0, 0.0)})
         self.assertEqual(r["sample"], e)
-        self.assertTrue(r["target"] is None)
+        self.assertIsNone(r["target"])
 
         #  Single covariate which doesn't exist in both should raise error
         self.assertRaisesRegex(
@@ -403,7 +402,7 @@ class TestUtil(
         )
         sample_add_na = _verify_value_type(r["sample"], pd.DataFrame)
         self.assertEqual(sample_add_na.sort_index(axis=1), e)
-        self.assertTrue(r["target"] is None)
+        self.assertIsNone(r["target"])
 
         #  Test return_type argument
         r_one = balance_util.model_matrix(s, t, return_type="one")["model_matrix"]
@@ -458,7 +457,7 @@ class TestUtil(
             r_sparse["model_matrix_columns_names"],
             ["_is_na_a[T.True]", "a", "c[a]", "c[b]", "c[c]"],
         )
-        self.assertTrue(type(model_matrix_sparse) is csc_matrix)
+        self.assertIs(type(model_matrix_sparse), csc_matrix)
 
         # Test formula argument
         result_a_plus_b = _verify_value_type(

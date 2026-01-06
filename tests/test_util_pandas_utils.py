@@ -10,14 +10,13 @@ from __future__ import annotations
 from copy import deepcopy
 
 import balance.testutil
-
 import numpy as np
 import pandas as pd
+
 # TODO: remove the use of balance_util in most cases, and just import the functions to be tested directly
 from balance import util as balance_util
 from balance.sample_class import Sample
 from balance.util import _coerce_scalar
-
 from numpy import dtype
 
 
@@ -96,24 +95,6 @@ class TestUtil(
 
         # Assert: Boolean types are not categorical, should return False
         self.assertFalse(result)
-
-        self.assertRaisesRegex(
-            ValueError,
-            "sample_weights must be the same length as sample_df",
-            balance_util._check_weighting_methods_input,
-            df=pd.DataFrame({"a": [1, 2]}),
-            weights=pd.Series([1]),
-            object_name="sample",
-        )
-
-        self.assertRaisesRegex(
-            ValueError,
-            "sample_df index must be the same as sample_weights index",
-            balance_util._check_weighting_methods_input,
-            df=pd.DataFrame({"a": [1, 2]}, index=[1, 2]),
-            weights=pd.Series([1, 1], index=[3, 4]),
-            object_name="sample",
-        )
 
     def test__coerce_scalar(self) -> None:
         """Ensure scalar coercion handles edge cases without raising errors."""
@@ -304,7 +285,7 @@ class TestUtil(
         pd.testing.assert_series_equal(result, expected)
 
         # Test with function that accesses the grouping column
-        result = balance_util._safe_groupby_apply(df, "group", lambda x: len(x))
+        result = balance_util._safe_groupby_apply(df, "group", len)
         expected = pd.Series([2, 2, 1], index=pd.Index(["A", "B", "C"], name="group"))
         pd.testing.assert_series_equal(result, expected)
 

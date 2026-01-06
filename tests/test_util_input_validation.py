@@ -8,7 +8,6 @@
 from __future__ import annotations
 
 import balance.testutil
-
 import numpy as np
 import numpy.testing
 import pandas as pd
@@ -45,6 +44,22 @@ class TestUtil(
             balance_util._check_weighting_methods_input,
             df=pd.DataFrame({"a": (1, 2)}),
             weights=1,
+            object_name="sample",
+        )
+        self.assertRaisesRegex(
+            ValueError,
+            "sample_weights must be the same length as sample_df",
+            balance_util._check_weighting_methods_input,
+            df=pd.DataFrame({"a": [1, 2]}),
+            weights=pd.Series([1]),
+            object_name="sample",
+        )
+        self.assertRaisesRegex(
+            ValueError,
+            "sample_df index must be the same as sample_weights index",
+            balance_util._check_weighting_methods_input,
+            df=pd.DataFrame({"a": [1, 2]}, index=[1, 2]),
+            weights=pd.Series([1, 1], index=[3, 4]),
             object_name="sample",
         )
 

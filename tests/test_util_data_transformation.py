@@ -8,9 +8,9 @@
 from __future__ import annotations
 
 import balance.testutil
-
 import numpy as np
 import pandas as pd
+
 # TODO: remove the use of balance_util in most cases, and just import the functions to be tested directly
 from balance import util as balance_util
 from balance.sample_class import Sample
