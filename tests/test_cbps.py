@@ -25,6 +25,7 @@ from balance.datasets import load_data
 from balance.sample_class import Sample
 from balance.stats_and_plots.weights_stats import design_effect
 from balance.weighting_methods import cbps as balance_cbps
+from statsmodels.tools.sm_exceptions import PerfectSeparationWarning
 
 # Test constants for improved readability and maintainability
 TEST_SEED = 2021
@@ -851,7 +852,7 @@ class Testcbps(
             warnings.filterwarnings(
                 "ignore",
                 message="Perfect separation or prediction detected",
-                category=Warning,
+                category=PerfectSeparationWarning,
             )
             result = balance_cbps.cbps(
                 sample_df,
