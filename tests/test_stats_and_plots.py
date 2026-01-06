@@ -1037,9 +1037,7 @@ class TestBalance_weighted_comparisons_stats(
             True,
         ).to_list()
 
-        self.assertEqual(
-            np.round(r1, 5).tolist(), [2.82843, 0.70711, 0.70711, 1.76777]
-        )
+        self.assertEqual(np.round(r1, 5).tolist(), [2.82843, 0.70711, 0.70711, 1.76777])
         self.assertEqual(np.round(r2, 5).tolist(), [2.82843, 0.70711, 1.76777])
 
     def test__aggregate_statistic_by_main_covar(self) -> None:
