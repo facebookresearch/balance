@@ -287,7 +287,7 @@
 - **Improved test organization** (more granular) across all test modules
   (test_stats_and_plots.py, test_balancedf.py, test_ipw.py, test_rake.py,
   test_cli.py, test_weighted_comparisons_plots.py, test_cbps.py,
-  test_testutil.py, test_adjustment.py, test_util_*.py, test_sample.py)
+  test_testutil.py, test_adjustment.py, test_util.py, test_sample.py)
 - **Updated GitHub workflows** to include Python 3.12 in build and test matrix
 - **Fix 261 "pandas deprecation" warnings!**
 - **Added type annotations** - Converted test_balancedf.py to pyre-strict with.
