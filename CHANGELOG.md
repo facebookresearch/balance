@@ -37,6 +37,14 @@
 
 - **Split util helpers into focused modules**
   - Broke `balance.util` into `balance.utils` submodules for easier navigation.
+- **Split test_util.py into focused test modules**
+  - Split the large `test_util.py` file (2325 lines) into 5 modular test files that mirror the `balance/utils/` structure:
+    - `test_util_data_transformation.py` - Tests for data transformation utilities
+    - `test_util_input_validation.py` - Tests for input validation utilities
+    - `test_util_model_matrix.py` - Tests for model matrix utilities
+    - `test_util_pandas_utils.py` - Tests for pandas utilities (including high cardinality warnings)
+    - `test_util_logging_utils.py` - Tests for logging utilities
+  - This improves test organization and makes it easier to locate tests for specific utilities.
 
 # 0.14.0 (2025-12-14)
 
@@ -279,7 +287,7 @@
 - **Improved test organization** (more granular) across all test modules
   (test_stats_and_plots.py, test_balancedf.py, test_ipw.py, test_rake.py,
   test_cli.py, test_weighted_comparisons_plots.py, test_cbps.py,
-  test_testutil.py, test_adjustment.py, test_util.py, test_sample.py)
+  test_testutil.py, test_adjustment.py, test_util_*.py, test_sample.py)
 - **Updated GitHub workflows** to include Python 3.12 in build and test matrix
 - **Fix 261 "pandas deprecation" warnings!**
 - **Added type annotations** - Converted test_balancedf.py to pyre-strict with.
