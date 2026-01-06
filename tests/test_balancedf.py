@@ -1539,8 +1539,8 @@ class TestBalanceDFCovars_from_frame(BalanceTestCase):
         self.assertEqual(result.df.shape[0], 3)
 
         # Verify actual data values are preserved
-        self.assertTrue((result.df["a"] == [1, 2, 3]).all())
-        self.assertTrue((result.df["b"] == [4, 5, 6]).all())
+        self.assertEqual(result.df["a"].tolist(), [1, 2, 3])
+        self.assertEqual(result.df["b"].tolist(), [4, 5, 6])
 
     def test_from_frame_with_weights_creates_instance_with_weights(self) -> None:
         """Test that from_frame correctly handles weights parameter.
@@ -1565,7 +1565,7 @@ class TestBalanceDFCovars_from_frame(BalanceTestCase):
 
         # Verify actual weight values are correctly applied
         weights_df = result._sample.weights().df
-        self.assertTrue((weights_df["weight"] == [0.5, 1.0, 1.5]).all())
+        self.assertEqual(weights_df["weight"].tolist(), [0.5, 1.0, 1.5])
 
     def test_from_frame_with_various_column_counts(self) -> None:
         """Test that from_frame handles DataFrames with different numbers of columns.
@@ -1614,8 +1614,8 @@ class TestBalanceDFCovars_from_frame(BalanceTestCase):
         result = covars.from_frame(df)
 
         # Assert
-        self.assertTrue((result.df["int_col"] == [1, 2, 3]).all())
-        self.assertTrue((result.df["float_col"] == [1.5, 2.5, 3.5]).all())
+        self.assertEqual(result.df["int_col"].tolist(), [1, 2, 3])
+        self.assertEqual(result.df["float_col"].tolist(), [1.5, 2.5, 3.5])
 
 
 class TestBalanceDF_model_matrix_caching(BalanceTestCase):

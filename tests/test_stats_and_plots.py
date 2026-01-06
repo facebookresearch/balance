@@ -367,7 +367,7 @@ class TestBalance_weighted_stats(
         self.assertEqual(type(v2), pd.DataFrame)
         self.assertEqual(type(w2), pd.Series)
         self.assertEqual(w2, pd.Series([1.0, 1.0, 1.0, 1.0]))
-        self.assertTrue(len(w2) == 4)
+        self.assertEqual(len(w2), 4)
         # Verify defaults:
         self.assertEqual(
             _prepare_weighted_stat_args(v, None, False)[0],
@@ -1037,10 +1037,10 @@ class TestBalance_weighted_comparisons_stats(
             True,
         ).to_list()
 
-        self.assertTrue(
-            all((np.round(r1, 5)) == np.array([2.82843, 0.70711, 0.70711, 1.76777]))
+        self.assertEqual(
+            np.round(r1, 5).tolist(), [2.82843, 0.70711, 0.70711, 1.76777]
         )
-        self.assertTrue(all((np.round(r2, 5)) == np.array([2.82843, 0.70711, 1.76777])))
+        self.assertEqual(np.round(r2, 5).tolist(), [2.82843, 0.70711, 1.76777])
 
     def test__aggregate_statistic_by_main_covar(self) -> None:
         """Test aggregation of statistics values by main covariate.
