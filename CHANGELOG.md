@@ -37,6 +37,14 @@
 
 - **Split util helpers into focused modules**
   - Broke `balance.util` into `balance.utils` submodules for easier navigation.
+- **Split test_util.py into focused test modules**
+  - Split the large `test_util.py` file (2325 lines) into 5 modular test files that mirror the `balance/utils/` structure:
+    - `test_util_data_transformation.py` - Tests for data transformation utilities
+    - `test_util_input_validation.py` - Tests for input validation utilities
+    - `test_util_model_matrix.py` - Tests for model matrix utilities
+    - `test_util_pandas_utils.py` - Tests for pandas utilities (including high cardinality warnings)
+    - `test_util_logging_utils.py` - Tests for logging utilities
+  - This improves test organization and makes it easier to locate tests for specific utilities.
 
 # 0.14.0 (2025-12-14)
 
