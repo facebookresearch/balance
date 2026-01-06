@@ -1497,7 +1497,7 @@ class TestSample_to_download(balance.testutil.BalanceTestCase):
 
 class TestSamplePrivateAPI(balance.testutil.BalanceTestCase):
     def test__links(self) -> None:
-        self.assertTrue(len(s1._links.keys()) == 0)
+        self.assertEqual(len(s1._links.keys()), 0)
 
         self.assertTrue(s3._links["target"] is s2)
         self.assertTrue(s3.has_target())

@@ -227,8 +227,8 @@ class Testpoststratify(
         # age>0.4 has 4 times as many people than age <0.4 in the target
         # Check that the weights come out as 0.2 and 0.8
         eps = 0.05
-        self.assertTrue(abs(result[s.age < 0.4].sum() / size - 0.2) < eps)
-        self.assertTrue(abs(result[s.age >= 0.4].sum() / size - 0.8) < eps)
+        self.assertAlmostEqual(result[s.age < 0.4].sum() / size, 0.2, delta=eps)
+        self.assertAlmostEqual(result[s.age >= 0.4].sum() / size, 0.8, delta=eps)
 
         # for strings
         size = 10000
@@ -249,9 +249,9 @@ class Testpoststratify(
         # since these are combined in default transformations (into '_lumped_other').
         # Hence their frequency would be as in sample
         eps = 0.05
-        self.assertTrue(abs(result[s.x == "a"].sum() / size - 0.95) < eps)
-        self.assertTrue(abs(result[s.x == "b"].sum() / size - 0.035) < eps)
-        self.assertTrue(abs(result[s.x == "c"].sum() / size - 0.015) < eps)
+        self.assertAlmostEqual(result[s.x == "a"].sum() / size, 0.95, delta=eps)
+        self.assertAlmostEqual(result[s.x == "b"].sum() / size, 0.035, delta=eps)
+        self.assertAlmostEqual(result[s.x == "c"].sum() / size, 0.015, delta=eps)
 
     def test_poststratify_exceptions(self) -> None:
         # column with name weight
