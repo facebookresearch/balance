@@ -13,12 +13,13 @@ from __future__ import (
     unicode_literals,
 )
 
+import warnings
+
 import balance.testutil
 
 import numpy as np
 import pandas as pd
 import scipy
-import warnings
 
 from balance.datasets import load_data
 from balance.sample_class import Sample
