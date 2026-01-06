@@ -90,6 +90,11 @@ first_party_detection = false
 
 [tool.pytest.ini_options]
 filterwarnings = [
+    # Ignore third-party deprecation warnings from matplotlib's internal dependencies
+    "ignore:'oneOf' deprecated:DeprecationWarning:matplotlib._fontconfig_pattern",
+    "ignore:'parseString' deprecated:DeprecationWarning:matplotlib._fontconfig_pattern",
+    "ignore:'resetCache' deprecated:DeprecationWarning:matplotlib._fontconfig_pattern",
+    "ignore:'enablePackrat' deprecated:DeprecationWarning:matplotlib._mathtext",
     # Ignore deprecation warnings from matplotlib's internal use of pyparsing
     "ignore:'oneOf' deprecated - use 'one_of':DeprecationWarning:matplotlib._fontconfig_pattern",
     "ignore:'parseString' deprecated - use 'parse_string':DeprecationWarning:matplotlib._fontconfig_pattern",

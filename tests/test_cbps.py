@@ -13,6 +13,8 @@ from __future__ import (
     unicode_literals,
 )
 
+import warnings
+
 import balance.testutil
 
 import numpy as np
@@ -23,6 +25,7 @@ from balance.datasets import load_data
 from balance.sample_class import Sample
 from balance.stats_and_plots.weights_stats import design_effect
 from balance.weighting_methods import cbps as balance_cbps
+from statsmodels.tools.sm_exceptions import PerfectSeparationWarning
 
 # Test constants for improved readability and maintainability
 TEST_SEED = 2021
@@ -844,16 +847,23 @@ class Testcbps(
 
         # Test that 'exact' method with tight constraint produces identical weights
         # (which means the balancing essentially fails)
-        result = balance_cbps.cbps(
-            sample_df,
-            sample_weights,
-            target_df,
-            target_weights,
-            transformations=None,
-            cbps_method="exact",
-            max_de=1.01,  # Very tight constraint
-            weight_trimming_mean_ratio=None,
-        )
+        # Suppress PerfectSeparationWarning as it's expected with this extreme test data
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message="Perfect separation or prediction detected",
+                category=PerfectSeparationWarning,
+            )
+            result = balance_cbps.cbps(
+                sample_df,
+                sample_weights,
+                target_df,
+                target_weights,
+                transformations=None,
+                cbps_method="exact",
+                max_de=1.01,  # Very tight constraint
+                weight_trimming_mean_ratio=None,
+            )
 
         # When constraints are too tight, all weights become identical
         # This is indicated by very low standard deviation
