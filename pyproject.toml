@@ -87,3 +87,12 @@ target-version = ["py39", "py310", "py311", "py312", "py313"]
 
 [tool.usort]
 first_party_detection = false
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    # Ignore deprecation warnings from matplotlib's internal use of pyparsing
+    "ignore:'oneOf' deprecated - use 'one_of':DeprecationWarning:matplotlib._fontconfig_pattern",
+    "ignore:'parseString' deprecated - use 'parse_string':DeprecationWarning:matplotlib._fontconfig_pattern",
+    "ignore:'resetCache' deprecated - use 'reset_cache':DeprecationWarning:matplotlib._fontconfig_pattern",
+    "ignore:'enablePackrat' deprecated - use 'enable_packrat':DeprecationWarning:matplotlib._mathtext",
+]
