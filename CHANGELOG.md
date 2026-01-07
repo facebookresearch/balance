@@ -32,11 +32,9 @@
 - **Restored CBPS tutorial plots**
   - Re-enabled scatter plots in the CBPS comparison tutorial notebook while
     avoiding GitHub Pages rendering errors and pandas colormap warnings.
-- **Hardened transformation and model matrix validations**
-  - `trim_weights()` now accepts list/tuple inputs and raises clearer errors for invalid types.
-  - `apply_transformations()` reports invalid input types and empty transformations explicitly.
-  - `model_matrix(add_na=False)` now drops NA rows while preserving categorical levels and raises
-    descriptive errors when dropping empties.
+- **Clearer validation errors in adjustment helpers**
+  - `trim_weights()` now accepts list/tuple inputs and reports invalid types explicitly.
+  - `apply_transformations()` raises clearer errors for invalid inputs and empty transformations.
 
 ## Code Quality & Refactoring
 

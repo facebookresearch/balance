@@ -16,12 +16,7 @@ import pandas as pd
 from balance.utils.data_transformation import add_na_indicator
 from balance.utils.input_validation import _isinstance_sample, choose_variables
 from balance.utils.pandas_utils import _make_df_column_names_unique
-from pandas.api.types import (
-    is_bool_dtype,
-    is_numeric_dtype,
-    is_object_dtype,
-    is_string_dtype,
-)
+from pandas.api.types import is_bool_dtype, is_numeric_dtype
 from patsy.contrasts import ContrastMatrix
 from patsy.highlevel import dmatrix, ModelDesc
 from scipy.sparse import csc_matrix, hstack
@@ -311,41 +306,7 @@ def _prepare_input_model_matrix(
         all_data = add_na_indicator(all_data)
     else:
         logger.warning("Dropping all rows with NAs")
-        category_levels: Dict[str, List[Any]] = {}
-        for column in all_data.columns:
-            column_series = all_data[column]
-            if isinstance(column_series.dtype, pd.CategoricalDtype):
-                category_levels[column] = list(column_series.cat.categories)
-            elif is_object_dtype(column_series) or is_string_dtype(column_series):
-                category_levels[column] = [
-                    value for value in pd.unique(column_series) if not pd.isna(value)
-                ]
-        sample_df = sample_df.dropna()
-        if sample_df.empty:
-            raise ValueError(
-                "Dropping rows led to empty sample. Maybe try add_na=True?"
-            )
-        sample_n = sample_df.shape[0]
-        if target_df is not None:
-            target_df = target_df.dropna()
-            if target_df.empty:
-                raise ValueError(
-                    "Dropping rows led to empty target. Maybe try add_na=True?"
-                )
-        if category_levels:
-            for column, levels in category_levels.items():
-                if column in sample_df.columns:
-                    sample_df[column] = pd.Categorical(
-                        sample_df[column], categories=levels
-                    )
-                if target_df is not None and column in target_df.columns:
-                    target_df[column] = pd.Categorical(
-                        target_df[column], categories=levels
-                    )
-        frames = [sample_df]
-        if target_df is not None:
-            frames.append(target_df)
-        all_data = pd.concat(frames)
+        # TODO: add code to drop all rows with NAs (columns are left as is)
 
     if fix_columns_names:
         all_data.columns = all_data.columns.str.replace(
