@@ -317,7 +317,9 @@ def _prepare_input_model_matrix(
             if isinstance(column_series.dtype, pd.CategoricalDtype):
                 category_levels[column] = list(column_series.cat.categories)
             elif is_object_dtype(column_series) or is_string_dtype(column_series):
-                category_levels[column] = list(pd.unique(column_series.dropna()))
+                category_levels[column] = [
+                    value for value in pd.unique(column_series) if not pd.isna(value)
+                ]
         sample_df = sample_df.dropna()
         if sample_df.empty:
             raise ValueError(
