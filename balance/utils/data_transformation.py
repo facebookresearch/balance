@@ -43,8 +43,7 @@ def add_na_indicator(
     """
     already_na_cols = [c for c in df.columns if c.startswith("_is_na_")]
     if len(already_na_cols) > 0:
-        # TODO: change to ValueError?!
-        raise Exception(
+        raise ValueError(
             "Can't add NA indicator to DataFrame which contains"
             f"columns which start with '_is_na_': {already_na_cols}"
         )
@@ -61,8 +60,7 @@ def add_na_indicator(
 
     for c in list(na_cols):
         if replace_val_obj in set(df[c]):
-            # TODO: change to ValueError?!
-            raise Exception(
+            raise ValueError(
                 f"Can't add NA indicator to columns containing NAs and the value '{replace_val_obj}', "
                 f"i.e. column: {c}"
             )

@@ -33,7 +33,7 @@ class TestUtil(
         self.assertEqual(balance_util.formula_generator(["a", "b", "c"]), "c + b + a")
         # check exceptions
         self.assertRaisesRegex(
-            Exception,
+            ValueError,
             "This formula type is not supported",
             balance_util.formula_generator,
             ["aa"],
@@ -55,14 +55,14 @@ class TestUtil(
 
         # check exceptions
         self.assertRaisesRegex(
-            Exception,
+            TypeError,
             "Variables should not be empty. Please provide a list of strings.",
             balance_util.dot_expansion,
             ".",
             None,
         )
         self.assertRaisesRegex(
-            Exception,
+            TypeError,
             "Variables should be a list of strings and have to be included.",
             balance_util.dot_expansion,
             ".",
@@ -108,7 +108,7 @@ class TestUtil(
 
         # check exceptions
         self.assertRaisesRegex(
-            Exception,
+            ValueError,
             "Not all factor variables are contained in variables",
             balance_util.process_formula,
             formula="a:(b+aab)",
@@ -162,7 +162,7 @@ class TestUtil(
 
         # Check exceptions
         self.assertRaisesRegex(
-            Exception,
+            ValueError,
             "Not all factor variables are contained in df",
             balance_util.build_model_matrix,
             df,
@@ -172,7 +172,7 @@ class TestUtil(
 
         df = pd.DataFrame({"[a]": ["a1", "a2", "a1", "a1"]})
         self.assertRaisesRegex(
-            Exception,
+            ValueError,
             "Variable names cannot contain characters",
             balance_util.build_model_matrix,
             df,
@@ -383,7 +383,7 @@ class TestUtil(
 
         #  Single covariate which doesn't exist in both should raise error
         self.assertRaisesRegex(
-            Exception,
+            ValueError,
             "requested variables are not in all Samples",
             balance_util.model_matrix,
             s,

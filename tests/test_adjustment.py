@@ -87,10 +87,18 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
 
         # Test error handling for invalid input types
         with self.assertRaisesRegex(
-            TypeError, "weights must be np.array or pd.Series, are of type*"
+            TypeError,
+            "weights must be np.array, list, tuple, or pd.Series, are of type:.*",
         ):
             # pyre-ignore[6]: Testing error handling with intentionally wrong type
             trim_weights("Strings don't get trimmed", weight_trimming_mean_ratio=1)
+
+        list_weights = [0.0, 1.0, 2.0]
+        tuple_weights = (0.0, 1.0, 2.0)
+        list_result = trim_weights(list_weights, keep_sum_of_weights=False)
+        tuple_result = trim_weights(tuple_weights, keep_sum_of_weights=False)
+        pd.testing.assert_series_equal(list_result, expected_weights)
+        pd.testing.assert_series_equal(tuple_result, expected_weights)
 
         # Test error when both trimming parameters are provided
         with self.assertRaisesRegex(ValueError, "Only one"):
@@ -485,7 +493,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
 
         # Test non-dataframe input
         self.assertRaisesRegex(
-            AssertionError,
+            TypeError,
             "'dfs' must contain DataFrames",
             apply_transformations,
             (sample_data,),
@@ -494,11 +502,20 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
 
         # Test non-tuple input
         self.assertRaisesRegex(
-            AssertionError,
+            TypeError,
             "'dfs' argument must be a tuple of DataFrames",
             apply_transformations,
             sample_data.df,
             "foobar",
+        )
+
+        # Test no transformations/additions
+        self.assertRaisesRegex(
+            ValueError,
+            "No transformations or additions passed",
+            apply_transformations,
+            (sample_data.df,),
+            {},
         )
 
     def test__find_adjustment_method(self) -> None:

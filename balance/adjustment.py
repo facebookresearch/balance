@@ -116,8 +116,7 @@ def _quantile_with_method(
 
 
 def trim_weights(
-    weights: pd.Series | npt.NDArray,
-    # TODO: add support to more types of input weights? (e.g. list? other?)
+    weights: pd.Series | npt.NDArray | list[float] | tuple[float, ...],
     weight_trimming_mean_ratio: float | int | None = None,
     weight_trimming_percentile: float | Tuple[float, float] | None = None,
     verbose: bool = False,
@@ -160,8 +159,8 @@ def trim_weights(
     desired total.
 
     Args:
-        weights (pd.Series | np.ndarray): Weights to trim. np.ndarray will be
-            converted to pd.Series internally.
+        weights (pd.Series | np.ndarray | list[float] | tuple[float, ...]): Weights to trim.
+            Arrays and sequences will be converted to pd.Series internally.
         weight_trimming_mean_ratio (float | int | None, optional): Ratio for upper bound
             clipping as mean(weights) * ratio. Mutually exclusive with
             weight_trimming_percentile. Defaults to None.
@@ -260,11 +259,14 @@ def trim_weights(
 
     if isinstance(weights, pd.Series):
         weights = weights.astype(np.float64, copy=False)
-    elif isinstance(weights, np.ndarray):
-        weights = pd.Series(weights, dtype=np.float64, name=original_name)
+    elif isinstance(weights, (np.ndarray, list, tuple)):
+        weights = pd.Series(
+            np.asarray(weights, dtype=np.float64), dtype=np.float64, name=original_name
+        )
     else:
         raise TypeError(
-            f"weights must be np.array or pd.Series, are of type: {type(weights)}"
+            "weights must be np.array, list, tuple, or pd.Series, are of type: "
+            f"{type(weights)}"
         )
     weights_index = weights.index
 
@@ -438,11 +440,10 @@ def apply_transformations(
                 #  2  9  6,)
 
     """
-    # TODO: change assert to raise
-    assert isinstance(dfs, tuple), "'dfs' argument must be a tuple of DataFrames"
-    assert all(
-        isinstance(x, pd.DataFrame) for x in dfs
-    ), "'dfs' must contain DataFrames"
+    if not isinstance(dfs, tuple):
+        raise TypeError("'dfs' argument must be a tuple of DataFrames")
+    if not all(isinstance(x, pd.DataFrame) for x in dfs):
+        raise TypeError("'dfs' must contain DataFrames")
 
     if transformations is None:
         return dfs
@@ -472,10 +473,8 @@ def apply_transformations(
         f"Total number of added or transformed variables: {len(additions) + len(transformations)}"
     )
 
-    # TODO: change assert to raise
-    assert (
-        len(additions) + len(transformations)
-    ) > 0, "No transformations or additions passed"
+    if len(additions) + len(transformations) == 0:
+        raise ValueError("No transformations or additions passed")
 
     if len(additions) > 0:
         added = all_data.assign(**additions).loc[:, list(additions.keys())]

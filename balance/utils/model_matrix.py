@@ -40,8 +40,7 @@ def formula_generator(variables: List[str], formula_type: str = "additive") -> s
     if formula_type == "additive":
         rhs_formula = " + ".join(sorted(variables, reverse=True))
     else:
-        # TODO ValueError?!
-        raise Exception(
+        raise ValueError(
             "This formula type is not supported.'" "Please provide a string formula"
         )
 
@@ -69,14 +68,12 @@ def dot_expansion(formula: str, variables: List[str]) -> str:
         If no '.' is present, then the original formula is returned as is.
     """
     if variables is None:
-        # TODO: TypeError?
-        raise Exception(
+        raise TypeError(
             "Variables should not be empty. Please provide a list of strings."
         )
 
     if not isinstance(variables, list):
-        # TODO: TypeError?
-        raise Exception(
+        raise TypeError(
             "Variables should be a list of strings and have to be included."
             "Please provide a list of your variables. If you would like to use all variables in"
             "a dataframe, insert variables = list(df.columns)"
@@ -164,8 +161,7 @@ def process_formula(
     """
     # Check all factor variables are in variables:
     if (factor_variables is not None) and (not set(factor_variables) <= set(variables)):
-        # TODO: ValueError?!
-        raise Exception("Not all factor variables are contained in variables")
+        raise ValueError("Not all factor variables are contained in variables")
 
     formula = dot_expansion(formula, variables)
     # Remove the intercept since it is added by sklearn/cbps
@@ -225,8 +221,7 @@ def build_model_matrix(
 
     bracket_variables = [v for v in variables if ("[" in v) or ("]" in v)]
     if len(bracket_variables) > 0:
-        # TODO: ValueError?
-        raise Exception(
+        raise ValueError(
             "Variable names cannot contain characters '[' or ']'"
             f"because patsy uses them to denote one-hot encoded categoricals: ({bracket_variables})"
         )
@@ -234,8 +229,7 @@ def build_model_matrix(
     # Check all factor variables are in variables:
     if factor_variables is not None:
         if not (set(factor_variables) <= set(variables)):
-            # TODO: ValueError?
-            raise Exception("Not all factor variables are contained in df")
+            raise ValueError("Not all factor variables are contained in df")
 
     model_desc = process_formula(formula, variables, factor_variables)
     # dmatrix cannot get Int64Dtype as data type. Hence converting all numeric columns to float64.
@@ -286,7 +280,7 @@ def _prepare_input_model_matrix(
 
     bracket_variables = [v for v in variables if ("[" in v) or ("]" in v)]
     if len(bracket_variables) > 0:
-        raise Exception(
+        raise ValueError(
             "Variable names cannot contain characters '[' or ']'"
             f"because patsy uses them to denote one-hot encoded categoricals: ({bracket_variables})"
         )
