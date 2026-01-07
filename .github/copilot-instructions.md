@@ -7,6 +7,20 @@ This repo contains the **balance** Python package: weighting and balancing utili
 
 ## Review checklist
 
+### 0) PR scope and focus — one idea per PR
+- Each PR should represent **one self-contained idea** that is easy to test, review, and accept.
+- Flag PRs that combine multiple unrelated changes:
+  - mixing feature additions with refactoring
+  - addressing multiple independent bugs in one PR
+  - combining documentation updates with unrelated code changes
+  - bundling multiple distinct features together
+- If a PR touches multiple subsystems or modules for unrelated reasons, suggest splitting into focused PRs.
+- Large PRs are acceptable if all changes serve a single, cohesive goal (e.g., implementing one feature that naturally spans multiple files).
+- When flagging scope issues:
+  - list the distinct concerns or ideas present in the PR
+  - suggest a logical split (e.g., "Consider separating the refactoring into its own PR")
+  - explain how splitting will improve reviewability and testability
+
 ### 1) Correctness and statistical soundness
 - Verify the implementation matches the intended method (IPW / CBPS / rake / poststratification).
 - Confirm assumptions and constraints are handled explicitly (e.g., positivity, normalization, convergence criteria).
