@@ -88,7 +88,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         # Test error handling for invalid input types
         with self.assertRaisesRegex(
             TypeError,
-            "weights must be np.array, list, tuple, or pd.Series, are of type*",
+            "weights must be np.array, list, tuple, or pd.Series, are of type:.*",
         ):
             # pyre-ignore[6]: Testing error handling with intentionally wrong type
             trim_weights("Strings don't get trimmed", weight_trimming_mean_ratio=1)
