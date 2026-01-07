@@ -82,8 +82,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">already_na_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_is_na_&quot;</span><span class="p">)]</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">already_na_cols</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="c1"># TODO: change to ValueError?!</span>
-        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="s2">&quot;Can&#39;t add NA indicator to DataFrame which contains&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;columns which start with &#39;_is_na_&#39;: </span><span class="si">{</span><span class="n">already_na_cols</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
@@ -100,8 +99,7 @@
 
     <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">na_cols</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">replace_val_obj</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">c</span><span class="p">]):</span>
-            <span class="c1"># TODO: change to ValueError?!</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Can&#39;t add NA indicator to columns containing NAs and the value &#39;</span><span class="si">{</span><span class="n">replace_val_obj</span><span class="si">}</span><span class="s2">&#39;, &quot;</span>
                 <span class="sa">f</span><span class="s2">&quot;i.e. column: </span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>

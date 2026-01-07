@@ -42,6 +42,9 @@ hide_title: true
 - **Restored CBPS tutorial plots**
   - Re-enabled scatter plots in the CBPS comparison tutorial notebook while
     avoiding GitHub Pages rendering errors and pandas colormap warnings.
+- **Clearer validation errors in adjustment helpers**
+  - `trim_weights()` now accepts list/tuple inputs and reports invalid types explicitly.
+  - `apply_transformations()` raises clearer errors for invalid inputs and empty transformations.
 
 ## Code Quality & Refactoring
 
