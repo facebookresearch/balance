@@ -16,7 +16,12 @@ import pandas as pd
 from balance.utils.data_transformation import add_na_indicator
 from balance.utils.input_validation import _isinstance_sample, choose_variables
 from balance.utils.pandas_utils import _make_df_column_names_unique
-from pandas.api.types import is_bool_dtype, is_numeric_dtype
+from pandas.api.types import (
+    is_bool_dtype,
+    is_numeric_dtype,
+    is_object_dtype,
+    is_string_dtype,
+)
 from patsy.contrasts import ContrastMatrix
 from patsy.highlevel import dmatrix, ModelDesc
 from scipy.sparse import csc_matrix, hstack
@@ -40,8 +45,7 @@ def formula_generator(variables: List[str], formula_type: str = "additive") -> s
     if formula_type == "additive":
         rhs_formula = " + ".join(sorted(variables, reverse=True))
     else:
-        # TODO ValueError?!
-        raise Exception(
+        raise ValueError(
             "This formula type is not supported.'" "Please provide a string formula"
         )
 
@@ -69,14 +73,12 @@ def dot_expansion(formula: str, variables: List[str]) -> str:
         If no '.' is present, then the original formula is returned as is.
     """
     if variables is None:
-        # TODO: TypeError?
-        raise Exception(
+        raise TypeError(
             "Variables should not be empty. Please provide a list of strings."
         )
 
     if not isinstance(variables, list):
-        # TODO: TypeError?
-        raise Exception(
+        raise TypeError(
             "Variables should be a list of strings and have to be included."
             "Please provide a list of your variables. If you would like to use all variables in"
             "a dataframe, insert variables = list(df.columns)"
@@ -164,8 +166,7 @@ def process_formula(
     """
     # Check all factor variables are in variables:
     if (factor_variables is not None) and (not set(factor_variables) <= set(variables)):
-        # TODO: ValueError?!
-        raise Exception("Not all factor variables are contained in variables")
+        raise ValueError("Not all factor variables are contained in variables")
 
     formula = dot_expansion(formula, variables)
     # Remove the intercept since it is added by sklearn/cbps
@@ -225,8 +226,7 @@ def build_model_matrix(
 
     bracket_variables = [v for v in variables if ("[" in v) or ("]" in v)]
     if len(bracket_variables) > 0:
-        # TODO: ValueError?
-        raise Exception(
+        raise ValueError(
             "Variable names cannot contain characters '[' or ']'"
             f"because patsy uses them to denote one-hot encoded categoricals: ({bracket_variables})"
         )
@@ -234,8 +234,7 @@ def build_model_matrix(
     # Check all factor variables are in variables:
     if factor_variables is not None:
         if not (set(factor_variables) <= set(variables)):
-            # TODO: ValueError?
-            raise Exception("Not all factor variables are contained in df")
+            raise ValueError("Not all factor variables are contained in df")
 
     model_desc = process_formula(formula, variables, factor_variables)
     # dmatrix cannot get Int64Dtype as data type. Hence converting all numeric columns to float64.
@@ -286,7 +285,7 @@ def _prepare_input_model_matrix(
 
     bracket_variables = [v for v in variables if ("[" in v) or ("]" in v)]
     if len(bracket_variables) > 0:
-        raise Exception(
+        raise ValueError(
             "Variable names cannot contain characters '[' or ']'"
             f"because patsy uses them to denote one-hot encoded categoricals: ({bracket_variables})"
         )
@@ -312,7 +311,39 @@ def _prepare_input_model_matrix(
         all_data = add_na_indicator(all_data)
     else:
         logger.warning("Dropping all rows with NAs")
-        # TODO: add code to drop all rows with NAs (columns are left as is)
+        category_levels: Dict[str, List[Any]] = {}
+        for column in all_data.columns:
+            column_series = all_data[column]
+            if isinstance(column_series.dtype, pd.CategoricalDtype):
+                category_levels[column] = list(column_series.cat.categories)
+            elif is_object_dtype(column_series) or is_string_dtype(column_series):
+                category_levels[column] = list(pd.unique(column_series.dropna()))
+        sample_df = sample_df.dropna()
+        if sample_df.empty:
+            raise ValueError(
+                "Dropping rows led to empty sample. Maybe try add_na=True?"
+            )
+        sample_n = sample_df.shape[0]
+        if target_df is not None:
+            target_df = target_df.dropna()
+            if target_df.empty:
+                raise ValueError(
+                    "Dropping rows led to empty target. Maybe try add_na=True?"
+                )
+        if category_levels:
+            for column, levels in category_levels.items():
+                if column in sample_df.columns:
+                    sample_df[column] = pd.Categorical(
+                        sample_df[column], categories=levels
+                    )
+                if target_df is not None and column in target_df.columns:
+                    target_df[column] = pd.Categorical(
+                        target_df[column], categories=levels
+                    )
+        frames = [sample_df]
+        if target_df is not None:
+            frames.append(target_df)
+        all_data = pd.concat(frames)
 
     if fix_columns_names:
         all_data.columns = all_data.columns.str.replace(
