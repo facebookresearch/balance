@@ -19,7 +19,7 @@ from balance.sample_class import Sample  # noqa
 from balance.util import TruncationFormatter  # noqa
 
 global __version__
-__version__ = "0.14.0"
+__version__ = "0.14.x"
 
 WELCOME_MESSAGE = f"""
 balance (Version {__version__}) loaded:
