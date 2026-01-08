@@ -11,6 +11,9 @@
 - **Expose outcome columns selection in the CLI**
   - Added `--outcome_columns` to choose which columns are treated as outcomes
     instead of defaulting to all non-id/weight/covariate columns. Remaining columns are moved to `ignored_columns`.
+- **Drop NA rows when requested in model_matrix**
+  - `model_matrix(add_na=False)` now drops NA rows while preserving categorical levels.
+  - Dropping all rows now raises a clear error to prompt using `add_na=True`.
 
 ## Bug Fixes
 

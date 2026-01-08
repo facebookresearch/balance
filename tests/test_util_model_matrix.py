@@ -404,6 +404,62 @@ class TestUtil(
         self.assertEqual(sample_add_na.sort_index(axis=1), e)
         self.assertIsNone(r["target"])
 
+        self.assertRaisesRegex(
+            ValueError,
+            "Dropping rows led to empty sample",
+            balance_util.model_matrix,
+            pd.DataFrame({"a": [None], "b": [None], "c": [None]}),
+            add_na=False,
+        )
+
+        self.assertRaisesRegex(
+            ValueError,
+            "Dropping rows led to empty target",
+            balance_util.model_matrix,
+            pd.DataFrame({"a": [1.0], "b": [1.0], "c": ["keep"]}),
+            pd.DataFrame({"a": [None], "b": [None], "c": [None]}),
+            add_na=False,
+        )
+
+        cat_df = pd.DataFrame(
+            {
+                "a": [1.0, None, 2.0],
+                "b": [1.0, 2.0, 3.0],
+                "c": pd.Categorical(
+                    ["keep", "drop", "keep"], categories=["keep", "drop"]
+                ),
+            }
+        )
+        cat_result = balance_util.model_matrix(cat_df, add_na=False)["sample"]
+        cat_result = _verify_value_type(cat_result, pd.DataFrame)
+        self.assertIn("c[drop]", cat_result.columns)
+        self.assertTrue((cat_result["c[drop]"] == 0.0).all())
+
+        obj_df = pd.DataFrame(
+            {
+                "a": [1.0, None, 2.0],
+                "b": [1.0, 2.0, 3.0],
+                "c": ["keep", "drop_only", "keep"],
+            }
+        )
+        obj_result = balance_util.model_matrix(obj_df, add_na=False)["sample"]
+        obj_result = _verify_value_type(obj_result, pd.DataFrame)
+        self.assertIn("c[drop_only]", obj_result.columns)
+        self.assertTrue((obj_result["c[drop_only]"] == 0.0).all())
+
+        target_df = pd.DataFrame(
+            {
+                "a": [1.0, None],
+                "b": [1.0, 2.0],
+                "c": ["keep", "target_only"],
+            }
+        )
+        combined = balance_util.model_matrix(obj_df, target_df, add_na=False)
+        sample_combined = _verify_value_type(combined["sample"], pd.DataFrame)
+        target_combined = _verify_value_type(combined["target"], pd.DataFrame)
+        self.assertIn("c[target_only]", sample_combined.columns)
+        self.assertIn("c[target_only]", target_combined.columns)
+
         #  Test return_type argument
         r_one = balance_util.model_matrix(s, t, return_type="one")["model_matrix"]
         e_s = pd.DataFrame(
