@@ -53,7 +53,12 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.data_transformation</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_na_indicator</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.input_validation</span><span class="w"> </span><span class="kn">import</span> <span class="n">_isinstance_sample</span><span class="p">,</span> <span class="n">choose_variables</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.pandas_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_make_df_column_names_unique</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pandas.api.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_bool_dtype</span><span class="p">,</span> <span class="n">is_numeric_dtype</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pandas.api.types</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">is_bool_dtype</span><span class="p">,</span>
+    <span class="n">is_numeric_dtype</span><span class="p">,</span>
+    <span class="n">is_object_dtype</span><span class="p">,</span>
+    <span class="n">is_string_dtype</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">patsy.contrasts</span><span class="w"> </span><span class="kn">import</span> <span class="n">ContrastMatrix</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">patsy.highlevel</span><span class="w"> </span><span class="kn">import</span> <span class="n">dmatrix</span><span class="p">,</span> <span class="n">ModelDesc</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.sparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">csc_matrix</span><span class="p">,</span> <span class="n">hstack</span>
@@ -300,6 +305,25 @@
 
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_concat_frames</span><span class="p">(</span>
+    <span class="n">sample_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">target_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a combined DataFrame from sample/target, skipping empty inputs.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sample_df: The sample DataFrame (must be non-empty).</span>
+<span class="sd">        target_df: The optional target DataFrame.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A DataFrame containing the concatenated rows or a copy of the single</span>
+<span class="sd">        non-empty frame.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">frames</span> <span class="o">=</span> <span class="p">[</span><span class="n">df</span> <span class="k">for</span> <span class="n">df</span> <span class="ow">in</span> <span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">)</span> <span class="k">if</span> <span class="n">df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">empty</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">frames</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_prepare_input_model_matrix</span><span class="p">(</span>
     <span class="n">sample</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">Any</span><span class="p">,</span>
     <span class="n">target</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -342,6 +366,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample</span>
     <span class="k">assert</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;sample must have more than zero rows&quot;</span>
+    <span class="c1"># NOTE: .copy() not needed as it is copied anyway in _concat_frames</span>
     <span class="n">sample_n</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
 
@@ -352,13 +377,56 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">target_df</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
 
-    <span class="n">all_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">))</span>
-
     <span class="k">if</span> <span class="n">add_na</span><span class="p">:</span>
+        <span class="c1"># Build a combined frame so NA indicators reflect sample/target union</span>
+        <span class="c1"># (target-only missingness should still add NA indicator columns).</span>
+        <span class="n">all_data</span> <span class="o">=</span> <span class="n">_concat_frames</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">)</span>
         <span class="n">all_data</span> <span class="o">=</span> <span class="n">add_na_indicator</span><span class="p">(</span><span class="n">all_data</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Dropping all rows with NAs&quot;</span><span class="p">)</span>
-        <span class="c1"># TODO: add code to drop all rows with NAs (columns are left as is)</span>
+        <span class="n">target_was_all_na</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">target_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">target_df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">how</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="n">target_was_all_na</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">target_df</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">all_data</span> <span class="o">=</span> <span class="n">_concat_frames</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">target_was_all_na</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Dropping rows led to empty target. Consider using add_na=True to add &quot;</span>
+                <span class="s2">&quot;NA indicator columns instead of dropping rows.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">category_levels</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">all_data</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="n">column_series</span> <span class="o">=</span> <span class="n">all_data</span><span class="p">[</span><span class="n">column</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">column_series</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">CategoricalDtype</span><span class="p">):</span>
+                <span class="n">category_levels</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">column_series</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">categories</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">is_object_dtype</span><span class="p">(</span><span class="n">column_series</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_string_dtype</span><span class="p">(</span><span class="n">column_series</span><span class="p">):</span>
+                <span class="n">category_levels</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">column_series</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
+
+        <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Dropping rows led to empty sample. Consider using add_na=True to add &quot;</span>
+                <span class="s2">&quot;NA indicator columns instead of dropping rows.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">sample_n</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">target_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">target_df</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">target_df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Dropping rows led to empty target. Consider using add_na=True to add &quot;</span>
+                    <span class="s2">&quot;NA indicator columns instead of dropping rows.&quot;</span>
+                <span class="p">)</span>
+        <span class="k">if</span> <span class="n">category_levels</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">column</span><span class="p">,</span> <span class="n">levels</span> <span class="ow">in</span> <span class="n">category_levels</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                    <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+                        <span class="o">**</span><span class="p">{</span><span class="n">column</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">sample_df</span><span class="p">[</span><span class="n">column</span><span class="p">],</span> <span class="n">categories</span><span class="o">=</span><span class="n">levels</span><span class="p">)}</span>
+                    <span class="p">)</span>
+                <span class="k">if</span> <span class="n">target_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">target_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                    <span class="n">target_df</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+                        <span class="o">**</span><span class="p">{</span><span class="n">column</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">target_df</span><span class="p">[</span><span class="n">column</span><span class="p">],</span> <span class="n">categories</span><span class="o">=</span><span class="n">levels</span><span class="p">)}</span>
+                    <span class="p">)</span>
+        <span class="n">all_data</span> <span class="o">=</span> <span class="n">_concat_frames</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">fix_columns_names</span><span class="p">:</span>
         <span class="n">all_data</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">all_data</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
