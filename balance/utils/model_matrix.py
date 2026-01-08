@@ -296,14 +296,14 @@ def _prepare_input_model_matrix(
         sample_df = sample
     assert sample_df.shape[0] > 0, "sample must have more than zero rows"
     sample_n = sample_df.shape[0]
-    sample_df = sample_df.loc[:, variables]
+    sample_df = sample_df.loc[:, variables].copy()
 
     if target is None:
         target_df = None
     elif _isinstance_sample(target):
-        target_df = target._df.loc[:, variables]
+        target_df = target._df.loc[:, variables].copy()
     else:
-        target_df = target.loc[:, variables]
+        target_df = target.loc[:, variables].copy()
 
     target_was_all_na = False
     if target_df is not None and target_df.dropna(how="all").empty:
@@ -322,7 +322,8 @@ def _prepare_input_model_matrix(
         logger.warning("Dropping all rows with NAs")
         if target_was_all_na:
             raise ValueError(
-                "Dropping rows led to empty target. Maybe try add_na=True?"
+                "Dropping rows led to empty target. Consider using add_na=True to add "
+                "NA indicator columns instead of dropping rows."
             )
         category_levels: Dict[str, List[Any]] = {}
         for column in all_data.columns:
@@ -334,17 +335,19 @@ def _prepare_input_model_matrix(
                     value for value in pd.unique(column_series) if not pd.isna(value)
                 ]
 
-        sample_df = sample_df.dropna()
+        sample_df = sample_df.dropna().copy()
         if sample_df.empty:
             raise ValueError(
-                "Dropping rows led to empty sample. Maybe try add_na=True?"
+                "Dropping rows led to empty sample. Consider using add_na=True to add "
+                "NA indicator columns instead of dropping rows."
             )
         sample_n = sample_df.shape[0]
         if target_df is not None:
-            target_df = target_df.dropna()
+            target_df = target_df.dropna().copy()
             if target_df.empty:
                 raise ValueError(
-                    "Dropping rows led to empty target. Maybe try add_na=True?"
+                    "Dropping rows led to empty target. Consider using add_na=True to add "
+                    "NA indicator columns instead of dropping rows."
                 )
         if category_levels:
             for column, levels in category_levels.items():

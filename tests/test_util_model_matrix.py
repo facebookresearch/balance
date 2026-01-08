@@ -406,7 +406,7 @@ class TestUtil(
 
         self.assertRaisesRegex(
             ValueError,
-            "Dropping rows led to empty sample",
+            "Dropping rows led to empty sample. Consider using add_na=True",
             balance_util.model_matrix,
             pd.DataFrame({"a": [None], "b": [None], "c": [None]}),
             add_na=False,
@@ -414,7 +414,7 @@ class TestUtil(
 
         self.assertRaisesRegex(
             ValueError,
-            "Dropping rows led to empty target",
+            "Dropping rows led to empty target. Consider using add_na=True",
             balance_util.model_matrix,
             pd.DataFrame({"a": [1.0], "b": [1.0], "c": ["keep"]}),
             pd.DataFrame({"a": [None], "b": [None], "c": [None]}),
@@ -435,17 +435,29 @@ class TestUtil(
         self.assertIn("c[drop]", cat_result.columns)
         self.assertTrue((cat_result["c[drop]"] == 0.0).all())
 
+        string_df = pd.DataFrame(
+            {
+                "a": [1.0, None, 2.0],
+                "b": [1.0, 2.0, 3.0],
+                "c": pd.Series(["keep", "string_only", "keep"], dtype="string"),
+            }
+        )
+        string_result = balance_util.model_matrix(string_df, add_na=False)["sample"]
+        string_result = _verify_value_type(string_result, pd.DataFrame)
+        self.assertIn("c[string_only]", string_result.columns)
+        self.assertTrue((string_result["c[string_only]"] == 0.0).all())
+
         obj_df = pd.DataFrame(
             {
                 "a": [1.0, None, 2.0],
                 "b": [1.0, 2.0, 3.0],
-                "c": ["keep", "drop_only", "keep"],
+                "c": ["keep", "in_dropped_row", "keep"],
             }
         )
         obj_result = balance_util.model_matrix(obj_df.copy(), add_na=False)["sample"]
         obj_result = _verify_value_type(obj_result, pd.DataFrame)
-        self.assertIn("c[drop_only]", obj_result.columns)
-        self.assertTrue((obj_result["c[drop_only]"] == 0.0).all())
+        self.assertIn("c[in_dropped_row]", obj_result.columns)
+        self.assertTrue((obj_result["c[in_dropped_row]"] == 0.0).all())
 
         target_df = pd.DataFrame(
             {
