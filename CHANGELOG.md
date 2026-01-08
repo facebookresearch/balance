@@ -2,8 +2,6 @@
 
 > TODO: update to final version
 
-# 0.14.x (TBD)
-
 ## New Features
 
 - **Warn when adjustment target dwarfs sample size**
@@ -14,8 +12,8 @@
   - Added `--outcome_columns` to choose which columns are treated as outcomes
     instead of defaulting to all non-id/weight/covariate columns. Remaining columns are moved to `ignored_columns`.
 - **Drop NA rows when requested in model_matrix**
-  - `model_matrix(add_na=False)` now drops NA rows while preserving categorical levels.
-  - Dropping all rows now raises a clear error to prompt using `add_na=True`.
+  - `model_matrix(add_na=False)` now actually drops rows containing NA values while preserving categorical levels, matching the documented behavior.
+  - Previously, `add_na=False` only logged a warning without dropping rows; code relying on the old behavior may now see fewer rows and should either handle missingness explicitly or use `add_na=True`.
 
 ## Bug Fixes
 
