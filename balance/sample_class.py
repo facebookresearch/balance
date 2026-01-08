@@ -94,13 +94,12 @@ def _concat_metric_val_var(
     )
 
     # Append rows to diagnostics with column alignment
-    if diagnostics.empty:
-        if diagnostics.columns.empty:
-            return rows.reset_index(drop=True)
+    if not diagnostics.columns.empty:
         rows = rows.reindex(columns=diagnostics.columns, fill_value=pd.NA)
+
+    if diagnostics.empty:
         return rows.reset_index(drop=True)
 
-    rows = rows.reindex(columns=diagnostics.columns, fill_value=pd.NA)
     return pd.concat((diagnostics, rows), ignore_index=True)
 
 

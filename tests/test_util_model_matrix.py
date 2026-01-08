@@ -442,7 +442,7 @@ class TestUtil(
                 "c": ["keep", "drop_only", "keep"],
             }
         )
-        obj_result = balance_util.model_matrix(obj_df, add_na=False)["sample"]
+        obj_result = balance_util.model_matrix(obj_df.copy(), add_na=False)["sample"]
         obj_result = _verify_value_type(obj_result, pd.DataFrame)
         self.assertIn("c[drop_only]", obj_result.columns)
         self.assertTrue((obj_result["c[drop_only]"] == 0.0).all())
@@ -454,11 +454,13 @@ class TestUtil(
                 "c": ["keep", "target_only"],
             }
         )
-        combined = balance_util.model_matrix(obj_df, target_df, add_na=False)
+        combined = balance_util.model_matrix(obj_df.copy(), target_df, add_na=False)
         sample_combined = _verify_value_type(combined["sample"], pd.DataFrame)
         target_combined = _verify_value_type(combined["target"], pd.DataFrame)
         self.assertIn("c[target_only]", sample_combined.columns)
         self.assertIn("c[target_only]", target_combined.columns)
+        self.assertTrue((sample_combined["c[target_only]"] == 0.0).all())
+        self.assertTrue((target_combined["c[target_only]"] == 0.0).all())
 
         #  Test return_type argument
         r_one = balance_util.model_matrix(s, t, return_type="one")["model_matrix"]
