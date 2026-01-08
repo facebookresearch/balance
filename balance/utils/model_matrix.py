@@ -253,6 +253,25 @@ def build_model_matrix(
     return {"model_matrix": X_matrix, "model_matrix_columns": X_matrix_columns}
 
 
+def _concat_frames(
+    sample_df: pd.DataFrame, target_df: pd.DataFrame | None
+) -> pd.DataFrame:
+    """Return a combined DataFrame from sample/target, skipping empty inputs.
+
+    Args:
+        sample_df: The sample DataFrame (must be non-empty).
+        target_df: The optional target DataFrame.
+
+    Returns:
+        A DataFrame containing the concatenated rows or a copy of the single
+        non-empty frame.
+    """
+    frames = [df for df in (sample_df, target_df) if df is not None and not df.empty]
+    if len(frames) == 1:
+        return frames[0].copy()
+    return pd.concat(frames)
+
+
 def _prepare_input_model_matrix(
     sample: pd.DataFrame | Any,
     target: pd.DataFrame | Any | None = None,
@@ -306,13 +325,9 @@ def _prepare_input_model_matrix(
         target_df = target.loc[:, variables].copy()
 
     if add_na:
-        frames = [
-            df for df in (sample_df, target_df) if df is not None and not df.empty
-        ]
-        if len(frames) == 1:
-            all_data = frames[0].copy()
-        else:
-            all_data = pd.concat(frames)
+        # Build a combined frame so NA indicators reflect sample/target union
+        # (target-only missingness should still add NA indicator columns).
+        all_data = _concat_frames(sample_df, target_df)
         all_data = add_na_indicator(all_data)
     else:
         logger.warning("Dropping all rows with NAs")
@@ -320,13 +335,7 @@ def _prepare_input_model_matrix(
         if target_df is not None and target_df.dropna(how="all").empty:
             target_was_all_na = True
             target_df = None
-        frames = [
-            df for df in (sample_df, target_df) if df is not None and not df.empty
-        ]
-        if len(frames) == 1:
-            all_data = frames[0].copy()
-        else:
-            all_data = pd.concat(frames)
+        all_data = _concat_frames(sample_df, target_df)
         if target_was_all_na:
             raise ValueError(
                 "Dropping rows led to empty target. Consider using add_na=True to add "
@@ -364,13 +373,7 @@ def _prepare_input_model_matrix(
                     target_df = target_df.assign(
                         **{column: pd.Categorical(target_df[column], categories=levels)}
                     )
-        frames = [
-            df for df in (sample_df, target_df) if df is not None and not df.empty
-        ]
-        if len(frames) == 1:
-            all_data = frames[0].copy()
-        else:
-            all_data = pd.concat(frames)
+        all_data = _concat_frames(sample_df, target_df)
 
     if fix_columns_names:
         all_data.columns = all_data.columns.str.replace(

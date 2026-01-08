@@ -392,6 +392,22 @@ class TestUtil(
         )
 
         # Test add_na argument
+        sample_no_na = pd.DataFrame(
+            {"a": [1.0, 2.0], "b": [1.0, 2.0], "c": ["keep", "keep"]}
+        )
+        target_with_na = pd.DataFrame(
+            {"a": [1.0, None], "b": [1.0, 2.0], "c": ["keep", "keep"]}
+        )
+        add_na_result = balance_util.model_matrix(
+            sample_no_na, target_with_na, add_na=True
+        )
+        add_na_sample = _verify_value_type(add_na_result["sample"], pd.DataFrame)
+        add_na_target = _verify_value_type(add_na_result["target"], pd.DataFrame)
+        self.assertIn("_is_na_a[T.True]", add_na_sample.columns)
+        self.assertIn("_is_na_a[T.True]", add_na_target.columns)
+        self.assertTrue((add_na_sample["_is_na_a[T.True]"] == 0.0).all())
+        self.assertEqual(add_na_target["_is_na_a[T.True]"].tolist(), [0.0, 1.0])
+
         e = pd.DataFrame(
             {"a": (0.0, 2.0), "b": (0.0, 2.0), "c[a]": (1.0, 1.0), "c[b]": (0.0, 0.0)},
             index=(0, 2),
