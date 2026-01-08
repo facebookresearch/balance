@@ -1,6 +1,8 @@
-# 0.15.x (TBD)
+# 0.15.0 (TBD)
 
 > TODO: update to final version
+
+# 0.14.x (TBD)
 
 ## New Features
 
@@ -48,6 +50,9 @@
     - `test_util_pandas_utils.py` - Tests for pandas utilities (including high cardinality warnings)
     - `test_util_logging_utils.py` - Tests for logging utilities
   - This improves test organization and makes it easier to locate tests for specific utilities.
+
+## Tests
+- **Added Pyre type checking to GitHub Actions** via `.pyre_configuration.external` and a new `pyre` job in the workflow. Tests are excluded due to external typeshed stub differences; library code is fully type-checked.
 
 # 0.14.0 (2025-12-14)
 
