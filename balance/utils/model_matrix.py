@@ -331,11 +331,9 @@ def _prepare_input_model_matrix(
             if isinstance(column_series.dtype, pd.CategoricalDtype):
                 category_levels[column] = list(column_series.cat.categories)
             elif is_object_dtype(column_series) or is_string_dtype(column_series):
-                category_levels[column] = [
-                    value for value in pd.unique(column_series) if not pd.isna(value)
-                ]
+                category_levels[column] = list(column_series.dropna().unique())
 
-        sample_df = sample_df.dropna().copy()
+        sample_df = sample_df.dropna()
         if sample_df.empty:
             raise ValueError(
                 "Dropping rows led to empty sample. Consider using add_na=True to add "
@@ -343,7 +341,7 @@ def _prepare_input_model_matrix(
             )
         sample_n = sample_df.shape[0]
         if target_df is not None:
-            target_df = target_df.dropna().copy()
+            target_df = target_df.dropna()
             if target_df.empty:
                 raise ValueError(
                     "Dropping rows led to empty target. Consider using add_na=True to add "
@@ -352,12 +350,20 @@ def _prepare_input_model_matrix(
         if category_levels:
             for column, levels in category_levels.items():
                 if column in sample_df.columns:
-                    sample_df[column] = pd.Categorical(
-                        sample_df[column], categories=levels
+                    sample_df = sample_df.assign(
+                        **{
+                            column: pd.Categorical(
+                                sample_df[column], categories=levels
+                            )
+                        }
                     )
                 if target_df is not None and column in target_df.columns:
-                    target_df[column] = pd.Categorical(
-                        target_df[column], categories=levels
+                    target_df = target_df.assign(
+                        **{
+                            column: pd.Categorical(
+                                target_df[column], categories=levels
+                            )
+                        }
                     )
         frames = [
             df for df in (sample_df, target_df) if df is not None and not df.empty
