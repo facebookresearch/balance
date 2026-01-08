@@ -16,7 +16,12 @@ import pandas as pd
 from balance.utils.data_transformation import add_na_indicator
 from balance.utils.input_validation import _isinstance_sample, choose_variables
 from balance.utils.pandas_utils import _make_df_column_names_unique
-from pandas.api.types import is_bool_dtype, is_numeric_dtype
+from pandas.api.types import (
+    is_bool_dtype,
+    is_numeric_dtype,
+    is_object_dtype,
+    is_string_dtype,
+)
 from patsy.contrasts import ContrastMatrix
 from patsy.highlevel import dmatrix, ModelDesc
 from scipy.sparse import csc_matrix, hstack
@@ -248,6 +253,25 @@ def build_model_matrix(
     return {"model_matrix": X_matrix, "model_matrix_columns": X_matrix_columns}
 
 
+def _concat_frames(
+    sample_df: pd.DataFrame, target_df: pd.DataFrame | None
+) -> pd.DataFrame:
+    """Return a combined DataFrame from sample/target, skipping empty inputs.
+
+    Args:
+        sample_df: The sample DataFrame (must be non-empty).
+        target_df: The optional target DataFrame.
+
+    Returns:
+        A DataFrame containing the concatenated rows or a copy of the single
+        non-empty frame.
+    """
+    frames = [df for df in (sample_df, target_df) if df is not None and not df.empty]
+    if len(frames) == 1:
+        return frames[0].copy()
+    return pd.concat(frames)
+
+
 def _prepare_input_model_matrix(
     sample: pd.DataFrame | Any,
     target: pd.DataFrame | Any | None = None,
@@ -290,6 +314,7 @@ def _prepare_input_model_matrix(
     else:
         sample_df = sample
     assert sample_df.shape[0] > 0, "sample must have more than zero rows"
+    # NOTE: .copy() not needed as it is copied anyway in _concat_frames
     sample_n = sample_df.shape[0]
     sample_df = sample_df.loc[:, variables]
 
@@ -300,13 +325,56 @@ def _prepare_input_model_matrix(
     else:
         target_df = target.loc[:, variables]
 
-    all_data = pd.concat((sample_df, target_df))
-
     if add_na:
+        # Build a combined frame so NA indicators reflect sample/target union
+        # (target-only missingness should still add NA indicator columns).
+        all_data = _concat_frames(sample_df, target_df)
         all_data = add_na_indicator(all_data)
     else:
         logger.warning("Dropping all rows with NAs")
-        # TODO: add code to drop all rows with NAs (columns are left as is)
+        target_was_all_na = False
+        if target_df is not None and target_df.dropna(how="all").empty:
+            target_was_all_na = True
+            target_df = None
+        all_data = _concat_frames(sample_df, target_df)
+        if target_was_all_na:
+            raise ValueError(
+                "Dropping rows led to empty target. Consider using add_na=True to add "
+                "NA indicator columns instead of dropping rows."
+            )
+        category_levels: Dict[str, List[Any]] = {}
+        for column in all_data.columns:
+            column_series = all_data[column]
+            if isinstance(column_series.dtype, pd.CategoricalDtype):
+                category_levels[column] = list(column_series.cat.categories)
+            elif is_object_dtype(column_series) or is_string_dtype(column_series):
+                category_levels[column] = list(column_series.dropna().unique())
+
+        sample_df = sample_df.dropna()
+        if sample_df.empty:
+            raise ValueError(
+                "Dropping rows led to empty sample. Consider using add_na=True to add "
+                "NA indicator columns instead of dropping rows."
+            )
+        sample_n = sample_df.shape[0]
+        if target_df is not None:
+            target_df = target_df.dropna()
+            if target_df.empty:
+                raise ValueError(
+                    "Dropping rows led to empty target. Consider using add_na=True to add "
+                    "NA indicator columns instead of dropping rows."
+                )
+        if category_levels:
+            for column, levels in category_levels.items():
+                if column in sample_df.columns:
+                    sample_df = sample_df.assign(
+                        **{column: pd.Categorical(sample_df[column], categories=levels)}
+                    )
+                if target_df is not None and column in target_df.columns:
+                    target_df = target_df.assign(
+                        **{column: pd.Categorical(target_df[column], categories=levels)}
+                    )
+        all_data = _concat_frames(sample_df, target_df)
 
     if fix_columns_names:
         all_data.columns = all_data.columns.str.replace(

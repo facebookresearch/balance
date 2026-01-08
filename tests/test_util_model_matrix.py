@@ -392,6 +392,22 @@ class TestUtil(
         )
 
         # Test add_na argument
+        sample_no_na = pd.DataFrame(
+            {"a": [1.0, 2.0], "b": [1.0, 2.0], "c": ["keep", "keep"]}
+        )
+        target_with_na = pd.DataFrame(
+            {"a": [1.0, None], "b": [1.0, 2.0], "c": ["keep", "keep"]}
+        )
+        add_na_result = balance_util.model_matrix(
+            sample_no_na, target_with_na, add_na=True
+        )
+        add_na_sample = _verify_value_type(add_na_result["sample"], pd.DataFrame)
+        add_na_target = _verify_value_type(add_na_result["target"], pd.DataFrame)
+        self.assertIn("_is_na_a[T.True]", add_na_sample.columns)
+        self.assertIn("_is_na_a[T.True]", add_na_target.columns)
+        self.assertTrue((add_na_sample["_is_na_a[T.True]"] == 0.0).all())
+        self.assertEqual(add_na_target["_is_na_a[T.True]"].tolist(), [0.0, 1.0])
+
         e = pd.DataFrame(
             {"a": (0.0, 2.0), "b": (0.0, 2.0), "c[a]": (1.0, 1.0), "c[b]": (0.0, 0.0)},
             index=(0, 2),
@@ -403,6 +419,76 @@ class TestUtil(
         sample_add_na = _verify_value_type(r["sample"], pd.DataFrame)
         self.assertEqual(sample_add_na.sort_index(axis=1), e)
         self.assertIsNone(r["target"])
+
+        self.assertRaisesRegex(
+            ValueError,
+            "Dropping rows led to empty sample. Consider using add_na=True",
+            balance_util.model_matrix,
+            pd.DataFrame({"a": [None], "b": [None], "c": [None]}),
+            add_na=False,
+        )
+
+        self.assertRaisesRegex(
+            ValueError,
+            "Dropping rows led to empty target. Consider using add_na=True",
+            balance_util.model_matrix,
+            pd.DataFrame({"a": [1.0], "b": [1.0], "c": ["keep"]}),
+            pd.DataFrame({"a": [None], "b": [None], "c": [None]}),
+            add_na=False,
+        )
+
+        cat_df = pd.DataFrame(
+            {
+                "a": [1.0, None, 2.0],
+                "b": [1.0, 2.0, 3.0],
+                "c": pd.Categorical(
+                    ["keep", "drop", "keep"], categories=["keep", "drop"]
+                ),
+            }
+        )
+        cat_result = balance_util.model_matrix(cat_df, add_na=False)["sample"]
+        cat_result = _verify_value_type(cat_result, pd.DataFrame)
+        self.assertIn("c[drop]", cat_result.columns)
+        self.assertTrue((cat_result["c[drop]"] == 0.0).all())
+
+        string_df = pd.DataFrame(
+            {
+                "a": [1.0, None, 2.0],
+                "b": [1.0, 2.0, 3.0],
+                "c": pd.Series(["keep", "string_only", "keep"], dtype="string"),
+            }
+        )
+        string_result = balance_util.model_matrix(string_df, add_na=False)["sample"]
+        string_result = _verify_value_type(string_result, pd.DataFrame)
+        self.assertIn("c[string_only]", string_result.columns)
+        self.assertTrue((string_result["c[string_only]"] == 0.0).all())
+
+        obj_df = pd.DataFrame(
+            {
+                "a": [1.0, None, 2.0],
+                "b": [1.0, 2.0, 3.0],
+                "c": ["keep", "in_dropped_row", "keep"],
+            }
+        )
+        obj_result = balance_util.model_matrix(obj_df.copy(), add_na=False)["sample"]
+        obj_result = _verify_value_type(obj_result, pd.DataFrame)
+        self.assertIn("c[in_dropped_row]", obj_result.columns)
+        self.assertTrue((obj_result["c[in_dropped_row]"] == 0.0).all())
+
+        target_df = pd.DataFrame(
+            {
+                "a": [1.0, None],
+                "b": [1.0, 2.0],
+                "c": ["keep", "target_only"],
+            }
+        )
+        combined = balance_util.model_matrix(obj_df.copy(), target_df, add_na=False)
+        sample_combined = _verify_value_type(combined["sample"], pd.DataFrame)
+        target_combined = _verify_value_type(combined["target"], pd.DataFrame)
+        self.assertIn("c[target_only]", sample_combined.columns)
+        self.assertIn("c[target_only]", target_combined.columns)
+        self.assertTrue((sample_combined["c[target_only]"] == 0.0).all())
+        self.assertTrue((target_combined["c[target_only]"] == 0.0).all())
 
         #  Test return_type argument
         r_one = balance_util.model_matrix(s, t, return_type="one")["model_matrix"]
