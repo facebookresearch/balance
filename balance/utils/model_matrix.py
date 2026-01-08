@@ -351,19 +351,11 @@ def _prepare_input_model_matrix(
             for column, levels in category_levels.items():
                 if column in sample_df.columns:
                     sample_df = sample_df.assign(
-                        **{
-                            column: pd.Categorical(
-                                sample_df[column], categories=levels
-                            )
-                        }
+                        **{column: pd.Categorical(sample_df[column], categories=levels)}
                     )
                 if target_df is not None and column in target_df.columns:
                     target_df = target_df.assign(
-                        **{
-                            column: pd.Categorical(
-                                target_df[column], categories=levels
-                            )
-                        }
+                        **{column: pd.Categorical(target_df[column], categories=levels)}
                     )
         frames = [
             df for df in (sample_df, target_df) if df is not None and not df.empty
