@@ -305,21 +305,28 @@ def _prepare_input_model_matrix(
     else:
         target_df = target.loc[:, variables].copy()
 
-    target_was_all_na = False
-    if target_df is not None and target_df.dropna(how="all").empty:
-        target_was_all_na = True
-        target_df = None
-
-    frames = [df for df in (sample_df, target_df) if df is not None and not df.empty]
-    if len(frames) == 1:
-        all_data = frames[0].copy()
-    else:
-        all_data = pd.concat(frames)
-
     if add_na:
+        frames = [
+            df for df in (sample_df, target_df) if df is not None and not df.empty
+        ]
+        if len(frames) == 1:
+            all_data = frames[0].copy()
+        else:
+            all_data = pd.concat(frames)
         all_data = add_na_indicator(all_data)
     else:
         logger.warning("Dropping all rows with NAs")
+        target_was_all_na = False
+        if target_df is not None and target_df.dropna(how="all").empty:
+            target_was_all_na = True
+            target_df = None
+        frames = [
+            df for df in (sample_df, target_df) if df is not None and not df.empty
+        ]
+        if len(frames) == 1:
+            all_data = frames[0].copy()
+        else:
+            all_data = pd.concat(frames)
         if target_was_all_na:
             raise ValueError(
                 "Dropping rows led to empty target. Consider using add_na=True to add "
