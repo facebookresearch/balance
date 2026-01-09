@@ -505,6 +505,22 @@ class BalanceDF:
 
         Returns:
             FileLink: Embedding a local file link in an IPython session, based on path. Using :func:FileLink.
+
+        Examples:
+            >>> import pandas as pd
+            >>> import tempfile
+            >>> from IPython.lib.display import FileLink
+            >>> from balance.sample_class import Sample
+            >>> sample = Sample.from_frame(
+            ...     pd.DataFrame(
+            ...         {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
+            ...     ),
+            ...     id_column="id",
+            ...     weight_column="weight",
+            ...     standardize_types=False,
+            ... )
+            >>> isinstance(sample.covars().to_download(tempdir=tempfile.gettempdir()), FileLink)
+            True
         """
         return balance_util._to_download(self._df_with_ids(), tempdir)
 
@@ -522,6 +538,20 @@ class BalanceDF:
 
         Returns:
             pd.DataFrame: The df (this is __df, with no weights) from the BalanceDF object.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_class import Sample
+            >>> sample = Sample.from_frame(
+            ...     pd.DataFrame(
+            ...         {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
+            ...     ),
+            ...     id_column="id",
+            ...     weight_column="weight",
+            ...     standardize_types=False,
+            ... )
+            >>> sample.covars().df.columns.tolist()
+            ['x']
         """
         return self.__df
 
@@ -1030,6 +1060,20 @@ class BalanceDF:
         Returns:
             Union[pd.DataFrame, str]: A table with two rows for each input column: one for the mean and one for the CI.
                 The columns of the table are labeled with the names of the input columns.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_class import Sample
+            >>> sample = Sample.from_frame(
+            ...     pd.DataFrame(
+            ...         {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
+            ...     ),
+            ...     id_column="id",
+            ...     weight_column="weight",
+            ...     standardize_types=False,
+            ... )
+            >>> sample.covars().summary().columns.tolist()
+            ['self', 'self_ci']
         """
         # TODO model matrix means to include categorical columns, fix model_matrix to accept DataFrame
         # TODO: include min/max/std/etc. show min/mean/max if there's a single column, just means if multiple (covars and outcomes)
@@ -1531,6 +1575,21 @@ class BalanceDF:
 
         Returns:
             Optional[str]: If path_or_buf is None, returns the resulting csv format as a string. Otherwise returns None.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_class import Sample
+            >>> sample = Sample.from_frame(
+            ...     pd.DataFrame(
+            ...         {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
+            ...     ),
+            ...     id_column="id",
+            ...     weight_column="weight",
+            ...     standardize_types=False,
+            ... )
+            >>> csv_text = sample.covars().to_csv()
+            >>> "id" in csv_text
+            True
         """
         return to_csv_with_defaults(self._df_with_ids(), path_or_buf, *args, **kwargs)
 
@@ -1848,6 +1907,13 @@ class BalanceDFCovars(BalanceDF):
 
         Returns:
             BalanceDFCovars: Object.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.balancedf_class import BalanceDFCovars
+            >>> covars = BalanceDFCovars.from_frame(pd.DataFrame({"a": [1, 2], "b": [3, 4]}))
+            >>> covars.df.columns.tolist()
+            ['index', 'a', 'b']
         """
         df = df.reset_index()
         concat_list: list[pd.DataFrame | pd.Series] = [
@@ -1952,6 +2018,20 @@ class BalanceDFWeights(BalanceDF):
 
         Returns:
             np.float64: Deff.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_class import Sample
+            >>> sample = Sample.from_frame(
+            ...     pd.DataFrame(
+            ...         {"id": ["1", "2"], "weight": [1.0, 2.0]}
+            ...     ),
+            ...     id_column="id",
+            ...     weight_column="weight",
+            ...     standardize_types=False,
+            ... )
+            >>> round(sample.weights().design_effect(), 3)
+            1.111
         """
         return weights_stats.design_effect(self.df.iloc[:, 0])
 
@@ -1987,6 +2067,21 @@ class BalanceDFWeights(BalanceDF):
 
         Returns:
             None. This function updates the :func:`_sample` using :func:`set_weights`
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_class import Sample
+            >>> sample = Sample.from_frame(
+            ...     pd.DataFrame(
+            ...         {"id": ["1", "2"], "weight": [1.0, 100.0]}
+            ...     ),
+            ...     id_column="id",
+            ...     weight_column="weight",
+            ...     standardize_types=False,
+            ... )
+            >>> sample.weights().trim(percentile=0.5, keep_sum_of_weights=False)
+            >>> sample.weights().df["weight"].max() <= 100.0
+            True
         """
         # TODO: verify which object exactly gets updated - and explain it here.
         self._sample.set_weights(

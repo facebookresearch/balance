@@ -333,6 +333,12 @@ def weighted_var(
         If inf_rm=False then:
             If v has Inf then the output will be Inf.
             If w has Inf then the output will be np.nan.
+
+    Examples:
+        >>> import pandas as pd
+        >>> from balance.stats_and_plots.weighted_stats import weighted_var
+        >>> weighted_var(pd.DataFrame({"x": [1, 2, 3]}), [1, 1, 1]).tolist()
+        [1.0]
     """
     v, w = _prepare_weighted_stat_args(v, w, inf_rm)
     means = weighted_mean(v, w)
@@ -361,6 +367,12 @@ def weighted_sd(
 
     Returns:
         pd.Series: np.sqrt of :func:`weighted_var` (np.float64)
+
+    Examples:
+        >>> import pandas as pd
+        >>> from balance.stats_and_plots.weighted_stats import weighted_sd
+        >>> weighted_sd(pd.DataFrame({"x": [1, 2, 3]}), [1, 1, 1]).tolist()
+        [1.0]
     """
     return pd.Series(np.sqrt(weighted_var(v, w, inf_rm)))
 
@@ -388,6 +400,11 @@ def weighted_quantile(
         pd.DataFrame: The index (names p) has the values from quantiles. The columns are based on v:
             If it's a pd.Series it's one column, if it's a pd.DataFrame with several columns, than each column
             in the output corrosponds to the column in v.
+
+    Examples:
+        >>> from balance.stats_and_plots.weighted_stats import weighted_quantile
+        >>> weighted_quantile([1, 2, 3], [0.5], w=[1, 1, 1]).iloc[0, 0]
+        2.0
     """
 
     v, w = _prepare_weighted_stat_args(v, w, inf_rm)

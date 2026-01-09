@@ -170,6 +170,17 @@ def rake(
     "model" --- parameters of the model: iterations (dataframe with iteration numbers and
                 convergence rate information at all steps), converged (Flag with the output
                 status: 0 for failure and 1 for success).
+
+    Examples:
+        >>> import pandas as pd
+        >>> from balance.weighting_methods.rake import rake
+        >>> sample_df = pd.DataFrame({"x": ["a", "b"]})
+        >>> target_df = pd.DataFrame({"x": ["a", "b"]})
+        >>> sample_weights = pd.Series([1.0, 1.0])
+        >>> target_weights = pd.Series([1.0, 1.0])
+        >>> result = rake(sample_df, sample_weights, target_df, target_weights, variables=["x"])
+        >>> result["weight"].tolist()
+        [1.0, 1.0]
     """
     assert (
         "weight" not in sample_df.columns.values
@@ -567,24 +578,13 @@ def prepare_marginal_dist_for_raking(
         and rows containing the category labels according to their proportions.
         An additional "id" column is added with integer values as row identifiers.
 
-    Example:
-        ::
-            print(prepare_marginal_dist_for_raking({
-                            "A": {"a": 0.5, "b": 0.5},
-                            "B": {"x": 0.2, "y": 0.8}
-                        }))
-            # Returns a DataFrame with columns A, B, and id
-                #    A  B  id
-                # 0  a  x   0
-                # 1  b  y   1
-                # 2  a  y   2
-                # 3  b  y   3
-                # 4  a  y   4
-                # 5  b  x   5
-                # 6  a  y   6
-                # 7  b  y   7
-                # 8  a  y   8
-                # 9  b  y   9
+    Examples:
+        >>> from balance.weighting_methods.rake import prepare_marginal_dist_for_raking
+        >>> df = prepare_marginal_dist_for_raking(
+        ...     {"A": {"a": 0.5, "b": 0.5}, "B": {"x": 0.2, "y": 0.8}}
+        ... )
+        >>> df.columns.tolist()
+        ['A', 'B', 'id']
     """
     target_dict_from_marginals = _realize_dicts_of_proportions(dict_of_dicts)
     target_df_from_marginals = pd.DataFrame.from_dict(target_dict_from_marginals)

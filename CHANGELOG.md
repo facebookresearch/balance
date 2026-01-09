@@ -51,6 +51,9 @@
     - `test_util_pandas_utils.py` - Tests for pandas utilities (including high cardinality warnings)
     - `test_util_logging_utils.py` - Tests for logging utilities
   - This improves test organization and makes it easier to locate tests for specific utilities.
+- **Synchronize docstring examples with test cases**
+  - Updated user-facing docstrings so the documented examples mirror tested inputs
+    and outputs.
 
 ## Tests
 - **Added Pyre type checking to GitHub Actions** via `.pyre_configuration.external` and a new `pyre` job in the workflow. Tests are excluded due to external typeshed stub differences; library code is fully type-checked.
