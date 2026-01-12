@@ -16,10 +16,8 @@ from typing import Any, Callable, Dict, List, Literal
 import numpy as np
 import pandas as pd
 from balance import adjustment as balance_adjustment, util as balance_util
-
 from balance.csv_utils import to_csv_with_defaults
 from balance.stats_and_plots import weights_stats
-
 from balance.stats_and_plots.weighted_comparisons_stats import outcome_variance_ratio
 from balance.typing import DiagnosticScalar, FilePathOrBuffer
 from balance.util import (
@@ -28,7 +26,6 @@ from balance.util import (
     _verify_value_type,
     HighCardinalityFeature,
 )
-
 from IPython.lib.display import FileLink
 
 

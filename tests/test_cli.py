@@ -16,7 +16,6 @@ import numpy as np
 import pandas as pd
 from balance.cli import BalanceCLI, make_parser
 from balance.util import _float_or_none, _verify_value_type
-
 from numpy import dtype
 from sklearn.linear_model import LogisticRegression
 
@@ -39,9 +38,10 @@ def check_some_flags(
     Returns:
         Dict containing input and output pandas DataFrames for comparison
     """
-    with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
-        "w", suffix=".csv", delete=False
-    ) as in_file:
+    with (
+        tempfile.TemporaryDirectory() as temp_dir,
+        tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as in_file,
+    ):
         in_contents = (
             "x,y,is_respondent,id,weight\n"
             + ("1.0,50,1,1,1\n" * SAMPLE_SIZE_SMALL)
@@ -293,10 +293,11 @@ class TestCli(
 
     def test_cli_succeed_on_weighting_failure(self) -> None:
         """Test CLI behavior when weighting fails but succeed_on_weighting_failure flag is set."""
-        with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
-            "w", suffix=".csv", delete=False
-        ) as in_file:
-            in_contents = "x,y,is_respondent,id,weight\n" "a,b,1,1,1\n" "a,b,0,1,1"
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as in_file,
+        ):
+            in_contents = "x,y,is_respondent,id,weight\na,b,1,1,1\na,b,0,1,1"
             in_file.write(in_contents)
             in_file.close()
             out_file = os.path.join(temp_dir, "out.csv")
@@ -322,9 +323,10 @@ class TestCli(
 
     def test_cli_works(self) -> None:
         """Test basic CLI functionality with sample data and diagnostics output."""
-        with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
-            "w", suffix=".csv", delete=False
-        ) as in_file:
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as in_file,
+        ):
             in_contents = (
                 "x,y,is_respondent,id,weight\n"
                 + ("a,b,1,1,1\n" * SAMPLE_SIZE_SMALL)
@@ -357,9 +359,10 @@ class TestCli(
 
     def test_cli_works_with_row_column_filters(self) -> None:
         """Test CLI functionality with row and column filtering for diagnostics."""
-        with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
-            "w", suffix=".csv", delete=False
-        ) as in_file:
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as in_file,
+        ):
             in_contents = (
                 "x,y,z,is_respondent,id,weight\n"
                 + ("a,b,g,1,1,1\n" * SAMPLE_SIZE_SMALL)
@@ -426,9 +429,10 @@ class TestCli(
 
     def test_cli_empty_input(self) -> None:
         """Test CLI behavior with empty input data (header only)."""
-        with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
-            "w", suffix=".csv", delete=False
-        ) as in_file:
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as in_file,
+        ):
             in_contents = "x,y,is_respondent,id,weight\n"
             in_file.write(in_contents)
             in_file.close()
@@ -457,9 +461,10 @@ class TestCli(
 
     def test_cli_empty_input_keep_row(self) -> None:
         """Test CLI behavior with empty input data when using keep_row and batch_columns."""
-        with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
-            "w", suffix=".csv", delete=False
-        ) as in_file:
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as in_file,
+        ):
             in_contents = "x,y,is_respondent,id,weight,keep_row,batch_column\n"
             in_file.write(in_contents)
             in_file.close()
@@ -492,9 +497,10 @@ class TestCli(
 
     def test_cli_sep_works(self) -> None:
         """Test CLI functionality with custom output file separators."""
-        with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
-            "w", suffix=".csv", delete=False
-        ) as in_file:
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as in_file,
+        ):
             in_contents = (
                 "x,y,z,is_respondent,id,weight\n"
                 + ("a,b,g,1,1,1\n" * SAMPLE_SIZE_SMALL)
@@ -556,9 +562,10 @@ class TestCli(
 
     def test_cli_sep_input_works(self) -> None:
         """Test CLI functionality with custom input file separators (TSV)."""
-        with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
-            "w", suffix=".tsv", delete=False
-        ) as in_file:
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            tempfile.NamedTemporaryFile("w", suffix=".tsv", delete=False) as in_file,
+        ):
             in_contents = (
                 "x\ty\tz\tis_respondent\tid\tweight\n"
                 + ("a\tb\tg\t1\t1\t1\n" * SAMPLE_SIZE_SMALL)
@@ -622,9 +629,10 @@ class TestCli(
         Some users used only partial arg names for their pipelines.
         This test verifies new arguments would still be backward compatible.
         """
-        with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
-            "w", suffix=".csv", delete=False
-        ) as in_file:
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as in_file,
+        ):
             in_contents = (
                 "x,y,z,is_respondent,id,weight\n"
                 + ("a,b,g,1,1,1\n" * SAMPLE_SIZE_SMALL)
@@ -708,9 +716,10 @@ class TestCli(
         target_df["is_respondent"] = False
         input_dataset = pd.concat([sample_df, target_df])
 
-        with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
-            "w", suffix=".csv", delete=False
-        ) as input_file:
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as input_file,
+        ):
             input_dataset.to_csv(path_or_buf=input_file)
             input_file.close()
             output_file = os.path.join(temp_dir, "weights_out.csv")
@@ -797,9 +806,10 @@ class TestCli(
         target_df["is_respondent"] = False
         input_dataset = pd.concat([sample_df, target_df])
 
-        with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
-            "w", suffix=".csv", delete=False
-        ) as input_file:
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as input_file,
+        ):
             input_dataset.to_csv(path_or_buf=input_file)
             input_file.close()
             output_file = os.path.join(temp_dir, "weights_out.csv")
@@ -835,9 +845,10 @@ class TestCli(
 
     def test_one_hot_encoding_works(self) -> None:
         """Test CLI one-hot encoding parameter with various boolean values."""
-        with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
-            "w", suffix=".tsv", delete=False
-        ) as in_file:
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            tempfile.NamedTemporaryFile("w", suffix=".tsv", delete=False) as in_file,
+        ):
             # Assert value is False when "False" is passed
             out_file = os.path.join(temp_dir, "out.csv")
             parser = make_parser()
@@ -895,9 +906,10 @@ class TestCli(
         """Test CLI functionality with different transformation options (None and default)."""
         input_dataset = _create_sample_and_target_data()
 
-        with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
-            "w", suffix=".csv", delete=False
-        ) as input_file:
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as input_file,
+        ):
             input_dataset.to_csv(path_or_buf=input_file)
             input_file.close()
             output_file = os.path.join(temp_dir, "weights_out.csv")
@@ -1025,9 +1037,10 @@ class TestCli(
         """Test CLI functionality with custom formula specifications."""
         input_dataset = _create_sample_and_target_data()
 
-        with tempfile.TemporaryDirectory() as temp_dir, tempfile.NamedTemporaryFile(
-            "w", suffix=".csv", delete=False
-        ) as input_file:
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as input_file,
+        ):
             input_dataset.to_csv(path_or_buf=input_file)
             input_file.close()
             output_file = os.path.join(temp_dir, "weights_out.csv")

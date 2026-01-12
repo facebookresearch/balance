@@ -15,7 +15,6 @@ from __future__ import (
 
 import balance.testutil
 import pandas as pd
-
 from balance.sample_class import Sample
 from balance.weighting_methods import adjust_null as balance_adjust_null
 

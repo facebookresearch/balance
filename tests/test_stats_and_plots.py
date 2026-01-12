@@ -10,7 +10,6 @@ from __future__ import annotations
 from typing import Any, cast
 
 import balance.testutil
-
 import numpy as np
 import pandas as pd
 from balance.util import _verify_value_type

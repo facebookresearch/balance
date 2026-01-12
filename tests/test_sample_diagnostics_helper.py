@@ -7,7 +7,6 @@
 
 import numpy as np
 import pandas as pd
-
 from balance.sample_class import _concat_metric_val_var
 
 

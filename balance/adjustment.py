@@ -8,13 +8,11 @@
 from __future__ import annotations
 
 import logging
-
 from typing import Any, Callable, Dict, Literal, Tuple
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-
 from balance import util as balance_util
 from balance.weighting_methods import (
     adjust_null as balance_adjust_null,

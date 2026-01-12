@@ -19,7 +19,6 @@ from typing import Any, Callable, Generator, Union
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-
 from balance.util import _verify_value_type  # noqa: F401
 
 

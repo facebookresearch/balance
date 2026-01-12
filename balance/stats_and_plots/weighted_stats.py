@@ -13,11 +13,9 @@ from typing import Any, Tuple
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-
 from balance.stats_and_plots.weights_stats import _check_weights_are_valid
 from balance.util import model_matrix, rm_mutual_nas
 from scipy.stats import norm
-
 from statsmodels.stats.weightstats import DescrStatsW
 
 logger: logging.Logger = logging.getLogger(__package__)

@@ -13,7 +13,6 @@ from typing import Any, cast, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
-
 from balance import adjustment as balance_adjustment, util as balance_util
 from balance.stats_and_plots.weighted_comparisons_stats import (
     asmd,

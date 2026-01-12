@@ -14,10 +14,8 @@ from __future__ import (
 )
 
 import balance.testutil
-
 import numpy as np
 import pandas as pd
-
 from balance.sample_class import Sample
 from balance.weighting_methods import ipw as balance_ipw
 from sklearn.ensemble import RandomForestClassifier

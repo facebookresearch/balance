@@ -14,7 +14,6 @@ from __future__ import (
 )
 
 import balance.testutil
-
 import numpy as np
 import pandas as pd
 from balance import adjustment as balance_adjustment

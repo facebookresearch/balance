@@ -14,7 +14,6 @@ from typing import Any, Callable, List, Optional, overload, Tuple, Type, TypeVar
 
 import numpy as np
 import pandas as pd
-
 from balance.utils.pandas_utils import _process_series_for_missing_mask
 
 logger: logging.Logger = logging.getLogger(__package__)

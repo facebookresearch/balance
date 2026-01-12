@@ -26,7 +26,6 @@ from balance.stats_and_plots import (
 )
 from balance.typing import FilePathOrBuffer
 from balance.util import find_items_index_in_list, get_items_from_list_via_indices
-
 from IPython.lib.display import FileLink
 from plotly.graph_objs import Figure
 

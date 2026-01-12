@@ -10,7 +10,6 @@ from __future__ import annotations
 import balance.testutil
 import numpy as np
 import pandas as pd
-
 from balance.datasets import load_cbps_data, load_data, load_sim_data
 from balance.util import _verify_value_type
 

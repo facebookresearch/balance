@@ -10,16 +10,12 @@ from __future__ import annotations
 import inspect
 import json
 import logging
-
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
-
 from typing import Any, Dict, List, Tuple, Type
 
 import balance
-
 import pandas as pd
-
 from balance import __version__  # @manual
 from balance.sample_class import Sample as balance_sample_cls  # @manual
 from balance.util import _float_or_none

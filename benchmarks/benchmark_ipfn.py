@@ -12,7 +12,6 @@ import time
 from typing import Callable, Sequence
 
 import numpy as np
-
 from balance.weighting_methods.rake import _run_ipf_numpy
 
 try:

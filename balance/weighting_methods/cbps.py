@@ -14,7 +14,6 @@ from __future__ import (
 )
 
 import logging
-
 from typing import Any, cast
 
 import numpy as np
@@ -23,7 +22,6 @@ import pandas as pd
 import scipy
 import sklearn.utils.extmath
 import statsmodels.api as sm
-
 from balance import adjustment as balance_adjustment, util as balance_util
 from balance.stats_and_plots.weights_stats import design_effect
 from scipy.sparse import csc_matrix

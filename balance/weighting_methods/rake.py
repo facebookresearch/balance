@@ -8,18 +8,14 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import itertools
-
 import logging
-
 import math
 from fractions import Fraction
-
 from functools import reduce
 from typing import Any, Callable, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
-
 from balance import adjustment as balance_adjustment, util as balance_util
 
 logger: logging.Logger = logging.getLogger(__package__)
@@ -171,22 +167,22 @@ def rake(
                 convergence rate information at all steps), converged (Flag with the output
                 status: 0 for failure and 1 for success).
     """
-    assert (
-        "weight" not in sample_df.columns.values
-    ), "weight shouldn't be a name for covariate in the sample data"
-    assert (
-        "weight" not in target_df.columns.values
-    ), "weight shouldn't be a name for covariate in the target data"
+    assert "weight" not in sample_df.columns.values, (
+        "weight shouldn't be a name for covariate in the sample data"
+    )
+    assert "weight" not in target_df.columns.values, (
+        "weight shouldn't be a name for covariate in the target data"
+    )
 
     # TODO: move the input checks into separate funnction for rake, ipw, poststratify
     assert isinstance(sample_df, pd.DataFrame), "sample_df must be a pandas DataFrame"
     assert isinstance(target_df, pd.DataFrame), "target_df must be a pandas DataFrame"
-    assert isinstance(
-        sample_weights, pd.Series
-    ), "sample_weights must be a pandas Series"
-    assert isinstance(
-        target_weights, pd.Series
-    ), "target_weights must be a pandas Series"
+    assert isinstance(sample_weights, pd.Series), (
+        "sample_weights must be a pandas Series"
+    )
+    assert isinstance(target_weights, pd.Series), (
+        "target_weights must be a pandas Series"
+    )
     assert sample_df.shape[0] == sample_weights.shape[0], (
         "sample_weights must be the same length as sample_df"
         f"{sample_df.shape[0]}, {sample_weights.shape[0]}"

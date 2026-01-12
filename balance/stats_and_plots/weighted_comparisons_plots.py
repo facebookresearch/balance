@@ -14,20 +14,16 @@ from __future__ import (
 )
 
 import logging
-
 import random
-
 from typing import Any, cast, Dict, List, Literal, Optional, Tuple, TypedDict, Union
 
 import matplotlib.pyplot as plt
-
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import plotly.graph_objs as go
 import plotly.offline as offline
 import seaborn as sns
-
 from balance.stats_and_plots.weighted_stats import (
     relative_frequency_table,
     weighted_quantile,

@@ -8,14 +8,11 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import tempfile
-
 from copy import deepcopy
 
 import IPython.display
-
 import numpy as np
 import pandas as pd
-
 from balance.balancedf_class import (  # noqa
     BalanceDF,
     BalanceDFCovars,  # noqa

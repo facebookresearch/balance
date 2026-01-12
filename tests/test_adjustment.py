@@ -14,9 +14,7 @@ from __future__ import (
 )
 
 import balance
-
 import balance.testutil
-
 import numpy as np
 import pandas as pd
 from balance.adjustment import (
@@ -26,7 +24,6 @@ from balance.adjustment import (
     default_transformations,
     trim_weights,
 )
-
 from balance.sample_class import Sample
 from balance.util import fct_lump, quantize
 from balance.weighting_methods import (

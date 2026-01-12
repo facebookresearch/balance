@@ -15,7 +15,6 @@ from typing import Any, List, Tuple
 
 import numpy as np
 import pandas as pd
-
 from balance.utils.input_validation import choose_variables
 from balance.utils.pandas_utils import _safe_fillna_and_infer
 

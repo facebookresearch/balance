@@ -22,19 +22,15 @@ of Sample functionality.
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import logging
-
 from copy import deepcopy
 from textwrap import dedent
 from typing import Any, Callable
 from unittest.mock import MagicMock
 
 import balance.testutil
-
 import IPython.display
-
 import numpy as np
 import pandas as pd
-
 from balance.sample_class import Sample
 from balance.testutil import tempfile_path
 from balance.util import _verify_value_type

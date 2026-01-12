@@ -11,7 +11,6 @@ import logging
 from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
-
 from balance import adjustment as balance_adjustment, util as balance_util
 
 logger: logging.Logger = logging.getLogger(__package__)

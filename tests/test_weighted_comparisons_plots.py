@@ -10,7 +10,6 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 from typing import List
 
 import balance.testutil
-
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np

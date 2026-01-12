@@ -16,11 +16,9 @@ from __future__ import (
 import warnings
 
 import balance.testutil
-
 import numpy as np
 import pandas as pd
 import scipy
-
 from balance.datasets import load_data
 from balance.sample_class import Sample
 from balance.stats_and_plots.weights_stats import design_effect

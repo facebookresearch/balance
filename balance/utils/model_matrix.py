@@ -12,7 +12,6 @@ from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
-
 from balance.utils.data_transformation import add_na_indicator
 from balance.utils.input_validation import _isinstance_sample, choose_variables
 from balance.utils.pandas_utils import _make_df_column_names_unique
@@ -46,7 +45,7 @@ def formula_generator(variables: List[str], formula_type: str = "additive") -> s
         rhs_formula = " + ".join(sorted(variables, reverse=True))
     else:
         raise ValueError(
-            "This formula type is not supported.'" "Please provide a string formula"
+            "This formula type is not supported.'Please provide a string formula"
         )
 
     logger.debug(f"Model default formula: {rhs_formula}")
@@ -417,9 +416,9 @@ def model_matrix(
     # Arrange penalty factor
     if penalty_factor is None:
         penalty_factor = [1] * len(formula)
-    assert len(formula) == len(
-        penalty_factor
-    ), "penalty factor and formula must have the same length"
+    assert len(formula) == len(penalty_factor), (
+        "penalty factor and formula must have the same length"
+    )
 
     # Arrange factor variables
     if one_hot_encoding:
