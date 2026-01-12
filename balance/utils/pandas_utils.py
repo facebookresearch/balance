@@ -467,7 +467,9 @@ def _warn_of_df_dtypes_change(
         compared_dtypes = compare_df_dtypes_before_and_after["comparison_of_dtypes"]
         dtypes_that_changed = (
             # pyre-ignore[16]: we're only using the pd.Series, so no worries
-            compared_dtypes[np.bitwise_not(compared_dtypes.values)].keys().to_list()
+            compared_dtypes[np.bitwise_not(compared_dtypes.values)]
+            .keys()
+            .to_list()
         )
         logger.debug(compare_df_dtypes_before_and_after)
         logger.warning(

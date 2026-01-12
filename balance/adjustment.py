@@ -99,9 +99,11 @@ def _quantile_with_method(
         ``float``: The computed quantile value converted to ``float``.
 
     Examples:
-        >>> _quantile_with_method([1, 2, 3, 4], 0.25, "higher")
+    .. code-block:: python
+
+        _quantile_with_method([1, 2, 3, 4], 0.25, "higher")
         2.0
-        >>> _quantile_with_method([1, 2, 3, 4], 0.75, "lower")
+        _quantile_with_method([1, 2, 3, 4], 0.75, "lower")
         3.0
     """
 
@@ -185,72 +187,25 @@ def trim_weights(
         pd.Series (of type float64): Trimmed weights with the same index as input
 
     Examples:
-        ::
+    .. code-block:: python
 
-            import pandas as pd
-            from balance.adjustment import trim_weights
-            print(trim_weights(pd.Series(range(1, 101)), weight_trimming_mean_ratio = None))
-                # 0       1.0
-                # 1       2.0
-                # 2       3.0
-                # 3       4.0
-                # 4       5.0
-                #     ...
-                # 95     96.0
-                # 96     97.0
-                # 97     98.0
-                # 98     99.0
-                # 99    100.0
-                # Length: 100, dtype: float64
-
-            print(trim_weights(pd.Series(range(1, 101)), weight_trimming_mean_ratio = 1.5))
-                # 0      1.064559
-                # 1      2.129117
-                # 2      3.193676
-                # 3      4.258235
-                # 4      5.322793
-                #         ...
-                # 95    80.640316
-                # 96    80.640316
-                # 97    80.640316
-                # 98    80.640316
-                # 99    80.640316
-                # Length: 100, dtype: float64
-
-            print(pd.DataFrame(trim_weights(
-                pd.Series(range(1, 101)),
-                weight_trimming_percentile=.01,
-                keep_sum_of_weights=False,
-            )))
-                # 0    3.0
-                # 1    3.0
-                # 2    3.0
-                # 3    4.0
-                # 4    5.0
-                # ..   ...
-                # 95  96.0
-                # 96  97.0
-                # 97  98.0
-                # 98  98.0
-                # 99  98.0
-                # [100 rows x 1 columns]
-
-            print(pd.DataFrame(trim_weights(
-                pd.Series(range(1, 101)),
-                weight_trimming_percentile=(0., .05),
-                keep_sum_of_weights=False,
-            )))
-                # 0     1.0
-                # 1     2.0
-                # 2     3.0
-                # 3     4.0
-                # 4     5.0
-                # ..    ...
-                # 95   94.0
-                # 96   94.0
-                # 97   94.0
-                # 98   94.0
-                # 99   94.0
+        import pandas as pd
+        from balance.adjustment import trim_weights
+        weights = pd.Series(range(1, 101))
+        symmetric = trim_weights(
+            weights,
+            weight_trimming_percentile=0.01,
+            keep_sum_of_weights=False,
+        )
+        symmetric.equals(pd.Series(range(1, 101)).clip(3, 98).astype(float))
+        # True
+        upper = trim_weights(
+            weights,
+            weight_trimming_percentile=(0.0, 0.05),
+            keep_sum_of_weights=False,
+        )
+        upper.equals(pd.Series(range(1, 101)).clip(upper=94).astype(float))
+        # True
     """
 
     original_name = getattr(weights, "name", None)
@@ -369,6 +324,16 @@ def default_transformations(
 
     Returns:
         Dict[str, Callable]: Dict of transformations
+
+    Examples:
+    .. code-block:: python
+
+        import pandas as pd
+        from balance.adjustment import default_transformations
+        df = pd.DataFrame({"age": [20, 30], "gender": ["f", "m"]})
+        transformations = default_transformations((df,))
+        sorted(transformations.keys())
+        # ['age', 'gender']
     """
     dtypes = {}
     for d in dfs:
@@ -421,7 +386,7 @@ def apply_transformations(
         Tuple[pd.DataFrame, ...]: tuple of pd.DataFrames
 
     Examples:
-        ::
+    .. code-block:: python
 
             from balance.adjustment import apply_transformations
             import pandas as pd
