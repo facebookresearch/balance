@@ -69,9 +69,10 @@ If <cite>w</cite> has infinite values, the output will be <cite>np.nan</cite>.</
 <dd class="field-even"><p>pd.Series</p>
 </dd>
 </dl>
-<p class="rubric">Examples</p>
-<dl>
-<dt>::</dt><dd><p>from balance.stats_and_plots.weighted_stats import ci_of_weighted_mean</p>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>from balance.stats_and_plots.weighted_stats import ci_of_weighted_mean</p>
 <dl class="simple">
 <dt>ci_of_weighted_mean(pd.Series((1, 2, 3, 4)))</dt><dd><p># 0    (1.404346824279273, 3.5956531757207273)
 # dtype: object</p>
@@ -98,8 +99,7 @@ ci_of_weighted_mean(df, w, conf_level = 0.99, round_ndigits = 3)</p>
 <dt>ci_of_weighted_mean(df, w, conf_level = 0.99, round_ndigits = 3).to_dict()</dt><dd><p># {‘a’: (1.738, 4.262), ‘b’: (1.0, 1.0)}</p>
 </dd>
 </dl>
-</dd>
-</dl>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -145,68 +145,76 @@ Defaults to True.</p></li>
 <dd class="field-odd"><p>pd.DataFrame</p>
 </dd>
 </dl>
-<p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots.weighted_stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">descriptive_stats</span><span class="p">,</span> <span class="n">weighted_mean</span><span class="p">,</span> <span class="n">weighted_sd</span>
-
-<span class="c1"># Without weights</span>
-<span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">descriptive_stats</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">weighted_mean</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-    <span class="c1">#     0</span>
-    <span class="c1"># 0  2.5</span>
-    <span class="c1"># 2.5</span>
-    <span class="c1"># 0    2.5</span>
-    <span class="c1"># dtype: float64</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="n">descriptive_stats</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;var_of_mean&quot;</span><span class="p">))</span>
-    <span class="c1">#         0</span>
-    <span class="c1"># 0  0.3125</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="n">descriptive_stats</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;std&quot;</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">weighted_sd</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-<span class="n">x2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x2</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">))</span>
-    <span class="c1">#         0</span>
-    <span class="c1"># 0  1.290994</span>
-    <span class="c1"># 0    1.290994</span>
-    <span class="c1"># dtype: float64</span>
-    <span class="c1"># 1.2909944487358056</span>
-    <span class="c1"># Notice that it is different from</span>
-    <span class="c1"># print(np.std(x))</span>
-    <span class="c1"># which gives: 1.118033988749895</span>
-    <span class="c1"># Which is the MLE (i.e.: biased, dividing by n and not n-1) estimator for std:</span>
-    <span class="c1"># (np.sqrt( np.sum((x2 - x2.mean())**2) / (len(x)) ))</span>
-
-<span class="n">x2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-<span class="n">tmp_sd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x2</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
-<span class="n">tmp_se</span> <span class="o">=</span> <span class="n">tmp_sd</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">descriptive_stats</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;std_mean&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">tmp_se</span><span class="p">)</span>
-    <span class="c1"># 0.6454972243679029</span>
-    <span class="c1"># 0.6454972243679028</span>
-
-<span class="c1"># Weighted results</span>
-<span class="n">x</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">descriptive_stats</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">w</span><span class="p">,</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">))</span>
-    <span class="c1">#      0</span>
-    <span class="c1"># 0  3.0</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">descriptive_stats</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">w</span><span class="p">,</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;std&quot;</span><span class="p">))</span>
-    <span class="c1">#           0</span>
-    <span class="c1"># 0  1.195229</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">descriptive_stats</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">w</span><span class="p">,</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;std_mean&quot;</span><span class="p">))</span>
-    <span class="c1">#           0</span>
-    <span class="c1"># 0  0.333333</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">descriptive_stats</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">w</span><span class="p">,</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;var_of_mean&quot;</span><span class="p">))</span>
-    <span class="c1">#       0</span>
-    <span class="c1"># 0  0.24</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">descriptive_stats</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">w</span><span class="p">,</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;ci_of_mean&quot;</span><span class="p">,</span> <span class="n">conf_level</span> <span class="o">=</span> <span class="mf">0.99</span><span class="p">,</span> <span class="n">round_ndigits</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
-    <span class="c1">#                 0</span>
-    <span class="c1"># 0  (1.738, 4.262)</span>
-</pre></div>
-</div>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import numpy as np
+import pandas as pd
+from balance.stats_and_plots.weighted_stats import descriptive_stats, weighted_mean, weighted_sd</p>
+<p># Without weights
+x = [1, 2, 3, 4]
+print(descriptive_stats(pd.DataFrame(x), stat=”mean”))
+print(np.mean(x))
+print(weighted_mean(x))</p>
+<blockquote>
+<div><p>#     0
+# 0  2.5
+# 2.5
+# 0    2.5
+# dtype: float64</p>
+</div></blockquote>
+<dl class="simple">
+<dt>print(descriptive_stats(pd.DataFrame(x), stat=”var_of_mean”))</dt><dd><p>#         0
+# 0  0.3125</p>
+</dd>
+</dl>
+<p>print(descriptive_stats(pd.DataFrame(x), stat=”std”))
+print(weighted_sd(x))
+x2 = pd.Series(x)
+print(np.sqrt( np.sum((x2 - x2.mean())**2) / (len(x)-1) ))</p>
+<blockquote>
+<div><p>#         0
+# 0  1.290994
+# 0    1.290994
+# dtype: float64
+# 1.2909944487358056
+# Notice that it is different from
+# print(np.std(x))
+# which gives: 1.118033988749895
+# Which is the MLE (i.e.: biased, dividing by n and not n-1) estimator for std:
+# (np.sqrt( np.sum((x2 - x2.mean())**2) / (len(x)) ))</p>
+</div></blockquote>
+<p>x2 = pd.Series(x)
+tmp_sd = np.sqrt(np.sum((x2 - x2.mean()) ** 2) / (len(x) - 1))
+tmp_se = tmp_sd / np.sqrt(len(x))
+print(descriptive_stats(pd.DataFrame(x), stat=”std_mean”).iloc[0, 0])
+print(tmp_se)</p>
+<blockquote>
+<div><p># 0.6454972243679029
+# 0.6454972243679028</p>
+</div></blockquote>
+<p># Weighted results
+x, w = [1, 2, 3, 4], [1, 2, 3, 4]
+print(descriptive_stats(pd.DataFrame(x), w, stat=”mean”))</p>
+<blockquote>
+<div><p>#      0
+# 0  3.0</p>
+</div></blockquote>
+<dl class="simple">
+<dt>print(descriptive_stats(pd.DataFrame(x), w, stat=”std”))</dt><dd><p>#           0
+# 0  1.195229</p>
+</dd>
+<dt>print(descriptive_stats(pd.DataFrame(x), w, stat=”std_mean”))</dt><dd><p>#           0
+# 0  0.333333</p>
+</dd>
+<dt>print(descriptive_stats(pd.DataFrame(x), w, stat=”var_of_mean”))</dt><dd><p>#       0
+# 0  0.24</p>
+</dd>
+<dt>print(descriptive_stats(pd.DataFrame(x), w, stat=”ci_of_mean”, conf_level = 0.99, round_ndigits=3))</dt><dd><p>#                 0
+# 0  (1.738, 4.262)</p>
+</dd>
+</dl>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -240,34 +248,41 @@ If None than assumes weights is 1 for all rows. The defaults is None.</p></li>
 <dd class="field-odd"><p>pd.DataFrame</p>
 </dd>
 </dl>
-<p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots.weighted_stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">relative_frequency_table</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
-    <span class="s1">&#39;group&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">),</span>
-    <span class="s1">&#39;v1&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
-<span class="p">})</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">relative_frequency_table</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="s1">&#39;group&#39;</span><span class="p">))</span>
-    <span class="c1">#     group  prop</span>
-    <span class="c1">#   0     a  0.25</span>
-    <span class="c1">#   1     b  0.25</span>
-    <span class="c1">#   2     c  0.50</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">relative_frequency_table</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="s1">&#39;group&#39;</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),)))</span>
-    <span class="c1">#     group  prop</span>
-    <span class="c1">#   0     a   0.4</span>
-    <span class="c1">#   1     b   0.2</span>
-    <span class="c1">#   2     c   0.4</span>
-
-<span class="c1"># Using a pd.Series:</span>
-<span class="n">a_series</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;group&#39;</span><span class="p">]</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">relative_frequency_table</span><span class="p">(</span><span class="n">a_series</span><span class="p">))</span>
-    <span class="c1">#   group  prop</span>
-    <span class="c1"># 0     a  0.25</span>
-    <span class="c1"># 1     b  0.25</span>
-    <span class="c1"># 2     c  0.50</span>
-</pre></div>
-</div>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>from balance.stats_and_plots.weighted_stats import relative_frequency_table
+import pandas as pd</p>
+<dl class="simple">
+<dt>df = pd.DataFrame({</dt><dd><p>‘group’: (‘a’, ‘b’, ‘c’, ‘c’),
+‘v1’: (1, 2, 3, 4),</p>
+</dd>
+</dl>
+<p>})
+print(relative_frequency_table(df, ‘group’))</p>
+<blockquote>
+<div><p>#     group  prop
+#   0     a  0.25
+#   1     b  0.25
+#   2     c  0.50</p>
+</div></blockquote>
+<dl class="simple">
+<dt>print(relative_frequency_table(df, ‘group’, pd.Series((2, 1, 1, 1),)))</dt><dd><p>#     group  prop
+#   0     a   0.4
+#   1     b   0.2
+#   2     c   0.4</p>
+</dd>
+</dl>
+<p># Using a pd.Series:
+a_series = df[‘group’]
+print(relative_frequency_table(a_series))</p>
+<blockquote>
+<div><p>#   group  prop
+# 0     a  0.25
+# 1     b  0.25
+# 2     c  0.50</p>
+</div></blockquote>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -294,9 +309,10 @@ If <cite>w</cite> has infinite values, the output will be <cite>np.nan</cite>.</
 <dd class="field-even"><p>pd.Series</p>
 </dd>
 </dl>
-<p class="rubric">Examples</p>
-<dl>
-<dt>::</dt><dd><p>from balance.stats_and_plots.weighted_stats import var_of_weighted_mean</p>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>from balance.stats_and_plots.weighted_stats import var_of_weighted_mean</p>
 <p>#  In R: sum((1:4 - mean(1:4))^2 / 4) / (4)
 #  [1] 0.3125
 var_of_weighted_mean(pd.Series((1, 2, 3, 4)))</p>
@@ -320,8 +336,7 @@ var_of_weighted_mean(df, w)</p>
 # b    0.00
 # dtype: float64</p>
 </div></blockquote>
-</dd>
-</dl>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -356,9 +371,10 @@ If w has Inf then the output will be np.nan.</p>
 <dd class="field-odd"><p>pd.Series(dtype=np.float64)</p>
 </dd>
 </dl>
-<p class="rubric">Examples</p>
-<dl>
-<dt>::</dt><dd><p>from balance.stats_and_plots.weighted_stats import weighted_mean</p>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>from balance.stats_and_plots.weighted_stats import weighted_mean</p>
 <dl class="simple">
 <dt>weighted_mean(pd.Series((1, 2, 3, 4)))</dt><dd><p># 0    2.5
 # dtype: float64</p>
@@ -377,8 +393,7 @@ weighted_mean(df, w)</p>
 # b    1.0
 # dtype: float64</p>
 </div></blockquote>
-</dd>
-</dl>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -408,6 +423,13 @@ in the output corrosponds to the column in v.</p>
 <dd class="field-odd"><p>pd.DataFrame</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>from balance.stats_and_plots.weighted_stats import weighted_quantile
+weighted_quantile([1, 2, 3], [0.5], w=[1, 1, 1]).iloc[0, 0]
+# 2.0</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -430,6 +452,14 @@ in the output corrosponds to the column in v.</p>
 <dd class="field-odd"><p>pd.Series</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.stats_and_plots.weighted_stats import weighted_sd
+weighted_sd(pd.DataFrame({“x”: [1, 2, 3]}), [1, 1, 1]).tolist()
+# [1.0]</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -465,6 +495,14 @@ If w has Inf then the output will be np.nan.</p>
 <dd class="field-odd"><p>pd.Series[np.float64]</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.stats_and_plots.weighted_stats import weighted_var
+weighted_var(pd.DataFrame({“x”: [1, 2, 3]}), [1, 1, 1]).tolist()
+# [1.0]</p>
+</div></blockquote>
 </dd></dl>
 
 </section>

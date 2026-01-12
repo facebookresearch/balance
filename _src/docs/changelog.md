@@ -51,6 +51,10 @@ hide_title: true
 
 ## Code Quality & Refactoring
 
+- **Aligned formatting toolchain between Meta internal and GitHub CI**
+  - Added `["fbcode/core_stats/balance"]` override to Meta's internal `tools/lint/pyfmt/config.toml` to use `formatter = "black"` and `sorter = "usort"`.
+  - This ensures both internal (`pyfmt`/`arc lint`) and external (GitHub Actions) environments use the same Black 25.1.0 formatter, eliminating formatting drift.
+  - Updated CI workflow, pre-commit config, and `requirements-fmt.txt` to use `black==25.1.0`.
 - **Split util helpers into focused modules**
   - Broke `balance.util` into `balance.utils` submodules for easier navigation.
 - **Split test_util.py into focused test modules**
@@ -61,6 +65,9 @@ hide_title: true
     - `test_util_pandas_utils.py` - Tests for pandas utilities (including high cardinality warnings)
     - `test_util_logging_utils.py` - Tests for logging utilities
   - This improves test organization and makes it easier to locate tests for specific utilities.
+- **Synchronize docstring examples with test cases**
+  - Updated user-facing docstrings so the documented examples mirror tested inputs
+    and outputs.
 
 ## Tests
 - **Added Pyre type checking to GitHub Actions** via `.pyre_configuration.external` and a new `pyre` job in the workflow. Tests are excluded due to external typeshed stub differences; library code is fully type-checked.

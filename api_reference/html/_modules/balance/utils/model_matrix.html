@@ -470,9 +470,9 @@
     <span class="c1"># Arrange penalty factor</span>
     <span class="k">if</span> <span class="n">penalty_factor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">penalty_factor</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">formula</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">formula</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">penalty_factor</span><span class="p">),</span> <span class="p">(</span>
-        <span class="s2">&quot;penalty factor and formula must have the same length&quot;</span>
-    <span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">formula</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span>
+        <span class="n">penalty_factor</span>
+    <span class="p">),</span> <span class="s2">&quot;penalty factor and formula must have the same length&quot;</span>
 
     <span class="c1"># Arrange factor variables</span>
     <span class="k">if</span> <span class="n">one_hot_encoding</span><span class="p">:</span>

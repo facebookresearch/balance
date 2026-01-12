@@ -67,6 +67,19 @@ It computes the gmm loss of alpha*beta.</p>
 <dd class="field-odd"><p>Union[float, np.ndarray]</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import numpy as np
+from balance.weighting_methods.cbps import alpha_function
+X = np.array([[1.0], [1.0]])
+alpha = np.array([0.5])
+beta = np.array([1.0])
+design_weights = np.array([1.0, 1.0])
+in_pop = np.array([1.0, 0.0])
+float(alpha_function(alpha, beta, X, design_weights, in_pop)) &gt;= 0
+# True</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -91,6 +104,19 @@ It computes the balance loss.</p>
 <dd class="field-odd"><p>np.float64</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import numpy as np
+from balance.weighting_methods.cbps import bal_loss
+X = np.array([[1.0], [1.0]])
+beta = np.array([0.0])
+design_weights = np.array([1.0, 1.0])
+in_pop = np.array([1.0, 0.0])
+XtXinv = np.linalg.pinv(X.T &#64; X)
+float(bal_loss(beta, X, design_weights, in_pop, XtXinv)) &gt;= 0
+# True</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -182,6 +208,29 @@ else None,</p>
 <dd class="field-even"><p>Dict[str, Union[pd.Series, Dict]]</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.weighting_methods.cbps import cbps
+sample_df = pd.DataFrame({“x”: [0, 1, 0, 1]})
+target_df = pd.DataFrame({“x”: [0, 1, 0, 1]})
+sample_weights = pd.Series([1.0, 1.0, 1.0, 1.0])
+target_weights = pd.Series([1.0, 1.0, 1.0, 1.0])
+result = cbps(</p>
+<blockquote>
+<div><p>sample_df,
+sample_weights,
+target_df,
+target_weights,
+variables=[“x”],
+transformations=None,
+balance_classes=False,</p>
+</div></blockquote>
+<p>)
+len(result[“weight”]) == len(sample_df)
+# True</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -206,6 +255,18 @@ It is used for setting a constraints on max_de.</p>
 <dd class="field-odd"><p>np.float64</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import numpy as np
+from balance.weighting_methods.cbps import compute_deff_from_beta
+X = np.array([[1.0], [1.0]])
+beta = np.array([0.0])
+design_weights = np.array([1.0, 1.0])
+in_pop = np.array([1.0, 0.0])
+float(compute_deff_from_beta(X, beta, design_weights, in_pop)) &gt;= 0
+# True</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -229,6 +290,17 @@ Given computed probs, it computes the weights: N/N_t * (in_pop - p_i)/(1 - p_i).
 <dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import numpy as np
+from balance.weighting_methods.cbps import compute_pseudo_weights_from_logit_probs
+probs = np.array([0.5, 0.5])
+design_weights = np.array([1.0, 1.0])
+in_pop = np.array([1.0, 0.0])
+compute_pseudo_weights_from_logit_probs(probs, design_weights, in_pop).tolist()
+# [2.0, -2.0]</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -258,6 +330,19 @@ invV (np.ndarray) the weighting matrix for GMM</p>
 <dd class="field-odd"><p>Dict[str, Union[float, np.ndarray]]</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import numpy as np
+from balance.weighting_methods.cbps import gmm_function
+X = np.array([[1.0], [1.0]])
+beta = np.array([0.0])
+design_weights = np.array([1.0, 1.0])
+in_pop = np.array([1.0, 0.0])
+result = gmm_function(beta, X, design_weights, in_pop)
+sorted(result.keys())
+# [‘invV’, ‘loss’]</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -283,6 +368,18 @@ See gmm_function for detials.</p>
 <dd class="field-odd"><p>Union[float, np.ndarray]</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import numpy as np
+from balance.weighting_methods.cbps import gmm_loss
+X = np.array([[1.0], [1.0]])
+beta = np.array([0.0])
+design_weights = np.array([1.0, 1.0])
+in_pop = np.array([1.0, 0.0])
+float(gmm_loss(beta, X, design_weights, in_pop)) &gt;= 0
+# True</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -308,6 +405,14 @@ which is essential for stable weight computation in propensity score methods.</p
 <dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import numpy as np
+from balance.weighting_methods.cbps import logit_truncated
+logit_truncated(np.array([[0.0]]), np.array([0.0])).tolist()
+# [[0.5]]</p>
+</div></blockquote>
 </dd></dl>
 
 </section>

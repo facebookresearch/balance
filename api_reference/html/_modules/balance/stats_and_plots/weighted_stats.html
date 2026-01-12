@@ -175,7 +175,7 @@
 <span class="sd">            If w has Inf then the output will be np.nan.</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        ::</span>
+<span class="sd">    .. code-block:: python</span>
 <span class="sd">            from balance.stats_and_plots.weighted_stats import weighted_mean</span>
 
 <span class="sd">            weighted_mean(pd.Series((1, 2, 3, 4)))</span>
@@ -228,7 +228,8 @@
 
 
 <span class="sd">    Examples:</span>
-<span class="sd">        ::</span>
+<span class="sd">    .. code-block:: python</span>
+
 <span class="sd">            from balance.stats_and_plots.weighted_stats import var_of_weighted_mean</span>
 
 <span class="sd">            #  In R: sum((1:4 - mean(1:4))^2 / 4) / (4)</span>
@@ -288,7 +289,8 @@
 <span class="sd">            If `w` has infinite values, the output will be `np.nan`.</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        ::</span>
+<span class="sd">    .. code-block:: python</span>
+
 <span class="sd">            from balance.stats_and_plots.weighted_stats import ci_of_weighted_mean</span>
 
 <span class="sd">            ci_of_weighted_mean(pd.Series((1, 2, 3, 4)))</span>
@@ -379,6 +381,14 @@
 <span class="sd">        If inf_rm=False then:</span>
 <span class="sd">            If v has Inf then the output will be Inf.</span>
 <span class="sd">            If w has Inf then the output will be np.nan.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        import pandas as pd</span>
+<span class="sd">        from balance.stats_and_plots.weighted_stats import weighted_var</span>
+<span class="sd">        weighted_var(pd.DataFrame({&quot;x&quot;: [1, 2, 3]}), [1, 1, 1]).tolist()</span>
+<span class="sd">        # [1.0]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">v</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">_prepare_weighted_stat_args</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">inf_rm</span><span class="p">)</span>
     <span class="n">means</span> <span class="o">=</span> <span class="n">weighted_mean</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span>
@@ -410,6 +420,14 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        pd.Series: np.sqrt of :func:`weighted_var` (np.float64)</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        import pandas as pd</span>
+<span class="sd">        from balance.stats_and_plots.weighted_stats import weighted_sd</span>
+<span class="sd">        weighted_sd(pd.DataFrame({&quot;x&quot;: [1, 2, 3]}), [1, 1, 1]).tolist()</span>
+<span class="sd">        # [1.0]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">weighted_var</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">inf_rm</span><span class="p">)))</span></div>
 
@@ -440,6 +458,13 @@
 <span class="sd">        pd.DataFrame: The index (names p) has the values from quantiles. The columns are based on v:</span>
 <span class="sd">            If it&#39;s a pd.Series it&#39;s one column, if it&#39;s a pd.DataFrame with several columns, than each column</span>
 <span class="sd">            in the output corrosponds to the column in v.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        from balance.stats_and_plots.weighted_stats import weighted_quantile</span>
+<span class="sd">        weighted_quantile([1, 2, 3], [0.5], w=[1, 1, 1]).iloc[0, 0]</span>
+<span class="sd">        # 2.0</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">v</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">_prepare_weighted_stat_args</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">inf_rm</span><span class="p">)</span>
@@ -499,7 +524,7 @@
 <span class="sd">        pd.DataFrame: Returns pd.DataFrame of the output (based on stat argument), for each of the columns in df.</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        ::</span>
+<span class="sd">    .. code-block:: python</span>
 
 <span class="sd">            import numpy as np</span>
 <span class="sd">            import pandas as pd</span>
@@ -639,7 +664,7 @@
 <span class="sd">            -  &#39;prop&#39;, the aggregated (weighted) proportion of rows from each group in &#39;column&#39;.</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        ::</span>
+<span class="sd">    .. code-block:: python</span>
 
 <span class="sd">            from balance.stats_and_plots.weighted_stats import relative_frequency_table</span>
 <span class="sd">            import pandas as pd</span>

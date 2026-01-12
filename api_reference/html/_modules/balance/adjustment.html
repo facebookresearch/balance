@@ -136,9 +136,11 @@
 <span class="sd">        ``float``: The computed quantile value converted to ``float``.</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        &gt;&gt;&gt; _quantile_with_method([1, 2, 3, 4], 0.25, &quot;higher&quot;)</span>
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        _quantile_with_method([1, 2, 3, 4], 0.25, &quot;higher&quot;)</span>
 <span class="sd">        2.0</span>
-<span class="sd">        &gt;&gt;&gt; _quantile_with_method([1, 2, 3, 4], 0.75, &quot;lower&quot;)</span>
+<span class="sd">        _quantile_with_method([1, 2, 3, 4], 0.75, &quot;lower&quot;)</span>
 <span class="sd">        3.0</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -224,72 +226,25 @@
 <span class="sd">        pd.Series (of type float64): Trimmed weights with the same index as input</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        ::</span>
+<span class="sd">    .. code-block:: python</span>
 
-<span class="sd">            import pandas as pd</span>
-<span class="sd">            from balance.adjustment import trim_weights</span>
-<span class="sd">            print(trim_weights(pd.Series(range(1, 101)), weight_trimming_mean_ratio = None))</span>
-<span class="sd">                # 0       1.0</span>
-<span class="sd">                # 1       2.0</span>
-<span class="sd">                # 2       3.0</span>
-<span class="sd">                # 3       4.0</span>
-<span class="sd">                # 4       5.0</span>
-<span class="sd">                #     ...</span>
-<span class="sd">                # 95     96.0</span>
-<span class="sd">                # 96     97.0</span>
-<span class="sd">                # 97     98.0</span>
-<span class="sd">                # 98     99.0</span>
-<span class="sd">                # 99    100.0</span>
-<span class="sd">                # Length: 100, dtype: float64</span>
-
-<span class="sd">            print(trim_weights(pd.Series(range(1, 101)), weight_trimming_mean_ratio = 1.5))</span>
-<span class="sd">                # 0      1.064559</span>
-<span class="sd">                # 1      2.129117</span>
-<span class="sd">                # 2      3.193676</span>
-<span class="sd">                # 3      4.258235</span>
-<span class="sd">                # 4      5.322793</span>
-<span class="sd">                #         ...</span>
-<span class="sd">                # 95    80.640316</span>
-<span class="sd">                # 96    80.640316</span>
-<span class="sd">                # 97    80.640316</span>
-<span class="sd">                # 98    80.640316</span>
-<span class="sd">                # 99    80.640316</span>
-<span class="sd">                # Length: 100, dtype: float64</span>
-
-<span class="sd">            print(pd.DataFrame(trim_weights(</span>
-<span class="sd">                pd.Series(range(1, 101)),</span>
-<span class="sd">                weight_trimming_percentile=.01,</span>
-<span class="sd">                keep_sum_of_weights=False,</span>
-<span class="sd">            )))</span>
-<span class="sd">                # 0    3.0</span>
-<span class="sd">                # 1    3.0</span>
-<span class="sd">                # 2    3.0</span>
-<span class="sd">                # 3    4.0</span>
-<span class="sd">                # 4    5.0</span>
-<span class="sd">                # ..   ...</span>
-<span class="sd">                # 95  96.0</span>
-<span class="sd">                # 96  97.0</span>
-<span class="sd">                # 97  98.0</span>
-<span class="sd">                # 98  98.0</span>
-<span class="sd">                # 99  98.0</span>
-<span class="sd">                # [100 rows x 1 columns]</span>
-
-<span class="sd">            print(pd.DataFrame(trim_weights(</span>
-<span class="sd">                pd.Series(range(1, 101)),</span>
-<span class="sd">                weight_trimming_percentile=(0., .05),</span>
-<span class="sd">                keep_sum_of_weights=False,</span>
-<span class="sd">            )))</span>
-<span class="sd">                # 0     1.0</span>
-<span class="sd">                # 1     2.0</span>
-<span class="sd">                # 2     3.0</span>
-<span class="sd">                # 3     4.0</span>
-<span class="sd">                # 4     5.0</span>
-<span class="sd">                # ..    ...</span>
-<span class="sd">                # 95   94.0</span>
-<span class="sd">                # 96   94.0</span>
-<span class="sd">                # 97   94.0</span>
-<span class="sd">                # 98   94.0</span>
-<span class="sd">                # 99   94.0</span>
+<span class="sd">        import pandas as pd</span>
+<span class="sd">        from balance.adjustment import trim_weights</span>
+<span class="sd">        weights = pd.Series(range(1, 101))</span>
+<span class="sd">        symmetric = trim_weights(</span>
+<span class="sd">            weights,</span>
+<span class="sd">            weight_trimming_percentile=0.01,</span>
+<span class="sd">            keep_sum_of_weights=False,</span>
+<span class="sd">        )</span>
+<span class="sd">        symmetric.equals(pd.Series(range(1, 101)).clip(3, 98).astype(float))</span>
+<span class="sd">        # True</span>
+<span class="sd">        upper = trim_weights(</span>
+<span class="sd">            weights,</span>
+<span class="sd">            weight_trimming_percentile=(0.0, 0.05),</span>
+<span class="sd">            keep_sum_of_weights=False,</span>
+<span class="sd">        )</span>
+<span class="sd">        upper.equals(pd.Series(range(1, 101)).clip(upper=94).astype(float))</span>
+<span class="sd">        # True</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">original_name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -411,6 +366,16 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict[str, Callable]: Dict of transformations</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        import pandas as pd</span>
+<span class="sd">        from balance.adjustment import default_transformations</span>
+<span class="sd">        df = pd.DataFrame({&quot;age&quot;: [20, 30], &quot;gender&quot;: [&quot;f&quot;, &quot;m&quot;]})</span>
+<span class="sd">        transformations = default_transformations((df,))</span>
+<span class="sd">        sorted(transformations.keys())</span>
+<span class="sd">        # [&#39;age&#39;, &#39;gender&#39;]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">dtypes</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dfs</span><span class="p">:</span>
@@ -466,7 +431,7 @@
 <span class="sd">        Tuple[pd.DataFrame, ...]: tuple of pd.DataFrames</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        ::</span>
+<span class="sd">    .. code-block:: python</span>
 
 <span class="sd">            from balance.adjustment import apply_transformations</span>
 <span class="sd">            import pandas as pd</span>

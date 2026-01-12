@@ -100,57 +100,51 @@ typically don’t provide meaningful signal for adjustment and may lead to
 unstable or uniform weights. The warning helps identify features that should be
 reviewed or excluded from the adjustment.</p>
 </div>
-<p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">balance</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.ensemble</span><span class="w"> </span><span class="kn">import</span> <span class="n">RandomForestClassifier</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sample</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_data</span>
-
-<span class="c1"># Load simulated data</span>
-<span class="n">target_df</span><span class="p">,</span> <span class="n">sample_df</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
-
-<span class="n">sample</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">outcome_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;happiness&quot;</span><span class="p">])</span>
-<span class="c1"># Often times we don&#39;y have the outcome for the target. In this case we&#39;ve added it just to validate later that the weights indeed help us reduce the bias</span>
-<span class="n">target</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">outcome_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;happiness&quot;</span><span class="p">])</span>
-
-<span class="n">sample_with_target</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">set_target</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
-<span class="n">adjusted</span> <span class="o">=</span> <span class="n">sample_with_target</span><span class="o">.</span><span class="n">adjust</span><span class="p">()</span>
-
-<span class="n">rf</span> <span class="o">=</span> <span class="n">RandomForestClassifier</span><span class="p">(</span><span class="n">n_estimators</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">adjusted_rf</span> <span class="o">=</span> <span class="n">sample_with_target</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="n">model</span> <span class="o">=</span> <span class="n">rf</span><span class="p">)</span>
-
-<span class="c1"># Print ASMD tables for both adjusted and adjusted_rf</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">=== Adjusted ASMD ===&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">adjusted</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">asmd</span><span class="p">()</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">=== Adjusted_RF ASMD ===&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">adjusted_rf</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">asmd</span><span class="p">()</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
-
-<span class="c1"># output</span>
-<span class="c1">#</span>
-<span class="c1"># === Adjusted ASMD ===</span>
-<span class="c1"># source                  self  unadjusted  unadjusted - self</span>
-<span class="c1"># age_group[T.25-34]  0.021777    0.005688          -0.016090</span>
-<span class="c1"># age_group[T.35-44]  0.055884    0.312711           0.256827</span>
-<span class="c1"># age_group[T.45+]    0.169816    0.378828           0.209013</span>
-<span class="c1"># gender[Female]      0.097916    0.375699           0.277783</span>
-<span class="c1"># gender[Male]        0.103989    0.379314           0.275324</span>
-<span class="c1"># gender[_NA]         0.010578    0.006296          -0.004282</span>
-<span class="c1"># income              0.205469    0.494217           0.288748</span>
-<span class="c1"># mean(asmd)          0.119597    0.326799           0.207202</span>
-<span class="c1">#</span>
-<span class="c1"># === Adjusted_RF ASMD ===</span>
-<span class="c1"># source                  self  unadjusted  unadjusted - self</span>
-<span class="c1"># age_group[T.25-34]  0.074491    0.005688          -0.068804</span>
-<span class="c1"># age_group[T.35-44]  0.022383    0.312711           0.290328</span>
-<span class="c1"># age_group[T.45+]    0.145628    0.378828           0.233201</span>
-<span class="c1"># gender[Female]      0.037700    0.375699           0.337999</span>
-<span class="c1"># gender[Male]        0.067392    0.379314           0.311922</span>
-<span class="c1"># gender[_NA]         0.051718    0.006296          -0.045422</span>
-<span class="c1"># income              0.140655    0.494217           0.353562</span>
-<span class="c1"># mean(asmd)          0.091253    0.326799           0.235546</span>
-</pre></div>
-</div>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import balance
+from sklearn.ensemble import RandomForestClassifier
+from balance import Sample
+from balance import load_data</p>
+<p># Load simulated data
+target_df, sample_df = load_data()</p>
+<p>sample = Sample.from_frame(sample_df, outcome_columns=[“happiness”])
+# Often times we don’y have the outcome for the target. In this case we’ve added it just to validate later that the weights indeed help us reduce the bias
+target = Sample.from_frame(target_df, outcome_columns=[“happiness”])</p>
+<p>sample_with_target = sample.set_target(target)
+adjusted = sample_with_target.adjust()</p>
+<p>rf = RandomForestClassifier(n_estimators=200, random_state=0)
+adjusted_rf = sample_with_target.adjust(model = rf)</p>
+<p># Print ASMD tables for both adjusted and adjusted_rf
+print(”n=== Adjusted ASMD ===”)
+print(adjusted.covars().asmd().T)</p>
+<p>print(”n=== Adjusted_RF ASMD ===”)
+print(adjusted_rf.covars().asmd().T)</p>
+<p># output
+#
+# === Adjusted ASMD ===
+# source                  self  unadjusted  unadjusted - self
+# age_group[T.25-34]  0.021777    0.005688          -0.016090
+# age_group[T.35-44]  0.055884    0.312711           0.256827
+# age_group[T.45+]    0.169816    0.378828           0.209013
+# gender[Female]      0.097916    0.375699           0.277783
+# gender[Male]        0.103989    0.379314           0.275324
+# gender[_NA]         0.010578    0.006296          -0.004282
+# income              0.205469    0.494217           0.288748
+# mean(asmd)          0.119597    0.326799           0.207202
+#
+# === Adjusted_RF ASMD ===
+# source                  self  unadjusted  unadjusted - self
+# age_group[T.25-34]  0.074491    0.005688          -0.068804
+# age_group[T.35-44]  0.022383    0.312711           0.290328
+# age_group[T.45+]    0.145628    0.378828           0.233201
+# gender[Female]      0.037700    0.375699           0.337999
+# gender[Male]        0.067392    0.379314           0.311922
+# gender[_NA]         0.051718    0.006296          -0.045422
+# income              0.140655    0.494217           0.353562
+# mean(asmd)          0.091253    0.326799           0.235546</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -172,26 +166,31 @@ For these columns, since they are all either 0 or 1, their means should be inter
 <dd class="field-odd"><p>pd.DataFrame</p>
 </dd>
 </dl>
-<p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sample</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-
-<span class="n">s</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
-    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-        <span class="p">{</span><span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">),</span> <span class="s2">&quot;o&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)}</span>
-    <span class="p">),</span>
-    <span class="n">outcome_columns</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;o&quot;</span><span class="p">),</span>
-<span class="p">)</span>
-<span class="n">s_adjusted</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">set_target</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="n">method</span> <span class="o">=</span> <span class="s1">&#39;null&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">s_adjusted</span><span class="o">.</span><span class="n">covar_means</span><span class="p">())</span>
-
-    <span class="c1"># source  unadjusted  adjusted    target</span>
-    <span class="c1"># a         1.000000  1.000000  1.000000</span>
-    <span class="c1"># c[a]      0.333333  0.333333  0.333333</span>
-    <span class="c1"># c[b]      0.333333  0.333333  0.333333</span>
-    <span class="c1"># c[c]      0.333333  0.333333  0.333333</span>
-</pre></div>
-</div>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>from balance import Sample
+import pandas as pd</p>
+<dl>
+<dt>s = Sample.from_frame(</dt><dd><dl class="simple">
+<dt>pd.DataFrame(</dt><dd><p>{“a”: (0, 1, 2), “c”: (“a”, “b”, “c”), “o”: (1,3,5), “id”: (1, 2, 3)}</p>
+</dd>
+</dl>
+<p>),
+outcome_columns=(“o”),</p>
+</dd>
+</dl>
+<p>)
+s_adjusted = s.set_target(s).adjust(method = ‘null’)
+print(s_adjusted.covar_means())</p>
+<blockquote>
+<div><p># source  unadjusted  adjusted    target
+# a         1.000000  1.000000  1.000000
+# c[a]      0.333333  0.333333  0.333333
+# c[b]      0.333333  0.333333  0.333333
+# c[c]      0.333333  0.333333  0.333333</p>
+</div></blockquote>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -207,6 +206,34 @@ See :class:BalanceDFCovars.</p>
 <dd class="field-even"><p>BalanceDFCovars</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample
+sample = Sample.from_frame(</p>
+<blockquote>
+<div><dl>
+<dt>pd.DataFrame(</dt><dd><dl class="simple">
+<dt>{</dt><dd><p>“id”: [“1”, “2”],
+“x”: [0, 1],
+“weight”: [1.0, 2.0],
+“y”: [0.1, 0.2],</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+outcome_columns=”y”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+sample.covars().df.columns.tolist()
+# [‘x’]</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -224,6 +251,26 @@ See :class:BalanceDFCovars.</p>
 <dd class="field-odd"><p>np.float64</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample
+sample = Sample.from_frame(</p>
+<blockquote>
+<div><dl class="simple">
+<dt>pd.DataFrame(</dt><dd><p>{“id”: [“1”, “2”], “x”: [0, 1], “weight”: [1.0, 2.0]}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+round(sample.design_effect(), 3)
+# 1.111</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -244,6 +291,46 @@ It should include 3 components: “unadjusted”, “adjusted”, “target”.<
 <dd class="field-odd"><p>np.float64</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample
+sample = Sample.from_frame(</p>
+<blockquote>
+<div><dl>
+<dt>pd.DataFrame(</dt><dd><dl class="simple">
+<dt>{</dt><dd><p>“id”: [“1”, “2”],
+“x”: [0, 1],
+“weight”: [1.0, 2.0],
+“y”: [0.1, 0.2],</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+outcome_columns=”y”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+target = Sample.from_frame(</p>
+<blockquote>
+<div><dl class="simple">
+<dt>pd.DataFrame(</dt><dd><p>{“id”: [“3”, “4”], “x”: [0, 1], “weight”: [1.0, 1.0]}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+adjusted = sample.set_target(target).adjust(method=”null”)
+_ = adjusted.design_effect_prop()</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py property">
@@ -261,6 +348,35 @@ It should include 3 components: “unadjusted”, “adjusted”, “target”.<
 <dd class="field-odd"><p>pd.DataFrame</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample
+df = pd.DataFrame(</p>
+<blockquote>
+<div><dl class="simple">
+<dt>{</dt><dd><p>“id”: [“1”, “2”],
+“x”: [0, 1],
+“weight”: [1.0, 2.0],
+“y”: [0.1, 0.2],</p>
+</dd>
+</dl>
+<p>}</p>
+</div></blockquote>
+<p>)
+sample = Sample.from_frame(</p>
+<blockquote>
+<div><p>df,
+id_column=”id”,
+weight_column=”weight”,
+outcome_columns=”y”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+sample.df.columns.tolist()
+# [‘id’, ‘x’, ‘y’, ‘weight’]</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -344,6 +460,39 @@ and have a large influence on the conclusion we draw from the survey.</p>
 <dd class="field-even"><p>pd.DataFrame</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample
+sample = Sample.from_frame(</p>
+<blockquote>
+<div><dl class="simple">
+<dt>pd.DataFrame(</dt><dd><p>{“id”: [“1”, “2”], “x”: [0, 1], “weight”: [1.0, 2.0]}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+target = Sample.from_frame(</p>
+<blockquote>
+<div><dl class="simple">
+<dt>pd.DataFrame(</dt><dd><p>{“id”: [“3”, “4”], “x”: [0, 1], “weight”: [1.0, 1.0]}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+adjusted = sample.set_target(target).adjust(method=”null”)
+adjusted.diagnostics().columns.tolist()
+# [‘metric’, ‘val’, ‘var’]</p>
+</div></blockquote>
 </section>
 </dd></dl>
 
@@ -394,6 +543,35 @@ Defaults to True.</p></li>
 <dd class="field-odd"><p><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample">Sample</a></p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample
+df = pd.DataFrame(</p>
+<blockquote>
+<div><dl class="simple">
+<dt>{</dt><dd><p>“id”: [“1”, “2”],
+“x”: [0, 1],
+“weight”: [1.0, 2.0],
+“y”: [0.1, 0.2],</p>
+</dd>
+</dl>
+<p>}</p>
+</div></blockquote>
+<p>)
+sample = Sample.from_frame(</p>
+<blockquote>
+<div><p>df,
+id_column=”id”,
+weight_column=”weight”,
+outcome_columns=”y”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+isinstance(sample, Sample)
+# True</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -408,6 +586,38 @@ Defaults to True.</p></li>
 <dd class="field-even"><p>bool</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample
+sample = Sample.from_frame(</p>
+<blockquote>
+<div><dl class="simple">
+<dt>pd.DataFrame(</dt><dd><p>{“id”: [“1”, “2”], “x”: [0, 1], “weight”: [1.0, 2.0]}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+target = Sample.from_frame(</p>
+<blockquote>
+<div><dl class="simple">
+<dt>pd.DataFrame(</dt><dd><p>{“id”: [“3”, “4”], “x”: [0, 1], “weight”: [1.0, 1.0]}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+sample.set_target(target).has_target()
+# True</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -425,18 +635,23 @@ no ignored columns are defined.</p>
 <dd class="field-even"><p>Optional[pd.DataFrame]</p>
 </dd>
 </dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;note&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">],</span> <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">21</span><span class="p">],</span> <span class="s2">&quot;out&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]}</span>
-<span class="gp">... </span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">sample</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">df</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="n">outcome_columns</span><span class="o">=</span><span class="s2">&quot;out&quot;</span><span class="p">,</span> <span class="n">ignore_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;note&quot;</span><span class="p">],</span> <span class="n">weight_column</span><span class="o">=</span><span class="kc">None</span>
-<span class="gp">... </span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">sample</span><span class="o">.</span><span class="n">ignored_columns</span><span class="p">()</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-<span class="go">[&#39;note&#39;]</span>
-</pre></div>
-</div>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+df = pd.DataFrame(</p>
+<blockquote>
+<div><p>{“id”: [1, 2], “note”: [“x”, “y”], “age”: [20, 21], “out”: [0, 1]}</p>
+</div></blockquote>
+<p>)
+sample = Sample.from_frame(</p>
+<blockquote>
+<div><p>df, id_column=”id”, outcome_columns=”out”, ignore_columns=[“note”], weight_column=None</p>
+</div></blockquote>
+<p>)
+sample.ignored_columns().columns.tolist()
+# [‘note’]</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -451,6 +666,26 @@ no ignored columns are defined.</p>
 <dd class="field-even"><p>bool</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample
+sample = Sample.from_frame(</p>
+<blockquote>
+<div><dl class="simple">
+<dt>pd.DataFrame(</dt><dd><p>{“id”: [“1”, “2”], “x”: [0, 1], “weight”: [1.0, 2.0]}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+sample.is_adjusted()
+# False</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -487,6 +722,34 @@ This performs the transformation on both the sample’s df and its linked dfs (u
 <dd class="field-odd"><p><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample">Sample</a></p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample
+sample = Sample.from_frame(</p>
+<blockquote>
+<div><dl>
+<dt>pd.DataFrame(</dt><dd><dl class="simple">
+<dt>{</dt><dd><p>“id”: [“1”, “2”],
+“x”: [0, 1],
+“weight”: [1.0, 2.0],
+“y”: [0.1, 0.2],</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+outcome_columns=”y”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+sample.keep_only_some_rows_columns(rows_to_keep=”x == 1”).df.shape
+# (1, 4)</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -505,6 +768,26 @@ Otherwise returns None.</p>
 <dd class="field-odd"><p>str or None</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample
+sample = Sample.from_frame(</p>
+<blockquote>
+<div><dl class="simple">
+<dt>pd.DataFrame(</dt><dd><p>{“id”: [“1”, “2”], “x”: [0, 1], “weight”: [1.0, 2.0]}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+sample.model() is None
+# True</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -520,6 +803,26 @@ while adding na indicator for null values (see <code class="xref py py-func docu
 <dd class="field-even"><p>pd.DataFrame</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample
+sample = Sample.from_frame(</p>
+<blockquote>
+<div><dl class="simple">
+<dt>pd.DataFrame(</dt><dd><p>{“id”: [“1”, “2”], “x”: [0, 1], “weight”: [1.0, 2.0]}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+sample.model_matrix().shape
+# (2, 1)</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -541,6 +844,46 @@ It should include 3 components: “unadjusted”, “adjusted”, “target”.<
 <dd class="field-odd"><p>pd.Series</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample
+sample = Sample.from_frame(</p>
+<blockquote>
+<div><dl>
+<dt>pd.DataFrame(</dt><dd><dl class="simple">
+<dt>{</dt><dd><p>“id”: [“1”, “2”],
+“x”: [0, 1],
+“weight”: [1.0, 2.0],
+“y”: [0.1, 0.2],</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+outcome_columns=”y”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+target = Sample.from_frame(</p>
+<blockquote>
+<div><dl class="simple">
+<dt>pd.DataFrame(</dt><dd><p>{“id”: [“3”, “4”], “x”: [0, 1], “weight”: [1.0, 1.0]}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+adjusted = sample.set_target(target).adjust(method=”null”)
+_ = adjusted.outcome_sd_prop()</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -560,6 +903,46 @@ It should include 3 components: “unadjusted”, “adjusted”, “target”.<
 <dd class="field-odd"><p>pd.Series</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample
+sample = Sample.from_frame(</p>
+<blockquote>
+<div><dl>
+<dt>pd.DataFrame(</dt><dd><dl class="simple">
+<dt>{</dt><dd><p>“id”: [“1”, “2”],
+“x”: [0, 1],
+“weight”: [1.0, 2.0],
+“y”: [0.1, 0.2],</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+outcome_columns=”y”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+target = Sample.from_frame(</p>
+<blockquote>
+<div><dl class="simple">
+<dt>pd.DataFrame(</dt><dd><p>{“id”: [“3”, “4”], “x”: [0, 1], “weight”: [1.0, 1.0]}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+adjusted = sample.set_target(target).adjust(method=”null”)
+_ = adjusted.outcome_variance_ratio()</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -575,39 +958,71 @@ See :class:BalanceDFOutcomes.</p>
 <dd class="field-even"><p>BalanceDFOutcomes or None</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample
+sample = Sample.from_frame(</p>
+<blockquote>
+<div><dl>
+<dt>pd.DataFrame(</dt><dd><dl class="simple">
+<dt>{</dt><dd><p>“id”: [“1”, “2”],
+“x”: [0, 1],
+“weight”: [1.0, 2.0],
+“y”: [0.1, 0.2],</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+outcome_columns=”y”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+sample.outcomes().df.columns.tolist()
+# [‘y’]</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="balance.sample_class.Sample.plot_weight_density">
 <span class="sig-name descname"><span class="pre">plot_weight_density</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.plot_weight_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.plot_weight_density" title="Link to this definition">¶</a></dt>
 <dd><p>Plot the density of weights of Sample.</p>
-<p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sample</span>
-
-
-<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-    <span class="p">{</span>
-        <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">100</span><span class="p">),</span>
-        <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
-            <span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="s2">&quot;d&quot;</span><span class="p">],</span>
-            <span class="n">size</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
-            <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.04</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.45</span><span class="p">],</span>
-        <span class="p">),</span>
-        <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span>
-        <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span>
-    <span class="p">}</span>
-<span class="p">)</span>
-
-<span class="n">a</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
-<span class="n">sample</span><span class="o">.</span><span class="n">weights</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
-<span class="c1"># The same as:</span>
-<span class="n">sample</span><span class="o">.</span><span class="n">plot_weight_density</span><span class="p">()</span>
-</pre></div>
-</div>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import numpy as np
+import pandas as pd
+from balance.sample_class import Sample</p>
+<p>np.random.seed(123)
+df = pd.DataFrame(</p>
+<blockquote>
+<div><dl>
+<dt>{</dt><dd><p>“a”: np.random.uniform(size=100),
+“c”: np.random.choice(</p>
+<blockquote>
+<div><p>[“a”, “b”, “c”, “d”],
+size=100,
+replace=True,
+p=[0.01, 0.04, 0.5, 0.45],</p>
+</div></blockquote>
+<p>),
+“id”: range(100),
+“weight”: np.random.uniform(size=100) + 0.5,</p>
+</dd>
+</dl>
+<p>}</p>
+</div></blockquote>
+<p>)</p>
+<p>a = Sample.from_frame(df)
+sample.weights().plot()
+# The same as:
+sample.plot_weight_density()</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -625,6 +1040,38 @@ See :class:BalanceDFOutcomes.</p>
 <dd class="field-odd"><p><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample">Sample</a></p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample
+sample = Sample.from_frame(</p>
+<blockquote>
+<div><dl class="simple">
+<dt>pd.DataFrame(</dt><dd><p>{“id”: [“1”, “2”], “x”: [0, 1], “weight”: [1.0, 2.0]}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+target = Sample.from_frame(</p>
+<blockquote>
+<div><dl class="simple">
+<dt>pd.DataFrame(</dt><dd><p>{“id”: [“3”, “4”], “x”: [0, 1], “weight”: [1.0, 1.0]}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+sample.set_target(target).has_target()
+# True</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -643,6 +1090,27 @@ This is useful in case one wants to compare two samples.</p>
 <dd class="field-odd"><p><a class="reference internal" href="#balance.sample_class.Sample" title="balance.sample_class.Sample">Sample</a></p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample
+sample = Sample.from_frame(</p>
+<blockquote>
+<div><dl class="simple">
+<dt>pd.DataFrame(</dt><dd><p>{“id”: [“1”, “2”], “x”: [0, 1], “weight”: [1.0, 2.0]}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+linked = sample.set_unadjusted(sample)
+linked.is_adjusted()
+# False</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -661,6 +1129,27 @@ If None or float values, the same weight (or None) will be assigned to all units
 <dd class="field-even"><p>None, but adapting the Sample weight column to weights</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample
+sample = Sample.from_frame(</p>
+<blockquote>
+<div><dl class="simple">
+<dt>pd.DataFrame(</dt><dd><p>{“id”: [“1”, “2”], “x”: [0, 1], “weight”: [1.0, 2.0]}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+sample.set_weights(pd.Series([1.0, 3.0], index=sample.df.index))
+sample.weights().df[“weight”].tolist()
+# [1.0, 3.0]</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -681,41 +1170,52 @@ and <code class="xref py py-func docutils literal notranslate"><span class="pre"
 <dd class="field-even"><p>str</p>
 </dd>
 </dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sample</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">survey</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-<span class="gp">... </span>        <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">),</span> <span class="s2">&quot;w&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)}</span>
-<span class="gp">... </span>    <span class="p">),</span>
-<span class="gp">... </span>    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">outcome_columns</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">weight_column</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span>
-<span class="gp">... </span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">target</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)}),</span>
-<span class="gp">... </span>    <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
-<span class="gp">... </span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">adjusted</span> <span class="o">=</span> <span class="n">survey</span><span class="o">.</span><span class="n">set_target</span><span class="p">(</span><span class="n">target</span><span class="p">)</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;null&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">adjusted</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
-<span class="go">Adjustment details:</span>
-<span class="go">    method: null_adjustment</span>
-<span class="go">Covariate diagnostics:</span>
-<span class="go">    Covar ASMD reduction: 0.0%</span>
-<span class="go">    Covar ASMD (1 variables): 0.173 -&gt; 0.173</span>
-<span class="go">    Covar mean KLD reduction: 0.0%</span>
-<span class="go">    Covar mean KLD (1 variables): 0.020 -&gt; 0.020</span>
-<span class="go">Weight diagnostics:</span>
-<span class="go">    design effect (Deff): 1.120</span>
-<span class="go">    effective sample proportion (ESSP): 0.893</span>
-<span class="go">    effective sample size (ESS): 3.6</span>
-<span class="go">Outcome weighted means:</span>
-<span class="go">               y</span>
-<span class="go">source</span>
-<span class="go">self       0.480</span>
-<span class="go">unadjusted 0.480</span>
-</pre></div>
-</div>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample
+survey = Sample.from_frame(</p>
+<blockquote>
+<div><dl class="simple">
+<dt>pd.DataFrame(</dt><dd><p>{“x”: (0, 1, 1, 0), “id”: range(4), “y”: (0.1, 0.5, 0.4, 0.9), “w”: (1, 2, 1, 1)}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+outcome_columns=”y”,
+weight_column=”w”,</p>
+</div></blockquote>
+<p>)
+target = Sample.from_frame(</p>
+<blockquote>
+<div><p>pd.DataFrame({“x”: (0, 0, 1, 1), “id”: range(4)}),
+id_column=”id”,</p>
+</div></blockquote>
+<p>)
+adjusted = survey.set_target(target).adjust(method=”null”)
+print(adjusted.summary())
+Adjustment details:</p>
+<blockquote>
+<div><p>method: null_adjustment</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Covariate diagnostics:</dt><dd><p>Covar ASMD reduction: 0.0%
+Covar ASMD (1 variables): 0.173 -&gt; 0.173
+Covar mean KLD reduction: 0.0%
+Covar mean KLD (1 variables): 0.020 -&gt; 0.020</p>
+</dd>
+<dt>Weight diagnostics:</dt><dd><p>design effect (Deff): 1.120
+effective sample size proportion (ESSP): 0.893
+effective sample size (ESS): 3.6</p>
+</dd>
+<dt>Outcome weighted means:</dt><dd><p>y</p>
+</dd>
+</dl>
+<p>source
+self       0.480
+unadjusted 0.480</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -738,6 +1238,27 @@ and <code class="xref py py-func docutils literal notranslate"><span class="pre"
 <dd class="field-odd"><p>str | None</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample
+sample = Sample.from_frame(</p>
+<blockquote>
+<div><dl class="simple">
+<dt>pd.DataFrame(</dt><dd><p>{“id”: [“1”, “2”], “x”: [0, 1], “weight”: [1.0, 2.0]}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+csv_text = sample.to_csv()
+“id” in csv_text
+# True</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -759,6 +1280,28 @@ and <code class="xref py py-func docutils literal notranslate"><span class="pre"
 <dd class="field-odd"><p>FileLink</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+import tempfile
+from IPython.lib.display import FileLink
+from balance.sample_class import Sample
+sample = Sample.from_frame(</p>
+<blockquote>
+<div><dl class="simple">
+<dt>pd.DataFrame(</dt><dd><p>{“id”: [“1”, “2”], “x”: [0, 1], “weight”: [1.0, 2.0]}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+isinstance(sample.to_download(tempdir=tempfile.gettempdir()), FileLink)
+# True</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -774,6 +1317,34 @@ See :class:BalanceDFWeights.</p>
 <dd class="field-even"><p>BalanceDFWeights</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample
+sample = Sample.from_frame(</p>
+<blockquote>
+<div><dl>
+<dt>pd.DataFrame(</dt><dd><dl class="simple">
+<dt>{</dt><dd><p>“id”: [“1”, “2”],
+“x”: [0, 1],
+“weight”: [1.0, 2.0],
+“y”: [0.1, 0.2],</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+outcome_columns=”y”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+sample.weights().df.columns.tolist()
+# [‘weight’]</p>
+</div></blockquote>
 </dd></dl>
 
 </dd></dl>

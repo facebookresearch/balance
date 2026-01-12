@@ -107,71 +107,69 @@ The last element is ‘mean(asmd)’, which is the average of the calculated ASM
 <dd class="field-odd"><p>pd.Series</p>
 </dd>
 </dl>
-<p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">weighted_comparisons_stats</span>
-
-<span class="n">a1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
-<span class="n">b1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-<span class="n">a2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
-<span class="n">b2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
-<span class="n">w1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-<span class="n">w2</span> <span class="o">=</span> <span class="n">w1</span>
-
-<span class="n">r</span> <span class="o">=</span> <span class="n">weighted_comparisons_stats</span><span class="o">.</span><span class="n">asmd</span><span class="p">(</span>
-            <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="n">a1</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="n">b1</span><span class="p">}),</span>
-            <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="n">a2</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="n">b2</span><span class="p">}),</span>
-            <span class="n">w1</span><span class="p">,</span>
-            <span class="n">w2</span><span class="p">,</span>
-        <span class="p">)</span>
-
-<span class="n">exp_a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">a1</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">-</span> <span class="n">a2</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="o">/</span> <span class="n">a2</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
-<span class="n">exp_b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">b1</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">-</span> <span class="n">b2</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="o">/</span> <span class="n">b2</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">exp_a</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">exp_b</span><span class="p">)</span>
-
-<span class="c1"># output:</span>
-<span class="c1"># {&#39;a&#39;: 2.82842712474619, &#39;b&#39;: 0.0, &#39;mean(asmd)&#39;: 1.414213562373095}</span>
-<span class="c1"># 2.82842712474619</span>
-<span class="c1"># 0.0</span>
-
-
-
-<span class="n">a1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
-<span class="n">b1_A</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
-<span class="n">b1_B</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">))</span>
-<span class="n">a2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
-<span class="n">b2_A</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
-<span class="n">b2_B</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">))</span>
-<span class="n">w1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-<span class="n">w2</span> <span class="o">=</span> <span class="n">w1</span>
-
-<span class="n">r</span> <span class="o">=</span> <span class="n">weighted_comparisons_stats</span><span class="o">.</span><span class="n">asmd</span><span class="p">(</span>
-    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="n">a1</span><span class="p">,</span> <span class="s2">&quot;b[A]&quot;</span><span class="p">:</span> <span class="n">b1_A</span><span class="p">,</span> <span class="s2">&quot;b[B]&quot;</span><span class="p">:</span> <span class="n">b1_B</span><span class="p">}),</span>
-    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="n">a2</span><span class="p">,</span> <span class="s2">&quot;b[A]&quot;</span><span class="p">:</span> <span class="n">b2_A</span><span class="p">,</span> <span class="s2">&quot;b[B]&quot;</span><span class="p">:</span> <span class="n">b2_B</span><span class="p">}),</span>
-    <span class="n">w1</span><span class="p">,</span>
-    <span class="n">w2</span><span class="p">,</span>
-<span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
-<span class="c1"># {&#39;a&#39;: 2.82842712474619, &#39;b[A]&#39;: 0.7071067811865475, &#39;b[B]&#39;: 0.7071067811865475, &#39;mean(asmd)&#39;: 1.7677669529663689}</span>
-
-<span class="c1"># Check that using aggregate_by_main_covar works</span>
-<span class="n">r</span> <span class="o">=</span> <span class="n">weighted_comparisons_stats</span><span class="o">.</span><span class="n">asmd</span><span class="p">(</span>
-    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="n">a1</span><span class="p">,</span> <span class="s2">&quot;b[A]&quot;</span><span class="p">:</span> <span class="n">b1_A</span><span class="p">,</span> <span class="s2">&quot;b[B]&quot;</span><span class="p">:</span> <span class="n">b1_B</span><span class="p">}),</span>
-    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="n">a2</span><span class="p">,</span> <span class="s2">&quot;b[A]&quot;</span><span class="p">:</span> <span class="n">b2_A</span><span class="p">,</span> <span class="s2">&quot;b[B]&quot;</span><span class="p">:</span> <span class="n">b2_B</span><span class="p">}),</span>
-    <span class="n">w1</span><span class="p">,</span>
-    <span class="n">w2</span><span class="p">,</span>
-    <span class="s2">&quot;target&quot;</span><span class="p">,</span>
-    <span class="kc">True</span><span class="p">,</span>
-<span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
-<span class="c1"># {&#39;a&#39;: 2.82842712474619, &#39;b&#39;: 0.7071067811865475, &#39;mean(asmd)&#39;: 1.7677669529663689}</span>
-</pre></div>
-</div>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import numpy as np
+import pandas as pd
+from balance.stats_and_plots import weighted_comparisons_stats</p>
+<p>a1 = pd.Series((1, 2))
+b1 = pd.Series((-1, 1))
+a2 = pd.Series((3, 4))
+b2 = pd.Series((-2, 2))
+w1 = pd.Series((1, 1))
+w2 = w1</p>
+<dl>
+<dt>r = weighted_comparisons_stats.asmd(</dt><dd><blockquote>
+<div><p>pd.DataFrame({“a”: a1, “b”: b1}),
+pd.DataFrame({“a”: a2, “b”: b2}),
+w1,
+w2,</p>
+</div></blockquote>
+<p>)</p>
+</dd>
+</dl>
+<p>exp_a = np.abs(a1.mean() - a2.mean()) / a2.std()
+exp_b = np.abs(b1.mean() - b2.mean()) / b2.std()
+print(r)
+print(exp_a)
+print(exp_b)</p>
+<p># output:
+# {‘a’: 2.82842712474619, ‘b’: 0.0, ‘mean(asmd)’: 1.414213562373095}
+# 2.82842712474619
+# 0.0</p>
+<p>a1 = pd.Series((1, 2))
+b1_A = pd.Series((1, 3))
+b1_B = pd.Series((-1, -3))
+a2 = pd.Series((3, 4))
+b2_A = pd.Series((2, 3))
+b2_B = pd.Series((-2, -3))
+w1 = pd.Series((1, 1))
+w2 = w1</p>
+<dl class="simple">
+<dt>r = weighted_comparisons_stats.asmd(</dt><dd><p>pd.DataFrame({“a”: a1, “b[A]”: b1_A, “b[B]”: b1_B}),
+pd.DataFrame({“a”: a2, “b[A]”: b2_A, “b[B]”: b2_B}),
+w1,
+w2,</p>
+</dd>
+</dl>
+<p>).to_dict()</p>
+<p>print(r)
+# {‘a’: 2.82842712474619, ‘b[A]’: 0.7071067811865475, ‘b[B]’: 0.7071067811865475, ‘mean(asmd)’: 1.7677669529663689}</p>
+<p># Check that using aggregate_by_main_covar works
+r = weighted_comparisons_stats.asmd(</p>
+<blockquote>
+<div><p>pd.DataFrame({“a”: a1, “b[A]”: b1_A, “b[B]”: b1_B}),
+pd.DataFrame({“a”: a2, “b[A]”: b2_A, “b[B]”: b2_B}),
+w1,
+w2,
+“target”,
+True,</p>
+</div></blockquote>
+<p>).to_dict()</p>
+<p>print(r)
+# {‘a’: 2.82842712474619, ‘b’: 0.7071067811865475, ‘mean(asmd)’: 1.7677669529663689}</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -199,6 +197,16 @@ Returns 0.0 when asmd_mean_before is zero or very close to zero (&lt; 1e-10).</p
 <dd class="field-odd"><p>np.float64</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.stats_and_plots.weighted_comparisons_stats import asmd_improvement
+sample = pd.DataFrame({“x”: [0, 1]})
+target = pd.DataFrame({“x”: [0, 1]})
+float(asmd_improvement(sample, sample, target))
+# 0.0</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -243,42 +251,46 @@ The last element is ‘mean(kld)’, which is the weighted average of the calcul
 <dd class="field-odd"><p>pd.Series</p>
 </dd>
 </dl>
-<p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">weighted_comparisons_stats</span>
-
-<span class="c1"># Example with categorical data showing clear distributional differences</span>
-<span class="n">sample_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
-    <span class="s1">&#39;category&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">],</span>
-<span class="p">})</span>
-<span class="n">target_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
-    <span class="s1">&#39;category&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">],</span>
-<span class="p">})</span>
-
-<span class="c1"># Calculate KLD between the two categorical distributions</span>
-<span class="c1"># Sample has: 50% A, 25% B, 25% C</span>
-<span class="c1"># Target has: 25% A, 50% B, 25% C</span>
-<span class="n">kld_result</span> <span class="o">=</span> <span class="n">weighted_comparisons_stats</span><span class="o">.</span><span class="n">kld</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">kld_result</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">6</span><span class="p">))</span>
-<span class="c1"># category[A]    0.143841</span>
-<span class="c1"># category[B]    0.130812</span>
-<span class="c1"># category[C]    0.000000</span>
-<span class="c1"># mean(kld)      0.091551</span>
-<span class="c1"># dtype: float64</span>
-
-<span class="c1"># Example with aggregation by main covariate name</span>
-<span class="c1"># This aggregates all category levels into a single KLD value</span>
-<span class="n">kld_aggregated</span> <span class="o">=</span> <span class="n">weighted_comparisons_stats</span><span class="o">.</span><span class="n">kld</span><span class="p">(</span>
-    <span class="n">sample_df</span><span class="p">,</span>
-    <span class="n">target_df</span><span class="p">,</span>
-    <span class="n">aggregate_by_main_covar</span><span class="o">=</span><span class="kc">True</span>
-<span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">kld_aggregated</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">6</span><span class="p">))</span>
-<span class="c1"># category      0.091551</span>
-<span class="c1"># mean(kld)     0.091551</span>
-<span class="c1"># dtype: float64</span>
-</pre></div>
-</div>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.stats_and_plots import weighted_comparisons_stats</p>
+<p># Example with categorical data showing clear distributional differences
+sample_df = pd.DataFrame({</p>
+<blockquote>
+<div><p>‘category’: [‘A’, ‘A’, ‘B’, ‘C’],</p>
+</div></blockquote>
+<p>})
+target_df = pd.DataFrame({</p>
+<blockquote>
+<div><p>‘category’: [‘A’, ‘B’, ‘B’, ‘C’],</p>
+</div></blockquote>
+<p>})</p>
+<p># Calculate KLD between the two categorical distributions
+# Sample has: 50% A, 25% B, 25% C
+# Target has: 25% A, 50% B, 25% C
+kld_result = weighted_comparisons_stats.kld(sample_df, target_df)
+print(kld_result.round(6))
+# category[A]    0.143841
+# category[B]    0.130812
+# category[C]    0.000000
+# mean(kld)      0.091551
+# dtype: float64</p>
+<p># Example with aggregation by main covariate name
+# This aggregates all category levels into a single KLD value
+kld_aggregated = weighted_comparisons_stats.kld(</p>
+<blockquote>
+<div><p>sample_df,
+target_df,
+aggregate_by_main_covar=True</p>
+</div></blockquote>
+<p>)
+print(kld_aggregated.round(6))
+# category      0.091551
+# mean(kld)     0.091551
+# dtype: float64</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -305,6 +317,15 @@ of empirical weighted variance of the data.</p>
 <dd class="field-odd"><p>pd.Series</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.stats_and_plots.weighted_comparisons_stats import outcome_variance_ratio
+df = pd.DataFrame({“y”: [1.0, 2.0, 3.0]})
+outcome_variance_ratio(df, df).iloc[0]
+# 1.0</p>
+</div></blockquote>
 </dd></dl>
 
 </section>

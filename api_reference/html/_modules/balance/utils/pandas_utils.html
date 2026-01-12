@@ -507,7 +507,9 @@
         <span class="n">compared_dtypes</span> <span class="o">=</span> <span class="n">compare_df_dtypes_before_and_after</span><span class="p">[</span><span class="s2">&quot;comparison_of_dtypes&quot;</span><span class="p">]</span>
         <span class="n">dtypes_that_changed</span> <span class="o">=</span> <span class="p">(</span>
             <span class="c1"># pyre-ignore[16]: we&#39;re only using the pd.Series, so no worries</span>
-            <span class="n">compared_dtypes</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">bitwise_not</span><span class="p">(</span><span class="n">compared_dtypes</span><span class="o">.</span><span class="n">values</span><span class="p">)]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+            <span class="n">compared_dtypes</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">bitwise_not</span><span class="p">(</span><span class="n">compared_dtypes</span><span class="o">.</span><span class="n">values</span><span class="p">)]</span>
+            <span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+            <span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
         <span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">compare_df_dtypes_before_and_after</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>

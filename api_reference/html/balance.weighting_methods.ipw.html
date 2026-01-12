@@ -66,6 +66,22 @@
 <dd class="field-odd"><p>float, float</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import numpy as np
+from scipy.sparse import csr_matrix
+from sklearn.linear_model import LogisticRegression
+from balance.weighting_methods.ipw import calc_dev
+X = csr_matrix(np.arange(10).reshape(10, 1))
+y = np.array([0, 1] * 5)
+model = LogisticRegression(max_iter=1000)
+weights = np.ones(10)
+foldids = np.arange(10)
+dev_mean, dev_sd = calc_dev(X, y, model, weights, foldids)
+dev_mean &gt; 0
+# True</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -113,6 +129,35 @@ If set to None, then it uses ‘lambda_1se’. Defaults to 1.5.</p></li>
 <dd class="field-odd"><p>Dict[str, Any]</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import numpy as np
+import pandas as pd
+from balance.weighting_methods.ipw import choose_regularization
+links = [np.zeros(2)]
+lambdas = np.array([1.0])
+sample_df = pd.DataFrame({“x”: [0, 1]})
+target_df = pd.DataFrame({“x”: [0, 1]})
+sample_weights = pd.Series([1.0, 1.0])
+target_weights = pd.Series([1.0, 1.0])
+result = choose_regularization(</p>
+<blockquote>
+<div><p>links,
+lambdas,
+sample_df,
+target_df,
+sample_weights,
+target_weights,
+False,
+max_de=2.0,
+trim_options=(1.0,),
+n_asmd_candidates=1,</p>
+</div></blockquote>
+<p>)
+sorted(result.keys())
+# [‘best’, ‘perf’]</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -334,6 +379,14 @@ NotImplementedError: If <code class="docutils literal notranslate"><span class="
 <dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import numpy as np
+from balance.weighting_methods.ipw import link_transform
+float(link_transform(np.array([0.5]))[0])
+# 0.0</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -364,6 +417,18 @@ model does not expose linear coefficients).</p>
 <dd class="field-odd"><p>Dict[str, Any]</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import numpy as np
+from sklearn.linear_model import LogisticRegression
+from balance.weighting_methods.ipw import model_coefs
+X = np.array([[0.0], [1.0]])
+y = np.array([0, 1])
+model = LogisticRegression().fit(X, y)
+“coefs” in model_coefs(model)
+# True</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -390,6 +455,18 @@ the weights, then normalize the weights to have sum equal to the sum of the targ
 <dd class="field-odd"><p>pd.Series</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import numpy as np
+import pandas as pd
+from balance.weighting_methods.ipw import weights_from_link
+link = np.zeros(2)
+sample_weights = pd.Series([1.0, 1.0])
+target_weights = pd.Series([1.0, 1.0])
+weights_from_link(link, False, sample_weights, target_weights).tolist()
+# [1.0, 1.0]</p>
+</div></blockquote>
 </dd></dl>
 
 </section>

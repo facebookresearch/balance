@@ -205,23 +205,36 @@
 <span class="sd">    &quot;model&quot; --- parameters of the model: iterations (dataframe with iteration numbers and</span>
 <span class="sd">                convergence rate information at all steps), converged (Flag with the output</span>
 <span class="sd">                status: 0 for failure and 1 for success).</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        import pandas as pd</span>
+<span class="sd">        from balance.weighting_methods.rake import rake</span>
+<span class="sd">        sample_df = pd.DataFrame({&quot;x&quot;: [&quot;a&quot;, &quot;b&quot;]})</span>
+<span class="sd">        target_df = pd.DataFrame({&quot;x&quot;: [&quot;a&quot;, &quot;b&quot;]})</span>
+<span class="sd">        sample_weights = pd.Series([1.0, 1.0])</span>
+<span class="sd">        target_weights = pd.Series([1.0, 1.0])</span>
+<span class="sd">        result = rake(sample_df, sample_weights, target_df, target_weights, variables=[&quot;x&quot;])</span>
+<span class="sd">        result[&quot;weight&quot;].tolist()</span>
+<span class="sd">        # [1.0, 1.0]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">assert</span> <span class="s2">&quot;weight&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="p">(</span>
-        <span class="s2">&quot;weight shouldn&#39;t be a name for covariate in the sample data&quot;</span>
-    <span class="p">)</span>
-    <span class="k">assert</span> <span class="s2">&quot;weight&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="p">(</span>
-        <span class="s2">&quot;weight shouldn&#39;t be a name for covariate in the target data&quot;</span>
-    <span class="p">)</span>
+    <span class="k">assert</span> <span class="p">(</span>
+        <span class="s2">&quot;weight&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span>
+    <span class="p">),</span> <span class="s2">&quot;weight shouldn&#39;t be a name for covariate in the sample data&quot;</span>
+    <span class="k">assert</span> <span class="p">(</span>
+        <span class="s2">&quot;weight&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span>
+    <span class="p">),</span> <span class="s2">&quot;weight shouldn&#39;t be a name for covariate in the target data&quot;</span>
 
     <span class="c1"># TODO: move the input checks into separate funnction for rake, ipw, poststratify</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">),</span> <span class="s2">&quot;sample_df must be a pandas DataFrame&quot;</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">),</span> <span class="s2">&quot;target_df must be a pandas DataFrame&quot;</span>
-    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sample_weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">),</span> <span class="p">(</span>
-        <span class="s2">&quot;sample_weights must be a pandas Series&quot;</span>
-    <span class="p">)</span>
-    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target_weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">),</span> <span class="p">(</span>
-        <span class="s2">&quot;target_weights must be a pandas Series&quot;</span>
-    <span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
+        <span class="n">sample_weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span>
+    <span class="p">),</span> <span class="s2">&quot;sample_weights must be a pandas Series&quot;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
+        <span class="n">target_weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span>
+    <span class="p">),</span> <span class="s2">&quot;target_weights must be a pandas Series&quot;</span>
     <span class="k">assert</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">sample_weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span>
         <span class="s2">&quot;sample_weights must be the same length as sample_df&quot;</span>
         <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sample_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">sample_weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -446,7 +459,8 @@
 <span class="sd">        A list of strings where each key is repeated according to its proportion.</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        ::</span>
+<span class="sd">    .. code-block:: python</span>
+
 <span class="sd">            _proportional_array_from_dict({&quot;a&quot;:0.2, &quot;b&quot;:0.8})</span>
 <span class="sd">                # [&#39;a&#39;, &#39;b&#39;, &#39;b&#39;, &#39;b&#39;, &#39;b&#39;]</span>
 <span class="sd">            _proportional_array_from_dict({&quot;a&quot;:0.5, &quot;b&quot;:0.5})</span>
@@ -500,7 +514,8 @@
 <span class="sd">        The LCM of the lengths of the arrays in the input dictionary.</span>
 
 <span class="sd">    Example:</span>
-<span class="sd">        ::</span>
+<span class="sd">    .. code-block:: python</span>
+
 <span class="sd">            arrays = {</span>
 <span class="sd">                        &quot;v1&quot;: [&quot;a&quot;, &quot;b&quot;, &quot;b&quot;, &quot;c&quot;],</span>
 <span class="sd">                        &quot;v2&quot;: [&quot;aa&quot;, &quot;bb&quot;]</span>
@@ -538,7 +553,8 @@
 <span class="sd">        A dictionary with the same keys as the input and equal length arrays as values.</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        ::</span>
+<span class="sd">    .. code-block:: python</span>
+
 <span class="sd">            dict_of_dicts = {</span>
 <span class="sd">                &quot;v1&quot;: {&quot;a&quot;: 0.2, &quot;b&quot;: 0.6, &quot;c&quot;: 0.2},</span>
 <span class="sd">                &quot;v2&quot;: {&quot;aa&quot;: 0.5, &quot;bb&quot;: 0.5}</span>
@@ -605,24 +621,15 @@
 <span class="sd">        and rows containing the category labels according to their proportions.</span>
 <span class="sd">        An additional &quot;id&quot; column is added with integer values as row identifiers.</span>
 
-<span class="sd">    Example:</span>
-<span class="sd">        ::</span>
-<span class="sd">            print(prepare_marginal_dist_for_raking({</span>
-<span class="sd">                            &quot;A&quot;: {&quot;a&quot;: 0.5, &quot;b&quot;: 0.5},</span>
-<span class="sd">                            &quot;B&quot;: {&quot;x&quot;: 0.2, &quot;y&quot;: 0.8}</span>
-<span class="sd">                        }))</span>
-<span class="sd">            # Returns a DataFrame with columns A, B, and id</span>
-<span class="sd">                #    A  B  id</span>
-<span class="sd">                # 0  a  x   0</span>
-<span class="sd">                # 1  b  y   1</span>
-<span class="sd">                # 2  a  y   2</span>
-<span class="sd">                # 3  b  y   3</span>
-<span class="sd">                # 4  a  y   4</span>
-<span class="sd">                # 5  b  x   5</span>
-<span class="sd">                # 6  a  y   6</span>
-<span class="sd">                # 7  b  y   7</span>
-<span class="sd">                # 8  a  y   8</span>
-<span class="sd">                # 9  b  y   9</span>
+<span class="sd">    Examples:</span>
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        from balance.weighting_methods.rake import prepare_marginal_dist_for_raking</span>
+<span class="sd">        df = prepare_marginal_dist_for_raking(</span>
+<span class="sd">            {&quot;A&quot;: {&quot;a&quot;: 0.5, &quot;b&quot;: 0.5}, &quot;B&quot;: {&quot;x&quot;: 0.2, &quot;y&quot;: 0.8}}</span>
+<span class="sd">        )</span>
+<span class="sd">        df.columns.tolist()</span>
+<span class="sd">        # [&#39;A&#39;, &#39;B&#39;, &#39;id&#39;]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">target_dict_from_marginals</span> <span class="o">=</span> <span class="n">_realize_dicts_of_proportions</span><span class="p">(</span><span class="n">dict_of_dicts</span><span class="p">)</span>
     <span class="n">target_df_from_marginals</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">target_dict_from_marginals</span><span class="p">)</span>

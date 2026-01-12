@@ -86,22 +86,25 @@ not specified in <cite>transformations</cite>. Defaults to True.</p></li>
 <dd class="field-even"><p>Tuple[pd.DataFrame, …]</p>
 </dd>
 </dl>
-<p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.adjustment</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_transformations</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-
-<span class="n">apply_transformations</span><span class="p">(</span>
-    <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="s1">&#39;e&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]}),),</span>
-    <span class="p">{</span><span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">*</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;f&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">d</span><span class="o">+</span><span class="n">x</span><span class="o">.</span><span class="n">e</span><span class="p">}</span>
-<span class="p">)</span>
-
-    <span class="c1"># (   f  d</span>
-    <span class="c1">#  0  5  2</span>
-    <span class="c1">#  1  7  4</span>
-    <span class="c1">#  2  9  6,)</span>
-</pre></div>
-</div>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>from balance.adjustment import apply_transformations
+import pandas as pd
+import numpy as np</p>
+<dl class="simple">
+<dt>apply_transformations(</dt><dd><p>(pd.DataFrame({‘d’: [1, 2, 3], ‘e’: [4, 5, 6]}),),
+{‘d’: lambda x: x*2, ‘f’: lambda x: x.d+x.e}</p>
+</dd>
+</dl>
+<p>)</p>
+<blockquote>
+<div><p># (   f  d
+#  0  5  2
+#  1  7  4
+#  2  9  6,)</p>
+</div></blockquote>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -120,6 +123,16 @@ quantize to numeric columns and fct_lump to non-numeric and boolean</p>
 <dd class="field-odd"><p>Dict[str, Callable]</p>
 </dd>
 </dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.adjustment import default_transformations
+df = pd.DataFrame({“age”: [20, 30], “gender”: [“f”, “m”]})
+transformations = default_transformations((df,))
+sorted(transformations.keys())
+# [‘age’, ‘gender’]</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -196,73 +209,31 @@ target. <code class="docutils literal notranslate"><span class="pre">None</span>
 <dd class="field-even"><p>pd.Series (of type float64)</p>
 </dd>
 </dl>
-<p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">balance.adjustment</span><span class="w"> </span><span class="kn">import</span> <span class="n">trim_weights</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">trim_weights</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">101</span><span class="p">)),</span> <span class="n">weight_trimming_mean_ratio</span> <span class="o">=</span> <span class="kc">None</span><span class="p">))</span>
-    <span class="c1"># 0       1.0</span>
-    <span class="c1"># 1       2.0</span>
-    <span class="c1"># 2       3.0</span>
-    <span class="c1"># 3       4.0</span>
-    <span class="c1"># 4       5.0</span>
-    <span class="c1">#     ...</span>
-    <span class="c1"># 95     96.0</span>
-    <span class="c1"># 96     97.0</span>
-    <span class="c1"># 97     98.0</span>
-    <span class="c1"># 98     99.0</span>
-    <span class="c1"># 99    100.0</span>
-    <span class="c1"># Length: 100, dtype: float64</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="n">trim_weights</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">101</span><span class="p">)),</span> <span class="n">weight_trimming_mean_ratio</span> <span class="o">=</span> <span class="mf">1.5</span><span class="p">))</span>
-    <span class="c1"># 0      1.064559</span>
-    <span class="c1"># 1      2.129117</span>
-    <span class="c1"># 2      3.193676</span>
-    <span class="c1"># 3      4.258235</span>
-    <span class="c1"># 4      5.322793</span>
-    <span class="c1">#         ...</span>
-    <span class="c1"># 95    80.640316</span>
-    <span class="c1"># 96    80.640316</span>
-    <span class="c1"># 97    80.640316</span>
-    <span class="c1"># 98    80.640316</span>
-    <span class="c1"># 99    80.640316</span>
-    <span class="c1"># Length: 100, dtype: float64</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">trim_weights</span><span class="p">(</span>
-    <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">101</span><span class="p">)),</span>
-    <span class="n">weight_trimming_percentile</span><span class="o">=</span><span class="mf">.01</span><span class="p">,</span>
-    <span class="n">keep_sum_of_weights</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-<span class="p">)))</span>
-    <span class="c1"># 0    3.0</span>
-    <span class="c1"># 1    3.0</span>
-    <span class="c1"># 2    3.0</span>
-    <span class="c1"># 3    4.0</span>
-    <span class="c1"># 4    5.0</span>
-    <span class="c1"># ..   ...</span>
-    <span class="c1"># 95  96.0</span>
-    <span class="c1"># 96  97.0</span>
-    <span class="c1"># 97  98.0</span>
-    <span class="c1"># 98  98.0</span>
-    <span class="c1"># 99  98.0</span>
-    <span class="c1"># [100 rows x 1 columns]</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">trim_weights</span><span class="p">(</span>
-    <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">101</span><span class="p">)),</span>
-    <span class="n">weight_trimming_percentile</span><span class="o">=</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">.05</span><span class="p">),</span>
-    <span class="n">keep_sum_of_weights</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-<span class="p">)))</span>
-    <span class="c1"># 0     1.0</span>
-    <span class="c1"># 1     2.0</span>
-    <span class="c1"># 2     3.0</span>
-    <span class="c1"># 3     4.0</span>
-    <span class="c1"># 4     5.0</span>
-    <span class="c1"># ..    ...</span>
-    <span class="c1"># 95   94.0</span>
-    <span class="c1"># 96   94.0</span>
-    <span class="c1"># 97   94.0</span>
-    <span class="c1"># 98   94.0</span>
-    <span class="c1"># 99   94.0</span>
-</pre></div>
-</div>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.adjustment import trim_weights
+weights = pd.Series(range(1, 101))
+symmetric = trim_weights(</p>
+<blockquote>
+<div><p>weights,
+weight_trimming_percentile=0.01,
+keep_sum_of_weights=False,</p>
+</div></blockquote>
+<p>)
+symmetric.equals(pd.Series(range(1, 101)).clip(3, 98).astype(float))
+# True
+upper = trim_weights(</p>
+<blockquote>
+<div><p>weights,
+weight_trimming_percentile=(0.0, 0.05),
+keep_sum_of_weights=False,</p>
+</div></blockquote>
+<p>)
+upper.equals(pd.Series(range(1, 101)).clip(upper=94).astype(float))
+# True</p>
+</div></blockquote>
 </dd></dl>
 
 </section>

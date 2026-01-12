@@ -108,7 +108,7 @@
 <span class="sd">        with rows for each of the columns from &#39;covar_names&#39;</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        ::</span>
+<span class="sd">    .. code-block:: python</span>
 
 <span class="sd">            asmd_df = pd.DataFrame(</span>
 <span class="sd">            {</span>
@@ -329,7 +329,7 @@
 <span class="sd">        The last element is &#39;mean(asmd)&#39;, which is the average of the calculated ASMD values.</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        ::</span>
+<span class="sd">    .. code-block:: python</span>
 
 <span class="sd">            import numpy as np</span>
 <span class="sd">            import pandas as pd</span>
@@ -494,7 +494,7 @@
 <span class="sd">            The last element is &#39;mean(kld)&#39;, which is the weighted average of the calculated KLD values.</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        ::</span>
+<span class="sd">    .. code-block:: python</span>
 
 <span class="sd">            import pandas as pd</span>
 <span class="sd">            from balance.stats_and_plots import weighted_comparisons_stats</span>
@@ -655,7 +655,7 @@
 <span class="sd">            then they would be averaged (with equal weight to each).</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        ::</span>
+<span class="sd">    .. code-block:: python</span>
 
 <span class="sd">            from balance.stats_and_plots.weighted_comparisons_stats import _aggregate_statistic_by_main_covar</span>
 
@@ -721,6 +721,16 @@
 <span class="sd">        np.float64: The improvement is taking the (before_mean_asmd-after_mean_asmd)/before_mean_asmd.</span>
 <span class="sd">        The asmd is calculated using :func:`asmd`.</span>
 <span class="sd">        Returns 0.0 when asmd_mean_before is zero or very close to zero (&lt; 1e-10).</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        import pandas as pd</span>
+<span class="sd">        from balance.stats_and_plots.weighted_comparisons_stats import asmd_improvement</span>
+<span class="sd">        sample = pd.DataFrame({&quot;x&quot;: [0, 1]})</span>
+<span class="sd">        target = pd.DataFrame({&quot;x&quot;: [0, 1]})</span>
+<span class="sd">        float(asmd_improvement(sample, sample, target))</span>
+<span class="sd">        # 0.0</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">asmd_mean_before</span> <span class="o">=</span> <span class="n">asmd</span><span class="p">(</span>
         <span class="n">sample_before</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">sample_before_weights</span><span class="p">,</span> <span class="n">target_weights</span>
@@ -760,6 +770,15 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        pd.Series: (np.float64) A series of calculated ratio of variances for each outcome.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        import pandas as pd</span>
+<span class="sd">        from balance.stats_and_plots.weighted_comparisons_stats import outcome_variance_ratio</span>
+<span class="sd">        df = pd.DataFrame({&quot;y&quot;: [1.0, 2.0, 3.0]})</span>
+<span class="sd">        outcome_variance_ratio(df, df).iloc[0]</span>
+<span class="sd">        # 1.0</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">numerator_w_var</span> <span class="o">=</span> <span class="n">weighted_var</span><span class="p">(</span><span class="n">df_numerator</span><span class="p">,</span> <span class="n">w_numerator</span><span class="p">)</span>
     <span class="n">denominator_w_var</span> <span class="o">=</span> <span class="n">weighted_var</span><span class="p">(</span><span class="n">df_denominator</span><span class="p">,</span> <span class="n">w_denominator</span><span class="p">)</span>

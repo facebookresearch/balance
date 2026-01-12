@@ -193,7 +193,8 @@
 <span class="sd">                and &#39;unadjusted&#39;, and it will return them after running the same BalanceDF child creation method on them.</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            ::</span>
+<span class="sd">        .. code-block:: python</span>
+
 <span class="sd">                from balance.sample_class import Sample</span>
 <span class="sd">                import pandas as pd</span>
 
@@ -351,7 +352,7 @@
 <span class="sd">                per column mean, after applying `model_matrix` to the df from each object.</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            ::</span>
+<span class="sd">        .. code-block:: python</span>
 
 <span class="sd">                from balance.sample_class import Sample</span>
 <span class="sd">                import pandas as pd</span>
@@ -448,7 +449,7 @@
 <span class="sd">            pd.DataFrame: The output from :func:`balance_util.model_matrix`</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            ::</span>
+<span class="sd">        .. code-block:: python</span>
 
 <span class="sd">                import pandas as pd</span>
 <span class="sd">                from balance.sample_class import Sample</span>
@@ -548,6 +549,24 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            FileLink: Embedding a local file link in an IPython session, based on path. Using :func:FileLink.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            import tempfile</span>
+<span class="sd">            from IPython.lib.display import FileLink</span>
+<span class="sd">            from balance.sample_class import Sample</span>
+<span class="sd">            sample = Sample.from_frame(</span>
+<span class="sd">                pd.DataFrame(</span>
+<span class="sd">                    {&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;], &quot;x&quot;: [0, 1], &quot;weight&quot;: [1.0, 2.0]}</span>
+<span class="sd">                ),</span>
+<span class="sd">                id_column=&quot;id&quot;,</span>
+<span class="sd">                weight_column=&quot;weight&quot;,</span>
+<span class="sd">                standardize_types=False,</span>
+<span class="sd">            )</span>
+<span class="sd">            isinstance(sample.covars().to_download(tempdir=tempfile.gettempdir()), FileLink)</span>
+<span class="sd">            # True</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">_to_download</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df_with_ids</span><span class="p">(),</span> <span class="n">tempdir</span><span class="p">)</span></div>
 
@@ -566,6 +585,22 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            pd.DataFrame: The df (this is __df, with no weights) from the BalanceDF object.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from balance.sample_class import Sample</span>
+<span class="sd">            sample = Sample.from_frame(</span>
+<span class="sd">                pd.DataFrame(</span>
+<span class="sd">                    {&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;], &quot;x&quot;: [0, 1], &quot;weight&quot;: [1.0, 2.0]}</span>
+<span class="sd">                ),</span>
+<span class="sd">                id_column=&quot;id&quot;,</span>
+<span class="sd">                weight_column=&quot;weight&quot;,</span>
+<span class="sd">                standardize_types=False,</span>
+<span class="sd">            )</span>
+<span class="sd">            sample.covars().df.columns.tolist()</span>
+<span class="sd">            # [&#39;x&#39;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__df</span>
 
@@ -581,7 +616,7 @@
 <span class="sd">            List: Of column names.</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            ::</span>
+<span class="sd">        .. code-block:: python</span>
 
 <span class="sd">                s1 = Sample.from_frame(</span>
 <span class="sd">                    pd.DataFrame(</span>
@@ -636,7 +671,7 @@
 <span class="sd">                If library=&quot;seaborn&quot; then returns None, unless return_axes is True. Then either a list or an np.array of matplotlib axis.</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            ::</span>
+<span class="sd">        .. code-block:: python</span>
 
 <span class="sd">                import numpy as np</span>
 <span class="sd">                import pandas as pd</span>
@@ -726,7 +761,7 @@
 <span class="sd">                Columns are for each of the columns in the relevant df (after applying :func:`model_matrix`)</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            ::</span>
+<span class="sd">        .. code-block:: python</span>
 
 <span class="sd">                import pandas as pd</span>
 <span class="sd">                from balance.sample_class import Sample</span>
@@ -797,7 +832,7 @@
 <span class="sd">                Columns are for each of the columns in the relevant df (after applying :func:`model_matrix`)</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            ::</span>
+<span class="sd">        .. code-block:: python</span>
 
 <span class="sd">                import pandas as pd</span>
 <span class="sd">                from balance.sample_class import Sample</span>
@@ -868,7 +903,8 @@
 <span class="sd">                Columns are for each of the columns in the relevant df (after applying :func:`model_matrix`)</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            ::</span>
+<span class="sd">        .. code-block:: python</span>
+
 <span class="sd">                import pandas as pd</span>
 <span class="sd">                from balance.sample_class import Sample</span>
 <span class="sd">                from balance.stats_and_plots.weighted_stats import var_of_weighted_mean</span>
@@ -944,7 +980,8 @@
 <span class="sd">                Columns are for each of the columns in the relevant df (after applying :func:`model_matrix`)</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            ::</span>
+<span class="sd">        .. code-block:: python</span>
+
 <span class="sd">                import pandas as pd</span>
 <span class="sd">                from balance.sample_class import Sample</span>
 <span class="sd">                from balance.stats_and_plots.weighted_stats import ci_of_weighted_mean</span>
@@ -1034,7 +1071,8 @@
 <span class="sd">                The columns of the table are labeled with the names of the input columns.</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            ::</span>
+<span class="sd">        .. code-block:: python</span>
+
 <span class="sd">                import numpy as np</span>
 <span class="sd">                import pandas as pd</span>
 
@@ -1097,6 +1135,22 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Union[pd.DataFrame, str]: A table with two rows for each input column: one for the mean and one for the CI.</span>
 <span class="sd">                The columns of the table are labeled with the names of the input columns.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from balance.sample_class import Sample</span>
+<span class="sd">            sample = Sample.from_frame(</span>
+<span class="sd">                pd.DataFrame(</span>
+<span class="sd">                    {&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;], &quot;x&quot;: [0, 1], &quot;weight&quot;: [1.0, 2.0]}</span>
+<span class="sd">                ),</span>
+<span class="sd">                id_column=&quot;id&quot;,</span>
+<span class="sd">                weight_column=&quot;weight&quot;,</span>
+<span class="sd">                standardize_types=False,</span>
+<span class="sd">            )</span>
+<span class="sd">            sample.covars().summary().columns.tolist()</span>
+<span class="sd">            # [&#39;self&#39;, &#39;self_ci&#39;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># TODO model matrix means to include categorical columns, fix model_matrix to accept DataFrame</span>
         <span class="c1"># TODO: include min/max/std/etc. show min/mean/max if there&#39;s a single column, just means if multiple (covars and outcomes)</span>
@@ -1149,7 +1203,7 @@
 <span class="sd">            pd.Series: See :func:`weighted_comparisons_stats.asmd`</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            ::</span>
+<span class="sd">        .. code-block:: python</span>
 
 <span class="sd">                from balance.balancedf_class import BalanceDF</span>
 
@@ -1254,7 +1308,7 @@
 <span class="sd">                If on_linked_samples is True, then two rows per source (self, unadjusted), each with the asmd compared to target, and a third row for the difference (self-unadjusted).</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            ::</span>
+<span class="sd">        .. code-block:: python</span>
 
 <span class="sd">                import pandas as pd</span>
 <span class="sd">                from balance.sample_class import Sample</span>
@@ -1389,7 +1443,7 @@
 <span class="sd">                If on_linked_samples is True, then two rows per source (self, unadjusted), each with the kld compared to target, and a third row for the difference (self-unadjusted).</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            ::</span>
+<span class="sd">        .. code-block:: python</span>
 
 <span class="sd">                import pandas as pd</span>
 <span class="sd">                from balance.sample_class import Sample</span>
@@ -1484,7 +1538,7 @@
 <span class="sd">                The asmd is calculated using :func:`asmd`.</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            ::</span>
+<span class="sd">        .. code-block:: python</span>
 
 <span class="sd">                import pandas as pd</span>
 <span class="sd">                from balance.sample_class import Sample</span>
@@ -1610,6 +1664,23 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Optional[str]: If path_or_buf is None, returns the resulting csv format as a string. Otherwise returns None.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from balance.sample_class import Sample</span>
+<span class="sd">            sample = Sample.from_frame(</span>
+<span class="sd">                pd.DataFrame(</span>
+<span class="sd">                    {&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;], &quot;x&quot;: [0, 1], &quot;weight&quot;: [1.0, 2.0]}</span>
+<span class="sd">                ),</span>
+<span class="sd">                id_column=&quot;id&quot;,</span>
+<span class="sd">                weight_column=&quot;weight&quot;,</span>
+<span class="sd">                standardize_types=False,</span>
+<span class="sd">            )</span>
+<span class="sd">            csv_text = sample.covars().to_csv()</span>
+<span class="sd">            &quot;id&quot; in csv_text</span>
+<span class="sd">            # True</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">to_csv_with_defaults</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df_with_ids</span><span class="p">(),</span> <span class="n">path_or_buf</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 </div>
@@ -1665,7 +1736,7 @@
 <span class="sd">                If &#39;target&#39; is set to True but there is no target, the function returns None.</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            ::</span>
+<span class="sd">        .. code-block:: python</span>
 
 <span class="sd">                import numpy as np</span>
 <span class="sd">                import pandas as pd</span>
@@ -1753,7 +1824,7 @@
 <span class="sd">                If the object has a target, it returns the output of :func:`general_stats.relative_response_rates`.</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            ::</span>
+<span class="sd">        .. code-block:: python</span>
 
 <span class="sd">                import numpy as np</span>
 <span class="sd">                import pandas as pd</span>
@@ -1811,7 +1882,7 @@
 <span class="sd">            str: A printable string, with mean of outcome variables and response rates.</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            ::</span>
+<span class="sd">        .. code-block:: python</span>
 
 <span class="sd">                import numpy as np</span>
 <span class="sd">                import pandas as pd</span>
@@ -1945,6 +2016,15 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            BalanceDFCovars: Object.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from balance.balancedf_class import BalanceDFCovars</span>
+<span class="sd">            covars = BalanceDFCovars.from_frame(pd.DataFrame({&quot;a&quot;: [1, 2], &quot;b&quot;: [3, 4]}))</span>
+<span class="sd">            covars.df.columns.tolist()</span>
+<span class="sd">            # [&#39;index&#39;, &#39;a&#39;, &#39;b&#39;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
         <span class="n">concat_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
@@ -1997,7 +2077,7 @@
 <span class="sd">                If library=&quot;seaborn&quot; then returns None, unless return_axes is True. Then either a list or an np.array of matplotlib axis.</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            ::</span>
+<span class="sd">        .. code-block:: python</span>
 
 <span class="sd">                import numpy as np</span>
 <span class="sd">                import pandas as pd</span>
@@ -2058,6 +2138,22 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            np.float64: Deff.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from balance.sample_class import Sample</span>
+<span class="sd">            sample = Sample.from_frame(</span>
+<span class="sd">                pd.DataFrame(</span>
+<span class="sd">                    {&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;], &quot;weight&quot;: [1.0, 2.0]}</span>
+<span class="sd">                ),</span>
+<span class="sd">                id_column=&quot;id&quot;,</span>
+<span class="sd">                weight_column=&quot;weight&quot;,</span>
+<span class="sd">                standardize_types=False,</span>
+<span class="sd">            )</span>
+<span class="sd">            round(sample.weights().design_effect(), 3)</span>
+<span class="sd">            # 1.111</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">weights_stats</span><span class="o">.</span><span class="n">design_effect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span></div>
 
@@ -2096,6 +2192,23 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            None. This function updates the :func:`_sample` using :func:`set_weights`</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from balance.sample_class import Sample</span>
+<span class="sd">            sample = Sample.from_frame(</span>
+<span class="sd">                pd.DataFrame(</span>
+<span class="sd">                    {&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;], &quot;weight&quot;: [1.0, 100.0]}</span>
+<span class="sd">                ),</span>
+<span class="sd">                id_column=&quot;id&quot;,</span>
+<span class="sd">                weight_column=&quot;weight&quot;,</span>
+<span class="sd">                standardize_types=False,</span>
+<span class="sd">            )</span>
+<span class="sd">            sample.weights().trim(percentile=0.5, keep_sum_of_weights=False)</span>
+<span class="sd">            sample.weights().df[&quot;weight&quot;].max() &lt;= 100.0</span>
+<span class="sd">            # True</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># TODO: verify which object exactly gets updated - and explain it here.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="o">.</span><span class="n">set_weights</span><span class="p">(</span>
@@ -2133,7 +2246,7 @@
 <span class="sd">            The weights are normalized to sum to the sample size, n.</span>
 
 <span class="sd">        Examples:</span>
-<span class="sd">            ::</span>
+<span class="sd">        .. code-block:: python</span>
 
 <span class="sd">                import pandas as pd</span>
 <span class="sd">                from balance.sample_class import Sample</span>
