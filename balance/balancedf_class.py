@@ -516,7 +516,7 @@ class BalanceDF:
             from balance.sample_class import Sample
             sample = Sample.from_frame(
                 pd.DataFrame(
-                    # {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
+                    {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
                 ),
                 id_column="id",
                 weight_column="weight",
@@ -549,7 +549,7 @@ class BalanceDF:
             from balance.sample_class import Sample
             sample = Sample.from_frame(
                 pd.DataFrame(
-                    # {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
+                    {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
                 ),
                 id_column="id",
                 weight_column="weight",
@@ -1076,7 +1076,7 @@ class BalanceDF:
             from balance.sample_class import Sample
             sample = Sample.from_frame(
                 pd.DataFrame(
-                    # {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
+                    {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
                 ),
                 id_column="id",
                 weight_column="weight",
@@ -1593,7 +1593,7 @@ class BalanceDF:
             from balance.sample_class import Sample
             sample = Sample.from_frame(
                 pd.DataFrame(
-                    # {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
+                    {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
                 ),
                 id_column="id",
                 weight_column="weight",
@@ -2040,14 +2040,14 @@ class BalanceDFWeights(BalanceDF):
             from balance.sample_class import Sample
             sample = Sample.from_frame(
                 pd.DataFrame(
-                    # {"id": ["1", "2"], "weight": [1.0, 2.0]}
+                    {"id": ["1", "2"], "weight": [1.0, 2.0]}
                 ),
                 id_column="id",
                 weight_column="weight",
                 standardize_types=False,
             )
             round(sample.weights().design_effect(), 3)
-            1.111
+            # 1.111
         """
         return weights_stats.design_effect(self.df.iloc[:, 0])
 
@@ -2091,7 +2091,7 @@ class BalanceDFWeights(BalanceDF):
             from balance.sample_class import Sample
             sample = Sample.from_frame(
                 pd.DataFrame(
-                    # {"id": ["1", "2"], "weight": [1.0, 100.0]}
+                    {"id": ["1", "2"], "weight": [1.0, 100.0]}
                 ),
                 id_column="id",
                 weight_column="weight",

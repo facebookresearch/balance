@@ -1317,7 +1317,7 @@ class Sample:
                 standardize_types=False,
             )
             round(sample.design_effect(), 3)
-            1.111
+            # 1.111
         """
         return weights_stats.design_effect(self.weight_column)
 

@@ -685,7 +685,7 @@ def asmd_improvement(
         sample = pd.DataFrame({"x": [0, 1]})
         target = pd.DataFrame({"x": [0, 1]})
         float(asmd_improvement(sample, sample, target))
-        0.0
+        # 0.0
     """
     asmd_mean_before = asmd(
         sample_before, target, sample_before_weights, target_weights
@@ -730,7 +730,7 @@ def outcome_variance_ratio(
         from balance.stats_and_plots.weighted_comparisons_stats import outcome_variance_ratio
         df = pd.DataFrame({"y": [1.0, 2.0, 3.0]})
         outcome_variance_ratio(df, df).iloc[0]
-        1.0
+        # 1.0
     """
     numerator_w_var = weighted_var(df_numerator, w_numerator)
     denominator_w_var = weighted_var(df_denominator, w_denominator)

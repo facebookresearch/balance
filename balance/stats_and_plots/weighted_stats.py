@@ -412,7 +412,7 @@ def weighted_quantile(
 
         from balance.stats_and_plots.weighted_stats import weighted_quantile
         weighted_quantile([1, 2, 3], [0.5], w=[1, 1, 1]).iloc[0, 0]
-        2.0
+        # 2.0
     """
 
     v, w = _prepare_weighted_stat_args(v, w, inf_rm)

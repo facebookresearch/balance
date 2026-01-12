@@ -111,7 +111,7 @@ def link_transform(pred: np.ndarray) -> np.ndarray:
         import numpy as np
         from balance.weighting_methods.ipw import link_transform
         float(link_transform(np.array([0.5]))[0])
-        0.0
+        # 0.0
     """
     pred = np.asarray(pred, dtype=float)
     # Clip probabilities to avoid dividing by zero or taking log of zero

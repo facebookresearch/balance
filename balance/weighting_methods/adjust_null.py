@@ -51,7 +51,7 @@ def adjust_null(
         weights = pd.Series([1.0, 2.0])
         result = adjust_null(sample_df, weights, target_df, weights)
         result["model"]["method"]
-        'null_adjustment'
+        # 'null_adjustment'
     """
 
     return {
