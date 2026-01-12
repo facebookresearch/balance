@@ -101,9 +101,11 @@ def _quantile_with_method(
         ``float``: The computed quantile value converted to ``float``.
 
     Examples:
-        >>> _quantile_with_method([1, 2, 3, 4], 0.25, "higher")
+    .. code-block:: python
+
+        _quantile_with_method([1, 2, 3, 4], 0.25, "higher")
         2.0
-        >>> _quantile_with_method([1, 2, 3, 4], 0.75, "lower")
+        _quantile_with_method([1, 2, 3, 4], 0.75, "lower")
         3.0
     """
 
@@ -187,23 +189,25 @@ def trim_weights(
         pd.Series (of type float64): Trimmed weights with the same index as input
 
     Examples:
-        >>> import pandas as pd
-        >>> from balance.adjustment import trim_weights
-        >>> weights = pd.Series(range(1, 101))
-        >>> symmetric = trim_weights(
-        ...     weights,
-        ...     weight_trimming_percentile=0.01,
-        ...     keep_sum_of_weights=False,
-        ... )
-        >>> symmetric.equals(pd.Series(range(1, 101)).clip(3, 98).astype(float))
-        True
-        >>> upper = trim_weights(
-        ...     weights,
-        ...     weight_trimming_percentile=(0.0, 0.05),
-        ...     keep_sum_of_weights=False,
-        ... )
-        >>> upper.equals(pd.Series(range(1, 101)).clip(upper=94).astype(float))
-        True
+    .. code-block:: python
+
+        import pandas as pd
+        from balance.adjustment import trim_weights
+        weights = pd.Series(range(1, 101))
+        symmetric = trim_weights(
+            weights,
+            weight_trimming_percentile=0.01,
+            keep_sum_of_weights=False,
+        )
+        symmetric.equals(pd.Series(range(1, 101)).clip(3, 98).astype(float))
+        # True
+        upper = trim_weights(
+            weights,
+            weight_trimming_percentile=(0.0, 0.05),
+            keep_sum_of_weights=False,
+        )
+        upper.equals(pd.Series(range(1, 101)).clip(upper=94).astype(float))
+        # True
     """
 
     original_name = getattr(weights, "name", None)
@@ -324,12 +328,14 @@ def default_transformations(
         Dict[str, Callable]: Dict of transformations
 
     Examples:
-        >>> import pandas as pd
-        >>> from balance.adjustment import default_transformations
-        >>> df = pd.DataFrame({"age": [20, 30], "gender": ["f", "m"]})
-        >>> transformations = default_transformations((df,))
-        >>> sorted(transformations.keys())
-        ['age', 'gender']
+    .. code-block:: python
+
+        import pandas as pd
+        from balance.adjustment import default_transformations
+        df = pd.DataFrame({"age": [20, 30], "gender": ["f", "m"]})
+        transformations = default_transformations((df,))
+        sorted(transformations.keys())
+        # ['age', 'gender']
     """
     dtypes = {}
     for d in dfs:
@@ -382,7 +388,7 @@ def apply_transformations(
         Tuple[pd.DataFrame, ...]: tuple of pd.DataFrames
 
     Examples:
-        ::
+    .. code-block:: python
 
             from balance.adjustment import apply_transformations
             import pandas as pd

@@ -40,29 +40,31 @@ def relative_response_rates(
             A second row with the proportion of non-null observations.
 
     Examples:
-        >>> import numpy as np
-        >>> import pandas as pd
-        >>> from balance.stats_and_plots.general_stats import relative_response_rates
-        >>> df = pd.DataFrame(
-        ...     {
-        ...         "col1": [1, 2, 3, 4, 5],
-        ...         "col2": [1, 2, np.nan, 4, 5],
-        ...         "col3": [1, np.nan, np.nan, 4, 5],
-        ...     }
-        ... )
-        >>> relative_response_rates(df).to_dict()
-        {'col1': {'n': 5.0, '%': 100.0}, 'col2': {'n': 4.0, '%': 80.0}, 'col3': {'n': 3.0, '%': 60.0}}
-        >>> df_target = pd.DataFrame(
-        ...     {
-        ...         "col1": [1, 2, 3, 4, 5, 6, 7, 8],
-        ...         "col2": [1, 2, 3, 4, 5, 6, np.nan, np.nan],
-        ...     }
-        ... )
-        >>> df_subset = pd.DataFrame({"col1": [1, 2, 3, 4], "col2": [1, 2, np.nan, 4]})
-        >>> relative_response_rates(df_subset, df_target, per_column=True).to_dict()
-        {'col1': {'n': 4.0, '%': 50.0}, 'col2': {'n': 3.0, '%': 50.0}}
-        >>> relative_response_rates(df_subset, df_target, per_column=False).to_dict()
-        {'col1': {'n': 4.0, '%': 66.66666666666666}, 'col2': {'n': 3.0, '%': 50.0}}
+    .. code-block:: python
+
+        import numpy as np
+        import pandas as pd
+        from balance.stats_and_plots.general_stats import relative_response_rates
+        df = pd.DataFrame(
+            {
+                "col1": [1, 2, 3, 4, 5],
+                "col2": [1, 2, np.nan, 4, 5],
+                "col3": [1, np.nan, np.nan, 4, 5],
+            }
+        )
+        relative_response_rates(df).to_dict()
+        # {'col1': {'n': 5.0, '%': 100.0}, 'col2': {'n': 4.0, '%': 80.0}, 'col3': {'n': 3.0, '%': 60.0}}
+        df_target = pd.DataFrame(
+            {
+                "col1": [1, 2, 3, 4, 5, 6, 7, 8],
+                "col2": [1, 2, 3, 4, 5, 6, np.nan, np.nan],
+            }
+        )
+        df_subset = pd.DataFrame({"col1": [1, 2, 3, 4], "col2": [1, 2, np.nan, 4]})
+        relative_response_rates(df_subset, df_target, per_column=True).to_dict()
+        # {'col1': {'n': 4.0, '%': 50.0}, 'col2': {'n': 3.0, '%': 50.0}}
+        relative_response_rates(df_subset, df_target, per_column=False).to_dict()
+        # {'col1': {'n': 4.0, '%': 66.66666666666666}, 'col2': {'n': 3.0, '%': 50.0}}
     """
     df_n_notnull_rows = df.notnull().sum()
 

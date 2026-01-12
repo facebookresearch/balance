@@ -172,15 +172,17 @@ def rake(
                 status: 0 for failure and 1 for success).
 
     Examples:
-        >>> import pandas as pd
-        >>> from balance.weighting_methods.rake import rake
-        >>> sample_df = pd.DataFrame({"x": ["a", "b"]})
-        >>> target_df = pd.DataFrame({"x": ["a", "b"]})
-        >>> sample_weights = pd.Series([1.0, 1.0])
-        >>> target_weights = pd.Series([1.0, 1.0])
-        >>> result = rake(sample_df, sample_weights, target_df, target_weights, variables=["x"])
-        >>> result["weight"].tolist()
-        [1.0, 1.0]
+    .. code-block:: python
+
+        import pandas as pd
+        from balance.weighting_methods.rake import rake
+        sample_df = pd.DataFrame({"x": ["a", "b"]})
+        target_df = pd.DataFrame({"x": ["a", "b"]})
+        sample_weights = pd.Series([1.0, 1.0])
+        target_weights = pd.Series([1.0, 1.0])
+        result = rake(sample_df, sample_weights, target_df, target_weights, variables=["x"])
+        result["weight"].tolist()
+        # [1.0, 1.0]
     """
     assert (
         "weight" not in sample_df.columns.values
@@ -421,7 +423,8 @@ def _proportional_array_from_dict(
         A list of strings where each key is repeated according to its proportion.
 
     Examples:
-        ::
+    .. code-block:: python
+
             _proportional_array_from_dict({"a":0.2, "b":0.8})
                 # ['a', 'b', 'b', 'b', 'b']
             _proportional_array_from_dict({"a":0.5, "b":0.5})
@@ -475,7 +478,8 @@ def _find_lcm_of_array_lengths(arrays: Dict[str, List[str]]) -> int:
         The LCM of the lengths of the arrays in the input dictionary.
 
     Example:
-        ::
+    .. code-block:: python
+
             arrays = {
                         "v1": ["a", "b", "b", "c"],
                         "v2": ["aa", "bb"]
@@ -513,7 +517,8 @@ def _realize_dicts_of_proportions(
         A dictionary with the same keys as the input and equal length arrays as values.
 
     Examples:
-        ::
+    .. code-block:: python
+
             dict_of_dicts = {
                 "v1": {"a": 0.2, "b": 0.6, "c": 0.2},
                 "v2": {"aa": 0.5, "bb": 0.5}
@@ -579,12 +584,14 @@ def prepare_marginal_dist_for_raking(
         An additional "id" column is added with integer values as row identifiers.
 
     Examples:
-        >>> from balance.weighting_methods.rake import prepare_marginal_dist_for_raking
-        >>> df = prepare_marginal_dist_for_raking(
-        ...     {"A": {"a": 0.5, "b": 0.5}, "B": {"x": 0.2, "y": 0.8}}
-        ... )
-        >>> df.columns.tolist()
-        ['A', 'B', 'id']
+    .. code-block:: python
+
+        from balance.weighting_methods.rake import prepare_marginal_dist_for_raking
+        df = prepare_marginal_dist_for_raking(
+            {"A": {"a": 0.5, "b": 0.5}, "B": {"x": 0.2, "y": 0.8}}
+        )
+        df.columns.tolist()
+        # ['A', 'B', 'id']
     """
     target_dict_from_marginals = _realize_dicts_of_proportions(dict_of_dicts)
     target_df_from_marginals = pd.DataFrame.from_dict(target_dict_from_marginals)

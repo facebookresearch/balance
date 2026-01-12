@@ -42,13 +42,15 @@ def adjust_null(
         Dict[str, Union[Dict[str, str], pd.Series]]: Dict of weights (original sample weights) and model (with method = null_adjustment)
 
     Examples:
-        >>> import pandas as pd
-        >>> from balance.weighting_methods.adjust_null import adjust_null
-        >>> sample_df = pd.DataFrame({"x": [0, 1]})
-        >>> target_df = pd.DataFrame({"x": [0, 1]})
-        >>> weights = pd.Series([1.0, 2.0])
-        >>> result = adjust_null(sample_df, weights, target_df, weights)
-        >>> result["model"]["method"]
+    .. code-block:: python
+
+        import pandas as pd
+        from balance.weighting_methods.adjust_null import adjust_null
+        sample_df = pd.DataFrame({"x": [0, 1]})
+        target_df = pd.DataFrame({"x": [0, 1]})
+        weights = pd.Series([1.0, 2.0])
+        result = adjust_null(sample_df, weights, target_df, weights)
+        result["model"]["method"]
         'null_adjustment'
     """
 

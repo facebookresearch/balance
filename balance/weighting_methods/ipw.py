@@ -58,14 +58,16 @@ def model_coefs(
         model does not expose linear coefficients).
 
     Examples:
-        >>> import numpy as np
-        >>> from sklearn.linear_model import LogisticRegression
-        >>> from balance.weighting_methods.ipw import model_coefs
-        >>> X = np.array([[0.0], [1.0]])
-        >>> y = np.array([0, 1])
-        >>> model = LogisticRegression().fit(X, y)
-        >>> "coefs" in model_coefs(model)
-        True
+    .. code-block:: python
+
+        import numpy as np
+        from sklearn.linear_model import LogisticRegression
+        from balance.weighting_methods.ipw import model_coefs
+        X = np.array([[0.0], [1.0]])
+        y = np.array([0, 1])
+        model = LogisticRegression().fit(X, y)
+        "coefs" in model_coefs(model)
+        # True
     """
 
     if not hasattr(model, "coef_"):
@@ -104,9 +106,11 @@ def link_transform(pred: np.ndarray) -> np.ndarray:
         np.ndarray: Array of log odds.
 
     Examples:
-        >>> import numpy as np
-        >>> from balance.weighting_methods.ipw import link_transform
-        >>> float(link_transform(np.array([0.5]))[0])
+    .. code-block:: python
+
+        import numpy as np
+        from balance.weighting_methods.ipw import link_transform
+        float(link_transform(np.array([0.5]))[0])
         0.0
     """
     pred = np.asarray(pred, dtype=float)
@@ -202,18 +206,20 @@ def calc_dev(
         float, float: mean and standard deviance of holdout deviance.
 
     Examples:
-        >>> import numpy as np
-        >>> from scipy.sparse import csr_matrix
-        >>> from sklearn.linear_model import LogisticRegression
-        >>> from balance.weighting_methods.ipw import calc_dev
-        >>> X = csr_matrix(np.arange(10).reshape(10, 1))
-        >>> y = np.array([0, 1] * 5)
-        >>> model = LogisticRegression(max_iter=1000)
-        >>> weights = np.ones(10)
-        >>> foldids = np.arange(10)
-        >>> dev_mean, dev_sd = calc_dev(X, y, model, weights, foldids)
-        >>> dev_mean > 0
-        True
+    .. code-block:: python
+
+        import numpy as np
+        from scipy.sparse import csr_matrix
+        from sklearn.linear_model import LogisticRegression
+        from balance.weighting_methods.ipw import calc_dev
+        X = csr_matrix(np.arange(10).reshape(10, 1))
+        y = np.array([0, 1] * 5)
+        model = LogisticRegression(max_iter=1000)
+        weights = np.ones(10)
+        foldids = np.arange(10)
+        dev_mean, dev_sd = calc_dev(X, y, model, weights, foldids)
+        dev_mean > 0
+        # True
     """
     cv_dev = [0.0 for _ in range(10)]
 
@@ -263,14 +269,16 @@ def weights_from_link(
         pd.Series: A vecotr of normalized weights (for sum of target weights)
 
     Examples:
-        >>> import numpy as np
-        >>> import pandas as pd
-        >>> from balance.weighting_methods.ipw import weights_from_link
-        >>> link = np.zeros(2)
-        >>> sample_weights = pd.Series([1.0, 1.0])
-        >>> target_weights = pd.Series([1.0, 1.0])
-        >>> weights_from_link(link, False, sample_weights, target_weights).tolist()
-        [1.0, 1.0]
+    .. code-block:: python
+
+        import numpy as np
+        import pandas as pd
+        from balance.weighting_methods.ipw import weights_from_link
+        link = np.zeros(2)
+        sample_weights = pd.Series([1.0, 1.0])
+        target_weights = pd.Series([1.0, 1.0])
+        weights_from_link(link, False, sample_weights, target_weights).tolist()
+        # [1.0, 1.0]
     """
     link = link.reshape((link.shape[0],))
     if balance_classes:
@@ -334,29 +342,31 @@ def choose_regularization(
                 }
 
     Examples:
-        >>> import numpy as np
-        >>> import pandas as pd
-        >>> from balance.weighting_methods.ipw import choose_regularization
-        >>> links = [np.zeros(2)]
-        >>> lambdas = np.array([1.0])
-        >>> sample_df = pd.DataFrame({"x": [0, 1]})
-        >>> target_df = pd.DataFrame({"x": [0, 1]})
-        >>> sample_weights = pd.Series([1.0, 1.0])
-        >>> target_weights = pd.Series([1.0, 1.0])
-        >>> result = choose_regularization(
-        ...     links,
-        ...     lambdas,
-        ...     sample_df,
-        ...     target_df,
-        ...     sample_weights,
-        ...     target_weights,
-        ...     False,
-        ...     max_de=2.0,
-        ...     trim_options=(1.0,),
-        ...     n_asmd_candidates=1,
-        ... )
-        >>> sorted(result.keys())
-        ['best', 'perf']
+    .. code-block:: python
+
+        import numpy as np
+        import pandas as pd
+        from balance.weighting_methods.ipw import choose_regularization
+        links = [np.zeros(2)]
+        lambdas = np.array([1.0])
+        sample_df = pd.DataFrame({"x": [0, 1]})
+        target_df = pd.DataFrame({"x": [0, 1]})
+        sample_weights = pd.Series([1.0, 1.0])
+        target_weights = pd.Series([1.0, 1.0])
+        result = choose_regularization(
+            links,
+            lambdas,
+            sample_df,
+            target_df,
+            sample_weights,
+            target_weights,
+            False,
+            max_de=2.0,
+            trim_options=(1.0,),
+            n_asmd_candidates=1,
+        )
+        sorted(result.keys())
+        # ['best', 'perf']
     """
 
     logger.info("Starting choosing regularisation parameters")

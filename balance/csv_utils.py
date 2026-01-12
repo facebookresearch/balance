@@ -40,12 +40,14 @@ def to_csv_with_defaults(
     ``path_or_buf`` is ``None``.
 
     Examples:
-        >>> import pandas as pd
-        >>> from balance.csv_utils import to_csv_with_defaults
-        >>> df = pd.DataFrame({"a": [1, 2], "b": [3, 4]})
-        >>> csv_text = to_csv_with_defaults(df, None)
-        >>> "a,b" in csv_text
-        True
+    .. code-block:: python
+
+        import pandas as pd
+        from balance.csv_utils import to_csv_with_defaults
+        df = pd.DataFrame({"a": [1, 2], "b": [3, 4]})
+        csv_text = to_csv_with_defaults(df, None)
+        "a,b" in csv_text
+        # True
     """
 
     _apply_csv_defaults(kwargs)

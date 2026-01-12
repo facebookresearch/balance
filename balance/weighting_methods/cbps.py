@@ -53,10 +53,12 @@ def logit_truncated(
         np.ndarray: numpy array of computed probablities
 
     Examples:
-        >>> import numpy as np
-        >>> from balance.weighting_methods.cbps import logit_truncated
-        >>> logit_truncated(np.array([[0.0]]), np.array([0.0])).tolist()
-        [[0.5]]
+    .. code-block:: python
+
+        import numpy as np
+        from balance.weighting_methods.cbps import logit_truncated
+        logit_truncated(np.array([[0.0]]), np.array([0.0])).tolist()
+        # [[0.5]]
     """
     probs = expit(np.matmul(X, beta))
     return np.minimum(np.maximum(probs, truncation_value), 1 - truncation_value)
@@ -80,13 +82,15 @@ def compute_pseudo_weights_from_logit_probs(
         np.ndarray: np.ndarray of computed weights
 
     Examples:
-        >>> import numpy as np
-        >>> from balance.weighting_methods.cbps import compute_pseudo_weights_from_logit_probs
-        >>> probs = np.array([0.5, 0.5])
-        >>> design_weights = np.array([1.0, 1.0])
-        >>> in_pop = np.array([1.0, 0.0])
-        >>> compute_pseudo_weights_from_logit_probs(probs, design_weights, in_pop).tolist()
-        [2.0, -2.0]
+    .. code-block:: python
+
+        import numpy as np
+        from balance.weighting_methods.cbps import compute_pseudo_weights_from_logit_probs
+        probs = np.array([0.5, 0.5])
+        design_weights = np.array([1.0, 1.0])
+        in_pop = np.array([1.0, 0.0])
+        compute_pseudo_weights_from_logit_probs(probs, design_weights, in_pop).tolist()
+        # [2.0, -2.0]
     """
     N = np.sum(design_weights)
     N_target = np.sum(design_weights[in_pop == 1.0])
@@ -114,15 +118,17 @@ def bal_loss(
         np.float64: computed balance loss
 
     Examples:
-        >>> import numpy as np
-        >>> from balance.weighting_methods.cbps import bal_loss
-        >>> X = np.array([[1.0], [1.0]])
-        >>> beta = np.array([0.0])
-        >>> design_weights = np.array([1.0, 1.0])
-        >>> in_pop = np.array([1.0, 0.0])
-        >>> XtXinv = np.linalg.pinv(X.T @ X)
-        >>> float(bal_loss(beta, X, design_weights, in_pop, XtXinv)) >= 0
-        True
+    .. code-block:: python
+
+        import numpy as np
+        from balance.weighting_methods.cbps import bal_loss
+        X = np.array([[1.0], [1.0]])
+        beta = np.array([0.0])
+        design_weights = np.array([1.0, 1.0])
+        in_pop = np.array([1.0, 0.0])
+        XtXinv = np.linalg.pinv(X.T @ X)
+        float(bal_loss(beta, X, design_weights, in_pop, XtXinv)) >= 0
+        # True
     """
     probs = logit_truncated(X, beta)
     N = np.sum(design_weights)
@@ -159,15 +165,17 @@ def gmm_function(
             invV (np.ndarray) the weighting matrix for GMM
 
     Examples:
-        >>> import numpy as np
-        >>> from balance.weighting_methods.cbps import gmm_function
-        >>> X = np.array([[1.0], [1.0]])
-        >>> beta = np.array([0.0])
-        >>> design_weights = np.array([1.0, 1.0])
-        >>> in_pop = np.array([1.0, 0.0])
-        >>> result = gmm_function(beta, X, design_weights, in_pop)
-        >>> sorted(result.keys())
-        ['invV', 'loss']
+    .. code-block:: python
+
+        import numpy as np
+        from balance.weighting_methods.cbps import gmm_function
+        X = np.array([[1.0], [1.0]])
+        beta = np.array([0.0])
+        design_weights = np.array([1.0, 1.0])
+        in_pop = np.array([1.0, 0.0])
+        result = gmm_function(beta, X, design_weights, in_pop)
+        sorted(result.keys())
+        # ['invV', 'loss']
     """
     # Convert inputs to numpy arrays to avoid pandas indexing issues
     if isinstance(X, pd.DataFrame):
@@ -242,14 +250,16 @@ def gmm_loss(
         Union[float, np.ndarray]: loss (float) computed gmm loss
 
     Examples:
-        >>> import numpy as np
-        >>> from balance.weighting_methods.cbps import gmm_loss
-        >>> X = np.array([[1.0], [1.0]])
-        >>> beta = np.array([0.0])
-        >>> design_weights = np.array([1.0, 1.0])
-        >>> in_pop = np.array([1.0, 0.0])
-        >>> float(gmm_loss(beta, X, design_weights, in_pop)) >= 0
-        True
+    .. code-block:: python
+
+        import numpy as np
+        from balance.weighting_methods.cbps import gmm_loss
+        X = np.array([[1.0], [1.0]])
+        beta = np.array([0.0])
+        design_weights = np.array([1.0, 1.0])
+        in_pop = np.array([1.0, 0.0])
+        float(gmm_loss(beta, X, design_weights, in_pop)) >= 0
+        # True
     """
     return gmm_function(beta, X, design_weights, in_pop, invV)["loss"]
 
@@ -275,15 +285,17 @@ def alpha_function(
         Union[float, np.ndarray]: loss (float) computed gmm loss
 
     Examples:
-        >>> import numpy as np
-        >>> from balance.weighting_methods.cbps import alpha_function
-        >>> X = np.array([[1.0], [1.0]])
-        >>> alpha = np.array([0.5])
-        >>> beta = np.array([1.0])
-        >>> design_weights = np.array([1.0, 1.0])
-        >>> in_pop = np.array([1.0, 0.0])
-        >>> float(alpha_function(alpha, beta, X, design_weights, in_pop)) >= 0
-        True
+    .. code-block:: python
+
+        import numpy as np
+        from balance.weighting_methods.cbps import alpha_function
+        X = np.array([[1.0], [1.0]])
+        alpha = np.array([0.5])
+        beta = np.array([1.0])
+        design_weights = np.array([1.0, 1.0])
+        in_pop = np.array([1.0, 0.0])
+        float(alpha_function(alpha, beta, X, design_weights, in_pop)) >= 0
+        # True
     """
     return gmm_loss(alpha * beta, X, design_weights, in_pop)
 
@@ -305,14 +317,16 @@ def compute_deff_from_beta(
         np.float64: design effect
 
     Examples:
-        >>> import numpy as np
-        >>> from balance.weighting_methods.cbps import compute_deff_from_beta
-        >>> X = np.array([[1.0], [1.0]])
-        >>> beta = np.array([0.0])
-        >>> design_weights = np.array([1.0, 1.0])
-        >>> in_pop = np.array([1.0, 0.0])
-        >>> float(compute_deff_from_beta(X, beta, design_weights, in_pop)) >= 0
-        True
+    .. code-block:: python
+
+        import numpy as np
+        from balance.weighting_methods.cbps import compute_deff_from_beta
+        X = np.array([[1.0], [1.0]])
+        beta = np.array([0.0])
+        design_weights = np.array([1.0, 1.0])
+        in_pop = np.array([1.0, 0.0])
+        float(compute_deff_from_beta(X, beta, design_weights, in_pop)) >= 0
+        # True
     """
     probs = logit_truncated(X, beta)
     weights = np.absolute(
@@ -501,23 +515,25 @@ def cbps(  # noqa
             },
 
     Examples:
-        >>> import pandas as pd
-        >>> from balance.weighting_methods.cbps import cbps
-        >>> sample_df = pd.DataFrame({"x": [0, 1, 0, 1]})
-        >>> target_df = pd.DataFrame({"x": [0, 1, 0, 1]})
-        >>> sample_weights = pd.Series([1.0, 1.0, 1.0, 1.0])
-        >>> target_weights = pd.Series([1.0, 1.0, 1.0, 1.0])
-        >>> result = cbps(
-        ...     sample_df,
-        ...     sample_weights,
-        ...     target_df,
-        ...     target_weights,
-        ...     variables=["x"],
-        ...     transformations=None,
-        ...     balance_classes=False,
-        ... )
-        >>> len(result["weight"]) == len(sample_df)
-        True
+    .. code-block:: python
+
+        import pandas as pd
+        from balance.weighting_methods.cbps import cbps
+        sample_df = pd.DataFrame({"x": [0, 1, 0, 1]})
+        target_df = pd.DataFrame({"x": [0, 1, 0, 1]})
+        sample_weights = pd.Series([1.0, 1.0, 1.0, 1.0])
+        target_weights = pd.Series([1.0, 1.0, 1.0, 1.0])
+        result = cbps(
+            sample_df,
+            sample_weights,
+            target_df,
+            target_weights,
+            variables=["x"],
+            transformations=None,
+            balance_classes=False,
+        )
+        len(result["weight"]) == len(sample_df)
+        # True
     """
 
     logger.info("Starting cbps function")

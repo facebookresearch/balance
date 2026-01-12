@@ -181,17 +181,19 @@ class Sample:
                 structure and adjustment details.
 
         Examples:
-            >>> from balance import Sample
-            >>> import pandas as pd
-            >>> df = pd.DataFrame({
-            ...     "gender": ["f", "m"],
-            ...     "age_group": ["18-24", "25-34"],
-            ...     "id": [1, 2],
-            ...     "weight": [1.2, 0.8],
-            ... })
-            >>> sample = Sample.from_frame(df, id_column="id", weight_column="weight")
-            >>> adjusted = sample.set_target(sample).adjust(method="ipw")
-            >>> print(adjusted)
+        .. code-block:: python
+
+            from balance import Sample
+            import pandas as pd
+            df = pd.DataFrame({
+                "gender": ["f", "m"],
+                "age_group": ["18-24", "25-34"],
+                "id": [1, 2],
+                "weight": [1.2, 0.8],
+            })
+            sample = Sample.from_frame(df, id_column="id", weight_column="weight")
+            adjusted = sample.set_target(sample).adjust(method="ipw")
+            print(adjusted)
             Adjusted balance Sample object with target set using ipw
             2 observations x 2 variables: gender,age_group
             id_column: id, weight_column: weight,
@@ -280,7 +282,7 @@ class Sample:
             of the adjusted sample printout. You can also retrieve them
             directly for custom displays:
 
-            >>> sample._quick_adjustment_details()  # doctest: +SKIP
+            sample._quick_adjustment_details()  # doctest: +SKIP
             ['method: ipw', 'design effect (Deff): 1.013', 'effective sample size (ESS): 2.0']
         """
 
@@ -416,25 +418,27 @@ class Sample:
             Sample: a sample object
 
         Examples:
-            >>> import pandas as pd
-            >>> from balance.sample_class import Sample
-            >>> df = pd.DataFrame(
-            ...     {
-            ...         "id": ["1", "2"],
-            ...         "x": [0, 1],
-            ...         "weight": [1.0, 2.0],
-            ...         "y": [0.1, 0.2],
-            ...     }
-            ... )
-            >>> sample = Sample.from_frame(
-            ...     df,
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     outcome_columns="y",
-            ...     standardize_types=False,
-            ... )
-            >>> isinstance(sample, Sample)
-            True
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+            df = pd.DataFrame(
+                {
+                    "id": ["1", "2"],
+                    "x": [0, 1],
+                    "weight": [1.0, 2.0],
+                    "y": [0.1, 0.2],
+                }
+            )
+            sample = Sample.from_frame(
+                df,
+                id_column="id",
+                weight_column="weight",
+                outcome_columns="y",
+                standardize_types=False,
+            )
+            isinstance(sample, Sample)
+            # True
         """
         # Inititate a Sample() class, inside a from_frame constructor
         sample = cls()
@@ -626,25 +630,27 @@ class Sample:
             pd.DataFrame: with id_columns, and the df values of covars(), outcome() and weights() of the self in the Sample object.
 
         Examples:
-            >>> import pandas as pd
-            >>> from balance.sample_class import Sample
-            >>> df = pd.DataFrame(
-            ...     {
-            ...         "id": ["1", "2"],
-            ...         "x": [0, 1],
-            ...         "weight": [1.0, 2.0],
-            ...         "y": [0.1, 0.2],
-            ...     }
-            ... )
-            >>> sample = Sample.from_frame(
-            ...     df,
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     outcome_columns="y",
-            ...     standardize_types=False,
-            ... )
-            >>> sample.df.columns.tolist()
-            ['id', 'x', 'y', 'weight']
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+            df = pd.DataFrame(
+                {
+                    "id": ["1", "2"],
+                    "x": [0, 1],
+                    "weight": [1.0, 2.0],
+                    "y": [0.1, 0.2],
+                }
+            )
+            sample = Sample.from_frame(
+                df,
+                id_column="id",
+                weight_column="weight",
+                outcome_columns="y",
+                standardize_types=False,
+            )
+            sample.df.columns.tolist()
+            # ['id', 'x', 'y', 'weight']
         """
         return pd.concat(
             (
@@ -671,24 +677,26 @@ class Sample:
             BalanceDFOutcomes or None
 
         Examples:
-            >>> import pandas as pd
-            >>> from balance.sample_class import Sample
-            >>> sample = Sample.from_frame(
-            ...     pd.DataFrame(
-            ...         {
-            ...             "id": ["1", "2"],
-            ...             "x": [0, 1],
-            ...             "weight": [1.0, 2.0],
-            ...             "y": [0.1, 0.2],
-            ...         }
-            ...     ),
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     outcome_columns="y",
-            ...     standardize_types=False,
-            ... )
-            >>> sample.outcomes().df.columns.tolist()
-            ['y']
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {
+                        "id": ["1", "2"],
+                        "x": [0, 1],
+                        "weight": [1.0, 2.0],
+                        "y": [0.1, 0.2],
+                    }
+                ),
+                id_column="id",
+                weight_column="weight",
+                outcome_columns="y",
+                standardize_types=False,
+            )
+            sample.outcomes().df.columns.tolist()
+            # ['y']
         """
         if self._outcome_columns is not None:
             # NOTE: must import here so to avoid circular dependency
@@ -712,24 +720,26 @@ class Sample:
             BalanceDFWeights
 
         Examples:
-            >>> import pandas as pd
-            >>> from balance.sample_class import Sample
-            >>> sample = Sample.from_frame(
-            ...     pd.DataFrame(
-            ...         {
-            ...             "id": ["1", "2"],
-            ...             "x": [0, 1],
-            ...             "weight": [1.0, 2.0],
-            ...             "y": [0.1, 0.2],
-            ...         }
-            ...     ),
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     outcome_columns="y",
-            ...     standardize_types=False,
-            ... )
-            >>> sample.weights().df.columns.tolist()
-            ['weight']
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {
+                        "id": ["1", "2"],
+                        "x": [0, 1],
+                        "weight": [1.0, 2.0],
+                        "y": [0.1, 0.2],
+                    }
+                ),
+                id_column="id",
+                weight_column="weight",
+                outcome_columns="y",
+                standardize_types=False,
+            )
+            sample.weights().df.columns.tolist()
+            # ['weight']
         """
         # NOTE: must import here so to avoid circular dependency
         from balance.balancedf_class import BalanceDFWeights
@@ -752,24 +762,26 @@ class Sample:
             BalanceDFCovars
 
         Examples:
-            >>> import pandas as pd
-            >>> from balance.sample_class import Sample
-            >>> sample = Sample.from_frame(
-            ...     pd.DataFrame(
-            ...         {
-            ...             "id": ["1", "2"],
-            ...             "x": [0, 1],
-            ...             "weight": [1.0, 2.0],
-            ...             "y": [0.1, 0.2],
-            ...         }
-            ...     ),
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     outcome_columns="y",
-            ...     standardize_types=False,
-            ... )
-            >>> sample.covars().df.columns.tolist()
-            ['x']
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {
+                        "id": ["1", "2"],
+                        "x": [0, 1],
+                        "weight": [1.0, 2.0],
+                        "y": [0.1, 0.2],
+                    }
+                ),
+                id_column="id",
+                weight_column="weight",
+                outcome_columns="y",
+                standardize_types=False,
+            )
+            sample.covars().df.columns.tolist()
+            # ['x']
         """
         # NOTE: must import here so to avoid circular dependency
         from balance.balancedf_class import BalanceDFCovars
@@ -787,15 +799,17 @@ class Sample:
             no ignored columns are defined.
 
         Examples:
-            >>> import pandas as pd
-            >>> df = pd.DataFrame(
-            ...     {"id": [1, 2], "note": ["x", "y"], "age": [20, 21], "out": [0, 1]}
-            ... )
-            >>> sample = Sample.from_frame(
-            ...     df, id_column="id", outcome_columns="out", ignore_columns=["note"], weight_column=None
-            ... )
-            >>> sample.ignored_columns().columns.tolist()
-            ['note']
+        .. code-block:: python
+
+            import pandas as pd
+            df = pd.DataFrame(
+                {"id": [1, 2], "note": ["x", "y"], "age": [20, 21], "out": [0, 1]}
+            )
+            sample = Sample.from_frame(
+                df, id_column="id", outcome_columns="out", ignore_columns=["note"], weight_column=None
+            )
+            sample.ignored_columns().columns.tolist()
+            # ['note']
         """
 
         if len(getattr(self, "_ignored_column_names", [])) == 0:
@@ -816,18 +830,20 @@ class Sample:
             str or None: name of model used for adjusting Sample
 
         Examples:
-            >>> import pandas as pd
-            >>> from balance.sample_class import Sample
-            >>> sample = Sample.from_frame(
-            ...     pd.DataFrame(
-            ...         {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
-            ...     ),
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     standardize_types=False,
-            ... )
-            >>> sample.model() is None
-            True
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            sample.model() is None
+            # True
         """
         if hasattr(self, "_adjustment_model"):
             return self._adjustment_model
@@ -843,18 +859,20 @@ class Sample:
             pd.DataFrame: model matrix of sample
 
         Examples:
-            >>> import pandas as pd
-            >>> from balance.sample_class import Sample
-            >>> sample = Sample.from_frame(
-            ...     pd.DataFrame(
-            ...         {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
-            ...     ),
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     standardize_types=False,
-            ... )
-            >>> sample.model_matrix().shape
-            (2, 1)
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            sample.model_matrix().shape
+            # (2, 1)
         """
         res = _verify_value_type(
             balance_util.model_matrix(self, add_na=True)["sample"], pd.DataFrame
@@ -892,7 +910,7 @@ class Sample:
             reviewed or excluded from the adjustment.
 
         Examples:
-            ::
+        .. code-block:: python
 
                 import balance
                 from sklearn.ensemble import RandomForestClassifier
@@ -1040,19 +1058,21 @@ class Sample:
             None, but adapting the Sample weight column to weights
 
         Examples:
-            >>> import pandas as pd
-            >>> from balance.sample_class import Sample
-            >>> sample = Sample.from_frame(
-            ...     pd.DataFrame(
-            ...         {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
-            ...     ),
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     standardize_types=False,
-            ... )
-            >>> sample.set_weights(pd.Series([1.0, 3.0], index=sample.df.index))
-            >>> sample.weights().df["weight"].tolist()
-            [1.0, 3.0]
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            sample.set_weights(pd.Series([1.0, 3.0], index=sample.df.index))
+            sample.weights().df["weight"].tolist()
+            # [1.0, 3.0]
         """
         if isinstance(weights, pd.Series):
             if not all(idx in weights.index for idx in self.df.index):
@@ -1101,19 +1121,21 @@ class Sample:
             Sample: a new copy of Sample with unadjusted link attached to the self object.
 
         Examples:
-            >>> import pandas as pd
-            >>> from balance.sample_class import Sample
-            >>> sample = Sample.from_frame(
-            ...     pd.DataFrame(
-            ...         {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
-            ...     ),
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     standardize_types=False,
-            ... )
-            >>> linked = sample.set_unadjusted(sample)
-            >>> linked.is_adjusted()
-            False
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            linked = sample.set_unadjusted(sample)
+            linked.is_adjusted()
+            # False
         """
         if isinstance(second_sample, Sample):
             newsample = deepcopy(self)
@@ -1131,18 +1153,20 @@ class Sample:
             bool: whether the Sample is adjusted or not.
 
         Examples:
-            >>> import pandas as pd
-            >>> from balance.sample_class import Sample
-            >>> sample = Sample.from_frame(
-            ...     pd.DataFrame(
-            ...         {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
-            ...     ),
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     standardize_types=False,
-            ... )
-            >>> sample.is_adjusted()
-            False
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            sample.is_adjusted()
+            # False
         """
         return ("unadjusted" in self._links) and ("target" in self._links)
 
@@ -1157,26 +1181,28 @@ class Sample:
             Sample: new copy of Sample with target link attached
 
         Examples:
-            >>> import pandas as pd
-            >>> from balance.sample_class import Sample
-            >>> sample = Sample.from_frame(
-            ...     pd.DataFrame(
-            ...         {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
-            ...     ),
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     standardize_types=False,
-            ... )
-            >>> target = Sample.from_frame(
-            ...     pd.DataFrame(
-            ...         {"id": ["3", "4"], "x": [0, 1], "weight": [1.0, 1.0]}
-            ...     ),
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     standardize_types=False,
-            ... )
-            >>> sample.set_target(target).has_target()
-            True
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            target = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["3", "4"], "x": [0, 1], "weight": [1.0, 1.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            sample.set_target(target).has_target()
+            # True
         """
         if isinstance(target, Sample):
             newsample = deepcopy(self)
@@ -1193,26 +1219,28 @@ class Sample:
             bool: whether the Sample has target attached
 
         Examples:
-            >>> import pandas as pd
-            >>> from balance.sample_class import Sample
-            >>> sample = Sample.from_frame(
-            ...     pd.DataFrame(
-            ...         {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
-            ...     ),
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     standardize_types=False,
-            ... )
-            >>> target = Sample.from_frame(
-            ...     pd.DataFrame(
-            ...         {"id": ["3", "4"], "x": [0, 1], "weight": [1.0, 1.0]}
-            ...     ),
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     standardize_types=False,
-            ... )
-            >>> sample.set_target(target).has_target()
-            True
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            target = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["3", "4"], "x": [0, 1], "weight": [1.0, 1.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            sample.set_target(target).has_target()
+            # True
         """
         return "target" in self._links
 
@@ -1234,7 +1262,7 @@ class Sample:
             For these columns, since they are all either 0 or 1, their means should be interpreted as proportions.
 
         Examples:
-            ::
+        .. code-block:: python
 
                 from balance import Sample
                 import pandas as pd
@@ -1276,17 +1304,19 @@ class Sample:
             np.float64: Design effect
 
         Examples:
-            >>> import pandas as pd
-            >>> from balance.sample_class import Sample
-            >>> sample = Sample.from_frame(
-            ...     pd.DataFrame(
-            ...         {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
-            ...     ),
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     standardize_types=False,
-            ... )
-            >>> round(sample.design_effect(), 3)
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            round(sample.design_effect(), 3)
             1.111
         """
         return weights_stats.design_effect(self.weight_column)
@@ -1305,32 +1335,34 @@ class Sample:
             np.float64: relative difference in design effect.
 
         Examples:
-            >>> import pandas as pd
-            >>> from balance.sample_class import Sample
-            >>> sample = Sample.from_frame(
-            ...     pd.DataFrame(
-            ...         {
-            ...             "id": ["1", "2"],
-            ...             "x": [0, 1],
-            ...             "weight": [1.0, 2.0],
-            ...             "y": [0.1, 0.2],
-            ...         }
-            ...     ),
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     outcome_columns="y",
-            ...     standardize_types=False,
-            ... )
-            >>> target = Sample.from_frame(
-            ...     pd.DataFrame(
-            ...         {"id": ["3", "4"], "x": [0, 1], "weight": [1.0, 1.0]}
-            ...     ),
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     standardize_types=False,
-            ... )
-            >>> adjusted = sample.set_target(target).adjust(method="null")
-            >>> _ = adjusted.design_effect_prop()
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {
+                        "id": ["1", "2"],
+                        "x": [0, 1],
+                        "weight": [1.0, 2.0],
+                        "y": [0.1, 0.2],
+                    }
+                ),
+                id_column="id",
+                weight_column="weight",
+                outcome_columns="y",
+                standardize_types=False,
+            )
+            target = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["3", "4"], "x": [0, 1], "weight": [1.0, 1.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            adjusted = sample.set_target(target).adjust(method="null")
+            _ = adjusted.design_effect_prop()
         """
         self._check_if_adjusted()
         deff_unadjusted = self._links["unadjusted"].design_effect()
@@ -1343,7 +1375,7 @@ class Sample:
         """Plot the density of weights of Sample.
 
         Examples:
-            ::
+        .. code-block:: python
 
                 import numpy as np
                 import pandas as pd
@@ -1390,32 +1422,34 @@ class Sample:
             pd.Series: (np.float64) relative difference in outcome weighted standard deviation.
 
         Examples:
-            >>> import pandas as pd
-            >>> from balance.sample_class import Sample
-            >>> sample = Sample.from_frame(
-            ...     pd.DataFrame(
-            ...         {
-            ...             "id": ["1", "2"],
-            ...             "x": [0, 1],
-            ...             "weight": [1.0, 2.0],
-            ...             "y": [0.1, 0.2],
-            ...         }
-            ...     ),
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     outcome_columns="y",
-            ...     standardize_types=False,
-            ... )
-            >>> target = Sample.from_frame(
-            ...     pd.DataFrame(
-            ...         {"id": ["3", "4"], "x": [0, 1], "weight": [1.0, 1.0]}
-            ...     ),
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     standardize_types=False,
-            ... )
-            >>> adjusted = sample.set_target(target).adjust(method="null")
-            >>> _ = adjusted.outcome_sd_prop()
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {
+                        "id": ["1", "2"],
+                        "x": [0, 1],
+                        "weight": [1.0, 2.0],
+                        "y": [0.1, 0.2],
+                    }
+                ),
+                id_column="id",
+                weight_column="weight",
+                outcome_columns="y",
+                standardize_types=False,
+            )
+            target = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["3", "4"], "x": [0, 1], "weight": [1.0, 1.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            adjusted = sample.set_target(target).adjust(method="null")
+            _ = adjusted.outcome_sd_prop()
         """
         self._check_if_adjusted()
         self._check_outcomes_exists()
@@ -1439,32 +1473,34 @@ class Sample:
              pd.Series: (np.float64) A series of calculated ratio of variances for each outcome.
 
         Examples:
-            >>> import pandas as pd
-            >>> from balance.sample_class import Sample
-            >>> sample = Sample.from_frame(
-            ...     pd.DataFrame(
-            ...         {
-            ...             "id": ["1", "2"],
-            ...             "x": [0, 1],
-            ...             "weight": [1.0, 2.0],
-            ...             "y": [0.1, 0.2],
-            ...         }
-            ...     ),
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     outcome_columns="y",
-            ...     standardize_types=False,
-            ... )
-            >>> target = Sample.from_frame(
-            ...     pd.DataFrame(
-            ...         {"id": ["3", "4"], "x": [0, 1], "weight": [1.0, 1.0]}
-            ...     ),
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     standardize_types=False,
-            ... )
-            >>> adjusted = sample.set_target(target).adjust(method="null")
-            >>> _ = adjusted.outcome_variance_ratio()
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {
+                        "id": ["1", "2"],
+                        "x": [0, 1],
+                        "weight": [1.0, 2.0],
+                        "y": [0.1, 0.2],
+                    }
+                ),
+                id_column="id",
+                weight_column="weight",
+                outcome_columns="y",
+                standardize_types=False,
+            )
+            target = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["3", "4"], "x": [0, 1], "weight": [1.0, 1.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            adjusted = sample.set_target(target).adjust(method="null")
+            _ = adjusted.outcome_variance_ratio()
         """
         return outcome_variance_ratio(
             self.outcomes().df,
@@ -1495,22 +1531,24 @@ class Sample:
             str: a summary description of properties of an adjusted sample.
 
         Examples:
-            >>> import pandas as pd
-            >>> from balance.sample_class import Sample
-            >>> survey = Sample.from_frame(
-            ...     pd.DataFrame(
-            ...         {"x": (0, 1, 1, 0), "id": range(4), "y": (0.1, 0.5, 0.4, 0.9), "w": (1, 2, 1, 1)}
-            ...     ),
-            ...     id_column="id",
-            ...     outcome_columns="y",
-            ...     weight_column="w",
-            ... )
-            >>> target = Sample.from_frame(
-            ...     pd.DataFrame({"x": (0, 0, 1, 1), "id": range(4)}),
-            ...     id_column="id",
-            ... )
-            >>> adjusted = survey.set_target(target).adjust(method="null")
-            >>> print(adjusted.summary())
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+            survey = Sample.from_frame(
+                pd.DataFrame(
+                    {"x": (0, 1, 1, 0), "id": range(4), "y": (0.1, 0.5, 0.4, 0.9), "w": (1, 2, 1, 1)}
+                ),
+                id_column="id",
+                outcome_columns="y",
+                weight_column="w",
+            )
+            target = Sample.from_frame(
+                pd.DataFrame({"x": (0, 0, 1, 1), "id": range(4)}),
+                id_column="id",
+            )
+            adjusted = survey.set_target(target).adjust(method="null")
+            print(adjusted.summary())
             Adjustment details:
                 method: null_adjustment
             Covariate diagnostics:
@@ -1719,27 +1757,29 @@ class Sample:
                 indicating various tracking metrics on the model.
 
         Examples:
-            >>> import pandas as pd
-            >>> from balance.sample_class import Sample
-            >>> sample = Sample.from_frame(
-            ...     pd.DataFrame(
-            ...         {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
-            ...     ),
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     standardize_types=False,
-            ... )
-            >>> target = Sample.from_frame(
-            ...     pd.DataFrame(
-            ...         {"id": ["3", "4"], "x": [0, 1], "weight": [1.0, 1.0]}
-            ...     ),
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     standardize_types=False,
-            ... )
-            >>> adjusted = sample.set_target(target).adjust(method="null")
-            >>> adjusted.diagnostics().columns.tolist()
-            ['metric', 'val', 'var']
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            target = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["3", "4"], "x": [0, 1], "weight": [1.0, 1.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            adjusted = sample.set_target(target).adjust(method="null")
+            adjusted.diagnostics().columns.tolist()
+            # ['metric', 'val', 'var']
         """
         logger.info("Starting computation of diagnostics of the fitting")
         self._check_if_adjusted()
@@ -1999,24 +2039,26 @@ class Sample:
                 This performs the transformation on both the sample's df and its linked dfs (unadjusted, target).
 
         Examples:
-            >>> import pandas as pd
-            >>> from balance.sample_class import Sample
-            >>> sample = Sample.from_frame(
-            ...     pd.DataFrame(
-            ...         {
-            ...             "id": ["1", "2"],
-            ...             "x": [0, 1],
-            ...             "weight": [1.0, 2.0],
-            ...             "y": [0.1, 0.2],
-            ...         }
-            ...     ),
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     outcome_columns="y",
-            ...     standardize_types=False,
-            ... )
-            >>> sample.keep_only_some_rows_columns(rows_to_keep="x == 1").df.shape
-            (1, 4)
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {
+                        "id": ["1", "2"],
+                        "x": [0, 1],
+                        "weight": [1.0, 2.0],
+                        "y": [0.1, 0.2],
+                    }
+                ),
+                id_column="id",
+                weight_column="weight",
+                outcome_columns="y",
+                standardize_types=False,
+            )
+            sample.keep_only_some_rows_columns(rows_to_keep="x == 1").df.shape
+            # (1, 4)
         """
         if (rows_to_keep is None) and (columns_to_keep is None):
             return self
@@ -2089,20 +2131,22 @@ class Sample:
             FileLink: Embedding a local file link in an IPython session, based on path. Using :func:FileLink.
 
         Examples:
-            >>> import pandas as pd
-            >>> import tempfile
-            >>> from IPython.lib.display import FileLink
-            >>> from balance.sample_class import Sample
-            >>> sample = Sample.from_frame(
-            ...     pd.DataFrame(
-            ...         {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
-            ...     ),
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     standardize_types=False,
-            ... )
-            >>> isinstance(sample.to_download(tempdir=tempfile.gettempdir()), FileLink)
-            True
+        .. code-block:: python
+
+            import pandas as pd
+            import tempfile
+            from IPython.lib.display import FileLink
+            from balance.sample_class import Sample
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            isinstance(sample.to_download(tempdir=tempfile.gettempdir()), FileLink)
+            # True
         """
         return balance_util._to_download(self.df, tempdir)
 
@@ -2123,19 +2167,21 @@ class Sample:
             str | None: If path_or_buf is None, returns the resulting csv format as a string. Otherwise returns None.
 
         Examples:
-            >>> import pandas as pd
-            >>> from balance.sample_class import Sample
-            >>> sample = Sample.from_frame(
-            ...     pd.DataFrame(
-            ...         {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
-            ...     ),
-            ...     id_column="id",
-            ...     weight_column="weight",
-            ...     standardize_types=False,
-            ... )
-            >>> csv_text = sample.to_csv()
-            >>> "id" in csv_text
-            True
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            csv_text = sample.to_csv()
+            "id" in csv_text
+            # True
         """
         return to_csv_with_defaults(self.df, path_or_buf, **kwargs)
 
