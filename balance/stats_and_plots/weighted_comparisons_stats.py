@@ -71,7 +71,7 @@ def _weights_per_covars_names(covar_names: List[str]) -> pd.DataFrame:
         with rows for each of the columns from 'covar_names'
 
     Examples:
-        ::
+    .. code-block:: python
 
             asmd_df = pd.DataFrame(
             {
@@ -290,7 +290,7 @@ def asmd(
         The last element is 'mean(asmd)', which is the average of the calculated ASMD values.
 
     Examples:
-        ::
+    .. code-block:: python
 
             import numpy as np
             import pandas as pd
@@ -452,7 +452,7 @@ def kld(
             The last element is 'mean(kld)', which is the weighted average of the calculated KLD values.
 
     Examples:
-        ::
+    .. code-block:: python
 
             import pandas as pd
             from balance.stats_and_plots import weighted_comparisons_stats
@@ -612,7 +612,7 @@ def _aggregate_statistic_by_main_covar(statistic_series: pd.Series) -> pd.Series
             then they would be averaged (with equal weight to each).
 
     Examples:
-        ::
+    .. code-block:: python
 
             from balance.stats_and_plots.weighted_comparisons_stats import _aggregate_statistic_by_main_covar
 
@@ -676,6 +676,16 @@ def asmd_improvement(
         np.float64: The improvement is taking the (before_mean_asmd-after_mean_asmd)/before_mean_asmd.
         The asmd is calculated using :func:`asmd`.
         Returns 0.0 when asmd_mean_before is zero or very close to zero (< 1e-10).
+
+    Examples:
+    .. code-block:: python
+
+        import pandas as pd
+        from balance.stats_and_plots.weighted_comparisons_stats import asmd_improvement
+        sample = pd.DataFrame({"x": [0, 1]})
+        target = pd.DataFrame({"x": [0, 1]})
+        float(asmd_improvement(sample, sample, target))
+        # 0.0
     """
     asmd_mean_before = asmd(
         sample_before, target, sample_before_weights, target_weights
@@ -712,6 +722,15 @@ def outcome_variance_ratio(
 
     Returns:
         pd.Series: (np.float64) A series of calculated ratio of variances for each outcome.
+
+    Examples:
+    .. code-block:: python
+
+        import pandas as pd
+        from balance.stats_and_plots.weighted_comparisons_stats import outcome_variance_ratio
+        df = pd.DataFrame({"y": [1.0, 2.0, 3.0]})
+        outcome_variance_ratio(df, df).iloc[0]
+        # 1.0
     """
     numerator_w_var = weighted_var(df_numerator, w_numerator)
     denominator_w_var = weighted_var(df_denominator, w_denominator)

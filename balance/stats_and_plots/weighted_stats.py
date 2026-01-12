@@ -136,7 +136,7 @@ def weighted_mean(
             If w has Inf then the output will be np.nan.
 
     Examples:
-        ::
+    .. code-block:: python
             from balance.stats_and_plots.weighted_stats import weighted_mean
 
             weighted_mean(pd.Series((1, 2, 3, 4)))
@@ -186,7 +186,8 @@ def var_of_weighted_mean(
 
 
     Examples:
-        ::
+    .. code-block:: python
+
             from balance.stats_and_plots.weighted_stats import var_of_weighted_mean
 
             #  In R: sum((1:4 - mean(1:4))^2 / 4) / (4)
@@ -243,7 +244,8 @@ def ci_of_weighted_mean(
             If `w` has infinite values, the output will be `np.nan`.
 
     Examples:
-        ::
+    .. code-block:: python
+
             from balance.stats_and_plots.weighted_stats import ci_of_weighted_mean
 
             ci_of_weighted_mean(pd.Series((1, 2, 3, 4)))
@@ -331,6 +333,14 @@ def weighted_var(
         If inf_rm=False then:
             If v has Inf then the output will be Inf.
             If w has Inf then the output will be np.nan.
+
+    Examples:
+    .. code-block:: python
+
+        import pandas as pd
+        from balance.stats_and_plots.weighted_stats import weighted_var
+        weighted_var(pd.DataFrame({"x": [1, 2, 3]}), [1, 1, 1]).tolist()
+        # [1.0]
     """
     v, w = _prepare_weighted_stat_args(v, w, inf_rm)
     means = weighted_mean(v, w)
@@ -359,6 +369,14 @@ def weighted_sd(
 
     Returns:
         pd.Series: np.sqrt of :func:`weighted_var` (np.float64)
+
+    Examples:
+    .. code-block:: python
+
+        import pandas as pd
+        from balance.stats_and_plots.weighted_stats import weighted_sd
+        weighted_sd(pd.DataFrame({"x": [1, 2, 3]}), [1, 1, 1]).tolist()
+        # [1.0]
     """
     return pd.Series(np.sqrt(weighted_var(v, w, inf_rm)))
 
@@ -386,6 +404,13 @@ def weighted_quantile(
         pd.DataFrame: The index (names p) has the values from quantiles. The columns are based on v:
             If it's a pd.Series it's one column, if it's a pd.DataFrame with several columns, than each column
             in the output corrosponds to the column in v.
+
+    Examples:
+    .. code-block:: python
+
+        from balance.stats_and_plots.weighted_stats import weighted_quantile
+        weighted_quantile([1, 2, 3], [0.5], w=[1, 1, 1]).iloc[0, 0]
+        # 2.0
     """
 
     v, w = _prepare_weighted_stat_args(v, w, inf_rm)
@@ -442,7 +467,7 @@ def descriptive_stats(
         pd.DataFrame: Returns pd.DataFrame of the output (based on stat argument), for each of the columns in df.
 
     Examples:
-        ::
+    .. code-block:: python
 
             import numpy as np
             import pandas as pd
@@ -579,7 +604,7 @@ def relative_frequency_table(
             -  'prop', the aggregated (weighted) proportion of rows from each group in 'column'.
 
     Examples:
-        ::
+    .. code-block:: python
 
             from balance.stats_and_plots.weighted_stats import relative_frequency_table
             import pandas as pd

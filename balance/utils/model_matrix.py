@@ -416,9 +416,9 @@ def model_matrix(
     # Arrange penalty factor
     if penalty_factor is None:
         penalty_factor = [1] * len(formula)
-    assert len(formula) == len(penalty_factor), (
-        "penalty factor and formula must have the same length"
-    )
+    assert len(formula) == len(
+        penalty_factor
+    ), "penalty factor and formula must have the same length"
 
     # Arrange factor variables
     if one_hot_encoding:

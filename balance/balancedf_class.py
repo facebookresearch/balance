@@ -154,7 +154,8 @@ class BalanceDF:
                 and 'unadjusted', and it will return them after running the same BalanceDF child creation method on them.
 
         Examples:
-            ::
+        .. code-block:: python
+
                 from balance.sample_class import Sample
                 import pandas as pd
 
@@ -312,7 +313,7 @@ class BalanceDF:
                 per column mean, after applying `model_matrix` to the df from each object.
 
         Examples:
-            ::
+        .. code-block:: python
 
                 from balance.sample_class import Sample
                 import pandas as pd
@@ -407,7 +408,7 @@ class BalanceDF:
             pd.DataFrame: The output from :func:`balance_util.model_matrix`
 
         Examples:
-            ::
+        .. code-block:: python
 
                 import pandas as pd
                 from balance.sample_class import Sample
@@ -504,6 +505,24 @@ class BalanceDF:
 
         Returns:
             FileLink: Embedding a local file link in an IPython session, based on path. Using :func:FileLink.
+
+        Examples:
+        .. code-block:: python
+
+            import pandas as pd
+            import tempfile
+            from IPython.lib.display import FileLink
+            from balance.sample_class import Sample
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            isinstance(sample.covars().to_download(tempdir=tempfile.gettempdir()), FileLink)
+            # True
         """
         return balance_util._to_download(self._df_with_ids(), tempdir)
 
@@ -521,6 +540,22 @@ class BalanceDF:
 
         Returns:
             pd.DataFrame: The df (this is __df, with no weights) from the BalanceDF object.
+
+        Examples:
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            sample.covars().df.columns.tolist()
+            # ['x']
         """
         return self.__df
 
@@ -534,7 +569,7 @@ class BalanceDF:
             List: Of column names.
 
         Examples:
-            ::
+        .. code-block:: python
 
                 s1 = Sample.from_frame(
                     pd.DataFrame(
@@ -586,7 +621,7 @@ class BalanceDF:
                 If library="seaborn" then returns None, unless return_axes is True. Then either a list or an np.array of matplotlib axis.
 
         Examples:
-            ::
+        .. code-block:: python
 
                 import numpy as np
                 import pandas as pd
@@ -673,7 +708,7 @@ class BalanceDF:
                 Columns are for each of the columns in the relevant df (after applying :func:`model_matrix`)
 
         Examples:
-            ::
+        .. code-block:: python
 
                 import pandas as pd
                 from balance.sample_class import Sample
@@ -741,7 +776,7 @@ class BalanceDF:
                 Columns are for each of the columns in the relevant df (after applying :func:`model_matrix`)
 
         Examples:
-            ::
+        .. code-block:: python
 
                 import pandas as pd
                 from balance.sample_class import Sample
@@ -809,7 +844,8 @@ class BalanceDF:
                 Columns are for each of the columns in the relevant df (after applying :func:`model_matrix`)
 
         Examples:
-            ::
+        .. code-block:: python
+
                 import pandas as pd
                 from balance.sample_class import Sample
                 from balance.stats_and_plots.weighted_stats import var_of_weighted_mean
@@ -882,7 +918,8 @@ class BalanceDF:
                 Columns are for each of the columns in the relevant df (after applying :func:`model_matrix`)
 
         Examples:
-            ::
+        .. code-block:: python
+
                 import pandas as pd
                 from balance.sample_class import Sample
                 from balance.stats_and_plots.weighted_stats import ci_of_weighted_mean
@@ -969,7 +1006,8 @@ class BalanceDF:
                 The columns of the table are labeled with the names of the input columns.
 
         Examples:
-            ::
+        .. code-block:: python
+
                 import numpy as np
                 import pandas as pd
 
@@ -1029,6 +1067,22 @@ class BalanceDF:
         Returns:
             Union[pd.DataFrame, str]: A table with two rows for each input column: one for the mean and one for the CI.
                 The columns of the table are labeled with the names of the input columns.
+
+        Examples:
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            sample.covars().summary().columns.tolist()
+            # ['self', 'self_ci']
         """
         # TODO model matrix means to include categorical columns, fix model_matrix to accept DataFrame
         # TODO: include min/max/std/etc. show min/mean/max if there's a single column, just means if multiple (covars and outcomes)
@@ -1080,7 +1134,7 @@ class BalanceDF:
             pd.Series: See :func:`weighted_comparisons_stats.asmd`
 
         Examples:
-            ::
+        .. code-block:: python
 
                 from balance.balancedf_class import BalanceDF
 
@@ -1183,7 +1237,7 @@ class BalanceDF:
                 If on_linked_samples is True, then two rows per source (self, unadjusted), each with the asmd compared to target, and a third row for the difference (self-unadjusted).
 
         Examples:
-            ::
+        .. code-block:: python
 
                 import pandas as pd
                 from balance.sample_class import Sample
@@ -1315,7 +1369,7 @@ class BalanceDF:
                 If on_linked_samples is True, then two rows per source (self, unadjusted), each with the kld compared to target, and a third row for the difference (self-unadjusted).
 
         Examples:
-            ::
+        .. code-block:: python
 
                 import pandas as pd
                 from balance.sample_class import Sample
@@ -1407,7 +1461,7 @@ class BalanceDF:
                 The asmd is calculated using :func:`asmd`.
 
         Examples:
-            ::
+        .. code-block:: python
 
                 import pandas as pd
                 from balance.sample_class import Sample
@@ -1530,6 +1584,23 @@ class BalanceDF:
 
         Returns:
             Optional[str]: If path_or_buf is None, returns the resulting csv format as a string. Otherwise returns None.
+
+        Examples:
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            csv_text = sample.covars().to_csv()
+            "id" in csv_text
+            # True
         """
         return to_csv_with_defaults(self._df_with_ids(), path_or_buf, *args, **kwargs)
 
@@ -1579,7 +1650,7 @@ class BalanceDFOutcomes(BalanceDF):
                 If 'target' is set to True but there is no target, the function returns None.
 
         Examples:
-            ::
+        .. code-block:: python
 
                 import numpy as np
                 import pandas as pd
@@ -1664,7 +1735,7 @@ class BalanceDFOutcomes(BalanceDF):
                 If the object has a target, it returns the output of :func:`general_stats.relative_response_rates`.
 
         Examples:
-            ::
+        .. code-block:: python
 
                 import numpy as np
                 import pandas as pd
@@ -1719,7 +1790,7 @@ class BalanceDFOutcomes(BalanceDF):
             str: A printable string, with mean of outcome variables and response rates.
 
         Examples:
-            ::
+        .. code-block:: python
 
                 import numpy as np
                 import pandas as pd
@@ -1847,6 +1918,15 @@ class BalanceDFCovars(BalanceDF):
 
         Returns:
             BalanceDFCovars: Object.
+
+        Examples:
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.balancedf_class import BalanceDFCovars
+            covars = BalanceDFCovars.from_frame(pd.DataFrame({"a": [1, 2], "b": [3, 4]}))
+            covars.df.columns.tolist()
+            # ['index', 'a', 'b']
         """
         df = df.reset_index()
         concat_list: list[pd.DataFrame | pd.Series] = [
@@ -1893,7 +1973,7 @@ class BalanceDFWeights(BalanceDF):
                 If library="seaborn" then returns None, unless return_axes is True. Then either a list or an np.array of matplotlib axis.
 
         Examples:
-            ::
+        .. code-block:: python
 
                 import numpy as np
                 import pandas as pd
@@ -1951,6 +2031,22 @@ class BalanceDFWeights(BalanceDF):
 
         Returns:
             np.float64: Deff.
+
+        Examples:
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["1", "2"], "weight": [1.0, 2.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            round(sample.weights().design_effect(), 3)
+            # 1.111
         """
         return weights_stats.design_effect(self.df.iloc[:, 0])
 
@@ -1986,6 +2082,23 @@ class BalanceDFWeights(BalanceDF):
 
         Returns:
             None. This function updates the :func:`_sample` using :func:`set_weights`
+
+        Examples:
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["1", "2"], "weight": [1.0, 100.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            sample.weights().trim(percentile=0.5, keep_sum_of_weights=False)
+            sample.weights().df["weight"].max() <= 100.0
+            # True
         """
         # TODO: verify which object exactly gets updated - and explain it here.
         self._sample.set_weights(
@@ -2020,7 +2133,7 @@ class BalanceDFWeights(BalanceDF):
             The weights are normalized to sum to the sample size, n.
 
         Examples:
-            ::
+        .. code-block:: python
 
                 import pandas as pd
                 from balance.sample_class import Sample
