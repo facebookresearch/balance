@@ -269,6 +269,7 @@ class Testpoststratify(
             target_df=t,
             target_weights=t_weights,
             na_action="add_indicator",
+            transformations=None,
         )["weight"]
         self.assertEqual(result_add, t_weights.astype("float64"))
 
@@ -278,9 +279,53 @@ class Testpoststratify(
             target_df=t,
             target_weights=t_weights,
             na_action="drop",
+            transformations=None,
         )["weight"]
         expected = t_weights.loc[s.dropna().index].astype("float64")
         self.assertEqual(result_drop, expected)
+
+    def test_poststratify_na_drop_warns(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": (1, np.nan, 2),
+                    "id": (1, 2, 3),
+                }
+            ),
+            id_column="id",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": (1, 2, np.nan),
+                    "id": (1, 2, 3),
+                }
+            ),
+            id_column="id",
+        )
+        self.assertWarnsRegexp(
+            "Dropped 1/3 rows of sample",
+            sample.adjust,
+            target,
+            method="poststratify",
+            na_action="drop",
+            transformations=None,
+        )
+
+    def test_poststratify_dropna_empty(self) -> None:
+        s = pd.DataFrame({"a": (np.nan, None), "b": (np.nan, None)})
+        s_w = pd.Series((1, 2))
+        self.assertRaisesRegex(
+            ValueError,
+            "Dropping rows led to empty",
+            poststratify,
+            s,
+            s_w,
+            s,
+            s_w,
+            na_action="drop",
+            transformations=None,
+        )
 
     def test_poststratify_exceptions(self) -> None:
         # column with name weight
