@@ -405,7 +405,7 @@ class Testpoststratify(
         self.assertEqual(result, pd.Series([2.0, 0.0]))
 
         with self.assertRaisesRegex(
-            ValueError, "`na_action` must be 'add_indicator' or 'drop'"
+            ValueError, "`na_action` must be 'add_indicator'/True or 'drop'/False"
         ):
             poststratify(
                 sample_df=s,

@@ -167,7 +167,7 @@ def poststratify(
         sample_df = _safe_fillna_and_infer(sample_df, "__NaN__")
         target_df = _safe_fillna_and_infer(target_df, "__NaN__")
     else:
-        raise ValueError("`na_action` must be 'add_indicator' or 'drop'")
+        raise ValueError("`na_action` must be 'add_indicator'/True or 'drop'/False")
 
     target_df = target_df.assign(weight=target_weights)
     target_cell_props = target_df.groupby(list(variables))["weight"].sum()
