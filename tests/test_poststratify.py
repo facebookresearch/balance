@@ -252,6 +252,36 @@ class Testpoststratify(
         self.assertAlmostEqual(result[s.x == "b"].sum() / size, 0.035, delta=eps)
         self.assertAlmostEqual(result[s.x == "c"].sum() / size, 0.015, delta=eps)
 
+    def test_poststratify_na_action(self) -> None:
+        s = pd.DataFrame(
+            {
+                "a": (1, np.nan, 2),
+                "b": ("x", "x", "y"),
+            }
+        )
+        t = s.copy()
+        s_weights = pd.Series([1, 1, 1])
+        t_weights = pd.Series([2, 3, 4])
+
+        result_add = poststratify(
+            sample_df=s,
+            sample_weights=s_weights,
+            target_df=t,
+            target_weights=t_weights,
+            na_action="add_indicator",
+        )["weight"]
+        self.assertEqual(result_add, t_weights.astype("float64"))
+
+        result_drop = poststratify(
+            sample_df=s,
+            sample_weights=s_weights,
+            target_df=t,
+            target_weights=t_weights,
+            na_action="drop",
+        )["weight"]
+        expected = t_weights.loc[s.dropna().index].astype("float64")
+        self.assertEqual(result_drop, expected)
+
     def test_poststratify_exceptions(self) -> None:
         # column with name weight
         s = pd.DataFrame(
@@ -308,3 +338,14 @@ class Testpoststratify(
             strict_matching=False,
         )["weight"]
         self.assertEqual(result, pd.Series([2.0, 0.0]))
+
+        with self.assertRaisesRegex(
+            ValueError, "`na_action` must be 'add_indicator' or 'drop'"
+        ):
+            poststratify(
+                sample_df=s,
+                sample_weights=s_weights,
+                target_df=t,
+                target_weights=t_weights,
+                na_action="invalid",
+            )

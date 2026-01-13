@@ -14,6 +14,9 @@
 - **Drop NA rows when requested in model_matrix**
   - `model_matrix(add_na=False)` now actually drops rows containing NA values while preserving categorical levels, matching the documented behavior.
   - Previously, `add_na=False` only logged a warning without dropping rows; code relying on the old behavior may now see fewer rows and should either handle missingness explicitly or use `add_na=True`.
+- **Poststratify missing data handling**
+  - `poststratify()` now accepts `na_action` to either drop rows with missing
+    values or treat missing values as their own category during weighting.
 
 ## Bug Fixes
 
