@@ -26,7 +26,7 @@ def poststratify(
     transformations: str = "default",
     transformations_drop: bool = True,
     strict_matching: bool = True,
-    na_action: str | bool = "add_indicator",
+    na_action: Union[str, bool] = "add_indicator",
     weight_trimming_mean_ratio: Union[float, int, None] = None,
     weight_trimming_percentile: Union[float, None] = None,
     keep_sum_of_weights: bool = True,
