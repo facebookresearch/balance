@@ -20,7 +20,7 @@
   - **Breaking change:** the default behavior now treats missing values as a
     distinct category. Previously, rows with missing values were implicitly
     excluded by pandas groupby operations. To preserve the old behavior, pass
-    `na_action="drop"` (or `False`) explicitly.
+    `na_action="drop"` explicitly.
 
 ## Bug Fixes
 
