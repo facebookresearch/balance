@@ -284,6 +284,26 @@ class Testpoststratify(
         expected = t_weights.loc[s.dropna().index].astype("float64")
         self.assertEqual(result_drop, expected)
 
+        result_bool_add = poststratify(
+            sample_df=s,
+            sample_weights=s_weights,
+            target_df=t,
+            target_weights=t_weights,
+            na_action=True,
+            transformations=None,
+        )["weight"]
+        self.assertEqual(result_bool_add, t_weights.astype("float64"))
+
+        result_bool_drop = poststratify(
+            sample_df=s,
+            sample_weights=s_weights,
+            target_df=t,
+            target_weights=t_weights,
+            na_action=False,
+            transformations=None,
+        )["weight"]
+        self.assertEqual(result_bool_drop, expected)
+
     def test_poststratify_na_drop_warns(self) -> None:
         sample = Sample.from_frame(
             pd.DataFrame(
