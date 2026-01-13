@@ -12,21 +12,22 @@ from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 from balance import adjustment as balance_adjustment, util as balance_util
+from balance.util import _safe_fillna_and_infer
 
 logger: logging.Logger = logging.getLogger(__package__)
 
 
 # TODO: Add tests for all arguments of function
-# TODO: Add argument for na_action
 def poststratify(
     sample_df: pd.DataFrame,
     sample_weights: pd.Series,
     target_df: pd.DataFrame,
     target_weights: pd.Series,
     variables: Optional[List[str]] = None,
-    transformations: str = "default",
+    transformations: Optional[str] = "default",
     transformations_drop: bool = True,
     strict_matching: bool = True,
+    na_action: str = "add_indicator",
     weight_trimming_mean_ratio: Union[float, int, None] = None,
     weight_trimming_percentile: Union[float, None] = None,
     keep_sum_of_weights: bool = True,
@@ -50,6 +51,10 @@ def poststratify(
         transformations (str, optional): Transformations to apply to data before fitting the model. Default is "default". See `balance.adjustment.apply_transformations`.
         transformations_drop (bool, optional): If True, drops variables not affected by transformations. Default is True.
         strict_matching (bool, optional): If True, requires all sample cells to be present in the target. If False, cells missing in the target are assigned weight 0 (and a warning is raised). Default is True.
+        na_action (str, optional): How to handle missing values. Use
+            ``"add_indicator"`` to treat missing values as their own category, or
+            ``"drop"`` to remove rows with missing values from both sample and target.
+            Defaults to ``"add_indicator"``.
         weight_trimming_mean_ratio (Union[float, int, None], optional): Forwarded to
             :func:`balance.adjustment.trim_weights` to clip weights at a multiple of the mean.
         weight_trimming_percentile (Union[float, None], optional): Percentile limit(s) for
@@ -137,6 +142,19 @@ def poststratify(
     sample_df = sample_df.loc[:, variables]
     target_df = target_df.loc[:, variables]
 
+    if na_action == "drop":
+        (sample_df, sample_weights) = balance_util.drop_na_rows(
+            sample_df, sample_weights, "sample"
+        )
+        (target_df, target_weights) = balance_util.drop_na_rows(
+            target_df, target_weights, "target"
+        )
+    elif na_action == "add_indicator":
+        sample_df = pd.DataFrame(_safe_fillna_and_infer(sample_df, "__NaN__"))
+        target_df = pd.DataFrame(_safe_fillna_and_infer(target_df, "__NaN__"))
+    else:
+        raise ValueError("`na_action` must be 'add_indicator' or 'drop'")
+
     sample_df, target_df = balance_adjustment.apply_transformations(
         (sample_df, target_df),
         transformations=transformations,
@@ -170,8 +188,6 @@ def poststratify(
                 "Detected some cells in sample_df that are not in target_df. "
                 "Samples in cells not covered by the target are given weight 0."
             )
-            from balance.util import _safe_fillna_and_infer
-
             combined["weight"] = _safe_fillna_and_infer(combined["weight"], 0)
 
     combined["weight"] = combined["weight"] / combined["design_weight"]
