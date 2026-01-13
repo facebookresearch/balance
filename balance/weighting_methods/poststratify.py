@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 from balance import adjustment as balance_adjustment, util as balance_util
+from balance.util import _safe_fillna_and_infer
 
 logger: logging.Logger = logging.getLogger(__package__)
 
@@ -141,14 +142,6 @@ def poststratify(
     sample_df = sample_df.loc[:, variables]
     target_df = target_df.loc[:, variables]
 
-    sample_df, target_df = balance_adjustment.apply_transformations(
-        (sample_df, target_df),
-        transformations=transformations,
-        drop=transformations_drop,
-    )
-    variables = list(sample_df.columns)
-    logger.debug(f"Final variables in the model after transformations: {variables}")
-
     if na_action == "drop":
         (sample_df, sample_weights) = balance_util.drop_na_rows(
             sample_df, sample_weights, "sample"
@@ -157,12 +150,18 @@ def poststratify(
             target_df, target_weights, "target"
         )
     elif na_action == "add_indicator":
-        from balance.util import _safe_fillna_and_infer
-
         sample_df = _safe_fillna_and_infer(sample_df, "__NaN__")
         target_df = _safe_fillna_and_infer(target_df, "__NaN__")
     else:
         raise ValueError("`na_action` must be 'add_indicator' or 'drop'")
+
+    sample_df, target_df = balance_adjustment.apply_transformations(
+        (sample_df, target_df),
+        transformations=transformations,
+        drop=transformations_drop,
+    )
+    variables = list(sample_df.columns)
+    logger.debug(f"Final variables in the model after transformations: {variables}")
 
     target_df = target_df.assign(weight=target_weights)
     target_cell_props = target_df.groupby(list(variables))["weight"].sum()
@@ -189,8 +188,6 @@ def poststratify(
                 "Detected some cells in sample_df that are not in target_df. "
                 "Samples in cells not covered by the target are given weight 0."
             )
-            from balance.util import _safe_fillna_and_infer
-
             combined["weight"] = _safe_fillna_and_infer(combined["weight"], 0)
 
     combined["weight"] = combined["weight"] / combined["design_weight"]

@@ -17,10 +17,12 @@
 - **Poststratify missing data handling**
   - `poststratify()` now accepts `na_action` to either drop rows with missing
     values or treat missing values as their own category during weighting.
-  - **Breaking change:** the default behavior now treats missing values as a
-    distinct category. Previously, rows with missing values were implicitly
-    excluded by pandas groupby operations. To preserve the old behavior, pass
-    `na_action="drop"` explicitly.
+  - **Breaking change:** the default behavior now fills missing values in
+    poststratification variables with `"__NaN__"` and treats this as a distinct
+    category during weighting. Previously, missing values were not handled
+    explicitly, and their treatment depended on pandas `groupby` and `merge`
+    defaults. To approximate the legacy behavior where missing values do not
+    form their own category, pass `na_action="drop"` explicitly.
 
 ## Bug Fixes
 
