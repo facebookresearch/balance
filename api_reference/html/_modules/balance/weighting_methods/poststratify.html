@@ -49,12 +49,12 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">adjustment</span> <span class="k">as</span> <span class="n">balance_adjustment</span><span class="p">,</span> <span class="n">util</span> <span class="k">as</span> <span class="n">balance_util</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">_safe_fillna_and_infer</span>
 
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
 
 
 <span class="c1"># TODO: Add tests for all arguments of function</span>
-<span class="c1"># TODO: Add argument for na_action</span>
 <div class="viewcode-block" id="poststratify">
 <a class="viewcode-back" href="../../../balance.weighting_methods.poststratify.html#balance.weighting_methods.poststratify.poststratify">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">poststratify</span><span class="p">(</span>
@@ -63,9 +63,10 @@
     <span class="n">target_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">target_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="n">variables</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">transformations</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+    <span class="n">transformations</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
     <span class="n">transformations_drop</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">strict_matching</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">na_action</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">,</span>
     <span class="n">weight_trimming_mean_ratio</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">weight_trimming_percentile</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">keep_sum_of_weights</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -89,6 +90,10 @@
 <span class="sd">        transformations (str, optional): Transformations to apply to data before fitting the model. Default is &quot;default&quot;. See `balance.adjustment.apply_transformations`.</span>
 <span class="sd">        transformations_drop (bool, optional): If True, drops variables not affected by transformations. Default is True.</span>
 <span class="sd">        strict_matching (bool, optional): If True, requires all sample cells to be present in the target. If False, cells missing in the target are assigned weight 0 (and a warning is raised). Default is True.</span>
+<span class="sd">        na_action (str, optional): How to handle missing values. Use</span>
+<span class="sd">            ``&quot;add_indicator&quot;`` to treat missing values as their own category, or</span>
+<span class="sd">            ``&quot;drop&quot;`` to remove rows with missing values from both sample and target.</span>
+<span class="sd">            Defaults to ``&quot;add_indicator&quot;``.</span>
 <span class="sd">        weight_trimming_mean_ratio (Union[float, int, None], optional): Forwarded to</span>
 <span class="sd">            :func:`balance.adjustment.trim_weights` to clip weights at a multiple of the mean.</span>
 <span class="sd">        weight_trimming_percentile (Union[float, None], optional): Percentile limit(s) for</span>
@@ -176,6 +181,19 @@
     <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
     <span class="n">target_df</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
 
+    <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;drop&quot;</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">)</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">drop_na_rows</span><span class="p">(</span>
+            <span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">&quot;sample&quot;</span>
+        <span class="p">)</span>
+        <span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">)</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">drop_na_rows</span><span class="p">(</span>
+            <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">:</span>
+        <span class="n">sample_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">_safe_fillna_and_infer</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="s2">&quot;__NaN__&quot;</span><span class="p">))</span>
+        <span class="n">target_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">_safe_fillna_and_infer</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="s2">&quot;__NaN__&quot;</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`na_action` must be &#39;add_indicator&#39; or &#39;drop&#39;&quot;</span><span class="p">)</span>
+
     <span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span> <span class="o">=</span> <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">apply_transformations</span><span class="p">(</span>
         <span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">),</span>
         <span class="n">transformations</span><span class="o">=</span><span class="n">transformations</span><span class="p">,</span>
@@ -209,8 +227,6 @@
                 <span class="s2">&quot;Detected some cells in sample_df that are not in target_df. &quot;</span>
                 <span class="s2">&quot;Samples in cells not covered by the target are given weight 0.&quot;</span>
             <span class="p">)</span>
-            <span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">_safe_fillna_and_infer</span>
-
             <span class="n">combined</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_safe_fillna_and_infer</span><span class="p">(</span><span class="n">combined</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
 
     <span class="n">combined</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">combined</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">combined</span><span class="p">[</span><span class="s2">&quot;design_weight&quot;</span><span class="p">]</span>
