@@ -7541,7 +7541,7 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_data</span>
+<div class="highlight hl-python"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_data</span>
 <span class="n">target_df</span><span class="p">,</span> <span class="n">sample_df</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sample</span>
 <span class="n">sample</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">outcome_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">"happiness"</span><span class="p">])</span>
@@ -7560,21 +7560,28 @@ a.anchor-link {
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:51:46,856) [__init__/&lt;module&gt; (line 72)]: Using balance version 0.14.x
+<pre>INFO (2026-01-14 16:13:19,779) [__init__/&lt;module&gt; (line 72)]: Using balance version 0.14.x
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>WARNING (2026-01-13 15:51:47,046) [input_validation/guess_id_column (line 152)]: Guessed id column name id for the data
+<pre>WARNING (2026-01-14 16:13:19,965) [input_validation/guess_id_column (line 152)]: Guessed id column name id for the data
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>WARNING (2026-01-13 15:51:47,056) [sample_class/from_frame (line 531)]: No weights passed. Adding a 'weight' column and setting all values to 1
+<pre>WARNING (2026-01-14 16:13:19,974) [sample_class/from_frame (line 531)]: No weights passed. Adding a 'weight' column and setting all values to 1
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>WARNING (2026-01-14 16:13:19,981) [input_validation/guess_id_column (line 152)]: Guessed id column name id for the data
 </pre>
 </div>
 </div>
@@ -7598,14 +7605,7 @@ balance (Version 0.14.x) loaded:
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>WARNING (2026-01-13 15:51:47,064) [input_validation/guess_id_column (line 152)]: Guessed id column name id for the data
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>WARNING (2026-01-13 15:51:47,079) [sample_class/from_frame (line 531)]: No weights passed. Adding a 'weight' column and setting all values to 1
+<pre>WARNING (2026-01-14 16:13:19,996) [sample_class/from_frame (line 531)]: No weights passed. Adding a 'weight' column and setting all values to 1
 </pre>
 </div>
 </div>
@@ -7662,7 +7662,7 @@ balance (Version 0.14.x) loaded:
 <div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">adjusted</span> <span class="o">=</span> <span class="n">sample_with_target</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span>
+<div class="highlight hl-python"><pre><span></span><span class="n">adjusted</span> <span class="o">=</span> <span class="n">sample_with_target</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span>
     <span class="c1"># method="ipw", # default method</span>
     <span class="c1"># transformations=None,</span>
     <span class="c1"># formula=None,</span>
@@ -7683,105 +7683,105 @@ balance (Version 0.14.x) loaded:
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:51:47,098) [ipw/ipw (line 694)]: Starting ipw function
+<pre>INFO (2026-01-14 16:13:20,015) [ipw/ipw (line 694)]: Starting ipw function
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:51:47,100) [adjustment/apply_transformations (line 433)]: Adding the variables: []
+<pre>INFO (2026-01-14 16:13:20,018) [adjustment/apply_transformations (line 433)]: Adding the variables: []
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:51:47,101) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['gender', 'age_group', 'income']
+<pre>INFO (2026-01-14 16:13:20,018) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['gender', 'age_group', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:51:47,111) [adjustment/apply_transformations (line 469)]: Final variables in output: ['gender', 'age_group', 'income']
+<pre>INFO (2026-01-14 16:13:20,029) [adjustment/apply_transformations (line 469)]: Final variables in output: ['gender', 'age_group', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:51:47,120) [ipw/ipw (line 728)]: Building model matrix
+<pre>INFO (2026-01-14 16:13:20,038) [ipw/ipw (line 728)]: Building model matrix
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:51:47,217) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
+<pre>INFO (2026-01-14 16:13:20,135) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:51:47,217) [ipw/ipw (line 753)]: The number of columns in the model matrix: 16
+<pre>INFO (2026-01-14 16:13:20,136) [ipw/ipw (line 753)]: The number of columns in the model matrix: 16
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:51:47,218) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
+<pre>INFO (2026-01-14 16:13:20,137) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:03,998) [ipw/ipw (line 915)]: Done with sklearn
+<pre>INFO (2026-01-14 16:13:36,885) [ipw/ipw (line 915)]: Done with sklearn
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:03,999) [ipw/ipw (line 917)]: max_de: None
+<pre>INFO (2026-01-14 16:13:36,885) [ipw/ipw (line 917)]: max_de: None
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:04,000) [ipw/ipw (line 939)]: Starting model selection
+<pre>INFO (2026-01-14 16:13:36,886) [ipw/ipw (line 939)]: Starting model selection
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:04,003) [ipw/ipw (line 972)]: Chosen lambda: 0.041158338186664825
+<pre>INFO (2026-01-14 16:13:36,889) [ipw/ipw (line 972)]: Chosen lambda: 0.041158338186664825
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:04,004) [ipw/ipw (line 990)]: Proportion null deviance explained 0.17265121909892267
+<pre>INFO (2026-01-14 16:13:36,890) [ipw/ipw (line 990)]: Proportion null deviance explained 0.17265121909892267
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:04,008) [sample_class/diagnostics (line 1788)]: Starting computation of diagnostics of the fitting
+<pre>INFO (2026-01-14 16:13:36,894) [sample_class/diagnostics (line 1788)]: Starting computation of diagnostics of the fitting
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:04,268) [sample_class/diagnostics (line 2009)]: Done computing diagnostics
+<pre>INFO (2026-01-14 16:13:37,152) [sample_class/diagnostics (line 2009)]: Done computing diagnostics
 </pre>
 </div>
 </div>
@@ -7943,7 +7943,7 @@ balance (Version 0.14.x) loaded:
 <div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">adjusted</span> <span class="o">=</span> <span class="n">sample_with_target</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span>
+<div class="highlight hl-python"><pre><span></span><span class="n">adjusted</span> <span class="o">=</span> <span class="n">sample_with_target</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span>
     <span class="c1"># method="ipw",</span>
     <span class="n">transformations</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="c1"># formula=formula,</span>
@@ -7964,84 +7964,84 @@ balance (Version 0.14.x) loaded:
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:04,287) [ipw/ipw (line 694)]: Starting ipw function
+<pre>INFO (2026-01-14 16:13:37,170) [ipw/ipw (line 694)]: Starting ipw function
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:04,288) [ipw/ipw (line 728)]: Building model matrix
+<pre>INFO (2026-01-14 16:13:37,171) [ipw/ipw (line 728)]: Building model matrix
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:04,355) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
+<pre>INFO (2026-01-14 16:13:37,238) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:04,356) [ipw/ipw (line 753)]: The number of columns in the model matrix: 8
+<pre>INFO (2026-01-14 16:13:37,238) [ipw/ipw (line 753)]: The number of columns in the model matrix: 8
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:04,356) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
+<pre>INFO (2026-01-14 16:13:37,239) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:19,967) [ipw/ipw (line 915)]: Done with sklearn
+<pre>INFO (2026-01-14 16:13:52,860) [ipw/ipw (line 915)]: Done with sklearn
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:19,968) [ipw/ipw (line 917)]: max_de: None
+<pre>INFO (2026-01-14 16:13:52,861) [ipw/ipw (line 917)]: max_de: None
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:19,968) [ipw/ipw (line 939)]: Starting model selection
+<pre>INFO (2026-01-14 16:13:52,861) [ipw/ipw (line 939)]: Starting model selection
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:19,972) [ipw/ipw (line 972)]: Chosen lambda: 0.0368353720078807
+<pre>INFO (2026-01-14 16:13:52,864) [ipw/ipw (line 972)]: Chosen lambda: 0.0368353720078807
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:19,973) [ipw/ipw (line 990)]: Proportion null deviance explained 0.17353587606008936
+<pre>INFO (2026-01-14 16:13:52,865) [ipw/ipw (line 990)]: Proportion null deviance explained 0.17353587606008936
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:19,977) [sample_class/diagnostics (line 1788)]: Starting computation of diagnostics of the fitting
+<pre>INFO (2026-01-14 16:13:52,869) [sample_class/diagnostics (line 1788)]: Starting computation of diagnostics of the fitting
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:20,235) [sample_class/diagnostics (line 2009)]: Done computing diagnostics
+<pre>INFO (2026-01-14 16:13:53,128) [sample_class/diagnostics (line 2009)]: Done computing diagnostics
 </pre>
 </div>
 </div>
@@ -8155,7 +8155,7 @@ Regardless of the transformations, the model matrix made sure to turn the gender
 <div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">fct_lump</span><span class="p">,</span> <span class="n">quantize</span>
+<div class="highlight hl-python"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">fct_lump</span><span class="p">,</span> <span class="n">quantize</span>
 
 <span class="n">transformations</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">"age_group"</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">fct_lump</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">),</span>
@@ -8184,112 +8184,112 @@ Regardless of the transformations, the model matrix made sure to turn the gender
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:20,252) [ipw/ipw (line 694)]: Starting ipw function
+<pre>INFO (2026-01-14 16:13:53,145) [ipw/ipw (line 694)]: Starting ipw function
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:20,254) [adjustment/apply_transformations (line 433)]: Adding the variables: []
+<pre>INFO (2026-01-14 16:13:53,147) [adjustment/apply_transformations (line 433)]: Adding the variables: []
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:20,255) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['age_group', 'gender', 'income']
+<pre>INFO (2026-01-14 16:13:53,148) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['age_group', 'gender', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:20,263) [adjustment/apply_transformations (line 469)]: Final variables in output: ['age_group', 'gender', 'income']
+<pre>INFO (2026-01-14 16:13:53,155) [adjustment/apply_transformations (line 469)]: Final variables in output: ['age_group', 'gender', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:20,271) [ipw/ipw (line 728)]: Building model matrix
+<pre>INFO (2026-01-14 16:13:53,163) [ipw/ipw (line 728)]: Building model matrix
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:20,366) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
+<pre>INFO (2026-01-14 16:13:53,258) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:20,367) [ipw/ipw (line 753)]: The number of columns in the model matrix: 8
+<pre>INFO (2026-01-14 16:13:53,258) [ipw/ipw (line 753)]: The number of columns in the model matrix: 8
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:20,368) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
+<pre>INFO (2026-01-14 16:13:53,259) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:34,354) [ipw/ipw (line 915)]: Done with sklearn
+<pre>INFO (2026-01-14 16:14:07,240) [ipw/ipw (line 915)]: Done with sklearn
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:34,355) [ipw/ipw (line 917)]: max_de: None
+<pre>INFO (2026-01-14 16:14:07,241) [ipw/ipw (line 917)]: max_de: None
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:34,356) [ipw/ipw (line 939)]: Starting model selection
+<pre>INFO (2026-01-14 16:14:07,241) [ipw/ipw (line 939)]: Starting model selection
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:34,359) [ipw/ipw (line 972)]: Chosen lambda: 0.11811067639400605
+<pre>INFO (2026-01-14 16:14:07,244) [ipw/ipw (line 972)]: Chosen lambda: 0.11811067639400605
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:34,360) [ipw/ipw (line 990)]: Proportion null deviance explained 0.09420328935831213
+<pre>INFO (2026-01-14 16:14:07,245) [ipw/ipw (line 990)]: Proportion null deviance explained 0.09420328935831213
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>WARNING (2026-01-13 15:52:34,360) [ipw/ipw (line 998)]: The propensity model has low fraction null deviance explained (0.09420328935831213). Results may not be accurate
+<pre>WARNING (2026-01-14 16:14:07,245) [ipw/ipw (line 998)]: The propensity model has low fraction null deviance explained (0.09420328935831213). Results may not be accurate
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:34,364) [sample_class/diagnostics (line 1788)]: Starting computation of diagnostics of the fitting
+<pre>INFO (2026-01-14 16:14:07,249) [sample_class/diagnostics (line 1788)]: Starting computation of diagnostics of the fitting
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:34,622) [sample_class/diagnostics (line 2009)]: Done computing diagnostics
+<pre>INFO (2026-01-14 16:14:07,511) [sample_class/diagnostics (line 2009)]: Done computing diagnostics
 </pre>
 </div>
 </div>
@@ -8401,7 +8401,7 @@ Regardless of the transformations, the model matrix made sure to turn the gender
 <div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">transformations</span> <span class="o">=</span> <span class="p">{</span>
+<div class="highlight hl-python"><pre><span></span><span class="n">transformations</span> <span class="o">=</span> <span class="p">{</span>
     <span class="c1"># "age_group": lambda x: fct_lump(x, 0.25),</span>
     <span class="s2">"gender"</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
     <span class="c1"># "income": lambda x: quantize(x.fillna(x.mean()), q=3),</span>
@@ -8428,119 +8428,119 @@ Regardless of the transformations, the model matrix made sure to turn the gender
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:34,639) [ipw/ipw (line 694)]: Starting ipw function
+<pre>INFO (2026-01-14 16:14:07,529) [ipw/ipw (line 694)]: Starting ipw function
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:34,641) [adjustment/apply_transformations (line 433)]: Adding the variables: []
+<pre>INFO (2026-01-14 16:14:07,531) [adjustment/apply_transformations (line 433)]: Adding the variables: []
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:34,641) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['gender']
+<pre>INFO (2026-01-14 16:14:07,532) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['gender']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>WARNING (2026-01-13 15:52:34,643) [adjustment/apply_transformations (line 466)]: Dropping the variables: ['age_group', 'income']
+<pre>WARNING (2026-01-14 16:14:07,533) [adjustment/apply_transformations (line 466)]: Dropping the variables: ['age_group', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:34,643) [adjustment/apply_transformations (line 469)]: Final variables in output: ['gender']
+<pre>INFO (2026-01-14 16:14:07,533) [adjustment/apply_transformations (line 469)]: Final variables in output: ['gender']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:34,646) [ipw/ipw (line 728)]: Building model matrix
+<pre>INFO (2026-01-14 16:14:07,536) [ipw/ipw (line 728)]: Building model matrix
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:34,684) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['gender + _is_na_gender']
+<pre>INFO (2026-01-14 16:14:07,573) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['gender + _is_na_gender']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:34,684) [ipw/ipw (line 753)]: The number of columns in the model matrix: 4
+<pre>INFO (2026-01-14 16:14:07,573) [ipw/ipw (line 753)]: The number of columns in the model matrix: 4
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:34,685) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
+<pre>INFO (2026-01-14 16:14:07,574) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:43,519) [ipw/ipw (line 915)]: Done with sklearn
+<pre>INFO (2026-01-14 16:14:16,405) [ipw/ipw (line 915)]: Done with sklearn
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:43,519) [ipw/ipw (line 917)]: max_de: None
+<pre>INFO (2026-01-14 16:14:16,406) [ipw/ipw (line 917)]: max_de: None
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:43,520) [ipw/ipw (line 939)]: Starting model selection
+<pre>INFO (2026-01-14 16:14:16,406) [ipw/ipw (line 939)]: Starting model selection
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:43,523) [ipw/ipw (line 972)]: Chosen lambda: 0.20570886693214954
+<pre>INFO (2026-01-14 16:14:16,409) [ipw/ipw (line 972)]: Chosen lambda: 0.20570886693214954
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:43,524) [ipw/ipw (line 990)]: Proportion null deviance explained 0.0264854344569313
+<pre>INFO (2026-01-14 16:14:16,410) [ipw/ipw (line 990)]: Proportion null deviance explained 0.0264854344569313
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>WARNING (2026-01-13 15:52:43,525) [ipw/ipw (line 998)]: The propensity model has low fraction null deviance explained (0.0264854344569313). Results may not be accurate
+<pre>WARNING (2026-01-14 16:14:16,411) [ipw/ipw (line 998)]: The propensity model has low fraction null deviance explained (0.0264854344569313). Results may not be accurate
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:43,528) [sample_class/diagnostics (line 1788)]: Starting computation of diagnostics of the fitting
+<pre>INFO (2026-01-14 16:14:16,414) [sample_class/diagnostics (line 1788)]: Starting computation of diagnostics of the fitting
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:43,784) [sample_class/diagnostics (line 2009)]: Done computing diagnostics
+<pre>INFO (2026-01-14 16:14:16,673) [sample_class/diagnostics (line 2009)]: Done computing diagnostics
 </pre>
 </div>
 </div>
@@ -8627,7 +8627,7 @@ Regardless of the transformations, the model matrix made sure to turn the gender
 <div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># TODO: add more examples about how add_na works</span>
+<div class="highlight hl-python"><pre><span></span><span class="c1"># TODO: add more examples about how add_na works</span>
 <span class="c1"># TODO: add more examples about rare values in categorical variables and how they are grouped together. </span>
 </pre></div>
 </div>
@@ -8659,7 +8659,7 @@ Regardless of the transformations, the model matrix made sure to turn the gender
 <div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">fct_lump</span><span class="p">,</span> <span class="n">quantize</span>
+<div class="highlight hl-python"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">fct_lump</span><span class="p">,</span> <span class="n">quantize</span>
 
 <span class="n">transformations</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">"age_group"</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
@@ -8690,105 +8690,105 @@ Regardless of the transformations, the model matrix made sure to turn the gender
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:43,805) [ipw/ipw (line 694)]: Starting ipw function
+<pre>INFO (2026-01-14 16:14:16,695) [ipw/ipw (line 694)]: Starting ipw function
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:43,807) [adjustment/apply_transformations (line 433)]: Adding the variables: ['income_squared', 'income_buckets']
+<pre>INFO (2026-01-14 16:14:16,697) [adjustment/apply_transformations (line 433)]: Adding the variables: ['income_squared', 'income_buckets']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:43,808) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['age_group', 'gender', 'income']
+<pre>INFO (2026-01-14 16:14:16,698) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['age_group', 'gender', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:43,813) [adjustment/apply_transformations (line 469)]: Final variables in output: ['income_squared', 'income_buckets', 'age_group', 'gender', 'income']
+<pre>INFO (2026-01-14 16:14:16,703) [adjustment/apply_transformations (line 469)]: Final variables in output: ['income_squared', 'income_buckets', 'age_group', 'gender', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:43,827) [ipw/ipw (line 728)]: Building model matrix
+<pre>INFO (2026-01-14 16:14:16,717) [ipw/ipw (line 728)]: Building model matrix
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:43,926) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['income_squared + income_buckets + income + gender + age_group + _is_na_gender']
+<pre>INFO (2026-01-14 16:14:16,818) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['income_squared + income_buckets + income + gender + age_group + _is_na_gender']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:43,927) [ipw/ipw (line 753)]: The number of columns in the model matrix: 11
+<pre>INFO (2026-01-14 16:14:16,819) [ipw/ipw (line 753)]: The number of columns in the model matrix: 11
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:52:43,928) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
+<pre>INFO (2026-01-14 16:14:16,820) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:05,645) [ipw/ipw (line 915)]: Done with sklearn
+<pre>INFO (2026-01-14 16:14:38,579) [ipw/ipw (line 915)]: Done with sklearn
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:05,646) [ipw/ipw (line 917)]: max_de: None
+<pre>INFO (2026-01-14 16:14:38,579) [ipw/ipw (line 917)]: max_de: None
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:05,646) [ipw/ipw (line 939)]: Starting model selection
+<pre>INFO (2026-01-14 16:14:38,580) [ipw/ipw (line 939)]: Starting model selection
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:05,649) [ipw/ipw (line 972)]: Chosen lambda: 0.043506507030756265
+<pre>INFO (2026-01-14 16:14:38,583) [ipw/ipw (line 972)]: Chosen lambda: 0.043506507030756265
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:05,649) [ipw/ipw (line 990)]: Proportion null deviance explained 0.17223252304635372
+<pre>INFO (2026-01-14 16:14:38,584) [ipw/ipw (line 990)]: Proportion null deviance explained 0.17223252304635372
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:05,653) [sample_class/diagnostics (line 1788)]: Starting computation of diagnostics of the fitting
+<pre>INFO (2026-01-14 16:14:38,587) [sample_class/diagnostics (line 1788)]: Starting computation of diagnostics of the fitting
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:05,908) [sample_class/diagnostics (line 2009)]: Done computing diagnostics
+<pre>INFO (2026-01-14 16:14:38,844) [sample_class/diagnostics (line 2009)]: Done computing diagnostics
 </pre>
 </div>
 </div>
@@ -8918,7 +8918,7 @@ Regardless of the transformations, the model matrix made sure to turn the gender
 <div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">fct_lump_by</span><span class="p">,</span> <span class="n">quantize</span>
+<div class="highlight hl-python"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">fct_lump_by</span><span class="p">,</span> <span class="n">quantize</span>
 
 <span class="n">transformations</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">"age_group"</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
@@ -8951,105 +8951,105 @@ Regardless of the transformations, the model matrix made sure to turn the gender
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:05,926) [ipw/ipw (line 694)]: Starting ipw function
+<pre>INFO (2026-01-14 16:14:38,862) [ipw/ipw (line 694)]: Starting ipw function
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:05,928) [adjustment/apply_transformations (line 433)]: Adding the variables: []
+<pre>INFO (2026-01-14 16:14:38,864) [adjustment/apply_transformations (line 433)]: Adding the variables: []
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:05,928) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['age_group', 'gender', 'income']
+<pre>INFO (2026-01-14 16:14:38,864) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['age_group', 'gender', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:05,933) [adjustment/apply_transformations (line 469)]: Final variables in output: ['age_group', 'gender', 'income']
+<pre>INFO (2026-01-14 16:14:38,870) [adjustment/apply_transformations (line 469)]: Final variables in output: ['age_group', 'gender', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:05,941) [ipw/ipw (line 728)]: Building model matrix
+<pre>INFO (2026-01-14 16:14:38,878) [ipw/ipw (line 728)]: Building model matrix
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:06,006) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['age_group * gender']
+<pre>INFO (2026-01-14 16:14:38,942) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['age_group * gender']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:06,006) [ipw/ipw (line 753)]: The number of columns in the model matrix: 12
+<pre>INFO (2026-01-14 16:14:38,943) [ipw/ipw (line 753)]: The number of columns in the model matrix: 12
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:06,007) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
+<pre>INFO (2026-01-14 16:14:38,943) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:23,587) [ipw/ipw (line 915)]: Done with sklearn
+<pre>INFO (2026-01-14 16:14:56,579) [ipw/ipw (line 915)]: Done with sklearn
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:23,587) [ipw/ipw (line 917)]: max_de: None
+<pre>INFO (2026-01-14 16:14:56,579) [ipw/ipw (line 917)]: max_de: None
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:23,588) [ipw/ipw (line 939)]: Starting model selection
+<pre>INFO (2026-01-14 16:14:56,580) [ipw/ipw (line 939)]: Starting model selection
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:23,591) [ipw/ipw (line 972)]: Chosen lambda: 0.0894967426547247
+<pre>INFO (2026-01-14 16:14:56,583) [ipw/ipw (line 972)]: Chosen lambda: 0.0894967426547247
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:23,592) [ipw/ipw (line 990)]: Proportion null deviance explained 0.11496302030801142
+<pre>INFO (2026-01-14 16:14:56,584) [ipw/ipw (line 990)]: Proportion null deviance explained 0.11496302030801142
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:23,595) [sample_class/diagnostics (line 1788)]: Starting computation of diagnostics of the fitting
+<pre>INFO (2026-01-14 16:14:56,588) [sample_class/diagnostics (line 1788)]: Starting computation of diagnostics of the fitting
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:23,853) [sample_class/diagnostics (line 2009)]: Done computing diagnostics
+<pre>INFO (2026-01-14 16:14:56,839) [sample_class/diagnostics (line 2009)]: Done computing diagnostics
 </pre>
 </div>
 </div>
@@ -9183,8 +9183,9 @@ Regardless of the transformations, the model matrix made sure to turn the gender
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="Formula-and-penalty_factor">Formula and penalty_factor<a class="anchor-link" href="#Formula-and-penalty_factor">¶</a></h1><p>The formula can be provided as several strings, and then the penalty factor can indicate how much the model should focus to adjust to that element of the formula. Larger penalty factors means that element will be less corrected.</p>
-<p>The next two examples shows how in one case we focus on correcting for income, and in the second case we focus to correct for age and gender.</p>
+<h2 id="descriptive_stats-with-formulas">descriptive_stats with formulas<a class="anchor-link" href="#descriptive_stats-with-formulas">¶</a></h2><p>You can also use formulas when computing descriptive statistics to control which terms or
+dummy variables are included in the summary. This is helpful when you want summary
+statistics for a subset of columns or for specific categorical expansions.</p>
 </div>
 </div>
 </div>
@@ -9196,7 +9197,84 @@ Regardless of the transformations, the model matrix made sure to turn the gender
 <div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">transformations</span> <span class="o">=</span> <span class="p">{</span>
+<div class="highlight hl-python"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots.weighted_stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">descriptive_stats</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">"num"</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="s2">"group"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"a"</span><span class="p">,</span> <span class="s2">"b"</span><span class="p">,</span> <span class="s2">"a"</span><span class="p">]})</span>
+
+<span class="c1"># Only summarize the numeric column</span>
+<span class="n">descriptive_stats</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">stat</span><span class="o">=</span><span class="s2">"mean"</span><span class="p">,</span> <span class="n">formula</span><span class="o">=</span><span class="s2">"num"</span><span class="p">)</span>
+
+<span class="c1"># Summarize the categorical column via its dummy variables</span>
+<span class="n">descriptive_stats</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">stat</span><span class="o">=</span><span class="s2">"mean"</span><span class="p">,</span> <span class="n">formula</span><span class="o">=</span><span class="s2">"group"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[9]:</div>
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>group[a]</th>
+<th>group[b]</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>0</th>
+<td>0.666667</td>
+<td>0.333333</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h1 id="Formula-and-penalty_factor">Formula and penalty_factor<a class="anchor-link" href="#Formula-and-penalty_factor">¶</a></h1><p>The formula can be provided as several strings, and then the penalty factor can indicate how much the model should focus to adjust to that element of the formula. Larger penalty factors means that element will be less corrected.</p>
+<p>The next two examples shows how in one case we focus on correcting for income, and in the second case we focus to correct for age and gender.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-python"><pre><span></span><span class="n">transformations</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">"age_group"</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
     <span class="s2">"gender"</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
     <span class="s2">"income"</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
@@ -9227,110 +9305,110 @@ Regardless of the transformations, the model matrix made sure to turn the gender
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:23,871) [ipw/ipw (line 694)]: Starting ipw function
+<pre>INFO (2026-01-14 16:14:56,876) [ipw/ipw (line 694)]: Starting ipw function
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:23,873) [adjustment/apply_transformations (line 433)]: Adding the variables: []
+<pre>INFO (2026-01-14 16:14:56,878) [adjustment/apply_transformations (line 433)]: Adding the variables: []
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:23,874) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['age_group', 'gender', 'income']
+<pre>INFO (2026-01-14 16:14:56,878) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['age_group', 'gender', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:23,875) [adjustment/apply_transformations (line 469)]: Final variables in output: ['age_group', 'gender', 'income']
+<pre>INFO (2026-01-14 16:14:56,880) [adjustment/apply_transformations (line 469)]: Final variables in output: ['age_group', 'gender', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:23,883) [ipw/ipw (line 728)]: Building model matrix
+<pre>INFO (2026-01-14 16:14:56,887) [ipw/ipw (line 728)]: Building model matrix
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:23,952) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['age_group + gender', 'income']
+<pre>INFO (2026-01-14 16:14:56,952) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['age_group + gender', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:23,952) [ipw/ipw (line 753)]: The number of columns in the model matrix: 7
+<pre>INFO (2026-01-14 16:14:56,953) [ipw/ipw (line 753)]: The number of columns in the model matrix: 7
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:23,953) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
+<pre>INFO (2026-01-14 16:14:56,953) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:52,303) [ipw/ipw (line 915)]: Done with sklearn
+<pre>INFO (2026-01-14 16:15:25,139) [ipw/ipw (line 915)]: Done with sklearn
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:52,303) [ipw/ipw (line 917)]: max_de: None
+<pre>INFO (2026-01-14 16:15:25,140) [ipw/ipw (line 917)]: max_de: None
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:52,304) [ipw/ipw (line 939)]: Starting model selection
+<pre>INFO (2026-01-14 16:15:25,140) [ipw/ipw (line 939)]: Starting model selection
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:52,307) [ipw/ipw (line 972)]: Chosen lambda: 0.0009460271806598614
+<pre>INFO (2026-01-14 16:15:25,143) [ipw/ipw (line 972)]: Chosen lambda: 0.0009460271806598614
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:52,308) [ipw/ipw (line 990)]: Proportion null deviance explained 0.17289162681789683
+<pre>INFO (2026-01-14 16:15:25,144) [ipw/ipw (line 990)]: Proportion null deviance explained 0.17289162681789683
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:52,312) [sample_class/diagnostics (line 1788)]: Starting computation of diagnostics of the fitting
+<pre>INFO (2026-01-14 16:15:25,148) [sample_class/diagnostics (line 1788)]: Starting computation of diagnostics of the fitting
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:52,564) [sample_class/diagnostics (line 2009)]: Done computing diagnostics
+<pre>INFO (2026-01-14 16:15:25,402) [sample_class/diagnostics (line 2009)]: Done computing diagnostics
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[9]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[10]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -9427,10 +9505,10 @@ Regardless of the transformations, the model matrix made sure to turn the gender
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">transformations</span> <span class="o">=</span> <span class="p">{</span>
+<div class="highlight hl-python"><pre><span></span><span class="n">transformations</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">"age_group"</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
     <span class="s2">"gender"</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
     <span class="s2">"income"</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
@@ -9461,110 +9539,110 @@ Regardless of the transformations, the model matrix made sure to turn the gender
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:52,581) [ipw/ipw (line 694)]: Starting ipw function
+<pre>INFO (2026-01-14 16:15:25,419) [ipw/ipw (line 694)]: Starting ipw function
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:52,583) [adjustment/apply_transformations (line 433)]: Adding the variables: []
+<pre>INFO (2026-01-14 16:15:25,421) [adjustment/apply_transformations (line 433)]: Adding the variables: []
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:52,584) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['age_group', 'gender', 'income']
+<pre>INFO (2026-01-14 16:15:25,421) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['age_group', 'gender', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:52,585) [adjustment/apply_transformations (line 469)]: Final variables in output: ['age_group', 'gender', 'income']
+<pre>INFO (2026-01-14 16:15:25,423) [adjustment/apply_transformations (line 469)]: Final variables in output: ['age_group', 'gender', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:52,593) [ipw/ipw (line 728)]: Building model matrix
+<pre>INFO (2026-01-14 16:15:25,430) [ipw/ipw (line 728)]: Building model matrix
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:52,658) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['age_group + gender', 'income']
+<pre>INFO (2026-01-14 16:15:25,496) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['age_group + gender', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:52,659) [ipw/ipw (line 753)]: The number of columns in the model matrix: 7
+<pre>INFO (2026-01-14 16:15:25,496) [ipw/ipw (line 753)]: The number of columns in the model matrix: 7
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:53:52,659) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
+<pre>INFO (2026-01-14 16:15:25,497) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:18,870) [ipw/ipw (line 915)]: Done with sklearn
+<pre>INFO (2026-01-14 16:15:51,762) [ipw/ipw (line 915)]: Done with sklearn
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:18,871) [ipw/ipw (line 917)]: max_de: None
+<pre>INFO (2026-01-14 16:15:51,762) [ipw/ipw (line 917)]: max_de: None
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:18,872) [ipw/ipw (line 939)]: Starting model selection
+<pre>INFO (2026-01-14 16:15:51,763) [ipw/ipw (line 939)]: Starting model selection
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:18,876) [ipw/ipw (line 972)]: Chosen lambda: 0.0012484913627071772
+<pre>INFO (2026-01-14 16:15:51,766) [ipw/ipw (line 972)]: Chosen lambda: 0.0012484913627071772
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:18,876) [ipw/ipw (line 990)]: Proportion null deviance explained 0.17058848391571657
+<pre>INFO (2026-01-14 16:15:51,767) [ipw/ipw (line 990)]: Proportion null deviance explained 0.17058848391571657
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:18,880) [sample_class/diagnostics (line 1788)]: Starting computation of diagnostics of the fitting
+<pre>INFO (2026-01-14 16:15:51,771) [sample_class/diagnostics (line 1788)]: Starting computation of diagnostics of the fitting
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:19,155) [sample_class/diagnostics (line 2009)]: Done computing diagnostics
+<pre>INFO (2026-01-14 16:15:52,026) [sample_class/diagnostics (line 2009)]: Done computing diagnostics
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[10]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[11]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -9662,10 +9740,10 @@ Regardless of the transformations, the model matrix made sure to turn the gender
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">fct_lump_by</span><span class="p">,</span> <span class="n">quantize</span>
+<div class="highlight hl-python"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">fct_lump_by</span><span class="p">,</span> <span class="n">quantize</span>
 
 <span class="n">transformations</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">"age_group"</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
@@ -9699,110 +9777,110 @@ Regardless of the transformations, the model matrix made sure to turn the gender
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:19,172) [ipw/ipw (line 694)]: Starting ipw function
+<pre>INFO (2026-01-14 16:15:52,044) [ipw/ipw (line 694)]: Starting ipw function
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:19,174) [adjustment/apply_transformations (line 433)]: Adding the variables: ['income_buckets']
+<pre>INFO (2026-01-14 16:15:52,046) [adjustment/apply_transformations (line 433)]: Adding the variables: ['income_buckets']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:19,175) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['age_group', 'gender', 'income']
+<pre>INFO (2026-01-14 16:15:52,046) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['age_group', 'gender', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:19,180) [adjustment/apply_transformations (line 469)]: Final variables in output: ['income_buckets', 'age_group', 'gender', 'income']
+<pre>INFO (2026-01-14 16:15:52,051) [adjustment/apply_transformations (line 469)]: Final variables in output: ['income_buckets', 'age_group', 'gender', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:19,191) [ipw/ipw (line 728)]: Building model matrix
+<pre>INFO (2026-01-14 16:15:52,062) [ipw/ipw (line 728)]: Building model matrix
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:19,289) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['age_group + gender', 'income', 'income_buckets']
+<pre>INFO (2026-01-14 16:15:52,160) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['age_group + gender', 'income', 'income_buckets']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:19,289) [ipw/ipw (line 753)]: The number of columns in the model matrix: 11
+<pre>INFO (2026-01-14 16:15:52,160) [ipw/ipw (line 753)]: The number of columns in the model matrix: 11
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:19,290) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
+<pre>INFO (2026-01-14 16:15:52,161) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:38,894) [ipw/ipw (line 915)]: Done with sklearn
+<pre>INFO (2026-01-14 16:16:11,723) [ipw/ipw (line 915)]: Done with sklearn
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:38,895) [ipw/ipw (line 917)]: max_de: None
+<pre>INFO (2026-01-14 16:16:11,724) [ipw/ipw (line 917)]: max_de: None
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:38,895) [ipw/ipw (line 939)]: Starting model selection
+<pre>INFO (2026-01-14 16:16:11,725) [ipw/ipw (line 939)]: Starting model selection
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:38,898) [ipw/ipw (line 972)]: Chosen lambda: 0.043506507030756265
+<pre>INFO (2026-01-14 16:16:11,727) [ipw/ipw (line 972)]: Chosen lambda: 0.043506507030756265
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:38,898) [ipw/ipw (line 990)]: Proportion null deviance explained 0.17297124065566938
+<pre>INFO (2026-01-14 16:16:11,728) [ipw/ipw (line 990)]: Proportion null deviance explained 0.17297124065566938
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:38,902) [sample_class/diagnostics (line 1788)]: Starting computation of diagnostics of the fitting
+<pre>INFO (2026-01-14 16:16:11,732) [sample_class/diagnostics (line 1788)]: Starting computation of diagnostics of the fitting
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:39,157) [sample_class/diagnostics (line 2009)]: Done computing diagnostics
+<pre>INFO (2026-01-14 16:16:11,985) [sample_class/diagnostics (line 2009)]: Done computing diagnostics
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[11]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[12]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -9923,10 +10001,10 @@ Regardless of the transformations, the model matrix made sure to turn the gender
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">fct_lump_by</span><span class="p">,</span> <span class="n">quantize</span>
+<div class="highlight hl-python"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">fct_lump_by</span><span class="p">,</span> <span class="n">quantize</span>
 
 <span class="n">transformations</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">"age_group"</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
@@ -9960,110 +10038,110 @@ Regardless of the transformations, the model matrix made sure to turn the gender
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:39,175) [ipw/ipw (line 694)]: Starting ipw function
+<pre>INFO (2026-01-14 16:16:12,003) [ipw/ipw (line 694)]: Starting ipw function
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:39,177) [adjustment/apply_transformations (line 433)]: Adding the variables: ['income_buckets']
+<pre>INFO (2026-01-14 16:16:12,005) [adjustment/apply_transformations (line 433)]: Adding the variables: ['income_buckets']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:39,177) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['age_group', 'gender', 'income']
+<pre>INFO (2026-01-14 16:16:12,006) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['age_group', 'gender', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:39,182) [adjustment/apply_transformations (line 469)]: Final variables in output: ['income_buckets', 'age_group', 'gender', 'income']
+<pre>INFO (2026-01-14 16:16:12,011) [adjustment/apply_transformations (line 469)]: Final variables in output: ['income_buckets', 'age_group', 'gender', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:39,193) [ipw/ipw (line 728)]: Building model matrix
+<pre>INFO (2026-01-14 16:16:12,022) [ipw/ipw (line 728)]: Building model matrix
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:39,291) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['age_group', 'gender', 'income + income_buckets']
+<pre>INFO (2026-01-14 16:16:12,119) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['age_group', 'gender', 'income + income_buckets']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:39,291) [ipw/ipw (line 753)]: The number of columns in the model matrix: 12
+<pre>INFO (2026-01-14 16:16:12,120) [ipw/ipw (line 753)]: The number of columns in the model matrix: 12
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:39,292) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
+<pre>INFO (2026-01-14 16:16:12,120) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:55,095) [ipw/ipw (line 915)]: Done with sklearn
+<pre>INFO (2026-01-14 16:16:27,927) [ipw/ipw (line 915)]: Done with sklearn
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:55,096) [ipw/ipw (line 917)]: max_de: None
+<pre>INFO (2026-01-14 16:16:27,927) [ipw/ipw (line 917)]: max_de: None
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:55,096) [ipw/ipw (line 939)]: Starting model selection
+<pre>INFO (2026-01-14 16:16:27,928) [ipw/ipw (line 939)]: Starting model selection
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:55,099) [ipw/ipw (line 972)]: Chosen lambda: 0.0894967426547247
+<pre>INFO (2026-01-14 16:16:27,931) [ipw/ipw (line 972)]: Chosen lambda: 0.0894967426547247
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:55,100) [ipw/ipw (line 990)]: Proportion null deviance explained 0.17297566853458446
+<pre>INFO (2026-01-14 16:16:27,932) [ipw/ipw (line 990)]: Proportion null deviance explained 0.17297566853458446
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:55,103) [sample_class/diagnostics (line 1788)]: Starting computation of diagnostics of the fitting
+<pre>INFO (2026-01-14 16:16:27,935) [sample_class/diagnostics (line 1788)]: Starting computation of diagnostics of the fitting
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:55,365) [sample_class/diagnostics (line 2009)]: Done computing diagnostics
+<pre>INFO (2026-01-14 16:16:28,190) [sample_class/diagnostics (line 2009)]: Done computing diagnostics
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[12]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[13]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -10190,10 +10268,10 @@ Regardless of the transformations, the model matrix made sure to turn the gender
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Defaults from the package</span>
+<div class="highlight hl-python"><pre><span></span><span class="c1"># Defaults from the package</span>
 
 <span class="n">adjusted</span> <span class="o">=</span> <span class="n">sample_with_target</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span>
     <span class="c1"># max_de=None,</span>
@@ -10214,91 +10292,91 @@ Regardless of the transformations, the model matrix made sure to turn the gender
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:55,382) [ipw/ipw (line 694)]: Starting ipw function
+<pre>INFO (2026-01-14 16:16:28,207) [ipw/ipw (line 694)]: Starting ipw function
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:55,384) [adjustment/apply_transformations (line 433)]: Adding the variables: []
+<pre>INFO (2026-01-14 16:16:28,209) [adjustment/apply_transformations (line 433)]: Adding the variables: []
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:55,384) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['gender', 'age_group', 'income']
+<pre>INFO (2026-01-14 16:16:28,210) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['gender', 'age_group', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:55,394) [adjustment/apply_transformations (line 469)]: Final variables in output: ['gender', 'age_group', 'income']
+<pre>INFO (2026-01-14 16:16:28,219) [adjustment/apply_transformations (line 469)]: Final variables in output: ['gender', 'age_group', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:55,402) [ipw/ipw (line 728)]: Building model matrix
+<pre>INFO (2026-01-14 16:16:28,227) [ipw/ipw (line 728)]: Building model matrix
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:55,497) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
+<pre>INFO (2026-01-14 16:16:28,321) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:55,498) [ipw/ipw (line 753)]: The number of columns in the model matrix: 16
+<pre>INFO (2026-01-14 16:16:28,322) [ipw/ipw (line 753)]: The number of columns in the model matrix: 16
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:54:55,499) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
+<pre>INFO (2026-01-14 16:16:28,323) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:12,124) [ipw/ipw (line 915)]: Done with sklearn
+<pre>INFO (2026-01-14 16:16:44,962) [ipw/ipw (line 915)]: Done with sklearn
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:12,125) [ipw/ipw (line 917)]: max_de: None
+<pre>INFO (2026-01-14 16:16:44,963) [ipw/ipw (line 917)]: max_de: None
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:12,126) [ipw/ipw (line 939)]: Starting model selection
+<pre>INFO (2026-01-14 16:16:44,963) [ipw/ipw (line 939)]: Starting model selection
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:12,129) [ipw/ipw (line 972)]: Chosen lambda: 0.041158338186664825
+<pre>INFO (2026-01-14 16:16:44,966) [ipw/ipw (line 972)]: Chosen lambda: 0.041158338186664825
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:12,129) [ipw/ipw (line 990)]: Proportion null deviance explained 0.17265121909892267
+<pre>INFO (2026-01-14 16:16:44,967) [ipw/ipw (line 990)]: Proportion null deviance explained 0.17265121909892267
 </pre>
 </div>
 </div>
@@ -10358,10 +10436,10 @@ n    10000.0
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [15]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># No transformations at all</span>
+<div class="highlight hl-python"><pre><span></span><span class="c1"># No transformations at all</span>
 
 <span class="c1"># transformations = None is just like using:</span>
 <span class="c1"># transformations = {</span>
@@ -10395,70 +10473,70 @@ n    10000.0
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:13,634) [ipw/ipw (line 694)]: Starting ipw function
+<pre>INFO (2026-01-14 16:16:46,469) [ipw/ipw (line 694)]: Starting ipw function
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:13,636) [ipw/ipw (line 728)]: Building model matrix
+<pre>INFO (2026-01-14 16:16:46,470) [ipw/ipw (line 728)]: Building model matrix
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:13,702) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
+<pre>INFO (2026-01-14 16:16:46,536) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:13,702) [ipw/ipw (line 753)]: The number of columns in the model matrix: 8
+<pre>INFO (2026-01-14 16:16:46,537) [ipw/ipw (line 753)]: The number of columns in the model matrix: 8
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:13,703) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
+<pre>INFO (2026-01-14 16:16:46,537) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:29,183) [ipw/ipw (line 915)]: Done with sklearn
+<pre>INFO (2026-01-14 16:17:02,081) [ipw/ipw (line 915)]: Done with sklearn
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:29,184) [ipw/ipw (line 917)]: max_de: None
+<pre>INFO (2026-01-14 16:17:02,082) [ipw/ipw (line 917)]: max_de: None
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:29,184) [ipw/ipw (line 939)]: Starting model selection
+<pre>INFO (2026-01-14 16:17:02,082) [ipw/ipw (line 939)]: Starting model selection
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:29,187) [ipw/ipw (line 972)]: Chosen lambda: 0.0368353720078807
+<pre>INFO (2026-01-14 16:17:02,085) [ipw/ipw (line 972)]: Chosen lambda: 0.0368353720078807
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:29,188) [ipw/ipw (line 990)]: Proportion null deviance explained 0.17353587606008936
+<pre>INFO (2026-01-14 16:17:02,086) [ipw/ipw (line 990)]: Proportion null deviance explained 0.17353587606008936
 </pre>
 </div>
 </div>
@@ -10518,10 +10596,10 @@ n    10000.0
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [15]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [16]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># No transformations at all</span>
+<div class="highlight hl-python"><pre><span></span><span class="c1"># No transformations at all</span>
 <span class="n">transformations</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="c1"># But passing a squared term of income to the formula:</span>
 <span class="n">formula</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"age_group + gender + income + income**2"</span><span class="p">]</span>
@@ -10553,70 +10631,70 @@ n    10000.0
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:30,683) [ipw/ipw (line 694)]: Starting ipw function
+<pre>INFO (2026-01-14 16:17:03,569) [ipw/ipw (line 694)]: Starting ipw function
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:30,685) [ipw/ipw (line 728)]: Building model matrix
+<pre>INFO (2026-01-14 16:17:03,570) [ipw/ipw (line 728)]: Building model matrix
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:30,750) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['age_group + gender + income + income**2']
+<pre>INFO (2026-01-14 16:17:03,636) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['age_group + gender + income + income**2']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:30,751) [ipw/ipw (line 753)]: The number of columns in the model matrix: 7
+<pre>INFO (2026-01-14 16:17:03,636) [ipw/ipw (line 753)]: The number of columns in the model matrix: 7
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:30,751) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
+<pre>INFO (2026-01-14 16:17:03,637) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:45,562) [ipw/ipw (line 915)]: Done with sklearn
+<pre>INFO (2026-01-14 16:17:18,461) [ipw/ipw (line 915)]: Done with sklearn
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:45,563) [ipw/ipw (line 917)]: max_de: None
+<pre>INFO (2026-01-14 16:17:18,462) [ipw/ipw (line 917)]: max_de: None
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:45,563) [ipw/ipw (line 939)]: Starting model selection
+<pre>INFO (2026-01-14 16:17:18,462) [ipw/ipw (line 939)]: Starting model selection
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:45,566) [ipw/ipw (line 972)]: Chosen lambda: 0.0574164245593571
+<pre>INFO (2026-01-14 16:17:18,466) [ipw/ipw (line 972)]: Chosen lambda: 0.0574164245593571
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:45,567) [ipw/ipw (line 990)]: Proportion null deviance explained 0.17296221715396187
+<pre>INFO (2026-01-14 16:17:18,467) [ipw/ipw (line 990)]: Proportion null deviance explained 0.17296221715396187
 </pre>
 </div>
 </div>
@@ -10676,10 +10754,10 @@ n    10000.0
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [16]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [17]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">transformations</span> <span class="o">=</span> <span class="p">{</span>
+<div class="highlight hl-python"><pre><span></span><span class="n">transformations</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">"age_group"</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
     <span class="s2">"gender"</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
     <span class="s2">"income"</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
@@ -10715,91 +10793,91 @@ n    10000.0
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:47,060) [ipw/ipw (line 694)]: Starting ipw function
+<pre>INFO (2026-01-14 16:17:19,937) [ipw/ipw (line 694)]: Starting ipw function
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:47,063) [adjustment/apply_transformations (line 433)]: Adding the variables: ['income_buckets']
+<pre>INFO (2026-01-14 16:17:19,939) [adjustment/apply_transformations (line 433)]: Adding the variables: ['income_buckets']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:47,063) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['age_group', 'gender', 'income']
+<pre>INFO (2026-01-14 16:17:19,939) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['age_group', 'gender', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:47,069) [adjustment/apply_transformations (line 469)]: Final variables in output: ['income_buckets', 'age_group', 'gender', 'income']
+<pre>INFO (2026-01-14 16:17:19,945) [adjustment/apply_transformations (line 469)]: Final variables in output: ['income_buckets', 'age_group', 'gender', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:47,080) [ipw/ipw (line 728)]: Building model matrix
+<pre>INFO (2026-01-14 16:17:19,956) [ipw/ipw (line 728)]: Building model matrix
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:47,178) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['age_group + gender', 'income_buckets']
+<pre>INFO (2026-01-14 16:17:20,053) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['age_group + gender', 'income_buckets']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:47,179) [ipw/ipw (line 753)]: The number of columns in the model matrix: 26
+<pre>INFO (2026-01-14 16:17:20,054) [ipw/ipw (line 753)]: The number of columns in the model matrix: 26
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:55:47,180) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
+<pre>INFO (2026-01-14 16:17:20,055) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:09,671) [ipw/ipw (line 915)]: Done with sklearn
+<pre>INFO (2026-01-14 16:17:42,564) [ipw/ipw (line 915)]: Done with sklearn
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:09,672) [ipw/ipw (line 917)]: max_de: None
+<pre>INFO (2026-01-14 16:17:42,565) [ipw/ipw (line 917)]: max_de: None
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:09,673) [ipw/ipw (line 939)]: Starting model selection
+<pre>INFO (2026-01-14 16:17:42,565) [ipw/ipw (line 939)]: Starting model selection
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:09,676) [ipw/ipw (line 972)]: Chosen lambda: 0.09460271806598614
+<pre>INFO (2026-01-14 16:17:42,569) [ipw/ipw (line 972)]: Chosen lambda: 0.09460271806598614
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:09,676) [ipw/ipw (line 990)]: Proportion null deviance explained 0.17682033095496275
+<pre>INFO (2026-01-14 16:17:42,569) [ipw/ipw (line 990)]: Proportion null deviance explained 0.17682033095496275
 </pre>
 </div>
 </div>
@@ -10862,7 +10940,7 @@ n    10000.0
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span> 
+<div class="highlight hl-python"><pre><span></span> 
 </pre></div>
 </div>
 </div>
@@ -10884,10 +10962,10 @@ n    10000.0
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [17]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [18]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Defaults from the package</span>
+<div class="highlight hl-python"><pre><span></span><span class="c1"># Defaults from the package</span>
 
 <span class="n">adjusted</span> <span class="o">=</span> <span class="n">sample_with_target</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span>
     <span class="n">method</span> <span class="o">=</span> <span class="s2">"cbps"</span><span class="p">,</span>
@@ -10911,77 +10989,77 @@ n    10000.0
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:11,168) [cbps/cbps (line 537)]: Starting cbps function
+<pre>INFO (2026-01-14 16:17:44,057) [cbps/cbps (line 537)]: Starting cbps function
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:11,170) [adjustment/apply_transformations (line 433)]: Adding the variables: []
+<pre>INFO (2026-01-14 16:17:44,059) [adjustment/apply_transformations (line 433)]: Adding the variables: []
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:11,171) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['gender', 'age_group', 'income']
+<pre>INFO (2026-01-14 16:17:44,060) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['gender', 'age_group', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:11,180) [adjustment/apply_transformations (line 469)]: Final variables in output: ['gender', 'age_group', 'income']
+<pre>INFO (2026-01-14 16:17:44,069) [adjustment/apply_transformations (line 469)]: Final variables in output: ['gender', 'age_group', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:11,282) [cbps/cbps (line 588)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
+<pre>INFO (2026-01-14 16:17:44,171) [cbps/cbps (line 588)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:11,283) [cbps/cbps (line 599)]: The number of columns in the model matrix: 16
+<pre>INFO (2026-01-14 16:17:44,172) [cbps/cbps (line 599)]: The number of columns in the model matrix: 16
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:11,284) [cbps/cbps (line 600)]: The number of rows in the model matrix: 11000
+<pre>INFO (2026-01-14 16:17:44,173) [cbps/cbps (line 600)]: The number of rows in the model matrix: 11000
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:11,289) [cbps/cbps (line 669)]: Finding initial estimator for GMM optimization
+<pre>INFO (2026-01-14 16:17:44,179) [cbps/cbps (line 669)]: Finding initial estimator for GMM optimization
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:11,413) [cbps/cbps (line 696)]: Finding initial estimator for GMM optimization that minimizes the balance loss
+<pre>INFO (2026-01-14 16:17:44,301) [cbps/cbps (line 696)]: Finding initial estimator for GMM optimization that minimizes the balance loss
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:11,665) [cbps/cbps (line 732)]: Running GMM optimization
+<pre>INFO (2026-01-14 16:17:44,555) [cbps/cbps (line 732)]: Running GMM optimization
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:12,135) [cbps/cbps (line 859)]: Done cbps function
+<pre>INFO (2026-01-14 16:17:45,025) [cbps/cbps (line 859)]: Done cbps function
 </pre>
 </div>
 </div>
@@ -11039,10 +11117,10 @@ n    10000.0
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [18]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [19]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<div class="highlight hl-python"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="c1"># No transformations at all</span>
 <span class="n">transformations</span> <span class="o">=</span> <span class="p">{</span>
@@ -11079,84 +11157,84 @@ n    10000.0
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:13,669) [cbps/cbps (line 537)]: Starting cbps function
+<pre>INFO (2026-01-14 16:17:46,581) [cbps/cbps (line 537)]: Starting cbps function
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:13,671) [adjustment/apply_transformations (line 433)]: Adding the variables: ['income_log', 'income_buckets']
+<pre>INFO (2026-01-14 16:17:46,583) [adjustment/apply_transformations (line 433)]: Adding the variables: ['income_log', 'income_buckets']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:13,672) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['age_group', 'gender']
+<pre>INFO (2026-01-14 16:17:46,584) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['age_group', 'gender']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>WARNING (2026-01-13 15:56:13,677) [adjustment/apply_transformations (line 466)]: Dropping the variables: ['income']
+<pre>WARNING (2026-01-14 16:17:46,589) [adjustment/apply_transformations (line 466)]: Dropping the variables: ['income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:13,677) [adjustment/apply_transformations (line 469)]: Final variables in output: ['income_log', 'income_buckets', 'age_group', 'gender']
+<pre>INFO (2026-01-14 16:17:46,590) [adjustment/apply_transformations (line 469)]: Final variables in output: ['income_log', 'income_buckets', 'age_group', 'gender']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:13,783) [cbps/cbps (line 588)]: The formula used to build the model matrix: ['age_group + gender + income_log * income_buckets']
+<pre>INFO (2026-01-14 16:17:46,697) [cbps/cbps (line 588)]: The formula used to build the model matrix: ['age_group + gender + income_log * income_buckets']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:13,785) [cbps/cbps (line 599)]: The number of columns in the model matrix: 15
+<pre>INFO (2026-01-14 16:17:46,698) [cbps/cbps (line 599)]: The number of columns in the model matrix: 15
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:13,785) [cbps/cbps (line 600)]: The number of rows in the model matrix: 11000
+<pre>INFO (2026-01-14 16:17:46,699) [cbps/cbps (line 600)]: The number of rows in the model matrix: 11000
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:13,790) [cbps/cbps (line 669)]: Finding initial estimator for GMM optimization
+<pre>INFO (2026-01-14 16:17:46,704) [cbps/cbps (line 669)]: Finding initial estimator for GMM optimization
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:13,914) [cbps/cbps (line 696)]: Finding initial estimator for GMM optimization that minimizes the balance loss
+<pre>INFO (2026-01-14 16:17:46,832) [cbps/cbps (line 696)]: Finding initial estimator for GMM optimization that minimizes the balance loss
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:14,245) [cbps/cbps (line 732)]: Running GMM optimization
+<pre>INFO (2026-01-14 16:17:47,158) [cbps/cbps (line 732)]: Running GMM optimization
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-13 15:56:14,697) [cbps/cbps (line 859)]: Done cbps function
+<pre>INFO (2026-01-14 16:17:47,603) [cbps/cbps (line 859)]: Done cbps function
 </pre>
 </div>
 </div>
@@ -11214,10 +11292,10 @@ n    10000.0
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [19]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [20]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Sessions info</span>
+<div class="highlight hl-python"><pre><span></span><span class="c1"># Sessions info</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">session_info</span>
 <span class="n">session_info</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">html</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">dependencies</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
@@ -11340,7 +11418,7 @@ notebook            7.5.2
 Python 3.9.25 (main, Nov  3 2025, 15:16:36) [GCC 13.3.0]
 Linux-6.11.0-1018-azure-x86_64-with-glibc2.39
 -----
-Session information updated at 2026-01-13 15:56
+Session information updated at 2026-01-14 16:17
 </pre>
 </div>
 </div>
