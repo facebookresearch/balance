@@ -432,7 +432,7 @@ def descriptive_stats(
     # relevant only if we have non-numeric columns and we want to use model_matrix on them
     numeric_only: bool = False,
     add_na: bool = True,
-    formula: Optional[Union[str, list[str]]] = None
+    formula: Optional[Union[str, list[str]]] = None,
     **kwargs: Any,
 ) -> pd.DataFrame:
     """Computes weighted statistics (e.g.: mean, std) on a DataFrame
