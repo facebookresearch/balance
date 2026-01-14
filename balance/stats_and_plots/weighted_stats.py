@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Tuple, Union, Optional
+from typing import Any, Optional, Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
