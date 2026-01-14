@@ -534,6 +534,15 @@ def descriptive_stats(
                 #                 0
                 # 0  (1.738, 4.262)
 
+            # Formula example
+            df = pd.DataFrame({"num": [1, 2, 3], "group": ["a", "b", "a"]})
+            print(descriptive_stats(df, stat="mean", formula="num"))
+                #     num
+                # 0  2.0
+            print(descriptive_stats(df, stat="mean", formula="group"))
+                #    group[a]  group[b]
+                # 0       0.67      0.33
+
     """
     if formula is not None:
         df = model_matrix(  # pyre-ignore[9]: this uses the DataFrame only
