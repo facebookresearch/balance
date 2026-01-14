@@ -569,6 +569,10 @@ def descriptive_stats(
             #       if it does - then maybe add an option of numeric_only = None
             #       to just use df as is.
             df = df.select_dtypes(include=[np.number])
+        else:
+            df = model_matrix(df, add_na=add_na, return_type="one", formula=formula)[
+                "model_matrix"
+            ]
 
     if stat == "mean":
         return weighted_mean(df, weights, inf_rm=True).to_frame().transpose()
