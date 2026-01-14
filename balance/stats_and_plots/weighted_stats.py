@@ -15,6 +15,7 @@ import numpy.typing as npt
 import pandas as pd
 from balance.stats_and_plots.weights_stats import _check_weights_are_valid
 from balance.util import model_matrix, rm_mutual_nas
+from balance.utils.input_validation import _verify_value_type
 from scipy.stats import norm
 from statsmodels.stats.weightstats import DescrStatsW
 
@@ -534,20 +535,31 @@ def descriptive_stats(
                 #                 0
                 # 0  (1.738, 4.262)
 
-            # Formula example
+            # Formula examples
             df = pd.DataFrame({"num": [1, 2, 3], "group": ["a", "b", "a"]})
+            # Default formula includes all variables and encodes categoricals.
+            print(descriptive_stats(df, stat="mean"))
+                #    group[a]  group[b]  num
+                # 0      0.67      0.33  2.0
             print(descriptive_stats(df, stat="mean", formula="num"))
                 #     num
                 # 0  2.0
             print(descriptive_stats(df, stat="mean", formula="group"))
                 #    group[a]  group[b]
                 # 0       0.67      0.33
+            print(descriptive_stats(df, stat="mean", formula="num + group"))
+                #    group[a]  group[b]  num
+                # 0      0.67      0.33  2.0
+            print(descriptive_stats(df, stat="mean", formula="num + group + num:group"))
+                #    group[a]  group[b]  num  num:group[T.b]
+                # 0      0.67      0.33  2.0            0.67
 
     """
+    df = _verify_value_type(df, pd.DataFrame)
     if formula is not None:
-        df = model_matrix(  # pyre-ignore[9]: this uses the DataFrame only
-            df, add_na=add_na, return_type="one", formula=formula
-        )["model_matrix"]
+        df = model_matrix(df, add_na=add_na, return_type="one", formula=formula)[
+            "model_matrix"
+        ]
     elif len(df.select_dtypes(np.number).columns) != len(df.columns):
         # If we have non-numeric columns, and want faster results,
         # then we can set numeric_only == True.
@@ -557,10 +569,6 @@ def descriptive_stats(
             #       if it does - then maybe add an option of numeric_only = None
             #       to just use df as is.
             df = df.select_dtypes(include=[np.number])
-        else:
-            df = model_matrix(  # pyre-ignore[9]: this uses the DataFrame only
-                df, add_na=add_na, return_type="one", formula=formula
-            )["model_matrix"]
 
     if stat == "mean":
         return weighted_mean(df, weights, inf_rm=True).to_frame().transpose()
