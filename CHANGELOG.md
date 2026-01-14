@@ -23,6 +23,10 @@
     explicitly, and their treatment depended on pandas `groupby` and `merge`
     defaults. To approximate the legacy behavior where missing values do not
     form their own category, pass `na_action="drop"` explicitly.
+- **Customize `descriptive_stats` model matrices with formulas**
+  - `descriptive_stats()` now accepts a `formula` argument that is always
+    applied to the data (including numeric-only frames), letting callers
+    control which terms and dummy variables are included in summary statistics.
 
 ## Bug Fixes
 
