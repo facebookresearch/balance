@@ -751,6 +751,30 @@ class TestBalance_weighted_stats(
             {0: {0: (1.738, 4.262)}},
         )
 
+        df = pd.DataFrame({"num": [1, 2, 3], "group": ["a", "b", "a"]})
+        stats_num_only = descriptive_stats(df, stat="mean", formula="num")
+        self.assertEqual(list(stats_num_only.columns), ["num"])
+        self.assertEqual(stats_num_only.iloc[0, 0], np.mean([1, 2, 3]))
+
+        stats_group_only = descriptive_stats(df, stat="mean", formula="group")
+        self.assertNotIn("num", stats_group_only.columns)
+        self.assertTrue(
+            all(column.startswith("group") for column in stats_group_only.columns)
+        )
+
+        numeric_df = pd.DataFrame({"a": [1, 2, 3], "b": [3, 4, 5]})
+        stats_single_col = descriptive_stats(numeric_df, stat="mean", formula="a")
+        self.assertEqual(list(stats_single_col.columns), ["a"])
+        self.assertEqual(stats_single_col.iloc[0, 0], np.mean([1, 2, 3]))
+
+        stats_multi_formula = descriptive_stats(
+            df, stat="mean", formula=["num", "group"]
+        )
+        self.assertIn("num", stats_multi_formula.columns)
+        self.assertTrue(
+            any(column.startswith("group") for column in stats_multi_formula.columns)
+        )
+
 
 class TestBalance_weighted_comparisons_stats(
     balance.testutil.BalanceTestCase,

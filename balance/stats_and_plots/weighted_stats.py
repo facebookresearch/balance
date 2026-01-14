@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Tuple
+from typing import Any, Tuple, Union, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -432,6 +432,7 @@ def descriptive_stats(
     # relevant only if we have non-numeric columns and we want to use model_matrix on them
     numeric_only: bool = False,
     add_na: bool = True,
+    formula: Optional[Union[str, list[str]]] = None
     **kwargs: Any,
 ) -> pd.DataFrame:
     """Computes weighted statistics (e.g.: mean, std) on a DataFrame
@@ -461,6 +462,10 @@ def descriptive_stats(
         add_na (bool, optional): Passed to :func:`model_matrix`.
             Relevant only if numeric_only == False and df has non-numeric columns.
             Defaults to True.
+        formula (Optional[Union[str, List[str]]], optional): Formula passed to
+            :func:`model_matrix`. When provided, the formula is always applied,
+            allowing customization of which columns/dummies are used in the
+            statistics (and taking precedence over numeric_only). Defaults to None.
         **kwargs: extra args to be passed to functions (e.g.: ci_of_weighted_mean)
 
     Returns:
@@ -530,7 +535,11 @@ def descriptive_stats(
                 # 0  (1.738, 4.262)
 
     """
-    if len(df.select_dtypes(np.number).columns) != len(df.columns):
+    if formula is not None:
+        df = model_matrix(  # pyre-ignore[9]: this uses the DataFrame only
+            df, add_na=add_na, return_type="one", formula=formula
+        )["model_matrix"]
+    elif len(df.select_dtypes(np.number).columns) != len(df.columns):
         # If we have non-numeric columns, and want faster results,
         # then we can set numeric_only == True.
         # This will skip the model_matrix computation for non-numeric variables.
@@ -540,9 +549,8 @@ def descriptive_stats(
             #       to just use df as is.
             df = df.select_dtypes(include=[np.number])
         else:
-            # TODO: add the ability to pass formula argument to model_matrix
-            df = model_matrix(  # pyre-ignore[9]: this uses the DataFrame onlyÍ
-                df, add_na=add_na, return_type="one"
+            df = model_matrix(  # pyre-ignore[9]: this uses the DataFrame only
+                df, add_na=add_na, return_type="one", formula=formula
             )["model_matrix"]
 
     if stat == "mean":
