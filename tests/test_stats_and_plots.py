@@ -796,6 +796,14 @@ class TestBalance_weighted_stats(
             all(column in stats_interactions.columns for column in ("num:group[T.b]",))
         )
 
+        stats_default_formula = descriptive_stats(df, stat="mean")
+        self.assertTrue(
+            all(
+                column in stats_default_formula.columns
+                for column in ("group[a]", "group[b]", "num")
+            )
+        )
+
 
 class TestBalance_weighted_comparisons_stats(
     balance.testutil.BalanceTestCase,
