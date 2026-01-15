@@ -12,8 +12,8 @@ from typing import Any, cast
 import balance.testutil
 import numpy as np
 import pandas as pd
-from balance.util import _verify_value_type
 from balance.stats_and_plots import weighted_comparisons_stats
+from balance.util import _verify_value_type
 
 
 class TestBalance_weights_stats(
