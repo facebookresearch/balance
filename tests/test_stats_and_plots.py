@@ -13,6 +13,7 @@ import balance.testutil
 import numpy as np
 import pandas as pd
 from balance.util import _verify_value_type
+from balance.stats_and_plots import weighted_comparisons_stats
 
 
 class TestBalance_weights_stats(
@@ -1790,3 +1791,87 @@ class TestKLDivergence(balance.testutil.BalanceTestCase):
 
         # Identical single-category should have zero KLD
         self.assertAlmostEqual(kld_result["constant"], 0.0, places=5)
+
+    def test_emd_identical_distributions(self) -> None:
+        df = pd.DataFrame(
+            {
+                "category": ["A", "A", "B", "C"],
+                "numeric": [1.0, 2.0, 3.0, 4.0],
+            }
+        )
+
+        emd_result = weighted_comparisons_stats.emd(df, df)
+
+        self.assertAlmostEqual(emd_result["category"], 0.0, places=6)
+        self.assertAlmostEqual(emd_result["numeric"], 0.0, places=6)
+        self.assertAlmostEqual(emd_result["mean(emd)"], 0.0, places=6)
+
+    def test_emd_weighted_categorical(self) -> None:
+        sample_df = pd.DataFrame({"binary": [0, 0, 1, 1]})
+        target_df = pd.DataFrame({"binary": [0, 1, 1, 1]})
+
+        sample_weights = np.array([1.0, 1.0, 2.0, 2.0])
+        target_weights = np.array([1.0, 1.0, 1.0, 1.0])
+
+        emd_unweighted = weighted_comparisons_stats.emd(sample_df, target_df)
+        emd_weighted = weighted_comparisons_stats.emd(
+            sample_df, target_df, sample_weights, target_weights
+        )
+
+        self.assertNotEqual(emd_unweighted["binary"], emd_weighted["binary"])
+
+    def test_cvmd_discrete_matches_expected(self) -> None:
+        sample_df = pd.DataFrame({"cat": ["A", "A", "B"]})
+        target_df = pd.DataFrame({"cat": ["A", "B", "B"]})
+
+        cvmd_result = weighted_comparisons_stats.cvmd(sample_df, target_df)
+
+        expected = (1 / 3) ** 2 * 0.5
+        self.assertAlmostEqual(cvmd_result["cat"], expected, places=6)
+
+    def test_ks_discrete_matches_expected(self) -> None:
+        sample_df = pd.DataFrame({"cat": ["A", "A", "B"]})
+        target_df = pd.DataFrame({"cat": ["A", "B", "B"]})
+
+        ks_result = weighted_comparisons_stats.ks(sample_df, target_df)
+
+        self.assertAlmostEqual(ks_result["cat"], 1 / 3, places=6)
+
+    def test_ks_numeric_matches_expected(self) -> None:
+        sample_df = pd.DataFrame({"x": [0.0, 0.0, 1.0, 1.0]})
+        target_df = pd.DataFrame({"x": [0.0, 1.0, 1.0, 1.0]})
+
+        ks_result = weighted_comparisons_stats.ks(sample_df, target_df)
+
+        self.assertAlmostEqual(ks_result["x"], 0.25, places=6)
+
+    def test_emd_cvmd_ks_validation_errors(self) -> None:
+        valid_df = pd.DataFrame({"a": [1, 2, 3]})
+        invalid_series: Any = pd.Series([1, 2, 3])
+
+        with self.assertRaisesRegex(ValueError, "sample_df must be pd.DataFrame"):
+            weighted_comparisons_stats.emd(invalid_series, valid_df)
+        with self.assertRaisesRegex(ValueError, "target_df must be pd.DataFrame"):
+            weighted_comparisons_stats.emd(valid_df, invalid_series)
+
+        with self.assertRaisesRegex(ValueError, "sample_df must be pd.DataFrame"):
+            weighted_comparisons_stats.cvmd(invalid_series, valid_df)
+        with self.assertRaisesRegex(ValueError, "target_df must be pd.DataFrame"):
+            weighted_comparisons_stats.cvmd(valid_df, invalid_series)
+
+        with self.assertRaisesRegex(ValueError, "sample_df must be pd.DataFrame"):
+            weighted_comparisons_stats.ks(invalid_series, valid_df)
+        with self.assertRaisesRegex(ValueError, "target_df must be pd.DataFrame"):
+            weighted_comparisons_stats.ks(valid_df, invalid_series)
+
+    def test_emd_cvmd_ks_skip_na_indicator(self) -> None:
+        sample_df = pd.DataFrame({"value": [1, 2, 3, 4], "_is_na_value": [0, 0, 1, 0]})
+        target_df = pd.DataFrame({"value": [2, 3, 4, 5], "_is_na_value": [0, 1, 0, 0]})
+
+        emd_result = weighted_comparisons_stats.emd(sample_df, target_df)
+        cvmd_result = weighted_comparisons_stats.cvmd(sample_df, target_df)
+        ks_result = weighted_comparisons_stats.ks(sample_df, target_df)
+
+        for result in (emd_result, cvmd_result, ks_result):
+            self.assertNotIn("_is_na_value", result.index)
+            self.assertIn("value", result.index)

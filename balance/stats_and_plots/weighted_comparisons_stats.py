@@ -10,7 +10,7 @@ from __future__ import annotations
 import collections
 import logging
 import re
-from typing import List, Literal
+from typing import Any, List, Literal
 
 import numpy as np
 import numpy.typing as npt
@@ -24,7 +24,7 @@ from balance.stats_and_plots.weights_stats import _check_weights_are_valid
 from balance.util import _safe_groupby_apply, _safe_replace_and_infer
 from pandas import CategoricalDtype
 from scipy.integrate import quad
-from scipy.stats import gaussian_kde
+from scipy.stats import gaussian_kde, wasserstein_distance
 
 logger: logging.Logger = logging.getLogger(__package__)
 
@@ -225,6 +225,216 @@ def _kl_divergence_continuous_quad(
 
     kl, _ = quad(integrand, float(min_support), float(max_support), limit=100)
     return float(max(kl, 0.0))
+
+
+def _sorted_unique_categories(values: pd.Series) -> list[Any]:
+    """
+    Return sorted unique non-null category values for a Series.
+
+    Args:
+        values (pd.Series): Input series of categorical-like values.
+
+    Returns:
+        List[Any]: Sorted unique values. If no non-null values exist, returns an empty list.
+
+    Examples:
+    .. code-block:: python
+
+            import pandas as pd
+            from balance.stats_and_plots.weighted_comparisons_stats import (
+                _sorted_unique_categories,
+            )
+
+            _sorted_unique_categories(pd.Series(["b", "a", None]))
+            # ['a', 'b']
+    """
+    uniques = pd.unique(values.dropna())
+    if len(uniques) == 0:
+        return []
+    try:
+        return sorted(uniques)
+    except TypeError:
+        return sorted(uniques, key=lambda x: str(x))
+
+
+def _weighted_pmf(series: pd.Series, weights: np.ndarray) -> pd.Series:
+    """
+    Compute a weighted probability mass function for a categorical series.
+
+    Args:
+        series (pd.Series): Input categorical series.
+        weights (np.ndarray): Non-negative weights aligned to ``series``.
+
+    Returns:
+        pd.Series: Weighted PMF indexed by category values.
+
+    Raises:
+        ValueError: If weights sum to a non-positive value.
+
+    Examples:
+    .. code-block:: python
+
+            import numpy as np
+            import pandas as pd
+            from balance.stats_and_plots.weighted_comparisons_stats import _weighted_pmf
+
+            _weighted_pmf(pd.Series(["a", "a", "b"]), np.array([1.0, 2.0, 1.0]))
+            # a    0.75
+            # b    0.25
+            # dtype: float64
+    """
+    df = pd.DataFrame({"value": series, "weight": weights})
+    df = df[df["value"].notna()]
+    grouped = df.groupby("value", sort=False, observed=False)["weight"].sum()
+    total = grouped.sum()
+    if total <= 0:
+        raise ValueError("PMF weights must sum to a positive value.")
+    return grouped / total
+
+
+def _weighted_ecdf(
+    values: np.ndarray, weights: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Compute a weighted empirical CDF for numeric values.
+
+    Args:
+        values (np.ndarray): 1D array of numeric values.
+        weights (np.ndarray): 1D array of non-negative weights aligned to ``values``.
+
+    Returns:
+        Tuple[np.ndarray, np.ndarray]: Sorted values and their cumulative weights.
+
+    Raises:
+        ValueError: If inputs are not 1D, empty, mismatched in length, contain
+            negative weights, or have non-positive total weight.
+
+    Examples:
+    .. code-block:: python
+
+            import numpy as np
+            from balance.stats_and_plots.weighted_comparisons_stats import _weighted_ecdf
+
+            values, cdf = _weighted_ecdf(
+                np.array([2.0, 1.0, 3.0]), np.array([1.0, 1.0, 2.0])
+            )
+            values
+            # array([1., 2., 3.])
+            cdf
+            # array([0.25, 0.5 , 1.  ])
+    """
+    if values.ndim != 1 or weights.ndim != 1:
+        raise ValueError("values and weights must be 1D arrays.")
+    if values.size == 0:
+        raise ValueError("values must not be empty.")
+    if weights.shape[0] != values.shape[0]:
+        raise ValueError("weights must match the number of values.")
+    if np.any(weights < 0):
+        raise ValueError("weights must be non-negative.")
+    total = weights.sum()
+    if total <= 0:
+        raise ValueError("weights must sum to a positive value.")
+    order = np.argsort(values)
+    values_sorted = values[order]
+    weights_sorted = weights[order]
+    cdf = np.cumsum(weights_sorted) / total
+    return values_sorted, cdf
+
+
+def _evaluate_ecdf(
+    values_sorted: np.ndarray, cdf: np.ndarray, points: np.ndarray
+) -> np.ndarray:
+    """
+    Evaluate a weighted ECDF at given points.
+
+    Args:
+        values_sorted (np.ndarray): Sorted values used to define the ECDF.
+        cdf (np.ndarray): Cumulative weights aligned to ``values_sorted``.
+        points (np.ndarray): Points at which to evaluate the ECDF.
+
+    Returns:
+        np.ndarray: ECDF values at the requested points.
+
+    Examples:
+    .. code-block:: python
+
+            import numpy as np
+            from balance.stats_and_plots.weighted_comparisons_stats import _evaluate_ecdf
+
+            values_sorted = np.array([1.0, 2.0, 3.0])
+            cdf = np.array([0.2, 0.6, 1.0])
+            _evaluate_ecdf(values_sorted, cdf, np.array([0.5, 2.5, 3.0]))
+            # array([0. , 0.6, 1. ])
+    """
+    indices = np.searchsorted(values_sorted, points, side="right") - 1
+    out = np.zeros(points.shape[0], dtype=float)
+    valid = indices >= 0
+    out[valid] = cdf[indices[valid]]
+    return out
+
+
+def _combined_weights(
+    values: np.ndarray, weights: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Combine duplicate numeric values and normalize their weights.
+
+    Args:
+        values (np.ndarray): 1D array of numeric values.
+        weights (np.ndarray): 1D array of weights aligned to ``values``.
+
+    Returns:
+        Tuple[np.ndarray, np.ndarray]: Unique values (sorted) and normalized weights.
+
+    Raises:
+        ValueError: If total weight is not positive.
+
+    Examples:
+    .. code-block:: python
+
+            import numpy as np
+            from balance.stats_and_plots.weighted_comparisons_stats import _combined_weights
+
+            _combined_weights(np.array([1.0, 1.0, 2.0]), np.array([1.0, 2.0, 1.0]))
+            # (array([1., 2.]), array([0.75, 0.25]))
+    """
+    df = pd.DataFrame({"value": values, "weight": weights})
+    grouped = df.groupby("value", sort=True, observed=False)["weight"].sum()
+    total = grouped.sum()
+    if total <= 0:
+        raise ValueError("Combined weights must sum to a positive value.")
+    return grouped.index.to_numpy(), (grouped / total).to_numpy()
+
+
+def _is_discrete_series(series: pd.Series) -> bool:
+    """
+    Determine whether a series should be treated as discrete for comparisons.
+
+    Args:
+        series (pd.Series): Input series to classify.
+
+    Returns:
+        bool: True if the series is binary, object, categorical, or boolean.
+
+    Examples:
+    .. code-block:: python
+
+            import pandas as pd
+            from balance.stats_and_plots.weighted_comparisons_stats import (
+                _is_discrete_series,
+            )
+
+            _is_discrete_series(pd.Series([0, 1, 1, 0]))
+            # True
+    """
+    uniques = pd.unique(series.dropna())
+    is_binary_indicator = len(uniques) <= 2 and set(uniques).issubset({0, 1})
+    return (
+        is_binary_indicator
+        or pd.api.types.is_object_dtype(series)
+        or isinstance(series.dtype, CategoricalDtype)
+        or pd.api.types.is_bool_dtype(series)
+    )
 
 
 # TODO: add memoization
@@ -517,10 +727,6 @@ def kld(
         else np.ones(target_df.shape[0], dtype=float)
     )
 
-    def _is_binary(series: pd.Series) -> bool:
-        uniques = pd.unique(series.dropna())
-        return len(uniques) <= 2 and set(uniques).issubset({0, 1})
-
     def _extract_series_and_weights(
         series: pd.Series, weights: np.ndarray
     ) -> tuple[pd.Series, np.ndarray]:
@@ -528,15 +734,6 @@ def kld(
             raise ValueError("Weights must match the number of observations.")
         mask = series.notna().to_numpy()
         return series[mask], weights[mask]
-
-    def _weighted_pmf(series: pd.Series, weights: np.ndarray) -> pd.Series:
-        df = pd.DataFrame({"value": series, "weight": weights})
-        df = df[df["value"].notna()]
-        grouped = df.groupby("value", sort=False, observed=False)["weight"].sum()
-        total = grouped.sum()
-        if total <= 0:
-            raise ValueError("PMF weights must sum to a positive value.")
-        return grouped / total
 
     out: dict[str, float] | pd.DataFrame | pd.Series = {}
 
@@ -551,10 +748,9 @@ def kld(
             target_df[col], target_weights_arr
         )
 
-        is_discrete = _is_binary(sample_series) and _is_binary(target_series)
-        is_discrete = is_discrete or pd.api.types.is_object_dtype(sample_series)
-        is_discrete = is_discrete or isinstance(sample_series.dtype, CategoricalDtype)
-        is_discrete = is_discrete or pd.api.types.is_bool_dtype(sample_series)
+        is_discrete = _is_discrete_series(sample_series) or _is_discrete_series(
+            target_series
+        )
 
         if is_discrete:
             sample_pmf = _weighted_pmf(sample_series, sample_w)
@@ -587,6 +783,446 @@ def kld(
     out = pd.concat((out, weights))
     mean = weighted_mean(out.iloc[0], out.loc["weight"])
     out["mean(kld)"] = mean
+
+    out = out.iloc[0]
+    out.name = None
+
+    if aggregate_by_main_covar:
+        out = _aggregate_statistic_by_main_covar(out)
+
+    return out
+
+
+def emd(
+    sample_df: pd.DataFrame,
+    target_df: pd.DataFrame,
+    sample_weights: list[float] | pd.Series | npt.NDArray | None = None,
+    target_weights: list[float] | pd.Series | npt.NDArray | None = None,
+    aggregate_by_main_covar: bool = False,
+) -> pd.Series:
+    """Calculate the Earth Mover's Distance (EMD) between columns of two DataFrames.
+
+    Numeric columns use weighted Wasserstein distance. Discrete columns are mapped to an
+    ordered set of categories before computing the weighted distance.
+
+    Args:
+        sample_df (pd.DataFrame): source group of the EMD comparison.
+        target_df (pd.DataFrame): target group of the EMD comparison.
+            The column names should be the same as the ones from sample_df.
+        sample_weights (Union[List, pd.Series, np.ndarray], optional): weights to use.
+            The default is None. If no weights are passed (None), it will use an array of 1s.
+        target_weights (Union[List, pd.Series, np.ndarray], optional): weights to use.
+            The default is None. If no weights are passed (None), it will use an array of 1s.
+        aggregate_by_main_covar (bool): If to use :func:`_aggregate_statistic_by_main_covar`
+            to aggregate (average) the EMD based on variable name. Default is False.
+
+    Returns:
+        pd.Series: a Series indexed on the names of the columns in the input DataFrames.
+            The values (of type np.float64) are EMD values.
+            The last element is 'mean(emd)', which is the weighted average of EMD values.
+
+    Examples:
+    .. code-block:: python
+
+            import pandas as pd
+            from balance.stats_and_plots import weighted_comparisons_stats
+
+            sample_df = pd.DataFrame({"x": [0, 0, 1, 1]})
+            target_df = pd.DataFrame({"x": [0, 1, 1, 1]})
+
+            weighted_comparisons_stats.emd(sample_df, target_df)
+    """
+    if not isinstance(sample_df, pd.DataFrame):
+        raise ValueError(f"sample_df must be pd.DataFrame, is {type(sample_df)}")
+    if not isinstance(target_df, pd.DataFrame):
+        raise ValueError(f"target_df must be pd.DataFrame, is {type(target_df)}")
+
+    if sample_df.columns.values.tolist() != target_df.columns.values.tolist():
+        logger.warning(
+            f"""
+            sample_df and target_df must have the same column names.
+            sample_df column names: {sample_df.columns.values.tolist()}
+            target_df column names: {target_df.columns.values.tolist()}"""
+        )
+
+    sample_df, target_df = sample_df.align(
+        target_df, join="outer", axis=1, fill_value=0
+    )
+
+    sample_weights_arr = (
+        np.asarray(sample_weights, dtype=float)
+        if sample_weights is not None
+        else np.ones(sample_df.shape[0], dtype=float)
+    )
+    target_weights_arr = (
+        np.asarray(target_weights, dtype=float)
+        if target_weights is not None
+        else np.ones(target_df.shape[0], dtype=float)
+    )
+
+    def _extract_series_and_weights(
+        series: pd.Series, weights: np.ndarray, label: str
+    ) -> tuple[pd.Series, np.ndarray]:
+        if weights.shape[0] != series.shape[0]:
+            raise ValueError("Weights must match the number of observations.")
+        mask = series.notna().to_numpy()
+        filtered_series = series[mask]
+        filtered_weights = weights[mask]
+        if filtered_series.empty:
+            raise ValueError(f"{label} must contain at least one non-null value.")
+        return filtered_series, filtered_weights
+
+    out: dict[str, float] = {}
+
+    for col in sample_df.columns:
+        if col.startswith("_is_na_"):
+            continue
+
+        sample_series, sample_w = _extract_series_and_weights(
+            sample_df[col], sample_weights_arr, "sample_df column"
+        )
+        target_series, target_w = _extract_series_and_weights(
+            target_df[col], target_weights_arr, "target_df column"
+        )
+
+        if _is_discrete_series(sample_series) or _is_discrete_series(target_series):
+            categories = _sorted_unique_categories(
+                pd.concat([sample_series, target_series], axis=0)
+            )
+            if not categories:
+                raise ValueError("Discrete columns must contain at least one category.")
+            sample_codes = pd.Categorical(
+                sample_series, categories=categories, ordered=True
+            ).codes
+            target_codes = pd.Categorical(
+                target_series, categories=categories, ordered=True
+            ).codes
+            out[col] = float(
+                wasserstein_distance(
+                    sample_codes, target_codes, u_weights=sample_w, v_weights=target_w
+                )
+            )
+        else:
+            sample_vals = pd.to_numeric(sample_series, errors="coerce").dropna()
+            target_vals = pd.to_numeric(target_series, errors="coerce").dropna()
+            if sample_vals.empty or target_vals.empty:
+                raise ValueError("Numeric columns must contain at least one value.")
+            sample_w_numeric = sample_w[sample_series.index.isin(sample_vals.index)]
+            target_w_numeric = target_w[target_series.index.isin(target_vals.index)]
+            out[col] = float(
+                wasserstein_distance(
+                    sample_vals.to_numpy(),
+                    target_vals.to_numpy(),
+                    u_weights=sample_w_numeric,
+                    v_weights=target_w_numeric,
+                )
+            )
+
+    out = _safe_replace_and_infer(pd.DataFrame([out]))
+    weights = (
+        _weights_per_covars_names(out.columns.values.tolist())["weight"]
+        .to_frame()
+        .transpose()
+    )
+    out = pd.concat((out, weights))
+    mean = weighted_mean(out.iloc[0], out.loc["weight"])
+    out["mean(emd)"] = mean
+
+    out = out.iloc[0]
+    out.name = None
+
+    if aggregate_by_main_covar:
+        out = _aggregate_statistic_by_main_covar(out)
+
+    return out
+
+
+def cvmd(
+    sample_df: pd.DataFrame,
+    target_df: pd.DataFrame,
+    sample_weights: list[float] | pd.Series | npt.NDArray | None = None,
+    target_weights: list[float] | pd.Series | npt.NDArray | None = None,
+    aggregate_by_main_covar: bool = False,
+) -> pd.Series:
+    """Calculate the Cramér-von Mises distance between columns of two DataFrames.
+
+    Args:
+        sample_df (pd.DataFrame): source group of the CVMD comparison.
+        target_df (pd.DataFrame): target group of the CVMD comparison.
+            The column names should be the same as the ones from sample_df.
+        sample_weights (Union[List, pd.Series, np.ndarray], optional): weights to use.
+            The default is None. If no weights are passed (None), it will use an array of 1s.
+        target_weights (Union[List, pd.Series, np.ndarray], optional): weights to use.
+            The default is None. If no weights are passed (None), it will use an array of 1s.
+        aggregate_by_main_covar (bool): If to use :func:`_aggregate_statistic_by_main_covar`
+            to aggregate (average) the CVMD based on variable name. Default is False.
+
+    Returns:
+        pd.Series: a Series indexed on the names of the columns in the input DataFrames.
+            The values (of type np.float64) are CVMD values.
+            The last element is 'mean(cvmd)', which is the weighted average of CVMD values.
+
+    Examples:
+    .. code-block:: python
+
+            import pandas as pd
+            from balance.stats_and_plots import weighted_comparisons_stats
+
+            sample_df = pd.DataFrame({"cat": ["A", "A", "B"]})
+            target_df = pd.DataFrame({"cat": ["A", "B", "B"]})
+
+            weighted_comparisons_stats.cvmd(sample_df, target_df)
+    """
+    if not isinstance(sample_df, pd.DataFrame):
+        raise ValueError(f"sample_df must be pd.DataFrame, is {type(sample_df)}")
+    if not isinstance(target_df, pd.DataFrame):
+        raise ValueError(f"target_df must be pd.DataFrame, is {type(target_df)}")
+
+    if sample_df.columns.values.tolist() != target_df.columns.values.tolist():
+        logger.warning(
+            f"""
+            sample_df and target_df must have the same column names.
+            sample_df column names: {sample_df.columns.values.tolist()}
+            target_df column names: {target_df.columns.values.tolist()}"""
+        )
+
+    sample_df, target_df = sample_df.align(
+        target_df, join="outer", axis=1, fill_value=0
+    )
+
+    sample_weights_arr = (
+        np.asarray(sample_weights, dtype=float)
+        if sample_weights is not None
+        else np.ones(sample_df.shape[0], dtype=float)
+    )
+    target_weights_arr = (
+        np.asarray(target_weights, dtype=float)
+        if target_weights is not None
+        else np.ones(target_df.shape[0], dtype=float)
+    )
+
+    def _extract_series_and_weights(
+        series: pd.Series, weights: np.ndarray, label: str
+    ) -> tuple[pd.Series, np.ndarray]:
+        if weights.shape[0] != series.shape[0]:
+            raise ValueError("Weights must match the number of observations.")
+        mask = series.notna().to_numpy()
+        filtered_series = series[mask]
+        filtered_weights = weights[mask]
+        if filtered_series.empty:
+            raise ValueError(f"{label} must contain at least one non-null value.")
+        return filtered_series, filtered_weights
+
+    out: dict[str, float] = {}
+
+    for col in sample_df.columns:
+        if col.startswith("_is_na_"):
+            continue
+
+        sample_series, sample_w = _extract_series_and_weights(
+            sample_df[col], sample_weights_arr, "sample_df column"
+        )
+        target_series, target_w = _extract_series_and_weights(
+            target_df[col], target_weights_arr, "target_df column"
+        )
+
+        if _is_discrete_series(sample_series) or _is_discrete_series(target_series):
+            categories = _sorted_unique_categories(
+                pd.concat([sample_series, target_series], axis=0)
+            )
+            if not categories:
+                raise ValueError("Discrete columns must contain at least one category.")
+            sample_pmf = _weighted_pmf(sample_series, sample_w)
+            target_pmf = _weighted_pmf(target_series, target_w)
+            sample_cdf = np.cumsum(
+                sample_pmf.reindex(categories, fill_value=0.0).to_numpy()
+            )
+            target_cdf = np.cumsum(
+                target_pmf.reindex(categories, fill_value=0.0).to_numpy()
+            )
+            combined_pmf = (sample_pmf + target_pmf).reindex(
+                categories, fill_value=0.0
+            ) / 2
+            out[col] = float(
+                np.sum((sample_cdf - target_cdf) ** 2 * combined_pmf.to_numpy())
+            )
+        else:
+            sample_vals = pd.to_numeric(sample_series, errors="coerce").dropna()
+            target_vals = pd.to_numeric(target_series, errors="coerce").dropna()
+            if sample_vals.empty or target_vals.empty:
+                raise ValueError("Numeric columns must contain at least one value.")
+            sample_w_numeric = sample_w[sample_series.index.isin(sample_vals.index)]
+            target_w_numeric = target_w[target_series.index.isin(target_vals.index)]
+
+            sample_sorted, sample_cdf = _weighted_ecdf(
+                sample_vals.to_numpy(), sample_w_numeric
+            )
+            target_sorted, target_cdf = _weighted_ecdf(
+                target_vals.to_numpy(), target_w_numeric
+            )
+            combined_values, combined_weights = _combined_weights(
+                np.concatenate((sample_vals.to_numpy(), target_vals.to_numpy())),
+                np.concatenate((sample_w_numeric, target_w_numeric)),
+            )
+            sample_eval = _evaluate_ecdf(sample_sorted, sample_cdf, combined_values)
+            target_eval = _evaluate_ecdf(target_sorted, target_cdf, combined_values)
+            out[col] = float(
+                np.sum((sample_eval - target_eval) ** 2 * combined_weights)
+            )
+
+    out = _safe_replace_and_infer(pd.DataFrame([out]))
+    weights = (
+        _weights_per_covars_names(out.columns.values.tolist())["weight"]
+        .to_frame()
+        .transpose()
+    )
+    out = pd.concat((out, weights))
+    mean = weighted_mean(out.iloc[0], out.loc["weight"])
+    out["mean(cvmd)"] = mean
+
+    out = out.iloc[0]
+    out.name = None
+
+    if aggregate_by_main_covar:
+        out = _aggregate_statistic_by_main_covar(out)
+
+    return out
+
+
+def ks(
+    sample_df: pd.DataFrame,
+    target_df: pd.DataFrame,
+    sample_weights: list[float] | pd.Series | npt.NDArray | None = None,
+    target_weights: list[float] | pd.Series | npt.NDArray | None = None,
+    aggregate_by_main_covar: bool = False,
+) -> pd.Series:
+    """Calculate the Kolmogorov-Smirnov statistic between columns of two DataFrames.
+
+    Args:
+        sample_df (pd.DataFrame): source group of the KS comparison.
+        target_df (pd.DataFrame): target group of the KS comparison.
+            The column names should be the same as the ones from sample_df.
+        sample_weights (Union[List, pd.Series, np.ndarray], optional): weights to use.
+            The default is None. If no weights are passed (None), it will use an array of 1s.
+        target_weights (Union[List, pd.Series, np.ndarray], optional): weights to use.
+            The default is None. If no weights are passed (None), it will use an array of 1s.
+        aggregate_by_main_covar (bool): If to use :func:`_aggregate_statistic_by_main_covar`
+            to aggregate (average) the KS based on variable name. Default is False.
+
+    Returns:
+        pd.Series: a Series indexed on the names of the columns in the input DataFrames.
+            The values (of type np.float64) are KS values.
+            The last element is 'mean(ks)', which is the weighted average of KS values.
+
+    Examples:
+    .. code-block:: python
+
+            import pandas as pd
+            from balance.stats_and_plots import weighted_comparisons_stats
+
+            sample_df = pd.DataFrame({"x": [0.0, 0.0, 1.0, 1.0]})
+            target_df = pd.DataFrame({"x": [0.0, 1.0, 1.0, 1.0]})
+
+            weighted_comparisons_stats.ks(sample_df, target_df)
+    """
+    if not isinstance(sample_df, pd.DataFrame):
+        raise ValueError(f"sample_df must be pd.DataFrame, is {type(sample_df)}")
+    if not isinstance(target_df, pd.DataFrame):
+        raise ValueError(f"target_df must be pd.DataFrame, is {type(target_df)}")
+
+    if sample_df.columns.values.tolist() != target_df.columns.values.tolist():
+        logger.warning(
+            f"""
+            sample_df and target_df must have the same column names.
+            sample_df column names: {sample_df.columns.values.tolist()}
+            target_df column names: {target_df.columns.values.tolist()}"""
+        )
+
+    sample_df, target_df = sample_df.align(
+        target_df, join="outer", axis=1, fill_value=0
+    )
+
+    sample_weights_arr = (
+        np.asarray(sample_weights, dtype=float)
+        if sample_weights is not None
+        else np.ones(sample_df.shape[0], dtype=float)
+    )
+    target_weights_arr = (
+        np.asarray(target_weights, dtype=float)
+        if target_weights is not None
+        else np.ones(target_df.shape[0], dtype=float)
+    )
+
+    def _extract_series_and_weights(
+        series: pd.Series, weights: np.ndarray, label: str
+    ) -> tuple[pd.Series, np.ndarray]:
+        if weights.shape[0] != series.shape[0]:
+            raise ValueError("Weights must match the number of observations.")
+        mask = series.notna().to_numpy()
+        filtered_series = series[mask]
+        filtered_weights = weights[mask]
+        if filtered_series.empty:
+            raise ValueError(f"{label} must contain at least one non-null value.")
+        return filtered_series, filtered_weights
+
+    out: dict[str, float] = {}
+
+    for col in sample_df.columns:
+        if col.startswith("_is_na_"):
+            continue
+
+        sample_series, sample_w = _extract_series_and_weights(
+            sample_df[col], sample_weights_arr, "sample_df column"
+        )
+        target_series, target_w = _extract_series_and_weights(
+            target_df[col], target_weights_arr, "target_df column"
+        )
+
+        if _is_discrete_series(sample_series) or _is_discrete_series(target_series):
+            categories = _sorted_unique_categories(
+                pd.concat([sample_series, target_series], axis=0)
+            )
+            if not categories:
+                raise ValueError("Discrete columns must contain at least one category.")
+            sample_pmf = _weighted_pmf(sample_series, sample_w)
+            target_pmf = _weighted_pmf(target_series, target_w)
+            sample_cdf = np.cumsum(
+                sample_pmf.reindex(categories, fill_value=0.0).to_numpy()
+            )
+            target_cdf = np.cumsum(
+                target_pmf.reindex(categories, fill_value=0.0).to_numpy()
+            )
+            out[col] = float(np.max(np.abs(sample_cdf - target_cdf)))
+        else:
+            sample_vals = pd.to_numeric(sample_series, errors="coerce").dropna()
+            target_vals = pd.to_numeric(target_series, errors="coerce").dropna()
+            if sample_vals.empty or target_vals.empty:
+                raise ValueError("Numeric columns must contain at least one value.")
+            sample_w_numeric = sample_w[sample_series.index.isin(sample_vals.index)]
+            target_w_numeric = target_w[target_series.index.isin(target_vals.index)]
+
+            sample_sorted, sample_cdf = _weighted_ecdf(
+                sample_vals.to_numpy(), sample_w_numeric
+            )
+            target_sorted, target_cdf = _weighted_ecdf(
+                target_vals.to_numpy(), target_w_numeric
+            )
+            combined_values = np.unique(
+                np.concatenate((sample_vals.to_numpy(), target_vals.to_numpy()))
+            )
+            sample_eval = _evaluate_ecdf(sample_sorted, sample_cdf, combined_values)
+            target_eval = _evaluate_ecdf(target_sorted, target_cdf, combined_values)
+            out[col] = float(np.max(np.abs(sample_eval - target_eval)))
+
+    out = _safe_replace_and_infer(pd.DataFrame([out]))
+    weights = (
+        _weights_per_covars_names(out.columns.values.tolist())["weight"]
+        .to_frame()
+        .transpose()
+    )
+    out = pd.concat((out, weights))
+    mean = weighted_mean(out.iloc[0], out.loc["weight"])
+    out["mean(ks)"] = mean
 
     out = out.iloc[0]
     out.name = None

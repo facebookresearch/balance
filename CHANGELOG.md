@@ -27,6 +27,8 @@
   - `descriptive_stats()` now accepts a `formula` argument that is always
     applied to the data (including numeric-only frames), letting callers
     control which terms and dummy variables are included in summary statistics.
+- **Added EMD/CVMD/KS distribution diagnostics**
+  - `BalanceDF` now exposes Earth Mover's Distance (EMD), Cramér-von Mises distance (CVMD), and Kolmogorov-Smirnov (KS) statistics for comparing adjusted samples to targets.
 
 ## Bug Fixes
 
