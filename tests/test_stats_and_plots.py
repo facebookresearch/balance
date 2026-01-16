@@ -12,6 +12,7 @@ from typing import Any, cast
 import balance.testutil
 import numpy as np
 import pandas as pd
+from balance.sample_class import Sample
 from balance.stats_and_plots import weighted_comparisons_stats
 from balance.util import _verify_value_type
 
@@ -1818,7 +1819,8 @@ class TestKLDivergence(balance.testutil.BalanceTestCase):
             sample_df, target_df, sample_weights, target_weights
         )
 
-        self.assertNotEqual(emd_unweighted["binary"], emd_weighted["binary"])
+        self.assertAlmostEqual(emd_unweighted["binary"], 0.25, places=6)
+        self.assertAlmostEqual(emd_weighted["binary"], 1 / 12, places=6)
 
     def test_cvmd_discrete_matches_expected(self) -> None:
         sample_df = pd.DataFrame({"cat": ["A", "A", "B"]})
@@ -1875,3 +1877,69 @@ class TestKLDivergence(balance.testutil.BalanceTestCase):
         for result in (emd_result, cvmd_result, ks_result):
             self.assertNotIn("_is_na_value", result.index)
             self.assertIn("value", result.index)
+
+
+class TestBalanceDFDiagnostics(balance.testutil.BalanceTestCase):
+    def _make_samples(self) -> tuple["Sample", "Sample", "Sample"]:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "x": (0, 1, 2, 3),
+                    "w": (1.0, 1.0, 1.0, 1.0),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "x": (1, 2, 3, 4),
+                    "w": (1.0, 1.0, 1.0, 1.0),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+        adjusted = sample.set_target(target).adjust(method="null")
+        return sample, target, adjusted
+
+    def test_balance_df_emd_cvmd_ks_on_linked_samples(self) -> None:
+        _, _, adjusted = self._make_samples()
+
+        emd_df = adjusted.covars().emd()
+        cvmd_df = adjusted.covars().cvmd()
+        ks_df = adjusted.covars().ks()
+
+        for df in (emd_df, cvmd_df, ks_df):
+            self.assertIn("self", df.index)
+            self.assertIn("unadjusted", df.index)
+            self.assertIn("unadjusted - self", df.index)
+
+    def test_balance_df_emd_cvmd_ks_without_linked_samples(self) -> None:
+        _, target, adjusted = self._make_samples()
+
+        emd_df = adjusted.covars().emd(on_linked_samples=False, target=target.covars())
+        cvmd_df = adjusted.covars().cvmd(
+            on_linked_samples=False, target=target.covars()
+        )
+        ks_df = adjusted.covars().ks(on_linked_samples=False, target=target.covars())
+
+        for df in (emd_df, cvmd_df, ks_df):
+            self.assertEqual(["covars"], df.index.tolist())
+
+    def test_balance_df_emd_cvmd_ks_requires_target(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame({"id": (1, 2), "x": (0, 1), "w": (1.0, 1.0)}),
+            id_column="id",
+            weight_column="w",
+        )
+
+        with self.assertRaisesRegex(ValueError, "has no target set"):
+            sample.covars().emd()
+        with self.assertRaisesRegex(ValueError, "has no target set"):
+            sample.covars().cvmd()
+        with self.assertRaisesRegex(ValueError, "has no target set"):
+            sample.covars().ks()

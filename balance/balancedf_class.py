@@ -1546,6 +1546,8 @@ class BalanceDF:
     ) -> pd.DataFrame:
         """Calculate Earth Mover's Distance (EMD) to compare distributions to a target.
 
+        See: https://en.wikipedia.org/wiki/Earth_mover%27s_distance
+
         Args:
             self (BalanceDF): Object from sample (with/without adjustment, but it needs some target).
             on_linked_samples (bool, optional): If to compare also to linked sample objects (specifically: unadjusted).
@@ -1635,6 +1637,8 @@ class BalanceDF:
         **kwargs: Any,
     ) -> pd.DataFrame:
         """Calculate Cramér-von Mises distance (CVMD) to compare distributions to a target.
+
+        See: https://en.wikipedia.org/wiki/Cram%C3%A9r%E2%80%93von_Mises_criterion
 
         Args:
             self (BalanceDF): Object from sample (with/without adjustment, but it needs some target).
@@ -1727,6 +1731,8 @@ class BalanceDF:
         **kwargs: Any,
     ) -> pd.DataFrame:
         """Calculate Kolmogorov-Smirnov (KS) statistic to compare distributions to a target.
+
+        See: https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test
 
         Args:
             self (BalanceDF): Object from sample (with/without adjustment, but it needs some target).

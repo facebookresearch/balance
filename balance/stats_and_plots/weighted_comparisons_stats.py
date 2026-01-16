@@ -254,7 +254,53 @@ def _sorted_unique_categories(values: pd.Series) -> list[Any]:
     try:
         return sorted(uniques)
     except TypeError:
-        return sorted(uniques, key=lambda x: str(x))
+        return sorted(uniques, key=str)
+
+
+def _extract_series_and_weights(
+    series: pd.Series, weights: np.ndarray, label: str
+) -> tuple[pd.Series, np.ndarray]:
+    """
+    Validate and extract non-null series values aligned with weights.
+
+    Args:
+        series (pd.Series): Input series to filter.
+        weights (np.ndarray): Weights aligned to the full series.
+        label (str): Label for error messages.
+
+    Returns:
+        Tuple[pd.Series, np.ndarray]: Filtered series and weights with matching indices.
+
+    Raises:
+        ValueError: If weights length mismatches or filtered series is empty.
+
+    Examples:
+    .. code-block:: python
+
+            import numpy as np
+            import pandas as pd
+            from balance.stats_and_plots.weighted_comparisons_stats import (
+                _extract_series_and_weights,
+            )
+
+            series, w = _extract_series_and_weights(
+                pd.Series([1.0, None, 2.0]),
+                np.array([1.0, 1.0, 2.0]),
+                "example",
+            )
+            series.tolist()
+            # [1.0, 2.0]
+            w.tolist()
+            # [1.0, 2.0]
+    """
+    if weights.shape[0] != series.shape[0]:
+        raise ValueError("Weights must match the number of observations.")
+    mask = series.notna().to_numpy()
+    filtered_series = series[mask]
+    filtered_weights = weights[mask]
+    if filtered_series.empty:
+        raise ValueError(f"{label} must contain at least one non-null value.")
+    return filtered_series, filtered_weights
 
 
 def _weighted_pmf(series: pd.Series, weights: np.ndarray) -> pd.Series:
@@ -575,10 +621,9 @@ def asmd(
         raise ValueError(f"std_type must be in {possible_std_type}, is {std_type}")
     if sample_df.columns.values.tolist() != target_df.columns.values.tolist():
         logger.warning(
-            f"""
-            sample_df and target_df must have the same column names.
-            sample_df column names: {sample_df.columns.values.tolist()}
-            target_df column names: {target_df.columns.values.tolist()}"""
+            "sample_df and target_df must have the same column names.\n"
+            f"sample_df column names: {sample_df.columns.values.tolist()}\n"
+            f"target_df column names: {target_df.columns.values.tolist()}"
         )
 
     sample_mean = descriptive_stats(sample_df, sample_weights, "mean")
@@ -706,10 +751,9 @@ def kld(
 
     if sample_df.columns.values.tolist() != target_df.columns.values.tolist():
         logger.warning(
-            f"""
-            sample_df and target_df must have the same column names.
-            sample_df column names: {sample_df.columns.values.tolist()}
-            target_df column names: {target_df.columns.values.tolist()}"""
+            "sample_df and target_df must have the same column names.\n"
+            f"sample_df column names: {sample_df.columns.values.tolist()}\n"
+            f"target_df column names: {target_df.columns.values.tolist()}"
         )
 
     sample_df, target_df = sample_df.align(
@@ -727,14 +771,6 @@ def kld(
         else np.ones(target_df.shape[0], dtype=float)
     )
 
-    def _extract_series_and_weights(
-        series: pd.Series, weights: np.ndarray
-    ) -> tuple[pd.Series, np.ndarray]:
-        if weights.shape[0] != series.shape[0]:
-            raise ValueError("Weights must match the number of observations.")
-        mask = series.notna().to_numpy()
-        return series[mask], weights[mask]
-
     out: dict[str, float] | pd.DataFrame | pd.Series = {}
 
     for col in sample_df.columns:
@@ -742,10 +778,10 @@ def kld(
             continue
 
         sample_series, sample_w = _extract_series_and_weights(
-            sample_df[col], sample_weights_arr
+            sample_df[col], sample_weights_arr, "sample_df column"
         )
         target_series, target_w = _extract_series_and_weights(
-            target_df[col], target_weights_arr
+            target_df[col], target_weights_arr, "target_df column"
         )
 
         is_discrete = _is_discrete_series(sample_series) or _is_discrete_series(
@@ -805,6 +841,8 @@ def emd(
     Numeric columns use weighted Wasserstein distance. Discrete columns are mapped to an
     ordered set of categories before computing the weighted distance.
 
+    See: https://en.wikipedia.org/wiki/Earth_mover%27s_distance
+
     Args:
         sample_df (pd.DataFrame): source group of the EMD comparison.
         target_df (pd.DataFrame): target group of the EMD comparison.
@@ -831,6 +869,9 @@ def emd(
             target_df = pd.DataFrame({"x": [0, 1, 1, 1]})
 
             weighted_comparisons_stats.emd(sample_df, target_df)
+            # x            0.25
+            # mean(emd)    0.25
+            # dtype: float64
     """
     if not isinstance(sample_df, pd.DataFrame):
         raise ValueError(f"sample_df must be pd.DataFrame, is {type(sample_df)}")
@@ -839,10 +880,9 @@ def emd(
 
     if sample_df.columns.values.tolist() != target_df.columns.values.tolist():
         logger.warning(
-            f"""
-            sample_df and target_df must have the same column names.
-            sample_df column names: {sample_df.columns.values.tolist()}
-            target_df column names: {target_df.columns.values.tolist()}"""
+            "sample_df and target_df must have the same column names.\n"
+            f"sample_df column names: {sample_df.columns.values.tolist()}\n"
+            f"target_df column names: {target_df.columns.values.tolist()}"
         )
 
     sample_df, target_df = sample_df.align(
@@ -859,18 +899,6 @@ def emd(
         if target_weights is not None
         else np.ones(target_df.shape[0], dtype=float)
     )
-
-    def _extract_series_and_weights(
-        series: pd.Series, weights: np.ndarray, label: str
-    ) -> tuple[pd.Series, np.ndarray]:
-        if weights.shape[0] != series.shape[0]:
-            raise ValueError("Weights must match the number of observations.")
-        mask = series.notna().to_numpy()
-        filtered_series = series[mask]
-        filtered_weights = weights[mask]
-        if filtered_series.empty:
-            raise ValueError(f"{label} must contain at least one non-null value.")
-        return filtered_series, filtered_weights
 
     out: dict[str, float] = {}
 
@@ -946,6 +974,8 @@ def cvmd(
 ) -> pd.Series:
     """Calculate the Cramér-von Mises distance between columns of two DataFrames.
 
+    See: https://en.wikipedia.org/wiki/Cram%C3%A9r%E2%80%93von_Mises_criterion
+
     Args:
         sample_df (pd.DataFrame): source group of the CVMD comparison.
         target_df (pd.DataFrame): target group of the CVMD comparison.
@@ -969,9 +999,12 @@ def cvmd(
             from balance.stats_and_plots import weighted_comparisons_stats
 
             sample_df = pd.DataFrame({"cat": ["A", "A", "B"]})
-            target_df = pd.DataFrame({"cat": ["A", "B", "B"]})
+            target_df = pd.DataFrame({"cat": ["A", "A", "B"]})
 
             weighted_comparisons_stats.cvmd(sample_df, target_df)
+            # cat          0.0
+            # mean(cvmd)   0.0
+            # dtype: float64
     """
     if not isinstance(sample_df, pd.DataFrame):
         raise ValueError(f"sample_df must be pd.DataFrame, is {type(sample_df)}")
@@ -980,10 +1013,9 @@ def cvmd(
 
     if sample_df.columns.values.tolist() != target_df.columns.values.tolist():
         logger.warning(
-            f"""
-            sample_df and target_df must have the same column names.
-            sample_df column names: {sample_df.columns.values.tolist()}
-            target_df column names: {target_df.columns.values.tolist()}"""
+            "sample_df and target_df must have the same column names.\n"
+            f"sample_df column names: {sample_df.columns.values.tolist()}\n"
+            f"target_df column names: {target_df.columns.values.tolist()}"
         )
 
     sample_df, target_df = sample_df.align(
@@ -1000,18 +1032,6 @@ def cvmd(
         if target_weights is not None
         else np.ones(target_df.shape[0], dtype=float)
     )
-
-    def _extract_series_and_weights(
-        series: pd.Series, weights: np.ndarray, label: str
-    ) -> tuple[pd.Series, np.ndarray]:
-        if weights.shape[0] != series.shape[0]:
-            raise ValueError("Weights must match the number of observations.")
-        mask = series.notna().to_numpy()
-        filtered_series = series[mask]
-        filtered_weights = weights[mask]
-        if filtered_series.empty:
-            raise ValueError(f"{label} must contain at least one non-null value.")
-        return filtered_series, filtered_weights
 
     out: dict[str, float] = {}
 
@@ -1098,6 +1118,8 @@ def ks(
 ) -> pd.Series:
     """Calculate the Kolmogorov-Smirnov statistic between columns of two DataFrames.
 
+    See: https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test
+
     Args:
         sample_df (pd.DataFrame): source group of the KS comparison.
         target_df (pd.DataFrame): target group of the KS comparison.
@@ -1124,6 +1146,9 @@ def ks(
             target_df = pd.DataFrame({"x": [0.0, 1.0, 1.0, 1.0]})
 
             weighted_comparisons_stats.ks(sample_df, target_df)
+            # x          0.25
+            # mean(ks)   0.25
+            # dtype: float64
     """
     if not isinstance(sample_df, pd.DataFrame):
         raise ValueError(f"sample_df must be pd.DataFrame, is {type(sample_df)}")
@@ -1132,10 +1157,9 @@ def ks(
 
     if sample_df.columns.values.tolist() != target_df.columns.values.tolist():
         logger.warning(
-            f"""
-            sample_df and target_df must have the same column names.
-            sample_df column names: {sample_df.columns.values.tolist()}
-            target_df column names: {target_df.columns.values.tolist()}"""
+            "sample_df and target_df must have the same column names.\n"
+            f"sample_df column names: {sample_df.columns.values.tolist()}\n"
+            f"target_df column names: {target_df.columns.values.tolist()}"
         )
 
     sample_df, target_df = sample_df.align(
@@ -1152,18 +1176,6 @@ def ks(
         if target_weights is not None
         else np.ones(target_df.shape[0], dtype=float)
     )
-
-    def _extract_series_and_weights(
-        series: pd.Series, weights: np.ndarray, label: str
-    ) -> tuple[pd.Series, np.ndarray]:
-        if weights.shape[0] != series.shape[0]:
-            raise ValueError("Weights must match the number of observations.")
-        mask = series.notna().to_numpy()
-        filtered_series = series[mask]
-        filtered_weights = weights[mask]
-        if filtered_series.empty:
-            raise ValueError(f"{label} must contain at least one non-null value.")
-        return filtered_series, filtered_weights
 
     out: dict[str, float] = {}
 
