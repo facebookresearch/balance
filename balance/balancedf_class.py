@@ -1204,6 +1204,105 @@ class BalanceDF:
             aggregate_by_main_covar=aggregate_by_main_covar,
         )
 
+    @staticmethod
+    def _emd_BalanceDF(
+        sample_BalanceDF: "BalanceDF",
+        target_BalanceDF: "BalanceDF",
+        aggregate_by_main_covar: bool = False,
+    ) -> pd.Series:
+        """Run EMD on two BalanceDF objects.
+
+        Prepares the BalanceDF objects by passing them through :func:`_get_df_and_weights`, and
+        then passes the df and weights into :func:`weighted_comparisons_stats.emd`.
+
+        Args:
+            sample_BalanceDF (BalanceDF): Object.
+            target_BalanceDF (BalanceDF): Object.
+            aggregate_by_main_covar (bool, optional): See :func:`weighted_comparisons_stats.emd`. Defaults to False.
+
+        Returns:
+            pd.Series: See :func:`weighted_comparisons_stats.emd`.
+        """
+        BalanceDF._check_if_not_BalanceDF(sample_BalanceDF, "sample_BalanceDF")
+        BalanceDF._check_if_not_BalanceDF(target_BalanceDF, "target_BalanceDF")
+
+        sample_df_values, sample_weights = sample_BalanceDF._get_df_and_weights()
+        target_df_values, target_weights = target_BalanceDF._get_df_and_weights()
+
+        return weighted_comparisons_stats.emd(
+            sample_df_values,
+            target_df_values,
+            sample_weights,
+            target_weights,
+            aggregate_by_main_covar=aggregate_by_main_covar,
+        )
+
+    @staticmethod
+    def _cvmd_BalanceDF(
+        sample_BalanceDF: "BalanceDF",
+        target_BalanceDF: "BalanceDF",
+        aggregate_by_main_covar: bool = False,
+    ) -> pd.Series:
+        """Run CVMD on two BalanceDF objects.
+
+        Prepares the BalanceDF objects by passing them through :func:`_get_df_and_weights`, and
+        then passes the df and weights into :func:`weighted_comparisons_stats.cvmd`.
+
+        Args:
+            sample_BalanceDF (BalanceDF): Object.
+            target_BalanceDF (BalanceDF): Object.
+            aggregate_by_main_covar (bool, optional): See :func:`weighted_comparisons_stats.cvmd`. Defaults to False.
+
+        Returns:
+            pd.Series: See :func:`weighted_comparisons_stats.cvmd`.
+        """
+        BalanceDF._check_if_not_BalanceDF(sample_BalanceDF, "sample_BalanceDF")
+        BalanceDF._check_if_not_BalanceDF(target_BalanceDF, "target_BalanceDF")
+
+        sample_df_values, sample_weights = sample_BalanceDF._get_df_and_weights()
+        target_df_values, target_weights = target_BalanceDF._get_df_and_weights()
+
+        return weighted_comparisons_stats.cvmd(
+            sample_df_values,
+            target_df_values,
+            sample_weights,
+            target_weights,
+            aggregate_by_main_covar=aggregate_by_main_covar,
+        )
+
+    @staticmethod
+    def _ks_BalanceDF(
+        sample_BalanceDF: "BalanceDF",
+        target_BalanceDF: "BalanceDF",
+        aggregate_by_main_covar: bool = False,
+    ) -> pd.Series:
+        """Run KS on two BalanceDF objects.
+
+        Prepares the BalanceDF objects by passing them through :func:`_get_df_and_weights`, and
+        then passes the df and weights into :func:`weighted_comparisons_stats.ks`.
+
+        Args:
+            sample_BalanceDF (BalanceDF): Object.
+            target_BalanceDF (BalanceDF): Object.
+            aggregate_by_main_covar (bool, optional): See :func:`weighted_comparisons_stats.ks`. Defaults to False.
+
+        Returns:
+            pd.Series: See :func:`weighted_comparisons_stats.ks`.
+        """
+        BalanceDF._check_if_not_BalanceDF(sample_BalanceDF, "sample_BalanceDF")
+        BalanceDF._check_if_not_BalanceDF(target_BalanceDF, "target_BalanceDF")
+
+        sample_df_values, sample_weights = sample_BalanceDF._get_df_and_weights()
+        target_df_values, target_weights = target_BalanceDF._get_df_and_weights()
+
+        return weighted_comparisons_stats.ks(
+            sample_df_values,
+            target_df_values,
+            sample_weights,
+            target_weights,
+            aggregate_by_main_covar=aggregate_by_main_covar,
+        )
+
     def asmd(
         self: "BalanceDF",
         on_linked_samples: bool = True,
@@ -1438,6 +1537,284 @@ class BalanceDF:
             )
             return out
 
+    def emd(
+        self: "BalanceDF",
+        on_linked_samples: bool = True,
+        target: "BalanceDF" | None = None,
+        aggregate_by_main_covar: bool = False,
+        **kwargs: Any,
+    ) -> pd.DataFrame:
+        """Calculate Earth Mover's Distance (EMD) to compare distributions to a target.
+
+        See: https://en.wikipedia.org/wiki/Earth_mover%27s_distance
+
+        Args:
+            self (BalanceDF): Object from sample (with/without adjustment, but it needs some target).
+            on_linked_samples (bool, optional): If to compare also to linked sample objects (specifically: unadjusted).
+                If True, then uses :func:`_call_on_linked` with method "emd". Defaults to True.
+            target (Optional["BalanceDF"], optional): A BalanceDF (of the same type as the one used in self) to compare against.
+                If None then it looks for a target in the self linked objects. Defaults to None.
+            aggregate_by_main_covar (bool, optional): Defaults to False.
+                If True, it will make sure to return the emd DataFrame after averaging
+                all the columns from using the one-hot encoding for categorical variables.
+                See :func:`_aggregate_statistic_by_main_covar` for more details.
+
+        Raises:
+            ValueError: If self has no target and no target is supplied.
+
+        Returns:
+            pd.DataFrame:
+                If on_linked_samples is False, then only one row (index name depends on BalanceDF type, e.g.: covars),
+                with emd of self vs the target.
+                If on_linked_samples is True, then two rows per source (self, unadjusted), each with the emd compared
+                to target, and a third row for the difference (self-unadjusted).
+
+        Examples:
+        .. code-block:: python
+
+                import pandas as pd
+                from balance.sample_class import Sample
+
+                sample = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "id": (1, 2, 3, 4),
+                            "a": (1, 2, 3, 4),
+                            "w": (1, 1, 1, 1),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                )
+
+                target = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "id": (1, 2, 3, 4),
+                            "a": (2, 3, 4, 5),
+                            "w": (1, 1, 1, 1),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                )
+
+                sample.set_target(target).covars().emd(on_linked_samples=False)
+        """
+        target_from_self = self._BalanceDF_child_from_linked_samples().get("target")
+
+        if target is None:
+            target = target_from_self
+
+        if target is None:
+            raise ValueError(
+                f"Sample {object.__str__(self._sample)} has no target set, or target has no {self.__name} to compare against."
+            )
+        elif on_linked_samples:
+            return balance_util.row_pairwise_diffs(
+                self._call_on_linked(
+                    "emd",
+                    exclude=("target",),
+                    target=target,
+                    aggregate_by_main_covar=aggregate_by_main_covar,
+                    **kwargs,
+                )
+            )
+        else:
+            out = (
+                pd.DataFrame(self._emd_BalanceDF(self, target, aggregate_by_main_covar))
+                .transpose()
+                .assign(index=(self.__name,))
+                .set_index("index")
+            )
+            return out
+
+    def cvmd(
+        self: "BalanceDF",
+        on_linked_samples: bool = True,
+        target: "BalanceDF" | None = None,
+        aggregate_by_main_covar: bool = False,
+        **kwargs: Any,
+    ) -> pd.DataFrame:
+        """Calculate Cramér-von Mises distance (CVMD) to compare distributions to a target.
+
+        See: https://en.wikipedia.org/wiki/Cram%C3%A9r%E2%80%93von_Mises_criterion
+
+        Args:
+            self (BalanceDF): Object from sample (with/without adjustment, but it needs some target).
+            on_linked_samples (bool, optional): If to compare also to linked sample objects (specifically: unadjusted).
+                If True, then uses :func:`_call_on_linked` with method "cvmd". Defaults to True.
+            target (Optional["BalanceDF"], optional): A BalanceDF (of the same type as the one used in self) to compare against.
+                If None then it looks for a target in the self linked objects. Defaults to None.
+            aggregate_by_main_covar (bool, optional): Defaults to False.
+                If True, it will make sure to return the cvmd DataFrame after averaging
+                all the columns from using the one-hot encoding for categorical variables.
+                See :func:`_aggregate_statistic_by_main_covar` for more details.
+
+        Raises:
+            ValueError: If self has no target and no target is supplied.
+
+        Returns:
+            pd.DataFrame:
+                If on_linked_samples is False, then only one row (index name depends on BalanceDF type, e.g.: covars),
+                with cvmd of self vs the target.
+                If on_linked_samples is True, then two rows per source (self, unadjusted), each with the cvmd compared
+                to target, and a third row for the difference (self-unadjusted).
+
+        Examples:
+        .. code-block:: python
+
+                import pandas as pd
+                from balance.sample_class import Sample
+
+                sample = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "id": (1, 2, 3, 4),
+                            "a": (1, 2, 3, 4),
+                            "w": (1, 1, 1, 1),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                )
+
+                target = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "id": (1, 2, 3, 4),
+                            "a": (2, 3, 4, 5),
+                            "w": (1, 1, 1, 1),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                )
+
+                sample.set_target(target).covars().cvmd(on_linked_samples=False)
+        """
+        target_from_self = self._BalanceDF_child_from_linked_samples().get("target")
+
+        if target is None:
+            target = target_from_self
+
+        if target is None:
+            raise ValueError(
+                f"Sample {object.__str__(self._sample)} has no target set, or target has no {self.__name} to compare against."
+            )
+        elif on_linked_samples:
+            return balance_util.row_pairwise_diffs(
+                self._call_on_linked(
+                    "cvmd",
+                    exclude=("target",),
+                    target=target,
+                    aggregate_by_main_covar=aggregate_by_main_covar,
+                    **kwargs,
+                )
+            )
+        else:
+            out = (
+                pd.DataFrame(
+                    self._cvmd_BalanceDF(self, target, aggregate_by_main_covar)
+                )
+                .transpose()
+                .assign(index=(self.__name,))
+                .set_index("index")
+            )
+            return out
+
+    def ks(
+        self: "BalanceDF",
+        on_linked_samples: bool = True,
+        target: "BalanceDF" | None = None,
+        aggregate_by_main_covar: bool = False,
+        **kwargs: Any,
+    ) -> pd.DataFrame:
+        """Calculate Kolmogorov-Smirnov (KS) statistic to compare distributions to a target.
+
+        See: https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test
+
+        Args:
+            self (BalanceDF): Object from sample (with/without adjustment, but it needs some target).
+            on_linked_samples (bool, optional): If to compare also to linked sample objects (specifically: unadjusted).
+                If True, then uses :func:`_call_on_linked` with method "ks". Defaults to True.
+            target (Optional["BalanceDF"], optional): A BalanceDF (of the same type as the one used in self) to compare against.
+                If None then it looks for a target in the self linked objects. Defaults to None.
+            aggregate_by_main_covar (bool, optional): Defaults to False.
+                If True, it will make sure to return the ks DataFrame after averaging
+                all the columns from using the one-hot encoding for categorical variables.
+                See :func:`_aggregate_statistic_by_main_covar` for more details.
+
+        Raises:
+            ValueError: If self has no target and no target is supplied.
+
+        Returns:
+            pd.DataFrame:
+                If on_linked_samples is False, then only one row (index name depends on BalanceDF type, e.g.: covars),
+                with ks of self vs the target.
+                If on_linked_samples is True, then two rows per source (self, unadjusted), each with the ks compared
+                to target, and a third row for the difference (self-unadjusted).
+
+        Examples:
+        .. code-block:: python
+
+                import pandas as pd
+                from balance.sample_class import Sample
+
+                sample = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "id": (1, 2, 3, 4),
+                            "a": (1, 2, 3, 4),
+                            "w": (1, 1, 1, 1),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                )
+
+                target = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "id": (1, 2, 3, 4),
+                            "a": (2, 3, 4, 5),
+                            "w": (1, 1, 1, 1),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="w",
+                )
+
+                sample.set_target(target).covars().ks(on_linked_samples=False)
+        """
+        target_from_self = self._BalanceDF_child_from_linked_samples().get("target")
+
+        if target is None:
+            target = target_from_self
+
+        if target is None:
+            raise ValueError(
+                f"Sample {object.__str__(self._sample)} has no target set, or target has no {self.__name} to compare against."
+            )
+        elif on_linked_samples:
+            return balance_util.row_pairwise_diffs(
+                self._call_on_linked(
+                    "ks",
+                    exclude=("target",),
+                    target=target,
+                    aggregate_by_main_covar=aggregate_by_main_covar,
+                    **kwargs,
+                )
+            )
+        else:
+            out = (
+                pd.DataFrame(self._ks_BalanceDF(self, target, aggregate_by_main_covar))
+                .transpose()
+                .assign(index=(self.__name,))
+                .set_index("index")
+            )
+            return out
+
     def asmd_improvement(
         self: "BalanceDF",
         unadjusted: "BalanceDF" | None = None,
@@ -1544,16 +1921,6 @@ class BalanceDF:
             sample_after_weights=sample_after_weights,
             target_weights=target_weights,
         )
-
-    # TODO: implement the following methods (probably first in balance.stats_and_plots.weighted_comparisons_stats)
-    # def emd(self):
-    #     return NotImplementedError()
-
-    # def cvmd(self):
-    #     return NotImplementedError()
-
-    # def ks(self):
-    #     return NotImplementedError()
 
     def _df_with_ids(self: "BalanceDF") -> pd.DataFrame:
         """Creates a DataFrame of the BalanceDF, with ids.

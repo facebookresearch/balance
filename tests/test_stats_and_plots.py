@@ -12,6 +12,8 @@ from typing import Any, cast
 import balance.testutil
 import numpy as np
 import pandas as pd
+from balance.sample_class import Sample
+from balance.stats_and_plots import weighted_comparisons_stats
 from balance.util import _verify_value_type
 
 
@@ -1649,6 +1651,93 @@ class TestKLDivergence(balance.testutil.BalanceTestCase):
         self.assertNotIn("education[T.bachelor]", kld_aggregated.index)
         self.assertNotIn("education[T.masters]", kld_aggregated.index)
 
+    def test_emd_with_aggregate_by_main_covar(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "age": [25, 30, 35, 40],
+                "education[T.high_school]": [1, 0, 0, 0],
+                "education[T.bachelor]": [0, 1, 0, 0],
+                "education[T.masters]": [0, 0, 1, 1],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "age": [28, 32, 36, 42],
+                "education[T.high_school]": [0, 1, 0, 0],
+                "education[T.bachelor]": [1, 0, 0, 0],
+                "education[T.masters]": [0, 0, 1, 1],
+            }
+        )
+
+        emd_aggregated = weighted_comparisons_stats.emd(
+            sample_df, target_df, aggregate_by_main_covar=True
+        )
+
+        self.assertIn("age", emd_aggregated.index)
+        self.assertIn("education", emd_aggregated.index)
+        self.assertIn("mean(emd)", emd_aggregated.index)
+        self.assertNotIn("education[T.high_school]", emd_aggregated.index)
+        self.assertNotIn("education[T.bachelor]", emd_aggregated.index)
+        self.assertNotIn("education[T.masters]", emd_aggregated.index)
+
+    def test_cvmd_with_aggregate_by_main_covar(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "age": [25, 30, 35, 40],
+                "education[T.high_school]": [1, 0, 0, 0],
+                "education[T.bachelor]": [0, 1, 0, 0],
+                "education[T.masters]": [0, 0, 1, 1],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "age": [28, 32, 36, 42],
+                "education[T.high_school]": [0, 1, 0, 0],
+                "education[T.bachelor]": [1, 0, 0, 0],
+                "education[T.masters]": [0, 0, 1, 1],
+            }
+        )
+
+        cvmd_aggregated = weighted_comparisons_stats.cvmd(
+            sample_df, target_df, aggregate_by_main_covar=True
+        )
+
+        self.assertIn("age", cvmd_aggregated.index)
+        self.assertIn("education", cvmd_aggregated.index)
+        self.assertIn("mean(cvmd)", cvmd_aggregated.index)
+        self.assertNotIn("education[T.high_school]", cvmd_aggregated.index)
+        self.assertNotIn("education[T.bachelor]", cvmd_aggregated.index)
+        self.assertNotIn("education[T.masters]", cvmd_aggregated.index)
+
+    def test_ks_with_aggregate_by_main_covar(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "age": [25, 30, 35, 40],
+                "education[T.high_school]": [1, 0, 0, 0],
+                "education[T.bachelor]": [0, 1, 0, 0],
+                "education[T.masters]": [0, 0, 1, 1],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "age": [28, 32, 36, 42],
+                "education[T.high_school]": [0, 1, 0, 0],
+                "education[T.bachelor]": [1, 0, 0, 0],
+                "education[T.masters]": [0, 0, 1, 1],
+            }
+        )
+
+        ks_aggregated = weighted_comparisons_stats.ks(
+            sample_df, target_df, aggregate_by_main_covar=True
+        )
+
+        self.assertIn("age", ks_aggregated.index)
+        self.assertIn("education", ks_aggregated.index)
+        self.assertIn("mean(ks)", ks_aggregated.index)
+        self.assertNotIn("education[T.high_school]", ks_aggregated.index)
+        self.assertNotIn("education[T.bachelor]", ks_aggregated.index)
+        self.assertNotIn("education[T.masters]", ks_aggregated.index)
+
     def test_kld_validation_errors(self) -> None:
         """Test KLD function raises appropriate errors for invalid inputs.
 
@@ -1790,3 +1879,165 @@ class TestKLDivergence(balance.testutil.BalanceTestCase):
 
         # Identical single-category should have zero KLD
         self.assertAlmostEqual(kld_result["constant"], 0.0, places=5)
+
+    def test_emd_identical_distributions(self) -> None:
+        df = pd.DataFrame(
+            {
+                "category": ["A", "A", "B", "C"],
+                "numeric": [1.0, 2.0, 3.0, 4.0],
+            }
+        )
+
+        emd_result = weighted_comparisons_stats.emd(df, df)
+
+        self.assertAlmostEqual(emd_result["category"], 0.0, places=6)
+        self.assertAlmostEqual(emd_result["numeric"], 0.0, places=6)
+        self.assertAlmostEqual(emd_result["mean(emd)"], 0.0, places=6)
+
+    def test_emd_weighted_categorical(self) -> None:
+        sample_df = pd.DataFrame({"binary": [0, 0, 1, 1]})
+        target_df = pd.DataFrame({"binary": [0, 1, 1, 1]})
+
+        sample_weights = np.array([1.0, 1.0, 2.0, 2.0])
+        target_weights = np.array([1.0, 1.0, 1.0, 1.0])
+
+        emd_unweighted = weighted_comparisons_stats.emd(sample_df, target_df)
+        emd_weighted = weighted_comparisons_stats.emd(
+            sample_df, target_df, sample_weights, target_weights
+        )
+
+        self.assertAlmostEqual(emd_unweighted["binary"], 0.25, places=6)
+        self.assertAlmostEqual(emd_weighted["binary"], 1 / 12, places=6)
+
+    def test_emd_numeric_matches_wasserstein_example(self) -> None:
+        """EMD equals the 1D Wasserstein distance (L1 distance between CDFs)."""
+        # See: https://en.wikipedia.org/wiki/Wasserstein_metric
+        # Two point-masses at 0 and 1 have |F-G|=1 on [0, 1], so EMD=1.
+        sample_df = pd.DataFrame({"x": [0.0, 0.0]})
+        target_df = pd.DataFrame({"x": [1.0, 1.0]})
+
+        emd_result = weighted_comparisons_stats.emd(sample_df, target_df)
+
+        self.assertAlmostEqual(emd_result["x"], 1.0, places=6)
+
+    def test_cvmd_discrete_matches_expected(self) -> None:
+        sample_df = pd.DataFrame({"cat": ["A", "A", "B"]})
+        target_df = pd.DataFrame({"cat": ["A", "B", "B"]})
+
+        cvmd_result = weighted_comparisons_stats.cvmd(sample_df, target_df)
+
+        expected = (1 / 3) ** 2 * 0.5
+        self.assertAlmostEqual(cvmd_result["cat"], expected, places=6)
+
+    def test_ks_discrete_matches_expected(self) -> None:
+        sample_df = pd.DataFrame({"cat": ["A", "A", "B"]})
+        target_df = pd.DataFrame({"cat": ["A", "B", "B"]})
+
+        ks_result = weighted_comparisons_stats.ks(sample_df, target_df)
+
+        self.assertAlmostEqual(ks_result["cat"], 1 / 3, places=6)
+
+    def test_ks_numeric_matches_expected(self) -> None:
+        sample_df = pd.DataFrame({"x": [0.0, 0.0, 1.0, 1.0]})
+        target_df = pd.DataFrame({"x": [0.0, 1.0, 1.0, 1.0]})
+
+        ks_result = weighted_comparisons_stats.ks(sample_df, target_df)
+
+        self.assertAlmostEqual(ks_result["x"], 0.25, places=6)
+
+    def test_emd_cvmd_ks_validation_errors(self) -> None:
+        valid_df = pd.DataFrame({"a": [1, 2, 3]})
+        invalid_series: Any = pd.Series([1, 2, 3])
+
+        with self.assertRaisesRegex(ValueError, "sample_df must be pd.DataFrame"):
+            weighted_comparisons_stats.emd(invalid_series, valid_df)
+        with self.assertRaisesRegex(ValueError, "target_df must be pd.DataFrame"):
+            weighted_comparisons_stats.emd(valid_df, invalid_series)
+
+        with self.assertRaisesRegex(ValueError, "sample_df must be pd.DataFrame"):
+            weighted_comparisons_stats.cvmd(invalid_series, valid_df)
+        with self.assertRaisesRegex(ValueError, "target_df must be pd.DataFrame"):
+            weighted_comparisons_stats.cvmd(valid_df, invalid_series)
+
+        with self.assertRaisesRegex(ValueError, "sample_df must be pd.DataFrame"):
+            weighted_comparisons_stats.ks(invalid_series, valid_df)
+        with self.assertRaisesRegex(ValueError, "target_df must be pd.DataFrame"):
+            weighted_comparisons_stats.ks(valid_df, invalid_series)
+
+    def test_emd_cvmd_ks_skip_na_indicator(self) -> None:
+        sample_df = pd.DataFrame({"value": [1, 2, 3, 4], "_is_na_value": [0, 0, 1, 0]})
+        target_df = pd.DataFrame({"value": [2, 3, 4, 5], "_is_na_value": [0, 1, 0, 0]})
+
+        emd_result = weighted_comparisons_stats.emd(sample_df, target_df)
+        cvmd_result = weighted_comparisons_stats.cvmd(sample_df, target_df)
+        ks_result = weighted_comparisons_stats.ks(sample_df, target_df)
+
+        for result in (emd_result, cvmd_result, ks_result):
+            self.assertNotIn("_is_na_value", result.index)
+            self.assertIn("value", result.index)
+
+
+class TestBalanceDFDiagnostics(balance.testutil.BalanceTestCase):
+    def _make_samples(self) -> tuple["Sample", "Sample", "Sample"]:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "x": (0, 1, 2, 3),
+                    "w": (1.0, 1.0, 1.0, 1.0),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "x": (1, 2, 3, 4),
+                    "w": (1.0, 1.0, 1.0, 1.0),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+        adjusted = sample.set_target(target).adjust(method="null")
+        return sample, target, adjusted
+
+    def test_balance_df_emd_cvmd_ks_on_linked_samples(self) -> None:
+        _, _, adjusted = self._make_samples()
+
+        emd_df = adjusted.covars().emd()
+        cvmd_df = adjusted.covars().cvmd()
+        ks_df = adjusted.covars().ks()
+
+        for df in (emd_df, cvmd_df, ks_df):
+            self.assertIn("self", df.index)
+            self.assertIn("unadjusted", df.index)
+            self.assertIn("unadjusted - self", df.index)
+
+    def test_balance_df_emd_cvmd_ks_without_linked_samples(self) -> None:
+        _, target, adjusted = self._make_samples()
+
+        emd_df = adjusted.covars().emd(on_linked_samples=False, target=target.covars())
+        cvmd_df = adjusted.covars().cvmd(
+            on_linked_samples=False, target=target.covars()
+        )
+        ks_df = adjusted.covars().ks(on_linked_samples=False, target=target.covars())
+
+        for df in (emd_df, cvmd_df, ks_df):
+            self.assertEqual(["covars"], df.index.tolist())
+
+    def test_balance_df_emd_cvmd_ks_requires_target(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame({"id": (1, 2), "x": (0, 1), "w": (1.0, 1.0)}),
+            id_column="id",
+            weight_column="w",
+        )
+
+        with self.assertRaisesRegex(ValueError, "has no target set"):
+            sample.covars().emd()
+        with self.assertRaisesRegex(ValueError, "has no target set"):
+            sample.covars().cvmd()
+        with self.assertRaisesRegex(ValueError, "has no target set"):
+            sample.covars().ks()

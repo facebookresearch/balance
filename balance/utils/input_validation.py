@@ -70,6 +70,79 @@ def _float_or_none(value: float | int | str | None) -> float | None:
     return float(value)
 
 
+def _extract_series_and_weights(
+    series: pd.Series, weights: np.ndarray, label: str
+) -> tuple[pd.Series, np.ndarray]:
+    """
+    Validate and extract non-null series values aligned with weights.
+
+    Args:
+        series (pd.Series): Input series to filter.
+        weights (np.ndarray): Weights aligned to the full series.
+        label (str): Label for error messages.
+
+    Returns:
+        Tuple[pd.Series, np.ndarray]: Filtered series and weights with matching indices.
+
+    Raises:
+        ValueError: If weights length mismatches or filtered series is empty.
+
+    Examples:
+    .. code-block:: python
+
+            import numpy as np
+            import pandas as pd
+            from balance.utils.input_validation import _extract_series_and_weights
+
+            series, w = _extract_series_and_weights(
+                pd.Series([1.0, None, 2.0]),
+                np.array([1.0, 1.0, 2.0]),
+                "example",
+            )
+            series.tolist()
+            # [1.0, 2.0]
+            w.tolist()
+            # [1.0, 2.0]
+    """
+    if weights.shape[0] != series.shape[0]:
+        raise ValueError("Weights must match the number of observations.")
+    mask = series.notna().to_numpy()
+    filtered_series = series[mask]
+    filtered_weights = weights[mask]
+    if filtered_series.empty:
+        raise ValueError(f"{label} must contain at least one non-null value.")
+    return filtered_series, filtered_weights
+
+
+def _is_discrete_series(series: pd.Series) -> bool:
+    """
+    Determine whether a series should be treated as discrete for comparisons.
+
+    Args:
+        series (pd.Series): Input series to classify.
+
+    Returns:
+        bool: True if the series is binary, object, categorical, or boolean.
+
+    Examples:
+    .. code-block:: python
+
+            import pandas as pd
+            from balance.utils.input_validation import _is_discrete_series
+
+            _is_discrete_series(pd.Series([0, 1, 1, 0]))
+            # True
+    """
+    uniques = pd.unique(series.dropna())
+    is_binary_indicator = len(uniques) <= 2 and set(uniques).issubset({0, 1})
+    return (
+        is_binary_indicator
+        or pd.api.types.is_object_dtype(series)
+        or isinstance(series.dtype, pd.CategoricalDtype)
+        or pd.api.types.is_bool_dtype(series)
+    )
+
+
 def _check_weighting_methods_input(
     df: pd.DataFrame,
     weights: pd.Series,
