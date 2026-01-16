@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Literal, Tuple
+from typing import Any, Callable, Dict, Literal, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -1111,6 +1111,50 @@ class BalanceDF:
         return df_model_matrix, weights
 
     @staticmethod
+    def _apply_comparison_stat_to_BalanceDF(
+        comparison_func: Callable[..., pd.Series],
+        sample_BalanceDF: "BalanceDF",
+        target_BalanceDF: "BalanceDF",
+        aggregate_by_main_covar: bool = False,
+        **kwargs: Any,
+    ) -> pd.Series:
+        """Generic helper to apply a weighted comparison statistic function to two BalanceDF objects.
+
+        This helper function reduces code duplication across multiple comparison methods
+        (asmd, kld, emd, cvmd, ks) by extracting the common pattern of:
+        1. Validating inputs are BalanceDF objects
+        2. Extracting df and weights from both objects
+        3. Calling the comparison function with the extracted data
+
+        Args:
+            comparison_func (Callable[..., pd.Series]): The comparison function from
+                weighted_comparisons_stats to apply (e.g., asmd, kld, emd, cvmd, ks).
+            sample_BalanceDF (BalanceDF): Sample object.
+            target_BalanceDF (BalanceDF): Target object.
+            aggregate_by_main_covar (bool, optional): Whether to aggregate by main covariate.
+                Defaults to False. Passed to the comparison function.
+            **kwargs: Additional keyword arguments to pass to the comparison function
+                (e.g., std_type for asmd).
+
+        Returns:
+            pd.Series: The result from the comparison function.
+        """
+        BalanceDF._check_if_not_BalanceDF(sample_BalanceDF, "sample_BalanceDF")
+        BalanceDF._check_if_not_BalanceDF(target_BalanceDF, "target_BalanceDF")
+
+        sample_df_values, sample_weights = sample_BalanceDF._get_df_and_weights()
+        target_df_values, target_weights = target_BalanceDF._get_df_and_weights()
+
+        return comparison_func(
+            sample_df_values,
+            target_df_values,
+            sample_weights,
+            target_weights,
+            aggregate_by_main_covar=aggregate_by_main_covar,
+            **kwargs,
+        )
+
+    @staticmethod
     def _asmd_BalanceDF(
         sample_BalanceDF: "BalanceDF",
         target_BalanceDF: "BalanceDF",
@@ -1156,19 +1200,12 @@ class BalanceDF:
                     # mean(asmd)    1.756543
                     # dtype: float64
         """
-        BalanceDF._check_if_not_BalanceDF(sample_BalanceDF, "sample_BalanceDF")
-        BalanceDF._check_if_not_BalanceDF(sample_BalanceDF, "target_BalanceDF")
-
-        sample_df_values, sample_weights = sample_BalanceDF._get_df_and_weights()
-        target_df_values, target_weights = target_BalanceDF._get_df_and_weights()
-
-        return weighted_comparisons_stats.asmd(
-            sample_df_values,
-            target_df_values,
-            sample_weights,
-            target_weights,
+        return BalanceDF._apply_comparison_stat_to_BalanceDF(
+            weighted_comparisons_stats.asmd,
+            sample_BalanceDF,
+            target_BalanceDF,
+            aggregate_by_main_covar,
             std_type="target",
-            aggregate_by_main_covar=aggregate_by_main_covar,
         )
 
     @staticmethod
@@ -1190,18 +1227,11 @@ class BalanceDF:
         Returns:
             pd.Series: See :func:`weighted_comparisons_stats.kld`.
         """
-        BalanceDF._check_if_not_BalanceDF(sample_BalanceDF, "sample_BalanceDF")
-        BalanceDF._check_if_not_BalanceDF(target_BalanceDF, "target_BalanceDF")
-
-        sample_df_values, sample_weights = sample_BalanceDF._get_df_and_weights()
-        target_df_values, target_weights = target_BalanceDF._get_df_and_weights()
-
-        return weighted_comparisons_stats.kld(
-            sample_df_values,
-            target_df_values,
-            sample_weights,
-            target_weights,
-            aggregate_by_main_covar=aggregate_by_main_covar,
+        return BalanceDF._apply_comparison_stat_to_BalanceDF(
+            weighted_comparisons_stats.kld,
+            sample_BalanceDF,
+            target_BalanceDF,
+            aggregate_by_main_covar,
         )
 
     @staticmethod
@@ -1223,18 +1253,11 @@ class BalanceDF:
         Returns:
             pd.Series: See :func:`weighted_comparisons_stats.emd`.
         """
-        BalanceDF._check_if_not_BalanceDF(sample_BalanceDF, "sample_BalanceDF")
-        BalanceDF._check_if_not_BalanceDF(target_BalanceDF, "target_BalanceDF")
-
-        sample_df_values, sample_weights = sample_BalanceDF._get_df_and_weights()
-        target_df_values, target_weights = target_BalanceDF._get_df_and_weights()
-
-        return weighted_comparisons_stats.emd(
-            sample_df_values,
-            target_df_values,
-            sample_weights,
-            target_weights,
-            aggregate_by_main_covar=aggregate_by_main_covar,
+        return BalanceDF._apply_comparison_stat_to_BalanceDF(
+            weighted_comparisons_stats.emd,
+            sample_BalanceDF,
+            target_BalanceDF,
+            aggregate_by_main_covar,
         )
 
     @staticmethod
@@ -1256,18 +1279,11 @@ class BalanceDF:
         Returns:
             pd.Series: See :func:`weighted_comparisons_stats.cvmd`.
         """
-        BalanceDF._check_if_not_BalanceDF(sample_BalanceDF, "sample_BalanceDF")
-        BalanceDF._check_if_not_BalanceDF(target_BalanceDF, "target_BalanceDF")
-
-        sample_df_values, sample_weights = sample_BalanceDF._get_df_and_weights()
-        target_df_values, target_weights = target_BalanceDF._get_df_and_weights()
-
-        return weighted_comparisons_stats.cvmd(
-            sample_df_values,
-            target_df_values,
-            sample_weights,
-            target_weights,
-            aggregate_by_main_covar=aggregate_by_main_covar,
+        return BalanceDF._apply_comparison_stat_to_BalanceDF(
+            weighted_comparisons_stats.cvmd,
+            sample_BalanceDF,
+            target_BalanceDF,
+            aggregate_by_main_covar,
         )
 
     @staticmethod
@@ -1289,18 +1305,11 @@ class BalanceDF:
         Returns:
             pd.Series: See :func:`weighted_comparisons_stats.ks`.
         """
-        BalanceDF._check_if_not_BalanceDF(sample_BalanceDF, "sample_BalanceDF")
-        BalanceDF._check_if_not_BalanceDF(target_BalanceDF, "target_BalanceDF")
-
-        sample_df_values, sample_weights = sample_BalanceDF._get_df_and_weights()
-        target_df_values, target_weights = target_BalanceDF._get_df_and_weights()
-
-        return weighted_comparisons_stats.ks(
-            sample_df_values,
-            target_df_values,
-            sample_weights,
-            target_weights,
-            aggregate_by_main_covar=aggregate_by_main_covar,
+        return BalanceDF._apply_comparison_stat_to_BalanceDF(
+            weighted_comparisons_stats.ks,
+            sample_BalanceDF,
+            target_BalanceDF,
+            aggregate_by_main_covar,
         )
 
     def asmd(
