@@ -1304,15 +1304,11 @@ class TestBalanceDF_asmd(BalanceTestCase):
     def test_BalanceDF__kld_BalanceDF(self) -> None:
         """Test _kld_BalanceDF static method directly."""
         sample = Sample.from_frame(
-            pd.DataFrame(
-                {"id": (1, 2), "a": (1, 2), "b": (-1, 12), "weight": (1, 2)}
-            )
+            pd.DataFrame({"id": (1, 2), "a": (1, 2), "b": (-1, 12), "weight": (1, 2)})
         ).covars()
 
         target = Sample.from_frame(
-            pd.DataFrame(
-                {"id": (1, 2), "a": (3, 4), "b": (0, 42), "weight": (1, 2)}
-            )
+            pd.DataFrame({"id": (1, 2), "a": (3, 4), "b": (0, 42), "weight": (1, 2)})
         ).covars()
 
         result = BalanceDF._kld_BalanceDF(sample, target)
@@ -1327,21 +1323,19 @@ class TestBalanceDF_asmd(BalanceTestCase):
         self.assertTrue((result >= 0).all())
 
         # Test with aggregate_by_main_covar
-        result_agg = BalanceDF._kld_BalanceDF(sample, target, aggregate_by_main_covar=True)
+        result_agg = BalanceDF._kld_BalanceDF(
+            sample, target, aggregate_by_main_covar=True
+        )
         self.assertIsInstance(result_agg, pd.Series)
 
     def test_BalanceDF__emd_BalanceDF(self) -> None:
         """Test _emd_BalanceDF static method directly."""
         sample = Sample.from_frame(
-            pd.DataFrame(
-                {"id": (1, 2), "a": (1, 2), "b": (-1, 12), "weight": (1, 2)}
-            )
+            pd.DataFrame({"id": (1, 2), "a": (1, 2), "b": (-1, 12), "weight": (1, 2)})
         ).covars()
 
         target = Sample.from_frame(
-            pd.DataFrame(
-                {"id": (1, 2), "a": (3, 4), "b": (0, 42), "weight": (1, 2)}
-            )
+            pd.DataFrame({"id": (1, 2), "a": (3, 4), "b": (0, 42), "weight": (1, 2)})
         ).covars()
 
         result = BalanceDF._emd_BalanceDF(sample, target)
@@ -1356,21 +1350,19 @@ class TestBalanceDF_asmd(BalanceTestCase):
         self.assertTrue((result >= 0).all())
 
         # Test with aggregate_by_main_covar
-        result_agg = BalanceDF._emd_BalanceDF(sample, target, aggregate_by_main_covar=True)
+        result_agg = BalanceDF._emd_BalanceDF(
+            sample, target, aggregate_by_main_covar=True
+        )
         self.assertIsInstance(result_agg, pd.Series)
 
     def test_BalanceDF__cvmd_BalanceDF(self) -> None:
         """Test _cvmd_BalanceDF static method directly."""
         sample = Sample.from_frame(
-            pd.DataFrame(
-                {"id": (1, 2), "a": (1, 2), "b": (-1, 12), "weight": (1, 2)}
-            )
+            pd.DataFrame({"id": (1, 2), "a": (1, 2), "b": (-1, 12), "weight": (1, 2)})
         ).covars()
 
         target = Sample.from_frame(
-            pd.DataFrame(
-                {"id": (1, 2), "a": (3, 4), "b": (0, 42), "weight": (1, 2)}
-            )
+            pd.DataFrame({"id": (1, 2), "a": (3, 4), "b": (0, 42), "weight": (1, 2)})
         ).covars()
 
         result = BalanceDF._cvmd_BalanceDF(sample, target)
@@ -1385,21 +1377,19 @@ class TestBalanceDF_asmd(BalanceTestCase):
         self.assertTrue((result >= 0).all())
 
         # Test with aggregate_by_main_covar
-        result_agg = BalanceDF._cvmd_BalanceDF(sample, target, aggregate_by_main_covar=True)
+        result_agg = BalanceDF._cvmd_BalanceDF(
+            sample, target, aggregate_by_main_covar=True
+        )
         self.assertIsInstance(result_agg, pd.Series)
 
     def test_BalanceDF__ks_BalanceDF(self) -> None:
         """Test _ks_BalanceDF static method directly."""
         sample = Sample.from_frame(
-            pd.DataFrame(
-                {"id": (1, 2), "a": (1, 2), "b": (-1, 12), "weight": (1, 2)}
-            )
+            pd.DataFrame({"id": (1, 2), "a": (1, 2), "b": (-1, 12), "weight": (1, 2)})
         ).covars()
 
         target = Sample.from_frame(
-            pd.DataFrame(
-                {"id": (1, 2), "a": (3, 4), "b": (0, 42), "weight": (1, 2)}
-            )
+            pd.DataFrame({"id": (1, 2), "a": (3, 4), "b": (0, 42), "weight": (1, 2)})
         ).covars()
 
         result = BalanceDF._ks_BalanceDF(sample, target)
@@ -1415,15 +1405,15 @@ class TestBalanceDF_asmd(BalanceTestCase):
         self.assertTrue((result <= 1).all())
 
         # Test with aggregate_by_main_covar
-        result_agg = BalanceDF._ks_BalanceDF(sample, target, aggregate_by_main_covar=True)
+        result_agg = BalanceDF._ks_BalanceDF(
+            sample, target, aggregate_by_main_covar=True
+        )
         self.assertIsInstance(result_agg, pd.Series)
 
     def test_BalanceDF_comparison_functions_invalid_input(self) -> None:
         """Test that all comparison functions properly validate inputs."""
         sample = Sample.from_frame(
-            pd.DataFrame(
-                {"id": (1, 2), "a": (1, 2), "weight": (1, 2)}
-            )
+            pd.DataFrame({"id": (1, 2), "a": (1, 2), "weight": (1, 2)})
         ).covars()
 
         # Test with non-BalanceDF inputs
