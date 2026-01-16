@@ -210,6 +210,98 @@ float(asmd_improvement(sample, sample, target))
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_comparisons_stats.cvmd">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_comparisons_stats.</span></span><span class="sig-name descname"><span class="pre">cvmd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pd.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pd.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pd.Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">npt.NDArray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pd.Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">npt.NDArray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggregate_by_main_covar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pd.Series</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_comparisons_stats.html#cvmd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_comparisons_stats.cvmd" title="Link to this definition">¶</a></dt>
+<dd><p>Calculate the Cramér-von Mises distance between columns of two DataFrames.</p>
+<p>See: <a class="reference external" href="https://en.wikipedia.org/wiki/Cram%C3%A9r%E2%80%93von_Mises_criterion">https://en.wikipedia.org/wiki/Cram%C3%A9r%E2%80%93von_Mises_criterion</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sample_df</strong> (<em>pd.DataFrame</em>) – source group of the CVMD comparison.</p></li>
+<li><p><strong>target_df</strong> (<em>pd.DataFrame</em>) – target group of the CVMD comparison.
+The column names should be the same as the ones from sample_df.</p></li>
+<li><p><strong>sample_weights</strong> (<em>Union</em><em>[</em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>np.ndarray</em><em>]</em><em>, </em><em>optional</em>) – weights to use.
+The default is None. If no weights are passed (None), it will use an array of 1s.</p></li>
+<li><p><strong>target_weights</strong> (<em>Union</em><em>[</em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>np.ndarray</em><em>]</em><em>, </em><em>optional</em>) – weights to use.
+The default is None. If no weights are passed (None), it will use an array of 1s.</p></li>
+<li><p><strong>aggregate_by_main_covar</strong> (<em>bool</em>) – If to use <code class="xref py py-func docutils literal notranslate"><span class="pre">_aggregate_statistic_by_main_covar()</span></code>
+to aggregate (average) the CVMD based on variable name. Default is False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>a Series indexed on the names of the columns in the input DataFrames.</dt><dd><p>The values (of type np.float64) are CVMD values.
+The last element is ‘mean(cvmd)’, which is the weighted average of CVMD values.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.Series</p>
+</dd>
+</dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.stats_and_plots import weighted_comparisons_stats</p>
+<p>sample_df = pd.DataFrame({“cat”: [“A”, “A”, “B”]})
+target_df = pd.DataFrame({“cat”: [“A”, “A”, “B”]})</p>
+<p>weighted_comparisons_stats.cvmd(sample_df, target_df)
+# cat          0.0
+# mean(cvmd)   0.0
+# dtype: float64</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_comparisons_stats.emd">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_comparisons_stats.</span></span><span class="sig-name descname"><span class="pre">emd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pd.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pd.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pd.Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">npt.NDArray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pd.Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">npt.NDArray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggregate_by_main_covar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pd.Series</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_comparisons_stats.html#emd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_comparisons_stats.emd" title="Link to this definition">¶</a></dt>
+<dd><p>Calculate the Earth Mover’s Distance (EMD) between columns of two DataFrames.</p>
+<p>Numeric columns use weighted Wasserstein distance. Discrete columns are mapped to an
+ordered set of categories before computing the weighted distance.</p>
+<p>See: <a class="reference external" href="https://en.wikipedia.org/wiki/Earth_mover%27s_distance">https://en.wikipedia.org/wiki/Earth_mover%27s_distance</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sample_df</strong> (<em>pd.DataFrame</em>) – source group of the EMD comparison.</p></li>
+<li><p><strong>target_df</strong> (<em>pd.DataFrame</em>) – target group of the EMD comparison.
+The column names should be the same as the ones from sample_df.</p></li>
+<li><p><strong>sample_weights</strong> (<em>Union</em><em>[</em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>np.ndarray</em><em>]</em><em>, </em><em>optional</em>) – weights to use.
+The default is None. If no weights are passed (None), it will use an array of 1s.</p></li>
+<li><p><strong>target_weights</strong> (<em>Union</em><em>[</em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>np.ndarray</em><em>]</em><em>, </em><em>optional</em>) – weights to use.
+The default is None. If no weights are passed (None), it will use an array of 1s.</p></li>
+<li><p><strong>aggregate_by_main_covar</strong> (<em>bool</em>) – If to use <code class="xref py py-func docutils literal notranslate"><span class="pre">_aggregate_statistic_by_main_covar()</span></code>
+to aggregate (average) the EMD based on variable name. Default is False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>a Series indexed on the names of the columns in the input DataFrames.</dt><dd><p>The values (of type np.float64) are EMD values.
+The last element is ‘mean(emd)’, which is the weighted average of EMD values.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.Series</p>
+</dd>
+</dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.stats_and_plots import weighted_comparisons_stats</p>
+<p>sample_df = pd.DataFrame({“x”: [0, 0, 1, 1]})
+target_df = pd.DataFrame({“x”: [0, 1, 1, 1]})</p>
+<p>weighted_comparisons_stats.emd(sample_df, target_df)
+# x            0.25
+# mean(emd)    0.25
+# dtype: float64</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="balance.stats_and_plots.weighted_comparisons_stats.kld">
 <span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_comparisons_stats.</span></span><span class="sig-name descname"><span class="pre">kld</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pd.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pd.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pd.Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">npt.NDArray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pd.Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">npt.NDArray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggregate_by_main_covar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pd.Series</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_comparisons_stats.html#kld"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_comparisons_stats.kld" title="Link to this definition">¶</a></dt>
 <dd><p>Calculate the Kullback-Leibler divergence (KLD) between the columns of two DataFrames.</p>
@@ -294,6 +386,51 @@ print(kld_aggregated.round(6))
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_comparisons_stats.ks">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_comparisons_stats.</span></span><span class="sig-name descname"><span class="pre">ks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pd.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pd.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pd.Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">npt.NDArray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pd.Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">npt.NDArray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggregate_by_main_covar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pd.Series</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_comparisons_stats.html#ks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_comparisons_stats.ks" title="Link to this definition">¶</a></dt>
+<dd><p>Calculate the Kolmogorov-Smirnov statistic between columns of two DataFrames.</p>
+<p>See: <a class="reference external" href="https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test">https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sample_df</strong> (<em>pd.DataFrame</em>) – source group of the KS comparison.</p></li>
+<li><p><strong>target_df</strong> (<em>pd.DataFrame</em>) – target group of the KS comparison.
+The column names should be the same as the ones from sample_df.</p></li>
+<li><p><strong>sample_weights</strong> (<em>Union</em><em>[</em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>np.ndarray</em><em>]</em><em>, </em><em>optional</em>) – weights to use.
+The default is None. If no weights are passed (None), it will use an array of 1s.</p></li>
+<li><p><strong>target_weights</strong> (<em>Union</em><em>[</em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>np.ndarray</em><em>]</em><em>, </em><em>optional</em>) – weights to use.
+The default is None. If no weights are passed (None), it will use an array of 1s.</p></li>
+<li><p><strong>aggregate_by_main_covar</strong> (<em>bool</em>) – If to use <code class="xref py py-func docutils literal notranslate"><span class="pre">_aggregate_statistic_by_main_covar()</span></code>
+to aggregate (average) the KS based on variable name. Default is False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>a Series indexed on the names of the columns in the input DataFrames.</dt><dd><p>The values (of type np.float64) are KS values.
+The last element is ‘mean(ks)’, which is the weighted average of KS values.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.Series</p>
+</dd>
+</dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.stats_and_plots import weighted_comparisons_stats</p>
+<p>sample_df = pd.DataFrame({“x”: [0.0, 0.0, 1.0, 1.0]})
+target_df = pd.DataFrame({“x”: [0.0, 1.0, 1.0, 1.0]})</p>
+<p>weighted_comparisons_stats.ks(sample_df, target_df)
+# x          0.25
+# mean(ks)   0.25
+# dtype: float64</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="balance.stats_and_plots.weighted_comparisons_stats.outcome_variance_ratio">
 <span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_comparisons_stats.</span></span><span class="sig-name descname"><span class="pre">outcome_variance_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df_numerator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pd.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_denominator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pd.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_numerator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pd.Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">npt.NDArray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_denominator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pd.Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">npt.NDArray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pd.Series</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_comparisons_stats.html#outcome_variance_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_comparisons_stats.outcome_variance_ratio" title="Link to this definition">¶</a></dt>
 <dd><p>Calculate ratio of weighted variances of two DataFrames</p>
@@ -343,7 +480,10 @@ outcome_variance_ratio(df, df).iloc[0]
 <li><a class="reference internal" href="#">balance.stats_and_plots.weighted_comparisons_stats</a><ul>
 <li><a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_stats.asmd"><code class="docutils literal notranslate"><span class="pre">asmd()</span></code></a></li>
 <li><a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_stats.asmd_improvement"><code class="docutils literal notranslate"><span class="pre">asmd_improvement()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_stats.cvmd"><code class="docutils literal notranslate"><span class="pre">cvmd()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_stats.emd"><code class="docutils literal notranslate"><span class="pre">emd()</span></code></a></li>
 <li><a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_stats.kld"><code class="docutils literal notranslate"><span class="pre">kld()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_stats.ks"><code class="docutils literal notranslate"><span class="pre">ks()</span></code></a></li>
 <li><a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_stats.outcome_variance_ratio"><code class="docutils literal notranslate"><span class="pre">outcome_variance_ratio()</span></code></a></li>
 </ul>
 </li>

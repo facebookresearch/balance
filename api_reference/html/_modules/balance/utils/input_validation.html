@@ -107,6 +107,79 @@
     <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_extract_series_and_weights</span><span class="p">(</span>
+    <span class="n">series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Validate and extract non-null series values aligned with weights.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        series (pd.Series): Input series to filter.</span>
+<span class="sd">        weights (np.ndarray): Weights aligned to the full series.</span>
+<span class="sd">        label (str): Label for error messages.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple[pd.Series, np.ndarray]: Filtered series and weights with matching indices.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If weights length mismatches or filtered series is empty.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">            import numpy as np</span>
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from balance.utils.input_validation import _extract_series_and_weights</span>
+
+<span class="sd">            series, w = _extract_series_and_weights(</span>
+<span class="sd">                pd.Series([1.0, None, 2.0]),</span>
+<span class="sd">                np.array([1.0, 1.0, 2.0]),</span>
+<span class="sd">                &quot;example&quot;,</span>
+<span class="sd">            )</span>
+<span class="sd">            series.tolist()</span>
+<span class="sd">            # [1.0, 2.0]</span>
+<span class="sd">            w.tolist()</span>
+<span class="sd">            # [1.0, 2.0]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">series</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Weights must match the number of observations.&quot;</span><span class="p">)</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">notna</span><span class="p">()</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+    <span class="n">filtered_series</span> <span class="o">=</span> <span class="n">series</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+    <span class="n">filtered_weights</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">filtered_series</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> must contain at least one non-null value.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">filtered_series</span><span class="p">,</span> <span class="n">filtered_weights</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_is_discrete_series</span><span class="p">(</span><span class="n">series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Determine whether a series should be treated as discrete for comparisons.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        series (pd.Series): Input series to classify.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: True if the series is binary, object, categorical, or boolean.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from balance.utils.input_validation import _is_discrete_series</span>
+
+<span class="sd">            _is_discrete_series(pd.Series([0, 1, 1, 0]))</span>
+<span class="sd">            # True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">uniques</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">series</span><span class="o">.</span><span class="n">dropna</span><span class="p">())</span>
+    <span class="n">is_binary_indicator</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">uniques</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">2</span> <span class="ow">and</span> <span class="nb">set</span><span class="p">(</span><span class="n">uniques</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">({</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">})</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">is_binary_indicator</span>
+        <span class="ow">or</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_object_dtype</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">series</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">CategoricalDtype</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_bool_dtype</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+    <span class="p">)</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_check_weighting_methods_input</span><span class="p">(</span>
     <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>

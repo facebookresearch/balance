@@ -350,6 +350,81 @@ print(s3_null_2.outcomes().ci_of_mean(round_ndigits = 3))</p>
 </div></blockquote>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.balancedf_class.BalanceDF.cvmd">
+<span class="sig-name descname"><span class="pre">cvmd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">on_linked_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'BalanceDF'</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggregate_by_main_covar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pd.DataFrame</span></span></span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDF.cvmd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDF.cvmd" title="Link to this definition">¶</a></dt>
+<dd><p>Calculate Cramér-von Mises distance (CVMD) to compare distributions to a target.</p>
+<p>See: <a class="reference external" href="https://en.wikipedia.org/wiki/Cram%C3%A9r%E2%80%93von_Mises_criterion">https://en.wikipedia.org/wiki/Cram%C3%A9r%E2%80%93von_Mises_criterion</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> (<a class="reference internal" href="#balance.balancedf_class.BalanceDF" title="balance.balancedf_class.BalanceDF"><em>BalanceDF</em></a>) – Object from sample (with/without adjustment, but it needs some target).</p></li>
+<li><p><strong>on_linked_samples</strong> (<em>bool</em><em>, </em><em>optional</em>) – If to compare also to linked sample objects (specifically: unadjusted).
+If True, then uses <code class="xref py py-func docutils literal notranslate"><span class="pre">_call_on_linked()</span></code> with method “cvmd”. Defaults to True.</p></li>
+<li><p><strong>target</strong> (<em>Optional</em><em>[</em><em>&quot;BalanceDF&quot;</em><em>]</em><em>, </em><em>optional</em>) – A BalanceDF (of the same type as the one used in self) to compare against.
+If None then it looks for a target in the self linked objects. Defaults to None.</p></li>
+<li><p><strong>aggregate_by_main_covar</strong> (<em>bool</em><em>, </em><em>optional</em>) – Defaults to False.
+If True, it will make sure to return the cvmd DataFrame after averaging
+all the columns from using the one-hot encoding for categorical variables.
+See <code class="xref py py-func docutils literal notranslate"><span class="pre">_aggregate_statistic_by_main_covar()</span></code> for more details.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If self has no target and no target is supplied.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If on_linked_samples is False, then only one row (index name depends on BalanceDF type, e.g.: covars),
+with cvmd of self vs the target.
+If on_linked_samples is True, then two rows per source (self, unadjusted), each with the cvmd compared
+to target, and a third row for the difference (self-unadjusted).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.DataFrame</p>
+</dd>
+</dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample</p>
+<dl>
+<dt>sample = Sample.from_frame(</dt><dd><dl>
+<dt>pd.DataFrame(</dt><dd><dl class="simple">
+<dt>{</dt><dd><p>“id”: (1, 2, 3, 4),
+“a”: (1, 2, 3, 4),
+“w”: (1, 1, 1, 1),</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”w”,</p>
+</dd>
+</dl>
+<p>)</p>
+<dl>
+<dt>target = Sample.from_frame(</dt><dd><dl>
+<dt>pd.DataFrame(</dt><dd><dl class="simple">
+<dt>{</dt><dd><p>“id”: (1, 2, 3, 4),
+“a”: (2, 3, 4, 5),
+“w”: (1, 1, 1, 1),</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”w”,</p>
+</dd>
+</dl>
+<p>)</p>
+<p>sample.set_target(target).covars().cvmd(on_linked_samples=False)</p>
+</div></blockquote>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="balance.balancedf_class.BalanceDF.df">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">df</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span></em><a class="headerlink" href="#balance.balancedf_class.BalanceDF.df" title="Link to this definition">¶</a></dt>
@@ -385,6 +460,81 @@ standardize_types=False,</p>
 <p>)
 sample.covars().df.columns.tolist()
 # [‘x’]</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.balancedf_class.BalanceDF.emd">
+<span class="sig-name descname"><span class="pre">emd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">on_linked_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'BalanceDF'</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggregate_by_main_covar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pd.DataFrame</span></span></span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDF.emd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDF.emd" title="Link to this definition">¶</a></dt>
+<dd><p>Calculate Earth Mover’s Distance (EMD) to compare distributions to a target.</p>
+<p>See: <a class="reference external" href="https://en.wikipedia.org/wiki/Earth_mover%27s_distance">https://en.wikipedia.org/wiki/Earth_mover%27s_distance</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> (<a class="reference internal" href="#balance.balancedf_class.BalanceDF" title="balance.balancedf_class.BalanceDF"><em>BalanceDF</em></a>) – Object from sample (with/without adjustment, but it needs some target).</p></li>
+<li><p><strong>on_linked_samples</strong> (<em>bool</em><em>, </em><em>optional</em>) – If to compare also to linked sample objects (specifically: unadjusted).
+If True, then uses <code class="xref py py-func docutils literal notranslate"><span class="pre">_call_on_linked()</span></code> with method “emd”. Defaults to True.</p></li>
+<li><p><strong>target</strong> (<em>Optional</em><em>[</em><em>&quot;BalanceDF&quot;</em><em>]</em><em>, </em><em>optional</em>) – A BalanceDF (of the same type as the one used in self) to compare against.
+If None then it looks for a target in the self linked objects. Defaults to None.</p></li>
+<li><p><strong>aggregate_by_main_covar</strong> (<em>bool</em><em>, </em><em>optional</em>) – Defaults to False.
+If True, it will make sure to return the emd DataFrame after averaging
+all the columns from using the one-hot encoding for categorical variables.
+See <code class="xref py py-func docutils literal notranslate"><span class="pre">_aggregate_statistic_by_main_covar()</span></code> for more details.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If self has no target and no target is supplied.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If on_linked_samples is False, then only one row (index name depends on BalanceDF type, e.g.: covars),
+with emd of self vs the target.
+If on_linked_samples is True, then two rows per source (self, unadjusted), each with the emd compared
+to target, and a third row for the difference (self-unadjusted).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.DataFrame</p>
+</dd>
+</dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample</p>
+<dl>
+<dt>sample = Sample.from_frame(</dt><dd><dl>
+<dt>pd.DataFrame(</dt><dd><dl class="simple">
+<dt>{</dt><dd><p>“id”: (1, 2, 3, 4),
+“a”: (1, 2, 3, 4),
+“w”: (1, 1, 1, 1),</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”w”,</p>
+</dd>
+</dl>
+<p>)</p>
+<dl>
+<dt>target = Sample.from_frame(</dt><dd><dl>
+<dt>pd.DataFrame(</dt><dd><dl class="simple">
+<dt>{</dt><dd><p>“id”: (1, 2, 3, 4),
+“a”: (2, 3, 4, 5),
+“w”: (1, 1, 1, 1),</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”w”,</p>
+</dd>
+</dl>
+<p>)</p>
+<p>sample.set_target(target).covars().emd(on_linked_samples=False)</p>
 </div></blockquote>
 </dd></dl>
 
@@ -472,6 +622,81 @@ print(sample_with_target.covars().kld(on_linked_samples=False).round(6))</p>
 # index
 # covars   0.0  0.143841  0.130812   0.0   0.045776</p>
 </div></blockquote>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.balancedf_class.BalanceDF.ks">
+<span class="sig-name descname"><span class="pre">ks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">on_linked_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'BalanceDF'</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggregate_by_main_covar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pd.DataFrame</span></span></span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDF.ks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDF.ks" title="Link to this definition">¶</a></dt>
+<dd><p>Calculate Kolmogorov-Smirnov (KS) statistic to compare distributions to a target.</p>
+<p>See: <a class="reference external" href="https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test">https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> (<a class="reference internal" href="#balance.balancedf_class.BalanceDF" title="balance.balancedf_class.BalanceDF"><em>BalanceDF</em></a>) – Object from sample (with/without adjustment, but it needs some target).</p></li>
+<li><p><strong>on_linked_samples</strong> (<em>bool</em><em>, </em><em>optional</em>) – If to compare also to linked sample objects (specifically: unadjusted).
+If True, then uses <code class="xref py py-func docutils literal notranslate"><span class="pre">_call_on_linked()</span></code> with method “ks”. Defaults to True.</p></li>
+<li><p><strong>target</strong> (<em>Optional</em><em>[</em><em>&quot;BalanceDF&quot;</em><em>]</em><em>, </em><em>optional</em>) – A BalanceDF (of the same type as the one used in self) to compare against.
+If None then it looks for a target in the self linked objects. Defaults to None.</p></li>
+<li><p><strong>aggregate_by_main_covar</strong> (<em>bool</em><em>, </em><em>optional</em>) – Defaults to False.
+If True, it will make sure to return the ks DataFrame after averaging
+all the columns from using the one-hot encoding for categorical variables.
+See <code class="xref py py-func docutils literal notranslate"><span class="pre">_aggregate_statistic_by_main_covar()</span></code> for more details.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If self has no target and no target is supplied.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If on_linked_samples is False, then only one row (index name depends on BalanceDF type, e.g.: covars),
+with ks of self vs the target.
+If on_linked_samples is True, then two rows per source (self, unadjusted), each with the ks compared
+to target, and a third row for the difference (self-unadjusted).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.DataFrame</p>
+</dd>
+</dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample</p>
+<dl>
+<dt>sample = Sample.from_frame(</dt><dd><dl>
+<dt>pd.DataFrame(</dt><dd><dl class="simple">
+<dt>{</dt><dd><p>“id”: (1, 2, 3, 4),
+“a”: (1, 2, 3, 4),
+“w”: (1, 1, 1, 1),</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”w”,</p>
+</dd>
+</dl>
+<p>)</p>
+<dl>
+<dt>target = Sample.from_frame(</dt><dd><dl>
+<dt>pd.DataFrame(</dt><dd><dl class="simple">
+<dt>{</dt><dd><p>“id”: (1, 2, 3, 4),
+“a”: (2, 3, 4, 5),
+“w”: (1, 1, 1, 1),</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”w”,</p>
+</dd>
+</dl>
+<p>)</p>
+<p>sample.set_target(target).covars().ks(on_linked_samples=False)</p>
 </div></blockquote>
 </dd></dl>
 
@@ -1638,8 +1863,11 @@ sample.weights().df[“weight”].max() &lt;= 100.0
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDF.asmd"><code class="docutils literal notranslate"><span class="pre">BalanceDF.asmd()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDF.asmd_improvement"><code class="docutils literal notranslate"><span class="pre">BalanceDF.asmd_improvement()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDF.ci_of_mean"><code class="docutils literal notranslate"><span class="pre">BalanceDF.ci_of_mean()</span></code></a></li>
+<li><a class="reference internal" href="#balance.balancedf_class.BalanceDF.cvmd"><code class="docutils literal notranslate"><span class="pre">BalanceDF.cvmd()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDF.df"><code class="docutils literal notranslate"><span class="pre">BalanceDF.df</span></code></a></li>
+<li><a class="reference internal" href="#balance.balancedf_class.BalanceDF.emd"><code class="docutils literal notranslate"><span class="pre">BalanceDF.emd()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDF.kld"><code class="docutils literal notranslate"><span class="pre">BalanceDF.kld()</span></code></a></li>
+<li><a class="reference internal" href="#balance.balancedf_class.BalanceDF.ks"><code class="docutils literal notranslate"><span class="pre">BalanceDF.ks()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDF.mean"><code class="docutils literal notranslate"><span class="pre">BalanceDF.mean()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDF.mean_with_ci"><code class="docutils literal notranslate"><span class="pre">BalanceDF.mean_with_ci()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDF.model_matrix"><code class="docutils literal notranslate"><span class="pre">BalanceDF.model_matrix()</span></code></a></li>

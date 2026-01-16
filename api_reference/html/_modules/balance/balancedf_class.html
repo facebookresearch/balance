@@ -1273,6 +1273,105 @@
             <span class="n">aggregate_by_main_covar</span><span class="o">=</span><span class="n">aggregate_by_main_covar</span><span class="p">,</span>
         <span class="p">)</span>
 
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_emd_BalanceDF</span><span class="p">(</span>
+        <span class="n">sample_BalanceDF</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
+        <span class="n">target_BalanceDF</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
+        <span class="n">aggregate_by_main_covar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run EMD on two BalanceDF objects.</span>
+
+<span class="sd">        Prepares the BalanceDF objects by passing them through :func:`_get_df_and_weights`, and</span>
+<span class="sd">        then passes the df and weights into :func:`weighted_comparisons_stats.emd`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sample_BalanceDF (BalanceDF): Object.</span>
+<span class="sd">            target_BalanceDF (BalanceDF): Object.</span>
+<span class="sd">            aggregate_by_main_covar (bool, optional): See :func:`weighted_comparisons_stats.emd`. Defaults to False.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.Series: See :func:`weighted_comparisons_stats.emd`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_check_if_not_BalanceDF</span><span class="p">(</span><span class="n">sample_BalanceDF</span><span class="p">,</span> <span class="s2">&quot;sample_BalanceDF&quot;</span><span class="p">)</span>
+        <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_check_if_not_BalanceDF</span><span class="p">(</span><span class="n">target_BalanceDF</span><span class="p">,</span> <span class="s2">&quot;target_BalanceDF&quot;</span><span class="p">)</span>
+
+        <span class="n">sample_df_values</span><span class="p">,</span> <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">sample_BalanceDF</span><span class="o">.</span><span class="n">_get_df_and_weights</span><span class="p">()</span>
+        <span class="n">target_df_values</span><span class="p">,</span> <span class="n">target_weights</span> <span class="o">=</span> <span class="n">target_BalanceDF</span><span class="o">.</span><span class="n">_get_df_and_weights</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">weighted_comparisons_stats</span><span class="o">.</span><span class="n">emd</span><span class="p">(</span>
+            <span class="n">sample_df_values</span><span class="p">,</span>
+            <span class="n">target_df_values</span><span class="p">,</span>
+            <span class="n">sample_weights</span><span class="p">,</span>
+            <span class="n">target_weights</span><span class="p">,</span>
+            <span class="n">aggregate_by_main_covar</span><span class="o">=</span><span class="n">aggregate_by_main_covar</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_cvmd_BalanceDF</span><span class="p">(</span>
+        <span class="n">sample_BalanceDF</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
+        <span class="n">target_BalanceDF</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
+        <span class="n">aggregate_by_main_covar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run CVMD on two BalanceDF objects.</span>
+
+<span class="sd">        Prepares the BalanceDF objects by passing them through :func:`_get_df_and_weights`, and</span>
+<span class="sd">        then passes the df and weights into :func:`weighted_comparisons_stats.cvmd`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sample_BalanceDF (BalanceDF): Object.</span>
+<span class="sd">            target_BalanceDF (BalanceDF): Object.</span>
+<span class="sd">            aggregate_by_main_covar (bool, optional): See :func:`weighted_comparisons_stats.cvmd`. Defaults to False.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.Series: See :func:`weighted_comparisons_stats.cvmd`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_check_if_not_BalanceDF</span><span class="p">(</span><span class="n">sample_BalanceDF</span><span class="p">,</span> <span class="s2">&quot;sample_BalanceDF&quot;</span><span class="p">)</span>
+        <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_check_if_not_BalanceDF</span><span class="p">(</span><span class="n">target_BalanceDF</span><span class="p">,</span> <span class="s2">&quot;target_BalanceDF&quot;</span><span class="p">)</span>
+
+        <span class="n">sample_df_values</span><span class="p">,</span> <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">sample_BalanceDF</span><span class="o">.</span><span class="n">_get_df_and_weights</span><span class="p">()</span>
+        <span class="n">target_df_values</span><span class="p">,</span> <span class="n">target_weights</span> <span class="o">=</span> <span class="n">target_BalanceDF</span><span class="o">.</span><span class="n">_get_df_and_weights</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">weighted_comparisons_stats</span><span class="o">.</span><span class="n">cvmd</span><span class="p">(</span>
+            <span class="n">sample_df_values</span><span class="p">,</span>
+            <span class="n">target_df_values</span><span class="p">,</span>
+            <span class="n">sample_weights</span><span class="p">,</span>
+            <span class="n">target_weights</span><span class="p">,</span>
+            <span class="n">aggregate_by_main_covar</span><span class="o">=</span><span class="n">aggregate_by_main_covar</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ks_BalanceDF</span><span class="p">(</span>
+        <span class="n">sample_BalanceDF</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
+        <span class="n">target_BalanceDF</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
+        <span class="n">aggregate_by_main_covar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run KS on two BalanceDF objects.</span>
+
+<span class="sd">        Prepares the BalanceDF objects by passing them through :func:`_get_df_and_weights`, and</span>
+<span class="sd">        then passes the df and weights into :func:`weighted_comparisons_stats.ks`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sample_BalanceDF (BalanceDF): Object.</span>
+<span class="sd">            target_BalanceDF (BalanceDF): Object.</span>
+<span class="sd">            aggregate_by_main_covar (bool, optional): See :func:`weighted_comparisons_stats.ks`. Defaults to False.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.Series: See :func:`weighted_comparisons_stats.ks`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_check_if_not_BalanceDF</span><span class="p">(</span><span class="n">sample_BalanceDF</span><span class="p">,</span> <span class="s2">&quot;sample_BalanceDF&quot;</span><span class="p">)</span>
+        <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_check_if_not_BalanceDF</span><span class="p">(</span><span class="n">target_BalanceDF</span><span class="p">,</span> <span class="s2">&quot;target_BalanceDF&quot;</span><span class="p">)</span>
+
+        <span class="n">sample_df_values</span><span class="p">,</span> <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">sample_BalanceDF</span><span class="o">.</span><span class="n">_get_df_and_weights</span><span class="p">()</span>
+        <span class="n">target_df_values</span><span class="p">,</span> <span class="n">target_weights</span> <span class="o">=</span> <span class="n">target_BalanceDF</span><span class="o">.</span><span class="n">_get_df_and_weights</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">weighted_comparisons_stats</span><span class="o">.</span><span class="n">ks</span><span class="p">(</span>
+            <span class="n">sample_df_values</span><span class="p">,</span>
+            <span class="n">target_df_values</span><span class="p">,</span>
+            <span class="n">sample_weights</span><span class="p">,</span>
+            <span class="n">target_weights</span><span class="p">,</span>
+            <span class="n">aggregate_by_main_covar</span><span class="o">=</span><span class="n">aggregate_by_main_covar</span><span class="p">,</span>
+        <span class="p">)</span>
+
 <div class="viewcode-block" id="BalanceDF.asmd">
 <a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.asmd">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">asmd</span><span class="p">(</span>
@@ -1513,6 +1612,293 @@
             <span class="k">return</span> <span class="n">out</span></div>
 
 
+<div class="viewcode-block" id="BalanceDF.emd">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.emd">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">emd</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
+        <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">target</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">aggregate_by_main_covar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate Earth Mover&#39;s Distance (EMD) to compare distributions to a target.</span>
+
+<span class="sd">        See: https://en.wikipedia.org/wiki/Earth_mover%27s_distance</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (BalanceDF): Object from sample (with/without adjustment, but it needs some target).</span>
+<span class="sd">            on_linked_samples (bool, optional): If to compare also to linked sample objects (specifically: unadjusted).</span>
+<span class="sd">                If True, then uses :func:`_call_on_linked` with method &quot;emd&quot;. Defaults to True.</span>
+<span class="sd">            target (Optional[&quot;BalanceDF&quot;], optional): A BalanceDF (of the same type as the one used in self) to compare against.</span>
+<span class="sd">                If None then it looks for a target in the self linked objects. Defaults to None.</span>
+<span class="sd">            aggregate_by_main_covar (bool, optional): Defaults to False.</span>
+<span class="sd">                If True, it will make sure to return the emd DataFrame after averaging</span>
+<span class="sd">                all the columns from using the one-hot encoding for categorical variables.</span>
+<span class="sd">                See :func:`_aggregate_statistic_by_main_covar` for more details.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If self has no target and no target is supplied.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame:</span>
+<span class="sd">                If on_linked_samples is False, then only one row (index name depends on BalanceDF type, e.g.: covars),</span>
+<span class="sd">                with emd of self vs the target.</span>
+<span class="sd">                If on_linked_samples is True, then two rows per source (self, unadjusted), each with the emd compared</span>
+<span class="sd">                to target, and a third row for the difference (self-unadjusted).</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">                import pandas as pd</span>
+<span class="sd">                from balance.sample_class import Sample</span>
+
+<span class="sd">                sample = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3, 4),</span>
+<span class="sd">                            &quot;a&quot;: (1, 2, 3, 4),</span>
+<span class="sd">                            &quot;w&quot;: (1, 1, 1, 1),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                )</span>
+
+<span class="sd">                target = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3, 4),</span>
+<span class="sd">                            &quot;a&quot;: (2, 3, 4, 5),</span>
+<span class="sd">                            &quot;w&quot;: (1, 1, 1, 1),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                )</span>
+
+<span class="sd">                sample.set_target(target).covars().emd(on_linked_samples=False)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">target_from_self</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_BalanceDF_child_from_linked_samples</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="n">target_from_self</span>
+
+        <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Sample </span><span class="si">{</span><span class="nb">object</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="p">)</span><span class="si">}</span><span class="s2"> has no target set, or target has no </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">__name</span><span class="si">}</span><span class="s2"> to compare against.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">on_linked_samples</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">row_pairwise_diffs</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_call_on_linked</span><span class="p">(</span>
+                    <span class="s2">&quot;emd&quot;</span><span class="p">,</span>
+                    <span class="n">exclude</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;target&quot;</span><span class="p">,),</span>
+                    <span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span>
+                    <span class="n">aggregate_by_main_covar</span><span class="o">=</span><span class="n">aggregate_by_main_covar</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_emd_BalanceDF</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">aggregate_by_main_covar</span><span class="p">))</span>
+                <span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+                <span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__name</span><span class="p">,))</span>
+                <span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;index&quot;</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">out</span></div>
+
+
+<div class="viewcode-block" id="BalanceDF.cvmd">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.cvmd">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cvmd</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
+        <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">target</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">aggregate_by_main_covar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate Cramér-von Mises distance (CVMD) to compare distributions to a target.</span>
+
+<span class="sd">        See: https://en.wikipedia.org/wiki/Cram%C3%A9r%E2%80%93von_Mises_criterion</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (BalanceDF): Object from sample (with/without adjustment, but it needs some target).</span>
+<span class="sd">            on_linked_samples (bool, optional): If to compare also to linked sample objects (specifically: unadjusted).</span>
+<span class="sd">                If True, then uses :func:`_call_on_linked` with method &quot;cvmd&quot;. Defaults to True.</span>
+<span class="sd">            target (Optional[&quot;BalanceDF&quot;], optional): A BalanceDF (of the same type as the one used in self) to compare against.</span>
+<span class="sd">                If None then it looks for a target in the self linked objects. Defaults to None.</span>
+<span class="sd">            aggregate_by_main_covar (bool, optional): Defaults to False.</span>
+<span class="sd">                If True, it will make sure to return the cvmd DataFrame after averaging</span>
+<span class="sd">                all the columns from using the one-hot encoding for categorical variables.</span>
+<span class="sd">                See :func:`_aggregate_statistic_by_main_covar` for more details.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If self has no target and no target is supplied.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame:</span>
+<span class="sd">                If on_linked_samples is False, then only one row (index name depends on BalanceDF type, e.g.: covars),</span>
+<span class="sd">                with cvmd of self vs the target.</span>
+<span class="sd">                If on_linked_samples is True, then two rows per source (self, unadjusted), each with the cvmd compared</span>
+<span class="sd">                to target, and a third row for the difference (self-unadjusted).</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">                import pandas as pd</span>
+<span class="sd">                from balance.sample_class import Sample</span>
+
+<span class="sd">                sample = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3, 4),</span>
+<span class="sd">                            &quot;a&quot;: (1, 2, 3, 4),</span>
+<span class="sd">                            &quot;w&quot;: (1, 1, 1, 1),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                )</span>
+
+<span class="sd">                target = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3, 4),</span>
+<span class="sd">                            &quot;a&quot;: (2, 3, 4, 5),</span>
+<span class="sd">                            &quot;w&quot;: (1, 1, 1, 1),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                )</span>
+
+<span class="sd">                sample.set_target(target).covars().cvmd(on_linked_samples=False)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">target_from_self</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_BalanceDF_child_from_linked_samples</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="n">target_from_self</span>
+
+        <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Sample </span><span class="si">{</span><span class="nb">object</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="p">)</span><span class="si">}</span><span class="s2"> has no target set, or target has no </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">__name</span><span class="si">}</span><span class="s2"> to compare against.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">on_linked_samples</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">row_pairwise_diffs</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_call_on_linked</span><span class="p">(</span>
+                    <span class="s2">&quot;cvmd&quot;</span><span class="p">,</span>
+                    <span class="n">exclude</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;target&quot;</span><span class="p">,),</span>
+                    <span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span>
+                    <span class="n">aggregate_by_main_covar</span><span class="o">=</span><span class="n">aggregate_by_main_covar</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_cvmd_BalanceDF</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">aggregate_by_main_covar</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+                <span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__name</span><span class="p">,))</span>
+                <span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;index&quot;</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">out</span></div>
+
+
+<div class="viewcode-block" id="BalanceDF.ks">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.ks">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ks</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
+        <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">target</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">aggregate_by_main_covar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate Kolmogorov-Smirnov (KS) statistic to compare distributions to a target.</span>
+
+<span class="sd">        See: https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (BalanceDF): Object from sample (with/without adjustment, but it needs some target).</span>
+<span class="sd">            on_linked_samples (bool, optional): If to compare also to linked sample objects (specifically: unadjusted).</span>
+<span class="sd">                If True, then uses :func:`_call_on_linked` with method &quot;ks&quot;. Defaults to True.</span>
+<span class="sd">            target (Optional[&quot;BalanceDF&quot;], optional): A BalanceDF (of the same type as the one used in self) to compare against.</span>
+<span class="sd">                If None then it looks for a target in the self linked objects. Defaults to None.</span>
+<span class="sd">            aggregate_by_main_covar (bool, optional): Defaults to False.</span>
+<span class="sd">                If True, it will make sure to return the ks DataFrame after averaging</span>
+<span class="sd">                all the columns from using the one-hot encoding for categorical variables.</span>
+<span class="sd">                See :func:`_aggregate_statistic_by_main_covar` for more details.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If self has no target and no target is supplied.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame:</span>
+<span class="sd">                If on_linked_samples is False, then only one row (index name depends on BalanceDF type, e.g.: covars),</span>
+<span class="sd">                with ks of self vs the target.</span>
+<span class="sd">                If on_linked_samples is True, then two rows per source (self, unadjusted), each with the ks compared</span>
+<span class="sd">                to target, and a third row for the difference (self-unadjusted).</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">                import pandas as pd</span>
+<span class="sd">                from balance.sample_class import Sample</span>
+
+<span class="sd">                sample = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3, 4),</span>
+<span class="sd">                            &quot;a&quot;: (1, 2, 3, 4),</span>
+<span class="sd">                            &quot;w&quot;: (1, 1, 1, 1),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                )</span>
+
+<span class="sd">                target = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3, 4),</span>
+<span class="sd">                            &quot;a&quot;: (2, 3, 4, 5),</span>
+<span class="sd">                            &quot;w&quot;: (1, 1, 1, 1),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;w&quot;,</span>
+<span class="sd">                )</span>
+
+<span class="sd">                sample.set_target(target).covars().ks(on_linked_samples=False)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">target_from_self</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_BalanceDF_child_from_linked_samples</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="n">target_from_self</span>
+
+        <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Sample </span><span class="si">{</span><span class="nb">object</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="p">)</span><span class="si">}</span><span class="s2"> has no target set, or target has no </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">__name</span><span class="si">}</span><span class="s2"> to compare against.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">on_linked_samples</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">row_pairwise_diffs</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_call_on_linked</span><span class="p">(</span>
+                    <span class="s2">&quot;ks&quot;</span><span class="p">,</span>
+                    <span class="n">exclude</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;target&quot;</span><span class="p">,),</span>
+                    <span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span>
+                    <span class="n">aggregate_by_main_covar</span><span class="o">=</span><span class="n">aggregate_by_main_covar</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ks_BalanceDF</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">aggregate_by_main_covar</span><span class="p">))</span>
+                <span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+                <span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__name</span><span class="p">,))</span>
+                <span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;index&quot;</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">out</span></div>
+
+
 <div class="viewcode-block" id="BalanceDF.asmd_improvement">
 <a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.asmd_improvement">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">asmd_improvement</span><span class="p">(</span>
@@ -1622,16 +2008,6 @@
             <span class="n">target_weights</span><span class="o">=</span><span class="n">target_weights</span><span class="p">,</span>
         <span class="p">)</span></div>
 
-
-    <span class="c1"># TODO: implement the following methods (probably first in balance.stats_and_plots.weighted_comparisons_stats)</span>
-    <span class="c1"># def emd(self):</span>
-    <span class="c1">#     return NotImplementedError()</span>
-
-    <span class="c1"># def cvmd(self):</span>
-    <span class="c1">#     return NotImplementedError()</span>
-
-    <span class="c1"># def ks(self):</span>
-    <span class="c1">#     return NotImplementedError()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_df_with_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a DataFrame of the BalanceDF, with ids.</span>

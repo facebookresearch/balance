@@ -199,6 +199,34 @@
     <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_sorted_unique_categories</span><span class="p">(</span><span class="n">values</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return sorted unique non-null category values for a Series.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        values (pd.Series): Input series of categorical-like values.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List[Any]: Sorted unique values. If no non-null values exist, returns an empty list.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from balance.utils.pandas_utils import _sorted_unique_categories</span>
+
+<span class="sd">            _sorted_unique_categories(pd.Series([&quot;b&quot;, &quot;a&quot;, None]))</span>
+<span class="sd">            # [&#39;a&#39;, &#39;b&#39;]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">uniques</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">values</span><span class="o">.</span><span class="n">dropna</span><span class="p">())</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">uniques</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">uniques</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">uniques</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_is_categorical_dtype</span><span class="p">(</span><span class="n">series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if a pandas Series has a categorical dtype.</span>
 
