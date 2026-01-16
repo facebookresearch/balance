@@ -7,6 +7,7 @@
 [![Current Release](https://img.shields.io/github/release/facebookresearch/balance.svg)](https://github.com/facebookresearch/balance/releases)
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9+-fcbc2c.svg?logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![Build & Test](https://github.com/facebookresearch/balance/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/facebookresearch/balance/actions/workflows/build-and-test.yml?query=branch%3Amain)
+[![Coverage](https://github.com/facebookresearch/balance/actions/workflows/coverage.yml/badge.svg)](https://github.com/facebookresearch/balance/actions/workflows/coverage.yml?query=branch%3Amain)
 [![CodeQL](https://github.com/facebookresearch/balance/actions/workflows/codeql.yml/badge.svg)](https://github.com/facebookresearch/balance/actions/workflows/codeql.yml?query=branch%3Amain)
 [![Deploy Website](https://github.com/facebookresearch/balance/actions/workflows/deploy-website.yml/badge.svg)](https://github.com/facebookresearch/balance/actions/workflows/deploy-website.yml?query=branch%3Amain)
 [![Release](https://github.com/facebookresearch/balance/actions/workflows/release.yml/badge.svg)](https://github.com/facebookresearch/balance/actions/workflows/release.yml?query=branch%3Amain)

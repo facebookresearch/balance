@@ -57,6 +57,8 @@ dev = [
     "setuptools_scm",
     "wheel",
     "pytest",
+    "pytest-cov",
+    "coverage",
     "sphinx",
     "notebook",
     "nbconvert",
@@ -100,4 +102,25 @@ filterwarnings = [
     "ignore:'parseString' deprecated - use 'parse_string':DeprecationWarning:matplotlib._fontconfig_pattern",
     "ignore:'resetCache' deprecated - use 'reset_cache':DeprecationWarning:matplotlib._fontconfig_pattern",
     "ignore:'enablePackrat' deprecated - use 'enable_packrat':DeprecationWarning:matplotlib._mathtext",
+]
+
+[tool.coverage.run]
+source = ["balance"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "setup.py",
+    "version.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
 ]
