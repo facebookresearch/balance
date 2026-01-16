@@ -32,8 +32,6 @@ from scipy.stats import gaussian_kde, wasserstein_distance
 
 logger: logging.Logger = logging.getLogger(__package__)
 
-# TODO: add?
-# from scipy.stats import wasserstein_distance
 
 ##########################################
 # Weighted comparisons - functions to compare one or two data sources with one or two sources of weights
