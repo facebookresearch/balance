@@ -34,6 +34,8 @@ DEV_REQUIRES = [
     "setuptools_scm",
     "wheel",
     "pytest",
+    "pytest-cov",
+    "coverage",
     "sphinx",
     "notebook",
     "nbconvert",

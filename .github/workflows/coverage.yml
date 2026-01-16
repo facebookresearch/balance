@@ -40,15 +40,7 @@ jobs:
           name: coverage-xml
           path: coverage.xml
       
-      - name: Generate coverage badge
-        if: github.ref == 'refs/heads/main'
-        run: |
-          COVERAGE=$(python -c "import xml.etree.ElementTree as ET; tree = ET.parse('coverage.xml'); root = tree.getroot(); print(round(float(root.attrib['line-rate']) * 100, 2))")
-          echo "Coverage: $COVERAGE%"
-          echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
-      
-      - name: Create coverage comment
-        if: github.event_name == 'pull_request'
+      - name: Display coverage percentage
         run: |
           COVERAGE=$(python -c "import xml.etree.ElementTree as ET; tree = ET.parse('coverage.xml'); root = tree.getroot(); print(round(float(root.attrib['line-rate']) * 100, 2))")
           echo "Coverage: $COVERAGE%"
