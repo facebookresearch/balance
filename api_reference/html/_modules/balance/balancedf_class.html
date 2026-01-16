@@ -45,7 +45,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">npt</span>
@@ -1180,6 +1180,50 @@
         <span class="k">return</span> <span class="n">df_model_matrix</span><span class="p">,</span> <span class="n">weights</span>
 
     <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_apply_comparison_stat_to_BalanceDF</span><span class="p">(</span>
+        <span class="n">comparison_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">],</span>
+        <span class="n">sample_BalanceDF</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
+        <span class="n">target_BalanceDF</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
+        <span class="n">aggregate_by_main_covar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generic helper to apply a weighted comparison statistic function to two BalanceDF objects.</span>
+
+<span class="sd">        This helper function reduces code duplication across multiple comparison methods</span>
+<span class="sd">        (asmd, kld, emd, cvmd, ks) by extracting the common pattern of:</span>
+<span class="sd">        1. Validating inputs are BalanceDF objects</span>
+<span class="sd">        2. Extracting df and weights from both objects</span>
+<span class="sd">        3. Calling the comparison function with the extracted data</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            comparison_func (Callable[..., pd.Series]): The comparison function from</span>
+<span class="sd">                weighted_comparisons_stats to apply (e.g., asmd, kld, emd, cvmd, ks).</span>
+<span class="sd">            sample_BalanceDF (BalanceDF): Sample object.</span>
+<span class="sd">            target_BalanceDF (BalanceDF): Target object.</span>
+<span class="sd">            aggregate_by_main_covar (bool, optional): Whether to aggregate by main covariate.</span>
+<span class="sd">                Defaults to False. Passed to the comparison function.</span>
+<span class="sd">            **kwargs: Additional keyword arguments to pass to the comparison function</span>
+<span class="sd">                (e.g., std_type for asmd).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.Series: The result from the comparison function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_check_if_not_BalanceDF</span><span class="p">(</span><span class="n">sample_BalanceDF</span><span class="p">,</span> <span class="s2">&quot;sample_BalanceDF&quot;</span><span class="p">)</span>
+        <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_check_if_not_BalanceDF</span><span class="p">(</span><span class="n">target_BalanceDF</span><span class="p">,</span> <span class="s2">&quot;target_BalanceDF&quot;</span><span class="p">)</span>
+
+        <span class="n">sample_df_values</span><span class="p">,</span> <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">sample_BalanceDF</span><span class="o">.</span><span class="n">_get_df_and_weights</span><span class="p">()</span>
+        <span class="n">target_df_values</span><span class="p">,</span> <span class="n">target_weights</span> <span class="o">=</span> <span class="n">target_BalanceDF</span><span class="o">.</span><span class="n">_get_df_and_weights</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">comparison_func</span><span class="p">(</span>
+            <span class="n">sample_df_values</span><span class="p">,</span>
+            <span class="n">target_df_values</span><span class="p">,</span>
+            <span class="n">sample_weights</span><span class="p">,</span>
+            <span class="n">target_weights</span><span class="p">,</span>
+            <span class="n">aggregate_by_main_covar</span><span class="o">=</span><span class="n">aggregate_by_main_covar</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_asmd_BalanceDF</span><span class="p">(</span>
         <span class="n">sample_BalanceDF</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
         <span class="n">target_BalanceDF</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
@@ -1225,19 +1269,12 @@
 <span class="sd">                    # mean(asmd)    1.756543</span>
 <span class="sd">                    # dtype: float64</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_check_if_not_BalanceDF</span><span class="p">(</span><span class="n">sample_BalanceDF</span><span class="p">,</span> <span class="s2">&quot;sample_BalanceDF&quot;</span><span class="p">)</span>
-        <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_check_if_not_BalanceDF</span><span class="p">(</span><span class="n">sample_BalanceDF</span><span class="p">,</span> <span class="s2">&quot;target_BalanceDF&quot;</span><span class="p">)</span>
-
-        <span class="n">sample_df_values</span><span class="p">,</span> <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">sample_BalanceDF</span><span class="o">.</span><span class="n">_get_df_and_weights</span><span class="p">()</span>
-        <span class="n">target_df_values</span><span class="p">,</span> <span class="n">target_weights</span> <span class="o">=</span> <span class="n">target_BalanceDF</span><span class="o">.</span><span class="n">_get_df_and_weights</span><span class="p">()</span>
-
-        <span class="k">return</span> <span class="n">weighted_comparisons_stats</span><span class="o">.</span><span class="n">asmd</span><span class="p">(</span>
-            <span class="n">sample_df_values</span><span class="p">,</span>
-            <span class="n">target_df_values</span><span class="p">,</span>
-            <span class="n">sample_weights</span><span class="p">,</span>
-            <span class="n">target_weights</span><span class="p">,</span>
+        <span class="k">return</span> <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_apply_comparison_stat_to_BalanceDF</span><span class="p">(</span>
+            <span class="n">weighted_comparisons_stats</span><span class="o">.</span><span class="n">asmd</span><span class="p">,</span>
+            <span class="n">sample_BalanceDF</span><span class="p">,</span>
+            <span class="n">target_BalanceDF</span><span class="p">,</span>
+            <span class="n">aggregate_by_main_covar</span><span class="p">,</span>
             <span class="n">std_type</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">,</span>
-            <span class="n">aggregate_by_main_covar</span><span class="o">=</span><span class="n">aggregate_by_main_covar</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
@@ -1259,18 +1296,11 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            pd.Series: See :func:`weighted_comparisons_stats.kld`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_check_if_not_BalanceDF</span><span class="p">(</span><span class="n">sample_BalanceDF</span><span class="p">,</span> <span class="s2">&quot;sample_BalanceDF&quot;</span><span class="p">)</span>
-        <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_check_if_not_BalanceDF</span><span class="p">(</span><span class="n">target_BalanceDF</span><span class="p">,</span> <span class="s2">&quot;target_BalanceDF&quot;</span><span class="p">)</span>
-
-        <span class="n">sample_df_values</span><span class="p">,</span> <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">sample_BalanceDF</span><span class="o">.</span><span class="n">_get_df_and_weights</span><span class="p">()</span>
-        <span class="n">target_df_values</span><span class="p">,</span> <span class="n">target_weights</span> <span class="o">=</span> <span class="n">target_BalanceDF</span><span class="o">.</span><span class="n">_get_df_and_weights</span><span class="p">()</span>
-
-        <span class="k">return</span> <span class="n">weighted_comparisons_stats</span><span class="o">.</span><span class="n">kld</span><span class="p">(</span>
-            <span class="n">sample_df_values</span><span class="p">,</span>
-            <span class="n">target_df_values</span><span class="p">,</span>
-            <span class="n">sample_weights</span><span class="p">,</span>
-            <span class="n">target_weights</span><span class="p">,</span>
-            <span class="n">aggregate_by_main_covar</span><span class="o">=</span><span class="n">aggregate_by_main_covar</span><span class="p">,</span>
+        <span class="k">return</span> <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_apply_comparison_stat_to_BalanceDF</span><span class="p">(</span>
+            <span class="n">weighted_comparisons_stats</span><span class="o">.</span><span class="n">kld</span><span class="p">,</span>
+            <span class="n">sample_BalanceDF</span><span class="p">,</span>
+            <span class="n">target_BalanceDF</span><span class="p">,</span>
+            <span class="n">aggregate_by_main_covar</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
@@ -1292,18 +1322,11 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            pd.Series: See :func:`weighted_comparisons_stats.emd`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_check_if_not_BalanceDF</span><span class="p">(</span><span class="n">sample_BalanceDF</span><span class="p">,</span> <span class="s2">&quot;sample_BalanceDF&quot;</span><span class="p">)</span>
-        <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_check_if_not_BalanceDF</span><span class="p">(</span><span class="n">target_BalanceDF</span><span class="p">,</span> <span class="s2">&quot;target_BalanceDF&quot;</span><span class="p">)</span>
-
-        <span class="n">sample_df_values</span><span class="p">,</span> <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">sample_BalanceDF</span><span class="o">.</span><span class="n">_get_df_and_weights</span><span class="p">()</span>
-        <span class="n">target_df_values</span><span class="p">,</span> <span class="n">target_weights</span> <span class="o">=</span> <span class="n">target_BalanceDF</span><span class="o">.</span><span class="n">_get_df_and_weights</span><span class="p">()</span>
-
-        <span class="k">return</span> <span class="n">weighted_comparisons_stats</span><span class="o">.</span><span class="n">emd</span><span class="p">(</span>
-            <span class="n">sample_df_values</span><span class="p">,</span>
-            <span class="n">target_df_values</span><span class="p">,</span>
-            <span class="n">sample_weights</span><span class="p">,</span>
-            <span class="n">target_weights</span><span class="p">,</span>
-            <span class="n">aggregate_by_main_covar</span><span class="o">=</span><span class="n">aggregate_by_main_covar</span><span class="p">,</span>
+        <span class="k">return</span> <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_apply_comparison_stat_to_BalanceDF</span><span class="p">(</span>
+            <span class="n">weighted_comparisons_stats</span><span class="o">.</span><span class="n">emd</span><span class="p">,</span>
+            <span class="n">sample_BalanceDF</span><span class="p">,</span>
+            <span class="n">target_BalanceDF</span><span class="p">,</span>
+            <span class="n">aggregate_by_main_covar</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
@@ -1325,18 +1348,11 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            pd.Series: See :func:`weighted_comparisons_stats.cvmd`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_check_if_not_BalanceDF</span><span class="p">(</span><span class="n">sample_BalanceDF</span><span class="p">,</span> <span class="s2">&quot;sample_BalanceDF&quot;</span><span class="p">)</span>
-        <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_check_if_not_BalanceDF</span><span class="p">(</span><span class="n">target_BalanceDF</span><span class="p">,</span> <span class="s2">&quot;target_BalanceDF&quot;</span><span class="p">)</span>
-
-        <span class="n">sample_df_values</span><span class="p">,</span> <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">sample_BalanceDF</span><span class="o">.</span><span class="n">_get_df_and_weights</span><span class="p">()</span>
-        <span class="n">target_df_values</span><span class="p">,</span> <span class="n">target_weights</span> <span class="o">=</span> <span class="n">target_BalanceDF</span><span class="o">.</span><span class="n">_get_df_and_weights</span><span class="p">()</span>
-
-        <span class="k">return</span> <span class="n">weighted_comparisons_stats</span><span class="o">.</span><span class="n">cvmd</span><span class="p">(</span>
-            <span class="n">sample_df_values</span><span class="p">,</span>
-            <span class="n">target_df_values</span><span class="p">,</span>
-            <span class="n">sample_weights</span><span class="p">,</span>
-            <span class="n">target_weights</span><span class="p">,</span>
-            <span class="n">aggregate_by_main_covar</span><span class="o">=</span><span class="n">aggregate_by_main_covar</span><span class="p">,</span>
+        <span class="k">return</span> <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_apply_comparison_stat_to_BalanceDF</span><span class="p">(</span>
+            <span class="n">weighted_comparisons_stats</span><span class="o">.</span><span class="n">cvmd</span><span class="p">,</span>
+            <span class="n">sample_BalanceDF</span><span class="p">,</span>
+            <span class="n">target_BalanceDF</span><span class="p">,</span>
+            <span class="n">aggregate_by_main_covar</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
@@ -1358,18 +1374,11 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            pd.Series: See :func:`weighted_comparisons_stats.ks`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_check_if_not_BalanceDF</span><span class="p">(</span><span class="n">sample_BalanceDF</span><span class="p">,</span> <span class="s2">&quot;sample_BalanceDF&quot;</span><span class="p">)</span>
-        <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_check_if_not_BalanceDF</span><span class="p">(</span><span class="n">target_BalanceDF</span><span class="p">,</span> <span class="s2">&quot;target_BalanceDF&quot;</span><span class="p">)</span>
-
-        <span class="n">sample_df_values</span><span class="p">,</span> <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">sample_BalanceDF</span><span class="o">.</span><span class="n">_get_df_and_weights</span><span class="p">()</span>
-        <span class="n">target_df_values</span><span class="p">,</span> <span class="n">target_weights</span> <span class="o">=</span> <span class="n">target_BalanceDF</span><span class="o">.</span><span class="n">_get_df_and_weights</span><span class="p">()</span>
-
-        <span class="k">return</span> <span class="n">weighted_comparisons_stats</span><span class="o">.</span><span class="n">ks</span><span class="p">(</span>
-            <span class="n">sample_df_values</span><span class="p">,</span>
-            <span class="n">target_df_values</span><span class="p">,</span>
-            <span class="n">sample_weights</span><span class="p">,</span>
-            <span class="n">target_weights</span><span class="p">,</span>
-            <span class="n">aggregate_by_main_covar</span><span class="o">=</span><span class="n">aggregate_by_main_covar</span><span class="p">,</span>
+        <span class="k">return</span> <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_apply_comparison_stat_to_BalanceDF</span><span class="p">(</span>
+            <span class="n">weighted_comparisons_stats</span><span class="o">.</span><span class="n">ks</span><span class="p">,</span>
+            <span class="n">sample_BalanceDF</span><span class="p">,</span>
+            <span class="n">target_BalanceDF</span><span class="p">,</span>
+            <span class="n">aggregate_by_main_covar</span><span class="p">,</span>
         <span class="p">)</span>
 
 <div class="viewcode-block" id="BalanceDF.asmd">
