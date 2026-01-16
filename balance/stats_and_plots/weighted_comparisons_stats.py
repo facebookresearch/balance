@@ -10,7 +10,7 @@ from __future__ import annotations
 import collections
 import logging
 import re
-from typing import Any, List, Literal
+from typing import List, Literal
 
 import numpy as np
 import numpy.typing as npt
@@ -22,7 +22,11 @@ from balance.stats_and_plots.weighted_stats import (
 )
 from balance.stats_and_plots.weights_stats import _check_weights_are_valid
 from balance.util import _safe_groupby_apply, _safe_replace_and_infer
-from pandas import CategoricalDtype
+from balance.utils.input_validation import (
+    _extract_series_and_weights,
+    _is_discrete_series,
+)
+from balance.utils.pandas_utils import _sorted_unique_categories
 from scipy.integrate import quad
 from scipy.stats import gaussian_kde, wasserstein_distance
 
@@ -227,82 +231,6 @@ def _kl_divergence_continuous_quad(
     return float(max(kl, 0.0))
 
 
-def _sorted_unique_categories(values: pd.Series) -> list[Any]:
-    """
-    Return sorted unique non-null category values for a Series.
-
-    Args:
-        values (pd.Series): Input series of categorical-like values.
-
-    Returns:
-        List[Any]: Sorted unique values. If no non-null values exist, returns an empty list.
-
-    Examples:
-    .. code-block:: python
-
-            import pandas as pd
-            from balance.stats_and_plots.weighted_comparisons_stats import (
-                _sorted_unique_categories,
-            )
-
-            _sorted_unique_categories(pd.Series(["b", "a", None]))
-            # ['a', 'b']
-    """
-    uniques = pd.unique(values.dropna())
-    if len(uniques) == 0:
-        return []
-    try:
-        return sorted(uniques)
-    except TypeError:
-        return sorted(uniques, key=str)
-
-
-def _extract_series_and_weights(
-    series: pd.Series, weights: np.ndarray, label: str
-) -> tuple[pd.Series, np.ndarray]:
-    """
-    Validate and extract non-null series values aligned with weights.
-
-    Args:
-        series (pd.Series): Input series to filter.
-        weights (np.ndarray): Weights aligned to the full series.
-        label (str): Label for error messages.
-
-    Returns:
-        Tuple[pd.Series, np.ndarray]: Filtered series and weights with matching indices.
-
-    Raises:
-        ValueError: If weights length mismatches or filtered series is empty.
-
-    Examples:
-    .. code-block:: python
-
-            import numpy as np
-            import pandas as pd
-            from balance.stats_and_plots.weighted_comparisons_stats import (
-                _extract_series_and_weights,
-            )
-
-            series, w = _extract_series_and_weights(
-                pd.Series([1.0, None, 2.0]),
-                np.array([1.0, 1.0, 2.0]),
-                "example",
-            )
-            series.tolist()
-            # [1.0, 2.0]
-            w.tolist()
-            # [1.0, 2.0]
-    """
-    if weights.shape[0] != series.shape[0]:
-        raise ValueError("Weights must match the number of observations.")
-    mask = series.notna().to_numpy()
-    filtered_series = series[mask]
-    filtered_weights = weights[mask]
-    if filtered_series.empty:
-        raise ValueError(f"{label} must contain at least one non-null value.")
-    return filtered_series, filtered_weights
-
-
 def _weighted_pmf(series: pd.Series, weights: np.ndarray) -> pd.Series:
     """
     Compute a weighted probability mass function for a categorical series.
@@ -450,37 +378,6 @@ def _combined_weights(
     if total <= 0:
         raise ValueError("Combined weights must sum to a positive value.")
     return grouped.index.to_numpy(), (grouped / total).to_numpy()
-
-
-def _is_discrete_series(series: pd.Series) -> bool:
-    """
-    Determine whether a series should be treated as discrete for comparisons.
-
-    Args:
-        series (pd.Series): Input series to classify.
-
-    Returns:
-        bool: True if the series is binary, object, categorical, or boolean.
-
-    Examples:
-    .. code-block:: python
-
-            import pandas as pd
-            from balance.stats_and_plots.weighted_comparisons_stats import (
-                _is_discrete_series,
-            )
-
-            _is_discrete_series(pd.Series([0, 1, 1, 0]))
-            # True
-    """
-    uniques = pd.unique(series.dropna())
-    is_binary_indicator = len(uniques) <= 2 and set(uniques).issubset({0, 1})
-    return (
-        is_binary_indicator
-        or pd.api.types.is_object_dtype(series)
-        or isinstance(series.dtype, CategoricalDtype)
-        or pd.api.types.is_bool_dtype(series)
-    )
 
 
 # TODO: add memoization

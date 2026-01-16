@@ -159,6 +159,34 @@ def _coerce_scalar(value: Any) -> float:
     return float("nan")
 
 
+def _sorted_unique_categories(values: pd.Series) -> list[Any]:
+    """
+    Return sorted unique non-null category values for a Series.
+
+    Args:
+        values (pd.Series): Input series of categorical-like values.
+
+    Returns:
+        List[Any]: Sorted unique values. If no non-null values exist, returns an empty list.
+
+    Examples:
+    .. code-block:: python
+
+            import pandas as pd
+            from balance.utils.pandas_utils import _sorted_unique_categories
+
+            _sorted_unique_categories(pd.Series(["b", "a", None]))
+            # ['a', 'b']
+    """
+    uniques = pd.unique(values.dropna())
+    if len(uniques) == 0:
+        return []
+    try:
+        return sorted(uniques)
+    except TypeError:
+        return sorted(uniques, key=str)
+
+
 def _is_categorical_dtype(series: pd.Series) -> bool:
     """Check if a pandas Series has a categorical dtype.
 

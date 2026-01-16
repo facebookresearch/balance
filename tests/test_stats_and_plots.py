@@ -1651,6 +1651,93 @@ class TestKLDivergence(balance.testutil.BalanceTestCase):
         self.assertNotIn("education[T.bachelor]", kld_aggregated.index)
         self.assertNotIn("education[T.masters]", kld_aggregated.index)
 
+    def test_emd_with_aggregate_by_main_covar(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "age": [25, 30, 35, 40],
+                "education[T.high_school]": [1, 0, 0, 0],
+                "education[T.bachelor]": [0, 1, 0, 0],
+                "education[T.masters]": [0, 0, 1, 1],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "age": [28, 32, 36, 42],
+                "education[T.high_school]": [0, 1, 0, 0],
+                "education[T.bachelor]": [1, 0, 0, 0],
+                "education[T.masters]": [0, 0, 1, 1],
+            }
+        )
+
+        emd_aggregated = weighted_comparisons_stats.emd(
+            sample_df, target_df, aggregate_by_main_covar=True
+        )
+
+        self.assertIn("age", emd_aggregated.index)
+        self.assertIn("education", emd_aggregated.index)
+        self.assertIn("mean(emd)", emd_aggregated.index)
+        self.assertNotIn("education[T.high_school]", emd_aggregated.index)
+        self.assertNotIn("education[T.bachelor]", emd_aggregated.index)
+        self.assertNotIn("education[T.masters]", emd_aggregated.index)
+
+    def test_cvmd_with_aggregate_by_main_covar(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "age": [25, 30, 35, 40],
+                "education[T.high_school]": [1, 0, 0, 0],
+                "education[T.bachelor]": [0, 1, 0, 0],
+                "education[T.masters]": [0, 0, 1, 1],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "age": [28, 32, 36, 42],
+                "education[T.high_school]": [0, 1, 0, 0],
+                "education[T.bachelor]": [1, 0, 0, 0],
+                "education[T.masters]": [0, 0, 1, 1],
+            }
+        )
+
+        cvmd_aggregated = weighted_comparisons_stats.cvmd(
+            sample_df, target_df, aggregate_by_main_covar=True
+        )
+
+        self.assertIn("age", cvmd_aggregated.index)
+        self.assertIn("education", cvmd_aggregated.index)
+        self.assertIn("mean(cvmd)", cvmd_aggregated.index)
+        self.assertNotIn("education[T.high_school]", cvmd_aggregated.index)
+        self.assertNotIn("education[T.bachelor]", cvmd_aggregated.index)
+        self.assertNotIn("education[T.masters]", cvmd_aggregated.index)
+
+    def test_ks_with_aggregate_by_main_covar(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "age": [25, 30, 35, 40],
+                "education[T.high_school]": [1, 0, 0, 0],
+                "education[T.bachelor]": [0, 1, 0, 0],
+                "education[T.masters]": [0, 0, 1, 1],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "age": [28, 32, 36, 42],
+                "education[T.high_school]": [0, 1, 0, 0],
+                "education[T.bachelor]": [1, 0, 0, 0],
+                "education[T.masters]": [0, 0, 1, 1],
+            }
+        )
+
+        ks_aggregated = weighted_comparisons_stats.ks(
+            sample_df, target_df, aggregate_by_main_covar=True
+        )
+
+        self.assertIn("age", ks_aggregated.index)
+        self.assertIn("education", ks_aggregated.index)
+        self.assertIn("mean(ks)", ks_aggregated.index)
+        self.assertNotIn("education[T.high_school]", ks_aggregated.index)
+        self.assertNotIn("education[T.bachelor]", ks_aggregated.index)
+        self.assertNotIn("education[T.masters]", ks_aggregated.index)
+
     def test_kld_validation_errors(self) -> None:
         """Test KLD function raises appropriate errors for invalid inputs.
 
@@ -1821,6 +1908,17 @@ class TestKLDivergence(balance.testutil.BalanceTestCase):
 
         self.assertAlmostEqual(emd_unweighted["binary"], 0.25, places=6)
         self.assertAlmostEqual(emd_weighted["binary"], 1 / 12, places=6)
+
+    def test_emd_numeric_matches_wasserstein_example(self) -> None:
+        """EMD equals the 1D Wasserstein distance (L1 distance between CDFs)."""
+        # See: https://en.wikipedia.org/wiki/Wasserstein_metric
+        # Two point-masses at 0 and 1 have |F-G|=1 on [0, 1], so EMD=1.
+        sample_df = pd.DataFrame({"x": [0.0, 0.0]})
+        target_df = pd.DataFrame({"x": [1.0, 1.0]})
+
+        emd_result = weighted_comparisons_stats.emd(sample_df, target_df)
+
+        self.assertAlmostEqual(emd_result["x"], 1.0, places=6)
 
     def test_cvmd_discrete_matches_expected(self) -> None:
         sample_df = pd.DataFrame({"cat": ["A", "A", "B"]})
