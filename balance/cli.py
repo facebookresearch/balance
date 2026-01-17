@@ -269,7 +269,7 @@ class BalanceCLI:
         """
         return self.args.keep_columns is not None
 
-    def keep_columns(self) -> list[str] | None:
+    def keep_columns(self) -> List[str] | None:
         """Return the subset of columns to keep in outputs.
 
         Returns:
@@ -327,7 +327,7 @@ class BalanceCLI:
         """
         return self.args.outcome_columns is not None
 
-    def outcome_columns(self) -> list[str] | None:
+    def outcome_columns(self) -> List[str] | None:
         """Return the list of outcome columns if provided.
 
         Returns:
@@ -1399,8 +1399,8 @@ def make_parser() -> ArgumentParser:
     Examples:
         .. code-block:: python
             parser = make_parser()
-            parser.prog == "balance"
-            # False
+            isinstance(parser, ArgumentParser)
+            # True
     """
     parser = ArgumentParser()
     parser = add_arguments_to_parser(parser)
