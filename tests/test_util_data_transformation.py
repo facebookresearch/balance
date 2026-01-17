@@ -10,6 +10,7 @@ from __future__ import annotations
 import balance.testutil
 import numpy as np
 import pandas as pd
+from unittest.mock import patch
 
 # TODO: remove the use of balance_util in most cases, and just import the functions to be tested directly
 from balance import util as balance_util
@@ -205,6 +206,36 @@ class TestUtil(
             balance_util.quantize,
             pd.Series(["x", "y", "z"]),
         )
+
+    def test_quantize_non_dataframe_raises(self) -> None:
+        """Test that quantize raises TypeError when pd.Series returns non-Series object.
+
+        This test covers line 162 in data_transformation.py by mocking pd.Series
+        to return an object that is neither a Series nor a DataFrame.
+        This is an edge case that can only occur if pd.Series is monkey-patched
+        or behaves unexpectedly.
+        """
+        # Create a class that is neither Series nor DataFrame
+        class NotASeriesOrDataFrame:
+            pass
+
+        # Create a metaclass that makes pd.Series return NotASeriesOrDataFrame
+        # but keeps it as a type for isinstance checks
+        class SeriesMeta(type):
+            def __call__(cls, *args, **kwargs):
+                return NotASeriesOrDataFrame()
+
+        class FakeSeries(metaclass=SeriesMeta):
+            pass
+
+        # Mock pd.Series to use our fake series class
+        with patch("balance.utils.data_transformation.pd.Series", FakeSeries):
+            self.assertRaisesRegex(
+                TypeError,
+                "df must be a pandas DataFrame",
+                balance_util.quantize,
+                123,  # Input that's not Series or DataFrame
+            )
 
     def test_row_pairwise_diffs(self) -> None:
         d = pd.DataFrame({"a": (1, 2, 3), "b": (-42, 8, 2)})
