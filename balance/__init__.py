@@ -17,6 +17,7 @@ from balance.balancedf_class import (  # noqa
 from balance.datasets import load_data  # noqa
 from balance.sample_class import Sample  # noqa
 from balance.util import TruncationFormatter  # noqa
+from balance.estimators import BalanceWeighting  # noqa
 
 global __version__
 __version__ = "0.14.x"
