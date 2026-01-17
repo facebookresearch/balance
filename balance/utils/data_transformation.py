@@ -263,7 +263,7 @@ def auto_aggregate(
     if features is not None:
         warnings.warn(
             "features argument is unused, it will be removed in the future",
-            warnings.DeprecationWarning,
+            DeprecationWarning,
             stacklevel=2,
         )
 
