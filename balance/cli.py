@@ -424,7 +424,7 @@ class BalanceCLI:
             .. code-block:: python
                 from argparse import Namespace
                 BalanceCLI(Namespace(lambda_min=1e-5)).lambda_min()
-                1e-05
+                # 1e-05
         """
         return self.args.lambda_min
 
@@ -1495,8 +1495,8 @@ def make_parser() -> ArgumentParser:
     Examples:
         .. code-block:: python
             parser = make_parser()
-            parser.prog == "balance"
-            # False
+            isinstance(parser, ArgumentParser)
+            # True
     """
     parser = ArgumentParser()
     parser = add_arguments_to_parser(parser)
