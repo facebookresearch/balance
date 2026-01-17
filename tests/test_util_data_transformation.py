@@ -7,10 +7,11 @@
 
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import balance.testutil
 import numpy as np
 import pandas as pd
-from unittest.mock import patch
 
 # TODO: remove the use of balance_util in most cases, and just import the functions to be tested directly
 from balance import util as balance_util
@@ -215,6 +216,7 @@ class TestUtil(
         This is an edge case that can only occur if pd.Series is monkey-patched
         or behaves unexpectedly.
         """
+
         # Create a class that is neither Series nor DataFrame
         class NotASeriesOrDataFrame:
             pass
