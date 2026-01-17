@@ -47,14 +47,14 @@ jobs:
           coverage report --precision=2
       
       - name: Extract coverage percentage
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           COVERAGE=$(coverage report --precision=2 | grep TOTAL | awk '{print $NF}' | sed 's/%//')
           echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
           echo "Coverage: $COVERAGE%"
       
       - name: Create coverage badge
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           mkdir -p .github/badges
           python -c "
@@ -74,7 +74,7 @@ jobs:
           "
       
       - name: Commit coverage badge
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
