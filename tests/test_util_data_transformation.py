@@ -327,15 +327,15 @@ class TestUtil(
 
     def test_auto_aggregate_features_deprecation(self) -> None:
         """Test that auto_aggregate warns when features parameter is used.
-        
-        Tests that the deprecated 'features' parameter triggers a 
+
+        Tests that the deprecated 'features' parameter triggers a
         DeprecationWarning when it is not None.
         This covers line 264 in data_transformation.py.
         """
         df = pd.DataFrame(
             {"x": [1, 2, 3, 4], "y": [1, 1, 1, np.nan], "id": [1, 1, 2, 3]}
         )
-        
+
         # Test that passing features parameter triggers deprecation warning
         with self.assertWarns(DeprecationWarning):
             balance_util.auto_aggregate(df, features=["x", "y"])
