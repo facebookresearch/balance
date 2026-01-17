@@ -11,13 +11,12 @@ import logging
 from typing import Any, Dict, Literal, Union
 
 import pandas as pd
-import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 
 from balance.sample_class import Sample
 from balance.adjustment import _find_adjustment_method
 from balance.weighting_methods.ipw import weights_from_link, link_transform
-from balance.util import model_matrix, choose_variables
+from balance.util import model_matrix
 from balance.adjustment import apply_transformations
 
 logger: logging.Logger = logging.getLogger(__package__)
@@ -73,9 +72,36 @@ class BalanceWeighting(BaseEstimator, TransformerMixin):
         sample_covars_df = X.covars().df
         target_covars_df = target.covars().df
         
+        # Perform a lightweight high-cardinality check similar in spirit to Sample.adjust.
+        # We warn (rather than error) to avoid changing behavior while still surfacing UX issues.
+        def _check_high_cardinality(df: pd.DataFrame, df_name: str) -> None:
+            """
+            Emit a warning if any object/categorical covariate has very high cardinality.
+            """
+            high_card_cols: list[tuple[str, int]] = []
+            for col in df.columns:
+                series = df[col]
+                # Focus on columns where high cardinality is most problematic for modeling.
+                if series.dtype == object or isinstance(series.dtype, pd.CategoricalDtype):
+                    n_levels = int(series.nunique(dropna=True))
+                    if n_levels > 100:
+                        high_card_cols.append((str(col), n_levels))
+            if high_card_cols:
+                details = ", ".join(f"{name} ({n_levels} levels)" for name, n_levels in high_card_cols)
+                logger.warning(
+                    "High-cardinality covariates detected in %s: %s. "
+                    "This may lead to large model matrices and slow or unstable fitting. "
+                    "Consider binning or excluding some of these variables.",
+                    df_name,
+                    details,
+                )
+
+        _check_high_cardinality(sample_covars_df, "sample_covars_df")
+        _check_high_cardinality(target_covars_df, "target_covars_df")
+
         # Call the adjustment function
-        # Note: We are ignoring high cardinality checks here for brevity/purity, 
-        # but Sample.adjust does them. Ideally we'd use shared logic.
+        # Note: Sample.adjust performs additional checks; here we include a basic
+        # high-cardinality warning while keeping the estimator behavior unchanged.
         
         result = adjustment_function(
             sample_df=sample_covars_df,
@@ -102,6 +128,9 @@ class BalanceWeighting(BaseEstimator, TransformerMixin):
         Returns:
             pd.Series: The predicted weights.
         """
+        if not isinstance(X, Sample):
+            raise TypeError(f"Expected X to be a Sample object, got {type(X).__name__}")
+
         if self.model_ is None:
             raise ValueError("This BalanceWeighting instance is not fitted yet. Call 'fit' with appropriate arguments before using this estimator.")
         
@@ -126,6 +155,19 @@ class BalanceWeighting(BaseEstimator, TransformerMixin):
 
         Returns:
             Sample: A new Sample object with updated weights.
+
+        Example:
+            Fit a :class:`BalanceWeighting` estimator and transform a sample::
+
+                >>> from balance.estimators import BalanceWeighting
+                >>> from balance.sample_class import Sample
+                >>> # ... load data ...
+                >>> # sample = Sample.from_pandas(df, weight_col="weight")
+                >>> bw = BalanceWeighting(method="ipw")
+                >>> _ = bw.fit(sample)
+                >>> adjusted = bw.transform(sample)
+                >>> isinstance(adjusted, Sample)
+                True
         """
         weights = self.predict(X)
         
@@ -165,6 +207,54 @@ class BalanceWeighting(BaseEstimator, TransformerMixin):
         # For now, we use the same kwargs/defaults as passed to fit (via self.kwargs)
         transformations = self.kwargs.get("transformations", "default")
         
+        def _contains_stateful_transformation(obj: Any) -> bool:
+            """
+            Detect whether the provided `transformations` spec contains any
+            transformations that are known to depend on the joint
+            sample+target distribution (e.g., 'quantize').
+            This is a best-effort static check based on names only; it does
+            not execute any user code.
+            """
+            # Common case: a single string name
+            if isinstance(obj, str):
+                return "quantize" in obj.lower() or "quantile" in obj.lower()
+            
+            # Collections: inspect elements/values recursively
+            if isinstance(obj, dict):
+                return any(
+                    _contains_stateful_transformation(v) for v in obj.values()
+                )
+            if isinstance(obj, (list, tuple, set)):
+                return any(_contains_stateful_transformation(v) for v in obj)
+                
+            # Check callables (e.g. functions)
+            if hasattr(obj, "__name__"):
+                name = obj.__name__.lower()
+                if "quantize" in name or "quantile" in name:
+                    return True
+
+            return False
+
+        # Guard against transformations that cannot be safely recomputed on
+        # new data because they depend on the full sample+target used at fit
+        # time (e.g., 'quantize').
+        if _contains_stateful_transformation(transformations):
+            msg = (
+                "Prediction with stateful transformations such as 'quantize' is "
+                "not supported in _predict_ipw, because the fit-time "
+                "transformation state (computed on the combined sample+target) "
+                "is not stored. To obtain valid predictions, either:\n"
+                "  * remove or replace stateful transformations (e.g., set "
+                "`transformations=None` or use only stateless transforms), or\n"
+                "  * apply your own stable preprocessing pipeline to both the "
+                "training and prediction data, and pass `transformations=None` "
+                "to the estimator.\n"
+                "This explicit error avoids silently producing incorrect "
+                "weights for new data."
+            )
+            logger.error(msg)
+            raise ValueError(msg)
+
         # Apply transformations
         # apply_transformations expects a tuple
         dfs = apply_transformations((X.covars().df,), transformations=transformations)
