@@ -28,12 +28,6 @@ logger: logging.Logger = logging.getLogger(__package__)
 class BalanceCLI:
     """Helper class that encapsulates CLI argument handling and execution.
 
-    Args:
-        None.
-
-    Returns:
-        None.
-
     Examples:
         .. code-block:: python
             from argparse import Namespace
@@ -133,9 +127,6 @@ class BalanceCLI:
     def method(self) -> str:
         """Return the adjustment method name.
 
-        Args:
-            None.
-
         Returns:
             The adjustment method string (for example, ``"ipw"``).
 
@@ -149,9 +140,6 @@ class BalanceCLI:
 
     def sample_column(self) -> str:
         """Return the column indicating sample membership.
-
-        Args:
-            None.
 
         Returns:
             Name of the sample indicator column.
@@ -167,9 +155,6 @@ class BalanceCLI:
     def id_column(self) -> str:
         """Return the identifier column name.
 
-        Args:
-            None.
-
         Returns:
             Name of the ID column.
 
@@ -184,9 +169,6 @@ class BalanceCLI:
     def weight_column(self) -> str:
         """Return the weight column name.
 
-        Args:
-            None.
-
         Returns:
             Name of the weight column.
 
@@ -198,11 +180,8 @@ class BalanceCLI:
         """
         return self.args.weight_column
 
-    def covariate_columns(self) -> str:
+    def covariate_columns(self) -> List[str]:
         """Return the list of covariate column names.
-
-        Args:
-            None.
 
         Returns:
             Covariate column names parsed from the CLI argument.
@@ -215,11 +194,8 @@ class BalanceCLI:
         """
         return self.args.covariate_columns.split(",")
 
-    def covariate_columns_for_diagnostics(self) -> List[str]:
+    def covariate_columns_for_diagnostics(self) -> List[str] | None:
         """Return covariate columns used for diagnostics reporting.
-
-        Args:
-            None.
 
         Returns:
             List of columns to keep in diagnostics or ``None``.
@@ -228,18 +204,15 @@ class BalanceCLI:
             .. code-block:: python
                 from argparse import Namespace
                 BalanceCLI(
-                Namespace(covariate_columns_for_diagnostics="x,y")
+                    Namespace(covariate_columns_for_diagnostics="x,y")
                 ).covariate_columns_for_diagnostics()
                 # ['x', 'y']
         """
         out = self.args.covariate_columns_for_diagnostics
         return None if out is None else out.split(",")
 
-    def rows_to_keep_for_diagnostics(self) -> str:
+    def rows_to_keep_for_diagnostics(self) -> str | None:
         """Return the diagnostics row-filter expression.
-
-        Args:
-            None.
 
         Returns:
             The pandas expression string used to filter rows.
@@ -248,7 +221,7 @@ class BalanceCLI:
             .. code-block:: python
                 from argparse import Namespace
                 BalanceCLI(
-                Namespace(rows_to_keep_for_diagnostics="age >= 18")
+                    Namespace(rows_to_keep_for_diagnostics="age >= 18")
                 ).rows_to_keep_for_diagnostics()
                 # 'age >= 18'
         """
@@ -256,9 +229,6 @@ class BalanceCLI:
 
     def has_batch_columns(self) -> bool:
         """Return True when batch columns are supplied.
-
-        Args:
-            None.
 
         Returns:
             ``True`` if batch columns are set, otherwise ``False``.
@@ -271,11 +241,8 @@ class BalanceCLI:
         """
         return self.args.batch_columns is not None
 
-    def batch_columns(self) -> str:
+    def batch_columns(self) -> List[str]:
         """Return the list of batch column names.
-
-        Args:
-            None.
 
         Returns:
             Batch column names parsed from the CLI argument.
@@ -291,9 +258,6 @@ class BalanceCLI:
     def has_keep_columns(self) -> bool:
         """Return True when output keep columns are supplied.
 
-        Args:
-            None.
-
         Returns:
             ``True`` if keep columns are set, otherwise ``False``.
 
@@ -307,9 +271,6 @@ class BalanceCLI:
 
     def keep_columns(self) -> list[str] | None:
         """Return the subset of columns to keep in outputs.
-
-        Args:
-            None.
 
         Returns:
             List of columns to keep or ``None`` if unspecified.
@@ -327,9 +288,6 @@ class BalanceCLI:
     def has_keep_row_column(self) -> bool:
         """Return True when a keep-row column is supplied.
 
-        Args:
-            None.
-
         Returns:
             ``True`` if a keep-row column is set, otherwise ``False``.
 
@@ -341,11 +299,8 @@ class BalanceCLI:
         """
         return self.args.keep_row_column is not None
 
-    def keep_row_column(self) -> str:
+    def keep_row_column(self) -> str | None:
         """Return the keep-row indicator column name.
-
-        Args:
-            None.
 
         Returns:
             Name of the keep-row indicator column.
@@ -361,9 +316,6 @@ class BalanceCLI:
     def has_outcome_columns(self) -> bool:
         """Return True when outcome columns are explicitly supplied.
 
-        Args:
-            None.
-
         Returns:
             ``True`` if outcome columns are set, otherwise ``False``.
 
@@ -377,9 +329,6 @@ class BalanceCLI:
 
     def outcome_columns(self) -> list[str] | None:
         """Return the list of outcome columns if provided.
-
-        Args:
-            None.
 
         Returns:
             List of outcome columns or ``None`` if unset.
@@ -397,9 +346,6 @@ class BalanceCLI:
     def max_de(self) -> float | None:
         """Return the max design effect setting.
 
-        Args:
-            None.
-
         Returns:
             Maximum design effect or ``None`` if unset.
 
@@ -413,9 +359,6 @@ class BalanceCLI:
 
     def lambda_min(self) -> float | None:
         """Return the minimum L1 penalty setting.
-
-        Args:
-            None.
 
         Returns:
             Minimum L1 penalty value or ``None``.
@@ -431,9 +374,6 @@ class BalanceCLI:
     def lambda_max(self) -> float | None:
         """Return the maximum L1 penalty setting.
 
-        Args:
-            None.
-
         Returns:
             Maximum L1 penalty value or ``None``.
 
@@ -447,9 +387,6 @@ class BalanceCLI:
 
     def num_lambdas(self) -> int | None:
         """Return the number of lambda values to search over.
-
-        Args:
-            None.
 
         Returns:
             Number of lambdas as an integer or ``None``.
@@ -466,9 +403,6 @@ class BalanceCLI:
 
     def transformations(self) -> str | None:
         """Return the transformations config for adjustment.
-
-        Args:
-            None.
 
         Returns:
             Transformations setting or ``None`` if disabled.
@@ -487,9 +421,6 @@ class BalanceCLI:
     def formula(self) -> str | None:
         """Return the formula string used for model matrices.
 
-        Args:
-            None.
-
         Returns:
             Formula string or ``None`` if unset.
 
@@ -503,9 +434,6 @@ class BalanceCLI:
 
     def one_hot_encoding(self) -> bool | None:
         """Return the parsed one-hot encoding flag.
-
-        Args:
-            None.
 
         Returns:
             ``True``/``False`` for one-hot encoding, or ``None`` if unset.
@@ -521,9 +449,6 @@ class BalanceCLI:
     def standardize_types(self) -> bool:
         """Return whether to standardize input types in Sample.from_frame.
 
-        Args:
-            None.
-
         Returns:
             ``True`` if standardization is enabled, otherwise ``False``.
 
@@ -535,14 +460,11 @@ class BalanceCLI:
         """
         return balance.util._true_false_str_to_bool(self.args.standardize_types)
 
-    def weight_trimming_mean_ratio(self) -> float:
+    def weight_trimming_mean_ratio(self) -> float | None:
         """Return the mean ratio used for trimming weights.
 
-        Args:
-            None.
-
         Returns:
-            Weight trimming ratio.
+            Weight trimming ratio or ``None`` if unset.
 
         Examples:
             .. code-block:: python
@@ -555,9 +477,6 @@ class BalanceCLI:
     def logistic_regression_kwargs(self) -> Dict[str, Any] | None:
         """Parse JSON keyword arguments for the IPW logistic regression model.
 
-        Args:
-            None.
-
         Returns:
             Parsed keyword arguments dictionary or ``None``.
 
@@ -565,7 +484,7 @@ class BalanceCLI:
             .. code-block:: python
                 from argparse import Namespace
                 cli = BalanceCLI(
-                Namespace(ipw_logistic_regression_kwargs='{\"max_iter\": 100}')
+                    Namespace(ipw_logistic_regression_kwargs='{\"max_iter\": 100}')
                 )
                 cli.logistic_regression_kwargs()
                 # {'max_iter': 100}
@@ -589,9 +508,6 @@ class BalanceCLI:
 
     def logistic_regression_model(self) -> ClassifierMixin | None:
         """Build a LogisticRegression model when IPW kwargs are supplied.
-
-        Args:
-            None.
 
         Returns:
             Configured LogisticRegression instance or ``None``.
@@ -922,9 +838,6 @@ class BalanceCLI:
     def load_and_check_input(self) -> pd.DataFrame:
         """Read the input file and log basic information.
 
-        Args:
-            None.
-
         Returns:
             DataFrame loaded from the input file.
 
@@ -1009,9 +922,6 @@ class BalanceCLI:
     def update_attributes_for_main_used_by_adjust(self) -> None:
         """Prepare cached attributes for main to use in adjustment.
 
-        Args:
-            None.
-
         Returns:
             None.
 
@@ -1083,9 +993,6 @@ class BalanceCLI:
 
     def main(self) -> None:
         """Run the CLI workflow from input loading to output writing.
-
-        Args:
-            None.
 
         Returns:
             None.
@@ -1486,17 +1393,14 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
 def make_parser() -> ArgumentParser:
     """Create and return the CLI argument parser.
 
-    Args:
-        None.
-
     Returns:
         A configured ``ArgumentParser`` for the balance CLI.
 
     Examples:
         .. code-block:: python
             parser = make_parser()
-            isinstance(parser, ArgumentParser)
-            # True
+            parser.prog == "balance"
+            # False
     """
     parser = ArgumentParser()
     parser = add_arguments_to_parser(parser)
@@ -1505,9 +1409,6 @@ def make_parser() -> ArgumentParser:
 
 def main() -> None:
     """Entry point for the balance CLI.
-
-    Args:
-        None.
 
     Returns:
         None.
