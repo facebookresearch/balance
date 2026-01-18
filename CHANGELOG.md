@@ -80,6 +80,9 @@
 ## Tests
 - **Added Pyre type checking to GitHub Actions** via `.pyre_configuration.external` and a new `pyre` job in the workflow. Tests are excluded due to external typeshed stub differences; library code is fully type-checked.
 - **Added test coverage workflow and badge to README** via `.github/workflows/coverage.yml`. The workflow collects coverage using pytest-cov, generates HTML and XML reports, uploads them as artifacts, and displays coverage metrics. A coverage badge is now shown in README.md alongside other workflow badges.
+- **Improved test coverage for edge cases and error handling paths**
+  - Added targeted tests for previously uncovered code paths across the library, addressing edge cases including empty inputs, verbose logging, error handling for invalid parameters, and boundary conditions in weighting methods (IPW, CBPS, rake).
+  - Tests exercise defensive code paths that handle empty DataFrames, NaN convergence values, invalid model types, and non-convergence warnings.
 
 # 0.14.0 (2025-12-14)
 

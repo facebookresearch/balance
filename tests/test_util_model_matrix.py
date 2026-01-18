@@ -673,3 +673,48 @@ class TestUtil(
         }
         expected = pd.DataFrame(data=expected)
         self.assertEqual(res, expected)
+
+
+class TestModelMatrixEdgeCases(balance.testutil.BalanceTestCase):
+    """Test edge cases in model_matrix functions."""
+
+    def test_model_matrix_with_bracket_in_variable_names(self) -> None:
+        """Test that model_matrix raises error for variable names with brackets (line 306)."""
+        sample_df = pd.DataFrame({"var[one]": [1, 2, 3], "b": [4, 5, 6]})
+        target_df = pd.DataFrame({"var[one]": [7, 8, 9], "b": [10, 11, 12]})
+
+        with self.assertRaisesRegex(
+            ValueError, "Variable names cannot contain characters"
+        ):
+            balance_util.model_matrix(sample_df, target_df)
+
+    def test_model_matrix_with_bracket_in_multiple_variables(self) -> None:
+        """Test that model_matrix reports all bracket-containing variables."""
+        sample_df = pd.DataFrame(
+            {
+                "var[one]": [1, 2, 3],
+                "var]two[": [4, 5, 6],
+                "normal": [7, 8, 9],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "var[one]": [1, 2, 3],
+                "var]two[": [4, 5, 6],
+                "normal": [7, 8, 9],
+            }
+        )
+
+        with self.assertRaisesRegex(
+            ValueError, "Variable names cannot contain characters.*\\[.*\\]"
+        ):
+            balance_util.model_matrix(sample_df, target_df)
+
+    def test_model_matrix_empty_target_after_dropna(self) -> None:
+        """Test that model_matrix raises error when target is empty after dropna (line 362)."""
+        sample_df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+        # Target has all NA values - after dropna, it becomes empty
+        target_df = pd.DataFrame({"a": [np.nan, np.nan, np.nan], "b": [1, 2, 3]})
+
+        with self.assertRaisesRegex(ValueError, "Dropping rows led to empty target"):
+            balance_util.model_matrix(sample_df, target_df, add_na=False)

@@ -16,6 +16,7 @@ import pandas as pd
 from balance import util as balance_util
 from balance.sample_class import Sample
 from balance.util import _verify_value_type
+from balance.utils.input_validation import _extract_series_and_weights
 
 
 class TestUtil(
@@ -608,3 +609,60 @@ class TestUtil(
         # Test IndexError case separately
         with self.assertRaises(IndexError):
             balance_util.get_items_from_list_via_indices(["a", "b", "c"], [100])
+
+
+class TestExtractSeriesAndWeights(balance.testutil.BalanceTestCase):
+    """Test _extract_series_and_weights function (lines 107-114)."""
+
+    def test_weights_length_mismatch(self) -> None:
+        """Test that ValueError is raised when weights length doesn't match series (line 108)."""
+        series = pd.Series([1.0, 2.0, 3.0])
+        weights = np.array([1.0, 2.0])  # Wrong length
+
+        with self.assertRaisesRegex(ValueError, "Weights must match"):
+            _extract_series_and_weights(series, weights, "test")
+
+    def test_empty_filtered_series(self) -> None:
+        """Test that ValueError is raised when filtered series is empty (line 113)."""
+        # Series with all null values - after filtering, series is empty
+        series = pd.Series([None, None, None])
+        weights = np.array([1.0, 1.0, 1.0])
+
+        with self.assertRaisesRegex(ValueError, "must contain at least one non-null"):
+            _extract_series_and_weights(series, weights, "test_label")
+
+    def test_successful_extraction(self) -> None:
+        """Test successful extraction of series and weights."""
+        series = pd.Series([1.0, None, 3.0])
+        weights = np.array([1.0, 2.0, 3.0])
+
+        result_series, result_weights = _extract_series_and_weights(
+            series, weights, "test"
+        )
+
+        self.assertEqual(list(result_series), [1.0, 3.0])
+        self.assertEqual(list(result_weights), [1.0, 3.0])
+
+
+class TestChooseVariablesEmptySet(balance.testutil.BalanceTestCase):
+    """Test choose_variables with empty variables set (line 350)."""
+
+    def test_empty_variables_set_treated_as_none(self) -> None:
+        """Test that empty variables set is treated as None (line 350)."""
+        df1 = pd.DataFrame({"a": [1, 2], "b": [3, 4]})
+        df2 = pd.DataFrame({"a": [5, 6], "b": [7, 8]})
+
+        # Empty set should be treated as None and return intersection of columns
+        result = balance_util.choose_variables(df1, df2, variables=set())
+        self.assertIn("a", result)
+        self.assertIn("b", result)
+
+    def test_empty_list_treated_as_none(self) -> None:
+        """Test that empty list is treated as None."""
+        df1 = pd.DataFrame({"a": [1, 2], "b": [3, 4]})
+        df2 = pd.DataFrame({"a": [5, 6], "c": [7, 8]})
+
+        # Empty list should be treated as None
+        result = balance_util.choose_variables(df1, df2, variables=[])
+        # Should return intersection (only 'a')
+        self.assertEqual(result, ["a"])
