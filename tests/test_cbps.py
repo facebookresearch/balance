@@ -1342,21 +1342,27 @@ class TestCbpsOptimizationConvergenceWarnings(balance.testutil.BalanceTestCase):
 
         # CBPS handles extreme cases by logging a warning about identical weights
         # rather than raising an exception
-        self.assertWarnsRegexp(
-            "All weights are identical",
-            balance_cbps.cbps,
-            sample_df,
-            sample_weights,
-            target_df,
-            target_weights,
-            transformations=None,
-            cbps_method="exact",
-        )
-        """Test CBPS over method logs warnings when optimization fails (lines 713, 747, 765).
+        # Suppress PerfectSeparationWarning as it's expected with this extreme test data
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message="Perfect separation or prediction detected",
+                category=PerfectSeparationWarning,
+            )
+            self.assertWarnsRegexp(
+                "All weights are identical",
+                balance_cbps.cbps,
+                sample_df,
+                sample_weights,
+                target_df,
+                target_weights,
+                transformations=None,
+                cbps_method="exact",
+            )
 
-        Verifies that when optimization algorithms fail to converge, appropriate
-        warnings are logged.
-        """
+        # Test CBPS over method logs warnings when optimization fails (lines 713, 747, 765).
+        # Verifies that when optimization algorithms fail to converge, appropriate
+        # warnings are logged.
         import logging
 
         # Create data designed to cause convergence issues
@@ -1381,38 +1387,49 @@ class TestCbpsOptimizationConvergenceWarnings(balance.testutil.BalanceTestCase):
         # Run with over method to exercise gmm optimization paths
         # Use very tight opt_opts to force convergence failure
         # We expect either warnings to be logged or an exception to be raised
-        try:
-            with self.assertLogs(level=logging.WARNING) as log_context:
-                balance_cbps.cbps(
-                    sample_df,
-                    sample_weights,
-                    target_df,
-                    target_weights,
-                    transformations=None,
-                    cbps_method="over",
-                    opt_opts={"maxiter": 1},  # Force convergence failure
+        # Suppress PerfectSeparationWarning and scipy UserWarning as they're expected with extreme data
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message="Perfect separation or prediction detected",
+                category=PerfectSeparationWarning,
+            )
+            warnings.filterwarnings(
+                "ignore",
+                message="COBYLA: Invalid MAXFUN",
+            )
+            try:
+                with self.assertLogs(level=logging.WARNING) as log_context:
+                    balance_cbps.cbps(
+                        sample_df,
+                        sample_weights,
+                        target_df,
+                        target_weights,
+                        transformations=None,
+                        cbps_method="over",
+                        opt_opts={"maxiter": 1},  # Force convergence failure
+                    )
+                # Verify that at least one warning was logged
+                self.assertTrue(
+                    len(log_context.records) > 0,
+                    msg="Expected warning logs when optimization fails to converge",
                 )
-            # Verify that at least one warning was logged
-            self.assertTrue(
-                len(log_context.records) > 0,
-                msg="Expected warning logs when optimization fails to converge",
-            )
-        except Exception as e:
-            # If an exception is raised, verify it contains relevant error info
-            error_msg = str(e).lower()
-            self.assertTrue(
-                any(
-                    keyword in error_msg
-                    for keyword in [
-                        "converge",
-                        "constraint",
-                        "singular",
-                        "optimization",
-                        "failed",
-                    ]
-                ),
-                msg=f"Expected exception to contain convergence-related message, got: {e}",
-            )
+            except Exception as e:
+                # If an exception is raised, verify it contains relevant error info
+                error_msg = str(e).lower()
+                self.assertTrue(
+                    any(
+                        keyword in error_msg
+                        for keyword in [
+                            "converge",
+                            "constraint",
+                            "singular",
+                            "optimization",
+                            "failed",
+                        ]
+                    ),
+                    msg=f"Expected exception to contain convergence-related message, got: {e}",
+                )
 
     def test_cbps_alpha_function_convergence_warning(self) -> None:
         """Test CBPS logs warning when alpha_function fails to converge (line 689).
