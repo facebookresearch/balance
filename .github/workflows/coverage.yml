@@ -59,12 +59,18 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
-          # Fetch the badges branch or create it as an orphan
-          git fetch origin badges:badges 2>/dev/null || git checkout --orphan badges
-          git checkout badges
+          # Always start fresh with orphan branch
+          git checkout --orphan badges-temp
+          git rm -rf . 2>/dev/null || true
 
           # Create badge directory and file
           mkdir -p .github/badges
+          cat > README.md << 'EOF'
+          # Coverage Badges
+
+          This branch stores dynamically generated coverage badges.
+          EOF
+
           python -c "
           import os, json
           coverage = float(os.environ['COVERAGE'])
@@ -74,6 +80,6 @@ jobs:
               json.dump(badge, f)
           "
 
-          git add .github/badges/coverage.json
-          git diff --staged --quiet || git commit -m "Update coverage badge [skip ci]"
-          git push origin badges
+          git add .
+          git commit -m "Update coverage badge to ${COVERAGE}% [skip ci]"
+          git push -f origin badges-temp:badges
