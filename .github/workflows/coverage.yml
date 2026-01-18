@@ -69,17 +69,15 @@ jobs:
             COLOR="red"
           fi
 
-          # Create badge JSON
-          BADGE_JSON=$(cat <<EOF
-          {"schemaVersion": 1, "label": "coverage", "message": "${COVERAGE}%", "color": "${COLOR}"}
-          EOF
-          )
+          # Create badge JSON content as a string (escape quotes for nested JSON)
+          BADGE_CONTENT="{\\\"schemaVersion\\\": 1, \\\"label\\\": \\\"coverage\\\", \\\"message\\\": \\\"${COVERAGE}%\\\", \\\"color\\\": \\\"${COLOR}\\\"}"
 
-          # Update the Gist
+          # Update the Gist (content must be a JSON-escaped string)
           curl -s -X PATCH \
             -H "Authorization: token $GIST_TOKEN" \
             -H "Accept: application/vnd.github.v3+json" \
             https://api.github.com/gists/89d05034d314ebda47c1e16607e1ee22 \
-            -d "{\"files\": {\"coverage-balance.json\": {\"content\": $BADGE_JSON}}}"
+            -d "{\"files\": {\"coverage-balance.json\": {\"content\": \"$BADGE_CONTENT\"}}}" | head -20
 
+          echo ""
           echo "Badge updated successfully!"
