@@ -46,40 +46,40 @@ jobs:
         run: |
           coverage report --precision=2
 
-      - name: Extract coverage percentage
-        if: github.ref == 'refs/heads/main'
+      - name: Update coverage badge
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        env:
+          GIST_TOKEN: ${{ secrets.GIST_TOKEN_COVERAGE }}
         run: |
           COVERAGE=$(coverage report --precision=2 | grep TOTAL | awk '{print $NF}' | sed 's/%//')
-          echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
           echo "Coverage: $COVERAGE%"
 
-      - name: Commit coverage badge
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
+          # Determine badge color based on coverage (finer gradient)
+          if (( $(echo "$COVERAGE == 100" | bc -l) )); then
+            COLOR="brightgreen"
+          elif (( $(echo "$COVERAGE >= 97" | bc -l) )); then
+            COLOR="green"
+          elif (( $(echo "$COVERAGE >= 95" | bc -l) )); then
+            COLOR="yellowgreen"
+          elif (( $(echo "$COVERAGE >= 90" | bc -l) )); then
+            COLOR="yellow"
+          elif (( $(echo "$COVERAGE >= 80" | bc -l) )); then
+            COLOR="orange"
+          else
+            COLOR="red"
+          fi
 
-          # Always start fresh with orphan branch
-          git checkout --orphan badges-temp
-          git rm -rf . 2>/dev/null || true
-
-          # Create badge directory and file
-          mkdir -p .github/badges
-          cat > README.md << 'EOF'
-          # Coverage Badges
-
-          This branch stores dynamically generated coverage badges.
+          # Create badge JSON
+          BADGE_JSON=$(cat <<EOF
+          {"schemaVersion": 1, "label": "coverage", "message": "${COVERAGE}%", "color": "${COLOR}"}
           EOF
+          )
 
-          python -c "
-          import os, json
-          coverage = float(os.environ['COVERAGE'])
-          color = 'brightgreen' if coverage >= 80 else 'yellow' if coverage >= 60 else 'orange'
-          badge = {'schemaVersion': 1, 'label': 'coverage', 'message': f'{coverage}%', 'color': color}
-          with open('.github/badges/coverage.json', 'w') as f:
-              json.dump(badge, f)
-          "
+          # Update the Gist
+          curl -s -X PATCH \
+            -H "Authorization: token $GIST_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/gists/89d05034d314ebda47c1e16607e1ee22 \
+            -d "{\"files\": {\"coverage-balance.json\": {\"content\": $BADGE_JSON}}}"
 
-          git add .
-          git commit -m "Update coverage badge to ${COVERAGE}% [skip ci]"
-          git push -f origin badges-temp:badges
+          echo "Badge updated successfully!"
