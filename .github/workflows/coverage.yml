@@ -13,71 +13,67 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install .[dev]
-      
+
       - name: Run tests with coverage
         run: |
           python -m pytest --cov=balance --cov-report=xml --cov-report=html --cov-report=term-missing
-      
+
       - name: Upload coverage reports to artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: htmlcov/
-      
+
       - name: Upload coverage XML
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-xml
           path: coverage.xml
-      
+
       - name: Display coverage percentage
         run: |
           coverage report --precision=2
-      
+
       - name: Extract coverage percentage
         if: github.ref == 'refs/heads/main'
         run: |
           COVERAGE=$(coverage report --precision=2 | grep TOTAL | awk '{print $NF}' | sed 's/%//')
           echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
           echo "Coverage: $COVERAGE%"
-      
-      - name: Create coverage badge
-        if: github.ref == 'refs/heads/main'
-        run: |
-          mkdir -p .github/badges
-          python -c "
-          import os
-          coverage = float(os.environ['COVERAGE'])
-          color = 'brightgreen' if coverage >= 80 else 'yellow' if coverage >= 60 else 'orange'
-          badge = {
-              'schemaVersion': 1,
-              'label': 'coverage',
-              'message': f'{coverage}%',
-              'color': color
-          }
-          import json
-          with open('.github/badges/coverage.json', 'w') as f:
-              json.dump(badge, f)
-          print(f'Created badge with {coverage}% coverage in {color}')
-          "
-      
+
       - name: Commit coverage badge
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
+
+          # Fetch the badges branch or create it as an orphan
+          git fetch origin badges:badges 2>/dev/null || git checkout --orphan badges
+          git checkout badges
+
+          # Create badge directory and file
+          mkdir -p .github/badges
+          python -c "
+          import os, json
+          coverage = float(os.environ['COVERAGE'])
+          color = 'brightgreen' if coverage >= 80 else 'yellow' if coverage >= 60 else 'orange'
+          badge = {'schemaVersion': 1, 'label': 'coverage', 'message': f'{coverage}%', 'color': color}
+          with open('.github/badges/coverage.json', 'w') as f:
+              json.dump(badge, f)
+          "
+
           git add .github/badges/coverage.json
           git diff --staged --quiet || git commit -m "Update coverage badge [skip ci]"
-          git push
+          git push origin badges
