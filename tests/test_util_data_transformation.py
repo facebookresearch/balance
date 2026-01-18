@@ -7,6 +7,8 @@
 
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import balance.testutil
 import numpy as np
 import pandas as pd
@@ -206,6 +208,37 @@ class TestUtil(
             pd.Series(["x", "y", "z"]),
         )
 
+    def test_quantize_non_dataframe_raises(self) -> None:
+        """Test that quantize raises TypeError when pd.Series returns non-Series object.
+
+        This test covers line 162 in data_transformation.py by mocking pd.Series
+        to return an object that is neither a Series nor a DataFrame.
+        This is an edge case that can only occur if pd.Series is monkey-patched
+        or behaves unexpectedly.
+        """
+
+        # Create a class that is neither Series nor DataFrame
+        class NotASeriesOrDataFrame:
+            pass
+
+        # Create a metaclass that makes pd.Series return NotASeriesOrDataFrame
+        # but keeps it as a type for isinstance checks
+        class SeriesMeta(type):
+            def __call__(cls, *args, **kwargs):
+                return NotASeriesOrDataFrame()
+
+        class FakeSeries(metaclass=SeriesMeta):
+            pass
+
+        # Mock pd.Series to use our fake series class
+        with patch("balance.utils.data_transformation.pd.Series", FakeSeries):
+            self.assertRaisesRegex(
+                TypeError,
+                "df must be a pandas DataFrame",
+                balance_util.quantize,
+                123,  # Input that's not Series or DataFrame
+            )
+
     def test_row_pairwise_diffs(self) -> None:
         d = pd.DataFrame({"a": (1, 2, 3), "b": (-42, 8, 2)})
         e = pd.DataFrame(
@@ -324,6 +357,21 @@ class TestUtil(
             None,
             aggfunc="not_sum",
         )
+
+    def test_auto_aggregate_features_deprecation(self) -> None:
+        """Test that auto_aggregate warns when features parameter is used.
+
+        Tests that the deprecated 'features' parameter triggers a
+        DeprecationWarning when it is not None.
+        This covers line 264 in data_transformation.py.
+        """
+        df = pd.DataFrame(
+            {"x": [1, 2, 3, 4], "y": [1, 1, 1, np.nan], "id": [1, 1, 2, 3]}
+        )
+
+        # Test that passing features parameter triggers deprecation warning
+        with self.assertWarns(DeprecationWarning):
+            balance_util.auto_aggregate(df, features=["x", "y"])  # type: ignore[arg-type]
 
     def test_fct_lump_basic_functionality(self) -> None:
         """Test basic functionality of fct_lump for category lumping.
