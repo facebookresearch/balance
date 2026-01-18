@@ -32,6 +32,8 @@
   - These diagnostics support weighted or unweighted comparisons, apply discrete/continuous formulations, and respect `aggregate_by_main_covar` for one-hot categorical aggregation.
 - **Documented the balance CLI**
   - Added full API docstrings for `balance.cli` and a new CLI tutorial notebook.
+- **Expanded Balance CLI tutorial diagnostics**
+  - Added CLI command echoing, a `load_data()` example, and richer diagnostics exploration with metric/variable listings and a browsable diagnostics table.
 
 ## Bug Fixes
 
