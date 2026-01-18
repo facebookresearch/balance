@@ -30,6 +30,8 @@
 - **Added EMD/CVMD/KS distribution diagnostics**
   - `BalanceDF` now exposes Earth Mover's Distance (EMD), Cramér-von Mises distance (CVMD), and Kolmogorov-Smirnov (KS) statistics for comparing adjusted samples to targets.
   - These diagnostics support weighted or unweighted comparisons, apply discrete/continuous formulations, and respect `aggregate_by_main_covar` for one-hot categorical aggregation.
+- **Documented the balance CLI**
+  - Added full API docstrings for `balance.cli` and a new CLI tutorial notebook.
 
 ## Bug Fixes
 
