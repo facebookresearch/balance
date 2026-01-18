@@ -1,0 +1,1621 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>balance.cli &#8212; balance  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=fb9458d3" />
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../balance.html" accesskey="U">balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.cli</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for balance.cli</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) Meta Platforms, Inc. and affiliates.</span>
+<span class="c1">#</span>
+<span class="c1"># This source code is licensed under the MIT license found in the</span>
+<span class="c1"># LICENSE file in the root directory of this source tree.</span>
+
+<span class="c1"># pyre-strict</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">argparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArgumentParser</span><span class="p">,</span> <span class="n">Namespace</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">balance</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">__version__</span>  <span class="c1"># @manual</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sample</span> <span class="k">as</span> <span class="n">balance_sample_cls</span>  <span class="c1"># @manual</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">_float_or_none</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClassifierMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.linear_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LogisticRegression</span>
+
+<span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="BalanceCLI">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BalanceCLI</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper class that encapsulates CLI argument handling and execution.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        .. code-block:: python</span>
+<span class="sd">            from argparse import Namespace</span>
+
+<span class="sd">            cli = BalanceCLI(Namespace(method=&quot;ipw&quot;))</span>
+<span class="sd">            cli.method()</span>
+<span class="sd">            # &#39;ipw&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="n">Namespace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize CLI helpers and store parsed arguments.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            args: Parsed argparse namespace containing CLI configuration.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+
+<span class="sd">                cli = BalanceCLI(Namespace(method=&quot;ipw&quot;))</span>
+<span class="sd">                cli.method()</span>
+<span class="sd">                # &#39;ipw&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">:</span> <span class="n">Namespace</span> <span class="o">=</span> <span class="n">args</span>
+
+        <span class="c1"># Create attributes (to be populated later, which will be used in main)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_transformations</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_penalty_factor</span><span class="p">:</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_one_hot_encoding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_de</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lambda_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lambda_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_num_lambdas</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_weight_trimming_mean_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mf">20.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sample_cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">balance_sample_cls</span><span class="p">]</span> <span class="o">=</span> <span class="n">balance_sample_cls</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sample_package_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">__package__</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sample_package_version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">__version__</span>
+
+<div class="viewcode-block" id="BalanceCLI.check_input_columns">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.check_input_columns">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_input_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">columns</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate the input frame includes required columns.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            columns: Available column names in the input data.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+
+<span class="sd">                import pandas as pd</span>
+
+<span class="sd">                cli = BalanceCLI(</span>
+<span class="sd">                    Namespace(</span>
+<span class="sd">                        sample_column=&quot;is_respondent&quot;,</span>
+<span class="sd">                        id_column=&quot;id&quot;,</span>
+<span class="sd">                        weight_column=&quot;weight&quot;,</span>
+<span class="sd">                        covariate_columns=&quot;x&quot;,</span>
+<span class="sd">                        batch_columns=None,</span>
+<span class="sd">                        keep_columns=None,</span>
+<span class="sd">                        keep_row_column=None,</span>
+<span class="sd">                        outcome_columns=None,</span>
+<span class="sd">                    )</span>
+<span class="sd">                )</span>
+<span class="sd">                cli.check_input_columns(</span>
+<span class="sd">                    pd.Index([&quot;is_respondent&quot;, &quot;id&quot;, &quot;weight&quot;, &quot;x&quot;])</span>
+<span class="sd">                )</span>
+<span class="sd">                # None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">needed_columns</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">needed_columns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_column</span><span class="p">())</span>
+        <span class="n">needed_columns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id_column</span><span class="p">())</span>
+        <span class="n">needed_columns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="p">())</span>
+        <span class="n">needed_columns</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">covariate_columns</span><span class="p">())</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_batch_columns</span><span class="p">():</span>
+            <span class="n">needed_columns</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_columns</span><span class="p">())</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_keep_columns</span><span class="p">():</span>
+            <span class="n">keep_cols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">keep_columns</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">keep_cols</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">needed_columns</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">keep_cols</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_keep_row_column</span><span class="p">():</span>
+            <span class="n">needed_columns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keep_row_column</span><span class="p">())</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_outcome_columns</span><span class="p">():</span>
+            <span class="n">outcome_columns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcome_columns</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">outcome_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">needed_columns</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">outcome_columns</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">nc</span> <span class="ow">in</span> <span class="n">needed_columns</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">nc</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">nc</span><span class="si">}</span><span class="s2"> not in input colums&quot;</span></div>
+
+
+    <span class="c1"># TODO: decide if to explicitly mention/check here the option of methods or not</span>
+<div class="viewcode-block" id="BalanceCLI.method">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.method">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">method</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the adjustment method name.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The adjustment method string (for example, ``&quot;ipw&quot;``).</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(Namespace(method=&quot;ipw&quot;)).method()</span>
+<span class="sd">                # &#39;ipw&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">method</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.sample_column">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.sample_column">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample_column</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the column indicating sample membership.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Name of the sample indicator column.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(Namespace(sample_column=&quot;is_respondent&quot;)).sample_column()</span>
+<span class="sd">                # &#39;is_respondent&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">sample_column</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.id_column">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.id_column">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">id_column</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the identifier column name.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Name of the ID column.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(Namespace(id_column=&quot;id&quot;)).id_column()</span>
+<span class="sd">                # &#39;id&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">id_column</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.weight_column">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.weight_column">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">weight_column</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the weight column name.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Name of the weight column.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(Namespace(weight_column=&quot;weight&quot;)).weight_column()</span>
+<span class="sd">                # &#39;weight&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">weight_column</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.covariate_columns">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.covariate_columns">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">covariate_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the list of covariate column names.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Covariate column names parsed from the CLI argument.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(Namespace(covariate_columns=&quot;x,y&quot;)).covariate_columns()</span>
+<span class="sd">                # [&#39;x&#39;, &#39;y&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">covariate_columns</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.covariate_columns_for_diagnostics">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.covariate_columns_for_diagnostics">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">covariate_columns_for_diagnostics</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return covariate columns used for diagnostics reporting.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of columns to keep in diagnostics or ``None``.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(</span>
+<span class="sd">                    Namespace(covariate_columns_for_diagnostics=&quot;x,y&quot;)</span>
+<span class="sd">                ).covariate_columns_for_diagnostics()</span>
+<span class="sd">                # [&#39;x&#39;, &#39;y&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">covariate_columns_for_diagnostics</span>
+        <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.rows_to_keep_for_diagnostics">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.rows_to_keep_for_diagnostics">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">rows_to_keep_for_diagnostics</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the diagnostics row-filter expression.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The pandas expression string used to filter rows.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(</span>
+<span class="sd">                    Namespace(rows_to_keep_for_diagnostics=&quot;age &gt;= 18&quot;)</span>
+<span class="sd">                ).rows_to_keep_for_diagnostics()</span>
+<span class="sd">                # &#39;age &gt;= 18&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">rows_to_keep_for_diagnostics</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.has_batch_columns">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.has_batch_columns">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_batch_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True when batch columns are supplied.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ``True`` if batch columns are set, otherwise ``False``.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(Namespace(batch_columns=&quot;region&quot;)).has_batch_columns()</span>
+<span class="sd">                # True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">batch_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.batch_columns">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.batch_columns">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">batch_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the list of batch column names.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Batch column names parsed from the CLI argument.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(Namespace(batch_columns=&quot;region,team&quot;)).batch_columns()</span>
+<span class="sd">                # [&#39;region&#39;, &#39;team&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">batch_columns</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.has_keep_columns">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.has_keep_columns">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_keep_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True when output keep columns are supplied.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ``True`` if keep columns are set, otherwise ``False``.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(Namespace(keep_columns=&quot;id,weight&quot;)).has_keep_columns()</span>
+<span class="sd">                # True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">keep_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.keep_columns">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.keep_columns">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">keep_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the subset of columns to keep in outputs.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of columns to keep or ``None`` if unspecified.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(Namespace(keep_columns=&quot;id,weight&quot;)).keep_columns()</span>
+<span class="sd">                # [&#39;id&#39;, &#39;weight&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">keep_columns</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">keep_columns</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.has_keep_row_column">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.has_keep_row_column">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_keep_row_column</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True when a keep-row column is supplied.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ``True`` if a keep-row column is set, otherwise ``False``.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(Namespace(keep_row_column=&quot;keep&quot;)).has_keep_row_column()</span>
+<span class="sd">                # True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">keep_row_column</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.keep_row_column">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.keep_row_column">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">keep_row_column</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the keep-row indicator column name.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Name of the keep-row indicator column.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(Namespace(keep_row_column=&quot;keep&quot;)).keep_row_column()</span>
+<span class="sd">                # &#39;keep&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">keep_row_column</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.has_outcome_columns">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.has_outcome_columns">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_outcome_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True when outcome columns are explicitly supplied.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ``True`` if outcome columns are set, otherwise ``False``.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(Namespace(outcome_columns=&quot;y&quot;)).has_outcome_columns()</span>
+<span class="sd">                # True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">outcome_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.outcome_columns">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.outcome_columns">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">outcome_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the list of outcome columns if provided.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of outcome columns or ``None`` if unset.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(Namespace(outcome_columns=&quot;y,z&quot;)).outcome_columns()</span>
+<span class="sd">                # [&#39;y&#39;, &#39;z&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">outcome_columns</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">outcome_columns</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.max_de">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.max_de">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">max_de</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the max design effect setting.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Maximum design effect or ``None`` if unset.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(Namespace(max_de=1.5)).max_de()</span>
+<span class="sd">                # 1.5</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">max_de</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.lambda_min">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.lambda_min">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">lambda_min</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the minimum L1 penalty setting.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Minimum L1 penalty value or ``None``.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(Namespace(lambda_min=1e-5)).lambda_min()</span>
+<span class="sd">                # 1e-05</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">lambda_min</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.lambda_max">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.lambda_max">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">lambda_max</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the maximum L1 penalty setting.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Maximum L1 penalty value or ``None``.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(Namespace(lambda_max=10.0)).lambda_max()</span>
+<span class="sd">                # 10.0</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">lambda_max</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.num_lambdas">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.num_lambdas">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">num_lambdas</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the number of lambda values to search over.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Number of lambdas as an integer or ``None``.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(Namespace(num_lambdas=250)).num_lambdas()</span>
+<span class="sd">                # 250</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_lambdas</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_lambdas</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.transformations">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.transformations">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">transformations</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the transformations config for adjustment.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Transformations setting or ``None`` if disabled.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(Namespace(transformations=&quot;default&quot;)).transformations()</span>
+<span class="sd">                # &#39;default&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">transformations</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">transformations</span> <span class="o">==</span> <span class="s2">&quot;None&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">transformations</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.formula">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.formula">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">formula</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the formula string used for model matrices.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Formula string or ``None`` if unset.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(Namespace(formula=&quot;age + gender&quot;)).formula()</span>
+<span class="sd">                # &#39;age + gender&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">formula</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.one_hot_encoding">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.one_hot_encoding">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">one_hot_encoding</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the parsed one-hot encoding flag.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ``True``/``False`` for one-hot encoding, or ``None`` if unset.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(Namespace(one_hot_encoding=&quot;False&quot;)).one_hot_encoding()</span>
+<span class="sd">                # False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">balance</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">_true_false_str_to_bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">one_hot_encoding</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.standardize_types">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.standardize_types">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">standardize_types</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return whether to standardize input types in Sample.from_frame.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ``True`` if standardization is enabled, otherwise ``False``.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(Namespace(standardize_types=&quot;True&quot;)).standardize_types()</span>
+<span class="sd">                # True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">balance</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">_true_false_str_to_bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">standardize_types</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.weight_trimming_mean_ratio">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.weight_trimming_mean_ratio">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">weight_trimming_mean_ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the mean ratio used for trimming weights.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Weight trimming ratio or ``None`` if unset.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(Namespace(weight_trimming_mean_ratio=20.0)).weight_trimming_mean_ratio()</span>
+<span class="sd">                # 20.0</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">weight_trimming_mean_ratio</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.logistic_regression_kwargs">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.logistic_regression_kwargs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">logistic_regression_kwargs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse JSON keyword arguments for the IPW logistic regression model.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Parsed keyword arguments dictionary or ``None``.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                cli = BalanceCLI(</span>
+<span class="sd">                    Namespace(ipw_logistic_regression_kwargs=&#39;{\&quot;max_iter\&quot;: 100}&#39;)</span>
+<span class="sd">                )</span>
+<span class="sd">                cli.logistic_regression_kwargs()</span>
+<span class="sd">                # {&#39;max_iter&#39;: 100}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">raw_kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">ipw_logistic_regression_kwargs</span>
+        <span class="k">if</span> <span class="n">raw_kwargs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw_kwargs</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">raw_kwargs</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">parsed</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">raw_kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;--ipw_logistic_regression_kwargs must be a JSON object string&quot;</span>
+            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parsed</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;--ipw_logistic_regression_kwargs must decode to a JSON object&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">parsed</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.logistic_regression_model">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.logistic_regression_model">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">logistic_regression_model</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ClassifierMixin</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build a LogisticRegression model when IPW kwargs are supplied.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Configured LogisticRegression instance or ``None``.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                cli = BalanceCLI(</span>
+<span class="sd">                    Namespace(ipw_logistic_regression_kwargs=&#39;{\&quot;max_iter\&quot;: 100}&#39;)</span>
+<span class="sd">                )</span>
+<span class="sd">                cli.logistic_regression_model().__class__.__name__</span>
+<span class="sd">                # &#39;LogisticRegression&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">logistic_regression_kwargs</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">kwargs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.split_sample">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.split_sample">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">split_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Split the input frame into sample and target partitions.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            df: Input DataFrame containing sample and target rows.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A tuple of (sample_df, target_df).</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                import pandas as pd</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                cli = BalanceCLI(Namespace(sample_column=&quot;is_respondent&quot;))</span>
+<span class="sd">                frame = pd.DataFrame({&quot;is_respondent&quot;: [1, 0], &quot;x&quot;: [1, 2]})</span>
+<span class="sd">                sample_df, target_df = cli.split_sample(frame)</span>
+<span class="sd">                len(sample_df), len(target_df)</span>
+<span class="sd">                # (1, 1)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">in_sample</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_column</span><span class="p">()]</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="n">sample_df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">in_sample</span><span class="p">]</span>
+        <span class="n">target_df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="o">~</span><span class="n">in_sample</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.process_batch">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.process_batch">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_batch</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">batch_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">transformations</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+        <span class="n">formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">penalty_factor</span><span class="p">:</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">one_hot_encoding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">max_de</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mf">1.5</span><span class="p">,</span>
+        <span class="n">lambda_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mf">1e-05</span><span class="p">,</span>
+        <span class="n">lambda_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="n">num_lambdas</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mi">250</span><span class="p">,</span>
+        <span class="n">weight_trimming_mean_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
+        <span class="n">sample_cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">balance_sample_cls</span><span class="p">]</span> <span class="o">=</span> <span class="n">balance_sample_cls</span><span class="p">,</span>
+        <span class="n">sample_package_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">__package__</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run adjustment for a batch of data and return outputs.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            batch_df: Input data for the current batch.</span>
+<span class="sd">            transformations: Transformations argument for Sample.adjust.</span>
+<span class="sd">            formula: Optional formula for model matrices.</span>
+<span class="sd">            penalty_factor: Optional penalty factor passed to adjust.</span>
+<span class="sd">            one_hot_encoding: Whether to one-hot encode categorical features.</span>
+<span class="sd">            max_de: Maximum design effect constraint.</span>
+<span class="sd">            lambda_min: Minimum penalty value for IPW.</span>
+<span class="sd">            lambda_max: Maximum penalty value for IPW.</span>
+<span class="sd">            num_lambdas: Number of penalty values to search.</span>
+<span class="sd">            weight_trimming_mean_ratio: Mean ratio for trimming weights.</span>
+<span class="sd">            sample_cls: Sample implementation used to build sample/target.</span>
+<span class="sd">            sample_package_name: Name used in logging.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict with adjusted data and diagnostics frames.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                import pandas as pd</span>
+<span class="sd">                from argparse import Namespace</span>
+
+<span class="sd">                cli = BalanceCLI(</span>
+<span class="sd">                    Namespace(</span>
+<span class="sd">                        method=&quot;ipw&quot;,</span>
+<span class="sd">                        sample_column=&quot;is_respondent&quot;,</span>
+<span class="sd">                        id_column=&quot;id&quot;,</span>
+<span class="sd">                        weight_column=&quot;weight&quot;,</span>
+<span class="sd">                        covariate_columns=&quot;x&quot;,</span>
+<span class="sd">                        covariate_columns_for_diagnostics=None,</span>
+<span class="sd">                        rows_to_keep_for_diagnostics=None,</span>
+<span class="sd">                        batch_columns=None,</span>
+<span class="sd">                        keep_columns=None,</span>
+<span class="sd">                        keep_row_column=None,</span>
+<span class="sd">                        outcome_columns=None,</span>
+<span class="sd">                        max_de=1.5,</span>
+<span class="sd">                        lambda_min=1e-5,</span>
+<span class="sd">                        lambda_max=10.0,</span>
+<span class="sd">                        num_lambdas=250,</span>
+<span class="sd">                        transformations=&quot;default&quot;,</span>
+<span class="sd">                        formula=None,</span>
+<span class="sd">                        one_hot_encoding=&quot;True&quot;,</span>
+<span class="sd">                        standardize_types=&quot;True&quot;,</span>
+<span class="sd">                        weight_trimming_mean_ratio=20.0,</span>
+<span class="sd">                        ipw_logistic_regression_kwargs=None,</span>
+<span class="sd">                        succeed_on_weighting_failure=True,</span>
+<span class="sd">                        return_df_with_original_dtypes=False,</span>
+<span class="sd">                    )</span>
+<span class="sd">                )</span>
+<span class="sd">                frame = pd.DataFrame(</span>
+<span class="sd">                    {</span>
+<span class="sd">                        &quot;is_respondent&quot;: [1, 0],</span>
+<span class="sd">                        &quot;id&quot;: [1, 2],</span>
+<span class="sd">                        &quot;weight&quot;: [1.0, 1.0],</span>
+<span class="sd">                        &quot;x&quot;: [0.1, 0.2],</span>
+<span class="sd">                    }</span>
+<span class="sd">                )</span>
+<span class="sd">                result = cli.process_batch(frame)</span>
+<span class="sd">                set(result.keys()) == {&quot;adjusted&quot;, &quot;diagnostics&quot;}</span>
+<span class="sd">                # True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO: add unit tests</span>
+        <span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_sample</span><span class="p">(</span><span class="n">batch_df</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s2">&quot;adjusted&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(),</span>
+                <span class="s2">&quot;diagnostics&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;adjustment_failure&quot;</span><span class="p">,</span> <span class="s2">&quot;adjustment_failure_reason&quot;</span><span class="p">),</span>
+                        <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                        <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;No input data&quot;</span><span class="p">),</span>
+                    <span class="p">}</span>
+                <span class="p">),</span>
+            <span class="p">}</span>
+
+        <span class="c1"># Stuff everything that is not id, weight, or covariate into outcomes</span>
+        <span class="n">outcome_columns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcome_columns</span><span class="p">()</span>
+        <span class="n">ignore_columns</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">outcome_columns</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">outcome_columns</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">column</span>
+                <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">batch_df</span><span class="o">.</span><span class="n">columns</span>
+                <span class="k">if</span> <span class="n">column</span>
+                <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">id_column</span><span class="p">(),</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="p">(),</span>
+                    <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">covariate_columns</span><span class="p">(),</span>
+                <span class="p">}</span>
+            <span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ignore_columns</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">column</span>
+                <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">batch_df</span><span class="o">.</span><span class="n">columns</span>
+                <span class="k">if</span> <span class="n">column</span>
+                <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">id_column</span><span class="p">(),</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="p">(),</span>
+                    <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">covariate_columns</span><span class="p">(),</span>
+                    <span class="o">*</span><span class="n">outcome_columns</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">]</span>
+        <span class="n">outcome_columns</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">outcome_columns</span><span class="p">)</span>
+
+        <span class="c1"># definitions for diagnostics</span>
+        <span class="n">covariate_columns_for_diagnostics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariate_columns_for_diagnostics</span><span class="p">()</span>
+        <span class="n">rows_to_keep_for_diagnostics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rows_to_keep_for_diagnostics</span><span class="p">()</span>
+
+        <span class="n">sample</span> <span class="o">=</span> <span class="n">sample_cls</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+            <span class="n">sample_df</span><span class="p">,</span>
+            <span class="n">id_column</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">id_column</span><span class="p">(),</span>
+            <span class="n">weight_column</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="p">(),</span>
+            <span class="n">outcome_columns</span><span class="o">=</span><span class="n">outcome_columns</span><span class="p">,</span>
+            <span class="n">ignore_columns</span><span class="o">=</span><span class="n">ignore_columns</span><span class="p">,</span>
+            <span class="n">check_id_uniqueness</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">standardize_types</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">standardize_types</span><span class="p">(),</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> sample object: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sample_package_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">sample</span><span class="p">)))</span>
+
+        <span class="n">target</span> <span class="o">=</span> <span class="n">sample_cls</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+            <span class="n">target_df</span><span class="p">,</span>
+            <span class="n">id_column</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">id_column</span><span class="p">(),</span>
+            <span class="n">weight_column</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="p">(),</span>
+            <span class="n">outcome_columns</span><span class="o">=</span><span class="n">outcome_columns</span><span class="p">,</span>
+            <span class="n">ignore_columns</span><span class="o">=</span><span class="n">ignore_columns</span><span class="p">,</span>
+            <span class="n">check_id_uniqueness</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">standardize_types</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">standardize_types</span><span class="p">(),</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> target object: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sample_package_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">target</span><span class="p">)))</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">()</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">logistic_regression_model</span><span class="p">()</span> <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;ipw&quot;</span> <span class="k">else</span> <span class="kc">None</span>
+
+            <span class="n">adjusted_kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="n">method</span><span class="p">,</span>
+                <span class="s2">&quot;transformations&quot;</span><span class="p">:</span> <span class="n">transformations</span><span class="p">,</span>
+                <span class="s2">&quot;formula&quot;</span><span class="p">:</span> <span class="n">formula</span><span class="p">,</span>
+                <span class="s2">&quot;penalty_factor&quot;</span><span class="p">:</span> <span class="n">penalty_factor</span><span class="p">,</span>
+                <span class="s2">&quot;one_hot_encoding&quot;</span><span class="p">:</span> <span class="n">one_hot_encoding</span><span class="p">,</span>
+                <span class="s2">&quot;max_de&quot;</span><span class="p">:</span> <span class="n">max_de</span><span class="p">,</span>
+                <span class="s2">&quot;lambda_min&quot;</span><span class="p">:</span> <span class="n">lambda_min</span><span class="p">,</span>
+                <span class="s2">&quot;lambda_max&quot;</span><span class="p">:</span> <span class="n">lambda_max</span><span class="p">,</span>
+                <span class="s2">&quot;num_lambdas&quot;</span><span class="p">:</span> <span class="n">num_lambdas</span><span class="p">,</span>
+                <span class="s2">&quot;weight_trimming_mean_ratio&quot;</span><span class="p">:</span> <span class="n">weight_trimming_mean_ratio</span><span class="p">,</span>
+            <span class="p">}</span>
+
+            <span class="k">if</span> <span class="n">model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">adjusted_kwargs</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model</span>
+
+            <span class="n">adjusted</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">set_target</span><span class="p">(</span><span class="n">target</span><span class="p">)</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="o">**</span><span class="n">adjusted_kwargs</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Succeeded with adjusting sample to target&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> adjusted object: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sample_package_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">adjusted</span><span class="p">)))</span>
+
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;Condition on which rows to keep for diagnostics: </span><span class="si">%s</span><span class="s2"> &quot;</span>
+                <span class="o">%</span> <span class="n">rows_to_keep_for_diagnostics</span>
+            <span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;Names of columns to keep for diagnostics: </span><span class="si">%s</span><span class="s2"> &quot;</span>
+                <span class="o">%</span> <span class="n">covariate_columns_for_diagnostics</span>
+            <span class="p">)</span>
+
+            <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">adjusted</span><span class="o">.</span><span class="n">keep_only_some_rows_columns</span><span class="p">(</span>
+                <span class="n">rows_to_keep</span><span class="o">=</span><span class="n">rows_to_keep_for_diagnostics</span><span class="p">,</span>
+                <span class="n">columns_to_keep</span><span class="o">=</span><span class="n">covariate_columns_for_diagnostics</span><span class="p">,</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">diagnostics</span><span class="p">()</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> diagnostics object: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sample_package_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">diagnostics</span><span class="p">))</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Update dtypes</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">return_df_with_original_dtypes</span><span class="p">:</span>
+                <span class="n">df_to_return</span> <span class="o">=</span> <span class="n">balance</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">_astype_in_df_from_dtypes</span><span class="p">(</span>
+                    <span class="n">adjusted</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="n">adjusted</span><span class="o">.</span><span class="n">_df_dtypes</span>
+                <span class="p">)</span>
+                <span class="n">balance</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">_warn_of_df_dtypes_change</span><span class="p">(</span>
+                    <span class="n">adjusted</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">dtypes</span><span class="p">,</span>
+                    <span class="n">df_to_return</span><span class="o">.</span><span class="n">dtypes</span><span class="p">,</span>
+                    <span class="s2">&quot;df_after_adjust&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;df_returned_by_the_cli&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">df_to_return</span> <span class="o">=</span> <span class="n">adjusted</span><span class="o">.</span><span class="n">df</span>
+            <span class="n">rval</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;adjusted&quot;</span><span class="p">:</span> <span class="n">df_to_return</span><span class="p">,</span> <span class="s2">&quot;diagnostics&quot;</span><span class="p">:</span> <span class="n">diagnostics</span><span class="p">}</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">succeed_on_weighting_failure</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                    <span class="s2">&quot;Adjustment failed. Because &#39;--succeed_on_weighting_failure&#39; was set: returning empty weights.&quot;</span>
+                <span class="p">)</span>
+                <span class="n">sample</span><span class="o">.</span><span class="n">set_weights</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+                <span class="n">module</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmodule</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">trace</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">module_name</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="vm">__name__</span> <span class="k">if</span> <span class="n">module</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="n">error_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">module_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;The error message is: &quot;</span> <span class="o">+</span> <span class="n">error_message</span><span class="p">)</span>
+                <span class="c1"># Update dtypes</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">return_df_with_original_dtypes</span><span class="p">:</span>
+                    <span class="n">df_to_return</span> <span class="o">=</span> <span class="n">balance</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">_astype_in_df_from_dtypes</span><span class="p">(</span>
+                        <span class="n">sample</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df_dtypes</span>
+                    <span class="p">)</span>
+                    <span class="n">balance</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">_warn_of_df_dtypes_change</span><span class="p">(</span>
+                        <span class="n">sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">dtypes</span><span class="p">,</span>
+                        <span class="n">df_to_return</span><span class="o">.</span><span class="n">dtypes</span><span class="p">,</span>
+                        <span class="s2">&quot;df_without_adjusting&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;df_returned_by_the_cli&quot;</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">df_to_return</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">df</span>
+                <span class="n">rval</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;adjusted&quot;</span><span class="p">:</span> <span class="n">df_to_return</span><span class="p">,</span>
+                    <span class="s2">&quot;diagnostics&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                        <span class="p">{</span>
+                            <span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="p">(</span>
+                                <span class="s2">&quot;adjustment_failure&quot;</span><span class="p">,</span>
+                                <span class="s2">&quot;adjustment_failure_reason&quot;</span><span class="p">,</span>
+                            <span class="p">),</span>
+                            <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                            <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">error_message</span><span class="p">),</span>
+                        <span class="p">}</span>
+                    <span class="p">),</span>
+                <span class="p">}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">e</span>
+        <span class="k">return</span> <span class="n">rval</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.adapt_output">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.adapt_output">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">adapt_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Filter raw output dataframe to user&#39;s requested rows/columns.</span>
+
+<span class="sd">        - First we filter to the rows we are supposed to keep.</span>
+<span class="sd">        - Next we select the columns that need to be returned.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            output_df: DataFrame produced by the adjustment step.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Filtered DataFrame containing requested rows and columns.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                import pandas as pd</span>
+<span class="sd">                from argparse import Namespace</span>
+
+<span class="sd">                cli = BalanceCLI(</span>
+<span class="sd">                    Namespace(</span>
+<span class="sd">                        keep_row_column=&quot;keep&quot;,</span>
+<span class="sd">                        keep_columns=&quot;id,weight&quot;,</span>
+<span class="sd">                    )</span>
+<span class="sd">                )</span>
+<span class="sd">                frame = pd.DataFrame(</span>
+<span class="sd">                    {&quot;id&quot;: [1, 2], &quot;weight&quot;: [1.0, 2.0], &quot;keep&quot;: [1, 0]}</span>
+<span class="sd">                )</span>
+<span class="sd">                cli.adapt_output(frame).to_dict(orient=&quot;list&quot;)</span>
+<span class="sd">                # {&#39;id&#39;: [1], &#39;weight&#39;: [1.0]}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">output_df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">output_df</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_keep_row_column</span><span class="p">():</span>
+            <span class="n">keep_rows</span> <span class="o">=</span> <span class="n">output_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keep_row_column</span><span class="p">()]</span> <span class="o">==</span> <span class="mi">1</span>
+            <span class="n">output_df</span> <span class="o">=</span> <span class="n">output_df</span><span class="p">[</span><span class="n">keep_rows</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_keep_columns</span><span class="p">():</span>
+            <span class="n">output_df</span> <span class="o">=</span> <span class="n">output_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keep_columns</span><span class="p">()]</span>
+
+        <span class="k">return</span> <span class="n">output_df</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.load_and_check_input">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.load_and_check_input">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_and_check_input</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read the input file and log basic information.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            DataFrame loaded from the input file.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                import pandas as pd</span>
+<span class="sd">                import tempfile</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                with tempfile.NamedTemporaryFile(suffix=&quot;.csv&quot;) as tmp_file:</span>
+<span class="sd">                    df = pd.DataFrame({&quot;x&quot;: [1], &quot;y&quot;: [2]})</span>
+<span class="sd">                    df.to_csv(tmp_file.name, index=False)</span>
+<span class="sd">                    cli = BalanceCLI(</span>
+<span class="sd">                        Namespace(</span>
+<span class="sd">                            input_file=tmp_file.name,</span>
+<span class="sd">                            sep_input_file=&quot;,&quot;,</span>
+<span class="sd">                            keep_row_column=None,</span>
+<span class="sd">                        )</span>
+<span class="sd">                    )</span>
+<span class="sd">                    loaded = cli.load_and_check_input()</span>
+<span class="sd">                    loaded.shape</span>
+<span class="sd">                    # (1, 2)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO: Add unit tests for function</span>
+        <span class="c1"># Load and check input</span>
+        <span class="n">input_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">input_file</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">sep_input_file</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Number of rows in input file: </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">input_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_keep_row_column</span><span class="p">():</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;Number of rows to keep in input file: </span><span class="si">%d</span><span class="s2">&quot;</span>
+                <span class="o">%</span> <span class="n">input_df</span><span class="p">[</span><span class="n">input_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keep_row_column</span><span class="p">()]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Number of columns in input file: </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">input_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">input_df</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.write_outputs">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.write_outputs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_outputs</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">output_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">diagnostics_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write adjusted output and diagnostics CSV files.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            output_df: Adjusted output DataFrame to write.</span>
+<span class="sd">            diagnostics_df: Diagnostics DataFrame to write.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                import pandas as pd</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                from pathlib import Path</span>
+<span class="sd">                output_df = pd.DataFrame({&quot;id&quot;: [1], &quot;weight&quot;: [1.0]})</span>
+<span class="sd">                diagnostics_df = pd.DataFrame({&quot;metric&quot;: [&quot;size&quot;], &quot;var&quot;: [&quot;sample&quot;], &quot;val&quot;: [1]})</span>
+<span class="sd">                cli = BalanceCLI(</span>
+<span class="sd">                    Namespace(</span>
+<span class="sd">                        output_file=Path(&quot;tmp_cli_out.csv&quot;),</span>
+<span class="sd">                        diagnostics_output_file=Path(&quot;tmp_cli_diag.csv&quot;),</span>
+<span class="sd">                        no_output_header=False,</span>
+<span class="sd">                        sep_output_file=&quot;,&quot;,</span>
+<span class="sd">                        sep_diagnostics_output_file=&quot;,&quot;,</span>
+<span class="sd">                    )</span>
+<span class="sd">                )</span>
+<span class="sd">                cli.write_outputs(output_df, diagnostics_df)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO: Add unit tests for function</span>
+        <span class="c1"># Write output</span>
+        <span class="n">output_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span>
+            <span class="n">path_or_buf</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">output_file</span><span class="p">,</span>
+            <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">header</span><span class="o">=</span><span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">no_output_header</span><span class="p">),</span>
+            <span class="n">sep</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">sep_output_file</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">diagnostics_output_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">diagnostics_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span>
+                <span class="n">path_or_buf</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">diagnostics_output_file</span><span class="p">,</span>
+                <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">header</span><span class="o">=</span><span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">no_output_header</span><span class="p">),</span>
+                <span class="n">sep</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">sep_diagnostics_output_file</span><span class="p">,</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.update_attributes_for_main_used_by_adjust">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.update_attributes_for_main_used_by_adjust">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_attributes_for_main_used_by_adjust</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Prepare cached attributes for main to use in adjustment.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                cli = BalanceCLI(</span>
+<span class="sd">                    Namespace(</span>
+<span class="sd">                        method=&quot;ipw&quot;,</span>
+<span class="sd">                        transformations=&quot;default&quot;,</span>
+<span class="sd">                        formula=None,</span>
+<span class="sd">                        lambda_min=1e-5,</span>
+<span class="sd">                        lambda_max=10.0,</span>
+<span class="sd">                        num_lambdas=250,</span>
+<span class="sd">                        one_hot_encoding=&quot;True&quot;,</span>
+<span class="sd">                        max_de=1.5,</span>
+<span class="sd">                        weight_trimming_mean_ratio=20.0,</span>
+<span class="sd">                    )</span>
+<span class="sd">                )</span>
+<span class="sd">                cli.update_attributes_for_main_used_by_adjust()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO: future version might include conditional control over these attributes based on some input</span>
+        <span class="n">transformations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformations</span><span class="p">()</span>
+        <span class="n">formula</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">formula</span><span class="p">()</span>
+        <span class="n">penalty_factor</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">lambda_min</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_min</span><span class="p">()</span>
+        <span class="n">lambda_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_max</span><span class="p">()</span>
+        <span class="n">num_lambdas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_lambdas</span><span class="p">()</span>
+        <span class="n">one_hot_encoding_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">one_hot_encoding</span><span class="p">()</span>
+        <span class="n">one_hot_encoding</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">one_hot_encoding_result</span> <span class="k">if</span> <span class="n">one_hot_encoding_result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">False</span>
+        <span class="p">)</span>
+        <span class="n">max_de</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_de</span><span class="p">()</span>
+        <span class="n">weight_trimming_mean_ratio</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_trimming_mean_ratio</span><span class="p">()</span>
+        <span class="n">sample_cls</span><span class="p">,</span> <span class="n">sample_package_name</span><span class="p">,</span> <span class="n">sample_package_version</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">balance_sample_cls</span><span class="p">,</span>
+            <span class="n">__package__</span><span class="p">,</span>
+            <span class="n">__version__</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># update all attributes (to be later used in main)</span>
+        <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_transformations</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_formula</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_penalty_factor</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_one_hot_encoding</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_max_de</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_lambda_min</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_lambda_max</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_num_lambdas</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_weight_trimming_mean_ratio</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sample_cls</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sample_package_name</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sample_package_version</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">transformations</span><span class="p">,</span>
+            <span class="n">formula</span><span class="p">,</span>
+            <span class="n">penalty_factor</span><span class="p">,</span>
+            <span class="n">one_hot_encoding</span><span class="p">,</span>
+            <span class="n">max_de</span><span class="p">,</span>
+            <span class="n">lambda_min</span><span class="p">,</span>
+            <span class="n">lambda_max</span><span class="p">,</span>
+            <span class="n">num_lambdas</span><span class="p">,</span>
+            <span class="n">weight_trimming_mean_ratio</span><span class="p">,</span>
+            <span class="n">sample_cls</span><span class="p">,</span>
+            <span class="n">sample_package_name</span><span class="p">,</span>
+            <span class="n">sample_package_version</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.main">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.main">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the CLI workflow from input loading to output writing.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                cli = BalanceCLI(Namespace(method=&quot;ipw&quot;))</span>
+<span class="sd">                callable(cli.main)</span>
+<span class="sd">                # True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># update all the objects from self attributes</span>
+        <span class="p">(</span>
+            <span class="n">transformations</span><span class="p">,</span>
+            <span class="n">formula</span><span class="p">,</span>
+            <span class="n">penalty_factor</span><span class="p">,</span>
+            <span class="n">one_hot_encoding</span><span class="p">,</span>
+            <span class="n">max_de</span><span class="p">,</span>
+            <span class="n">lambda_min</span><span class="p">,</span>
+            <span class="n">lambda_max</span><span class="p">,</span>
+            <span class="n">num_lambdas</span><span class="p">,</span>
+            <span class="n">weight_trimming_mean_ratio</span><span class="p">,</span>
+            <span class="n">sample_cls</span><span class="p">,</span>
+            <span class="n">sample_package_name</span><span class="p">,</span>
+            <span class="n">sample_package_version</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_transformations</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_formula</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_penalty_factor</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_one_hot_encoding</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_max_de</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_lambda_min</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_lambda_max</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_num_lambdas</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_weight_trimming_mean_ratio</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sample_cls</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sample_package_name</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sample_package_version</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;Running cli.main() using </span><span class="si">%s</span><span class="s2"> version </span><span class="si">%s</span><span class="s2">&quot;</span>
+            <span class="o">%</span> <span class="p">(</span><span class="n">sample_package_name</span><span class="p">,</span> <span class="n">sample_package_version</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Logging arguments used by main:</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;transformations&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;formula&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;penalty_factor&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;one_hot_encoding&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;max_de&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;lambda_min&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;lambda_max&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;num_lambdas&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;weight_trimming_mean_ratio&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;sample_cls&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;sample_package_name&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;sample_package_version&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">transformations</span><span class="p">,</span>
+            <span class="n">formula</span><span class="p">,</span>
+            <span class="n">penalty_factor</span><span class="p">,</span>
+            <span class="n">one_hot_encoding</span><span class="p">,</span>
+            <span class="n">max_de</span><span class="p">,</span>
+            <span class="n">lambda_min</span><span class="p">,</span>
+            <span class="n">lambda_max</span><span class="p">,</span>
+            <span class="n">num_lambdas</span><span class="p">,</span>
+            <span class="n">weight_trimming_mean_ratio</span><span class="p">,</span>
+            <span class="n">sample_cls</span><span class="p">,</span>
+            <span class="n">sample_package_name</span><span class="p">,</span>
+            <span class="n">sample_package_version</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">main_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">values</span><span class="p">))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Attributes used by main() for running adjust: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">main_config</span><span class="p">)</span>
+
+        <span class="c1"># Load and check input</span>
+        <span class="n">input_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_and_check_input</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_input_columns</span><span class="p">(</span><span class="n">input_df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+
+        <span class="c1"># Run process_batch on input_df, and adjustment arguments</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_batch_columns</span><span class="p">():</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">diagnostics</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">batch_name</span><span class="p">,</span> <span class="n">batch_df</span> <span class="ow">in</span> <span class="n">input_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_columns</span><span class="p">()):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Running weighting for batch = </span><span class="si">%s</span><span class="s2"> &quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">batch_name</span><span class="p">))</span>
+                <span class="n">processed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_batch</span><span class="p">(</span>
+                    <span class="n">batch_df</span><span class="p">,</span>
+                    <span class="n">transformations</span><span class="p">,</span>
+                    <span class="n">formula</span><span class="p">,</span>
+                    <span class="n">penalty_factor</span><span class="p">,</span>
+                    <span class="n">one_hot_encoding</span><span class="p">,</span>
+                    <span class="n">max_de</span><span class="p">,</span>
+                    <span class="n">lambda_min</span><span class="p">,</span>
+                    <span class="n">lambda_max</span><span class="p">,</span>
+                    <span class="n">num_lambdas</span><span class="p">,</span>
+                    <span class="n">weight_trimming_mean_ratio</span><span class="p">,</span>
+                    <span class="n">sample_cls</span><span class="p">,</span>
+                    <span class="n">sample_package_name</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">processed</span><span class="p">[</span><span class="s2">&quot;adjusted&quot;</span><span class="p">])</span>
+                <span class="n">diagnostics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">processed</span><span class="p">[</span><span class="s2">&quot;diagnostics&quot;</span><span class="p">])</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done processing batch </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">batch_name</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">diagnostics</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">output_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+                <span class="n">diagnostics_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">output_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+                <span class="n">diagnostics_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">diagnostics</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">processed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_batch</span><span class="p">(</span>
+                <span class="n">input_df</span><span class="p">,</span>
+                <span class="n">transformations</span><span class="p">,</span>
+                <span class="n">formula</span><span class="p">,</span>
+                <span class="n">penalty_factor</span><span class="p">,</span>
+                <span class="n">one_hot_encoding</span><span class="p">,</span>
+                <span class="n">max_de</span><span class="p">,</span>
+                <span class="n">lambda_min</span><span class="p">,</span>
+                <span class="n">lambda_max</span><span class="p">,</span>
+                <span class="n">num_lambdas</span><span class="p">,</span>
+                <span class="n">weight_trimming_mean_ratio</span><span class="p">,</span>
+                <span class="n">sample_cls</span><span class="p">,</span>
+                <span class="n">sample_package_name</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">output_df</span> <span class="o">=</span> <span class="n">processed</span><span class="p">[</span><span class="s2">&quot;adjusted&quot;</span><span class="p">]</span>
+            <span class="n">diagnostics_df</span> <span class="o">=</span> <span class="n">processed</span><span class="p">[</span><span class="s2">&quot;diagnostics&quot;</span><span class="p">]</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done fitting the model, writing output&quot;</span><span class="p">)</span>
+        <span class="c1"># Remove unneeded rows and columns</span>
+        <span class="n">output_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adapt_output</span><span class="p">(</span><span class="n">output_df</span><span class="p">)</span>
+
+        <span class="c1"># Write output</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_outputs</span><span class="p">(</span><span class="n">output_df</span><span class="p">,</span> <span class="n">diagnostics_df</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="add_arguments_to_parser">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.add_arguments_to_parser">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_arguments_to_parser</span><span class="p">(</span><span class="n">parser</span><span class="p">:</span> <span class="n">ArgumentParser</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArgumentParser</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Register CLI arguments on an argparse parser.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        parser: Parser to add arguments to.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The parser instance with CLI arguments registered.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        .. code-block:: python</span>
+<span class="sd">            from argparse import ArgumentParser</span>
+<span class="sd">            parser = add_arguments_to_parser(ArgumentParser())</span>
+<span class="sd">            isinstance(parser, ArgumentParser)</span>
+<span class="sd">            # True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TODO: add checks for validity of input (including None as input)</span>
+    <span class="c1"># TODO: add arguments for formula when used as a list and for penalty_factor</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--input_file&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to input sample/target&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--output_file&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to write output weights&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--diagnostics_output_file&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to write adjustment diagnostics&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--method&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;ipw&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Method to use for weighting [default=ipw]&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--sample_column&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;is_respondent&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to target population [default=is_respondent]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--id_column&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Column that identifies units [default=id]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--weight_column&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;weight&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Column that identifies weights of samples [default=weight]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--covariate_columns&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Set of columns used for adjustment&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--outcome_columns&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;Set of columns used as outcomes. If not supplied, all columns that are &quot;</span>
+            <span class="s2">&quot;not in id, weight, or covariate columns are treated as outcomes.&quot;</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--covariate_columns_for_diagnostics&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Set of columns used for diagnostics reporting (if not supplied the default is None, which means to use all columns from --covariate_columns)&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--rows_to_keep_for_diagnostics&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;A string with a condition for filtering rows (to be used for diagnostics reporting). </span><span class="se">\</span>
+<span class="s2">             The condition should be based on the list of covariate_columns and result in a bool pd.Series </span><span class="se">\</span>
+<span class="s2">             (e.g.: &#39;is_married&#39; or &#39;is_married &amp; age &gt;= 18&#39;, etc.) </span><span class="se">\</span>
+<span class="s2">             (if not supplied the default is None, which means to use all rows without filtering&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--batch_columns&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Set of columns used to indicate batches of data&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--keep_columns&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Set of columns we include in the output csv file&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--keep_row_column&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Column indicating which rows we include in the output csv file&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--sep_input_file&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;,&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;A 1 character for indicating the delimiter for the output file. If not supplied it defaults to a comma (,)&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--sep_output_file&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;,&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;A 1 character for indicating the delimiter for the output file. If not supplied it defaults to a comma (,)&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--sep_diagnostics_output_file&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;,&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;A 1 character for indicating the delimiter for the diagnostics output file. If not supplied it defaults to a comma (,)&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--no_output_header&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Turn off header in the output csv file&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="c1"># TODO: Identify conditions for weighting failure or remove this argument entirely</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--succeed_on_weighting_failure&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;If adjustment fails (e.g. because the input data has too few &quot;</span>
+            <span class="s2">&quot;rows), then do not fail, but instead return the input data with &quot;</span>
+            <span class="s2">&quot;all weights null&quot;</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--max_de&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">_float_or_none</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;Upper bound for the design effect of the computed weights. &quot;</span>
+            <span class="s2">&quot;If not supplied it defaults to 1.5. If set to &#39;None&#39;, then it uses &#39;lambda_1se&#39;. &quot;</span>
+            <span class="s2">&quot;Only used if method is ipw or CBPS.&quot;</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--lambda_min&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mf">1e-05</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;Lower bound (least penalized) for the L1 penalty range searched over in ipw.&quot;</span>
+            <span class="s2">&quot;Only used if method is ipw.&quot;</span>
+            <span class="s2">&quot;If not supplied it defaults to 1e-05.&quot;</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--lambda_max&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;Upper bound (most penalized) for the L1 penalty range searched over in ipw.&quot;</span>
+            <span class="s2">&quot;Only used if method is ipw.&quot;</span>
+            <span class="s2">&quot;If not supplied it defaults to 10.&quot;</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--num_lambdas&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">250</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;Number of elements searched over in the L1 penalty range in ipw.&quot;</span>
+            <span class="s2">&quot;Only used if method is ipw.&quot;</span>
+            <span class="s2">&quot;If not supplied it defaults to 250.&quot;</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--ipw_logistic_regression_kwargs&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;A valid JSON object string of keyword arguments forwarded to sklearn.linear_model.LogisticRegression &quot;</span>
+            <span class="s1">&#39;when using the ipw method. For example: </span><span class="se">\&#39;</span><span class="s1">{&quot;solver&quot;: &quot;liblinear&quot;, &quot;max_iter&quot;: 500}</span><span class="se">\&#39;</span><span class="s1">. &#39;</span>
+            <span class="s2">&quot;Ignored for other methods.&quot;</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--weight_trimming_mean_ratio&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">_float_or_none</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mf">20.0</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;The ratio according to which weights are trimmed from above by mean(weights) * ratio. &quot;</span>
+            <span class="s2">&quot;Defaults to 20. &quot;</span>
+            <span class="s2">&quot;Used only for CBPS and ipw.&quot;</span>
+            <span class="s2">&quot;For ipw this is only used if max_de is set to &#39;None&#39;,otherwise, the trimming ratio is chosen by the algorithm.&quot;</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--one_hot_encoding&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;Set the value of the one_hot_encoding parameter. Accepts a string with one a value of &#39;True&#39; or &#39;False&#39; (treats it as a bool). Default is &#39;True&#39;&quot;</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="c1"># TODO: Ideally we would like transformations argument to be able to get three types of values: None (for no transformations),</span>
+    <span class="c1"># &quot;default&quot; for default transformations or a dictionary of transformations.</span>
+    <span class="c1"># However, as a first step I added the option for &quot;default&quot; (which is also the default) and None (for no transformations).</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--transformations&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;Define the transformations for the covariates. Can be set to None for no transformations or&quot;</span>
+            <span class="s2">&quot;&#39;default&#39; for default transformations.&quot;</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="c1"># TODO: we currently support only the option of a string formula (or None), not a list of formulas.</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--formula&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;The formula of the model matrix (in ipw or cbps). If None (default), the formula will be setted to an additive formula using all the covariates.&quot;</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--return_df_with_original_dtypes&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;If the input table has unsupported column types (e.g.: int32), then when using Sample.from_frame it will be changed (e.g.: float32). &quot;</span>
+            <span class="s2">&quot;The returned df from the cli will use the transformed DataFrame. If this flag is used, then the cli will attempt to restore the original dtypes of the input table&quot;</span>
+            <span class="s2">&quot;before returning it.&quot;</span>
+            <span class="s2">&quot;WARNING: sometimes the pd.astype command might lead to odd behaviors, so it is generally safer to NOT use this flag but to manually specify the desired dtypes in the input/output tables.&quot;</span>
+            <span class="s2">&quot;For example, dealing with missing values could lead to many issues (e.g.: there is np.nan and pd.NA, and these do not play nicely with type conversions)&quot;</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--standardize_types&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;Control the standardize_types argument in Sample.from_frame (which is used on the files read by the cli)&quot;</span>
+            <span class="s2">&quot;The default is True. It is generally not advised to use False since this step is needed to deal with converting input types that are not supported by various functions.&quot;</span>
+            <span class="s2">&quot;For example, if a column of Int64 has pandas.NA, it could fail on various functions. Current default (True) will turn that column into float64&quot;</span>
+            <span class="s2">&quot;(the pandas.NA will be converted into numpy.nan).&quot;</span>
+            <span class="s2">&quot;Setting the current flag to &#39;False&#39; might lead to failures. The advantage is that it would keep most columns dtype as is&quot;</span>
+            <span class="s2">&quot; (which might be helpful for some downstream operations that assume the output dtypes are the same as the input dtypes).&quot;</span>
+            <span class="s2">&quot;NOTE: regardless if this flag is set to true or false, the weight column will be turned into a float64 type anyway.&quot;</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">parser</span></div>
+
+
+
+<div class="viewcode-block" id="make_parser">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.make_parser">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_parser</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">ArgumentParser</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create and return the CLI argument parser.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A configured ``ArgumentParser`` for the balance CLI.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        .. code-block:: python</span>
+<span class="sd">            parser = make_parser()</span>
+<span class="sd">            isinstance(parser, ArgumentParser)</span>
+<span class="sd">            # True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">add_arguments_to_parser</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">parser</span></div>
+
+
+
+<div class="viewcode-block" id="main">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.main">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Entry point for the balance CLI.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        None.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        .. code-block:: python</span>
+<span class="sd">            callable(main)</span>
+<span class="sd">            # True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parser</span><span class="p">:</span> <span class="n">ArgumentParser</span> <span class="o">=</span> <span class="n">make_parser</span><span class="p">()</span>
+    <span class="n">args</span><span class="p">:</span> <span class="n">Namespace</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="n">cli</span> <span class="o">=</span> <span class="n">BalanceCLI</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">cli</span><span class="o">.</span><span class="n">update_attributes_for_main_used_by_adjust</span><span class="p">()</span>
+    <span class="n">cli</span><span class="o">.</span><span class="n">main</span><span class="p">()</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../balance.html" >balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.cli</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>
