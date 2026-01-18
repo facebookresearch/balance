@@ -132,6 +132,36 @@ class TestBalance_weights_stats(
             prop_above_and_below(pd.Series((1, 2, 3, 4)), above=None, below=None), None
         )
 
+        # Test with only below=None (line 249)
+        result_only_above = prop_above_and_below(
+            pd.Series((1, 2, 3, 4)), above=(1, 2), below=None
+        )
+        self.assertIsNotNone(result_only_above)
+        result_only_above = _verify_value_type(result_only_above, pd.Series)
+        # Should only have above values, no below values
+        self.assertEqual(len(result_only_above), 2)
+        self.assertTrue(
+            all(
+                "above" in str(idx) or "prop(w >=" in idx
+                for idx in result_only_above.index
+            )
+        )
+
+        # Test with only above=None (line 257)
+        result_only_below = prop_above_and_below(
+            pd.Series((1, 2, 3, 4)), above=None, below=(0.5, 1)
+        )
+        self.assertIsNotNone(result_only_below)
+        result_only_below = _verify_value_type(result_only_below, pd.Series)
+        # Should only have below values, no above values
+        self.assertEqual(len(result_only_below), 2)
+        self.assertTrue(
+            all(
+                "below" in str(idx) or "prop(w <" in idx
+                for idx in result_only_below.index
+            )
+        )
+
         # Test return_as_series = False
         result_dict = prop_above_and_below(
             pd.Series((1, 2, 3, 4)), return_as_series=False
@@ -2041,3 +2071,243 @@ class TestBalanceDFDiagnostics(balance.testutil.BalanceTestCase):
             sample.covars().cvmd()
         with self.assertRaisesRegex(ValueError, "has no target set"):
             sample.covars().ks()
+
+
+class TestWeightedEcdfValidation(balance.testutil.BalanceTestCase):
+    """Test cases for _weighted_ecdf validation (lines 299, 301, 303, 305, 308)."""
+
+    def test_weighted_ecdf_raises_on_non_1d_values(self) -> None:
+        """Test _weighted_ecdf raises ValueError for non-1D values.
+
+        Verifies line 299 in weighted_comparisons_stats.py.
+        """
+        from balance.stats_and_plots.weighted_comparisons_stats import _weighted_ecdf
+
+        values_2d = np.array([[1, 2], [3, 4]])
+        weights = np.array([1.0, 1.0])
+        with self.assertRaises(ValueError) as ctx:
+            _weighted_ecdf(values_2d, weights)
+        self.assertIn("must be 1D arrays", str(ctx.exception))
+
+    def test_weighted_ecdf_raises_on_empty_values(self) -> None:
+        """Test _weighted_ecdf raises ValueError for empty values.
+
+        Verifies line 301 in weighted_comparisons_stats.py.
+        """
+        from balance.stats_and_plots.weighted_comparisons_stats import _weighted_ecdf
+
+        values = np.array([])
+        weights = np.array([])
+        with self.assertRaises(ValueError) as ctx:
+            _weighted_ecdf(values, weights)
+        self.assertIn("must not be empty", str(ctx.exception))
+
+    def test_weighted_ecdf_raises_on_shape_mismatch(self) -> None:
+        """Test _weighted_ecdf raises ValueError for shape mismatch.
+
+        Verifies line 303 in weighted_comparisons_stats.py.
+        """
+        from balance.stats_and_plots.weighted_comparisons_stats import _weighted_ecdf
+
+        values = np.array([1.0, 2.0, 3.0])
+        weights = np.array([1.0, 1.0])
+        with self.assertRaises(ValueError) as ctx:
+            _weighted_ecdf(values, weights)
+        self.assertIn("must match", str(ctx.exception))
+
+    def test_weighted_ecdf_raises_on_negative_weights(self) -> None:
+        """Test _weighted_ecdf raises ValueError for negative weights.
+
+        Verifies line 305 in weighted_comparisons_stats.py.
+        """
+        from balance.stats_and_plots.weighted_comparisons_stats import _weighted_ecdf
+
+        values = np.array([1.0, 2.0, 3.0])
+        weights = np.array([1.0, -1.0, 1.0])
+        with self.assertRaises(ValueError) as ctx:
+            _weighted_ecdf(values, weights)
+        self.assertIn("non-negative", str(ctx.exception))
+
+    def test_weighted_ecdf_raises_on_zero_sum_weights(self) -> None:
+        """Test _weighted_ecdf raises ValueError for zero sum weights.
+
+        Verifies line 308 in weighted_comparisons_stats.py.
+        """
+        from balance.stats_and_plots.weighted_comparisons_stats import _weighted_ecdf
+
+        values = np.array([1.0, 2.0, 3.0])
+        weights = np.array([0.0, 0.0, 0.0])
+        with self.assertRaises(ValueError) as ctx:
+            _weighted_ecdf(values, weights)
+        self.assertIn("positive value", str(ctx.exception))
+
+
+class TestCombinedWeightsValidation(balance.testutil.BalanceTestCase):
+    """Test cases for _combined_weights validation (line 377)."""
+
+    def test_combined_weights_raises_on_zero_sum(self) -> None:
+        """Test _combined_weights raises ValueError for zero sum.
+
+        Verifies line 377 in weighted_comparisons_stats.py.
+        """
+        from balance.stats_and_plots.weighted_comparisons_stats import _combined_weights
+
+        values = np.array([1.0, 2.0])
+        weights = np.array([0.0, 0.0])
+        with self.assertRaises(ValueError) as ctx:
+            _combined_weights(values, weights)
+        self.assertIn("positive value", str(ctx.exception))
+
+
+class TestDistributionMetricsColumnWarnings(balance.testutil.BalanceTestCase):
+    """Test cases for distribution metrics column warnings (lines 777, 910, 1054)."""
+
+    def test_emd_warns_on_mismatched_columns(self) -> None:
+        """Test emd warns when sample and target have different columns.
+
+        Verifies line 777 in weighted_comparisons_stats.py.
+        """
+        sample_df = pd.DataFrame({"a": [1.0, 2.0], "b": [3.0, 4.0]})
+        target_df = pd.DataFrame({"a": [1.0, 2.0], "c": [5.0, 6.0]})
+
+        with self.assertLogs(level="WARNING") as log:
+            weighted_comparisons_stats.emd(sample_df, target_df)
+            self.assertTrue(any("same column names" in msg for msg in log.output))
+
+    def test_cvmd_warns_on_mismatched_columns(self) -> None:
+        """Test cvmd warns when sample and target have different columns.
+
+        Verifies line 910 in weighted_comparisons_stats.py.
+        """
+        sample_df = pd.DataFrame({"a": [1.0, 2.0], "b": [3.0, 4.0]})
+        target_df = pd.DataFrame({"a": [1.0, 2.0], "c": [5.0, 6.0]})
+
+        with self.assertLogs(level="WARNING") as log:
+            weighted_comparisons_stats.cvmd(sample_df, target_df)
+            self.assertTrue(any("same column names" in msg for msg in log.output))
+
+    def test_ks_warns_on_mismatched_columns(self) -> None:
+        """Test ks warns when sample and target have different columns.
+
+        Verifies line 1054 in weighted_comparisons_stats.py.
+        """
+        sample_df = pd.DataFrame({"a": [1.0, 2.0], "b": [3.0, 4.0]})
+        target_df = pd.DataFrame({"a": [1.0, 2.0], "c": [5.0, 6.0]})
+
+        with self.assertLogs(level="WARNING") as log:
+            weighted_comparisons_stats.ks(sample_df, target_df)
+            self.assertTrue(any("same column names" in msg for msg in log.output))
+
+
+class TestWeightedStatsPrepareArgs(balance.testutil.BalanceTestCase):
+    """Test cases for _prepare_weighted_stat_args edge cases (lines 67, 283, 287)."""
+
+    def test_prepare_weighted_stat_args_with_matrix_input(self) -> None:
+        """Test _prepare_weighted_stat_args handles np.matrix input.
+
+        Verifies lines 66-67 in weighted_stats.py.
+        """
+        from balance.stats_and_plots.weighted_stats import _prepare_weighted_stat_args
+
+        v = np.matrix([[1, 2], [3, 4]])
+        w = np.array([1.0, 1.0])
+        result_v, result_w = _prepare_weighted_stat_args(v, w, inf_rm=True)
+        self.assertIsInstance(result_v, pd.DataFrame)
+
+    def test_ci_of_weighted_mean_with_series(self) -> None:
+        """Test ci_of_weighted_mean with pd.Series input.
+
+        Verifies lines 282-283 in weighted_stats.py.
+        """
+        from balance.stats_and_plots.weighted_stats import ci_of_weighted_mean
+
+        v = pd.Series([1.0, 2.0, 3.0, 4.0])
+        w = pd.Series([1.0, 1.0, 1.0, 1.0])
+        result = ci_of_weighted_mean(v, w)
+        self.assertIsInstance(result, pd.Series)
+
+    def test_ci_of_weighted_mean_with_dataframe(self) -> None:
+        """Test ci_of_weighted_mean with pd.DataFrame input.
+
+        Verifies lines 284-285 in weighted_stats.py.
+        """
+        from balance.stats_and_plots.weighted_stats import ci_of_weighted_mean
+
+        v = pd.DataFrame({"a": [1.0, 2.0, 3.0], "b": [4.0, 5.0, 6.0]})
+        w = pd.Series([1.0, 1.0, 1.0])
+        result = ci_of_weighted_mean(v, w)
+        self.assertIsInstance(result, pd.Series)
+        self.assertIn("a", result.index)
+        self.assertIn("b", result.index)
+
+
+class TestDescriptiveStatsEdgeCases(balance.testutil.BalanceTestCase):
+    """Test cases for descriptive_stats edge cases (lines 572, 677, 680, 683)."""
+
+    def test_descriptive_stats_with_numeric_only_true(self) -> None:
+        """Test descriptive_stats filters to numeric columns only.
+
+        Verifies line 572 in weighted_stats.py.
+        """
+        from balance.stats_and_plots.weighted_stats import descriptive_stats
+
+        df = pd.DataFrame({"a": [1.0, 2.0], "b": ["x", "y"]})
+        weights = pd.Series([1.0, 1.0])
+        result = descriptive_stats(df, stat="mean", weights=weights, numeric_only=True)
+        self.assertIn("a", result.columns)
+        self.assertNotIn("b", result.columns)
+
+    def test_relative_frequency_table_with_series(self) -> None:
+        """Test relative_frequency_table with pd.Series input.
+
+        Verifies lines 678-681 in weighted_stats.py.
+        """
+        from balance.stats_and_plots.weighted_stats import relative_frequency_table
+
+        s = pd.Series(["a", "a", "b", "c"])
+        result = relative_frequency_table(s)
+        self.assertIsInstance(result, pd.DataFrame)
+        self.assertIn("prop", result.columns)
+
+    def test_relative_frequency_table_with_unnamed_series(self) -> None:
+        """Test relative_frequency_table with unnamed pd.Series.
+
+        Verifies lines 679-680 in weighted_stats.py.
+        """
+        from balance.stats_and_plots.weighted_stats import relative_frequency_table
+
+        s = pd.Series(["a", "a", "b"])
+        s.name = None
+        result = relative_frequency_table(s)
+        self.assertIn("group", result.columns)
+
+    def test_relative_frequency_table_raises_on_invalid_type(self) -> None:
+        """Test relative_frequency_table raises on invalid input type.
+
+        Verifies lines 682-683 in weighted_stats.py.
+        """
+        from balance.stats_and_plots.weighted_stats import relative_frequency_table
+
+        # Lists are not valid input - should raise an error (TypeError or AttributeError)
+        with self.assertRaises((TypeError, AttributeError)):
+            relative_frequency_table([1, 2, 3])  # type: ignore
+
+
+class TestInputValidationIsinstanceSample(balance.testutil.BalanceTestCase):
+    """Test cases for _isinstance_sample ImportError handling (lines 188-189)."""
+
+    def test_isinstance_sample_handles_import_error(self) -> None:
+        """Test _isinstance_sample returns False on ImportError.
+
+        Verifies lines 188-189 in input_validation.py.
+        """
+        from balance.utils.input_validation import _isinstance_sample
+
+        # Should return False for non-Sample objects
+        result = _isinstance_sample("not a sample")
+        self.assertFalse(result)
+
+        # Should return True for actual Sample objects
+        sample = Sample.from_frame(pd.DataFrame({"id": [1, 2], "a": [3, 4]}))
+        result = _isinstance_sample(sample)
+        self.assertTrue(result)

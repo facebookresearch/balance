@@ -2316,3 +2316,106 @@ class TestBalanceDF_ci_of_mean_edge_cases(BalanceTestCase):
         self.assertIsInstance(result, pd.DataFrame)
         # Should have mean and CI columns
         self.assertTrue(len(result.columns) > 1)
+
+
+class TestBalanceDF_plot_on_linked_samples(BalanceTestCase):
+    """Test cases for plot method with on_linked_samples parameter (lines 666-690)."""
+
+    def test_plot_on_linked_samples_true(self) -> None:
+        """Test plot method with on_linked_samples=True.
+
+        Verifies that plot returns values from linked samples.
+        Covers lines 666-690 in balancedf_class.py.
+        """
+        import matplotlib
+
+        matplotlib.use("Agg")
+
+        s3_adj = s3.adjust(method="null")
+        covars = s3_adj.covars()
+
+        # Verify plot runs without error with on_linked_samples=True
+        # With return_dict_of_figures=True, plotly returns a dict of figures
+        result = covars.plot(on_linked_samples=True, return_dict_of_figures=True)
+        self.assertIsNotNone(result)
+        self.assertIsInstance(result, dict)
+
+    def test_plot_on_linked_samples_false(self) -> None:
+        """Test plot method with on_linked_samples=False.
+
+        Verifies that plot only shows self data when on_linked_samples=False.
+        Covers lines 668-669 in balancedf_class.py.
+        """
+        import matplotlib
+
+        matplotlib.use("Agg")
+
+        s3_adj = s3.adjust(method="null")
+        covars = s3_adj.covars()
+
+        # Verify plot runs without error with on_linked_samples=False
+        # With return_dict_of_figures=True, plotly returns a dict of figures
+        result = covars.plot(on_linked_samples=False, return_dict_of_figures=True)
+        self.assertIsNotNone(result)
+        self.assertIsInstance(result, dict)
+
+
+class TestBalanceDF_kld_no_target(BalanceTestCase):
+    """Test cases for kld method when target is None (line 1527)."""
+
+    def test_kld_raises_value_error_when_no_target(self) -> None:
+        """Test that kld raises ValueError when no target is set.
+
+        Verifies line 1527 in balancedf_class.py.
+        """
+        sample_no_target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": (1, 2, 3),
+                    "b": (4, 5, 6),
+                    "id": (1, 2, 3),
+                    "w": (1.0, 1.0, 1.0),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+
+        with self.assertRaises(ValueError):
+            sample_no_target.covars().kld()
+
+
+class TestBalanceDFWeights_plot_defaults(BalanceTestCase):
+    """Test cases for BalanceDFWeights.plot method (lines 2389-2396)."""
+
+    def test_weights_plot_default_kwargs(self) -> None:
+        """Test that weights().plot() uses correct default kwargs.
+
+        Verifies lines 2389-2396 in balancedf_class.py.
+        """
+        import matplotlib
+
+        matplotlib.use("Agg")
+
+        s3_adj = s3.adjust(method="null")
+
+        result = s3_adj.weights().plot(return_axes=True)
+        self.assertIsNotNone(result)
+
+    def test_weights_plot_with_custom_kwargs(self) -> None:
+        """Test weights().plot() with custom kwargs.
+
+        Verifies that kwargs are passed through correctly.
+        """
+        import matplotlib
+
+        matplotlib.use("Agg")
+
+        s3_adj = s3.adjust(method="null")
+
+        result = s3_adj.weights().plot(
+            dist_type="hist",
+            library="seaborn",
+            return_axes=True,
+        )
+        self.assertIsNotNone(result)

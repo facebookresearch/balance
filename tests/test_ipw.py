@@ -853,3 +853,239 @@ class TestIPW(
 
             # Assert: Verify expected proportion
             self.assertAlmostEqual(result, expected, places=10)
+
+
+class TestIpwEdgeCases(balance.testutil.BalanceTestCase):
+    """Test suite for IPW edge cases and error handling."""
+
+    def test_model_coefs_no_feature_names(self) -> None:
+        """Test model_coefs when feature_names is None (line 90).
+
+        Verifies that when feature_names is not provided, model_coefs
+        returns a Series with numeric index from np.ravel(coefs).
+        """
+        # Setup: Create a fitted LogisticRegression model
+        X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+        y = np.array([0, 0, 1, 1])
+        model = LogisticRegression().fit(X, y)
+
+        # Execute: Get coefficients without feature names
+        result = balance_ipw.model_coefs(model, feature_names=None)
+
+        # Assert: Verify result is a dict with a 'coefs' key containing a Series
+        self.assertIn("coefs", result)
+        self.assertIsInstance(result["coefs"], pd.Series)
+        # With no feature_names, the index should be numeric
+        self.assertTrue(pd.api.types.is_integer_dtype(result["coefs"].index))
+
+    def test_ipw_model_none_default(self) -> None:
+        """Test that model=None defaults to sklearn (line 679).
+
+        Verifies that when model parameter is None, IPW uses sklearn
+        as the default model implementation.
+        """
+        # Setup: Create sample and target data
+        sample = pd.DataFrame({"a": [1, 2, 3, 4, 5]})
+        target = pd.DataFrame({"a": [1, 2, 3, 4, 5]})
+        sample_weights = pd.Series([1, 1, 1, 1, 1])
+        target_weights = pd.Series([1, 1, 1, 1, 1])
+
+        # Execute: Run IPW with model=None
+        result = balance_ipw.ipw(
+            sample_df=sample,
+            sample_weights=sample_weights,
+            target_df=target,
+            target_weights=target_weights,
+            model=None,
+        )
+
+        # Assert: Verify IPW ran successfully
+        self.assertIsNotNone(result)
+        self.assertIn("weight", result)
+
+    def test_ipw_invalid_model_type(self) -> None:
+        """Test that invalid model type raises TypeError (line 683).
+
+        Verifies that passing an unsupported model type raises a
+        descriptive TypeError.
+        """
+        # Setup: Create sample and target data with invalid model type
+        sample = pd.DataFrame({"a": [1, 2, 3, 4, 5]})
+        target = pd.DataFrame({"a": [1, 2, 3, 4, 5]})
+        sample_weights = pd.Series([1, 1, 1, 1, 1])
+        target_weights = pd.Series([1, 1, 1, 1, 1])
+
+        # Execute & Assert: Invalid model type should raise TypeError
+        # Use keyword argument for model to ensure it goes to the right parameter
+        with self.assertRaisesRegex(
+            TypeError,
+            "model must be 'sklearn', an sklearn classifier implementing predict_proba, or None",
+        ):
+            balance_ipw.ipw(
+                sample,
+                sample_weights,
+                target,
+                target_weights,
+                model=123,  # pyre-ignore[6]: Intentionally testing invalid model type
+            )
+
+    def test_ipw_single_value_sample_indicator(self) -> None:
+        """Test that single value sample indicator raises Exception (line 759).
+
+        Verifies that when the sample indicator has only one unique value
+        (e.g., all samples, no target), an appropriate exception is raised.
+        """
+        # Setup: Create empty sample or target to trigger single value indicator
+        sample = pd.DataFrame({"a": [1, 2, 3]})
+        target = pd.DataFrame({"a": []})  # Empty target
+        sample_weights = pd.Series([1, 1, 1])
+        target_weights = pd.Series([], dtype=float)
+
+        # Execute & Assert: Single value indicator should raise Exception
+        self.assertRaisesRegex(
+            Exception,
+            "Sample indicator only has value",
+            balance_ipw.ipw,
+            sample,
+            sample_weights,
+            target,
+            target_weights,
+        )
+
+
+class TestIPWPenaltyFactor(balance.testutil.BalanceTestCase):
+    """Test IPW penalty_factor handling (lines 807-813)."""
+
+    def test_ipw_with_penalty_factor(self) -> None:
+        """Test IPW with penalty_factor parameter (lines 807-813).
+
+        Verifies that the penalty_factor parameter correctly modifies
+        the penalization of different covariates in the model.
+        """
+        # Setup: Create sample and target data
+        np.random.seed(42)
+        n = 100
+        sample = pd.DataFrame(
+            {
+                "a": np.random.normal(0, 1, n),
+                "b": np.random.normal(0, 1, n),
+                "c": np.random.normal(0, 1, n),
+            }
+        )
+        target = pd.DataFrame(
+            {
+                "a": np.random.normal(0.5, 1, n),
+                "b": np.random.normal(-0.5, 1, n),
+                "c": np.random.normal(0, 1, n),
+            }
+        )
+        sample_weights = pd.Series([1.0] * n)
+        target_weights = pd.Series([1.0] * n)
+
+        # Test with penalty_factor - different penalties for different covariates
+        # penalty_factor > 0.1 uses 1/pf, penalty_factor <= 0.1 uses 10
+        # Use formula to specify exactly 3 covariates to match penalty_factor length
+        penalty_factor = [1.0, 0.5, 0.05]  # Third value triggers the 10 path (line 809)
+
+        result = balance_ipw.ipw(
+            sample,
+            sample_weights,
+            target,
+            target_weights,
+            transformations=None,
+            formula=["a", "b", "c"],
+            penalty_factor=penalty_factor,
+        )
+
+        # Verify result structure
+        self.assertIn("weight", result)
+        self.assertEqual(len(result["weight"]), n)
+
+    def test_ipw_penalty_factor_with_small_values(self) -> None:
+        """Test IPW penalty_factor with values <= 0.1 (lines 808-809).
+
+        When penalty_factor <= 0.1, the code uses 10 as the penalty instead
+        of 1/pf to avoid numerical issues with large penalties.
+        """
+        # Setup: Create sample and target data
+        np.random.seed(123)
+        n = 50
+        sample = pd.DataFrame(
+            {
+                "x1": np.random.uniform(0, 1, n),
+                "x2": np.random.uniform(0, 1, n),
+            }
+        )
+        target = pd.DataFrame(
+            {
+                "x1": np.random.uniform(0.2, 0.8, n),
+                "x2": np.random.uniform(0.2, 0.8, n),
+            }
+        )
+        sample_weights = pd.Series([1.0] * n)
+        target_weights = pd.Series([1.0] * n)
+
+        # Test with very small penalty_factor values (all <= 0.1)
+        # Use formula to specify exactly 2 covariates to match penalty_factor length
+        penalty_factor = [0.01, 0.1]  # Both should use 10 as penalty
+
+        result = balance_ipw.ipw(
+            sample,
+            sample_weights,
+            target,
+            target_weights,
+            transformations=None,
+            formula=["x1", "x2"],
+            penalty_factor=penalty_factor,
+        )
+
+        # Verify result structure
+        self.assertIn("weight", result)
+        self.assertEqual(len(result["weight"]), n)
+        self.assertTrue(all(w > 0 for w in result["weight"]))
+
+    def test_ipw_penalty_factor_mixed_values(self) -> None:
+        """Test IPW penalty_factor with mixed values (lines 808-813).
+
+        Tests that the loop correctly applies different penalties for
+        different covariates based on their penalty_factor values.
+        """
+        # Setup: Create sample and target data
+        np.random.seed(456)
+        n = 50
+        sample = pd.DataFrame(
+            {
+                "x1": np.random.uniform(0, 1, n),
+                "x2": np.random.uniform(0, 1, n),
+                "x3": np.random.uniform(0, 1, n),
+                "x4": np.random.uniform(0, 1, n),
+            }
+        )
+        target = pd.DataFrame(
+            {
+                "x1": np.random.uniform(0.2, 0.8, n),
+                "x2": np.random.uniform(0.2, 0.8, n),
+                "x3": np.random.uniform(0.2, 0.8, n),
+                "x4": np.random.uniform(0.2, 0.8, n),
+            }
+        )
+        sample_weights = pd.Series([1.0] * n)
+        target_weights = pd.Series([1.0] * n)
+
+        # Mixed penalty_factor: some > 0.1 (use 1/pf), some <= 0.1 (use 10)
+        # Use formula to specify exactly 4 covariates to match penalty_factor length
+        penalty_factor = [2.0, 0.5, 0.1, 0.01]
+
+        result = balance_ipw.ipw(
+            sample,
+            sample_weights,
+            target,
+            target_weights,
+            transformations=None,
+            formula=["x1", "x2", "x3", "x4"],
+            penalty_factor=penalty_factor,
+        )
+
+        # Verify result structure
+        self.assertIn("weight", result)
+        self.assertEqual(len(result["weight"]), n)

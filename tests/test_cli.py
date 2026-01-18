@@ -1201,3 +1201,179 @@ class TestCli(
             out_True["pd_out"].dtypes.to_dict(),
             out_True_flag_on["pd_out"].dtypes.to_dict(),
         )
+
+
+class TestBalanceCLI_keep_columns(balance.testutil.BalanceTestCase):
+    """Test cases for keep_columns and related methods (lines 113-115, 284-286)."""
+
+    def test_keep_columns_returns_list_when_set(self) -> None:
+        """Test keep_columns returns list of column names when set.
+
+        Verifies lines 284-286 in cli.py.
+        """
+        args = Namespace(keep_columns="id,weight,extra")
+        cli = BalanceCLI(args)
+        result = cli.keep_columns()
+        self.assertEqual(result, ["id", "weight", "extra"])
+
+    def test_keep_columns_returns_none_when_not_set(self) -> None:
+        """Test keep_columns returns None when not set.
+
+        Verifies lines 284-286 in cli.py.
+        """
+        args = Namespace(keep_columns=None)
+        cli = BalanceCLI(args)
+        result = cli.keep_columns()
+        self.assertIsNone(result)
+
+    def test_has_keep_columns_with_keep_columns(self) -> None:
+        """Test has_keep_columns returns True when keep_columns is set."""
+        args = Namespace(keep_columns="id,weight")
+        cli = BalanceCLI(args)
+        self.assertTrue(cli.has_keep_columns())
+
+    def test_check_input_columns_with_keep_columns(self) -> None:
+        """Test check_input_columns includes keep_columns in validation.
+
+        Verifies lines 112-115 in cli.py.
+        """
+        args = Namespace(
+            id_column="id",
+            weight_column="weight",
+            covariate_columns="x,y",
+            sample_column="is_respondent",
+            batch_columns=None,
+            keep_columns="keep_col",
+            keep_row_column=None,
+            outcome_columns=None,
+        )
+        cli = BalanceCLI(args)
+
+        columns = ["id", "weight", "x", "y", "is_respondent", "keep_col"]
+        cli.check_input_columns(columns)
+
+    def test_check_input_columns_raises_when_keep_column_missing(self) -> None:
+        """Test check_input_columns raises when keep_column not in input columns.
+
+        Verifies lines 112-115 in cli.py.
+        """
+        args = Namespace(
+            id_column="id",
+            weight_column="weight",
+            covariate_columns="x,y",
+            sample_column="is_respondent",
+            batch_columns=None,
+            keep_columns="missing_col",
+            keep_row_column=None,
+            outcome_columns=None,
+        )
+        cli = BalanceCLI(args)
+
+        columns = ["id", "weight", "x", "y", "is_respondent"]
+        with self.assertRaises(AssertionError):
+            cli.check_input_columns(columns)
+
+
+class TestBalanceCLI_num_lambdas(balance.testutil.BalanceTestCase):
+    """Test cases for num_lambdas method (line 401)."""
+
+    def test_num_lambdas_returns_none_when_not_set(self) -> None:
+        """Test num_lambdas returns None when args.num_lambdas is None.
+
+        Verifies lines 400-401 in cli.py.
+        """
+        args = Namespace(num_lambdas=None)
+        cli = BalanceCLI(args)
+        result = cli.num_lambdas()
+        self.assertIsNone(result)
+
+    def test_num_lambdas_returns_int_when_set(self) -> None:
+        """Test num_lambdas returns int when set."""
+        args = Namespace(num_lambdas="250")
+        cli = BalanceCLI(args)
+        result = cli.num_lambdas()
+        self.assertEqual(result, 250)
+        self.assertIsInstance(result, int)
+
+
+class TestBalanceCLI_ipw_kwargs(balance.testutil.BalanceTestCase):
+    """Test cases for ipw_logistic_regression_kwargs (lines 499-500)."""
+
+    def test_ipw_logistic_regression_kwargs_invalid_json_raises_error(self) -> None:
+        """Test that invalid JSON string raises ValueError.
+
+        Verifies lines 499-502 in cli.py.
+        """
+        args = Namespace(ipw_logistic_regression_kwargs="not valid json", method="ipw")
+        cli = BalanceCLI(args)
+        with self.assertRaises(ValueError) as context:
+            cli.logistic_regression_kwargs()
+        self.assertIn("must be a JSON object string", str(context.exception))
+
+    def test_ipw_logistic_regression_kwargs_valid_json(self) -> None:
+        """Test that valid JSON object is parsed correctly."""
+        args = Namespace(
+            ipw_logistic_regression_kwargs='{"C": 0.5, "max_iter": 1000}', method="ipw"
+        )
+        cli = BalanceCLI(args)
+        result = cli.logistic_regression_kwargs()
+        self.assertEqual(result, {"C": 0.5, "max_iter": 1000})
+
+    def test_ipw_logistic_regression_kwargs_non_object_raises_error(self) -> None:
+        """Test that JSON non-object raises ValueError.
+
+        Verifies lines 503-506 in cli.py.
+        """
+        args = Namespace(ipw_logistic_regression_kwargs="[1, 2, 3]", method="ipw")
+        cli = BalanceCLI(args)
+        with self.assertRaises(ValueError) as context:
+            cli.logistic_regression_kwargs()
+        self.assertIn("must decode to a JSON object", str(context.exception))
+
+
+class TestBalanceCLI_adapt_output(balance.testutil.BalanceTestCase):
+    """Test cases for adapt_output method (lines 830-831, 834)."""
+
+    def test_adapt_output_filters_rows_by_keep_row_column(self) -> None:
+        """Test adapt_output filters rows by keep_row_column.
+
+        Verifies lines 829-831 in cli.py.
+        """
+        args = Namespace(
+            keep_row_column="keep",
+            keep_columns=None,
+        )
+        cli = BalanceCLI(args)
+        df = pd.DataFrame({"id": [1, 2, 3], "value": [10, 20, 30], "keep": [1, 0, 1]})
+        result = cli.adapt_output(df)
+        self.assertEqual(result["id"].tolist(), [1, 3])
+        self.assertEqual(len(result), 2)
+
+    def test_adapt_output_selects_keep_columns(self) -> None:
+        """Test adapt_output selects only keep_columns.
+
+        Verifies lines 833-834 in cli.py.
+        """
+        args = Namespace(
+            keep_row_column=None,
+            keep_columns="id,value",
+        )
+        cli = BalanceCLI(args)
+        df = pd.DataFrame({"id": [1, 2], "value": [10, 20], "extra": [100, 200]})
+        result = cli.adapt_output(df)
+        self.assertEqual(list(result.columns), ["id", "value"])
+        self.assertNotIn("extra", result.columns)
+
+    def test_adapt_output_empty_df_returns_empty(self) -> None:
+        """Test adapt_output with empty DataFrame returns empty.
+
+        Verifies line 826-827 in cli.py.
+        """
+        args = Namespace(
+            keep_row_column="keep",
+            keep_columns="id",
+        )
+        cli = BalanceCLI(args)
+        df = pd.DataFrame()
+        result = cli.adapt_output(df)
+        self.assertTrue(result.empty)

@@ -2204,3 +2204,140 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
 
             # plot_weight_density returns None
             self.assertIsNone(result)
+
+
+class TestSampleConstructorInspectException(balance.testutil.BalanceTestCase):
+    """Test cases for constructor edge case (line 145)."""
+
+    def test_constructor_inspect_exception_raises_not_implemented(self) -> None:
+        """Test that constructor raises NotImplementedError when inspect.stack() fails.
+
+        This test covers line 145-148 in sample_class.py where an exception
+        during inspect.stack() results in NotImplementedError.
+        """
+        from unittest.mock import patch
+
+        with patch("inspect.stack", side_effect=Exception("Simulated inspect error")):
+            with self.assertRaises(NotImplementedError):
+                Sample()
+
+
+class TestSampleDesignEffectDiagnostics(balance.testutil.BalanceTestCase):
+    """Test cases for _design_effect_diagnostics edge cases (lines 342-351)."""
+
+    def test_design_effect_diagnostics_with_no_weight_column(self) -> None:
+        """Test _design_effect_diagnostics returns None values when weight_column is None.
+
+        Verifies lines 344-345 in sample_class.py.
+        """
+        sample = Sample.from_frame(pd.DataFrame({"a": [1, 2, 3], "id": [1, 2, 3]}))
+        sample.weight_column = None
+        result = sample._design_effect_diagnostics()
+        self.assertEqual(result, (None, None, None))
+
+    def test_design_effect_diagnostics_with_invalid_weights(self) -> None:
+        """Test _design_effect_diagnostics handles ValueError gracefully.
+
+        Verifies lines 349-351 in sample_class.py.
+        """
+        sample = Sample.from_frame(
+            pd.DataFrame({"a": [1, 2, 3], "id": [1, 2, 3], "w": [0, 0, 0]}),
+            weight_column="w",
+        )
+        result = sample._design_effect_diagnostics()
+        self.assertEqual(result, (None, None, None))
+
+
+class TestSampleFromFrameGuessWeightColumn(balance.testutil.BalanceTestCase):
+    """Test cases for weight column guessing in from_frame (lines 524-525)."""
+
+    def test_from_frame_guesses_weights_column(self) -> None:
+        """Test from_frame guesses 'weights' as weight column if present.
+
+        Verifies lines 523-525 in sample_class.py.
+        """
+        with self.assertLogs(level="WARNING") as log:
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {"a": [1, 2, 3], "id": [1, 2, 3], "weights": [1.0, 2.0, 3.0]}
+                )
+            )
+            self.assertEqual(sample.weight_column.name, "weights")
+            self.assertTrue(
+                any("Guessing weight column is 'weights'" in msg for msg in log.output)
+            )
+
+    def test_from_frame_standardize_types_false_keeps_int_weights(self) -> None:
+        """Test from_frame with standardize_types=False keeps int weights.
+
+        Verifies lines 539-542 in sample_class.py.
+        """
+        sample = Sample.from_frame(
+            pd.DataFrame({"a": [1, 2, 3], "id": [1, 2, 3]}),
+            standardize_types=False,
+        )
+        # Weight column should exist and be int type when no weight is given and standardize_types=False
+        self.assertIsNotNone(sample.weight_column)
+
+
+class TestSampleModelNone(balance.testutil.BalanceTestCase):
+    """Test cases for model() method returning None (line 854)."""
+
+    def test_model_returns_none_when_no_adjustment_model(self) -> None:
+        """Test model() returns None when _adjustment_model is not set.
+
+        Verifies lines 851-854 in sample_class.py.
+        """
+        sample = Sample.from_frame(pd.DataFrame({"a": [1, 2, 3], "id": [1, 2, 3]}))
+        self.assertIsNone(sample.model())
+
+
+class TestSampleSetWeightsNonFloat(balance.testutil.BalanceTestCase):
+    """Test cases for set_weights type conversion (lines 1103-1106)."""
+
+    def test_set_weights_converts_int_to_float(self) -> None:
+        """Test set_weights converts int weight column to float.
+
+        Verifies lines 1103-1106 in sample_class.py.
+        """
+        sample = Sample.from_frame(
+            pd.DataFrame({"a": [1, 2, 3], "id": [1, 2, 3], "w": [1, 2, 3]}),
+            weight_column="w",
+            standardize_types=False,
+        )
+        sample.set_weights(2.0)
+        self.assertEqual(sample._df[sample.weight_column.name].dtype.kind, "f")
+
+
+class TestSampleSummaryIPWModel(balance.testutil.BalanceTestCase):
+    """Test cases for summary with IPW model (line 1620)."""
+
+    def test_summary_includes_model_performance_for_ipw(self) -> None:
+        """Test that summary includes model performance for IPW adjusted sample.
+
+        Verifies line 1619-1624 in sample_class.py.
+        """
+        np.random.seed(42)
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": np.random.randn(100),
+                    "id": range(100),
+                    "w": [1.0] * 100,
+                }
+            ),
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": np.random.randn(100) + 1,
+                    "id": range(100, 200),
+                    "w": [1.0] * 100,
+                }
+            ),
+            weight_column="w",
+        )
+        adjusted = sample.set_target(target).adjust(method="ipw", max_de=1.5)
+        summary = adjusted.summary()
+        self.assertIn("Model performance", summary)

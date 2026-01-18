@@ -17,6 +17,7 @@ import pandas as pd
 from balance import util as balance_util
 from balance.sample_class import Sample
 from balance.util import _coerce_scalar
+from balance.utils.pandas_utils import _sorted_unique_categories
 from numpy import dtype
 
 
@@ -596,3 +597,50 @@ class TestSample_high_cardinality_warnings(balance.testutil.BalanceTestCase):
             < warning_logs[0].find(", high (unique"),
             "Expected higher-cardinality column to appear first in warning.",
         )
+
+
+class TestDetectHighCardinalityEdgeCases(balance.testutil.BalanceTestCase):
+    """Test edge cases in detect_high_cardinality_features (line 100)."""
+
+    def test_detect_high_cardinality_with_all_unique_null_column(self) -> None:
+        """Test that columns with zero unique values are skipped (line 100)."""
+        # Create a dataframe where a categorical column has zero unique non-null values
+        df = pd.DataFrame(
+            {
+                "all_null": pd.Series([None, None, None], dtype=object),
+                "normal": ["a", "b", "c"],
+            }
+        )
+
+        result = balance_util._detect_high_cardinality_features(df, threshold=0.5)
+
+        # The all_null column should be skipped (no unique values)
+        # normal column: 3 unique / 3 total = 1.0 ratio >= 0.5 threshold
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].column, "normal")
+
+
+class TestSortedUniqueCategoriesEdgeCases(balance.testutil.BalanceTestCase):
+    """Test edge cases in _sorted_unique_categories (lines 183, 186-187)."""
+
+    def test_sorted_unique_categories_empty_result(self) -> None:
+        """Test that empty list is returned when all values are null (line 183)."""
+        values = pd.Series([None, None, None])
+
+        result = _sorted_unique_categories(values)
+
+        self.assertEqual(result, [])
+
+    def test_sorted_unique_categories_with_uncomparable_types(self) -> None:
+        """Test sorting falls back to str conversion for uncomparable types (lines 186-187)."""
+        # Create a series with types that can't be directly compared using < operator
+        # Using complex numbers which are hashable but not comparable
+        values = pd.Series([complex(1, 2), complex(3, 4), complex(0, 1)], dtype=object)
+
+        # Should not raise and should return sorted by string representation
+        result = _sorted_unique_categories(values)
+
+        # The exact order depends on str() representation
+        self.assertEqual(len(result), 3)
+        # Verify all items are present
+        self.assertTrue(all(isinstance(item, complex) for item in result))
