@@ -933,3 +933,78 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         upper_bound_count = (trimmed_symmetric == trimmed_symmetric.max()).sum()
         # At least one tail should have multiple values clipped to the same bound
         self.assertTrue(lower_bound_count > 1 or upper_bound_count > 1)
+
+    def test_trim_weights_empty_weights(self) -> None:
+        """Test that trim_weights handles empty weights correctly (line 228)."""
+        empty_weights = pd.Series(dtype=np.float64)
+        result = trim_weights(empty_weights)
+        expected = pd.Series(dtype=np.float64)
+        pd.testing.assert_series_equal(result, expected)
+
+    def test_trim_weights_verbose_with_trimming(self) -> None:
+        """Test verbose logging when trimming occurs (lines 245-249)."""
+        weights = pd.Series([0.5, 1.0, 10.0, 20.0, 100.0])
+        # weight_trimming_mean_ratio=1 means max is capped at mean
+        # With verbose=True, should log clipping info at DEBUG level
+        import logging
+
+        with self.assertLogs("balance", level=logging.DEBUG) as cm:
+            trim_weights(
+                weights,
+                weight_trimming_mean_ratio=1,
+                verbose=True,
+                keep_sum_of_weights=False,
+            )
+        self.assertTrue(
+            any("Clipping weights to" in msg for msg in cm.output),
+            f"Expected 'Clipping weights to' in logs, got: {cm.output}",
+        )
+
+    def test_trim_weights_verbose_no_trimming(self) -> None:
+        """Test verbose logging when no trimming is needed (line 249)."""
+        weights = pd.Series([1.0, 1.0, 1.0])  # All same, no extreme weights
+        # With these uniform weights, mean_ratio trimming won't clip anything
+        import logging
+
+        with self.assertLogs("balance", level=logging.DEBUG) as cm:
+            trim_weights(
+                weights,
+                weight_trimming_mean_ratio=10,  # ratio too large to trim
+                verbose=True,
+                keep_sum_of_weights=False,
+            )
+        self.assertTrue(
+            any("No extreme weights were trimmed" in msg for msg in cm.output),
+            f"Expected 'No extreme weights were trimmed' in logs, got: {cm.output}",
+        )
+
+    def test_trim_weights_percentile_wrong_length(self) -> None:
+        """Test error for weight_trimming_percentile with wrong length (line 261)."""
+        weights = pd.Series([1.0, 2.0, 3.0, 4.0, 5.0])
+        with self.assertRaisesRegex(
+            ValueError,
+            "weight_trimming_percentile must be a single value or a length-2",
+        ):
+            trim_weights(
+                weights,
+                # pyre-ignore[6]: Intentionally passing wrong type to test error handling
+                weight_trimming_percentile=(0.1, 0.2, 0.3),  # 3 values - invalid
+                keep_sum_of_weights=False,
+            )
+
+    def test_trim_weights_percentile_verbose(self) -> None:
+        """Test verbose logging for percentile trimming (line 294)."""
+        weights = pd.Series([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0])
+        import logging
+
+        with self.assertLogs("balance", level=logging.DEBUG) as cm:
+            trim_weights(
+                weights,
+                weight_trimming_percentile=0.1,
+                verbose=True,
+                keep_sum_of_weights=False,
+            )
+        self.assertTrue(
+            any("Winsorizing weights to" in msg for msg in cm.output),
+            f"Expected 'Winsorizing weights to' in logs, got: {cm.output}",
+        )

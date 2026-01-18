@@ -342,3 +342,58 @@ class TestNoneThrows(
         result = balance.testutil._verify_value_type(series, pd.Series)
         self.assertIsInstance(result, pd.Series)
         pd.testing.assert_series_equal(result, series)
+
+
+class TestTempfilePath(balance.testutil.BalanceTestCase):
+    """Test cases for the tempfile_path context manager."""
+
+    def test_tempfile_path_creates_and_deletes_file(self) -> None:
+        """Test that tempfile_path creates a file and cleans up after use."""
+        import os
+
+        with balance.testutil.tempfile_path() as path:
+            # Verify the file path is created
+            self.assertIsInstance(path, str)
+            self.assertTrue(len(path) > 0)
+            # The file exists as a closed temporary file
+            # Write to it to confirm it's usable
+            with open(path, "w") as f:
+                f.write("test content")
+            self.assertTrue(os.path.exists(path))
+
+        # After context, file should be deleted
+        self.assertFalse(os.path.exists(path))
+
+    def test_tempfile_path_handles_already_deleted_file(self) -> None:
+        """Test that tempfile_path handles FileNotFoundError gracefully (lines 36-38)."""
+        import os
+
+        with balance.testutil.tempfile_path() as path:
+            # Delete the file within the context
+            if os.path.exists(path):
+                os.unlink(path)
+            # The context manager should not raise when the file is already gone
+
+        # No exception should be raised
+        self.assertFalse(os.path.exists(path))
+
+
+class TestAssertNotPrintsRegexp(balance.testutil.BalanceTestCase):
+    """Test cases for assertNotPrintsRegexp method (lines 207-210)."""
+
+    def test_assertNotPrintsRegexp_passes_when_no_output(self) -> None:
+        """Test assertNotPrintsRegexp passes when no output is produced."""
+        self.assertNotPrintsRegexp("abc", lambda: "no output")
+
+    def test_assertNotPrintsRegexp_passes_when_pattern_not_matched(self) -> None:
+        """Test assertNotPrintsRegexp passes when output doesn't match pattern."""
+        self.assertNotPrintsRegexp("xyz", lambda: print("abcde"))
+
+    def test_assertNotPrintsRegexp_fails_when_pattern_matched(self) -> None:
+        """Test assertNotPrintsRegexp raises AssertionError when pattern matches."""
+        self.assertRaises(
+            AssertionError,
+            self.assertNotPrintsRegexp,
+            "abc",
+            lambda: print("abcde"),
+        )

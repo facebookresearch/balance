@@ -1074,3 +1074,152 @@ class Testrake(
         self.assertEqual(converged, 1)
         # Should take relatively few iterations due to rate_tolerance
         self.assertLess(len(iterations), 100)
+
+
+class TestRakeEdgeCases(balance.testutil.BalanceTestCase):
+    """Test suite for rake edge cases and error handling."""
+
+    def test__run_ipf_numpy_nan_convergence(self) -> None:
+        """Test _run_ipf_numpy handles NaN in convergence calculation (line 97).
+
+        Verifies that when the convergence calculation results in NaN,
+        it is properly converted to 0.0 to continue the algorithm.
+        """
+        # Setup: Create a scenario where division by zero could occur in convergence
+        # Using a small table where margins sum to zero on one axis
+        original = np.array([[0.0, 0.0], [1.0, 1.0]])
+        # Target with a zero margin that could cause NaN in diff calculation
+        target_rows = np.array([0.0, 2.0])
+        target_cols = np.array([1.0, 1.0])
+
+        # Execute: Run IPF - should not raise despite potential NaN
+        result, _converged, iterations = _run_ipf_numpy(
+            original,
+            [target_rows, target_cols],
+            convergence_rate=0.01,
+            max_iteration=100,
+            rate_tolerance=1e-8,
+        )
+
+        # Assert: Verify algorithm completed without error
+        self.assertIsNotNone(result)
+        self.assertIsInstance(iterations, pd.DataFrame)
+
+    def test_rake_invalid_na_action(self) -> None:
+        """Test that invalid na_action raises ValueError (line 238).
+
+        Verifies that passing an invalid na_action value raises a
+        descriptive ValueError.
+        """
+        # Setup: Create sample and target data
+        sample = pd.DataFrame({"a": ["1", "2", "3"], "id": [1, 2, 3]})
+        target = pd.DataFrame({"a": ["1", "2", "3"], "id": [1, 2, 3]})
+        sample_weights = pd.Series([1, 1, 1])
+        target_weights = pd.Series([1, 1, 1])
+
+        # Execute & Assert: Invalid na_action should raise ValueError
+        self.assertRaisesRegex(
+            ValueError,
+            "`na_action` must be 'add_indicator' or 'drop'",
+            rake,
+            sample,
+            sample_weights,
+            target,
+            target_weights,
+            na_action="invalid_action",
+        )
+
+    def test_rake_non_convergence_warning(self) -> None:
+        """Test that non-convergence produces warning (line 327).
+
+        Verifies that when the rake algorithm does not converge within
+        max_iteration, a warning is logged about not achieving convergence.
+        """
+        # Setup: Create data that is difficult to converge with very few iterations
+        sample = pd.DataFrame(
+            {
+                "a": ["1", "2"] * 50,
+                "b": ["x", "y"] * 50,
+                "id": range(100),
+            }
+        )
+        target = pd.DataFrame(
+            {
+                "a": ["1"] * 90 + ["2"] * 10,
+                "b": ["x"] * 10 + ["y"] * 90,
+                "id": range(100),
+            }
+        )
+        sample_weights = pd.Series([1] * 100)
+        target_weights = pd.Series([1] * 100)
+
+        # Execute: Run rake with very few max_iteration to force non-convergence
+        with self.assertLogs(level="WARNING") as logs:
+            rake(
+                sample,
+                sample_weights,
+                target,
+                target_weights,
+                max_iteration=1,  # Force non-convergence
+            )
+
+        # Assert: Verify warning about non-convergence was logged
+        self.assertTrue(
+            any("convergence was not achieved" in message for message in logs.output)
+        )
+
+
+class TestRunIpfNumpyNanConv(balance.testutil.BalanceTestCase):
+    """Test _run_ipf_numpy nan convergence handling (line 97)."""
+
+    def test_run_ipf_numpy_nan_conv_handling(self) -> None:
+        """Test _run_ipf_numpy handles nan convergence value (line 97).
+
+        Verifies that when np.nanmax returns nan (all diff values are nan),
+        the current_conv is set to 0.0 to prevent algorithm errors.
+        """
+        # Setup: Create a marginal distribution that would cause all-nan diff values
+        # This happens when current = 0 and margin = 0, making diff = nan
+        table = np.array([[0.0, 0.0], [0.0, 0.0]])
+        margins = [np.array([0.0, 0.0]), np.array([0.0, 0.0])]
+
+        # Execute: Run IPF with zero margins that cause nan values
+        result_table, converged, iterations_df = _run_ipf_numpy(
+            table,
+            margins,
+            convergence_rate=1e-6,
+            max_iteration=10,
+            rate_tolerance=0.0,
+        )
+
+        # Assert: Should handle nan gracefully and converge (or at least not crash)
+        # When all margins are 0, convergence should be detected
+        self.assertEqual(converged, 1)  # Should converge since 0/0-1 = nan -> 0.0
+        self.assertIsInstance(result_table, np.ndarray)
+        self.assertIsInstance(iterations_df, pd.DataFrame)
+
+    def test_run_ipf_numpy_partial_nan_handling(self) -> None:
+        """Test _run_ipf_numpy handles partial nan values in convergence check (line 97).
+
+        Tests that when some but not all diff values are nan (due to 0/0),
+        the algorithm correctly handles them using np.nanmax and continues.
+        """
+        # Setup: Create mixed margins where some are 0 (causing nan) and some are not
+        table = np.array([[1.0, 0.0], [0.0, 1.0]])
+        # margins[0] has a zero that will cause nan in convergence check
+        margins = [np.array([1.0, 0.0]), np.array([0.0, 1.0])]
+
+        # Execute: Run IPF with mixed margins
+        result_table, converged, iterations_df = _run_ipf_numpy(
+            table,
+            margins,
+            convergence_rate=1e-6,
+            max_iteration=100,
+            rate_tolerance=0.0,
+        )
+
+        # Assert: Should handle partial nan gracefully
+        self.assertIsInstance(result_table, np.ndarray)
+        self.assertIsInstance(iterations_df, pd.DataFrame)
+        # Check that convergence history is recorded
+        self.assertGreater(len(iterations_df), 0)
