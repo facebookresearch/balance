@@ -1397,6 +1397,7 @@ class TestCbpsOptimizationConvergenceWarnings(balance.testutil.BalanceTestCase):
             warnings.filterwarnings(
                 "ignore",
                 message="COBYLA: Invalid MAXFUN",
+                category=UserWarning,
             )
             try:
                 with self.assertLogs(level=logging.WARNING) as log_context:
@@ -1410,8 +1411,9 @@ class TestCbpsOptimizationConvergenceWarnings(balance.testutil.BalanceTestCase):
                         opt_opts={"maxiter": 1},  # Force convergence failure
                     )
                 # Verify that at least one warning was logged
-                self.assertTrue(
-                    len(log_context.records) > 0,
+                self.assertGreater(
+                    len(log_context.records),
+                    0,
                     msg="Expected warning logs when optimization fails to converge",
                 )
             except Exception as e:
