@@ -68,6 +68,8 @@ hide_title: true
 - **Clearer validation errors in adjustment helpers**
   - `trim_weights()` now accepts list/tuple inputs and reports invalid types explicitly.
   - `apply_transformations()` raises clearer errors for invalid inputs and empty transformations.
+- **Cleaned up Balance CLI tutorial flow**
+  - Removed the unused synthetic dataset section, aligned diagnostics exploration by metric/variable pairs, and shortened the CLI help snippet.
 
 ## Code Quality & Refactoring
 
