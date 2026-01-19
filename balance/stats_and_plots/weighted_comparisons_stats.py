@@ -23,6 +23,7 @@ from balance.stats_and_plots.weighted_stats import (
 from balance.stats_and_plots.weights_stats import _check_weights_are_valid
 from balance.util import _safe_groupby_apply, _safe_replace_and_infer
 from balance.utils.input_validation import (
+    _coerce_to_numeric_and_validate,
     _extract_series_and_weights,
     _is_discrete_series,
 )
@@ -826,16 +827,16 @@ def emd(
                 )
             )
         else:
-            sample_vals = pd.to_numeric(sample_series, errors="coerce").dropna()
-            target_vals = pd.to_numeric(target_series, errors="coerce").dropna()
-            if sample_vals.empty or target_vals.empty:
-                raise ValueError("Numeric columns must contain at least one value.")
-            sample_w_numeric = sample_w[sample_series.index.isin(sample_vals.index)]
-            target_w_numeric = target_w[target_series.index.isin(target_vals.index)]
+            sample_vals, sample_w_numeric = _coerce_to_numeric_and_validate(
+                sample_series, sample_w, "Sample numeric column"
+            )
+            target_vals, target_w_numeric = _coerce_to_numeric_and_validate(
+                target_series, target_w, "Target numeric column"
+            )
             out_dict[col] = float(
                 wasserstein_distance(
-                    sample_vals.to_numpy(),
-                    target_vals.to_numpy(),
+                    sample_vals,
+                    target_vals,
                     u_weights=sample_w_numeric,
                     v_weights=target_w_numeric,
                 )
@@ -962,21 +963,17 @@ def cvmd(
                 np.sum((sample_cdf - target_cdf) ** 2 * combined_pmf.to_numpy())
             )
         else:
-            sample_vals = pd.to_numeric(sample_series, errors="coerce").dropna()
-            target_vals = pd.to_numeric(target_series, errors="coerce").dropna()
-            if sample_vals.empty or target_vals.empty:
-                raise ValueError("Numeric columns must contain at least one value.")
-            sample_w_numeric = sample_w[sample_series.index.isin(sample_vals.index)]
-            target_w_numeric = target_w[target_series.index.isin(target_vals.index)]
+            sample_vals, sample_w_numeric = _coerce_to_numeric_and_validate(
+                sample_series, sample_w, "Sample numeric column"
+            )
+            target_vals, target_w_numeric = _coerce_to_numeric_and_validate(
+                target_series, target_w, "Target numeric column"
+            )
 
-            sample_sorted, sample_cdf = _weighted_ecdf(
-                sample_vals.to_numpy(), sample_w_numeric
-            )
-            target_sorted, target_cdf = _weighted_ecdf(
-                target_vals.to_numpy(), target_w_numeric
-            )
+            sample_sorted, sample_cdf = _weighted_ecdf(sample_vals, sample_w_numeric)
+            target_sorted, target_cdf = _weighted_ecdf(target_vals, target_w_numeric)
             combined_values, combined_weights = _combined_weights(
-                np.concatenate((sample_vals.to_numpy(), target_vals.to_numpy())),
+                np.concatenate((sample_vals, target_vals)),
                 np.concatenate((sample_w_numeric, target_w_numeric)),
             )
             sample_eval = _evaluate_ecdf(sample_sorted, sample_cdf, combined_values)
@@ -1101,22 +1098,16 @@ def ks(
             )
             out_dict[col] = float(np.max(np.abs(sample_cdf - target_cdf)))
         else:
-            sample_vals = pd.to_numeric(sample_series, errors="coerce").dropna()
-            target_vals = pd.to_numeric(target_series, errors="coerce").dropna()
-            if sample_vals.empty or target_vals.empty:
-                raise ValueError("Numeric columns must contain at least one value.")
-            sample_w_numeric = sample_w[sample_series.index.isin(sample_vals.index)]
-            target_w_numeric = target_w[target_series.index.isin(target_vals.index)]
+            sample_vals, sample_w_numeric = _coerce_to_numeric_and_validate(
+                sample_series, sample_w, "Sample numeric column"
+            )
+            target_vals, target_w_numeric = _coerce_to_numeric_and_validate(
+                target_series, target_w, "Target numeric column"
+            )
 
-            sample_sorted, sample_cdf = _weighted_ecdf(
-                sample_vals.to_numpy(), sample_w_numeric
-            )
-            target_sorted, target_cdf = _weighted_ecdf(
-                target_vals.to_numpy(), target_w_numeric
-            )
-            combined_values = np.unique(
-                np.concatenate((sample_vals.to_numpy(), target_vals.to_numpy()))
-            )
+            sample_sorted, sample_cdf = _weighted_ecdf(sample_vals, sample_w_numeric)
+            target_sorted, target_cdf = _weighted_ecdf(target_vals, target_w_numeric)
+            combined_values = np.unique(np.concatenate((sample_vals, target_vals)))
             sample_eval = _evaluate_ecdf(sample_sorted, sample_cdf, combined_values)
             target_eval = _evaluate_ecdf(target_sorted, target_cdf, combined_values)
             out_dict[col] = float(np.max(np.abs(sample_eval - target_eval)))

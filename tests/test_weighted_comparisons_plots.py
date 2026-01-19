@@ -1092,6 +1092,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         """
         from balance.stats_and_plots.weighted_comparisons_plots import plot_qq
 
+        np.random.seed(42)
         test_df = pd.DataFrame({"v1": np.random.uniform(size=50)})
 
         fig, ax = plt.subplots(1, 1, figsize=(7.2, 7.2))
@@ -1562,6 +1563,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         )
 
         # Create test data
+        np.random.seed(42)
         test_df = pd.DataFrame(
             {
                 "v1": np.random.normal(size=50),
@@ -1601,3 +1603,348 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
             return_dict_of_figures=False,
         )
         self.assertIsNone(result_bar)
+
+
+class TestSeabornPlotDistDefaultNames(balance.testutil.BalanceTestCase):
+    """Test cases for seaborn_plot_dist with default names."""
+
+    def tearDown(self) -> None:
+        plt.close("all")
+        super().tearDown()
+
+    def test_seaborn_plot_dist_generates_default_names(self) -> None:
+        """Test seaborn_plot_dist generates default names when names=None."""
+        df1 = pd.DataFrame({"v1": [1.0, 2.0, 3.0]})
+        df2 = pd.DataFrame({"v1": [2.0, 3.0, 4.0]})
+        dfs: List[DataFrameWithWeight] = [
+            {"df": df1, "weight": None},
+            {"df": df2, "weight": None},
+        ]
+        result = weighted_comparisons_plots.seaborn_plot_dist(
+            dfs,
+            names=None,
+            variables=["v1"],
+            dist_type="hist",
+            return_axes=True,
+        )
+        self.assertIsNotNone(result)
+
+    def test_seaborn_plot_dist_single_df_default_hist(self) -> None:
+        """Test seaborn_plot_dist with single df defaults to hist dist_type."""
+        df1 = pd.DataFrame({"v1": [1.0, 2.0, 3.0]})
+        dfs: List[DataFrameWithWeight] = [{"df": df1, "weight": None}]
+        result = weighted_comparisons_plots.seaborn_plot_dist(
+            dfs,
+            names=["self"],
+            variables=["v1"],
+            dist_type=None,
+            return_axes=True,
+        )
+        self.assertIsNotNone(result)
+
+    def test_seaborn_plot_dist_multiple_df_default_qq(self) -> None:
+        """Test seaborn_plot_dist with multiple dfs defaults to qq dist_type."""
+        df1 = pd.DataFrame({"v1": [1.0, 2.0, 3.0]})
+        df2 = pd.DataFrame({"v1": [2.0, 3.0, 4.0]})
+        dfs: List[DataFrameWithWeight] = [
+            {"df": df1, "weight": None},
+            {"df": df2, "weight": None},
+        ]
+        result = weighted_comparisons_plots.seaborn_plot_dist(
+            dfs,
+            names=["self", "target"],
+            variables=["v1"],
+            dist_type=None,
+            return_axes=True,
+        )
+        self.assertIsNotNone(result)
+
+
+class TestSeabornPlotDistNoNonmissing(balance.testutil.BalanceTestCase):
+    """Test cases for seaborn_plot_dist with no nonmissing values."""
+
+    def tearDown(self) -> None:
+        plt.close("all")
+        super().tearDown()
+
+    def test_seaborn_plot_dist_skips_all_missing_variable(self) -> None:
+        """Test seaborn_plot_dist skips variable with no nonmissing values."""
+        import logging
+
+        df1 = pd.DataFrame({"v1": [np.nan, np.nan, np.nan]})
+        df2 = pd.DataFrame({"v1": [np.nan, np.nan, np.nan]})
+        dfs: List[DataFrameWithWeight] = [
+            {"df": df1, "weight": None},
+            {"df": df2, "weight": None},
+        ]
+        with self.assertLogs(level=logging.WARNING) as log:
+            weighted_comparisons_plots.seaborn_plot_dist(
+                dfs,
+                names=["self", "target"],
+                variables=["v1"],
+                dist_type="qq",
+            )
+        self.assertTrue(any("No nonmissing values" in msg for msg in log.output))
+
+
+class TestSeabornPlotDistQQNumeric(balance.testutil.BalanceTestCase):
+    """Test cases for seaborn_plot_dist qq with numeric variables."""
+
+    def tearDown(self) -> None:
+        plt.close("all")
+        super().tearDown()
+
+    def test_seaborn_plot_dist_qq_with_numeric(self) -> None:
+        """Test seaborn_plot_dist uses plot_qq for numeric variables with qq dist_type."""
+        np.random.seed(42)
+        df1 = pd.DataFrame({"v1": np.random.randn(50)})
+        df2 = pd.DataFrame({"v1": np.random.randn(50)})
+        dfs: List[DataFrameWithWeight] = [
+            {"df": df1, "weight": None},
+            {"df": df2, "weight": None},
+        ]
+        result = weighted_comparisons_plots.seaborn_plot_dist(
+            dfs,
+            names=["self", "target"],
+            variables=["v1"],
+            dist_type="qq",
+            numeric_n_values_threshold=3,
+            return_axes=True,
+        )
+        self.assertIsNotNone(result)
+
+
+class TestPlotlyPlotDensityWeightsNone(balance.testutil.BalanceTestCase):
+    """Test cases for plotly_plot_density without weights column."""
+
+    def test_plotly_plot_density_uses_ones_when_no_weight(self) -> None:
+        """Test plotly_plot_density uses ones when no weight column present."""
+        from balance.stats_and_plots.weighted_comparisons_plots import (
+            plotly_plot_density,
+        )
+
+        df_no_weight = pd.DataFrame({"v1": [1.0, 2.0, 3.0, 4.0]})
+        dict_of_dfs = {
+            "self": df_no_weight,
+            "target": df_no_weight.copy(),
+        }
+        result = plotly_plot_density(
+            dict_of_dfs,
+            variables=["v1"],
+            plot_it=False,
+            return_dict_of_figures=True,
+        )
+        self.assertIsNotNone(result)
+        self.assertIn("v1", result)
+
+
+class TestPlotlyPlotDensityPlotIt(balance.testutil.BalanceTestCase):
+    """Test cases for plotly_plot_density with plot_it=True."""
+
+    def test_plotly_plot_density_plot_it_true(self) -> None:
+        """Test plotly_plot_density with plot_it=True."""
+        from unittest.mock import patch
+
+        from balance.stats_and_plots.weighted_comparisons_plots import (
+            plotly_plot_density,
+        )
+
+        df = pd.DataFrame({"v1": [1.0, 2.0, 3.0], "weight": [1.0, 1.0, 1.0]})
+        dict_of_dfs = {"self": df, "target": df.copy()}
+
+        with patch("plotly.offline.iplot") as mock_iplot:
+            plotly_plot_density(
+                dict_of_dfs,
+                variables=["v1"],
+                plot_it=True,
+                return_dict_of_figures=False,
+            )
+            mock_iplot.assert_called()
+
+
+class TestPlotlyPlotQQPlotIt(balance.testutil.BalanceTestCase):
+    """Test cases for plotly_plot_qq with plot_it=True."""
+
+    def test_plotly_plot_qq_plot_it_true(self) -> None:
+        """Test plotly_plot_qq with plot_it=True."""
+        from unittest.mock import patch
+
+        from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_qq
+
+        np.random.seed(42)
+        df = pd.DataFrame({"v1": np.random.randn(50), "weight": np.ones(50)})
+        dict_of_dfs = {"self": df, "target": df.copy()}
+
+        with patch("plotly.offline.iplot") as mock_iplot:
+            plotly_plot_qq(
+                dict_of_dfs,
+                variables=["v1"],
+                plot_it=True,
+                return_dict_of_figures=False,
+            )
+            mock_iplot.assert_called()
+
+
+class TestPlotlyPlotDistNoSampleKey(balance.testutil.BalanceTestCase):
+    """Test cases for plotly_plot_dist without 'sample' key."""
+
+    def test_plotly_plot_dist_random_key_for_numeric(self) -> None:
+        """Test plotly_plot_dist uses random key when 'sample' not present."""
+        from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_dist
+
+        np.random.seed(42)
+        df = pd.DataFrame({"v1": np.random.randn(30), "weight": np.ones(30)})
+        dict_of_dfs = {"self": df, "target": df.copy()}
+        result = plotly_plot_dist(
+            dict_of_dfs,
+            variables=["v1"],
+            dist_type="kde",
+            plot_it=False,
+            return_dict_of_figures=True,
+        )
+        self.assertIsNotNone(result)
+
+
+class TestPlotlyPlotDistWithSampleKey(balance.testutil.BalanceTestCase):
+    """Test cases for plotly_plot_dist with 'sample' key present."""
+
+    def test_plotly_plot_dist_uses_sample_key_for_numeric(self) -> None:
+        """Test plotly_plot_dist uses 'sample' key when present for numeric vars.
+
+        Verifies line 1268 in weighted_comparisons_plots.py.
+        """
+        from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_dist
+
+        np.random.seed(42)
+        df = pd.DataFrame({"v1": np.random.randn(30), "weight": np.ones(30)})
+        dict_of_dfs = {"sample": df, "target": df.copy()}
+        result = plotly_plot_dist(
+            dict_of_dfs,
+            variables=["v1"],
+            dist_type="kde",
+            plot_it=False,
+            return_dict_of_figures=True,
+        )
+        self.assertIsNotNone(result)
+        self.assertIn("v1", result)
+
+
+class TestPlotlyPlotDistNoNonmissing(balance.testutil.BalanceTestCase):
+    """Test cases for plotly_plot_dist with no nonmissing values."""
+
+    def test_plotly_plot_dist_skips_all_missing_variable(self) -> None:
+        """Test plotly_plot_dist skips variable with no nonmissing values."""
+        import logging
+
+        from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_dist
+
+        df = pd.DataFrame({"v1": [np.nan, np.nan, np.nan], "weight": [1.0, 1.0, 1.0]})
+        dict_of_dfs = {"self": df, "target": df.copy()}
+        with self.assertLogs(level=logging.WARNING) as log:
+            plotly_plot_dist(
+                dict_of_dfs,
+                variables=["v1"],
+                dist_type="kde",
+                plot_it=False,
+                return_dict_of_figures=True,
+            )
+        self.assertTrue(any("No nonmissing values" in msg for msg in log.output))
+
+
+class TestPlotlyPlotDistUnsupportedDistType(balance.testutil.BalanceTestCase):
+    """Test cases for plotly_plot_dist with unsupported dist_type."""
+
+    def test_plotly_plot_dist_raises_on_unsupported_dist_type(self) -> None:
+        """Test plotly_plot_dist raises NotImplementedError for unsupported dist_type."""
+        from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_dist
+
+        df = pd.DataFrame({"v1": [1.0, 2.0, 3.0], "weight": [1.0, 1.0, 1.0]})
+        dict_of_dfs = {"self": df, "target": df.copy()}
+        with self.assertRaises(NotImplementedError):
+            plotly_plot_dist(
+                dict_of_dfs,
+                variables=["v1"],
+                # pyre-ignore[6]: Testing invalid dist_type intentionally
+                dist_type="unknown_type",
+                plot_it=False,
+                return_dict_of_figures=True,
+            )
+
+
+class TestPlotlyPlotDistQQDistType(balance.testutil.BalanceTestCase):
+    """Test cases for plotly_plot_dist with qq dist_type."""
+
+    def test_plotly_plot_dist_with_qq_dist_type(self) -> None:
+        """Test plotly_plot_dist uses plotly_plot_qq for qq dist_type."""
+        from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_dist
+
+        np.random.seed(42)
+        df = pd.DataFrame({"v1": np.random.randn(30), "weight": np.ones(30)})
+        dict_of_dfs = {"self": df, "target": df.copy()}
+        result = plotly_plot_dist(
+            dict_of_dfs,
+            variables=["v1"],
+            dist_type="qq",
+            plot_it=False,
+            return_dict_of_figures=True,
+        )
+        self.assertIsNotNone(result)
+        self.assertIn("v1", result)
+
+
+class TestPlotDistPlotlyQQDistType(balance.testutil.BalanceTestCase):
+    """Test cases for plot_dist with plotly library and qq dist_type."""
+
+    def test_plot_dist_plotly_with_qq_dist_type(self) -> None:
+        """Test plot_dist with plotly library and qq dist_type."""
+        np.random.seed(42)
+        df = pd.DataFrame({"v1": np.random.randn(30)})
+        dfs: List[DataFrameWithWeight] = [
+            {"df": df, "weight": pd.Series(np.ones(30))},
+            {"df": df.copy(), "weight": pd.Series(np.ones(30))},
+        ]
+        result = weighted_comparisons_plots.plot_dist(
+            dfs,
+            names=["self", "target"],
+            library="plotly",
+            dist_type="qq",
+            plot_it=False,
+            return_dict_of_figures=True,
+        )
+        self.assertIsNotNone(result)
+
+
+class TestPlotDistPlotlyUnsupportedDistType(balance.testutil.BalanceTestCase):
+    """Test cases for plot_dist with plotly library and unsupported dist_type."""
+
+    def test_plot_dist_plotly_raises_on_hist_dist_type(self) -> None:
+        """Test plot_dist with plotly library raises on hist dist_type."""
+        df = pd.DataFrame({"v1": [1.0, 2.0, 3.0]})
+        dfs: List[DataFrameWithWeight] = [
+            {"df": df, "weight": None},
+            {"df": df.copy(), "weight": None},
+        ]
+        with self.assertRaises(ValueError) as context:
+            weighted_comparisons_plots.plot_dist(
+                dfs,
+                names=["self", "target"],
+                library="plotly",
+                dist_type="hist",
+            )
+        self.assertIn("plotly library does not support", str(context.exception))
+
+    def test_plot_dist_plotly_raises_on_ecdf_dist_type(self) -> None:
+        """Test plot_dist with plotly library raises on ecdf dist_type."""
+        df = pd.DataFrame({"v1": [1.0, 2.0, 3.0]})
+        dfs: List[DataFrameWithWeight] = [
+            {"df": df, "weight": None},
+            {"df": df.copy(), "weight": None},
+        ]
+        with self.assertRaises(ValueError) as context:
+            weighted_comparisons_plots.plot_dist(
+                dfs,
+                names=["self", "target"],
+                library="plotly",
+                dist_type="ecdf",
+            )
+        self.assertIn("plotly library does not support", str(context.exception))

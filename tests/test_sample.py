@@ -2341,3 +2341,441 @@ class TestSampleSummaryIPWModel(balance.testutil.BalanceTestCase):
         adjusted = sample.set_target(target).adjust(method="ipw", max_de=1.5)
         summary = adjusted.summary()
         self.assertIn("Model performance", summary)
+
+
+class TestSampleStrWeightTrimmingPercentile(balance.testutil.BalanceTestCase):
+    """Test cases for weight_trimming_percentile in __str__ (lines 301-305)."""
+
+    def test_str_shows_weight_trimming_percentile_when_in_model(self) -> None:
+        """Test that __str__ shows weight_trimming_percentile when present in model.
+
+        Verifies lines 301-305 in sample_class.py.
+        Note: The IPW method currently does not store weight_trimming_percentile
+        in the model dictionary, so we manually inject it to test the display logic.
+        """
+        np.random.seed(42)
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": np.random.randn(100),
+                    "id": range(100),
+                    "w": [1.0] * 100,
+                }
+            ),
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": np.random.randn(100) + 1,
+                    "id": range(100, 200),
+                    "w": [1.0] * 100,
+                }
+            ),
+            weight_column="w",
+        )
+        adjusted = sample.set_target(target).adjust(
+            method="ipw",
+            weight_trimming_percentile=0.98,
+            weight_trimming_mean_ratio=None,
+        )
+        # Manually inject weight_trimming_percentile into the model to test display logic
+        # This is needed because the IPW implementation does not store this value in the model
+        if adjusted._adjustment_model is not None:
+            adjusted._adjustment_model["weight_trimming_percentile"] = 0.98
+        output_str = adjusted.__str__()
+        self.assertIn("weight trimming percentile", output_str)
+
+
+class TestSampleDesignEffectDiagnosticsExtended(balance.testutil.BalanceTestCase):
+    """Test cases for _design_effect_diagnostics edge cases (lines 307-308, 349-351)."""
+
+    def test_design_effect_diagnostics_when_n_rows_is_none(self) -> None:
+        """Test _design_effect_diagnostics with n_rows=None uses df shape.
+
+        Verifies lines 307-308 in sample_class.py.
+        """
+        sample = Sample.from_frame(
+            pd.DataFrame({"a": [1, 2, 3], "id": [1, 2, 3], "w": [1.0, 2.0, 3.0]}),
+            weight_column="w",
+        )
+        design_effect, effective_n, effective_prop = sample._design_effect_diagnostics(
+            n_rows=None
+        )
+        self.assertIsNotNone(design_effect)
+        self.assertIsNotNone(effective_n)
+        self.assertIsNotNone(effective_prop)
+
+    def test_design_effect_diagnostics_exception_handling(self) -> None:
+        """Test _design_effect_diagnostics returns None on exception.
+
+        Verifies lines 349-351 in sample_class.py.
+        """
+        sample = Sample.from_frame(
+            pd.DataFrame({"a": [1, 2, 3], "id": [1, 2, 3], "w": [0.0, 0.0, 0.0]}),
+            weight_column="w",
+        )
+        design_effect, effective_n, effective_prop = sample._design_effect_diagnostics()
+        self.assertIsNone(design_effect)
+        self.assertIsNone(effective_n)
+        self.assertIsNone(effective_prop)
+
+
+class TestSampleDiagnosticsIPWModelParams(balance.testutil.BalanceTestCase):
+    """Test cases for IPW model parameters in diagnostics (lines 1838, 1878-1879)."""
+
+    def test_diagnostics_includes_n_iter_intercept(self) -> None:
+        """Test diagnostics includes n_iter_ and intercept_ from IPW fit.
+
+        Verifies lines 1835-1849 in sample_class.py.
+        """
+        np.random.seed(42)
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": np.random.randn(100),
+                    "id": range(100),
+                    "w": [1.0] * 100,
+                }
+            ),
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": np.random.randn(100) + 1,
+                    "id": range(100, 200),
+                    "w": [1.0] * 100,
+                }
+            ),
+            weight_column="w",
+        )
+        adjusted = sample.set_target(target).adjust(method="ipw", max_de=1.5)
+        diagnostics = adjusted.diagnostics()
+        diagnostics_dict = diagnostics.set_index(["metric", "var"])["val"].to_dict()
+        self.assertTrue(
+            any(
+                "ipw_model_glance" in str(k)
+                or "n_iter_" in str(k)
+                or "intercept_" in str(k)
+                for k in diagnostics_dict.keys()
+            )
+        )
+
+    def test_diagnostics_includes_multi_class(self) -> None:
+        """Test diagnostics includes multi_class from IPW fit.
+
+        Verifies lines 1874-1879 in sample_class.py.
+        """
+        np.random.seed(42)
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": np.random.randn(100),
+                    "id": range(100),
+                    "w": [1.0] * 100,
+                }
+            ),
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": np.random.randn(100) + 1,
+                    "id": range(100, 200),
+                    "w": [1.0] * 100,
+                }
+            ),
+            weight_column="w",
+        )
+        adjusted = sample.set_target(target).adjust(method="ipw", max_de=1.5)
+        diagnostics = adjusted.diagnostics()
+        metrics = diagnostics["metric"].unique()
+        self.assertTrue(
+            "ipw_multi_class" in metrics,
+            f"Expected 'ipw_multi_class' in diagnostics metrics. Found: {metrics}",
+        )
+
+    def test_diagnostics_multi_class_converted_to_string(self) -> None:
+        """Test diagnostics converts non-string multi_class to string.
+
+        Verifies lines 1878-1879 in sample_class.py where multi_class is
+        converted to string if it's not already a string.
+        """
+        np.random.seed(42)
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": np.random.randn(100),
+                    "id": range(100),
+                    "w": [1.0] * 100,
+                }
+            ),
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": np.random.randn(100) + 1,
+                    "id": range(100, 200),
+                    "w": [1.0] * 100,
+                }
+            ),
+            weight_column="w",
+        )
+        adjusted = sample.set_target(target).adjust(method="ipw", max_de=1.5)
+
+        # Modify the model's fit object to have a non-string multi_class
+        # to test the conversion path (lines 1878-1879)
+        if adjusted._adjustment_model is not None:
+            fit = adjusted._adjustment_model.get("fit")
+            if fit is not None:
+                # Temporarily override multi_class with a non-string value
+                original_multi_class = getattr(fit, "multi_class", None)
+                try:
+                    # Set multi_class to a non-string value (e.g., an int)
+                    fit.multi_class = 123
+                    diagnostics = adjusted.diagnostics()
+                    # Check that ipw_multi_class is present and is a string
+                    multi_class_rows = diagnostics[
+                        diagnostics["metric"] == "ipw_multi_class"
+                    ]
+                    self.assertGreater(len(multi_class_rows), 0)
+                    # The value should be converted to string "123"
+                    self.assertEqual(multi_class_rows["var"].iloc[0], "123")
+                finally:
+                    # Restore original value
+                    if original_multi_class is not None:
+                        fit.multi_class = original_multi_class
+
+    def test_diagnostics_n_iter_array_larger_than_one(self) -> None:
+        """Test diagnostics handles n_iter_ array with size > 1.
+
+        Verifies line 1838 in sample_class.py where array_as_np.size == 1
+        check is performed. When size > 1, the value should be skipped.
+        """
+        np.random.seed(42)
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": np.random.randn(100),
+                    "id": range(100),
+                    "w": [1.0] * 100,
+                }
+            ),
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": np.random.randn(100) + 1,
+                    "id": range(100, 200),
+                    "w": [1.0] * 100,
+                }
+            ),
+            weight_column="w",
+        )
+        adjusted = sample.set_target(target).adjust(method="ipw", max_de=1.5)
+
+        # Modify the model's fit object to have n_iter_ as an array with size > 1
+        # to test the path where we skip the value (line 1838)
+        if adjusted._adjustment_model is not None:
+            fit = adjusted._adjustment_model.get("fit")
+            if fit is not None:
+                original_n_iter = getattr(fit, "n_iter_", None)
+                try:
+                    # Set n_iter_ to an array with size > 1
+                    fit.n_iter_ = np.array([10, 20, 30])
+                    diagnostics = adjusted.diagnostics()
+                    # Check that diagnostics still works
+                    self.assertIsNotNone(diagnostics)
+                    # n_iter_ should NOT be in ipw_model_glance since size > 1
+                    n_iter_rows = diagnostics[
+                        (diagnostics["metric"] == "ipw_model_glance")
+                        & (diagnostics["var"] == "n_iter_")
+                    ]
+                    self.assertEqual(len(n_iter_rows), 0)
+                finally:
+                    # Restore original value
+                    if original_n_iter is not None:
+                        fit.n_iter_ = original_n_iter
+
+    def test_diagnostics_n_iter_intercept_none_continue(self) -> None:
+        """Test diagnostics continues when n_iter_ or intercept_ is None.
+
+        Verifies line 1838 in sample_class.py where continue is called
+        when array_val is None for n_iter_ or intercept_ attributes.
+        """
+        np.random.seed(42)
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": np.random.randn(100),
+                    "id": range(100),
+                    "w": [1.0] * 100,
+                }
+            ),
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": np.random.randn(100) + 1,
+                    "id": range(100, 200),
+                    "w": [1.0] * 100,
+                }
+            ),
+            weight_column="w",
+        )
+        adjusted = sample.set_target(target).adjust(method="ipw", max_de=1.5)
+
+        # Modify the model's fit object to have n_iter_ and intercept_ set to None
+        # to test the continue path (line 1838)
+        if adjusted._adjustment_model is not None:
+            fit = adjusted._adjustment_model.get("fit")
+            if fit is not None:
+                original_n_iter = getattr(fit, "n_iter_", None)
+                original_intercept = getattr(fit, "intercept_", None)
+                try:
+                    # Set n_iter_ and intercept_ to None to trigger line 1838
+                    fit.n_iter_ = None
+                    fit.intercept_ = None
+                    diagnostics = adjusted.diagnostics()
+                    # Check that diagnostics still works
+                    self.assertIsNotNone(diagnostics)
+                    # n_iter_ should NOT be in ipw_model_glance since it's None
+                    n_iter_rows = diagnostics[
+                        (diagnostics["metric"] == "ipw_model_glance")
+                        & (diagnostics["var"] == "n_iter_")
+                    ]
+                    self.assertEqual(len(n_iter_rows), 0)
+                    # intercept_ should NOT be in ipw_model_glance since it's None
+                    intercept_rows = diagnostics[
+                        (diagnostics["metric"] == "ipw_model_glance")
+                        & (diagnostics["var"] == "intercept_")
+                    ]
+                    self.assertEqual(len(intercept_rows), 0)
+                finally:
+                    # Restore original values
+                    if original_n_iter is not None:
+                        fit.n_iter_ = original_n_iter
+                    if original_intercept is not None:
+                        fit.intercept_ = original_intercept
+
+
+class TestSampleQuickAdjustmentDetailsNRows(balance.testutil.BalanceTestCase):
+    """Test cases for _quick_adjustment_details with n_rows=None (line 308)."""
+
+    def test_quick_adjustment_details_with_n_rows_none(self) -> None:
+        """Test _quick_adjustment_details when n_rows is None uses df shape.
+
+        Verifies lines 307-308 in sample_class.py.
+        """
+        sample = Sample.from_frame(
+            pd.DataFrame({"a": [1, 2, 3], "id": [1, 2, 3], "w": [1.0, 2.0, 3.0]}),
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame({"a": [1, 2], "id": [4, 5], "w": [1.0, 1.0]}),
+            weight_column="w",
+        )
+        adjusted = sample.set_target(target).adjust(method="null")
+
+        # Call _quick_adjustment_details with n_rows=None (default)
+        details = adjusted._quick_adjustment_details(n_rows=None)
+
+        # Should include method and design effect info
+        self.assertTrue(any("method:" in d for d in details))
+        self.assertTrue(any("design effect" in d for d in details))
+
+
+class TestSampleModelNoAdjustmentModel(balance.testutil.BalanceTestCase):
+    """Test cases for model() returning None when _adjustment_model is None."""
+
+    def test_model_returns_none_when_adjustment_model_attr_missing(self) -> None:
+        """Test model() returns None when _adjustment_model attribute is None.
+
+        Verifies that for an unadjusted sample, model() returns None.
+        """
+        sample = Sample.from_frame(pd.DataFrame({"a": [1, 2, 3], "id": [1, 2, 3]}))
+
+        # For an unadjusted sample, model() should return None
+        result = sample.model()
+        self.assertIsNone(result)
+
+    def test_model_returns_adjustment_model_when_set(self) -> None:
+        """Test model() returns the adjustment model when set.
+
+        Verifies that model() returns the correct model dictionary after adjustment.
+        """
+        sample = Sample.from_frame(pd.DataFrame({"a": [1, 2, 3], "id": [1, 2, 3]}))
+        target = Sample.from_frame(pd.DataFrame({"a": [1, 2, 3], "id": [4, 5, 6]}))
+        adjusted = sample.set_target(target).adjust(method="null")
+
+        result = adjusted.model()
+        self.assertIsNotNone(result)
+        self.assertIsInstance(result, dict)
+        self.assertIn("method", result)
+
+
+class TestSampleDesignEffectDiagnosticsExceptionTypes(balance.testutil.BalanceTestCase):
+    """Test cases for _design_effect_diagnostics exception handling (lines 349-351)."""
+
+    def test_design_effect_diagnostics_type_error(self) -> None:
+        """Test _design_effect_diagnostics handles TypeError gracefully.
+
+        Verifies lines 349-351 in sample_class.py.
+        """
+        sample = Sample.from_frame(
+            pd.DataFrame({"a": [1, 2, 3], "id": [1, 2, 3], "w": [1.0, 2.0, 3.0]}),
+            weight_column="w",
+        )
+
+        # Mock design_effect to raise TypeError
+        original_design_effect = sample.design_effect
+        try:
+            sample.design_effect = MagicMock(side_effect=TypeError("test error"))
+            result = sample._design_effect_diagnostics()
+            self.assertEqual(result, (None, None, None))
+        finally:
+            sample.design_effect = original_design_effect
+
+    def test_design_effect_diagnostics_value_error(self) -> None:
+        """Test _design_effect_diagnostics handles ValueError gracefully.
+
+        Verifies lines 349-351 in sample_class.py.
+        """
+        sample = Sample.from_frame(
+            pd.DataFrame({"a": [1, 2, 3], "id": [1, 2, 3], "w": [1.0, 2.0, 3.0]}),
+            weight_column="w",
+        )
+
+        # Mock design_effect to raise ValueError
+        original_design_effect = sample.design_effect
+        try:
+            sample.design_effect = MagicMock(side_effect=ValueError("test error"))
+            result = sample._design_effect_diagnostics()
+            self.assertEqual(result, (None, None, None))
+        finally:
+            sample.design_effect = original_design_effect
+
+    def test_design_effect_diagnostics_zero_division_error(self) -> None:
+        """Test _design_effect_diagnostics handles ZeroDivisionError gracefully.
+
+        Verifies lines 349-351 in sample_class.py.
+        """
+        sample = Sample.from_frame(
+            pd.DataFrame({"a": [1, 2, 3], "id": [1, 2, 3], "w": [1.0, 2.0, 3.0]}),
+            weight_column="w",
+        )
+
+        # Mock design_effect to raise ZeroDivisionError
+        original_design_effect = sample.design_effect
+        try:
+            sample.design_effect = MagicMock(
+                side_effect=ZeroDivisionError("test error")
+            )
+            result = sample._design_effect_diagnostics()
+            self.assertEqual(result, (None, None, None))
+        finally:
+            sample.design_effect = original_design_effect
