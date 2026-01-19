@@ -35,6 +35,9 @@ class BalanceCLI:
             cli = BalanceCLI(Namespace(method="ipw"))
             cli.method()
             # 'ipw'
+
+    Tutorial:
+        https://import-balance.org/docs/tutorials/balance_cli_tutorial/
     """
 
     def __init__(self, args: Namespace) -> None:
