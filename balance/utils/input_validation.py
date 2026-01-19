@@ -114,6 +114,56 @@ def _extract_series_and_weights(
     return filtered_series, filtered_weights
 
 
+def _coerce_to_numeric_and_validate(
+    series: pd.Series,
+    weights: np.ndarray,
+    label: str,
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Convert series to numeric, drop NaN values, and validate non-empty.
+
+    This function handles series that may contain values that cannot be
+    converted to numeric (e.g., non-numeric strings in an object dtype series).
+    It coerces such values to NaN and drops them, then validates that at least
+    one valid numeric value remains.
+
+    Args:
+        series (pd.Series): Input series to convert to numeric.
+        weights (np.ndarray): Weights aligned to the series.
+        label (str): Label for error messages.
+
+    Returns:
+        Tuple[np.ndarray, np.ndarray]: Numeric values and corresponding weights.
+
+    Raises:
+        ValueError: If no valid numeric values remain after conversion.
+
+    Examples:
+    .. code-block:: python
+
+            import numpy as np
+            import pandas as pd
+            from balance.utils.input_validation import _coerce_to_numeric_and_validate
+
+            vals, w = _coerce_to_numeric_and_validate(
+                pd.Series([1.0, 2.0, 3.0]),
+                np.array([1.0, 1.0, 2.0]),
+                "example",
+            )
+            vals.tolist()
+            # [1.0, 2.0, 3.0]
+            w.tolist()
+            # [1.0, 1.0, 2.0]
+    """
+    numeric_series = pd.to_numeric(series, errors="coerce").dropna()
+    if numeric_series.empty:
+        raise ValueError(
+            f"{label} must contain at least one valid numeric value after conversion."
+        )
+    numeric_weights = weights[series.index.isin(numeric_series.index)]
+    return numeric_series.to_numpy(), numeric_weights
+
+
 def _is_discrete_series(series: pd.Series) -> bool:
     """
     Determine whether a series should be treated as discrete for comparisons.
@@ -183,10 +233,19 @@ def _check_weighting_methods_input(
 # This is so to avoid various cyclic imports (since various files call sample_class, and then sample_class also calls these files)
 # TODO: (p2) move away from this method once we restructure Sample and BalanceDF objects...
 def _isinstance_sample(obj: Any) -> bool:
-    try:
-        from balance import sample_class
-    except ImportError:
-        return False
+    """Check if an object is an instance of Sample.
+
+    The import is done inside the function to avoid circular import issues at
+    module load time. Since this module is part of the balance package, the
+    import will always succeed when the function is called.
+
+    Args:
+        obj: The object to check.
+
+    Returns:
+        bool: True if obj is a Sample instance, False otherwise.
+    """
+    from balance import sample_class
 
     return isinstance(obj, sample_class.Sample)
 

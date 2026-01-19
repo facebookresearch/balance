@@ -13,6 +13,8 @@ from __future__ import (
     unicode_literals,
 )
 
+import warnings
+
 import balance.testutil
 import numpy as np
 import pandas as pd
@@ -1184,13 +1186,20 @@ class TestRunIpfNumpyNanConv(balance.testutil.BalanceTestCase):
         margins = [np.array([0.0, 0.0]), np.array([0.0, 0.0])]
 
         # Execute: Run IPF with zero margins that cause nan values
-        result_table, converged, iterations_df = _run_ipf_numpy(
-            table,
-            margins,
-            convergence_rate=1e-6,
-            max_iteration=10,
-            rate_tolerance=0.0,
-        )
+        # Suppress RuntimeWarning about "All-NaN slice encountered" as it's expected
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message="All-NaN slice encountered",
+                category=RuntimeWarning,
+            )
+            result_table, converged, iterations_df = _run_ipf_numpy(
+                table,
+                margins,
+                convergence_rate=1e-6,
+                max_iteration=10,
+                rate_tolerance=0.0,
+            )
 
         # Assert: Should handle nan gracefully and converge (or at least not crash)
         # When all margins are 0, convergence should be detected

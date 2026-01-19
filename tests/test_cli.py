@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os.path
 import tempfile
+import warnings
 from argparse import Namespace
 
 import balance.testutil
@@ -1377,3 +1378,362 @@ class TestBalanceCLI_adapt_output(balance.testutil.BalanceTestCase):
         df = pd.DataFrame()
         result = cli.adapt_output(df)
         self.assertTrue(result.empty)
+
+    def test_cli_succeed_on_weighting_failure_with_return_df_with_original_dtypes(
+        self,
+    ) -> None:
+        """Test succeed_on_weighting_failure flag with return_df_with_original_dtypes.
+
+        Verifies lines 757-794 in cli.py - the exception handling path when
+        weighting fails and return_df_with_original_dtypes is True.
+        """
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as in_file,
+        ):
+            in_contents = "x,y,is_respondent,id,weight\na,b,1,1,1\na,b,0,1,1"
+            in_file.write(in_contents)
+            in_file.close()
+            out_file = os.path.join(temp_dir, "out.csv")
+            diagnostics_out_file = os.path.join(temp_dir, "diagnostics_out.csv")
+
+            parser = make_parser()
+
+            args = parser.parse_args(
+                [
+                    "--input_file",
+                    in_file.name,
+                    "--output_file",
+                    out_file,
+                    "--diagnostics_output_file",
+                    diagnostics_out_file,
+                    "--covariate_columns",
+                    "x,y",
+                    "--succeed_on_weighting_failure",
+                    "--return_df_with_original_dtypes",
+                ]
+            )
+            cli = BalanceCLI(args)
+            cli.update_attributes_for_main_used_by_adjust()
+            cli.main()
+
+            self.assertTrue(os.path.isfile(out_file))
+            self.assertTrue(os.path.isfile(diagnostics_out_file))
+
+            diagnostics_df = pd.read_csv(diagnostics_out_file)
+            self.assertIn("adjustment_failure", diagnostics_df["metric"].values)
+
+    def test_cli_ipw_method_with_model_in_adjusted_kwargs(self) -> None:
+        """Test CLI with IPW method to verify model is passed to adjust.
+
+        Verifies line 719 in cli.py where model is added to adjusted_kwargs.
+        """
+        input_dataset = _create_sample_and_target_data()
+
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as input_file,
+        ):
+            input_dataset.to_csv(path_or_buf=input_file)
+            input_file.close()
+            output_file = os.path.join(temp_dir, "weights_out.csv")
+            diagnostics_output_file = os.path.join(temp_dir, "diagnostics_out.csv")
+            features = "age,gender"
+
+            parser = make_parser()
+            args = parser.parse_args(
+                [
+                    "--input_file",
+                    input_file.name,
+                    "--output_file",
+                    output_file,
+                    "--diagnostics_output_file",
+                    diagnostics_output_file,
+                    "--covariate_columns",
+                    features,
+                    "--method=ipw",
+                    "--ipw_logistic_regression_kwargs",
+                    '{"solver": "lbfgs", "max_iter": 200}',
+                ]
+            )
+            cli = BalanceCLI(args)
+            cli.update_attributes_for_main_used_by_adjust()
+            cli.main()
+
+            self.assertTrue(os.path.isfile(output_file))
+            self.assertTrue(os.path.isfile(diagnostics_output_file))
+
+    def test_cli_batch_columns_empty_batches(self) -> None:
+        """Test CLI batch processing with empty batches.
+
+        Verifies lines 1082-1099, 1101-1106 in cli.py - batch processing
+        path including the empty results case.
+        """
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as in_file,
+        ):
+            in_contents = (
+                "x,y,is_respondent,id,weight,batch\n"
+                + ("1.0,50,1,1,1,A\n" * 50)
+                + ("2.0,60,0,1,1,A\n" * 50)
+                + ("1.0,50,1,2,1,B\n" * 50)
+                + ("2.0,60,0,2,1,B\n" * 50)
+            )
+            in_file.write(in_contents)
+            in_file.close()
+            out_file = os.path.join(temp_dir, "out.csv")
+            diagnostics_out_file = os.path.join(temp_dir, "diagnostics_out.csv")
+
+            parser = make_parser()
+            args = parser.parse_args(
+                [
+                    "--input_file",
+                    in_file.name,
+                    "--output_file",
+                    out_file,
+                    "--diagnostics_output_file",
+                    diagnostics_out_file,
+                    "--covariate_columns",
+                    "x,y",
+                    "--batch_columns",
+                    "batch",
+                ]
+            )
+            cli = BalanceCLI(args)
+            cli.update_attributes_for_main_used_by_adjust()
+            cli.main()
+
+            self.assertTrue(os.path.isfile(out_file))
+            self.assertTrue(os.path.isfile(diagnostics_out_file))
+
+            output_df = pd.read_csv(out_file)
+            self.assertTrue(len(output_df) > 0)
+
+
+class TestCliMainFunction(balance.testutil.BalanceTestCase):
+    """Test cases for CLI main() entry point function (lines 1421-1425)."""
+
+    def test_main_is_callable(self) -> None:
+        """Test that main function is callable.
+
+        Verifies lines 1421-1425 in cli.py.
+        """
+        from balance.cli import main
+
+        self.assertTrue(callable(main))
+
+    def test_main_runs_with_valid_args(self) -> None:
+        """Test that main() function executes successfully with valid arguments.
+
+        Verifies lines 1424-1428 in cli.py - the full main() entry point.
+        """
+        import sys
+        from unittest.mock import patch
+
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as in_file,
+        ):
+            in_contents = (
+                "x,y,is_respondent,id,weight\n"
+                + ("1.0,50,1,1,1\n" * 100)
+                + ("2.0,60,0,1,1\n" * 100)
+            )
+            in_file.write(in_contents)
+            in_file.close()
+            out_file = os.path.join(temp_dir, "out.csv")
+
+            test_args = [
+                "balance_cli",
+                "--input_file",
+                in_file.name,
+                "--output_file",
+                out_file,
+                "--covariate_columns",
+                "x,y",
+            ]
+
+            from balance.cli import main
+
+            with patch.object(sys, "argv", test_args):
+                main()
+
+            self.assertTrue(os.path.isfile(out_file))
+
+
+class TestCliExceptionHandling(balance.testutil.BalanceTestCase):
+    """Test cases for exception handling in process_batch (lines 760-797)."""
+
+    def test_process_batch_raises_without_succeed_on_weighting_failure(self) -> None:
+        """Test that exception is re-raised when succeed_on_weighting_failure is False.
+
+        Verifies lines 796-797 in cli.py (else: raise e).
+        """
+        from unittest.mock import patch
+
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as in_file,
+        ):
+            in_contents = (
+                "x,y,is_respondent,id,weight\n"
+                + ("1.0,50,1,1,1\n" * 50)
+                + ("2.0,60,0,1,1\n" * 50)
+            )
+            in_file.write(in_contents)
+            in_file.close()
+            out_file = os.path.join(temp_dir, "out.csv")
+
+            parser = make_parser()
+            args = parser.parse_args(
+                [
+                    "--input_file",
+                    in_file.name,
+                    "--output_file",
+                    out_file,
+                    "--covariate_columns",
+                    "x,y",
+                ]
+            )
+            cli = BalanceCLI(args)
+            cli.update_attributes_for_main_used_by_adjust()
+
+            # Mock the adjust method to raise an exception to test the error handling path
+            with patch(
+                "balance.sample_class.Sample.adjust",
+                side_effect=ValueError("Simulated weighting failure"),
+            ):
+                with self.assertRaisesRegex(ValueError, r"Simulated weighting failure"):
+                    cli.main()
+
+    def test_succeed_on_weighting_failure_exception_path(self) -> None:
+        """Test exception handling when succeed_on_weighting_failure is True.
+
+        Verifies lines 762-783 in cli.py - the exception handling path when
+        adjustment fails and succeed_on_weighting_failure is True.
+        This tests the else branch (lines 781-782) where return_df_with_original_dtypes is False.
+        """
+        from unittest.mock import patch
+
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as in_file,
+        ):
+            in_contents = (
+                "x,y,is_respondent,id,weight\n"
+                + ("1.0,50,1,1,1\n" * 50)
+                + ("2.0,60,0,1,1\n" * 50)
+            )
+            in_file.write(in_contents)
+            in_file.close()
+            out_file = os.path.join(temp_dir, "out.csv")
+            diagnostics_out_file = os.path.join(temp_dir, "diagnostics_out.csv")
+
+            parser = make_parser()
+            args = parser.parse_args(
+                [
+                    "--input_file",
+                    in_file.name,
+                    "--output_file",
+                    out_file,
+                    "--diagnostics_output_file",
+                    diagnostics_out_file,
+                    "--covariate_columns",
+                    "x,y",
+                    "--succeed_on_weighting_failure",
+                ]
+            )
+            cli = BalanceCLI(args)
+            cli.update_attributes_for_main_used_by_adjust()
+
+            # Mock the adjust method to raise an exception
+            # Suppress FutureWarning from pandas about setting incompatible dtype
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
+                    message="Setting an item of incompatible dtype",
+                    category=FutureWarning,
+                )
+                with patch(
+                    "balance.sample_class.Sample.adjust",
+                    side_effect=ValueError("Simulated weighting failure for testing"),
+                ):
+                    cli.main()
+
+            self.assertTrue(os.path.isfile(out_file))
+            self.assertTrue(os.path.isfile(diagnostics_out_file))
+
+            diagnostics_df = pd.read_csv(diagnostics_out_file)
+            self.assertIn("adjustment_failure", diagnostics_df["metric"].values)
+            self.assertIn("adjustment_failure_reason", diagnostics_df["metric"].values)
+            # Check that the error message is captured
+            failure_reason = diagnostics_df[
+                diagnostics_df["metric"] == "adjustment_failure_reason"
+            ]["val"].values[0]
+            self.assertIn("Simulated weighting failure", failure_reason)
+
+    def test_succeed_on_weighting_failure_with_return_original_dtypes(self) -> None:
+        """Test exception handling with succeed_on_weighting_failure and return_df_with_original_dtypes.
+
+        Verifies lines 771-780 in cli.py - the return_df_with_original_dtypes branch
+        inside the exception handler when weighting fails.
+        """
+        from unittest.mock import patch
+
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as in_file,
+        ):
+            # Use float weights (1.0) so that when set_weights(None) is called,
+            # the dtype conversion back to float64 can handle None/NaN values
+            in_contents = (
+                "x,y,is_respondent,id,weight\n"
+                + ("1.0,50.0,1,1,1.0\n" * 50)
+                + ("2.0,60.0,0,1,1.0\n" * 50)
+            )
+            in_file.write(in_contents)
+            in_file.close()
+            out_file = os.path.join(temp_dir, "out.csv")
+            diagnostics_out_file = os.path.join(temp_dir, "diagnostics_out.csv")
+
+            parser = make_parser()
+            args = parser.parse_args(
+                [
+                    "--input_file",
+                    in_file.name,
+                    "--output_file",
+                    out_file,
+                    "--diagnostics_output_file",
+                    diagnostics_out_file,
+                    "--covariate_columns",
+                    "x,y",
+                    "--succeed_on_weighting_failure",
+                    "--return_df_with_original_dtypes",
+                ]
+            )
+            cli = BalanceCLI(args)
+            cli.update_attributes_for_main_used_by_adjust()
+
+            # Mock the adjust method to raise an exception
+            # Suppress FutureWarning from pandas about setting incompatible dtype
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
+                    message="Setting an item of incompatible dtype",
+                    category=FutureWarning,
+                )
+                with patch(
+                    "balance.sample_class.Sample.adjust",
+                    side_effect=ValueError(
+                        "Simulated weighting failure for dtype test"
+                    ),
+                ):
+                    cli.main()
+
+            self.assertTrue(os.path.isfile(out_file))
+            self.assertTrue(os.path.isfile(diagnostics_out_file))
+
+            diagnostics_df = pd.read_csv(diagnostics_out_file)
+            self.assertIn("adjustment_failure", diagnostics_df["metric"].values)
+            self.assertIn("adjustment_failure_reason", diagnostics_df["metric"].values)

@@ -823,14 +823,21 @@ class Sample:
         self: "Sample",
     ) -> Dict[str, Any] | None:
         """
-        Returns the name of the model used to adjust Sample if adjusted.
+        Returns the adjustment model dictionary if Sample has been adjusted.
         Otherwise returns None.
+
+        The ``_adjustment_model`` attribute is initialized as ``None`` at the class
+        level and is set to a dictionary containing model details when
+        :meth:`adjust` is called. This method simply returns that attribute,
+        which will be ``None`` for unadjusted samples.
 
         Args:
             self (Sample): Sample object.
 
         Returns:
-            str or None: name of model used for adjusting Sample
+            Dict[str, Any] or None: Dictionary containing adjustment model details
+                (e.g., method name, fitted model, performance metrics) if the sample
+                has been adjusted, otherwise None.
 
         Examples:
         .. code-block:: python
@@ -848,10 +855,7 @@ class Sample:
             sample.model() is None
             # True
         """
-        if hasattr(self, "_adjustment_model"):
-            return self._adjustment_model
-        else:
-            return None
+        return self._adjustment_model
 
     def model_matrix(self: "Sample") -> pd.DataFrame:
         """
