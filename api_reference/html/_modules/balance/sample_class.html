@@ -879,14 +879,21 @@
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the name of the model used to adjust Sample if adjusted.</span>
+<span class="sd">        Returns the adjustment model dictionary if Sample has been adjusted.</span>
 <span class="sd">        Otherwise returns None.</span>
+
+<span class="sd">        The ``_adjustment_model`` attribute is initialized as ``None`` at the class</span>
+<span class="sd">        level and is set to a dictionary containing model details when</span>
+<span class="sd">        :meth:`adjust` is called. This method simply returns that attribute,</span>
+<span class="sd">        which will be ``None`` for unadjusted samples.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (Sample): Sample object.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            str or None: name of model used for adjusting Sample</span>
+<span class="sd">            Dict[str, Any] or None: Dictionary containing adjustment model details</span>
+<span class="sd">                (e.g., method name, fitted model, performance metrics) if the sample</span>
+<span class="sd">                has been adjusted, otherwise None.</span>
 
 <span class="sd">        Examples:</span>
 <span class="sd">        .. code-block:: python</span>
@@ -904,10 +911,7 @@
 <span class="sd">            sample.model() is None</span>
 <span class="sd">            # True</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_adjustment_model&quot;</span><span class="p">):</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adjustment_model</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adjustment_model</span></div>
 
 
 <div class="viewcode-block" id="Sample.model_matrix">

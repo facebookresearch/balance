@@ -324,12 +324,8 @@
     <span class="n">var_weighed_mean_of_v</span> <span class="o">=</span> <span class="n">var_of_weighted_mean</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">inf_rm</span><span class="p">)</span>
     <span class="n">z_value</span> <span class="o">=</span> <span class="n">norm</span><span class="o">.</span><span class="n">ppf</span><span class="p">((</span><span class="mi">1</span> <span class="o">+</span> <span class="n">conf_level</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
-        <span class="n">ci_index</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">index</span>
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
-        <span class="n">ci_index</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">columns</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">ci_index</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># After _prepare_weighted_stat_args, v is always a DataFrame</span>
+    <span class="n">ci_index</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">columns</span>
 
     <span class="n">ci</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
         <span class="p">[</span>

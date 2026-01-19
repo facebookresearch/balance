@@ -60,6 +60,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots.weights_stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">_check_weights_are_valid</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">_safe_groupby_apply</span><span class="p">,</span> <span class="n">_safe_replace_and_infer</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.input_validation</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">_coerce_to_numeric_and_validate</span><span class="p">,</span>
     <span class="n">_extract_series_and_weights</span><span class="p">,</span>
     <span class="n">_is_discrete_series</span><span class="p">,</span>
 <span class="p">)</span>
@@ -871,16 +872,16 @@
                 <span class="p">)</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">sample_vals</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">sample_series</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;coerce&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
-            <span class="n">target_vals</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">target_series</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;coerce&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">sample_vals</span><span class="o">.</span><span class="n">empty</span> <span class="ow">or</span> <span class="n">target_vals</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Numeric columns must contain at least one value.&quot;</span><span class="p">)</span>
-            <span class="n">sample_w_numeric</span> <span class="o">=</span> <span class="n">sample_w</span><span class="p">[</span><span class="n">sample_series</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">sample_vals</span><span class="o">.</span><span class="n">index</span><span class="p">)]</span>
-            <span class="n">target_w_numeric</span> <span class="o">=</span> <span class="n">target_w</span><span class="p">[</span><span class="n">target_series</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">target_vals</span><span class="o">.</span><span class="n">index</span><span class="p">)]</span>
+            <span class="n">sample_vals</span><span class="p">,</span> <span class="n">sample_w_numeric</span> <span class="o">=</span> <span class="n">_coerce_to_numeric_and_validate</span><span class="p">(</span>
+                <span class="n">sample_series</span><span class="p">,</span> <span class="n">sample_w</span><span class="p">,</span> <span class="s2">&quot;Sample numeric column&quot;</span>
+            <span class="p">)</span>
+            <span class="n">target_vals</span><span class="p">,</span> <span class="n">target_w_numeric</span> <span class="o">=</span> <span class="n">_coerce_to_numeric_and_validate</span><span class="p">(</span>
+                <span class="n">target_series</span><span class="p">,</span> <span class="n">target_w</span><span class="p">,</span> <span class="s2">&quot;Target numeric column&quot;</span>
+            <span class="p">)</span>
             <span class="n">out_dict</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>
                 <span class="n">wasserstein_distance</span><span class="p">(</span>
-                    <span class="n">sample_vals</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
-                    <span class="n">target_vals</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                    <span class="n">sample_vals</span><span class="p">,</span>
+                    <span class="n">target_vals</span><span class="p">,</span>
                     <span class="n">u_weights</span><span class="o">=</span><span class="n">sample_w_numeric</span><span class="p">,</span>
                     <span class="n">v_weights</span><span class="o">=</span><span class="n">target_w_numeric</span><span class="p">,</span>
                 <span class="p">)</span>
@@ -1010,21 +1011,17 @@
                 <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">sample_cdf</span> <span class="o">-</span> <span class="n">target_cdf</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">combined_pmf</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">())</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">sample_vals</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">sample_series</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;coerce&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
-            <span class="n">target_vals</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">target_series</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;coerce&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">sample_vals</span><span class="o">.</span><span class="n">empty</span> <span class="ow">or</span> <span class="n">target_vals</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Numeric columns must contain at least one value.&quot;</span><span class="p">)</span>
-            <span class="n">sample_w_numeric</span> <span class="o">=</span> <span class="n">sample_w</span><span class="p">[</span><span class="n">sample_series</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">sample_vals</span><span class="o">.</span><span class="n">index</span><span class="p">)]</span>
-            <span class="n">target_w_numeric</span> <span class="o">=</span> <span class="n">target_w</span><span class="p">[</span><span class="n">target_series</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">target_vals</span><span class="o">.</span><span class="n">index</span><span class="p">)]</span>
+            <span class="n">sample_vals</span><span class="p">,</span> <span class="n">sample_w_numeric</span> <span class="o">=</span> <span class="n">_coerce_to_numeric_and_validate</span><span class="p">(</span>
+                <span class="n">sample_series</span><span class="p">,</span> <span class="n">sample_w</span><span class="p">,</span> <span class="s2">&quot;Sample numeric column&quot;</span>
+            <span class="p">)</span>
+            <span class="n">target_vals</span><span class="p">,</span> <span class="n">target_w_numeric</span> <span class="o">=</span> <span class="n">_coerce_to_numeric_and_validate</span><span class="p">(</span>
+                <span class="n">target_series</span><span class="p">,</span> <span class="n">target_w</span><span class="p">,</span> <span class="s2">&quot;Target numeric column&quot;</span>
+            <span class="p">)</span>
 
-            <span class="n">sample_sorted</span><span class="p">,</span> <span class="n">sample_cdf</span> <span class="o">=</span> <span class="n">_weighted_ecdf</span><span class="p">(</span>
-                <span class="n">sample_vals</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="n">sample_w_numeric</span>
-            <span class="p">)</span>
-            <span class="n">target_sorted</span><span class="p">,</span> <span class="n">target_cdf</span> <span class="o">=</span> <span class="n">_weighted_ecdf</span><span class="p">(</span>
-                <span class="n">target_vals</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="n">target_w_numeric</span>
-            <span class="p">)</span>
+            <span class="n">sample_sorted</span><span class="p">,</span> <span class="n">sample_cdf</span> <span class="o">=</span> <span class="n">_weighted_ecdf</span><span class="p">(</span><span class="n">sample_vals</span><span class="p">,</span> <span class="n">sample_w_numeric</span><span class="p">)</span>
+            <span class="n">target_sorted</span><span class="p">,</span> <span class="n">target_cdf</span> <span class="o">=</span> <span class="n">_weighted_ecdf</span><span class="p">(</span><span class="n">target_vals</span><span class="p">,</span> <span class="n">target_w_numeric</span><span class="p">)</span>
             <span class="n">combined_values</span><span class="p">,</span> <span class="n">combined_weights</span> <span class="o">=</span> <span class="n">_combined_weights</span><span class="p">(</span>
-                <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sample_vals</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="n">target_vals</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">())),</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sample_vals</span><span class="p">,</span> <span class="n">target_vals</span><span class="p">)),</span>
                 <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sample_w_numeric</span><span class="p">,</span> <span class="n">target_w_numeric</span><span class="p">)),</span>
             <span class="p">)</span>
             <span class="n">sample_eval</span> <span class="o">=</span> <span class="n">_evaluate_ecdf</span><span class="p">(</span><span class="n">sample_sorted</span><span class="p">,</span> <span class="n">sample_cdf</span><span class="p">,</span> <span class="n">combined_values</span><span class="p">)</span>
@@ -1152,22 +1149,16 @@
             <span class="p">)</span>
             <span class="n">out_dict</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sample_cdf</span> <span class="o">-</span> <span class="n">target_cdf</span><span class="p">)))</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">sample_vals</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">sample_series</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;coerce&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
-            <span class="n">target_vals</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">target_series</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;coerce&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">sample_vals</span><span class="o">.</span><span class="n">empty</span> <span class="ow">or</span> <span class="n">target_vals</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Numeric columns must contain at least one value.&quot;</span><span class="p">)</span>
-            <span class="n">sample_w_numeric</span> <span class="o">=</span> <span class="n">sample_w</span><span class="p">[</span><span class="n">sample_series</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">sample_vals</span><span class="o">.</span><span class="n">index</span><span class="p">)]</span>
-            <span class="n">target_w_numeric</span> <span class="o">=</span> <span class="n">target_w</span><span class="p">[</span><span class="n">target_series</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">target_vals</span><span class="o">.</span><span class="n">index</span><span class="p">)]</span>
+            <span class="n">sample_vals</span><span class="p">,</span> <span class="n">sample_w_numeric</span> <span class="o">=</span> <span class="n">_coerce_to_numeric_and_validate</span><span class="p">(</span>
+                <span class="n">sample_series</span><span class="p">,</span> <span class="n">sample_w</span><span class="p">,</span> <span class="s2">&quot;Sample numeric column&quot;</span>
+            <span class="p">)</span>
+            <span class="n">target_vals</span><span class="p">,</span> <span class="n">target_w_numeric</span> <span class="o">=</span> <span class="n">_coerce_to_numeric_and_validate</span><span class="p">(</span>
+                <span class="n">target_series</span><span class="p">,</span> <span class="n">target_w</span><span class="p">,</span> <span class="s2">&quot;Target numeric column&quot;</span>
+            <span class="p">)</span>
 
-            <span class="n">sample_sorted</span><span class="p">,</span> <span class="n">sample_cdf</span> <span class="o">=</span> <span class="n">_weighted_ecdf</span><span class="p">(</span>
-                <span class="n">sample_vals</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="n">sample_w_numeric</span>
-            <span class="p">)</span>
-            <span class="n">target_sorted</span><span class="p">,</span> <span class="n">target_cdf</span> <span class="o">=</span> <span class="n">_weighted_ecdf</span><span class="p">(</span>
-                <span class="n">target_vals</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="n">target_w_numeric</span>
-            <span class="p">)</span>
-            <span class="n">combined_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sample_vals</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="n">target_vals</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()))</span>
-            <span class="p">)</span>
+            <span class="n">sample_sorted</span><span class="p">,</span> <span class="n">sample_cdf</span> <span class="o">=</span> <span class="n">_weighted_ecdf</span><span class="p">(</span><span class="n">sample_vals</span><span class="p">,</span> <span class="n">sample_w_numeric</span><span class="p">)</span>
+            <span class="n">target_sorted</span><span class="p">,</span> <span class="n">target_cdf</span> <span class="o">=</span> <span class="n">_weighted_ecdf</span><span class="p">(</span><span class="n">target_vals</span><span class="p">,</span> <span class="n">target_w_numeric</span><span class="p">)</span>
+            <span class="n">combined_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sample_vals</span><span class="p">,</span> <span class="n">target_vals</span><span class="p">)))</span>
             <span class="n">sample_eval</span> <span class="o">=</span> <span class="n">_evaluate_ecdf</span><span class="p">(</span><span class="n">sample_sorted</span><span class="p">,</span> <span class="n">sample_cdf</span><span class="p">,</span> <span class="n">combined_values</span><span class="p">)</span>
             <span class="n">target_eval</span> <span class="o">=</span> <span class="n">_evaluate_ecdf</span><span class="p">(</span><span class="n">target_sorted</span><span class="p">,</span> <span class="n">target_cdf</span><span class="p">,</span> <span class="n">combined_values</span><span class="p">)</span>
             <span class="n">out_dict</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sample_eval</span> <span class="o">-</span> <span class="n">target_eval</span><span class="p">)))</span>

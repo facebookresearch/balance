@@ -707,10 +707,6 @@
 <span class="sd">            # With limiting the y axis range to (0,1)</span>
 <span class="sd">            seaborn_plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], dist_type = &quot;kde&quot;, ylim = (0,1))</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Provide default names if not specified</span>
-    <span class="k">if</span> <span class="n">names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;df_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dfs</span><span class="p">))]</span>
-
     <span class="c1"># Set default dist_type</span>
     <span class="n">dist_type_resolved</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;qq&quot;</span><span class="p">,</span> <span class="s2">&quot;hist&quot;</span><span class="p">,</span> <span class="s2">&quot;kde&quot;</span><span class="p">,</span> <span class="s2">&quot;ecdf&quot;</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">dist_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -724,10 +720,6 @@
     <span class="c1"># Set default names if not provided</span>
     <span class="k">if</span> <span class="n">names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;df_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dfs</span><span class="p">))]</span>
-
-    <span class="c1"># Type narrowing for names parameter</span>
-    <span class="k">if</span> <span class="n">names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">names</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="c1">#  Choose set of variables to plot</span>
     <span class="n">variables</span> <span class="o">=</span> <span class="n">choose_variables</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;df&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dfs</span><span class="p">),</span> <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">)</span>
@@ -1420,12 +1412,13 @@
 <span class="sd">            naming_legend(&#39;self&#39;, [&#39;self&#39;, &#39;target&#39;]) #&#39;sample&#39;</span>
 <span class="sd">            naming_legend(&#39;other_name&#39;, [&#39;self&#39;, &#39;target&#39;]) #&#39;other_name&#39;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">object_name</span> <span class="ow">in</span> <span class="n">names_of_dfs</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;unadjusted&quot;</span><span class="p">:</span> <span class="s2">&quot;sample&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;self&quot;</span><span class="p">:</span> <span class="s2">&quot;adjusted&quot;</span> <span class="k">if</span> <span class="s2">&quot;unadjusted&quot;</span> <span class="ow">in</span> <span class="n">names_of_dfs</span> <span class="k">else</span> <span class="s2">&quot;sample&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="s2">&quot;population&quot;</span><span class="p">,</span>
-        <span class="p">}[</span><span class="n">object_name</span><span class="p">]</span>
+    <span class="n">name_mapping</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;unadjusted&quot;</span><span class="p">:</span> <span class="s2">&quot;sample&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;self&quot;</span><span class="p">:</span> <span class="s2">&quot;adjusted&quot;</span> <span class="k">if</span> <span class="s2">&quot;unadjusted&quot;</span> <span class="ow">in</span> <span class="n">names_of_dfs</span> <span class="k">else</span> <span class="s2">&quot;sample&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="s2">&quot;population&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">object_name</span> <span class="ow">in</span> <span class="n">name_mapping</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">name_mapping</span><span class="p">[</span><span class="n">object_name</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">object_name</span></div>
 

@@ -151,6 +151,56 @@
     <span class="k">return</span> <span class="n">filtered_series</span><span class="p">,</span> <span class="n">filtered_weights</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_coerce_to_numeric_and_validate</span><span class="p">(</span>
+    <span class="n">series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert series to numeric, drop NaN values, and validate non-empty.</span>
+
+<span class="sd">    This function handles series that may contain values that cannot be</span>
+<span class="sd">    converted to numeric (e.g., non-numeric strings in an object dtype series).</span>
+<span class="sd">    It coerces such values to NaN and drops them, then validates that at least</span>
+<span class="sd">    one valid numeric value remains.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        series (pd.Series): Input series to convert to numeric.</span>
+<span class="sd">        weights (np.ndarray): Weights aligned to the series.</span>
+<span class="sd">        label (str): Label for error messages.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple[np.ndarray, np.ndarray]: Numeric values and corresponding weights.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If no valid numeric values remain after conversion.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">            import numpy as np</span>
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from balance.utils.input_validation import _coerce_to_numeric_and_validate</span>
+
+<span class="sd">            vals, w = _coerce_to_numeric_and_validate(</span>
+<span class="sd">                pd.Series([1.0, 2.0, 3.0]),</span>
+<span class="sd">                np.array([1.0, 1.0, 2.0]),</span>
+<span class="sd">                &quot;example&quot;,</span>
+<span class="sd">            )</span>
+<span class="sd">            vals.tolist()</span>
+<span class="sd">            # [1.0, 2.0, 3.0]</span>
+<span class="sd">            w.tolist()</span>
+<span class="sd">            # [1.0, 1.0, 2.0]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">numeric_series</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;coerce&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">numeric_series</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> must contain at least one valid numeric value after conversion.&quot;</span>
+        <span class="p">)</span>
+    <span class="n">numeric_weights</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="n">series</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">numeric_series</span><span class="o">.</span><span class="n">index</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="n">numeric_series</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="n">numeric_weights</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_is_discrete_series</span><span class="p">(</span><span class="n">series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Determine whether a series should be treated as discrete for comparisons.</span>
@@ -220,10 +270,19 @@
 <span class="c1"># This is so to avoid various cyclic imports (since various files call sample_class, and then sample_class also calls these files)</span>
 <span class="c1"># TODO: (p2) move away from this method once we restructure Sample and BalanceDF objects...</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_isinstance_sample</span><span class="p">(</span><span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample_class</span>
-    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-        <span class="k">return</span> <span class="kc">False</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if an object is an instance of Sample.</span>
+
+<span class="sd">    The import is done inside the function to avoid circular import issues at</span>
+<span class="sd">    module load time. Since this module is part of the balance package, the</span>
+<span class="sd">    import will always succeed when the function is called.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        obj: The object to check.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: True if obj is a Sample instance, False otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample_class</span>
 
     <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">sample_class</span><span class="o">.</span><span class="n">Sample</span><span class="p">)</span>
 
