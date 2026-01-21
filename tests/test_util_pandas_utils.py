@@ -7,9 +7,12 @@
 
 from __future__ import annotations
 
+import os
+
 from copy import deepcopy
 
 import balance.testutil
+import balance.utils.pandas_utils as pandas_utils
 import numpy as np
 import pandas as pd
 
@@ -17,13 +20,148 @@ import pandas as pd
 from balance import util as balance_util
 from balance.sample_class import Sample
 from balance.util import _coerce_scalar
-from balance.utils.pandas_utils import _sorted_unique_categories
+from balance.utils.pandas_utils import (
+    _detect_high_cardinality_features,
+    _sorted_unique_categories,
+    get_high_cardinality_ratio_threshold,
+    HIGH_CARDINALITY_RATIO_THRESHOLD,
+    set_high_cardinality_ratio_threshold,
+)
 from numpy import dtype
 
 
 class TestUtil(
     balance.testutil.BalanceTestCase,
 ):
+    def test_high_cardinality_ratio_threshold_overrides(self) -> None:
+        env_key = "BALANCE_HIGH_CARDINALITY_RATIO_THRESHOLD"
+        original_env = os.environ.get(env_key)
+
+        try:
+            os.environ.pop(env_key, None)
+            set_high_cardinality_ratio_threshold(None)
+
+            self.assertEqual(
+                get_high_cardinality_ratio_threshold(),
+                HIGH_CARDINALITY_RATIO_THRESHOLD,
+            )
+
+            os.environ[env_key] = "0.6"
+            self.assertEqual(get_high_cardinality_ratio_threshold(), 0.6)
+
+            set_high_cardinality_ratio_threshold(0.75)
+            self.assertEqual(get_high_cardinality_ratio_threshold(), 0.75)
+
+            set_high_cardinality_ratio_threshold(None)
+            self.assertEqual(get_high_cardinality_ratio_threshold(), 0.6)
+        finally:
+            set_high_cardinality_ratio_threshold(None)
+            if original_env is None:
+                os.environ.pop(env_key, None)
+            else:
+                os.environ[env_key] = original_env
+
+    def test_high_cardinality_ratio_threshold_invalid_env(self) -> None:
+        env_key = "BALANCE_HIGH_CARDINALITY_RATIO_THRESHOLD"
+        original_env = os.environ.get(env_key)
+
+        try:
+            os.environ[env_key] = "not-a-number"
+            set_high_cardinality_ratio_threshold(None)
+            pandas_utils._warned_invalid_high_cardinality_env = False
+
+            with self.assertLogs("balance.utils", level="WARNING") as captured:
+                value = get_high_cardinality_ratio_threshold()
+
+            self.assertEqual(value, HIGH_CARDINALITY_RATIO_THRESHOLD)
+            self.assertTrue(
+                any(
+                    "BALANCE_HIGH_CARDINALITY_RATIO_THRESHOLD" in msg
+                    for msg in captured.output
+                )
+            )
+        finally:
+            set_high_cardinality_ratio_threshold(None)
+            if original_env is None:
+                os.environ.pop(env_key, None)
+            else:
+                os.environ[env_key] = original_env
+
+    def test_high_cardinality_ratio_threshold_invalid_range(self) -> None:
+        with self.assertRaises(ValueError):
+            set_high_cardinality_ratio_threshold(-0.1)
+
+        with self.assertRaises(ValueError):
+            set_high_cardinality_ratio_threshold(1.1)
+
+    def test_high_cardinality_ratio_threshold_invalid_env_range(self) -> None:
+        env_key = "BALANCE_HIGH_CARDINALITY_RATIO_THRESHOLD"
+        original_env = os.environ.get(env_key)
+
+        try:
+            os.environ[env_key] = "2"
+            set_high_cardinality_ratio_threshold(None)
+            pandas_utils._warned_invalid_high_cardinality_env = False
+
+            with self.assertLogs("balance.utils", level="WARNING") as captured:
+                value = get_high_cardinality_ratio_threshold()
+
+            self.assertEqual(value, HIGH_CARDINALITY_RATIO_THRESHOLD)
+            self.assertTrue(
+                any(
+                    "BALANCE_HIGH_CARDINALITY_RATIO_THRESHOLD" in msg
+                    for msg in captured.output
+                )
+            )
+        finally:
+            set_high_cardinality_ratio_threshold(None)
+            if original_env is None:
+                os.environ.pop(env_key, None)
+            else:
+                os.environ[env_key] = original_env
+
+    def test_high_cardinality_ratio_threshold_env_empty(self) -> None:
+        env_key = "BALANCE_HIGH_CARDINALITY_RATIO_THRESHOLD"
+        original_env = os.environ.get(env_key)
+
+        try:
+            os.environ[env_key] = "   "
+            set_high_cardinality_ratio_threshold(None)
+            pandas_utils._warned_invalid_high_cardinality_env = False
+
+            self.assertEqual(
+                get_high_cardinality_ratio_threshold(),
+                HIGH_CARDINALITY_RATIO_THRESHOLD,
+            )
+        finally:
+            set_high_cardinality_ratio_threshold(None)
+            if original_env is None:
+                os.environ.pop(env_key, None)
+            else:
+                os.environ[env_key] = original_env
+
+    def test_detect_high_cardinality_features_uses_override(self) -> None:
+        env_key = "BALANCE_HIGH_CARDINALITY_RATIO_THRESHOLD"
+        original_env = os.environ.get(env_key)
+
+        df = pd.DataFrame({"id": ["a", "a", "b"], "group": ["a", "a", "a"]})
+
+        try:
+            os.environ.pop(env_key, None)
+            set_high_cardinality_ratio_threshold(1.0)
+            self.assertEqual(_detect_high_cardinality_features(df), [])
+
+            set_high_cardinality_ratio_threshold(0.5)
+            features = _detect_high_cardinality_features(df)
+
+            self.assertEqual([feature.column for feature in features], ["id"])
+        finally:
+            set_high_cardinality_ratio_threshold(None)
+            if original_env is None:
+                os.environ.pop(env_key, None)
+            else:
+                os.environ[env_key] = original_env
+
     def test__is_categorical_dtype_object(self) -> None:
         """Test _is_categorical_dtype when series dtype is object.
 
