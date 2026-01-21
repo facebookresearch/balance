@@ -74,17 +74,7 @@ def set_high_cardinality_ratio_threshold(threshold: float | None) -> None:
 
 
 def _env_high_cardinality_ratio_threshold() -> float | None:
-    """Read an override threshold from the environment, if configured.
-
-    Examples:
-    .. code-block:: python
-
-        import os
-        from balance.utils.pandas_utils import _env_high_cardinality_ratio_threshold
-
-        os.environ["BALANCE_HIGH_CARDINALITY_RATIO_THRESHOLD"] = "0.6"
-        assert _env_high_cardinality_ratio_threshold() == 0.6
-    """
+    """Read an override threshold from the environment, if configured."""
     global _warned_invalid_high_cardinality_env
 
     value = os.getenv(_HIGH_CARDINALITY_RATIO_ENV_VAR)

@@ -90,13 +90,15 @@ class TestUtil(
             pandas_utils.set_high_cardinality_ratio_threshold(1.1)
 
     def test_high_cardinality_ratio_threshold_boundary_range(self) -> None:
-        pandas_utils.set_high_cardinality_ratio_threshold(0.0)
-        self.assertEqual(pandas_utils.get_high_cardinality_ratio_threshold(), 0.0)
+        try:
+            pandas_utils.set_high_cardinality_ratio_threshold(0.0)
+            self.assertEqual(pandas_utils.get_high_cardinality_ratio_threshold(), 0.0)
 
-        pandas_utils.set_high_cardinality_ratio_threshold(1.0)
-        self.assertEqual(pandas_utils.get_high_cardinality_ratio_threshold(), 1.0)
-
-        pandas_utils.set_high_cardinality_ratio_threshold(None)
+            pandas_utils.set_high_cardinality_ratio_threshold(1.0)
+            self.assertEqual(pandas_utils.get_high_cardinality_ratio_threshold(), 1.0)
+        finally:
+            pandas_utils.set_high_cardinality_ratio_threshold(None)
+            pandas_utils._warned_invalid_high_cardinality_env = False
 
     def test_high_cardinality_ratio_threshold_invalid_env_range(self) -> None:
         env_key = "BALANCE_HIGH_CARDINALITY_RATIO_THRESHOLD"
@@ -170,6 +172,9 @@ class TestUtil(
                 os.environ[env_key] = original_env
 
     def test_detect_high_cardinality_features_explicit_none(self) -> None:
+        env_key = "BALANCE_HIGH_CARDINALITY_RATIO_THRESHOLD"
+        original_env = os.environ.get(env_key)
+
         df = pd.DataFrame({"id": ["a", "a", "b"], "group": ["a", "a", "a"]})
 
         try:
@@ -177,6 +182,24 @@ class TestUtil(
             features = pandas_utils._detect_high_cardinality_features(
                 df, threshold=None
             )
+
+            self.assertEqual([feature.column for feature in features], ["id"])
+        finally:
+            pandas_utils.set_high_cardinality_ratio_threshold(None)
+            pandas_utils._warned_invalid_high_cardinality_env = False
+            if original_env is None:
+                os.environ.pop(env_key, None)
+            else:
+                os.environ[env_key] = original_env
+
+    def test_detect_high_cardinality_features_explicit_threshold_overrides(
+        self,
+    ) -> None:
+        df = pd.DataFrame({"id": ["a", "a", "b"], "group": ["a", "a", "a"]})
+
+        try:
+            pandas_utils.set_high_cardinality_ratio_threshold(0.9)
+            features = pandas_utils._detect_high_cardinality_features(df, threshold=0.5)
 
             self.assertEqual([feature.column for feature in features], ["id"])
         finally:
