@@ -42,7 +42,7 @@ def set_high_cardinality_ratio_threshold(threshold: float | None) -> None:
     Examples:
     .. code-block:: python
 
-        from balance.utils.pandas_utils import (
+        from balance.util import (
             get_high_cardinality_ratio_threshold,
             set_high_cardinality_ratio_threshold,
         )
@@ -120,7 +120,7 @@ def get_high_cardinality_ratio_threshold() -> float:
     .. code-block:: python
 
         import os
-        from balance.utils.pandas_utils import (
+        from balance.util import (
             get_high_cardinality_ratio_threshold,
             set_high_cardinality_ratio_threshold,
         )
