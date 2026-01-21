@@ -11,7 +11,7 @@ import copy
 import logging
 import os
 import warnings
-from typing import Any, Dict, NamedTuple, Optional
+from typing import Any, Dict, NamedTuple
 
 import numpy as np
 import pandas as pd
@@ -53,12 +53,19 @@ def set_high_cardinality_ratio_threshold(threshold: float | None) -> None:
         set_high_cardinality_ratio_threshold(None)
     """
     global _configured_high_cardinality_ratio_threshold
+    global _warned_invalid_high_cardinality_env
 
     if threshold is None:
         _configured_high_cardinality_ratio_threshold = None
+        _warned_invalid_high_cardinality_env = False
         return
 
-    value = float(threshold)
+    try:
+        value = float(threshold)
+    except (TypeError, ValueError) as exc:
+        raise TypeError(
+            "High-cardinality ratio threshold must be a real number."
+        ) from exc
     if not 0.0 <= value <= 1.0:
         raise ValueError(
             "High-cardinality ratio threshold must be between 0 and 1 inclusive."
@@ -184,7 +191,8 @@ def _compute_cardinality_metrics(series: pd.Series) -> HighCardinalityFeature:
 
 
 def _detect_high_cardinality_features(
-    df: pd.DataFrame, threshold: Optional[float] = None
+    df: pd.DataFrame,
+    threshold: float | None = None,
 ) -> list[HighCardinalityFeature]:
     """Identify categorical columns whose non-missing values are mostly unique.
 
