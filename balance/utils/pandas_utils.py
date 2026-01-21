@@ -184,8 +184,7 @@ def _compute_cardinality_metrics(series: pd.Series) -> HighCardinalityFeature:
 
 
 def _detect_high_cardinality_features(
-    df: pd.DataFrame,
-    threshold: Optional[float] = None
+    df: pd.DataFrame, threshold: Optional[float] = None
 ) -> list[HighCardinalityFeature]:
     """Identify categorical columns whose non-missing values are mostly unique.
 
