@@ -13,29 +13,34 @@ tags: [python, open-source, survey-statistics, package-update]
 hide_table_of_contents: true
 ---
 
-**tl;dr – balance v0.15.0**
+🎉 **balance v0.15.0 is out!**
 
-We're excited to announce [**balance v0.15.0**](https://pypi.org/project/balance/)! Since [v0.12.0](https://github.com/facebookresearch/balance/releases/tag/0.12.0), our work on balance has focused on more flexible statistical model choices (e.g., randomforest instead of just logistic regression) across the core API and CLI, more diagnostics, clearer missing-data behavior, and a more robust unit-testing. This post highlights the key changes from **v0.12.0 -> v0.15.0**:
+### What is balance?
 
-- **More control over modeling:** Customizable IPW (sklearn) estimators, formula-driven summaries, and explicit missing-data handling.
-- **Stronger diagnostics:** New distribution distance metrics (EMD, CVMD, KS), plus richer adjusted sample summaries and more consistent display formatting.
-- **Better workflows:** CLI enhancements, improved docs/tutorials, and developer tooling upgrades like type checking and coverage.
+[**balance**](https://pypi.org/project/balance/) is a Python package (from Meta) offering a simple workflow and methods for dealing with biased data samples when looking to infer from them to some population of interest. Biased samples often occur in survey statistics when respondents present non-response bias or surveys suffer from sampling bias (that are not missing completely at random). A similar issue arises in observational studies when comparing treated vs untreated groups, and in any data that suffers from selection bias.
+
+### Highlights from **[v0.15.0](https://pypi.org/project/balance/)** (since [v0.12.0](https://github.com/facebookresearch/balance/releases/tag/0.12.0)):
+
+✅ **More control over modeling:** The ability to run any sklearn model (instead of just LogisticRegression) to fit inverse-propensity-score weights. Plus formula-driven summaries and explicit missing-data handling.
+
+✅ **Stronger diagnostics:** The way weights influence covariate imbalance can now be evaluated not just with ASMD (as before), but also with various distribution distance metrics (KLD, EMD, CVMD, KS).
+
+✅ **Reliable code:** Test coverage was increased to 100%, with full type-checking across the whole codebase. Plus CLI enhancements and improved docs/tutorials.
 
 [![balance_logo_horizontal](https://raw.githubusercontent.com/facebookresearch/balance/main/website/static/img/balance_logo/PNG/Horizontal/balance_Logo_Horizontal_FullColor_RGB.png)](https://import-balance.org/)
 
 <!--truncate-->
 
-## New tutorials and docs
+## Updated Tutorials
 
-- Additional examples showing custom IPW models: https://import-balance.org/docs/tutorials/quickstart/
 - Post-stratification tutorial notebook (and expanded documentation): https://import-balance.org/docs/tutorials/quickstart_poststratify/
 - CLI tutorial: https://import-balance.org/docs/tutorials/balance_cli_tutorial/
-- README badges for build status, version support, release tracking, and unittest coverage. https://import-balance.org/docs/docs/overview/
+- Customizing IPW models: https://import-balance.org/docs/tutorials/quickstart/
 
 
-## More Flexible Modeling and Summary Tools
+## More Flexible IPW Modeling and Summary Tools
 
-### Bring your own IPW estimator
+### Bring Your Own IPW sklearn Estimator
 
 `.adjust(method="ipw")` now accepts **any scikit-learn classifier** via the `model` argument, so you can use estimators like random forests or gradient boosting. You can also pass a configured `LogisticRegression` instance or provide JSON-configured parameters through the CLI.
 
@@ -108,19 +113,19 @@ A detailed example is given here: https://import-balance.org/docs/tutorials/quic
 
 ## Diagnostics That Go Further
 
-### New distribution distance metrics for covariate diagnostics
+### Beyond ASMD: New Distance Metrics
 
 
-Balance now exposes **KL divergence**, **[Earth Mover's Distance (EMD)](https://en.wikipedia.org/wiki/Earth_mover%27s_distance)**, **[Cramér-von Mises distance (CVMD)](https://en.wikipedia.org/wiki/Cram%C3%A9r%E2%80%93von_Mises_criterion)**, and **[Kolmogorov–Smirnov (KS)](https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test)** statistics through `BalanceDF` diagnostics. These diagnostics work with weighted or unweighted comparisons, include discrete/continuous variants, and respect one-hot categorical aggregation when enabled.
+Balance now exposes **[KL divergence](https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence)**, **[Earth Mover's Distance (EMD)](https://en.wikipedia.org/wiki/Earth_mover%27s_distance)**, **[Cramér-von Mises distance (CVMD)](https://en.wikipedia.org/wiki/Cram%C3%A9r%E2%80%93von_Mises_criterion)**, and **[Kolmogorov–Smirnov (KS)](https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test)** statistics through `BalanceDF` diagnostics. These diagnostics work with weighted or unweighted comparisons, include discrete/continuous variants, and respect one-hot categorical aggregation when enabled.
 
 Example:
 
 ```python
 # Compare covariate distributions between a sample and target.
-sample.set_target(target).covars().kld(on_linked_samples=False)
-sample.set_target(target).covars().emd(on_linked_samples=False)
-sample.set_target(target).covars().cvmd(on_linked_samples=False)
-sample.set_target(target).covars().ks(on_linked_samples=False)
+sample.set_target(target).covars().kld()
+sample.set_target(target).covars().emd()
+sample.set_target(target).covars().cvmd()
+sample.set_target(target).covars().ks()
 ```
 
 Output:
@@ -143,7 +148,7 @@ index
 covars  0.5       0.0       0.0      0.25
 ```
 
-### Richer adjusted sample summaries
+### Richer Adjusted Sample Summaries
 
 Adjusted samples now surface more information at a glance:
 
@@ -185,7 +190,7 @@ Model performance: Model proportion deviance explained: 0.034
 
 ## Smarter Weighting Workflows
 
-### CLI outcome control
+### CLI Now Supports Outcome Columns
 
 The CLI now supports `--outcome_columns`, letting you explicitly declare which columns are outcomes. Remaining columns are moved to `ignored_columns` instead of being treated implicitly.
 
@@ -204,7 +209,7 @@ Output:
 ['y', 'z']
 ```
 
-### High-cardinality covariate warnings
+### High-Cardinality Covariate Warnings
 
 Balance warns when categorical covariates have >=80% unique values (e.g., user IDs), helping identify problematic columns before fitting.
 
@@ -227,7 +232,9 @@ Output:
 [HighCardinalityFeature(column='id', unique_count=3, unique_ratio=1.0, has_missing=np.False_)]
 ```
 
-## Key developer improvements, bug fixes, and breaking changes
+## Developer Improvements, Bug Fixes & Breaking Changes
+
+README badges for build status, version support, release tracking, and unittest coverage: https://import-balance.org/docs/docs/overview/
 
 `poststratify()` now supports `na_action` to either drop missing rows or treat missing values as their own category; **breaking change:** missing values default to a `"__NaN__"` category, so legacy drop behavior requires `na_action="drop"`.
 
