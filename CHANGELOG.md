@@ -9,6 +9,12 @@
     `BALANCE_HIGH_CARDINALITY_RATIO_THRESHOLD` environment variable to adjust
     sensitivity.
 
+## Documentation
+
+- **Documented global high-cardinality configuration in Quickstart**
+  - Added a Quickstart tutorial section covering programmatic and environment
+    overrides for the high-cardinality detection threshold.
+
 # 0.15.0 (2026-01-20)
 
 ## New Features

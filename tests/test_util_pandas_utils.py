@@ -89,6 +89,10 @@ class TestUtil(
         with self.assertRaises(ValueError):
             pandas_utils.set_high_cardinality_ratio_threshold(1.1)
 
+    def test_high_cardinality_ratio_threshold_non_numeric(self) -> None:
+        with self.assertRaises(TypeError):
+            pandas_utils.set_high_cardinality_ratio_threshold("not-a-number")
+
     def test_high_cardinality_ratio_threshold_boundary_range(self) -> None:
         try:
             pandas_utils.set_high_cardinality_ratio_threshold(0.0)
