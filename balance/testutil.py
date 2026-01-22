@@ -114,6 +114,7 @@ class BalanceTestCase(unittest.TestCase):
     def tearDown(self) -> None:
         _reset_high_cardinality_threshold_state(self._high_cardinality_env)
         super().tearDown()
+
     # Some Warns
     def assertIfWarns(
         self, callable: Callable[..., Any], *args: Any, **kwargs: Any

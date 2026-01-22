@@ -10,20 +10,22 @@
 import os
 
 import matplotlib
-import pytest
-
 from balance import testutil
 
 # Force a non-interactive backend so tests do not require a Tk installation.
 matplotlib.use("Agg", force=True)
 
 
-@pytest.fixture(autouse=True)
-def reset_high_cardinality_threshold() -> None:
-    """Reset high-cardinality global state between tests to avoid pollution."""
+def pytest_runtest_setup(item: object) -> None:
+    """Reset high-cardinality global state before each test."""
     original_env = os.environ.get("BALANCE_HIGH_CARDINALITY_RATIO_THRESHOLD")
+    setattr(item, "_high_cardinality_env", original_env)
     testutil._reset_high_cardinality_threshold_state(original_env)
 
-    yield
 
+def pytest_runtest_teardown(item: object, nextitem: object | None) -> None:
+    """Restore high-cardinality global state after each test."""
+    original_env = getattr(item, "_high_cardinality_env", None)
     testutil._reset_high_cardinality_threshold_state(original_env)
+    if hasattr(item, "_high_cardinality_env"):
+        delattr(item, "_high_cardinality_env")
