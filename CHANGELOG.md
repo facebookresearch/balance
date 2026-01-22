@@ -1,3 +1,15 @@
+# 0.16.0 (Unreleased)
+
+## Bug Fixes
+
+- **Removed deprecated setup build**
+  - Replaced deprecated `setup.py` with `pyproject.toml` build in CI to avoid build failure.
+
+## Packaging & Tests
+
+- **Pandas 2.x compatibility and upper bound (<3.0.0)**
+  - Constrained the pandas dependency to `>=2,<3.0.0` to avoid untested pandas 3.x API and dtype changes.
+
 # 0.15.0 (2026-01-20)
 
 ## New Features

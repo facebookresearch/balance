@@ -86,8 +86,7 @@ REQUIRES = [
 ]
 ```
 
-See [setup.py](https://github.com/facebookresearch/balance/blob/main/setup.py)
-or
+See
 [pyproject.toml](https://github.com/facebookresearch/balance/blob/main/pyproject.toml)
 for more details.
 
