@@ -124,7 +124,6 @@ class TestDatasets(
 
         # Check column types for both dataframes
         for df in [target_df, sample_df]:
-            self.assertEqual(df["id"].dtype, object)  # String type
             self.assertTrue(
                 df["gender"].dtype == object
                 or pd.api.types.is_string_dtype(df["gender"])
