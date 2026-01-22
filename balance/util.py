@@ -61,10 +61,8 @@ from balance.utils.pandas_utils import (
     _safe_replace_and_infer,
     _safe_show_legend,
     _warn_of_df_dtypes_change,
-    get_high_cardinality_ratio_threshold,
     HIGH_CARDINALITY_RATIO_THRESHOLD,
     HighCardinalityFeature,
-    set_high_cardinality_ratio_threshold,
 )
 
 logger: logging.Logger = logging.getLogger(__package__)
@@ -98,8 +96,6 @@ __all__ = [
     "_true_false_str_to_bool",
     "_verify_value_type",
     "_warn_of_df_dtypes_change",
-    "get_high_cardinality_ratio_threshold",
-    "set_high_cardinality_ratio_threshold",
     "add_na_indicator",
     "auto_aggregate",
     "auto_spread",
