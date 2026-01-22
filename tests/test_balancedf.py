@@ -1614,7 +1614,7 @@ class TestBalanceDF__repr__(BalanceTestCase):
 class TestBalanceDF(BalanceTestCase):
     def testBalanceDF_model_matrix(self) -> None:
         self.assertEqual(
-            tuple(s1.covars().model_matrix().sort_index(axis=1).columns),
+            s1.covars().model_matrix().sort_index(axis=1).columns.values,
             ("a", "b", "c[v]", "c[x]", "c[y]", "c[z]"),
         )
         self.assertEqual(

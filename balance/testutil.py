@@ -58,30 +58,7 @@ def _assert_frame_equal_lazy(
         x = x.sort_index(axis=0).sort_index(axis=1)
         y = y.sort_index(axis=0).sort_index(axis=1)
 
-    x = _normalize_string_columns(x)
-    y = _normalize_string_columns(y)
-
     return pd.testing.assert_frame_equal(x, y)
-
-
-def _normalize_string_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Normalize string columns to use pandas StringDtype for comparisons."""
-    df = df.copy()
-    target_dtype = pd.StringDtype(na_value=pd.NA)
-    for column in df.columns:
-        dtype = df[column].dtype
-        if isinstance(dtype, pd.StringDtype) or pd.api.types.is_object_dtype(dtype):
-            df[column] = df[column].astype(target_dtype)
-    return df
-
-
-def _normalize_string_series(series: pd.Series) -> pd.Series:
-    """Normalize a Series to pandas StringDtype when it is object/string-like."""
-    if isinstance(series.dtype, pd.StringDtype) or pd.api.types.is_object_dtype(
-        series.dtype
-    ):
-        return series.astype(pd.StringDtype(na_value=pd.NA))
-    return series
 
 
 def _assert_index_equal_lazy(x: pd.Index, y: pd.Index, lazy: bool = True) -> None:
@@ -187,9 +164,7 @@ class BalanceTestCase(unittest.TestCase):
                 lazy,
             )
         elif isinstance(first, pd.Series) or isinstance(second, pd.Series):
-            pd.testing.assert_series_equal(
-                _normalize_string_series(first), _normalize_string_series(second)
-            )
+            pd.testing.assert_series_equal(first, second)
         elif isinstance(first, pd.Index) or isinstance(second, pd.Index):
             _assert_index_equal_lazy(first, second, lazy)
         else:

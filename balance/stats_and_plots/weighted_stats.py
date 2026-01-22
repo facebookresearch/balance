@@ -87,8 +87,8 @@ def _prepare_weighted_stat_args(
 
     dtypes = v.dtypes if hasattr(v.dtypes, "__iter__") else [v.dtypes]
 
-    if not all(pd.api.types.is_numeric_dtype(x) for x in dtypes):
-        raise TypeError("must be numeric")
+    if not all(np.issubdtype(x, np.number) for x in dtypes):
+        raise TypeError("all columns must be numeric")
 
     if inf_rm:
         from balance.util import _safe_replace_and_infer

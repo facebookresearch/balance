@@ -432,14 +432,14 @@ class TestSample(
         df = pd.DataFrame({"id": (1, 2), "a": (1, 2)})
         self.assertEqual(df.id.dtype.type, np.int64)
         self.assertEqual(
-            Sample.from_frame(df, use_deepcopy=False).df.id.dtype.type, str
+            Sample.from_frame(df, use_deepcopy=False).df.id.dtype.type, np.object_
         )
-        self.assertEqual(df.id.dtype.type, str)
+        self.assertEqual(df.id.dtype.type, np.object_)
 
         # Test with use_deepcopy=True (default) - original DataFrame should be preserved
         df = pd.DataFrame({"id": (1, 2), "a": (1, 2)})
         self.assertEqual(df.id.dtype.type, np.int64)
-        self.assertEqual(Sample.from_frame(df).df.id.dtype.type, str)
+        self.assertEqual(Sample.from_frame(df).df.id.dtype.type, np.object_)
         self.assertEqual(df.id.dtype.type, np.int64)
 
     def test_Sample_adjust(self) -> None:
@@ -1626,11 +1626,15 @@ class TestSample_NA_behavior(balance.testutil.BalanceTestCase):
         smpl_to_adj = get_sample_to_adjust(df)
         self.assertIsInstance(smpl_to_adj.adjust(method="ipw"), Sample)
 
-        # With pandas string defaults, pd.NA in string-like columns is handled even when
-        # standardize_types is disabled.
-        df.iloc[0, 1] = pd.NA
-        smpl_to_adj = get_sample_to_adjust(df, standardize_types=False)
-        self.assertIsInstance(smpl_to_adj.adjust(method="ipw"), Sample)
+        # Turning standardize_types to False should raise a TypeError (since we have pd.NA):
+        with self.assertRaisesRegex(
+            TypeError,
+            "boolean value of NA is ambiguous",
+        ):
+            # df.iloc[0, 0] = pd.NA
+            df.iloc[0, 1] = pd.NA
+            smpl_to_adj = get_sample_to_adjust(df, standardize_types=False)
+            smpl_to_adj.adjust(method="ipw")
 
 
 class TestSample_high_cardinality_warnings(balance.testutil.BalanceTestCase):
