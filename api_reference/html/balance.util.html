@@ -371,31 +371,6 @@ most important interactions in a model.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="balance.util.get_high_cardinality_ratio_threshold">
-<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">get_high_cardinality_ratio_threshold</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/balance/utils/pandas_utils.html#get_high_cardinality_ratio_threshold"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.get_high_cardinality_ratio_threshold" title="Link to this definition">¶</a></dt>
-<dd><p>Return the configured high-cardinality detection threshold.</p>
-<p>Order of precedence:
-1. Value set via <a class="reference internal" href="#balance.util.set_high_cardinality_ratio_threshold" title="balance.util.set_high_cardinality_ratio_threshold"><code class="xref py py-func docutils literal notranslate"><span class="pre">set_high_cardinality_ratio_threshold()</span></code></a>.
-2. Environment variable <code class="docutils literal notranslate"><span class="pre">BALANCE_HIGH_CARDINALITY_RATIO_THRESHOLD</span></code>.
-3. Module default <code class="docutils literal notranslate"><span class="pre">HIGH_CARDINALITY_RATIO_THRESHOLD</span></code>.</p>
-<p>Examples:
-.. code-block:: python</p>
-<blockquote>
-<div><p>import os
-from balance.util import (</p>
-<blockquote>
-<div><p>get_high_cardinality_ratio_threshold,
-set_high_cardinality_ratio_threshold,</p>
-</div></blockquote>
-<p>)</p>
-<p>os.environ[“BALANCE_HIGH_CARDINALITY_RATIO_THRESHOLD”] = “0.7”
-assert get_high_cardinality_ratio_threshold() == 0.7</p>
-<p>set_high_cardinality_ratio_threshold(0.9)
-assert get_high_cardinality_ratio_threshold() == 0.9</p>
-</div></blockquote>
-</dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="balance.util.get_items_from_list_via_indices">
 <span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">get_items_from_list_via_indices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/utils/input_validation.html#get_items_from_list_via_indices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.get_items_from_list_via_indices" title="Link to this definition">¶</a></dt>
 <dd><p>Gets a subset of items from a list via indices</p>
@@ -580,39 +555,6 @@ If None, all numeric variables are transformed. Defaults to None.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="balance.util.set_high_cardinality_ratio_threshold">
-<span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">set_high_cardinality_ratio_threshold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/balance/utils/pandas_utils.html#set_high_cardinality_ratio_threshold"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.set_high_cardinality_ratio_threshold" title="Link to this definition">¶</a></dt>
-<dd><p>Override the high-cardinality detection ratio threshold globally.</p>
-<p>Set to <code class="docutils literal notranslate"><span class="pre">None</span></code> to clear the override and restore environment or default
-configuration.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>threshold</strong> – Ratio threshold in the inclusive range [0, 1], or <code class="docutils literal notranslate"><span class="pre">None</span></code> to
-clear the override.</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">threshold</span></code> is outside the allowed range.</p></li>
-<li><p><strong>TypeError</strong> – If <code class="docutils literal notranslate"><span class="pre">threshold</span></code> cannot be coerced to <code class="docutils literal notranslate"><span class="pre">float</span></code>.</p></li>
-</ul>
-</dd>
-</dl>
-<p>Examples:
-.. code-block:: python</p>
-<blockquote>
-<div><dl class="simple">
-<dt>from balance.util import (</dt><dd><p>get_high_cardinality_ratio_threshold,
-set_high_cardinality_ratio_threshold,</p>
-</dd>
-</dl>
-<p>)</p>
-<p>set_high_cardinality_ratio_threshold(0.75)
-assert get_high_cardinality_ratio_threshold() == 0.75</p>
-<p>set_high_cardinality_ratio_threshold(None)</p>
-</div></blockquote>
-</dd></dl>
-
 </section>
 
 
@@ -647,7 +589,6 @@ assert get_high_cardinality_ratio_threshold() == 0.75</p>
 <li><a class="reference internal" href="#balance.util.fct_lump_by"><code class="docutils literal notranslate"><span class="pre">fct_lump_by()</span></code></a></li>
 <li><a class="reference internal" href="#balance.util.find_items_index_in_list"><code class="docutils literal notranslate"><span class="pre">find_items_index_in_list()</span></code></a></li>
 <li><a class="reference internal" href="#balance.util.formula_generator"><code class="docutils literal notranslate"><span class="pre">formula_generator()</span></code></a></li>
-<li><a class="reference internal" href="#balance.util.get_high_cardinality_ratio_threshold"><code class="docutils literal notranslate"><span class="pre">get_high_cardinality_ratio_threshold()</span></code></a></li>
 <li><a class="reference internal" href="#balance.util.get_items_from_list_via_indices"><code class="docutils literal notranslate"><span class="pre">get_items_from_list_via_indices()</span></code></a></li>
 <li><a class="reference internal" href="#balance.util.guess_id_column"><code class="docutils literal notranslate"><span class="pre">guess_id_column()</span></code></a></li>
 <li><a class="reference internal" href="#balance.util.model_matrix"><code class="docutils literal notranslate"><span class="pre">model_matrix()</span></code></a></li>
@@ -657,7 +598,6 @@ assert get_high_cardinality_ratio_threshold() == 0.75</p>
 <li><a class="reference internal" href="#balance.util.quantize"><code class="docutils literal notranslate"><span class="pre">quantize()</span></code></a></li>
 <li><a class="reference internal" href="#balance.util.rm_mutual_nas"><code class="docutils literal notranslate"><span class="pre">rm_mutual_nas()</span></code></a></li>
 <li><a class="reference internal" href="#balance.util.row_pairwise_diffs"><code class="docutils literal notranslate"><span class="pre">row_pairwise_diffs()</span></code></a></li>
-<li><a class="reference internal" href="#balance.util.set_high_cardinality_ratio_threshold"><code class="docutils literal notranslate"><span class="pre">set_high_cardinality_ratio_threshold()</span></code></a></li>
 </ul>
 </li>
 </ul>

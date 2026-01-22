@@ -46,7 +46,6 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">NamedTuple</span>
 
@@ -56,132 +55,8 @@
 
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
 
+<span class="c1"># TODO: Allow configuring this threshold globally if we need different sensitivity</span>
 <span class="n">HIGH_CARDINALITY_RATIO_THRESHOLD</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.8</span>
-<span class="n">_HIGH_CARDINALITY_RATIO_ENV_VAR</span> <span class="o">=</span> <span class="s2">&quot;BALANCE_HIGH_CARDINALITY_RATIO_THRESHOLD&quot;</span>
-<span class="n">_configured_high_cardinality_ratio_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="n">_warned_invalid_high_cardinality_env</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
-
-
-<div class="viewcode-block" id="set_high_cardinality_ratio_threshold">
-<a class="viewcode-back" href="../../../balance.util.html#balance.util.set_high_cardinality_ratio_threshold">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">set_high_cardinality_ratio_threshold</span><span class="p">(</span><span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Override the high-cardinality detection ratio threshold globally.</span>
-
-<span class="sd">    Set to ``None`` to clear the override and restore environment or default</span>
-<span class="sd">    configuration.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        threshold: Ratio threshold in the inclusive range [0, 1], or ``None`` to</span>
-<span class="sd">            clear the override.</span>
-
-<span class="sd">    Raises:</span>
-<span class="sd">        ValueError: If ``threshold`` is outside the allowed range.</span>
-<span class="sd">        TypeError: If ``threshold`` cannot be coerced to ``float``.</span>
-
-<span class="sd">    Examples:</span>
-<span class="sd">    .. code-block:: python</span>
-
-<span class="sd">        from balance.util import (</span>
-<span class="sd">            get_high_cardinality_ratio_threshold,</span>
-<span class="sd">            set_high_cardinality_ratio_threshold,</span>
-<span class="sd">        )</span>
-
-<span class="sd">        set_high_cardinality_ratio_threshold(0.75)</span>
-<span class="sd">        assert get_high_cardinality_ratio_threshold() == 0.75</span>
-
-<span class="sd">        set_high_cardinality_ratio_threshold(None)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">global</span> <span class="n">_configured_high_cardinality_ratio_threshold</span>
-    <span class="k">global</span> <span class="n">_warned_invalid_high_cardinality_env</span>
-
-    <span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_configured_high_cardinality_ratio_threshold</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">_warned_invalid_high_cardinality_env</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">return</span>
-
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">threshold</span><span class="p">)</span>
-    <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="s2">&quot;High-cardinality ratio threshold must be a real number.&quot;</span>
-        <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;High-cardinality ratio threshold must be between 0 and 1 inclusive.&quot;</span>
-        <span class="p">)</span>
-    <span class="n">_configured_high_cardinality_ratio_threshold</span> <span class="o">=</span> <span class="n">value</span></div>
-
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_env_high_cardinality_ratio_threshold</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read an override threshold from the environment, if configured.&quot;&quot;&quot;</span>
-    <span class="k">global</span> <span class="n">_warned_invalid_high_cardinality_env</span>
-
-    <span class="n">value</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="n">_HIGH_CARDINALITY_RATIO_ENV_VAR</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
-        <span class="k">return</span> <span class="kc">None</span>
-
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">parsed</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">_warned_invalid_high_cardinality_env</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">&quot;Invalid </span><span class="si">%s</span><span class="s2"> value </span><span class="si">%r</span><span class="s2">; falling back to default </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span>
-                <span class="n">_HIGH_CARDINALITY_RATIO_ENV_VAR</span><span class="p">,</span>
-                <span class="n">value</span><span class="p">,</span>
-                <span class="n">HIGH_CARDINALITY_RATIO_THRESHOLD</span><span class="p">,</span>
-            <span class="p">)</span>
-            <span class="n">_warned_invalid_high_cardinality_env</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">return</span> <span class="kc">None</span>
-
-    <span class="k">if</span> <span class="ow">not</span> <span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">parsed</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">:</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">_warned_invalid_high_cardinality_env</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> must be between 0 and 1; got </span><span class="si">%s</span><span class="s2">. Falling back to default </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span>
-                <span class="n">_HIGH_CARDINALITY_RATIO_ENV_VAR</span><span class="p">,</span>
-                <span class="n">parsed</span><span class="p">,</span>
-                <span class="n">HIGH_CARDINALITY_RATIO_THRESHOLD</span><span class="p">,</span>
-            <span class="p">)</span>
-            <span class="n">_warned_invalid_high_cardinality_env</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">return</span> <span class="kc">None</span>
-
-    <span class="k">return</span> <span class="n">parsed</span>
-
-
-<div class="viewcode-block" id="get_high_cardinality_ratio_threshold">
-<a class="viewcode-back" href="../../../balance.util.html#balance.util.get_high_cardinality_ratio_threshold">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_high_cardinality_ratio_threshold</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the configured high-cardinality detection threshold.</span>
-
-<span class="sd">    Order of precedence:</span>
-<span class="sd">    1. Value set via :func:`set_high_cardinality_ratio_threshold`.</span>
-<span class="sd">    2. Environment variable ``BALANCE_HIGH_CARDINALITY_RATIO_THRESHOLD``.</span>
-<span class="sd">    3. Module default ``HIGH_CARDINALITY_RATIO_THRESHOLD``.</span>
-
-<span class="sd">    Examples:</span>
-<span class="sd">    .. code-block:: python</span>
-
-<span class="sd">        import os</span>
-<span class="sd">        from balance.util import (</span>
-<span class="sd">            get_high_cardinality_ratio_threshold,</span>
-<span class="sd">            set_high_cardinality_ratio_threshold,</span>
-<span class="sd">        )</span>
-
-<span class="sd">        os.environ[&quot;BALANCE_HIGH_CARDINALITY_RATIO_THRESHOLD&quot;] = &quot;0.7&quot;</span>
-<span class="sd">        assert get_high_cardinality_ratio_threshold() == 0.7</span>
-
-<span class="sd">        set_high_cardinality_ratio_threshold(0.9)</span>
-<span class="sd">        assert get_high_cardinality_ratio_threshold() == 0.9</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">_configured_high_cardinality_ratio_threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">_configured_high_cardinality_ratio_threshold</span>
-
-    <span class="n">env_value</span> <span class="o">=</span> <span class="n">_env_high_cardinality_ratio_threshold</span><span class="p">()</span>
-    <span class="k">if</span> <span class="n">env_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">env_value</span>
-
-    <span class="k">return</span> <span class="n">HIGH_CARDINALITY_RATIO_THRESHOLD</span></div>
-
 
 
 <div class="viewcode-block" id="HighCardinalityFeature">
@@ -228,7 +103,7 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_detect_high_cardinality_features</span><span class="p">(</span>
     <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
-    <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">HIGH_CARDINALITY_RATIO_THRESHOLD</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">HighCardinalityFeature</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Identify categorical columns whose non-missing values are mostly unique.</span>
 
@@ -240,9 +115,7 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        df: Dataframe containing candidate features.</span>
-<span class="sd">        threshold: Minimum unique-to-count ratio to flag a column. Defaults to</span>
-<span class="sd">            the globally configured threshold returned by</span>
-<span class="sd">            :func:`get_high_cardinality_ratio_threshold`.</span>
+<span class="sd">        threshold: Minimum unique-to-count ratio to flag a column.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        list[HighCardinalityFeature]: High-cardinality categorical columns</span>
@@ -255,9 +128,6 @@
 <span class="sd">        [HighCardinalityFeature(column=&#39;id&#39;, unique_count=3, unique_ratio=1.0, has_missing=False)]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">high_cardinality_features</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">HighCardinalityFeature</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">resolved_threshold</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">get_high_cardinality_ratio_threshold</span><span class="p">()</span> <span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">threshold</span>
-    <span class="p">)</span>
 
     <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
         <span class="c1"># Only check categorical columns (object, category, string dtypes)</span>
@@ -269,7 +139,7 @@
         <span class="k">if</span> <span class="n">metrics</span><span class="o">.</span><span class="n">unique_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">continue</span>
 
-        <span class="k">if</span> <span class="n">metrics</span><span class="o">.</span><span class="n">unique_ratio</span> <span class="o">&lt;</span> <span class="n">resolved_threshold</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">metrics</span><span class="o">.</span><span class="n">unique_ratio</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">:</span>
             <span class="k">continue</span>
 
         <span class="n">high_cardinality_features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
