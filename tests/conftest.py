@@ -8,25 +8,22 @@
 """Test configuration shared across pytest runs"""
 
 import os
+from typing import Generator
 
 import matplotlib
+import pytest
 from balance import testutil
-from typing import Optional
 
 # Force a non-interactive backend so tests do not require a Tk installation.
 matplotlib.use("Agg", force=True)
 
 
-def pytest_runtest_setup(item: object) -> None:
-    """Reset high-cardinality global state before each test."""
+@pytest.fixture(autouse=True)
+def reset_high_cardinality_threshold_state() -> Generator[None, None, None]:
+    """Reset high-cardinality global state around each pytest test."""
     original_env = os.environ.get("BALANCE_HIGH_CARDINALITY_RATIO_THRESHOLD")
-    setattr(item, "_high_cardinality_env", original_env)
     testutil._reset_high_cardinality_threshold_state(original_env)
-
-
-def pytest_runtest_teardown(item: object, nextitem: Optional[object]) -> None:
-    """Restore high-cardinality global state after each test."""
-    original_env = getattr(item, "_high_cardinality_env", None)
-    testutil._reset_high_cardinality_threshold_state(original_env)
-    if hasattr(item, "_high_cardinality_env"):
-        delattr(item, "_high_cardinality_env")
+    try:
+        yield
+    finally:
+        testutil._reset_high_cardinality_threshold_state(original_env)
