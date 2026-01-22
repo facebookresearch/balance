@@ -17,10 +17,7 @@ import pandas as pd
 from balance import util as balance_util
 from balance.sample_class import Sample
 from balance.util import _coerce_scalar
-from balance.utils.pandas_utils import (
-    _coerce_string_dtype_to_object,
-    _sorted_unique_categories,
-)
+from balance.utils.pandas_utils import _sorted_unique_categories
 from numpy import dtype
 
 
@@ -114,30 +111,6 @@ class TestUtil(
         self.assertTrue(np.isnan(_coerce_scalar(())))
         self.assertTrue(np.isnan(_coerce_scalar(np.array([4.5]))))
 
-    def test__coerce_string_dtype_to_object(self) -> None:
-        """Test conversion of StringDtype to object for backward compatibility."""
-        series = pd.Series(["a", "b", "c"], dtype="string")
-        result = _coerce_string_dtype_to_object(series)
-        self.assertEqual(result.dtype, "object")
-
-        empty_series = pd.Series([], dtype="string")
-        result = _coerce_string_dtype_to_object(empty_series)
-        self.assertEqual(result.dtype, "object")
-
-        df = pd.DataFrame(
-            {
-                "text": pd.Series(["a", "b"], dtype="string"),
-                "num": pd.Series([1, 2], dtype="int64"),
-            }
-        )
-        result_df = _coerce_string_dtype_to_object(df)
-        self.assertEqual(result_df["text"].dtype, "object")
-        self.assertEqual(result_df["num"].dtype, "int64")
-
-        non_string = pd.Series([1, 2, 3])
-        result = _coerce_string_dtype_to_object(non_string)
-        self.assertEqual(result.dtype, non_string.dtype)
-
     def test__dict_intersect(self) -> None:
         d1 = {"a": 1, "b": 2}
         d2 = {"c": 3, "b": 2222}
@@ -151,11 +124,19 @@ class TestUtil(
 
         self.assertEqual(
             df.dtypes.to_dict(),
-            {"id": dtype("O"), "a": dtype("float64"), "weight": dtype("float64")},
+            {
+                "id": pd.StringDtype(na_value=np.nan),
+                "a": dtype("float64"),
+                "weight": dtype("float64"),
+            },
         )
         self.assertEqual(
             df_orig.dtypes.to_dict(),
-            {"id": dtype("int64"), "a": dtype("int64"), "forest": dtype("O")},
+            {
+                "id": dtype("int64"),
+                "a": dtype("int64"),
+                "forest": pd.StringDtype(na_value=np.nan),
+            },
         )
 
         df_fixed = balance_util._astype_in_df_from_dtypes(df, df_orig.dtypes)
@@ -245,7 +226,7 @@ class TestUtil(
         result = balance_util._safe_replace_and_infer(
             series_obj, to_replace="b", value="x"
         )
-        expected = pd.Series(["a", "x", "c"], dtype="object")
+        expected = pd.Series(["a", "x", "c"], dtype=pd.StringDtype(na_value=np.nan))
         pd.testing.assert_series_equal(result, expected)
 
     def test__safe_fillna_and_infer(self) -> None:

@@ -188,6 +188,7 @@ def _is_discrete_series(series: pd.Series) -> bool:
     return (
         is_binary_indicator
         or pd.api.types.is_object_dtype(series)
+        or pd.api.types.is_string_dtype(series)
         or isinstance(series.dtype, pd.CategoricalDtype)
         or pd.api.types.is_bool_dtype(series)
     )
@@ -320,6 +321,8 @@ def rm_mutual_nas(*args: Any) -> List[Any]:
     Ignores args which are None.
 
     Can accept multiple array-like arguments or a single array-like argument. Handles pandas and numpy arrays.
+    Extension arrays are reconstructed using their native constructors when possible, with a
+    fallback through object arrays if needed.
 
     Raises:
         ValueError: If any argument is not array-like. (see: :func:`_is_arraylike`)
@@ -353,9 +356,16 @@ def rm_mutual_nas(*args: Any) -> List[Any]:
         elif isinstance(
             x, pd.api.extensions.ExtensionArray
         ) or "pandas.core.arrays" in str(type(x)):
-            if hasattr(type(x), "_from_sequence"):
-                return lambda obj: type(x)._from_sequence(obj, dtype=x.dtype)
-            return lambda obj: pd.array(np.array(obj, dtype=object), dtype=x.dtype)
+
+            def _build_extension_array(obj: Any) -> pd.api.extensions.ExtensionArray:
+                if hasattr(type(x), "_from_sequence"):
+                    try:
+                        return type(x)._from_sequence(obj, dtype=x.dtype)
+                    except (TypeError, ValueError):
+                        pass
+                return pd.array(np.array(obj, dtype=object), dtype=x.dtype)
+
+            return _build_extension_array
         else:
             return type(x)
 

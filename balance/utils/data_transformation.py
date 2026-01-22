@@ -309,14 +309,7 @@ def fct_lump(s: pd.Series, prop: float = 0.05) -> pd.Series:
     Returns:
         pd.Series: pd.series (with category dtype converted to object, if applicable)
     """
-    # Handle value_counts with object-dtype to maintain consistent behavior
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore",
-            message="The behavior of value_counts with object-dtype is deprecated.*",
-            category=FutureWarning,
-        )
-        props = s.value_counts() / s.shape[0]
+    props = s.value_counts() / s.shape[0]
 
     # Ensure proper dtype inference on the index
     props.index = props.index.astype("object")

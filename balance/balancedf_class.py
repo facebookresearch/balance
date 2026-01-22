@@ -2244,7 +2244,7 @@ class BalanceDFOutcomes(BalanceDF):
             target_clause = f"Response rates (in the target):\n {target_response_rates}"
 
         n_outcomes = self.df.shape[1]
-        list_outcomes = self.df.columns.values
+        list_outcomes = np.array(self.df.columns.tolist())
         mean_outcomes_with_ci = mean_outcomes_with_ci
         relative_response_rates = relative_response_rates
         target_clause = target_clause
