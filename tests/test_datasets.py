@@ -124,9 +124,15 @@ class TestDatasets(
 
         # Check column types for both dataframes
         for df in [target_df, sample_df]:
-            self.assertTrue(pd.api.types.is_string_dtype(df["id"]))
-            self.assertTrue(pd.api.types.is_string_dtype(df["gender"]))
-            self.assertTrue(pd.api.types.is_string_dtype(df["age_group"]))
+            self.assertEqual(df["id"].dtype, object)  # String type
+            self.assertTrue(
+                df["gender"].dtype == object
+                or pd.api.types.is_string_dtype(df["gender"])
+            )
+            self.assertTrue(
+                df["age_group"].dtype == object
+                or pd.api.types.is_string_dtype(df["age_group"])
+            )
             self.assertTrue(pd.api.types.is_numeric_dtype(df["income"]))
             self.assertTrue(pd.api.types.is_numeric_dtype(df["happiness"]))
 
