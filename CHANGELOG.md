@@ -1,19 +1,5 @@
 # 0.16.0 (Unreleased)
 
-## New Features
-
-- **Configurable high-cardinality detection threshold**
-  - Added global/environment configuration for the high-cardinality ratio
-    threshold used when detecting mostly-unique categorical features.
-  - Use `set_high_cardinality_ratio_threshold()` or the
-    `BALANCE_HIGH_CARDINALITY_RATIO_THRESHOLD` environment variable to adjust
-    sensitivity.
-
-## Documentation
-
-- **Documented global high-cardinality configuration in Quickstart**
-  - Added a Quickstart tutorial section covering programmatic and environment
-    overrides for the high-cardinality detection threshold.
 
 # 0.15.0 (2026-01-20)
 
