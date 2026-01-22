@@ -230,6 +230,30 @@ def _process_series_for_missing_mask(series: pd.Series) -> pd.Series:
     return replaced_series.isna()
 
 
+def _coerce_string_dtype_to_object(
+    data: pd.Series | pd.DataFrame,
+) -> pd.Series | pd.DataFrame:
+    """Convert pandas StringDtype back to object dtype where present.
+
+    This keeps backward-compatible object dtypes for string columns while still
+    allowing inference for numeric/object conversions.
+    """
+    if isinstance(data, pd.Series):
+        if isinstance(data.dtype, pd.StringDtype):
+            return data.astype("object")
+        return data
+
+    string_columns = [
+        column
+        for column in data.columns
+        if isinstance(data[column].dtype, pd.StringDtype)
+    ]
+    if not string_columns:
+        return data
+
+    return data.astype({column: "object" for column in string_columns})
+
+
 def _safe_replace_and_infer(
     data: pd.Series | pd.DataFrame,
     to_replace: Any | None = None,
@@ -255,7 +279,8 @@ def _safe_replace_and_infer(
             message="Downcasting behavior in `replace` is deprecated.*",
             category=FutureWarning,
         )
-        return data.replace(to_replace, value).infer_objects(copy=False)
+        replaced = data.replace(to_replace, value).infer_objects()
+    return _coerce_string_dtype_to_object(replaced)
 
 
 def _safe_fillna_and_infer(
@@ -280,7 +305,8 @@ def _safe_fillna_and_infer(
         warnings.simplefilter("ignore", FutureWarning)
         filled_data = data.fillna(value)
 
-    return filled_data.infer_objects(copy=False)
+    inferred = filled_data.infer_objects()
+    return _coerce_string_dtype_to_object(inferred)
 
 
 def _safe_groupby_apply(

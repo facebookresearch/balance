@@ -97,7 +97,7 @@ def _concat_metric_val_var(
         rows = rows.reindex(columns=diagnostics.columns, fill_value=pd.NA)
         return rows.reset_index(drop=True)
 
-    rows = rows.reindex(columns=diagnostics.columns, fill_value=pd.NA)
+    rows = rows.reindex(columns=diagnostics.columns, fill_value=np.nan)
     return pd.concat((diagnostics, rows), ignore_index=True)
 
 

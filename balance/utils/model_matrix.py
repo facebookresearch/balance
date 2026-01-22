@@ -378,7 +378,7 @@ def _prepare_input_model_matrix(
     if fix_columns_names:
         all_data.columns = all_data.columns.str.replace(
             r"[^\w]", "_", regex=True
-        ).infer_objects(copy=False)
+        ).astype("object")
         all_data = _make_df_column_names_unique(all_data)
 
     return {"all_data": all_data, "sample_n": sample_n}

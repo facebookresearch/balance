@@ -9,6 +9,11 @@ from __future__ import annotations
 
 import logging
 
+import pandas as pd
+
+if hasattr(pd.options, "future") and hasattr(pd.options.future, "infer_string"):
+    pd.options.future.infer_string = False
+
 from balance.balancedf_class import (  # noqa
     BalanceDFCovars,  # noqa
     BalanceDFOutcomes,  # noqa

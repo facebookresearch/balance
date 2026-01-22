@@ -2329,6 +2329,15 @@ class BalanceDFWeights(BalanceDF):
         """
         super().__init__(sample.weight_column.to_frame(), sample, name="weights")
 
+    @property
+    def df(self: "BalanceDFWeights") -> pd.DataFrame:
+        """Return the current weights dataframe from the linked sample.
+
+        BalanceDFWeights should always reflect the latest weights stored on the
+        Sample, especially after in-place adjustments.
+        """
+        return self._sample.weight_column.to_frame()
+
     # TODO: maybe add better control if there are no weights for unadjusted or target (the current default shows them in the legend, but not in the figure)
     def plot(
         self: "BalanceDFWeights", on_linked_samples: bool = True, **kwargs: Any

@@ -299,12 +299,14 @@ def _is_arraylike(o: Any) -> bool:
     return (
         isinstance(o, np.ndarray)
         or isinstance(o, pd.Series)
+        or isinstance(o, pd.api.extensions.ExtensionArray)
         or (
             hasattr(pd.arrays, "NumpyExtensionArray")
             and isinstance(o, pd.arrays.NumpyExtensionArray)
         )
         or isinstance(o, pd.arrays.StringArray)
         or isinstance(o, pd.arrays.IntegerArray)
+        or isinstance(o, pd.arrays.FloatingArray)
         or isinstance(o, pd.arrays.BooleanArray)
         or "pandas.core.arrays" in str(type(o))  # support any pandas array type.
         or (isinstance(o, collections.abc.Sequence) and not isinstance(o, str))
@@ -348,8 +350,10 @@ def rm_mutual_nas(*args: Any) -> List[Any]:
         if isinstance(x, np.ndarray):
             return lambda obj: np.array(obj, dtype=x.dtype)
         # same with pd.arrays.PandasArray, pd.arrays.StringArray, etc.
-        elif "pandas.core.arrays" in str(type(x)):
-            return lambda obj: pd.array(obj, dtype=x.dtype)
+        elif isinstance(
+            x, pd.api.extensions.ExtensionArray
+        ) or "pandas.core.arrays" in str(type(x)):
+            return lambda obj: pd.array(np.array(obj, dtype=object), dtype=x.dtype)
         else:
             return type(x)
 
