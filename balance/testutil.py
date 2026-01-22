@@ -20,6 +20,7 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from balance.util import _verify_value_type  # noqa: F401
+from balance.utils import pandas_utils
 
 
 @contextmanager
@@ -92,7 +93,27 @@ def _capture_output() -> Generator[tuple[io.StringIO, io.StringIO], None, None]:
         sys.stdout, sys.stderr = original_out, original_err
 
 
+def _reset_high_cardinality_threshold_state(original_env: str | None) -> None:
+    env_key = "BALANCE_HIGH_CARDINALITY_RATIO_THRESHOLD"
+    pandas_utils.set_high_cardinality_ratio_threshold(None)
+    pandas_utils._warned_invalid_high_cardinality_env = False
+    if original_env is None:
+        os.environ.pop(env_key, None)
+    else:
+        os.environ[env_key] = original_env
+
+
 class BalanceTestCase(unittest.TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self._high_cardinality_env = os.environ.get(
+            "BALANCE_HIGH_CARDINALITY_RATIO_THRESHOLD"
+        )
+        _reset_high_cardinality_threshold_state(self._high_cardinality_env)
+
+    def tearDown(self) -> None:
+        _reset_high_cardinality_threshold_state(self._high_cardinality_env)
+        super().tearDown()
     # Some Warns
     def assertIfWarns(
         self, callable: Callable[..., Any], *args: Any, **kwargs: Any
