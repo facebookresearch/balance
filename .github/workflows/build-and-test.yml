@@ -34,7 +34,8 @@ jobs:
           python -m pytest -ra
       - name: Build wheels pkg
         run: |
-          python -m build
+          python -m pip install --upgrade pip build
+          python -m build --wheel --outdir dist
 
   lint:
     runs-on: ubuntu-latest
