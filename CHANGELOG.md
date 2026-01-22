@@ -1,11 +1,14 @@
 # 0.16.0 (Unreleased)
 
-## Bug Fixes
+## New Features
 
-- **Preserved object dtypes for string columns under pandas 3**
+- **balance now supports Pandas 3 while preserving object dtypes for string columns**
   - Restored object-string handling in inference helpers, missing-value utilities, and model matrix column normalization to avoid unexpected `StringDtype` conversions.
   - Ensured `BalanceDFWeights` reflects the latest sample weights after in-place trimming.
-  - Hardened `rm_mutual_nas` to rebuild pandas arrays from NumPy buffers reliably.
+  - Hardened `rm_mutual_nas` to rebuild pandas extension arrays using their native constructors.
+
+## Bug Fixes
+
 - **Removed pandas deprecation warnings**
   - Dropped deprecated `copy` arguments on `infer_objects`/`astype`.
   - Stopped setting the deprecated `mode.copy_on_write` option in transformations.

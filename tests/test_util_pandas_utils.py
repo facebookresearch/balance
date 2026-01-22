@@ -17,7 +17,10 @@ import pandas as pd
 from balance import util as balance_util
 from balance.sample_class import Sample
 from balance.util import _coerce_scalar
-from balance.utils.pandas_utils import _sorted_unique_categories
+from balance.utils.pandas_utils import (
+    _coerce_string_dtype_to_object,
+    _sorted_unique_categories,
+)
 from numpy import dtype
 
 
@@ -110,6 +113,30 @@ class TestUtil(
         self.assertTrue(np.isnan(_coerce_scalar(complex(1, 2))))
         self.assertTrue(np.isnan(_coerce_scalar(())))
         self.assertTrue(np.isnan(_coerce_scalar(np.array([4.5]))))
+
+    def test__coerce_string_dtype_to_object(self) -> None:
+        """Test conversion of StringDtype to object for backward compatibility."""
+        series = pd.Series(["a", "b", "c"], dtype="string")
+        result = _coerce_string_dtype_to_object(series)
+        self.assertEqual(result.dtype, "object")
+
+        empty_series = pd.Series([], dtype="string")
+        result = _coerce_string_dtype_to_object(empty_series)
+        self.assertEqual(result.dtype, "object")
+
+        df = pd.DataFrame(
+            {
+                "text": pd.Series(["a", "b"], dtype="string"),
+                "num": pd.Series([1, 2], dtype="int64"),
+            }
+        )
+        result_df = _coerce_string_dtype_to_object(df)
+        self.assertEqual(result_df["text"].dtype, "object")
+        self.assertEqual(result_df["num"].dtype, "int64")
+
+        non_string = pd.Series([1, 2, 3])
+        result = _coerce_string_dtype_to_object(non_string)
+        self.assertEqual(result.dtype, non_string.dtype)
 
     def test__dict_intersect(self) -> None:
         d1 = {"a": 1, "b": 2}

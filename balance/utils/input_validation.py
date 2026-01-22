@@ -353,6 +353,8 @@ def rm_mutual_nas(*args: Any) -> List[Any]:
         elif isinstance(
             x, pd.api.extensions.ExtensionArray
         ) or "pandas.core.arrays" in str(type(x)):
+            if hasattr(type(x), "_from_sequence"):
+                return lambda obj: type(x)._from_sequence(obj, dtype=x.dtype)
             return lambda obj: pd.array(np.array(obj, dtype=object), dtype=x.dtype)
         else:
             return type(x)

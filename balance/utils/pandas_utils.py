@@ -237,6 +237,12 @@ def _coerce_string_dtype_to_object(
 
     This keeps backward-compatible object dtypes for string columns while still
     allowing inference for numeric/object conversions.
+
+    Args:
+        data: Series or DataFrame to normalize.
+
+    Returns:
+        Series or DataFrame with StringDtype columns coerced to object dtype.
     """
     if isinstance(data, pd.Series):
         if isinstance(data.dtype, pd.StringDtype):
