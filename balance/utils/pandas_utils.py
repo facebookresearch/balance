@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import copy
 import logging
-import os
 import warnings
 from typing import Any, Dict, NamedTuple
 
@@ -19,126 +18,8 @@ import pandas.api.types as pd_types
 
 logger: logging.Logger = logging.getLogger(__package__)
 
+# TODO: Allow configuring this threshold globally if we need different sensitivity
 HIGH_CARDINALITY_RATIO_THRESHOLD: float = 0.8
-_HIGH_CARDINALITY_RATIO_ENV_VAR = "BALANCE_HIGH_CARDINALITY_RATIO_THRESHOLD"
-_configured_high_cardinality_ratio_threshold: float | None = None
-_warned_invalid_high_cardinality_env: bool = False
-
-
-def set_high_cardinality_ratio_threshold(threshold: float | None) -> None:
-    """Override the high-cardinality detection ratio threshold globally.
-
-    Set to ``None`` to clear the override and restore environment or default
-    configuration.
-
-    Args:
-        threshold: Ratio threshold in the inclusive range [0, 1], or ``None`` to
-            clear the override.
-
-    Raises:
-        ValueError: If ``threshold`` is outside the allowed range.
-        TypeError: If ``threshold`` cannot be coerced to ``float``.
-
-    Examples:
-    .. code-block:: python
-
-        from balance.util import (
-            get_high_cardinality_ratio_threshold,
-            set_high_cardinality_ratio_threshold,
-        )
-
-        set_high_cardinality_ratio_threshold(0.75)
-        assert get_high_cardinality_ratio_threshold() == 0.75
-
-        set_high_cardinality_ratio_threshold(None)
-    """
-    global _configured_high_cardinality_ratio_threshold
-    global _warned_invalid_high_cardinality_env
-
-    if threshold is None:
-        _configured_high_cardinality_ratio_threshold = None
-        _warned_invalid_high_cardinality_env = False
-        return
-
-    try:
-        value = float(threshold)
-    except (TypeError, ValueError) as exc:
-        raise TypeError(
-            "High-cardinality ratio threshold must be a real number."
-        ) from exc
-    if not 0.0 <= value <= 1.0:
-        raise ValueError(
-            "High-cardinality ratio threshold must be between 0 and 1 inclusive."
-        )
-    _configured_high_cardinality_ratio_threshold = value
-
-
-def _env_high_cardinality_ratio_threshold() -> float | None:
-    """Read an override threshold from the environment, if configured."""
-    global _warned_invalid_high_cardinality_env
-
-    value = os.getenv(_HIGH_CARDINALITY_RATIO_ENV_VAR)
-    if value is None or value.strip() == "":
-        return None
-
-    try:
-        parsed = float(value)
-    except ValueError:
-        if not _warned_invalid_high_cardinality_env:
-            logger.warning(
-                "Invalid %s value %r; falling back to default %s.",
-                _HIGH_CARDINALITY_RATIO_ENV_VAR,
-                value,
-                HIGH_CARDINALITY_RATIO_THRESHOLD,
-            )
-            _warned_invalid_high_cardinality_env = True
-        return None
-
-    if not 0.0 <= parsed <= 1.0:
-        if not _warned_invalid_high_cardinality_env:
-            logger.warning(
-                "%s must be between 0 and 1; got %s. Falling back to default %s.",
-                _HIGH_CARDINALITY_RATIO_ENV_VAR,
-                parsed,
-                HIGH_CARDINALITY_RATIO_THRESHOLD,
-            )
-            _warned_invalid_high_cardinality_env = True
-        return None
-
-    return parsed
-
-
-def get_high_cardinality_ratio_threshold() -> float:
-    """Return the configured high-cardinality detection threshold.
-
-    Order of precedence:
-    1. Value set via :func:`set_high_cardinality_ratio_threshold`.
-    2. Environment variable ``BALANCE_HIGH_CARDINALITY_RATIO_THRESHOLD``.
-    3. Module default ``HIGH_CARDINALITY_RATIO_THRESHOLD``.
-
-    Examples:
-    .. code-block:: python
-
-        import os
-        from balance.util import (
-            get_high_cardinality_ratio_threshold,
-            set_high_cardinality_ratio_threshold,
-        )
-
-        os.environ["BALANCE_HIGH_CARDINALITY_RATIO_THRESHOLD"] = "0.7"
-        assert get_high_cardinality_ratio_threshold() == 0.7
-
-        set_high_cardinality_ratio_threshold(0.9)
-        assert get_high_cardinality_ratio_threshold() == 0.9
-    """
-    if _configured_high_cardinality_ratio_threshold is not None:
-        return _configured_high_cardinality_ratio_threshold
-
-    env_value = _env_high_cardinality_ratio_threshold()
-    if env_value is not None:
-        return env_value
-
-    return HIGH_CARDINALITY_RATIO_THRESHOLD
 
 
 class HighCardinalityFeature(NamedTuple):
@@ -182,7 +63,7 @@ def _compute_cardinality_metrics(series: pd.Series) -> HighCardinalityFeature:
 
 def _detect_high_cardinality_features(
     df: pd.DataFrame,
-    threshold: float | None = None,
+    threshold: float = HIGH_CARDINALITY_RATIO_THRESHOLD,
 ) -> list[HighCardinalityFeature]:
     """Identify categorical columns whose non-missing values are mostly unique.
 
@@ -194,9 +75,7 @@ def _detect_high_cardinality_features(
 
     Args:
         df: Dataframe containing candidate features.
-        threshold: Minimum unique-to-count ratio to flag a column. Defaults to
-            the globally configured threshold returned by
-            :func:`get_high_cardinality_ratio_threshold`.
+        threshold: Minimum unique-to-count ratio to flag a column.
 
     Returns:
         list[HighCardinalityFeature]: High-cardinality categorical columns
@@ -209,9 +88,6 @@ def _detect_high_cardinality_features(
         [HighCardinalityFeature(column='id', unique_count=3, unique_ratio=1.0, has_missing=False)]
     """
     high_cardinality_features: list[HighCardinalityFeature] = []
-    resolved_threshold = (
-        get_high_cardinality_ratio_threshold() if threshold is None else threshold
-    )
 
     for column in df.columns:
         # Only check categorical columns (object, category, string dtypes)
@@ -223,7 +99,7 @@ def _detect_high_cardinality_features(
         if metrics.unique_count == 0:
             continue
 
-        if metrics.unique_ratio < resolved_threshold:
+        if metrics.unique_ratio < threshold:
             continue
 
         high_cardinality_features.append(
