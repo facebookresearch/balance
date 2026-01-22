@@ -15,7 +15,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple, Type
 
 import balance
-import numpy as np
 import pandas as pd
 from balance import __version__  # @manual
 from balance.sample_class import Sample as balance_sample_cls  # @manual
@@ -763,7 +762,7 @@ class BalanceCLI:
                 logger.error(
                     "Adjustment failed. Because '--succeed_on_weighting_failure' was set: returning empty weights."
                 )
-                sample.set_weights(np.nan)
+                sample.set_weights(None)
                 module = inspect.getmodule(inspect.trace()[-1][0])
                 module_name = module.__name__ if module is not None else None
                 error_message = f"{module_name}: {e}"

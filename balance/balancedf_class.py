@@ -2244,7 +2244,7 @@ class BalanceDFOutcomes(BalanceDF):
             target_clause = f"Response rates (in the target):\n {target_response_rates}"
 
         n_outcomes = self.df.shape[1]
-        list_outcomes = np.array(self.df.columns.tolist())
+        list_outcomes = self.df.columns.values
         mean_outcomes_with_ci = mean_outcomes_with_ci
         relative_response_rates = relative_response_rates
         target_clause = target_clause
@@ -2328,15 +2328,6 @@ class BalanceDFWeights(BalanceDF):
             sample (Sample): Object
         """
         super().__init__(sample.weight_column.to_frame(), sample, name="weights")
-
-    @property
-    def df(self: "BalanceDFWeights") -> pd.DataFrame:
-        """Return the current weights dataframe from the linked sample.
-
-        BalanceDFWeights should always reflect the latest weights stored on the
-        Sample, especially after in-place adjustments.
-        """
-        return self._sample.weight_column.to_frame()
 
     # TODO: maybe add better control if there are no weights for unadjusted or target (the current default shows them in the legend, but not in the figure)
     def plot(

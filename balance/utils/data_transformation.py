@@ -67,7 +67,7 @@ def add_na_indicator(
             filled_col = (
                 df[c].cat.add_categories(replace_val_obj).fillna(replace_val_obj)
             )
-            df[c] = filled_col
+            df[c] = filled_col.infer_objects(copy=False)
         elif c in non_numeric_cols:
             df[c] = _safe_fillna_and_infer(df[c], replace_val_obj)
         else:
@@ -309,10 +309,17 @@ def fct_lump(s: pd.Series, prop: float = 0.05) -> pd.Series:
     Returns:
         pd.Series: pd.series (with category dtype converted to object, if applicable)
     """
-    props = s.value_counts() / s.shape[0]
+    # Handle value_counts with object-dtype to maintain consistent behavior
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="The behavior of value_counts with object-dtype is deprecated.*",
+            category=FutureWarning,
+        )
+        props = s.value_counts() / s.shape[0]
 
     # Ensure proper dtype inference on the index
-    props.index = props.index.astype("object")
+    props.index = props.index.infer_objects(copy=False)
 
     small_categories = props[props < prop].index.tolist()
 
@@ -342,6 +349,7 @@ def fct_lump_by(s: pd.Series, by: pd.Series, prop: float = 0.05) -> pd.Series:
         pd.Series: pd.series, we keep the index of s as the index of the result.
     """
     res = copy.deepcopy(s)
+    pd.options.mode.copy_on_write = True
     # pandas groupby doesnt preserve order
     for subgroup in pd.unique(by):
         mask = by == subgroup

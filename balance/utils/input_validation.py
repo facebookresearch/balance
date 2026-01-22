@@ -188,7 +188,6 @@ def _is_discrete_series(series: pd.Series) -> bool:
     return (
         is_binary_indicator
         or pd.api.types.is_object_dtype(series)
-        or pd.api.types.is_string_dtype(series)
         or isinstance(series.dtype, pd.CategoricalDtype)
         or pd.api.types.is_bool_dtype(series)
     )
@@ -300,14 +299,12 @@ def _is_arraylike(o: Any) -> bool:
     return (
         isinstance(o, np.ndarray)
         or isinstance(o, pd.Series)
-        or isinstance(o, pd.api.extensions.ExtensionArray)
         or (
             hasattr(pd.arrays, "NumpyExtensionArray")
             and isinstance(o, pd.arrays.NumpyExtensionArray)
         )
         or isinstance(o, pd.arrays.StringArray)
         or isinstance(o, pd.arrays.IntegerArray)
-        or isinstance(o, pd.arrays.FloatingArray)
         or isinstance(o, pd.arrays.BooleanArray)
         or "pandas.core.arrays" in str(type(o))  # support any pandas array type.
         or (isinstance(o, collections.abc.Sequence) and not isinstance(o, str))
@@ -321,8 +318,6 @@ def rm_mutual_nas(*args: Any) -> List[Any]:
     Ignores args which are None.
 
     Can accept multiple array-like arguments or a single array-like argument. Handles pandas and numpy arrays.
-    Extension arrays are reconstructed using their native constructors when possible, with a
-    fallback through object arrays if needed.
 
     Raises:
         ValueError: If any argument is not array-like. (see: :func:`_is_arraylike`)
@@ -353,19 +348,8 @@ def rm_mutual_nas(*args: Any) -> List[Any]:
         if isinstance(x, np.ndarray):
             return lambda obj: np.array(obj, dtype=x.dtype)
         # same with pd.arrays.PandasArray, pd.arrays.StringArray, etc.
-        elif isinstance(
-            x, pd.api.extensions.ExtensionArray
-        ) or "pandas.core.arrays" in str(type(x)):
-
-            def _build_extension_array(obj: Any) -> pd.api.extensions.ExtensionArray:
-                if hasattr(type(x), "_from_sequence"):
-                    try:
-                        return type(x)._from_sequence(obj, dtype=x.dtype)
-                    except (TypeError, ValueError):
-                        pass
-                return pd.array(np.array(obj, dtype=object), dtype=x.dtype)
-
-            return _build_extension_array
+        elif "pandas.core.arrays" in str(type(x)):
+            return lambda obj: pd.array(obj, dtype=x.dtype)
         else:
             return type(x)
 

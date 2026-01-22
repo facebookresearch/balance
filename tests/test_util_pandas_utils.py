@@ -124,19 +124,11 @@ class TestUtil(
 
         self.assertEqual(
             df.dtypes.to_dict(),
-            {
-                "id": pd.StringDtype(na_value=np.nan),
-                "a": dtype("float64"),
-                "weight": dtype("float64"),
-            },
+            {"id": dtype("O"), "a": dtype("float64"), "weight": dtype("float64")},
         )
         self.assertEqual(
             df_orig.dtypes.to_dict(),
-            {
-                "id": dtype("int64"),
-                "a": dtype("int64"),
-                "forest": pd.StringDtype(na_value=np.nan),
-            },
+            {"id": dtype("int64"), "a": dtype("int64"), "forest": dtype("O")},
         )
 
         df_fixed = balance_util._astype_in_df_from_dtypes(df, df_orig.dtypes)
@@ -226,7 +218,7 @@ class TestUtil(
         result = balance_util._safe_replace_and_infer(
             series_obj, to_replace="b", value="x"
         )
-        expected = pd.Series(["a", "x", "c"], dtype=pd.StringDtype(na_value=np.nan))
+        expected = pd.Series(["a", "x", "c"], dtype="object")
         pd.testing.assert_series_equal(result, expected)
 
     def test__safe_fillna_and_infer(self) -> None:

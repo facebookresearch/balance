@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import copy
 import logging
+import warnings
 from typing import Any, Dict, NamedTuple
 
 import numpy as np
@@ -216,7 +217,7 @@ def _is_categorical_dtype(series: pd.Series) -> bool:
 def _process_series_for_missing_mask(series: pd.Series) -> pd.Series:
     """
     Helper function to process a pandas Series for missing value detection
-    while keeping replace/infer behavior consistent.
+    while avoiding deprecation warnings from replace and infer_objects.
 
     Args:
         series (pd.Series): Input series to process
@@ -224,7 +225,7 @@ def _process_series_for_missing_mask(series: pd.Series) -> pd.Series:
     Returns:
         pd.Series: Boolean series indicating missing values
     """
-    # Use _safe_replace_and_infer to keep replacement/inference behavior consistent
+    # Use _safe_replace_and_infer to avoid downcasting warnings
     replaced_series = _safe_replace_and_infer(series, [np.inf, -np.inf], np.nan)
     return replaced_series.isna()
 
@@ -235,7 +236,8 @@ def _safe_replace_and_infer(
     value: Any | None = None,
 ) -> pd.Series | pd.DataFrame:
     """
-    Helper function to replace values and infer object dtypes.
+    Helper function to safely replace values and infer object dtypes
+    while avoiding pandas deprecation warnings.
     Args:
         data: pandas Series or DataFrame to process
         to_replace: Value(s) to replace (default: [np.inf, -np.inf])
@@ -247,14 +249,21 @@ def _safe_replace_and_infer(
         to_replace = [np.inf, -np.inf]
     if value is None:
         value = np.nan
-    return data.replace(to_replace, value).infer_objects()
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="Downcasting behavior in `replace` is deprecated.*",
+            category=FutureWarning,
+        )
+        return data.replace(to_replace, value).infer_objects(copy=False)
 
 
 def _safe_fillna_and_infer(
     data: pd.Series | pd.DataFrame, value: Any | None = None
 ) -> pd.Series | pd.DataFrame:
     """
-    Helper function to fill NaN values and infer object dtypes.
+    Helper function to safely fill NaN values and infer object dtypes
+    while avoiding pandas deprecation warnings.
 
     Args:
         data: pandas Series or DataFrame to process
@@ -266,9 +275,12 @@ def _safe_fillna_and_infer(
     if value is None:
         value = np.nan
 
-    filled_data = data.fillna(value)
+    # Suppress pandas FutureWarnings about downcasting during fillna operations
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", FutureWarning)
+        filled_data = data.fillna(value)
 
-    return filled_data.infer_objects()
+    return filled_data.infer_objects(copy=False)
 
 
 def _safe_groupby_apply(
@@ -293,8 +305,11 @@ def _safe_groupby_apply(
     try:
         return data.groupby(groupby_cols, include_groups=False).apply(apply_func)
     except TypeError:
-        # Fallback for older pandas versions that don't support include_groups parameter
-        return data.groupby(groupby_cols).apply(apply_func)
+        # Suppress pandas FutureWarnings about downcasting during fillna operations
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", FutureWarning)
+            # Fallback for older pandas versions that don't support include_groups parameter
+            return data.groupby(groupby_cols).apply(apply_func)
 
 
 def _safe_show_legend(axis: Any) -> None:

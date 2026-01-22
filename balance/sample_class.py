@@ -98,11 +98,7 @@ def _concat_metric_val_var(
         return rows.reset_index(drop=True)
 
     rows = rows.reindex(columns=diagnostics.columns, fill_value=pd.NA)
-    result = pd.concat((diagnostics, rows), ignore_index=True)
-    for column in diagnostics.columns:
-        if isinstance(diagnostics[column].dtype, pd.StringDtype):
-            result[column] = result[column].astype(diagnostics[column].dtype)
-    return result
+    return pd.concat((diagnostics, rows), ignore_index=True)
 
 
 class Sample:
