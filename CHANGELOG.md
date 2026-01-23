@@ -1,20 +1,26 @@
-# 0.15.0 (TBD)
+# 0.16.0 (Unreleased)
 
-> TODO: update to final version
+## Bug Fixes
+
+- **Removed deprecated setup build**
+  - Replaced deprecated `setup.py` with `pyproject.toml` build in CI to avoid build failure.
+
+## Packaging & Tests
+
+- **Pandas 2.x compatibility and upper bound (<3.0.0)**
+  - Constrained the pandas dependency to `>=2,<3.0.0` to avoid untested pandas 3.x API and dtype changes.
+
+# 0.15.0 (2026-01-20)
 
 ## New Features
 
-- **Warn when adjustment target dwarfs sample size**
-  - `Sample.adjust()` now warns when the target exceeds 100k rows and is at
-    least 10x larger than the sample, highlighting that uncertainty is
-    dominated by the sample (akin to a one-sample comparison).
-- **Expose outcome columns selection in the CLI**
+- **Added EMD/CVMD/KS distribution diagnostics**
+  - `BalanceDF` now exposes Earth Mover's Distance (EMD), Cramér-von Mises distance (CVMD), and Kolmogorov-Smirnov (KS) statistics for comparing adjusted samples to targets.
+  - These diagnostics support weighted or unweighted comparisons, apply discrete/continuous formulations, and respect `aggregate_by_main_covar` for one-hot categorical aggregation.
+- **Exposed outcome columns selection in the CLI**
   - Added `--outcome_columns` to choose which columns are treated as outcomes
     instead of defaulting to all non-id/weight/covariate columns. Remaining columns are moved to `ignored_columns`.
-- **Drop NA rows when requested in model_matrix**
-  - `model_matrix(add_na=False)` now actually drops rows containing NA values while preserving categorical levels, matching the documented behavior.
-  - Previously, `add_na=False` only logged a warning without dropping rows; code relying on the old behavior may now see fewer rows and should either handle missingness explicitly or use `add_na=True`.
-- **Poststratify missing data handling**
+- **Improved missing data handling in `poststratify()`**
   - `poststratify()` now accepts `na_action` to either drop rows with missing
     values or treat missing values as their own category during weighting.
   - **Breaking change:** the default behavior now fills missing values in
@@ -23,15 +29,29 @@
     explicitly, and their treatment depended on pandas `groupby` and `merge`
     defaults. To approximate the legacy behavior where missing values do not
     form their own category, pass `na_action="drop"` explicitly.
-- **Customize `descriptive_stats` model matrices with formulas**
+- **Added formula support for `descriptive_stats` model matrices**
   - `descriptive_stats()` now accepts a `formula` argument that is always
     applied to the data (including numeric-only frames), letting callers
     control which terms and dummy variables are included in summary statistics.
-- **Added EMD/CVMD/KS distribution diagnostics**
-  - `BalanceDF` now exposes Earth Mover's Distance (EMD), Cramér-von Mises distance (CVMD), and Kolmogorov-Smirnov (KS) statistics for comparing adjusted samples to targets.
-  - These diagnostics support weighted or unweighted comparisons, apply discrete/continuous formulations, and respect `aggregate_by_main_covar` for one-hot categorical aggregation.
+
+## Documentation
+
 - **Documented the balance CLI**
   - Added full API docstrings for `balance.cli` and a new CLI tutorial notebook.
+- **Created Balance CLI tutorial**
+  - Added CLI command echoing, a `load_data()` example, and richer diagnostics exploration with metric/variable listings and a browsable diagnostics table. https://import-balance.org/docs/tutorials/balance_cli_tutorial/
+- **Synchronized docstring examples with test cases**
+  - Updated user-facing docstrings so the documented examples mirror tested inputs
+    and outputs.
+
+## Code Quality & Refactoring
+
+- **Added warning when the sample size of 'target' is much larger than 'sample' sample size**
+  - `Sample.adjust()` now warns when the target exceeds 100k rows and is at
+    least 10x larger than the sample, highlighting that uncertainty is
+    dominated by the sample (akin to a one-sample comparison).
+- **Split util helpers into focused modules**
+  - Broke `balance.util` into `balance.utils` submodules for easier navigation.
 
 ## Bug Fixes
 
@@ -52,19 +72,25 @@
     and target proportions in categorical QQ plots.
 - **Restored CBPS tutorial plots**
   - Re-enabled scatter plots in the CBPS comparison tutorial notebook while
-    avoiding GitHub Pages rendering errors and pandas colormap warnings.
+    avoiding GitHub Pages rendering errors and pandas colormap warnings. https://import-balance.org/docs/tutorials/comparing_cbps_in_r_vs_python_using_sim_data/
 - **Clearer validation errors in adjustment helpers**
   - `trim_weights()` now accepts list/tuple inputs and reports invalid types explicitly.
   - `apply_transformations()` raises clearer errors for invalid inputs and empty transformations.
+- **Fixed `model_matrix` to drop NA rows when requested**
+  - `model_matrix(add_na=False)` now actually drops rows containing NA values while preserving categorical levels, matching the documented behavior.
+  - Previously, `add_na=False` only logged a warning without dropping rows; code relying on the old behavior may now see fewer rows and should either handle missingness explicitly or use `add_na=True`.
 
-## Code Quality & Refactoring
+## Tests
 
 - **Aligned formatting toolchain between Meta internal and GitHub CI**
   - Added `["fbcode/core_stats/balance"]` override to Meta's internal `tools/lint/pyfmt/config.toml` to use `formatter = "black"` and `sorter = "usort"`.
   - This ensures both internal (`pyfmt`/`arc lint`) and external (GitHub Actions) environments use the same Black 25.1.0 formatter, eliminating formatting drift.
   - Updated CI workflow, pre-commit config, and `requirements-fmt.txt` to use `black==25.1.0`.
-- **Split util helpers into focused modules**
-  - Broke `balance.util` into `balance.utils` submodules for easier navigation.
+- **Added Pyre type checking to GitHub Actions** via `.pyre_configuration.external` and a new `pyre` job in the workflow. Tests are excluded due to external typeshed stub differences; library code is fully type-checked.
+- **Added test coverage workflow and badge to README** via `.github/workflows/coverage.yml`. The workflow collects coverage using pytest-cov, generates HTML and XML reports, uploads them as artifacts, and displays coverage metrics. A coverage badge is now shown in README.md alongside other workflow badges.
+- **Improved test coverage for edge cases and error handling paths**
+  - Added targeted tests for previously uncovered code paths across the library, addressing edge cases including empty inputs, verbose logging, error handling for invalid parameters, and boundary conditions in weighting methods (IPW, CBPS, rake).
+  - Tests exercise defensive code paths that handle empty DataFrames, NaN convergence values, invalid model types, and non-convergence warnings.
 - **Split test_util.py into focused test modules**
   - Split the large `test_util.py` file (2325 lines) into 5 modular test files that mirror the `balance/utils/` structure:
     - `test_util_data_transformation.py` - Tests for data transformation utilities
@@ -73,16 +99,10 @@
     - `test_util_pandas_utils.py` - Tests for pandas utilities (including high cardinality warnings)
     - `test_util_logging_utils.py` - Tests for logging utilities
   - This improves test organization and makes it easier to locate tests for specific utilities.
-- **Synchronize docstring examples with test cases**
-  - Updated user-facing docstrings so the documented examples mirror tested inputs
-    and outputs.
 
-## Tests
-- **Added Pyre type checking to GitHub Actions** via `.pyre_configuration.external` and a new `pyre` job in the workflow. Tests are excluded due to external typeshed stub differences; library code is fully type-checked.
-- **Added test coverage workflow and badge to README** via `.github/workflows/coverage.yml`. The workflow collects coverage using pytest-cov, generates HTML and XML reports, uploads them as artifacts, and displays coverage metrics. A coverage badge is now shown in README.md alongside other workflow badges.
-- **Improved test coverage for edge cases and error handling paths**
-  - Added targeted tests for previously uncovered code paths across the library, addressing edge cases including empty inputs, verbose logging, error handling for invalid parameters, and boundary conditions in weighting methods (IPW, CBPS, rake).
-  - Tests exercise defensive code paths that handle empty DataFrames, NaN convergence values, invalid model types, and non-convergence warnings.
+## Contributors
+
+@neuralsorcerer, @talgalili
 
 # 0.14.0 (2025-12-14)
 

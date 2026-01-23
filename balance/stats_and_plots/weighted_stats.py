@@ -279,12 +279,8 @@ def ci_of_weighted_mean(
     var_weighed_mean_of_v = var_of_weighted_mean(v, w, inf_rm)
     z_value = norm.ppf((1 + conf_level) / 2)
 
-    if isinstance(v, pd.Series):
-        ci_index = v.index
-    elif isinstance(v, pd.DataFrame):
-        ci_index = v.columns
-    else:
-        ci_index = None
+    # After _prepare_weighted_stat_args, v is always a DataFrame
+    ci_index = v.columns
 
     ci = pd.Series(
         [

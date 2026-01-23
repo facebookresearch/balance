@@ -16,7 +16,10 @@ import pandas as pd
 from balance import util as balance_util
 from balance.sample_class import Sample
 from balance.util import _verify_value_type
-from balance.utils.input_validation import _extract_series_and_weights
+from balance.utils.input_validation import (
+    _extract_series_and_weights,
+    _isinstance_sample,
+)
 
 
 class TestUtil(
@@ -115,8 +118,6 @@ class TestUtil(
         - Regular pandas DataFrames
         - Sample objects created from DataFrames
         """
-        from balance.util import _isinstance_sample
-
         s_df = pd.DataFrame(
             {
                 "a": (0, 1, 2),
@@ -666,3 +667,149 @@ class TestChooseVariablesEmptySet(balance.testutil.BalanceTestCase):
         result = balance_util.choose_variables(df1, df2, variables=[])
         # Should return intersection (only 'a')
         self.assertEqual(result, ["a"])
+
+
+class TestIsinstanceSample(balance.testutil.BalanceTestCase):
+    """Test _isinstance_sample function behavior."""
+
+    def test_isinstance_sample_returns_false_for_non_sample(self) -> None:
+        """Test _isinstance_sample returns False for non-Sample objects."""
+        self.assertFalse(_isinstance_sample("not a sample"))
+        self.assertFalse(_isinstance_sample(123))
+        self.assertFalse(_isinstance_sample([1, 2, 3]))
+        self.assertFalse(_isinstance_sample(pd.DataFrame({"a": [1, 2]})))
+
+    def test_isinstance_sample_returns_true_for_sample(self) -> None:
+        """Test _isinstance_sample returns True for Sample objects."""
+        sample = Sample.from_frame(pd.DataFrame({"id": [1, 2], "a": [3, 4]}))
+        self.assertTrue(_isinstance_sample(sample))
+
+
+class TestCoerceToNumericAndValidate(balance.testutil.BalanceTestCase):
+    """Test cases for _coerce_to_numeric_and_validate function."""
+
+    def test_successful_numeric_conversion(self) -> None:
+        """Test successful conversion of numeric series."""
+        from balance.utils.input_validation import _coerce_to_numeric_and_validate
+
+        series = pd.Series([1.0, 2.0, 3.0])
+        weights = np.array([1.0, 2.0, 3.0])
+
+        result_vals, result_weights = _coerce_to_numeric_and_validate(
+            series, weights, "test"
+        )
+
+        np.testing.assert_array_equal(result_vals, np.array([1.0, 2.0, 3.0]))
+        np.testing.assert_array_equal(result_weights, np.array([1.0, 2.0, 3.0]))
+
+    def test_conversion_with_coercible_strings(self) -> None:
+        """Test conversion when series contains numeric strings."""
+        from balance.utils.input_validation import _coerce_to_numeric_and_validate
+
+        series = pd.Series(["1", "2", "3"])
+        weights = np.array([1.0, 2.0, 3.0])
+
+        result_vals, result_weights = _coerce_to_numeric_and_validate(
+            series, weights, "test"
+        )
+
+        np.testing.assert_array_equal(result_vals, np.array([1.0, 2.0, 3.0]))
+        np.testing.assert_array_equal(result_weights, np.array([1.0, 2.0, 3.0]))
+
+    def test_partial_conversion_with_some_non_numeric(self) -> None:
+        """Test conversion when some values can't be converted to numeric."""
+        from balance.utils.input_validation import _coerce_to_numeric_and_validate
+
+        # Mix of convertible and non-convertible values
+        series = pd.Series([1.0, "abc", 3.0])
+        weights = np.array([1.0, 2.0, 3.0])
+
+        result_vals, result_weights = _coerce_to_numeric_and_validate(
+            series, weights, "test"
+        )
+
+        # "abc" should be coerced to NaN and dropped
+        np.testing.assert_array_equal(result_vals, np.array([1.0, 3.0]))
+        np.testing.assert_array_equal(result_weights, np.array([1.0, 3.0]))
+
+    def test_raises_on_all_non_numeric(self) -> None:
+        """Test that ValueError is raised when all values fail numeric conversion.
+
+        This is the key test case that verifies the previously unreachable code
+        path is now testable. When all values in a series cannot be converted
+        to numeric, the function should raise ValueError.
+        """
+        from balance.utils.input_validation import _coerce_to_numeric_and_validate
+
+        # All values are non-numeric strings
+        series = pd.Series(["abc", "def", "ghi"])
+        weights = np.array([1.0, 2.0, 3.0])
+
+        with self.assertRaisesRegex(
+            ValueError, "must contain at least one valid numeric value"
+        ):
+            _coerce_to_numeric_and_validate(series, weights, "test")
+
+    def test_raises_on_empty_series(self) -> None:
+        """Test that ValueError is raised when series is empty."""
+        from balance.utils.input_validation import _coerce_to_numeric_and_validate
+
+        series = pd.Series([], dtype=float)
+        weights = np.array([])
+
+        with self.assertRaisesRegex(
+            ValueError, "must contain at least one valid numeric value"
+        ):
+            _coerce_to_numeric_and_validate(series, weights, "empty series")
+
+    def test_handles_nan_values(self) -> None:
+        """Test that NaN values are properly dropped during conversion."""
+        from balance.utils.input_validation import _coerce_to_numeric_and_validate
+
+        series = pd.Series([1.0, np.nan, 3.0])
+        weights = np.array([1.0, 2.0, 3.0])
+
+        result_vals, result_weights = _coerce_to_numeric_and_validate(
+            series, weights, "test"
+        )
+
+        np.testing.assert_array_equal(result_vals, np.array([1.0, 3.0]))
+        np.testing.assert_array_equal(result_weights, np.array([1.0, 3.0]))
+
+    def test_raises_on_all_nan_values(self) -> None:
+        """Test that ValueError is raised when all values are NaN after conversion."""
+        from balance.utils.input_validation import _coerce_to_numeric_and_validate
+
+        series = pd.Series([np.nan, np.nan, np.nan])
+        weights = np.array([1.0, 2.0, 3.0])
+
+        with self.assertRaisesRegex(
+            ValueError, "must contain at least one valid numeric value"
+        ):
+            _coerce_to_numeric_and_validate(series, weights, "all_nan")
+
+    def test_preserves_weight_alignment(self) -> None:
+        """Test that weights are correctly aligned after dropping invalid values."""
+        from balance.utils.input_validation import _coerce_to_numeric_and_validate
+
+        # Series with some non-convertible values at specific positions
+        series = pd.Series([1.0, "bad", 3.0, "bad", 5.0], index=[0, 1, 2, 3, 4])
+        weights = np.array([10.0, 20.0, 30.0, 40.0, 50.0])
+
+        result_vals, result_weights = _coerce_to_numeric_and_validate(
+            series, weights, "test"
+        )
+
+        # Only positions 0, 2, 4 should remain
+        np.testing.assert_array_equal(result_vals, np.array([1.0, 3.0, 5.0]))
+        np.testing.assert_array_equal(result_weights, np.array([10.0, 30.0, 50.0]))
+
+    def test_error_message_includes_label(self) -> None:
+        """Test that error message includes the provided label."""
+        from balance.utils.input_validation import _coerce_to_numeric_and_validate
+
+        series = pd.Series(["abc", "def"])
+        weights = np.array([1.0, 2.0])
+
+        with self.assertRaisesRegex(ValueError, "my_custom_label"):
+            _coerce_to_numeric_and_validate(series, weights, "my_custom_label")

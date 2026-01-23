@@ -14,6 +14,8 @@ from __future__ import (
 )
 
 import warnings
+from typing import Any, Callable, Dict, List, Tuple, Union
+from unittest.mock import MagicMock
 
 import balance.testutil
 import numpy as np
@@ -1342,16 +1344,25 @@ class TestCbpsOptimizationConvergenceWarnings(balance.testutil.BalanceTestCase):
 
         # CBPS handles extreme cases by logging a warning about identical weights
         # rather than raising an exception
-        self.assertWarnsRegexp(
-            "All weights are identical",
-            balance_cbps.cbps,
-            sample_df,
-            sample_weights,
-            target_df,
-            target_weights,
-            transformations=None,
-            cbps_method="exact",
-        )
+        # Suppress PerfectSeparationWarning as it's expected with this extreme test data
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message="Perfect separation or prediction detected",
+                category=PerfectSeparationWarning,
+            )
+            self.assertWarnsRegexp(
+                "All weights are identical",
+                balance_cbps.cbps,
+                sample_df,
+                sample_weights,
+                target_df,
+                target_weights,
+                transformations=None,
+                cbps_method="exact",
+            )
+
+    def test_cbps_over_method_logs_warnings(self) -> None:
         """Test CBPS over method logs warnings when optimization fails (lines 713, 747, 765).
 
         Verifies that when optimization algorithms fail to converge, appropriate
@@ -1381,38 +1392,53 @@ class TestCbpsOptimizationConvergenceWarnings(balance.testutil.BalanceTestCase):
         # Run with over method to exercise gmm optimization paths
         # Use very tight opt_opts to force convergence failure
         # We expect either warnings to be logged or an exception to be raised
-        try:
-            with self.assertLogs(level=logging.WARNING) as log_context:
-                balance_cbps.cbps(
-                    sample_df,
-                    sample_weights,
-                    target_df,
-                    target_weights,
-                    transformations=None,
-                    cbps_method="over",
-                    opt_opts={"maxiter": 1},  # Force convergence failure
+        # Suppress PerfectSeparationWarning and scipy COBYLA warnings as they're expected
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message="Perfect separation or prediction detected",
+                category=PerfectSeparationWarning,
+            )
+            # Suppress scipy COBYLA warning about MAXFUN being too small
+            # This is expected when we intentionally set maxiter=1 to force failure
+            warnings.filterwarnings(
+                "ignore",
+                message="COBYLA: Invalid MAXFUN",
+                category=UserWarning,
+            )
+            try:
+                with self.assertLogs(level=logging.WARNING) as log_context:
+                    balance_cbps.cbps(
+                        sample_df,
+                        sample_weights,
+                        target_df,
+                        target_weights,
+                        transformations=None,
+                        cbps_method="over",
+                        opt_opts={"maxiter": 1},  # Force convergence failure
+                    )
+                # Verify that at least one warning was logged
+                self.assertGreater(
+                    len(log_context.records),
+                    0,
+                    msg="Expected warning logs when optimization fails to converge",
                 )
-            # Verify that at least one warning was logged
-            self.assertTrue(
-                len(log_context.records) > 0,
-                msg="Expected warning logs when optimization fails to converge",
-            )
-        except Exception as e:
-            # If an exception is raised, verify it contains relevant error info
-            error_msg = str(e).lower()
-            self.assertTrue(
-                any(
-                    keyword in error_msg
-                    for keyword in [
-                        "converge",
-                        "constraint",
-                        "singular",
-                        "optimization",
-                        "failed",
-                    ]
-                ),
-                msg=f"Expected exception to contain convergence-related message, got: {e}",
-            )
+            except Exception as e:
+                # If an exception is raised, verify it contains relevant error info
+                error_msg = str(e).lower()
+                self.assertTrue(
+                    any(
+                        keyword in error_msg
+                        for keyword in [
+                            "converge",
+                            "constraint",
+                            "singular",
+                            "optimization",
+                            "failed",
+                        ]
+                    ),
+                    msg=f"Expected exception to contain convergence-related message, got: {e}",
+                )
 
     def test_cbps_alpha_function_convergence_warning(self) -> None:
         """Test CBPS logs warning when alpha_function fails to converge (line 689).
@@ -1476,4 +1502,137 @@ class TestCbpsOptimizationConvergenceWarnings(balance.testutil.BalanceTestCase):
                     ]
                 ),
                 msg=f"Expected exception to contain convergence-related message, got: {e}",
+            )
+
+
+class TestCbpsOptimizationConvergenceWithMocking(balance.testutil.BalanceTestCase):
+    """Test CBPS optimization convergence warning branches using mocking (lines 689, 713, 726, 747, 765, 778).
+
+    These tests use unittest.mock to directly control scipy.optimize.minimize return values,
+    ensuring the specific warning and exception branches in _cbps_optimization are executed.
+    """
+
+    def _create_simple_test_data(
+        self,
+    ) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]:
+        """Create simple test data for CBPS testing."""
+        sample_df = pd.DataFrame({"a": [1.0, 2.0, 3.0, 4.0, 5.0]})
+        target_df = pd.DataFrame({"a": [2.0, 3.0, 4.0, 5.0, 6.0]})
+        sample_weights = pd.Series([1.0] * 5)
+        target_weights = pd.Series([1.0] * 5)
+        return sample_df, sample_weights, target_df, target_weights
+
+    def test_exact_method_constraint_violation_exception(self) -> None:
+        """Test line 726: Exception when exact method constraints can't be satisfied.
+
+        Uses mocking to simulate scipy.optimize.minimize returning success=False
+        with a specific constraint violation message.
+        """
+        from unittest.mock import patch
+
+        sample_df, sample_weights, target_df, target_weights = (
+            self._create_simple_test_data()
+        )
+
+        def mock_minimize(fun: Callable[..., Any], x0: Any, **kwargs: Any) -> MagicMock:
+            result = MagicMock()
+            # Simulate constraint violation failure
+            result.__getitem__ = lambda _, key: {
+                "success": np.bool_(False),
+                "message": "Did not converge to a solution satisfying the constraints",
+                "x": x0,
+                "fun": 100.0,
+            }[key]
+            return result
+
+        def mock_minimize_scalar(
+            fun: Callable[..., Any], **kwargs: Any
+        ) -> Dict[str, Union[np.bool_, np.ndarray, str]]:
+            return {
+                "success": np.bool_(True),
+                "message": "Success",
+                "x": np.array([1.0]),
+            }
+
+        with (
+            patch("scipy.optimize.minimize_scalar", side_effect=mock_minimize_scalar),
+            patch("scipy.optimize.minimize", side_effect=mock_minimize),
+        ):
+            with self.assertRaises(Exception) as context:
+                balance_cbps.cbps(
+                    sample_df,
+                    sample_weights,
+                    target_df,
+                    target_weights,
+                    transformations=None,
+                    cbps_method="exact",
+                )
+
+            self.assertIn(
+                "no solution satisfying the constraints",
+                str(context.exception).lower(),
+                msg="Expected exception about constraint violation",
+            )
+
+    def test_over_method_both_gmm_constraint_violation_exception(self) -> None:
+        """Test line 778: Exception when over method both GMM optimizations fail with constraint violation.
+
+        Uses mocking to simulate both gmm_loss optimizations failing with constraint messages.
+        """
+        from unittest.mock import patch
+
+        sample_df, sample_weights, target_df, target_weights = (
+            self._create_simple_test_data()
+        )
+
+        call_count: List[int] = [0]
+
+        def mock_minimize(fun: Callable[..., Any], x0: Any, **kwargs: Any) -> MagicMock:
+            call_count[0] += 1
+            result = MagicMock()
+            if call_count[0] == 1:
+                # First call is balance_optimize - succeed
+                result.__getitem__ = lambda _, key: {
+                    "success": np.bool_(True),
+                    "message": "Success",
+                    "x": x0,
+                    "fun": 1.0,
+                }[key]
+            else:
+                # Both GMM optimizations fail with constraint violation
+                result.__getitem__ = lambda _, key: {
+                    "success": np.bool_(False),
+                    "message": "Did not converge to a solution satisfying the constraints",
+                    "x": x0,
+                    "fun": 100.0,
+                }[key]
+            return result
+
+        def mock_minimize_scalar(
+            fun: Callable[..., Any], **kwargs: Any
+        ) -> Dict[str, Union[np.bool_, np.ndarray, str]]:
+            return {
+                "success": np.bool_(True),
+                "message": "Success",
+                "x": np.array([1.0]),
+            }
+
+        with (
+            patch("scipy.optimize.minimize_scalar", side_effect=mock_minimize_scalar),
+            patch("scipy.optimize.minimize", side_effect=mock_minimize),
+        ):
+            with self.assertRaises(Exception) as context:
+                balance_cbps.cbps(
+                    sample_df,
+                    sample_weights,
+                    target_df,
+                    target_weights,
+                    transformations=None,
+                    cbps_method="over",
+                )
+
+            self.assertIn(
+                "no solution satisfying the constraints",
+                str(context.exception).lower(),
+                msg="Expected exception about constraint violation in over method",
             )

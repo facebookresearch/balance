@@ -653,10 +653,6 @@ def seaborn_plot_dist(
             # With limiting the y axis range to (0,1)
             seaborn_plot_dist(dfs1, names=["self", "unadjusted", "target"], dist_type = "kde", ylim = (0,1))
     """
-    # Provide default names if not specified
-    if names is None:
-        names = [f"df_{i}" for i in range(len(dfs))]
-
     # Set default dist_type
     dist_type_resolved: Literal["qq", "hist", "kde", "ecdf"]
     if dist_type is None:
@@ -670,10 +666,6 @@ def seaborn_plot_dist(
     # Set default names if not provided
     if names is None:
         names = [f"df_{i}" for i in range(len(dfs))]
-
-    # Type narrowing for names parameter
-    if names is None:
-        names = []
 
     #  Choose set of variables to plot
     variables = choose_variables(*(d["df"] for d in dfs), variables=variables)
@@ -1348,12 +1340,13 @@ def naming_legend(object_name: str, names_of_dfs: List[str]) -> str:
             naming_legend('self', ['self', 'target']) #'sample'
             naming_legend('other_name', ['self', 'target']) #'other_name'
     """
-    if object_name in names_of_dfs:
-        return {
-            "unadjusted": "sample",
-            "self": "adjusted" if "unadjusted" in names_of_dfs else "sample",
-            "target": "population",
-        }[object_name]
+    name_mapping = {
+        "unadjusted": "sample",
+        "self": "adjusted" if "unadjusted" in names_of_dfs else "sample",
+        "target": "population",
+    }
+    if object_name in name_mapping:
+        return name_mapping[object_name]
     else:
         return object_name
 

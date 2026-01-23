@@ -20,7 +20,7 @@ from balance.util import TruncationFormatter  # noqa
 from balance.estimators import BalanceWeighting  # noqa
 
 global __version__
-__version__ = "0.14.x"
+__version__ = "0.15.0"
 
 WELCOME_MESSAGE = f"""
 balance (Version {__version__}) loaded:

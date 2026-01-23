@@ -34,7 +34,8 @@ jobs:
           python -m pytest -ra
       - name: Build wheels pkg
         run: |
-          python setup.py bdist_wheel
+          python -m pip install --upgrade pip build
+          python -m build --wheel --outdir dist
 
   lint:
     runs-on: ubuntu-latest
@@ -53,6 +54,8 @@ jobs:
         flake8 .
     - name: ufmt (formatting check)
       run: |
+        echo "Checking for formatting issues..."
+        ufmt diff .
         ufmt check .
 
   pyre:
