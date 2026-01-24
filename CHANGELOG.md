@@ -15,6 +15,16 @@
 - **Pandas 2.x compatibility and upper bound (<3.0.0)**
   - Constrained the pandas dependency to `>=2,<3.0.0` to avoid untested pandas 3.x API and dtype changes.
 
+## Breaking Changes
+
+- **Require positive weights for weight diagnostics that normalize or aggregate**
+  - `design_effect`, `nonparametric_skew`, `prop_above_and_below`, and
+    `weighted_median_breakdown_point` now raise a `ValueError` when all weights
+    are zero.
+  - **Migration:** ensure your weights include at least one positive value
+    before calling these diagnostics, or catch the `ValueError` if all-zero
+    weights are possible in your workflow.
+
 # 0.15.0 (2026-01-20)
 
 ## New Features
