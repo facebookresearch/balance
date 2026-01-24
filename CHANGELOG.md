@@ -1,5 +1,10 @@
 # 0.16.0 (Unreleased)
 
+## New Features
+
+- **Validate weights include positive values**
+  - Added a guard in weight diagnostics to error when all weights are zero.
+
 ## Bug Fixes
 
 - **Removed deprecated setup build**

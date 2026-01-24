@@ -59,6 +59,26 @@ class TestBalance_weights_stats(
             negative_w = [-1, 0, 1]
             _check_weights_are_valid(negative_w)
 
+        # Test invalid weights (all zeros) when positive weights are required
+        with self.assertRaisesRegex(
+            ValueError, "weights \\(w\\) must include at least one positive value."
+        ):
+            zero_w = [0, 0, 0]
+            _check_weights_are_valid(zero_w, require_positive=True)
+
+        # Zeros are allowed when positive weights are not required
+        self.assertEqual(_check_weights_are_valid([0, 0, 0]), None)
+
+        # Empty weights should fail as non-numeric inputs
+        with self.assertRaisesRegex(TypeError, "weights \\(w\\) must be a number*"):
+            _check_weights_are_valid([], require_positive=True)
+
+        # All-NaN weights should fail when positive weights are required
+        with self.assertRaisesRegex(
+            ValueError, "weights \\(w\\) must include at least one positive value."
+        ):
+            _check_weights_are_valid([np.nan, np.nan], require_positive=True)
+
     def test_design_effect(self) -> None:
         """Test calculation of design effect for weighted samples.
 
@@ -74,6 +94,11 @@ class TestBalance_weights_stats(
             1.555_555_555_555_555_6,
         )
         self.assertEqual(type(design_effect(pd.Series((0, 1, 2, 3)))), np.float64)
+
+        with self.assertRaisesRegex(
+            ValueError, "weights \\(w\\) must include at least one positive value."
+        ):
+            design_effect(pd.Series((0, 0, 0)))
 
     def test_nonparametric_skew(self) -> None:
         """Test calculation of nonparametric skewness measure.
