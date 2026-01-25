@@ -292,8 +292,12 @@ def guess_id_column(
             candidate_columns = ["id"]
         elif isinstance(possible_id_columns, str):
             candidate_columns = [possible_id_columns]
-        else:
+        elif isinstance(possible_id_columns, collections.abc.Sequence):
             candidate_columns = list(possible_id_columns)
+        else:
+            raise TypeError(
+                "possible_id_columns must be a string or a sequence of strings"
+            )
 
         if not candidate_columns:
             raise ValueError(

@@ -137,6 +137,14 @@ class TestUtil(
                 df,
                 possible_id_columns=["user_id", 1],
             )
+        with self.assertRaisesRegex(
+            TypeError,
+            "possible_id_columns must be a string or a sequence of strings",
+        ):
+            balance_util.guess_id_column(
+                df,
+                possible_id_columns=1,
+            )
 
         # test when column_name is passed
         df = pd.DataFrame(
