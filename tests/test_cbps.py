@@ -504,11 +504,20 @@ class Testcbps(
             if isinstance(weight_series, pd.Series):
                 unconstrained_de = design_effect(weight_series)
             else:
-                # pyre-fixme[6]: Fallback for unexpected type
-                unconstrained_de = design_effect(unconstrained_result)
-        else:
-            # pyre-fixme[6]: Fallback for direct Series result
+                self.fail(
+                    "cbps returned a dict with 'weight' key that is not a pandas Series; "
+                    f"got {type(weight_series).__name__}"
+                )
+                return
+        elif isinstance(unconstrained_result, pd.Series):
             unconstrained_de = design_effect(unconstrained_result)
+        else:
+            self.fail(
+                "cbps returned unexpected type; expected either a pandas Series or a "
+                f"dict containing a 'weight' Series, got {type(unconstrained_result).__name__}"
+            )
+            return
+        # pyre-ignore[61]: self.fail() always raises, so this is always defined
         self.assertTrue(
             unconstrained_de > MAX_DESIGN_EFFECT,
             msg=f"Unconstrained CBPS should produce high design effect (>{MAX_DESIGN_EFFECT}), got {unconstrained_de}",
@@ -533,11 +542,20 @@ class Testcbps(
             if isinstance(weight_series, pd.Series):
                 constrained_de_over = design_effect(weight_series)
             else:
-                # pyre-fixme[6]: Fallback for unexpected type
-                constrained_de_over = design_effect(constrained_result_over)
-        else:
-            # pyre-fixme[6]: Fallback for direct Series result
+                self.fail(
+                    "cbps returned a dict with 'weight' key that is not a pandas Series; "
+                    f"got {type(weight_series).__name__}"
+                )
+                return
+        elif isinstance(constrained_result_over, pd.Series):
             constrained_de_over = design_effect(constrained_result_over)
+        else:
+            self.fail(
+                "cbps returned unexpected type; expected either a pandas Series or a "
+                f"dict containing a 'weight' Series, got {type(constrained_result_over).__name__}"
+            )
+            return
+        # pyre-ignore[61]: self.fail() always raises, so this is always defined
         self.assertTrue(
             round(constrained_de_over, 5) <= MAX_DESIGN_EFFECT,
             msg=f"Constrained CBPS ('over' method) should respect max_de={MAX_DESIGN_EFFECT}, got {constrained_de_over}",
@@ -563,11 +581,20 @@ class Testcbps(
             if isinstance(weight_series, pd.Series):
                 constrained_de_exact = design_effect(weight_series)
             else:
-                # pyre-fixme[6]: Fallback for unexpected type
-                constrained_de_exact = design_effect(constrained_result_exact)
-        else:
-            # pyre-fixme[6]: Fallback for direct Series result
+                self.fail(
+                    "cbps returned a dict with 'weight' key that is not a pandas Series; "
+                    f"got {type(weight_series).__name__}"
+                )
+                return
+        elif isinstance(constrained_result_exact, pd.Series):
             constrained_de_exact = design_effect(constrained_result_exact)
+        else:
+            self.fail(
+                "cbps returned unexpected type; expected either a pandas Series or a "
+                f"dict containing a 'weight' Series, got {type(constrained_result_exact).__name__}"
+            )
+            return
+        # pyre-ignore[61]: self.fail() always raises, so this is always defined
         self.assertTrue(
             round(constrained_de_exact, 5) <= MAX_DESIGN_EFFECT,
             msg=f"Constrained CBPS ('exact' method) should respect max_de={MAX_DESIGN_EFFECT}, got {constrained_de_exact}",
