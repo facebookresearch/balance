@@ -10,7 +10,18 @@ from __future__ import annotations
 import collections
 import logging
 from functools import reduce
-from typing import Any, Callable, List, Optional, overload, Tuple, Type, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    List,
+    Optional,
+    overload,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import numpy as np
 import pandas as pd
@@ -250,7 +261,11 @@ def _isinstance_sample(obj: Any) -> bool:
     return isinstance(obj, sample_class.Sample)
 
 
-def guess_id_column(dataset: pd.DataFrame, column_name: str | None = None) -> str:
+def guess_id_column(
+    dataset: pd.DataFrame,
+    column_name: str | None = None,
+    possible_id_columns: Sequence[str] | str | None = None,
+) -> str:
     """
     Guess the id column of a given dataset.
     Possible values for guess: 'id'.
@@ -259,13 +274,13 @@ def guess_id_column(dataset: pd.DataFrame, column_name: str | None = None) -> st
         dataset (pd.DataFrame): dataset to guess id column
         column_name (str, optional): Given id column name. Defaults to None,
             which will guess the id column or raise exception.
+        possible_id_columns (Sequence[str] | str, optional): Candidate ID column
+            names to consider when guessing. Defaults to None, which falls back
+            to ["id"].
 
     Returns:
         str: name of guessed id column
     """
-    # TODO: add a general argument for the user so they could set
-    # a list of possible userid column names instead of only "id".
-    # This should go as an input into Sample.from_frame as well.
     columns = list(dataset.columns)
     if column_name is not None:
         if column_name in columns:
@@ -273,16 +288,46 @@ def guess_id_column(dataset: pd.DataFrame, column_name: str | None = None) -> st
         else:
             raise ValueError(f"Dataframe does not have column '{column_name}'")
     else:
-        possible_columns = [i for i in ["id"] if i in columns]
-        if len(possible_columns) != 1:
+        if possible_id_columns is None:
+            candidate_columns = ["id"]
+        elif isinstance(possible_id_columns, str):
+            candidate_columns = [possible_id_columns]
+        else:
+            candidate_columns = list(possible_id_columns)
+
+        if not candidate_columns:
+            raise ValueError(
+                "Cannot guess id column name for this DataFrame. "
+                "Please provide a value in id_column or possible_id_columns"
+            )
+
+        unique_candidates: list[str] = []
+        seen_candidates: set[str] = set()
+        for candidate in candidate_columns:
+            if not isinstance(candidate, str):
+                raise TypeError(
+                    "possible_id_columns must contain only string column names"
+                )
+            if candidate == "":
+                raise ValueError("possible_id_columns cannot contain empty values")
+            if candidate not in seen_candidates:
+                unique_candidates.append(candidate)
+                seen_candidates.add(candidate)
+
+        possible_columns = [i for i in unique_candidates if i in columns]
+        if len(possible_columns) == 0:
             raise ValueError(
                 "Cannot guess id column name for this DataFrame. "
                 "Please provide a value in id_column"
             )
-        else:
-            column_name = possible_columns[0]
-            logger.warning(f"Guessed id column name {column_name} for the data")
-            return column_name
+        if len(possible_columns) > 1:
+            raise ValueError(
+                "Multiple candidate id columns found in the DataFrame. "
+                "Please provide a value in id_column"
+            )
+        column_name = possible_columns[0]
+        logger.warning(f"Guessed id column name {column_name} for the data")
+        return column_name
 
 
 def _is_arraylike(o: Any) -> bool:

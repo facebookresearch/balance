@@ -4,11 +4,16 @@
 
 - **Validate weights include positive values**
   - Added a guard in weight diagnostics to error when all weights are zero.
+- **Support configurable ID column candidates**
+  - `Sample.from_frame()` and `guess_id_column()` now accept candidate ID column names
+    when auto-detecting the ID column.
 
 ## Bug Fixes
 
 - **Removed deprecated setup build**
   - Replaced deprecated `setup.py` with `pyproject.toml` build in CI to avoid build failure.
+- **Hardened ID column candidate validation**
+  - `guess_id_column()` now ignores duplicate candidate names and validates that candidates are non-empty strings.
 
 ## Packaging & Tests
 

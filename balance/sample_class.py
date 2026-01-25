@@ -370,6 +370,7 @@ class Sample:
         cls: type["Sample"],
         df: pd.DataFrame,
         id_column: str | None = None,
+        id_column_candidates: List[str] | tuple[str, ...] | str | None = None,
         outcome_columns: List[str] | tuple[str, ...] | str | None = None,
         weight_column: str | None = None,
         ignore_columns: List[str] | tuple[str, ...] | str | None = None,
@@ -395,6 +396,9 @@ class Sample:
             df (pd.DataFrame): containing the sample's data
             id_column (str | None): the column of the df which contains the respondent's id
             (should be unique). Defaults to None.
+            id_column_candidates (list | tuple | str | None): candidate id column names
+                to use when id_column is not provided. Defaults to None which uses
+                ["id"].
             outcome_columns (list | tuple | str | None): names of columns to treat as outcome
             weight_column (str | None): name of column to treat as weight. If not specified, will
                 be guessed (either "weight" or "weights"). If not found, a new column will be created ("weight") and filled with 1.0.
@@ -450,7 +454,9 @@ class Sample:
             sample._df = df
 
         # id column
-        id_column = balance_util.guess_id_column(df, id_column)
+        id_column = balance_util.guess_id_column(
+            df, id_column, possible_id_columns=id_column_candidates
+        )
         if any(sample._df[id_column].isnull()):
             raise ValueError("Null values are not allowed in the id_column")
         if not all(isinstance(x, str) for x in sample._df[id_column].tolist()):
