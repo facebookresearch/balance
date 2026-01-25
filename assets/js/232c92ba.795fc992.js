@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkstaticdocs_starter=globalThis.webpackChunkstaticdocs_starter||[]).push([[6837],{95742(t){t.exports=JSON.parse('{"label":"python","permalink":"/blog/tags/python","allTagsPath":"/blog/tags","count":2}')}}]);
