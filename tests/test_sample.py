@@ -196,7 +196,7 @@ class TestSample(
         # Test error when id column cannot be guessed
         with self.assertRaisesRegex(
             ValueError,
-            "Cannot guess id column name for this DataFrame. None of the possible_id_columns candidates",
+            "Cannot guess id column name for this DataFrame. None of the id_column_candidates candidates",
         ):
             Sample.from_frame(df)
 
