@@ -2306,7 +2306,7 @@ class TestSampleFromFrameGuessIdColumnCandidates(balance.testutil.BalanceTestCas
         """Test from_frame raises when candidate ids include invalid types."""
         with self.assertRaisesRegex(
             TypeError,
-            "possible_id_columns must contain only string column names",
+            "id_column_candidates must contain only string column names",
         ):
             Sample.from_frame(
                 pd.DataFrame({"user_id": [1, 2, 3], "a": [1, 2, 3]}),
