@@ -63,6 +63,8 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_check_weights_are_valid</span><span class="p">(</span>
     <span class="n">w</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">require_positive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check weights.</span>
 
@@ -70,10 +72,13 @@
 <span class="sd">        w (Union[ List, pd.Series, np.ndarray, pd.DataFrame, None, ]): input weights.</span>
 <span class="sd">            If w is pd.DataFrame then only the first column will be checked (assuming it is a column of weights).</span>
 <span class="sd">            If input is None, then the function returns None with no errors (since None is a valid weights input for various functions).</span>
+<span class="sd">        require_positive (bool, optional): If True, require at least one weight</span>
+<span class="sd">            to be strictly positive. Defaults to False.</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: if weights are not numeric.</span>
 <span class="sd">        ValueError: if weights include a negative value.</span>
+<span class="sd">        ValueError: if ``require_positive`` is True and all weights are zero.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        _type_: None</span>
@@ -92,7 +97,8 @@
         <span class="p">)</span>
     <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">w</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weights (w) must all be non-negative values.&quot;</span><span class="p">)</span>
-    <span class="c1"># TODO: do we also want to verify that at least one weight is larger than 0?!</span>
+    <span class="k">if</span> <span class="n">require_positive</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">w</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weights (w) must include at least one positive value.&quot;</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="kc">None</span>
 
@@ -138,7 +144,7 @@
 <span class="sd">                # 2.9880418803112336</span>
 <span class="sd">                # As expected. With a single dominating weight - the Deff is almost equal to the sample size.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">_check_weights_are_valid</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+    <span class="n">_check_weights_are_valid</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">require_positive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">_safe_divide_with_zero_handling</span>
 
     <span class="c1"># Avoid divide by zero warning</span>
@@ -179,7 +185,7 @@
 <span class="sd">            nonparametric_skew(pd.Series((-1,1,1, 1)))   #-0.5</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">_check_weights_are_valid</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+    <span class="n">_check_weights_are_valid</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">require_positive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">std</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">-</span> <span class="n">w</span><span class="o">.</span><span class="n">median</span><span class="p">())</span> <span class="o">/</span> <span class="n">w</span><span class="o">.</span><span class="n">std</span><span class="p">()</span></div>
@@ -277,7 +283,7 @@
 <span class="sd">                # dtype: float64}</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">_check_weights_are_valid</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+    <span class="n">_check_weights_are_valid</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">require_positive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1"># normalize weight to sample size:</span>
     <span class="n">w</span> <span class="o">=</span> <span class="n">w</span> <span class="o">/</span> <span class="n">w</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
@@ -350,7 +356,7 @@
 <span class="sd">            w = pd.Series([1,1,1,1, 10])</span>
 <span class="sd">            print(weighted_median_breakdown_point(w)) # 0.2</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">_check_weights_are_valid</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+    <span class="n">_check_weights_are_valid</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">require_positive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1"># normalize weight to sample size:</span>
 
