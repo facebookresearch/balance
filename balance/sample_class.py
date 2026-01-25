@@ -370,13 +370,13 @@ class Sample:
         cls: type["Sample"],
         df: pd.DataFrame,
         id_column: str | None = None,
-        id_column_candidates: List[str] | tuple[str, ...] | str | None = None,
         outcome_columns: List[str] | tuple[str, ...] | str | None = None,
         weight_column: str | None = None,
         ignore_columns: List[str] | tuple[str, ...] | str | None = None,
         check_id_uniqueness: bool = True,
         standardize_types: bool = True,
         use_deepcopy: bool = True,
+        id_column_candidates: List[str] | tuple[str, ...] | str | None = None,
     ) -> "Sample":
         """
         Create a new Sample object.
@@ -396,9 +396,6 @@ class Sample:
             df (pd.DataFrame): containing the sample's data
             id_column (str | None): the column of the df which contains the respondent's id
             (should be unique). Defaults to None.
-            id_column_candidates (list | tuple | str | None): candidate id column names
-                to use when id_column is not provided. Defaults to None which uses
-                ["id"].
             outcome_columns (list | tuple | str | None): names of columns to treat as outcome
             weight_column (str | None): name of column to treat as weight. If not specified, will
                 be guessed (either "weight" or "weights"). If not found, a new column will be created ("weight") and filled with 1.0.
@@ -416,6 +413,9 @@ class Sample:
             use_deepcopy (Optional, bool): Whether to have a new df copy inside the sample object.
                 If False, then when the sample methods update the internal df then the original df will also be updated.
                 Defaults to True.
+            id_column_candidates (list | tuple | str | None): candidate id column names
+                to use when id_column is not provided. Defaults to None which uses
+                ["id"].
 
         Returns:
             Sample: a sample object

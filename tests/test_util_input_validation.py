@@ -155,7 +155,7 @@ class TestUtil(
         # test when no id column is passed and no id column in dataframe
         with self.assertRaisesRegex(
             ValueError,
-            "Cannot guess id column name for this DataFrame. Please provide a value in id_column",
+            "Cannot guess id column name for this DataFrame. None of the possible_id_columns candidates",
         ):
             balance_util.guess_id_column(df)
         with self.assertRaisesRegex(

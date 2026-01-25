@@ -317,8 +317,10 @@ def guess_id_column(
         possible_columns = [i for i in unique_candidates if i in columns]
         if len(possible_columns) == 0:
             raise ValueError(
-                "Cannot guess id column name for this DataFrame. "
-                "Please provide a value in id_column"
+                "Cannot guess id column name for this DataFrame. None of the "
+                f"possible_id_columns candidates {unique_candidates} were found in "
+                f"the DataFrame columns {columns}. Please provide a value in "
+                "id_column or update possible_id_columns to match an existing column."
             )
         if len(possible_columns) > 1:
             raise ValueError(
