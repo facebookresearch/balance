@@ -325,7 +325,9 @@ def guess_id_column(
         if len(possible_columns) > 1:
             raise ValueError(
                 "Multiple candidate id columns found in the DataFrame. "
-                "Please provide a value in id_column"
+                f"Matched columns: {possible_columns}. These were derived from "
+                f"possible_id_columns candidates {unique_candidates}. Please "
+                "provide a value in id_column to disambiguate."
             )
         column_name = possible_columns[0]
         logger.warning(f"Guessed id column name {column_name} for the data")

@@ -172,7 +172,7 @@ class TestUtil(
         )
         with self.assertRaisesRegex(
             ValueError,
-            "Multiple candidate id columns found in the DataFrame",
+            "Multiple candidate id columns found in the DataFrame. Matched columns",
         ):
             balance_util.guess_id_column(
                 df,

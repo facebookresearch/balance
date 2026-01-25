@@ -196,7 +196,7 @@ class TestSample(
         # Test error when id column cannot be guessed
         with self.assertRaisesRegex(
             ValueError,
-            "Cannot guess id column name for this DataFrame. None of the id_column_candidates candidates",
+            "Error while inferring id_column from DataFrame. Specify a valid",
         ):
             Sample.from_frame(df)
 
@@ -2300,6 +2300,17 @@ class TestSampleFromFrameGuessIdColumnCandidates(balance.testutil.BalanceTestCas
             Sample.from_frame(
                 pd.DataFrame({"id": [1, 2, 3], "user_id": [4, 5, 6]}),
                 id_column_candidates=["id", "user_id"],
+            )
+
+    def test_from_frame_id_column_candidates_invalid_type(self) -> None:
+        """Test from_frame raises when candidate ids include invalid types."""
+        with self.assertRaisesRegex(
+            TypeError,
+            "Error while inferring id_column from DataFrame. Specify a valid",
+        ):
+            Sample.from_frame(
+                pd.DataFrame({"user_id": [1, 2, 3], "a": [1, 2, 3]}),
+                id_column_candidates=["user_id", 1],
             )
 
     def test_from_frame_id_column_candidates_invalid_type(self) -> None:

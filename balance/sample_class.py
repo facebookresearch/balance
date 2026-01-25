@@ -459,11 +459,11 @@ class Sample:
                 df, id_column, possible_id_columns=id_column_candidates
             )
         except (ValueError, TypeError) as exc:
-            message = str(exc).replace(
-                "possible_id_columns",
-                "id_column_candidates",
-            )
-            raise type(exc)(message) from exc
+            raise type(exc)(
+                "Error while inferring id_column from DataFrame. Specify a valid "
+                "'id_column' or provide 'id_column_candidates'. Original error: "
+                f"{exc}"
+            ) from exc
         if any(sample._df[id_column].isnull()):
             raise ValueError("Null values are not allowed in the id_column")
         if not all(isinstance(x, str) for x in sample._df[id_column].tolist()):
