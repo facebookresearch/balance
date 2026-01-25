@@ -26,6 +26,8 @@ logger: logging.Logger = logging.getLogger(__package__)
 
 def _check_weights_are_valid(
     w: list[Any] | pd.Series | npt.NDArray | pd.DataFrame | None,
+    *,
+    require_positive: bool = False,
 ) -> None:
     """Check weights.
 
@@ -33,10 +35,13 @@ def _check_weights_are_valid(
         w (Union[ List, pd.Series, np.ndarray, pd.DataFrame, None, ]): input weights.
             If w is pd.DataFrame then only the first column will be checked (assuming it is a column of weights).
             If input is None, then the function returns None with no errors (since None is a valid weights input for various functions).
+        require_positive (bool, optional): If True, require at least one weight
+            to be strictly positive. Defaults to False.
 
     Raises:
         ValueError: if weights are not numeric.
         ValueError: if weights include a negative value.
+        ValueError: if ``require_positive`` is True and all weights are zero.
 
     Returns:
         _type_: None
@@ -55,7 +60,8 @@ def _check_weights_are_valid(
         )
     if any(w < 0):
         raise ValueError("weights (w) must all be non-negative values.")
-    # TODO: do we also want to verify that at least one weight is larger than 0?!
+    if require_positive and not any(w > 0):
+        raise ValueError("weights (w) must include at least one positive value.")
 
     return None
 
@@ -99,7 +105,7 @@ def design_effect(w: pd.Series) -> np.float64:
                 # 2.9880418803112336
                 # As expected. With a single dominating weight - the Deff is almost equal to the sample size.
     """
-    _check_weights_are_valid(w)
+    _check_weights_are_valid(w, require_positive=True)
     from balance.util import _safe_divide_with_zero_handling
 
     # Avoid divide by zero warning
@@ -137,7 +143,7 @@ def nonparametric_skew(w: pd.Series) -> float:
             nonparametric_skew(pd.Series((-1,1,1, 1)))   #-0.5
 
     """
-    _check_weights_are_valid(w)
+    _check_weights_are_valid(w, require_positive=True)
     if (len(w) == 1) or (w.std() == 0):
         return float(0)
     return (w.mean() - w.median()) / w.std()
@@ -232,7 +238,7 @@ def prop_above_and_below(
                 # dtype: float64}
 
     """
-    _check_weights_are_valid(w)
+    _check_weights_are_valid(w, require_positive=True)
 
     # normalize weight to sample size:
     w = w / w.mean()
@@ -302,7 +308,7 @@ def weighted_median_breakdown_point(w: pd.Series) -> np.float64:
             w = pd.Series([1,1,1,1, 10])
             print(weighted_median_breakdown_point(w)) # 0.2
     """
-    _check_weights_are_valid(w)
+    _check_weights_are_valid(w, require_positive=True)
 
     # normalize weight to sample size:
 
