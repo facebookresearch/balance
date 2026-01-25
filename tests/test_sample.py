@@ -2313,17 +2313,6 @@ class TestSampleFromFrameGuessIdColumnCandidates(balance.testutil.BalanceTestCas
                 id_column_candidates=["user_id", 1],
             )
 
-    def test_from_frame_id_column_candidates_invalid_type(self) -> None:
-        """Test from_frame raises when candidate ids include invalid types."""
-        with self.assertRaisesRegex(
-            TypeError,
-            "id_column_candidates must contain only string column names",
-        ):
-            Sample.from_frame(
-                pd.DataFrame({"user_id": [1, 2, 3], "a": [1, 2, 3]}),
-                id_column_candidates=["user_id", 1],
-            )
-
 
 class TestSampleModelNone(balance.testutil.BalanceTestCase):
     """Test cases for model() method returning None (line 854)."""
