@@ -302,7 +302,7 @@ def guess_id_column(
         if not candidate_columns:
             raise ValueError(
                 "Cannot guess id column name for this DataFrame. "
-                "Please provide a value in id_column or possible_id_columns"
+                "Please provide a value in column_name or possible_id_columns"
             )
 
         unique_candidates: list[str] = []
