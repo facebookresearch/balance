@@ -417,6 +417,7 @@
         <span class="n">check_id_uniqueness</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">standardize_types</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">use_deepcopy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">id_column_candidates</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Sample&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new Sample object.</span>
@@ -453,6 +454,9 @@
 <span class="sd">            use_deepcopy (Optional, bool): Whether to have a new df copy inside the sample object.</span>
 <span class="sd">                If False, then when the sample methods update the internal df then the original df will also be updated.</span>
 <span class="sd">                Defaults to True.</span>
+<span class="sd">            id_column_candidates (list | tuple | str | None): candidate id column names</span>
+<span class="sd">                to use when id_column is not provided. Defaults to None which uses</span>
+<span class="sd">                [&quot;id&quot;].</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Sample: a sample object</span>
@@ -491,7 +495,16 @@
             <span class="n">sample</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="n">df</span>
 
         <span class="c1"># id column</span>
-        <span class="n">id_column</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">guess_id_column</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">id_column</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">id_column</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">guess_id_column</span><span class="p">(</span>
+                <span class="n">df</span><span class="p">,</span> <span class="n">id_column</span><span class="p">,</span> <span class="n">possible_id_columns</span><span class="o">=</span><span class="n">id_column_candidates</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="nb">type</span><span class="p">(</span><span class="n">exc</span><span class="p">)(</span>
+                <span class="s2">&quot;Error while inferring id_column from DataFrame. Specify a valid &quot;</span>
+                <span class="s2">&quot;&#39;id_column&#39; or provide &#39;id_column_candidates&#39;. Original error: &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
         <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">id_column</span><span class="p">]</span><span class="o">.</span><span class="n">isnull</span><span class="p">()):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Null values are not allowed in the id_column&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">id_column</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()):</span>

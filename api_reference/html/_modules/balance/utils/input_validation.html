@@ -47,7 +47,18 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">collections</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">reduce</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">overload</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Any</span><span class="p">,</span>
+    <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">List</span><span class="p">,</span>
+    <span class="n">Optional</span><span class="p">,</span>
+    <span class="n">overload</span><span class="p">,</span>
+    <span class="n">Sequence</span><span class="p">,</span>
+    <span class="n">Tuple</span><span class="p">,</span>
+    <span class="n">Type</span><span class="p">,</span>
+    <span class="n">TypeVar</span><span class="p">,</span>
+    <span class="n">Union</span><span class="p">,</span>
+<span class="p">)</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
@@ -289,22 +300,25 @@
 
 <div class="viewcode-block" id="guess_id_column">
 <a class="viewcode-back" href="../../../balance.util.html#balance.util.guess_id_column">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">guess_id_column</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">column_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">guess_id_column</span><span class="p">(</span>
+    <span class="n">dataset</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">column_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">possible_id_columns</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Guess the id column of a given dataset.</span>
-<span class="sd">    Possible values for guess: &#39;id&#39;.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        dataset (pd.DataFrame): dataset to guess id column</span>
 <span class="sd">        column_name (str, optional): Given id column name. Defaults to None,</span>
 <span class="sd">            which will guess the id column or raise exception.</span>
+<span class="sd">        possible_id_columns (Sequence[str] | str, optional): Candidate ID column</span>
+<span class="sd">            names to consider when guessing. Defaults to None, which falls back</span>
+<span class="sd">            to [&quot;id&quot;].</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        str: name of guessed id column</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># TODO: add a general argument for the user so they could set</span>
-    <span class="c1"># a list of possible userid column names instead of only &quot;id&quot;.</span>
-    <span class="c1"># This should go as an input into Sample.from_frame as well.</span>
     <span class="n">columns</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">column_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">column_name</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">:</span>
@@ -312,16 +326,54 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dataframe does not have column &#39;</span><span class="si">{</span><span class="n">column_name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">possible_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">]</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">possible_columns</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">possible_id_columns</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">candidate_columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">possible_id_columns</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">candidate_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">possible_id_columns</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">possible_id_columns</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Sequence</span><span class="p">):</span>
+            <span class="n">candidate_columns</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">possible_id_columns</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;possible_id_columns must be a string or a sequence of strings&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">candidate_columns</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;Cannot guess id column name for this DataFrame. &quot;</span>
-                <span class="s2">&quot;Please provide a value in id_column&quot;</span>
+                <span class="s2">&quot;Please provide a value in column_name or possible_id_columns&quot;</span>
             <span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">column_name</span> <span class="o">=</span> <span class="n">possible_columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Guessed id column name </span><span class="si">{</span><span class="n">column_name</span><span class="si">}</span><span class="s2"> for the data&quot;</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">column_name</span></div>
+
+        <span class="n">unique_candidates</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">seen_candidates</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">candidate</span> <span class="ow">in</span> <span class="n">candidate_columns</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">candidate</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                    <span class="s2">&quot;possible_id_columns must contain only string column names&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">candidate</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;possible_id_columns cannot contain empty values&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">candidate</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen_candidates</span><span class="p">:</span>
+                <span class="n">unique_candidates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span>
+                <span class="n">seen_candidates</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span>
+
+        <span class="n">possible_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">unique_candidates</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">possible_columns</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Cannot guess id column name for this DataFrame. None of the &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;possible_id_columns candidates </span><span class="si">{</span><span class="n">unique_candidates</span><span class="si">}</span><span class="s2"> were found in &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;the DataFrame columns </span><span class="si">{</span><span class="n">columns</span><span class="si">}</span><span class="s2">. Please provide a value in &quot;</span>
+                <span class="s2">&quot;column_name or update possible_id_columns to match an existing column.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">possible_columns</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Multiple candidate id columns found in the DataFrame. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Matched columns: </span><span class="si">{</span><span class="n">possible_columns</span><span class="si">}</span><span class="s2">. These were derived from &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;possible_id_columns candidates </span><span class="si">{</span><span class="n">unique_candidates</span><span class="si">}</span><span class="s2">. Please &quot;</span>
+                <span class="s2">&quot;provide a value in column_name to disambiguate.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">column_name</span> <span class="o">=</span> <span class="n">possible_columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Guessed id column name </span><span class="si">{</span><span class="n">column_name</span><span class="si">}</span><span class="s2"> for the data&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">column_name</span></div>
 
 
 
