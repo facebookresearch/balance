@@ -324,14 +324,14 @@ def guess_id_column(
                 "Cannot guess id column name for this DataFrame. None of the "
                 f"possible_id_columns candidates {unique_candidates} were found in "
                 f"the DataFrame columns {columns}. Please provide a value in "
-                "id_column or update possible_id_columns to match an existing column."
+                "column_name or update possible_id_columns to match an existing column."
             )
         if len(possible_columns) > 1:
             raise ValueError(
                 "Multiple candidate id columns found in the DataFrame. "
                 f"Matched columns: {possible_columns}. These were derived from "
                 f"possible_id_columns candidates {unique_candidates}. Please "
-                "provide a value in id_column to disambiguate."
+                "provide a value in column_name to disambiguate."
             )
         column_name = possible_columns[0]
         logger.warning(f"Guessed id column name {column_name} for the data")

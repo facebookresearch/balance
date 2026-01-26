@@ -168,7 +168,7 @@ class TestUtil(
             balance_util.guess_id_column(df)
         with self.assertRaisesRegex(
             ValueError,
-            "Cannot guess id column name for this DataFrame. Please provide a value in id_column or possible_id_columns",
+            "Cannot guess id column name for this DataFrame. Please provide a value in column_name or possible_id_columns",
         ):
             balance_util.guess_id_column(df, possible_id_columns=[])
 
