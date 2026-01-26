@@ -376,6 +376,7 @@ class Sample:
         check_id_uniqueness: bool = True,
         standardize_types: bool = True,
         use_deepcopy: bool = True,
+        id_column_candidates: List[str] | tuple[str, ...] | str | None = None,
     ) -> "Sample":
         """
         Create a new Sample object.
@@ -412,6 +413,9 @@ class Sample:
             use_deepcopy (Optional, bool): Whether to have a new df copy inside the sample object.
                 If False, then when the sample methods update the internal df then the original df will also be updated.
                 Defaults to True.
+            id_column_candidates (list | tuple | str | None): candidate id column names
+                to use when id_column is not provided. Defaults to None which uses
+                ["id"].
 
         Returns:
             Sample: a sample object
@@ -450,7 +454,16 @@ class Sample:
             sample._df = df
 
         # id column
-        id_column = balance_util.guess_id_column(df, id_column)
+        try:
+            id_column = balance_util.guess_id_column(
+                df, id_column, possible_id_columns=id_column_candidates
+            )
+        except (ValueError, TypeError) as exc:
+            raise type(exc)(
+                "Error while inferring id_column from DataFrame. Specify a valid "
+                "'id_column' or provide 'id_column_candidates'. Original error: "
+                f"{exc}"
+            ) from exc
         if any(sample._df[id_column].isnull()):
             raise ValueError("Null values are not allowed in the id_column")
         if not all(isinstance(x, str) for x in sample._df[id_column].tolist()):

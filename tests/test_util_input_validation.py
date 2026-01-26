@@ -72,8 +72,10 @@ class TestUtil(
 
         Tests the guess_id_column function's ability to:
         - Automatically identify 'id' columns when present
+        - Use custom candidate id column names
         - Use explicitly provided column names
         - Handle cases where no ID column exists
+        - Handle ambiguous candidate columns
         - Raise appropriate errors for invalid column names
         """
         # test when id column is presented
@@ -89,6 +91,62 @@ class TestUtil(
             balance_util.guess_id_column,
             df,
         )
+
+        # test when custom candidate columns are provided
+        df = pd.DataFrame(
+            {
+                "user_id": (1, 2, 3),
+                "a": (0, 1, 2),
+            }
+        )
+        self.assertEqual(
+            balance_util.guess_id_column(
+                df,
+                possible_id_columns=["user_id", "id"],
+            ),
+            "user_id",
+        )
+        self.assertWarnsRegexp(
+            "Guessed id column name user_id for the data",
+            balance_util.guess_id_column,
+            df,
+            possible_id_columns="user_id",
+        )
+        self.assertEqual(
+            balance_util.guess_id_column(
+                df,
+                possible_id_columns=["user_id", "user_id"],
+            ),
+            "user_id",
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "possible_id_columns cannot contain empty values",
+        ):
+            balance_util.guess_id_column(
+                df,
+                possible_id_columns=["user_id", ""],
+            )
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "possible_id_columns must contain only string column names",
+        ):
+            balance_util.guess_id_column(
+                df,
+                # pyre-ignore[6]: Intentionally passing invalid type to test error handling
+                possible_id_columns=["user_id", 1],
+            )
+        with self.assertRaisesRegex(
+            TypeError,
+            "possible_id_columns must be a string or a sequence of strings",
+        ):
+            balance_util.guess_id_column(
+                df,
+                # pyre-ignore[6]: Intentionally passing invalid type to test error handling
+                possible_id_columns=1,
+            )
 
         # test when column_name is passed
         df = pd.DataFrame(
@@ -107,9 +165,29 @@ class TestUtil(
         # test when no id column is passed and no id column in dataframe
         with self.assertRaisesRegex(
             ValueError,
-            "Cannot guess id column name for this DataFrame. Please provide a value in id_column",
+            "Cannot guess id column name for this DataFrame. None of the possible_id_columns candidates",
         ):
             balance_util.guess_id_column(df)
+        with self.assertRaisesRegex(
+            ValueError,
+            "Cannot guess id column name for this DataFrame. Please provide a value in column_name or possible_id_columns",
+        ):
+            balance_util.guess_id_column(df, possible_id_columns=[])
+
+        df = pd.DataFrame(
+            {
+                "id": (1, 2, 3),
+                "user_id": (4, 5, 6),
+            }
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "Multiple candidate id columns found in the DataFrame. Matched columns",
+        ):
+            balance_util.guess_id_column(
+                df,
+                possible_id_columns=["id", "user_id"],
+            )
 
     def test__isinstance_sample(self) -> None:
         """Test type checking for Sample objects.

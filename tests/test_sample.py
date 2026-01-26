@@ -196,7 +196,7 @@ class TestSample(
         # Test error when id column cannot be guessed
         with self.assertRaisesRegex(
             ValueError,
-            "Cannot guess id column name for this DataFrame. Please provide a value in id_column",
+            "Error while inferring id_column from DataFrame. Specify a valid",
         ):
             Sample.from_frame(df)
 
@@ -2278,6 +2278,41 @@ class TestSampleFromFrameGuessWeightColumn(balance.testutil.BalanceTestCase):
         )
         # Weight column should exist and be int type when no weight is given and standardize_types=False
         self.assertIsNotNone(sample.weight_column)
+
+
+class TestSampleFromFrameGuessIdColumnCandidates(balance.testutil.BalanceTestCase):
+    """Test cases for id column guessing in from_frame with candidate names."""
+
+    def test_from_frame_uses_id_column_candidates(self) -> None:
+        """Test from_frame uses id_column_candidates to pick a non-default id."""
+        sample = Sample.from_frame(
+            pd.DataFrame({"user_id": [1, 2, 3], "a": [1, 2, 3]}),
+            id_column_candidates=["user_id", "id"],
+        )
+        self.assertEqual(sample.id_column.name, "user_id")
+
+    def test_from_frame_id_column_candidates_ambiguous(self) -> None:
+        """Test from_frame raises when multiple candidate ids are present."""
+        with self.assertRaisesRegex(
+            ValueError,
+            "Multiple candidate id columns found in the DataFrame",
+        ):
+            Sample.from_frame(
+                pd.DataFrame({"id": [1, 2, 3], "user_id": [4, 5, 6]}),
+                id_column_candidates=["id", "user_id"],
+            )
+
+    def test_from_frame_id_column_candidates_invalid_type(self) -> None:
+        """Test from_frame raises when candidate ids include invalid types."""
+        with self.assertRaisesRegex(
+            TypeError,
+            "Error while inferring id_column from DataFrame. Specify a valid",
+        ):
+            Sample.from_frame(
+                pd.DataFrame({"user_id": [1, 2, 3], "a": [1, 2, 3]}),
+                # pyre-ignore[6]: Intentionally passing invalid type to test error handling
+                id_column_candidates=["user_id", 1],
+            )
 
 
 class TestSampleModelNone(balance.testutil.BalanceTestCase):
