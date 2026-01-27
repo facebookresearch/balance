@@ -2174,6 +2174,31 @@ class BalanceDFOutcomes(BalanceDF):
 
         Returns:
             Optional[pd.DataFrame]: Outcome-by-statistic table or None if weights are missing.
+
+        Examples:
+        .. code-block:: python
+
+                import pandas as pd
+
+                from balance.sample_class import Sample
+
+                sample = Sample.from_frame(
+                    pd.DataFrame(
+                        {
+                            "id": (1, 2, 3, 4),
+                            "weight": (1.0, 2.0, 1.0, 2.0),
+                            "outcome": (1.0, 2.0, 3.0, 4.0),
+                        }
+                    ),
+                    id_column="id",
+                    weight_column="weight",
+                    outcome_columns=("outcome",),
+                )
+
+                impact = sample.outcomes().weights_impact_on_outcome_ss(
+                    method="t_test", round_ndigits=3
+                )
+                impact.loc["outcome", "mean_yw0"]  # 2.5
         """
         if w1 is None:
             if self._weights is None:

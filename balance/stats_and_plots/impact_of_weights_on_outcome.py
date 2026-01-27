@@ -79,6 +79,23 @@ def weights_impact_on_outcome_ss(
 
     Returns:
         pd.Series: Summary statistics for the weighted outcome comparison.
+
+    Examples:
+    .. code-block:: python
+
+            import pandas as pd
+
+            from balance.stats_and_plots.impact_of_weights_on_outcome import (
+                weights_impact_on_outcome_ss,
+            )
+
+            result = weights_impact_on_outcome_ss(
+                y=pd.Series([1.0, 2.0, 3.0, 4.0]),
+                w0=pd.Series([1.0, 1.0, 1.0, 1.0]),
+                w1=pd.Series([1.0, 2.0, 1.0, 2.0]),
+                method="t_test",
+            )
+            result["mean_diff"]  # -1.5
     """
     if method != "t_test":
         raise ValueError(f"Unsupported method: {method}")
@@ -139,6 +156,48 @@ def compare_adjusted_weighted_outcome_ss(
 
     Returns:
         pd.DataFrame: Outcome-by-statistic table comparing weighted outcomes.
+
+    Examples:
+    .. code-block:: python
+
+            import pandas as pd
+
+            from balance.sample_class import Sample
+            from balance.stats_and_plots.impact_of_weights_on_outcome import (
+                compare_adjusted_weighted_outcome_ss,
+            )
+
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {
+                        "id": [1, 2, 3],
+                        "x": [0.1, 0.2, 0.3],
+                        "weight": [1.0, 1.0, 1.0],
+                        "outcome": [1.0, 2.0, 3.0],
+                    }
+                ),
+                id_column="id",
+                weight_column="weight",
+                outcome_columns=("outcome",),
+            )
+            target = Sample.from_frame(
+                pd.DataFrame(
+                    {
+                        "id": [4, 5, 6],
+                        "x": [0.1, 0.2, 0.3],
+                        "weight": [1.0, 1.0, 1.0],
+                        "outcome": [1.0, 2.0, 3.0],
+                    }
+                ),
+                id_column="id",
+                weight_column="weight",
+                outcome_columns=("outcome",),
+            )
+            adjusted_a = sample.set_target(target).adjust(method="null")
+            adjusted_b = sample.set_target(target).adjust(method="null")
+
+            impact = compare_adjusted_weighted_outcome_ss(adjusted_a, adjusted_b)
+            list(impact.index)  # ['outcome']
     """
     from balance.sample_class import Sample
 
