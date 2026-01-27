@@ -130,8 +130,7 @@ class Sample:
     weight_column = None
     # pyre-fixme[4]: Attributes are initialized in from_frame()
     _links = None
-    # pyre-fixme[4]: Attributes are initialized in from_frame()
-    _adjustment_model = None
+    _adjustment_model: Dict[str, Any] | None = None
     # pyre-fixme[4]: Attributes are initialized in from_frame()
     _df_dtypes = None
 
