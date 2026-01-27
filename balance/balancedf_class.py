@@ -19,6 +19,7 @@ from balance.csv_utils import to_csv_with_defaults
 from balance.sample_class import Sample
 from balance.stats_and_plots import (
     general_stats,
+    impact_of_weights_on_outcome,
     weighted_comparisons_plots,
     weighted_comparisons_stats,
     weighted_stats,
@@ -2150,17 +2151,84 @@ class BalanceDFOutcomes(BalanceDF):
         else:
             return general_stats.relative_response_rates(self_target.df)
 
+    def weights_impact_on_outcome_ss(
+        self: "BalanceDFOutcomes",
+        method: str = "t_test",
+        conf_level: float = 0.95,
+        round_ndigits: int | None = 3,
+        w0: npt.NDArray | pd.Series | None = None,
+        w1: npt.NDArray | pd.Series | None = None,
+    ) -> pd.DataFrame | None:
+        """
+        Compare weighted outcomes using paired tests on y*w0 vs y*w1.
+
+        Args:
+            self (BalanceDFOutcomes): Object.
+            method (str, optional): Statistical test to use. Defaults to "t_test".
+            conf_level (float, optional): Confidence level for the mean difference interval.
+                Defaults to 0.95.
+            round_ndigits (int | None, optional): Optional rounding for numeric outputs.
+                Defaults to 3.
+            w0: Baseline weights. Defaults to a vector of ones.
+            w1: Alternative weights. Defaults to the BalanceDF weights.
+
+        Returns:
+            Optional[pd.DataFrame]: Outcome-by-statistic table or None if weights are missing.
+        """
+        if w1 is None:
+            if self._weights is None:
+                logger.warning("No weights available for outcome impact analysis.")
+                return None
+            w1 = self._weights
+
+        w1_values = (
+            w1.to_numpy() if isinstance(w1, pd.Series) else np.asarray(w1, dtype=float)
+        )
+        if w0 is None:
+            w0_values = np.ones_like(w1_values, dtype=float)
+        else:
+            w0_values = (
+                w0.to_numpy()
+                if isinstance(w0, pd.Series)
+                else np.asarray(w0, dtype=float)
+            )
+
+        model_matrix = self.model_matrix()
+        results = {}
+        for column in model_matrix.columns:
+            results[column] = impact_of_weights_on_outcome.weights_impact_on_outcome_ss(
+                y=model_matrix[column].to_numpy(),
+                w0=w0_values,
+                w1=w1_values,
+                method=method,
+                conf_level=conf_level,
+            )
+
+        impact_df = pd.DataFrame(results).T
+        impact_df.index.name = "outcome"
+        if round_ndigits is not None:
+            numeric_cols = impact_df.select_dtypes(include=["number"]).columns
+            impact_df[numeric_cols] = impact_df[numeric_cols].round(round_ndigits)
+        return impact_df
+
     # TODO: it's a question if summary should produce a printable output or a DataFrame.
     #       The BalanceDF.summary method only returns a DataFrame. So it's a question
     #       what is the best way to structure this more generally.
     def summary(
-        self: "BalanceDFOutcomes", on_linked_samples: bool | None = None
+        self: "BalanceDFOutcomes",
+        on_linked_samples: bool | None = None,
+        weights_impact_method: str | None = None,
+        weights_impact_conf_level: float = 0.95,
     ) -> str:
         """Produces summary printable string of a BalanceDFOutcomes object.
 
         Args:
             self (BalanceDFOutcomes): Object.
             on_linked_samples (Optional[bool]): Ignored. Only here since summary overrides BalanceDF.summary.
+            weights_impact_method (Optional[str]): If provided, include a paired test
+                of y*w0 vs y*w1 for each outcome (default is None).
+            weights_impact_conf_level (float): Confidence level for the mean difference
+                interval when weights_impact_method is provided. Defaults to 0.95.
 
         Returns:
             str: A printable string, with mean of outcome variables and response rates.
@@ -2232,6 +2300,18 @@ class BalanceDFOutcomes(BalanceDF):
         mean_outcomes_with_ci = self.mean_with_ci()
         relative_response_rates = self.relative_response_rates()
         target_response_rates = self.target_response_rates()
+        weights_impact_clause = ""
+        if weights_impact_method is not None:
+            weights_impact = self.weights_impact_on_outcome_ss(
+                method=weights_impact_method,
+                conf_level=weights_impact_conf_level,
+            )
+            if weights_impact is not None:
+                weights_impact_clause = (
+                    "Weights impact on outcomes "
+                    f"({weights_impact_method}):\n"
+                    f"{weights_impact.to_string(max_cols=None)}\n\n"
+                )
         if target_response_rates is None:
             target_clause = ""
             relative_to_target_clause = ""
@@ -2254,6 +2334,7 @@ class BalanceDFOutcomes(BalanceDF):
             f"Mean outcomes (with 95% confidence intervals):\n"
             # TODO: in the future consider if to add an argument to transpose (.T) the output, in case there are multiple outcomes.
             f"{mean_outcomes_with_ci.to_string(max_cols=None)}\n\n"
+            f"{weights_impact_clause}"
             "Response rates (relative to number of respondents in sample):\n"
             f"{relative_response_rates}\n"
             f"{relative_to_target_clause}\n"

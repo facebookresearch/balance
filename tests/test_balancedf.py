@@ -378,6 +378,26 @@ class TestBalanceDFOutcomes(BalanceTestCase):
             _remove_whitespace_and_newlines(e_str),
         )
 
+    def test_outcomes_weights_impact_on_outcome_ss(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "weight": (1.0, 2.0, 1.0, 2.0),
+                    "outcome": (1.0, 2.0, 3.0, 4.0),
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+        )
+
+        impact = sample.outcomes().weights_impact_on_outcome_ss()
+        self.assertIsNotNone(impact)
+        self.assertIsInstance(impact, pd.DataFrame)
+        self.assertIn("mean_diff", impact.columns)
+        self.assertEqual(list(impact.index), ["outcome"])
+
 
 class TestBalanceDFCovars(BalanceTestCase):
     """Test cases for BalanceDFCovars class functionality."""

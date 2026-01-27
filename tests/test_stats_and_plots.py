@@ -200,6 +200,84 @@ class TestBalance_weights_stats(
         }
         self.assertEqual({k: v.to_list() for k, v in result_dict.items()}, expected)
 
+
+class TestImpactOfWeightsOnOutcome(
+    balance.testutil.BalanceTestCase,
+):
+    def test_weights_impact_on_outcome_ss(self) -> None:
+        from balance.stats_and_plots.impact_of_weights_on_outcome import (
+            weights_impact_on_outcome_ss,
+        )
+
+        y = pd.Series([1.0, 2.0, 3.0, 4.0])
+        w0 = pd.Series([1.0, 1.0, 1.0, 1.0])
+        w1 = pd.Series([1.0, 2.0, 1.0, 2.0])
+
+        result = weights_impact_on_outcome_ss(y, w0, w1, method="t_test")
+        self.assertAlmostEqual(result["mean_yw0"], 2.5)
+        self.assertAlmostEqual(result["mean_yw1"], 4.0)
+        self.assertAlmostEqual(result["mean_diff"], -1.5)
+        self.assertLess(result["diff_ci_lower"], result["mean_diff"])
+        self.assertGreater(result["diff_ci_upper"], result["mean_diff"])
+
+    def test_weights_impact_on_outcome_ss_length_mismatch(self) -> None:
+        from balance.stats_and_plots.impact_of_weights_on_outcome import (
+            weights_impact_on_outcome_ss,
+        )
+
+        with self.assertRaisesRegex(
+            ValueError, "Outcome and weights must have the same number of observations."
+        ):
+            weights_impact_on_outcome_ss([1.0, 2.0], [1.0], [1.0, 1.0])
+
+    def test_weights_impact_on_outcome_ss_invalid_method(self) -> None:
+        from balance.stats_and_plots.impact_of_weights_on_outcome import (
+            weights_impact_on_outcome_ss,
+        )
+
+        with self.assertRaisesRegex(ValueError, "Unsupported method"):
+            weights_impact_on_outcome_ss(
+                [1.0, 2.0], [1.0, 1.0], [1.0, 1.0], method="bad"
+            )
+
+    def test_compare_adjusted_weighted_outcome_ss(self) -> None:
+        from balance.stats_and_plots.impact_of_weights_on_outcome import (
+            compare_adjusted_weighted_outcome_ss,
+        )
+
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [1, 2, 3],
+                    "x": [0.1, 0.2, 0.3],
+                    "weight": [1.0, 1.0, 1.0],
+                    "outcome": [1.0, 2.0, 3.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [4, 5, 6],
+                    "x": [0.1, 0.2, 0.3],
+                    "weight": [1.0, 1.0, 1.0],
+                    "outcome": [1.0, 2.0, 3.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+        )
+        adjusted0 = sample.set_target(target).adjust(method="null")
+        adjusted1 = sample.set_target(target).adjust(method="null")
+
+        impact = compare_adjusted_weighted_outcome_ss(adjusted0, adjusted1)
+        self.assertIn("mean_diff", impact.columns)
+        self.assertEqual(list(impact.index), ["outcome"])
+
     def test_weighted_median_breakdown_point(self) -> None:
         """Test calculation of weighted median breakdown point.
 

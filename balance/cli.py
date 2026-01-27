@@ -230,6 +230,25 @@ class BalanceCLI:
         """
         return self.args.rows_to_keep_for_diagnostics
 
+    def weights_impact_on_outcome_method(self) -> str | None:
+        """Return the outcome weight impact method for diagnostics.
+
+        Returns:
+            The method name or ``None`` if disabled.
+
+        Examples:
+            .. code-block:: python
+                from argparse import Namespace
+                BalanceCLI(
+                    Namespace(weights_impact_on_outcome_method="t_test")
+                ).weights_impact_on_outcome_method()
+                # 't_test'
+        """
+        method = getattr(self.args, "weights_impact_on_outcome_method", None)
+        if method is None or method.lower() == "none":
+            return None
+        return method
+
     def has_batch_columns(self) -> bool:
         """Return True when batch columns are supplied.
 
@@ -602,6 +621,7 @@ class BalanceCLI:
                         covariate_columns="x",
                         covariate_columns_for_diagnostics=None,
                         rows_to_keep_for_diagnostics=None,
+                        weights_impact_on_outcome_method="none",
                         batch_columns=None,
                         keep_columns=None,
                         keep_row_column=None,
@@ -678,6 +698,7 @@ class BalanceCLI:
         # definitions for diagnostics
         covariate_columns_for_diagnostics = self.covariate_columns_for_diagnostics()
         rows_to_keep_for_diagnostics = self.rows_to_keep_for_diagnostics()
+        weights_impact_on_outcome_method = self.weights_impact_on_outcome_method()
 
         sample = sample_cls.from_frame(
             sample_df,
@@ -737,7 +758,9 @@ class BalanceCLI:
             diagnostics = adjusted.keep_only_some_rows_columns(
                 rows_to_keep=rows_to_keep_for_diagnostics,
                 columns_to_keep=covariate_columns_for_diagnostics,
-            ).diagnostics()
+            ).diagnostics(
+                weights_impact_on_outcome_method=weights_impact_on_outcome_method
+            )
             logger.info(
                 "%s diagnostics object: %s" % (sample_package_name, str(diagnostics))
             )
@@ -1213,6 +1236,15 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
              The condition should be based on the list of covariate_columns and result in a bool pd.Series \
              (e.g.: 'is_married' or 'is_married & age >= 18', etc.) \
              (if not supplied the default is None, which means to use all rows without filtering",
+    )
+    parser.add_argument(
+        "--weights_impact_on_outcome_method",
+        required=False,
+        default="none",
+        help=(
+            "Method for outcome-weight impact diagnostics (default: none). "
+            "Set to 't_test' to compare y*w0 vs y*w1."
+        ),
     )
     parser.add_argument(
         "--batch_columns",

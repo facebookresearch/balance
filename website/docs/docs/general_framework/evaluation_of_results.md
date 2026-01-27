@@ -199,6 +199,36 @@ For example, we see that the estimated mean happiness according to our sample is
 adjusted.outcomes().plot()
 ```
 
+### Impact of weights on outcomes
+
+To assess whether weighting statistically shifts the outcomes, compare the paired
+products `y*w0` versus `y*w1`. The helper below uses a paired t-test and reports
+the baseline means, the mean difference, and its confidence interval:
+
+```python
+adjusted.outcomes().weights_impact_on_outcome_ss(method="t_test")
+```
+
+You can also include this in the printable summary:
+
+```python
+print(adjusted.outcomes().summary(weights_impact_method="t_test"))
+```
+
+In diagnostics output, these appear under `weights_impact_on_outcome_*` metrics
+when the feature is enabled.
+
+To compare two adjusted models (for example, IPW vs. CBPS) on the same outcomes,
+use:
+
+```python
+from balance.stats_and_plots.impact_of_weights_on_outcome import (
+    compare_adjusted_weighted_outcome_ss,
+)
+
+compare_adjusted_weighted_outcome_ss(adjusted_ipw, adjusted_cbps)
+```
+
 And we get:
 
 ![](../img/fig_09_seaborn_outcome_kde_after.png)

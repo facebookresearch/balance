@@ -1713,7 +1713,11 @@ class Sample:
 
         return "\n".join(filter(None, sections))
 
-    def diagnostics(self: "Sample") -> pd.DataFrame:
+    def diagnostics(
+        self: "Sample",
+        weights_impact_on_outcome_method: str | None = None,
+        weights_impact_on_outcome_conf_level: float = 0.95,
+    ) -> pd.DataFrame:
         # TODO: mention the other diagnostics
         # TODO: update/improve the wiki pages doc is linking to.
         # TODO: move explanation on weights normalization to some external page
@@ -1772,6 +1776,10 @@ class Sample:
 
         Args:
             self (Sample): only after running an adjustment with Sample.adjust.
+            weights_impact_on_outcome_method (Optional[str]): If provided, include
+                outcome-weight impact diagnostics using the specified method.
+            weights_impact_on_outcome_conf_level (float): Confidence level for
+                the outcome impact interval. Defaults to 0.95.
 
         Returns:
             pd.DataFrame: with 3 columns: ("metric", "val", "var"),
@@ -1831,6 +1839,29 @@ class Sample:
             list(the_weights_summary["val"]),  # passing a list instead of a pd.Series
             list(the_weights_summary["var"]),
         )
+
+        # ----------------------------------------------------
+        # Diagnostics on the impact of weights on outcomes
+        # ----------------------------------------------------
+        if (
+            weights_impact_on_outcome_method is not None
+            and self._outcome_columns is not None
+        ):
+            outcome_impact = self.outcomes().weights_impact_on_outcome_ss(
+                method=weights_impact_on_outcome_method,
+                conf_level=weights_impact_on_outcome_conf_level,
+                round_ndigits=None,
+            )
+            if outcome_impact is not None:
+                impact_rows = (
+                    outcome_impact.reset_index()
+                    .melt(id_vars="outcome", var_name="stat", value_name="val")
+                    .assign(
+                        metric=lambda df: "weights_impact_on_outcome_" + df["stat"],
+                        var=lambda df: df["outcome"],
+                    )[["metric", "val", "var"]]
+                )
+                diagnostics = pd.concat((diagnostics, impact_rows), ignore_index=True)
 
         # ----------------------------------------------------
         # Diagnostics on the model
