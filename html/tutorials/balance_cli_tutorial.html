@@ -7560,7 +7560,7 @@ a.anchor-link {
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:06,753) [__init__/&lt;module&gt; (line 72)]: Using balance version 0.15.0
+<pre>INFO (2026-01-27 09:44:48,112) [__init__/&lt;module&gt; (line 72)]: Using balance version 0.15.0
 </pre>
 </div>
 </div>
@@ -7772,49 +7772,49 @@ adding a sample indicator and weight columns, then concatenate sample and target
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>CLI command: python -m balance.cli --input_file /tmp/tmp14zjtoq9/input.csv --output_file /tmp/tmp14zjtoq9/weights_out.csv --diagnostics_output_file /tmp/tmp14zjtoq9/diagnostics_out.csv --covariate_columns gender,age_group,income --method ipw
+<pre>CLI command: python -m balance.cli --input_file /tmp/tmppqt202nx/input.csv --output_file /tmp/tmppqt202nx/weights_out.csv --diagnostics_output_file /tmp/tmppqt202nx/diagnostics_out.csv --covariate_columns gender,age_group,income --method ipw
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:08,406) [__init__/&lt;module&gt; (line 72)]: Using balance version 0.15.0
-INFO (2026-01-26 12:38:08,408) [cli/main (line 1039)]: Running cli.main() using balance version 0.15.0
-INFO (2026-01-26 12:38:08,408) [cli/main (line 1074)]: Attributes used by main() for running adjust: {'transformations': 'default', 'formula': None, 'penalty_factor': None, 'one_hot_encoding': True, 'max_de': 1.5, 'lambda_min': 1e-05, 'lambda_max': 10, 'num_lambdas': 250, 'weight_trimming_mean_ratio': 20.0, 'sample_cls': &lt;class 'balance.sample_class.Sample'&gt;, 'sample_package_name': 'balance', 'sample_package_version': '0.15.0'}
-INFO (2026-01-26 12:38:08,420) [cli/load_and_check_input (line 869)]: Number of rows in input file: 11000
-INFO (2026-01-26 12:38:08,420) [cli/load_and_check_input (line 875)]: Number of columns in input file: 7
-WARNING (2026-01-26 12:38:08,571) [sample_class/from_frame (line 470)]: Casting id column to string
-WARNING (2026-01-26 12:38:08,580) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
-WARNING (2026-01-26 12:38:08,580) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
-WARNING (2026-01-26 12:38:08,581) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
+<pre>INFO (2026-01-27 09:44:49,806) [__init__/&lt;module&gt; (line 72)]: Using balance version 0.15.0
+INFO (2026-01-27 09:44:49,808) [cli/main (line 1039)]: Running cli.main() using balance version 0.15.0
+INFO (2026-01-27 09:44:49,808) [cli/main (line 1074)]: Attributes used by main() for running adjust: {'transformations': 'default', 'formula': None, 'penalty_factor': None, 'one_hot_encoding': True, 'max_de': 1.5, 'lambda_min': 1e-05, 'lambda_max': 10, 'num_lambdas': 250, 'weight_trimming_mean_ratio': 20.0, 'sample_cls': &lt;class 'balance.sample_class.Sample'&gt;, 'sample_package_name': 'balance', 'sample_package_version': '0.15.0'}
+INFO (2026-01-27 09:44:49,819) [cli/load_and_check_input (line 869)]: Number of rows in input file: 11000
+INFO (2026-01-27 09:44:49,819) [cli/load_and_check_input (line 875)]: Number of columns in input file: 7
+WARNING (2026-01-27 09:44:49,971) [sample_class/from_frame (line 469)]: Casting id column to string
+WARNING (2026-01-27 09:44:49,980) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
+WARNING (2026-01-27 09:44:49,980) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
+WARNING (2026-01-27 09:44:49,981) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
 is_respondent    int64
 id               int64
 dtype: object
-WARNING (2026-01-26 12:38:08,581) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
-WARNING (2026-01-26 12:38:08,582) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
+WARNING (2026-01-27 09:44:49,981) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
+WARNING (2026-01-27 09:44:49,982) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
 is_respondent    float64
 id                object
 dtype: object
-INFO (2026-01-26 12:38:08,583) [cli/process_batch (line 691)]: balance sample object: 
+INFO (2026-01-27 09:44:49,983) [cli/process_batch (line 691)]: balance sample object: 
         balance Sample object
         1000 observations x 3 variables: gender,age_group,income
         id_column: id, weight_column: weight,
         outcome_columns: happiness,is_respondent
         
-WARNING (2026-01-26 12:38:08,585) [sample_class/from_frame (line 470)]: Casting id column to string
-WARNING (2026-01-26 12:38:08,600) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
-WARNING (2026-01-26 12:38:08,600) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
-WARNING (2026-01-26 12:38:08,601) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
+WARNING (2026-01-27 09:44:49,985) [sample_class/from_frame (line 469)]: Casting id column to string
+WARNING (2026-01-27 09:44:50,000) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
+WARNING (2026-01-27 09:44:50,000) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
+WARNING (2026-01-27 09:44:50,001) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
 is_respondent    int64
 id               int64
 dtype: object
-WARNING (2026-01-26 12:38:08,601) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
-WARNING (2026-01-26 12:38:08,602) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
+WARNING (2026-01-27 09:44:50,001) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
+WARNING (2026-01-27 09:44:50,002) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
 is_respondent    float64
 id                object
 dtype: object
-INFO (2026-01-26 12:38:08,604) [cli/process_batch (line 702)]: balance target object: 
+INFO (2026-01-27 09:44:50,004) [cli/process_batch (line 702)]: balance target object: 
         balance Sample object
         10000 observations x 3 variables: gender,age_group,income
         id_column: id, weight_column: weight,
@@ -7826,36 +7826,36 @@ INFO (2026-01-26 12:38:08,604) [cli/process_batch (line 702)]: balance target ob
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:08,609) [ipw/ipw (line 694)]: Starting ipw function
-INFO (2026-01-26 12:38:08,611) [adjustment/apply_transformations (line 433)]: Adding the variables: []
-INFO (2026-01-26 12:38:08,611) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['gender', 'age_group', 'income']
-INFO (2026-01-26 12:38:08,620) [adjustment/apply_transformations (line 469)]: Final variables in output: ['gender', 'age_group', 'income']
-INFO (2026-01-26 12:38:08,628) [ipw/ipw (line 728)]: Building model matrix
-INFO (2026-01-26 12:38:08,728) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
-INFO (2026-01-26 12:38:08,728) [ipw/ipw (line 753)]: The number of columns in the model matrix: 18
-INFO (2026-01-26 12:38:08,729) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
+<pre>INFO (2026-01-27 09:44:50,009) [ipw/ipw (line 694)]: Starting ipw function
+INFO (2026-01-27 09:44:50,011) [adjustment/apply_transformations (line 433)]: Adding the variables: []
+INFO (2026-01-27 09:44:50,011) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['gender', 'age_group', 'income']
+INFO (2026-01-27 09:44:50,021) [adjustment/apply_transformations (line 469)]: Final variables in output: ['gender', 'age_group', 'income']
+INFO (2026-01-27 09:44:50,029) [ipw/ipw (line 728)]: Building model matrix
+INFO (2026-01-27 09:44:50,129) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
+INFO (2026-01-27 09:44:50,129) [ipw/ipw (line 753)]: The number of columns in the model matrix: 18
+INFO (2026-01-27 09:44:50,129) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:10,329) [ipw/ipw (line 915)]: Done with sklearn
-INFO (2026-01-26 12:38:10,329) [ipw/ipw (line 917)]: max_de: 1.5
-INFO (2026-01-26 12:38:10,329) [ipw/choose_regularization (line 371)]: Starting choosing regularisation parameters
+<pre>INFO (2026-01-27 09:44:51,714) [ipw/ipw (line 915)]: Done with sklearn
+INFO (2026-01-27 09:44:51,714) [ipw/ipw (line 917)]: max_de: 1.5
+INFO (2026-01-27 09:44:51,714) [ipw/choose_regularization (line 371)]: Starting choosing regularisation parameters
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:18,486) [ipw/choose_regularization (line 457)]: Best regularisation: 
+<pre>INFO (2026-01-27 09:44:59,969) [ipw/choose_regularization (line 457)]: Best regularisation: 
            s  s_index  trim  design_effect  asmd_improvement      asmd
 9  0.064155       91   2.5       1.495568          0.535793  0.090706
-INFO (2026-01-26 12:38:18,487) [ipw/ipw (line 972)]: Chosen lambda: 0.06415476458273757
-INFO (2026-01-26 12:38:18,488) [ipw/ipw (line 990)]: Proportion null deviance explained 0.17451470039667905
-INFO (2026-01-26 12:38:18,491) [cli/process_batch (line 725)]: Succeeded with adjusting sample to target
-INFO (2026-01-26 12:38:18,493) [cli/process_batch (line 726)]: balance adjusted object: 
+INFO (2026-01-27 09:44:59,971) [ipw/ipw (line 972)]: Chosen lambda: 0.06415476458273757
+INFO (2026-01-27 09:44:59,971) [ipw/ipw (line 990)]: Proportion null deviance explained 0.17451470039667905
+INFO (2026-01-27 09:44:59,974) [cli/process_batch (line 725)]: Succeeded with adjusting sample to target
+INFO (2026-01-27 09:44:59,976) [cli/process_batch (line 726)]: balance adjusted object: 
         Adjusted balance Sample object with target set using ipw
         1000 observations x 3 variables: gender,age_group,income
         id_column: id, weight_column: weight,
@@ -7877,17 +7877,17 @@ INFO (2026-01-26 12:38:18,493) [cli/process_batch (line 726)]: balance adjusted 
 	        
             3 common variables: gender,age_group,income
             
-INFO (2026-01-26 12:38:18,493) [cli/process_batch (line 728)]: Condition on which rows to keep for diagnostics: None 
-INFO (2026-01-26 12:38:18,493) [cli/process_batch (line 732)]: Names of columns to keep for diagnostics: None 
-INFO (2026-01-26 12:38:18,493) [sample_class/diagnostics (line 1805)]: Starting computation of diagnostics of the fitting
+INFO (2026-01-27 09:44:59,976) [cli/process_batch (line 728)]: Condition on which rows to keep for diagnostics: None 
+INFO (2026-01-27 09:44:59,976) [cli/process_batch (line 732)]: Names of columns to keep for diagnostics: None 
+INFO (2026-01-27 09:44:59,976) [sample_class/diagnostics (line 1804)]: Starting computation of diagnostics of the fitting
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:18,750) [sample_class/diagnostics (line 2026)]: Done computing diagnostics
-INFO (2026-01-26 12:38:18,754) [cli/process_batch (line 741)]: balance diagnostics object:                          metric           val            var
+<pre>INFO (2026-01-27 09:45:00,241) [sample_class/diagnostics (line 2025)]: Done computing diagnostics
+INFO (2026-01-27 09:45:00,245) [cli/process_batch (line 741)]: balance diagnostics object:                          metric           val            var
 0                          size   1000.000000     sample_obs
 1                          size      3.000000  sample_covars
 2                          size  10000.000000     target_obs
@@ -7901,7 +7901,7 @@ INFO (2026-01-26 12:38:18,754) [cli/process_batch (line 741)]: balance diagnosti
 95           adjustment_failure      0.000000            NaN
 
 [96 rows x 3 columns]
-INFO (2026-01-26 12:38:18,756) [cli/main (line 1128)]: Done fitting the model, writing output
+INFO (2026-01-27 09:45:00,248) [cli/main (line 1128)]: Done fitting the model, writing output
 </pre>
 </div>
 </div>
@@ -8372,84 +8372,84 @@ optional arguments:
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>CLI command:
-python -m balance.cli --input_file /tmp/tmpspyj1p2w/input.csv --output_file /tmp/tmpspyj1p2w/weights_tuned.csv --diagnostics_output_file /tmp/tmpspyj1p2w/diagnostics_tuned.csv --covariate_columns gender,age_group,income --method ipw --max_de 2.0 --lambda_min 1e-06 --lambda_max 100 --num_lambdas 500 --weight_trimming_mean_ratio 10.0 --ipw_logistic_regression_kwargs {"solver": "liblinear", "max_iter": 500}
+python -m balance.cli --input_file /tmp/tmpuciqm1vi/input.csv --output_file /tmp/tmpuciqm1vi/weights_tuned.csv --diagnostics_output_file /tmp/tmpuciqm1vi/diagnostics_tuned.csv --covariate_columns gender,age_group,income --method ipw --max_de 2.0 --lambda_min 1e-06 --lambda_max 100 --num_lambdas 500 --weight_trimming_mean_ratio 10.0 --ipw_logistic_regression_kwargs {"solver": "liblinear", "max_iter": 500}
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:22,539) [__init__/&lt;module&gt; (line 72)]: Using balance version 0.15.0
-INFO (2026-01-26 12:38:22,541) [cli/main (line 1039)]: Running cli.main() using balance version 0.15.0
-INFO (2026-01-26 12:38:22,541) [cli/main (line 1074)]: Attributes used by main() for running adjust: {'transformations': 'default', 'formula': None, 'penalty_factor': None, 'one_hot_encoding': True, 'max_de': 2.0, 'lambda_min': 1e-06, 'lambda_max': 100.0, 'num_lambdas': 500, 'weight_trimming_mean_ratio': 10.0, 'sample_cls': &lt;class 'balance.sample_class.Sample'&gt;, 'sample_package_name': 'balance', 'sample_package_version': '0.15.0'}
-INFO (2026-01-26 12:38:22,551) [cli/load_and_check_input (line 869)]: Number of rows in input file: 11000
-INFO (2026-01-26 12:38:22,551) [cli/load_and_check_input (line 875)]: Number of columns in input file: 7
-WARNING (2026-01-26 12:38:22,702) [sample_class/from_frame (line 470)]: Casting id column to string
-WARNING (2026-01-26 12:38:22,711) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
-WARNING (2026-01-26 12:38:22,711) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
-WARNING (2026-01-26 12:38:22,712) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
-id               int64
+<pre>INFO (2026-01-27 09:45:04,290) [__init__/&lt;module&gt; (line 72)]: Using balance version 0.15.0
+INFO (2026-01-27 09:45:04,292) [cli/main (line 1039)]: Running cli.main() using balance version 0.15.0
+INFO (2026-01-27 09:45:04,292) [cli/main (line 1074)]: Attributes used by main() for running adjust: {'transformations': 'default', 'formula': None, 'penalty_factor': None, 'one_hot_encoding': True, 'max_de': 2.0, 'lambda_min': 1e-06, 'lambda_max': 100.0, 'num_lambdas': 500, 'weight_trimming_mean_ratio': 10.0, 'sample_cls': &lt;class 'balance.sample_class.Sample'&gt;, 'sample_package_name': 'balance', 'sample_package_version': '0.15.0'}
+INFO (2026-01-27 09:45:04,303) [cli/load_and_check_input (line 869)]: Number of rows in input file: 11000
+INFO (2026-01-27 09:45:04,303) [cli/load_and_check_input (line 875)]: Number of columns in input file: 7
+WARNING (2026-01-27 09:45:04,456) [sample_class/from_frame (line 469)]: Casting id column to string
+WARNING (2026-01-27 09:45:04,466) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
+WARNING (2026-01-27 09:45:04,466) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
+WARNING (2026-01-27 09:45:04,467) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
 is_respondent    int64
+id               int64
 dtype: object
-WARNING (2026-01-26 12:38:22,712) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
-WARNING (2026-01-26 12:38:22,713) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
-id                object
+WARNING (2026-01-27 09:45:04,467) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
+WARNING (2026-01-27 09:45:04,467) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
 is_respondent    float64
+id                object
 dtype: object
-INFO (2026-01-26 12:38:22,714) [cli/process_batch (line 691)]: balance sample object: 
+INFO (2026-01-27 09:45:04,469) [cli/process_batch (line 691)]: balance sample object: 
         balance Sample object
         1000 observations x 3 variables: gender,age_group,income
         id_column: id, weight_column: weight,
         outcome_columns: happiness,is_respondent
         
-WARNING (2026-01-26 12:38:22,716) [sample_class/from_frame (line 470)]: Casting id column to string
-WARNING (2026-01-26 12:38:22,730) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
-WARNING (2026-01-26 12:38:22,730) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
-WARNING (2026-01-26 12:38:22,731) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
-id               int64
+WARNING (2026-01-27 09:45:04,471) [sample_class/from_frame (line 469)]: Casting id column to string
+WARNING (2026-01-27 09:45:04,486) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
+WARNING (2026-01-27 09:45:04,486) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
+WARNING (2026-01-27 09:45:04,487) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
 is_respondent    int64
+id               int64
 dtype: object
-WARNING (2026-01-26 12:38:22,731) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
-WARNING (2026-01-26 12:38:22,732) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
-id                object
+WARNING (2026-01-27 09:45:04,487) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
+WARNING (2026-01-27 09:45:04,488) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
 is_respondent    float64
+id                object
 dtype: object
-INFO (2026-01-26 12:38:22,734) [cli/process_batch (line 702)]: balance target object: 
+INFO (2026-01-27 09:45:04,490) [cli/process_batch (line 702)]: balance target object: 
         balance Sample object
         10000 observations x 3 variables: gender,age_group,income
         id_column: id, weight_column: weight,
         outcome_columns: happiness,is_respondent
         
-INFO (2026-01-26 12:38:22,739) [ipw/ipw (line 694)]: Starting ipw function
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:22,741) [adjustment/apply_transformations (line 433)]: Adding the variables: []
-INFO (2026-01-26 12:38:22,741) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['gender', 'age_group', 'income']
-INFO (2026-01-26 12:38:22,750) [adjustment/apply_transformations (line 469)]: Final variables in output: ['gender', 'age_group', 'income']
-INFO (2026-01-26 12:38:22,757) [ipw/ipw (line 728)]: Building model matrix
-INFO (2026-01-26 12:38:22,856) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
-INFO (2026-01-26 12:38:22,856) [ipw/ipw (line 753)]: The number of columns in the model matrix: 18
-INFO (2026-01-26 12:38:22,856) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
-INFO (2026-01-26 12:38:22,885) [ipw/ipw (line 915)]: Done with sklearn
-INFO (2026-01-26 12:38:22,885) [ipw/ipw (line 917)]: max_de: 2.0
-INFO (2026-01-26 12:38:22,885) [ipw/choose_regularization (line 371)]: Starting choosing regularisation parameters
+<pre>INFO (2026-01-27 09:45:04,496) [ipw/ipw (line 694)]: Starting ipw function
+INFO (2026-01-27 09:45:04,498) [adjustment/apply_transformations (line 433)]: Adding the variables: []
+INFO (2026-01-27 09:45:04,498) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['gender', 'age_group', 'income']
+INFO (2026-01-27 09:45:04,508) [adjustment/apply_transformations (line 469)]: Final variables in output: ['gender', 'age_group', 'income']
+INFO (2026-01-27 09:45:04,516) [ipw/ipw (line 728)]: Building model matrix
+INFO (2026-01-27 09:45:04,618) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
+INFO (2026-01-27 09:45:04,618) [ipw/ipw (line 753)]: The number of columns in the model matrix: 18
+INFO (2026-01-27 09:45:04,618) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
+INFO (2026-01-27 09:45:04,649) [ipw/ipw (line 915)]: Done with sklearn
+INFO (2026-01-27 09:45:04,649) [ipw/ipw (line 917)]: max_de: 2.0
+INFO (2026-01-27 09:45:04,649) [ipw/choose_regularization (line 371)]: Starting choosing regularisation parameters
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:27,101) [ipw/choose_regularization (line 457)]: Best regularisation: 
+<pre>INFO (2026-01-27 09:45:08,875) [ipw/choose_regularization (line 457)]: Best regularisation: 
      s  s_index  trim  design_effect  asmd_improvement      asmd
 6 NaN        0   2.5       1.714071          0.634917  0.071337
-INFO (2026-01-26 12:38:27,103) [ipw/ipw (line 972)]: Chosen lambda: nan
-INFO (2026-01-26 12:38:27,103) [ipw/ipw (line 990)]: Proportion null deviance explained 0.18280833369391158
-INFO (2026-01-26 12:38:27,106) [cli/process_batch (line 725)]: Succeeded with adjusting sample to target
-INFO (2026-01-26 12:38:27,108) [cli/process_batch (line 726)]: balance adjusted object: 
+INFO (2026-01-27 09:45:08,877) [ipw/ipw (line 972)]: Chosen lambda: nan
+INFO (2026-01-27 09:45:08,877) [ipw/ipw (line 990)]: Proportion null deviance explained 0.18280833369391158
+INFO (2026-01-27 09:45:08,880) [cli/process_batch (line 725)]: Succeeded with adjusting sample to target
+INFO (2026-01-27 09:45:08,882) [cli/process_batch (line 726)]: balance adjusted object: 
         Adjusted balance Sample object with target set using ipw
         1000 observations x 3 variables: gender,age_group,income
         id_column: id, weight_column: weight,
@@ -8471,17 +8471,17 @@ INFO (2026-01-26 12:38:27,108) [cli/process_batch (line 726)]: balance adjusted 
 	        
             3 common variables: gender,age_group,income
             
-INFO (2026-01-26 12:38:27,108) [cli/process_batch (line 728)]: Condition on which rows to keep for diagnostics: None 
-INFO (2026-01-26 12:38:27,108) [cli/process_batch (line 732)]: Names of columns to keep for diagnostics: None 
-INFO (2026-01-26 12:38:27,108) [sample_class/diagnostics (line 1805)]: Starting computation of diagnostics of the fitting
+INFO (2026-01-27 09:45:08,882) [cli/process_batch (line 728)]: Condition on which rows to keep for diagnostics: None 
+INFO (2026-01-27 09:45:08,882) [cli/process_batch (line 732)]: Names of columns to keep for diagnostics: None 
+INFO (2026-01-27 09:45:08,882) [sample_class/diagnostics (line 1804)]: Starting computation of diagnostics of the fitting
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:27,365) [sample_class/diagnostics (line 2026)]: Done computing diagnostics
-INFO (2026-01-26 12:38:27,369) [cli/process_batch (line 741)]: balance diagnostics object:                          metric           val            var
+<pre>INFO (2026-01-27 09:45:09,147) [sample_class/diagnostics (line 2025)]: Done computing diagnostics
+INFO (2026-01-27 09:45:09,151) [cli/process_batch (line 741)]: balance diagnostics object:                          metric           val            var
 0                          size   1000.000000     sample_obs
 1                          size      3.000000  sample_covars
 2                          size  10000.000000     target_obs
@@ -8495,7 +8495,7 @@ INFO (2026-01-26 12:38:27,369) [cli/process_batch (line 741)]: balance diagnosti
 95           adjustment_failure      0.000000            NaN
 
 [96 rows x 3 columns]
-INFO (2026-01-26 12:38:27,370) [cli/main (line 1128)]: Done fitting the model, writing output
+INFO (2026-01-27 09:45:09,154) [cli/main (line 1128)]: Done fitting the model, writing output
 </pre>
 </div>
 </div>
@@ -8676,49 +8676,49 @@ prevent automatic transformations from interfering with your custom formula.</p>
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>CLI command with custom formula:
-python -m balance.cli --input_file /tmp/tmpmrr7guar/input.csv --output_file /tmp/tmpmrr7guar/weights_formula.csv --diagnostics_output_file /tmp/tmpmrr7guar/diagnostics_formula.csv --covariate_columns gender,age_group,income --method ipw --transformations None --formula gender*income
+python -m balance.cli --input_file /tmp/tmpa66xobgl/input.csv --output_file /tmp/tmpa66xobgl/weights_formula.csv --diagnostics_output_file /tmp/tmpa66xobgl/diagnostics_formula.csv --covariate_columns gender,age_group,income --method ipw --transformations None --formula gender*income
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:29,266) [__init__/&lt;module&gt; (line 72)]: Using balance version 0.15.0
-INFO (2026-01-26 12:38:29,268) [cli/main (line 1039)]: Running cli.main() using balance version 0.15.0
-INFO (2026-01-26 12:38:29,268) [cli/main (line 1074)]: Attributes used by main() for running adjust: {'transformations': None, 'formula': 'gender*income', 'penalty_factor': None, 'one_hot_encoding': True, 'max_de': 1.5, 'lambda_min': 1e-05, 'lambda_max': 10, 'num_lambdas': 250, 'weight_trimming_mean_ratio': 20.0, 'sample_cls': &lt;class 'balance.sample_class.Sample'&gt;, 'sample_package_name': 'balance', 'sample_package_version': '0.15.0'}
-INFO (2026-01-26 12:38:29,280) [cli/load_and_check_input (line 869)]: Number of rows in input file: 11000
-INFO (2026-01-26 12:38:29,280) [cli/load_and_check_input (line 875)]: Number of columns in input file: 7
-WARNING (2026-01-26 12:38:29,433) [sample_class/from_frame (line 470)]: Casting id column to string
-WARNING (2026-01-26 12:38:29,442) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
-WARNING (2026-01-26 12:38:29,442) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
-WARNING (2026-01-26 12:38:29,443) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
+<pre>INFO (2026-01-27 09:45:11,122) [__init__/&lt;module&gt; (line 72)]: Using balance version 0.15.0
+INFO (2026-01-27 09:45:11,124) [cli/main (line 1039)]: Running cli.main() using balance version 0.15.0
+INFO (2026-01-27 09:45:11,124) [cli/main (line 1074)]: Attributes used by main() for running adjust: {'transformations': None, 'formula': 'gender*income', 'penalty_factor': None, 'one_hot_encoding': True, 'max_de': 1.5, 'lambda_min': 1e-05, 'lambda_max': 10, 'num_lambdas': 250, 'weight_trimming_mean_ratio': 20.0, 'sample_cls': &lt;class 'balance.sample_class.Sample'&gt;, 'sample_package_name': 'balance', 'sample_package_version': '0.15.0'}
+INFO (2026-01-27 09:45:11,135) [cli/load_and_check_input (line 869)]: Number of rows in input file: 11000
+INFO (2026-01-27 09:45:11,135) [cli/load_and_check_input (line 875)]: Number of columns in input file: 7
+WARNING (2026-01-27 09:45:11,288) [sample_class/from_frame (line 469)]: Casting id column to string
+WARNING (2026-01-27 09:45:11,297) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
+WARNING (2026-01-27 09:45:11,297) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
+WARNING (2026-01-27 09:45:11,298) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
 id               int64
 is_respondent    int64
 dtype: object
-WARNING (2026-01-26 12:38:29,443) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
-WARNING (2026-01-26 12:38:29,444) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
+WARNING (2026-01-27 09:45:11,298) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
+WARNING (2026-01-27 09:45:11,298) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
 id                object
 is_respondent    float64
 dtype: object
-INFO (2026-01-26 12:38:29,445) [cli/process_batch (line 691)]: balance sample object: 
+INFO (2026-01-27 09:45:11,300) [cli/process_batch (line 691)]: balance sample object: 
         balance Sample object
         1000 observations x 3 variables: gender,age_group,income
         id_column: id, weight_column: weight,
         outcome_columns: happiness,is_respondent
         
-WARNING (2026-01-26 12:38:29,447) [sample_class/from_frame (line 470)]: Casting id column to string
-WARNING (2026-01-26 12:38:29,461) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
-WARNING (2026-01-26 12:38:29,462) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
-WARNING (2026-01-26 12:38:29,462) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
+WARNING (2026-01-27 09:45:11,302) [sample_class/from_frame (line 469)]: Casting id column to string
+WARNING (2026-01-27 09:45:11,317) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
+WARNING (2026-01-27 09:45:11,317) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
+WARNING (2026-01-27 09:45:11,318) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
 id               int64
 is_respondent    int64
 dtype: object
-WARNING (2026-01-26 12:38:29,462) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
-WARNING (2026-01-26 12:38:29,463) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
+WARNING (2026-01-27 09:45:11,318) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
+WARNING (2026-01-27 09:45:11,319) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
 id                object
 is_respondent    float64
 dtype: object
-INFO (2026-01-26 12:38:29,465) [cli/process_batch (line 702)]: balance target object: 
+INFO (2026-01-27 09:45:11,321) [cli/process_batch (line 702)]: balance target object: 
         balance Sample object
         10000 observations x 3 variables: gender,age_group,income
         id_column: id, weight_column: weight,
@@ -8730,34 +8730,34 @@ INFO (2026-01-26 12:38:29,465) [cli/process_batch (line 702)]: balance target ob
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:29,470) [ipw/ipw (line 694)]: Starting ipw function
-INFO (2026-01-26 12:38:29,471) [ipw/ipw (line 728)]: Building model matrix
-INFO (2026-01-26 12:38:29,514) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['gender*income']
-INFO (2026-01-26 12:38:29,514) [ipw/ipw (line 753)]: The number of columns in the model matrix: 7
-INFO (2026-01-26 12:38:29,514) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
+<pre>INFO (2026-01-27 09:45:11,327) [ipw/ipw (line 694)]: Starting ipw function
+INFO (2026-01-27 09:45:11,328) [ipw/ipw (line 728)]: Building model matrix
+INFO (2026-01-27 09:45:11,373) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['gender*income']
+INFO (2026-01-27 09:45:11,373) [ipw/ipw (line 753)]: The number of columns in the model matrix: 7
+INFO (2026-01-27 09:45:11,373) [ipw/ipw (line 754)]: The number of rows in the model matrix: 11000
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:30,902) [ipw/ipw (line 915)]: Done with sklearn
-INFO (2026-01-26 12:38:30,902) [ipw/ipw (line 917)]: max_de: 1.5
-INFO (2026-01-26 12:38:30,902) [ipw/choose_regularization (line 371)]: Starting choosing regularisation parameters
+<pre>INFO (2026-01-27 09:45:12,780) [ipw/ipw (line 915)]: Done with sklearn
+INFO (2026-01-27 09:45:12,780) [ipw/ipw (line 917)]: max_de: 1.5
+INFO (2026-01-27 09:45:12,780) [ipw/choose_regularization (line 371)]: Starting choosing regularisation parameters
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:37,221) [ipw/choose_regularization (line 457)]: Best regularisation: 
+<pre>INFO (2026-01-27 09:45:19,167) [ipw/choose_regularization (line 457)]: Best regularisation: 
            s  s_index  trim  design_effect  asmd_improvement      asmd
 9  0.043507       98   5.0       1.496216          0.517269  0.157756
-INFO (2026-01-26 12:38:37,223) [ipw/ipw (line 972)]: Chosen lambda: 0.043506507030756265
-INFO (2026-01-26 12:38:37,224) [ipw/ipw (line 990)]: Proportion null deviance explained 0.09595811553953071
-WARNING (2026-01-26 12:38:37,224) [ipw/ipw (line 998)]: The propensity model has low fraction null deviance explained (0.09595811553953071). Results may not be accurate
-INFO (2026-01-26 12:38:37,227) [cli/process_batch (line 725)]: Succeeded with adjusting sample to target
-INFO (2026-01-26 12:38:37,229) [cli/process_batch (line 726)]: balance adjusted object: 
+INFO (2026-01-27 09:45:19,169) [ipw/ipw (line 972)]: Chosen lambda: 0.043506507030756265
+INFO (2026-01-27 09:45:19,169) [ipw/ipw (line 990)]: Proportion null deviance explained 0.09595811553953071
+WARNING (2026-01-27 09:45:19,169) [ipw/ipw (line 998)]: The propensity model has low fraction null deviance explained (0.09595811553953071). Results may not be accurate
+INFO (2026-01-27 09:45:19,172) [cli/process_batch (line 725)]: Succeeded with adjusting sample to target
+INFO (2026-01-27 09:45:19,174) [cli/process_batch (line 726)]: balance adjusted object: 
         Adjusted balance Sample object with target set using ipw
         1000 observations x 3 variables: gender,age_group,income
         id_column: id, weight_column: weight,
@@ -8779,17 +8779,17 @@ INFO (2026-01-26 12:38:37,229) [cli/process_batch (line 726)]: balance adjusted 
 	        
             3 common variables: gender,age_group,income
             
-INFO (2026-01-26 12:38:37,229) [cli/process_batch (line 728)]: Condition on which rows to keep for diagnostics: None 
-INFO (2026-01-26 12:38:37,229) [cli/process_batch (line 732)]: Names of columns to keep for diagnostics: None 
-INFO (2026-01-26 12:38:37,229) [sample_class/diagnostics (line 1805)]: Starting computation of diagnostics of the fitting
+INFO (2026-01-27 09:45:19,174) [cli/process_batch (line 728)]: Condition on which rows to keep for diagnostics: None 
+INFO (2026-01-27 09:45:19,174) [cli/process_batch (line 732)]: Names of columns to keep for diagnostics: None 
+INFO (2026-01-27 09:45:19,174) [sample_class/diagnostics (line 1804)]: Starting computation of diagnostics of the fitting
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:37,493) [sample_class/diagnostics (line 2026)]: Done computing diagnostics
-INFO (2026-01-26 12:38:37,497) [cli/process_batch (line 741)]: balance diagnostics object:                          metric           val            var
+<pre>INFO (2026-01-27 09:45:19,435) [sample_class/diagnostics (line 2025)]: Done computing diagnostics
+INFO (2026-01-27 09:45:19,440) [cli/process_batch (line 741)]: balance diagnostics object:                          metric           val            var
 0                          size   1000.000000     sample_obs
 1                          size      3.000000  sample_covars
 2                          size  10000.000000     target_obs
@@ -8803,7 +8803,7 @@ INFO (2026-01-26 12:38:37,497) [cli/process_batch (line 741)]: balance diagnosti
 84           adjustment_failure      0.000000            NaN
 
 [85 rows x 3 columns]
-INFO (2026-01-26 12:38:37,499) [cli/main (line 1128)]: Done fitting the model, writing output
+INFO (2026-01-27 09:45:19,441) [cli/main (line 1128)]: Done fitting the model, writing output
 </pre>
 </div>
 </div>
@@ -8945,91 +8945,91 @@ Name: count, dtype: int64
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>CLI command with batch processing:
-python -m balance.cli --input_file /tmp/tmp41env59d/input_batch.csv --output_file /tmp/tmp41env59d/weights_batch.csv --diagnostics_output_file /tmp/tmp41env59d/diagnostics_batch.csv --covariate_columns age_group,income --outcome_columns happiness --batch_columns gender --method ipw
+python -m balance.cli --input_file /tmp/tmpge3jvban/input_batch.csv --output_file /tmp/tmpge3jvban/weights_batch.csv --diagnostics_output_file /tmp/tmpge3jvban/diagnostics_batch.csv --covariate_columns age_group,income --outcome_columns happiness --batch_columns gender --method ipw
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:39,395) [__init__/&lt;module&gt; (line 72)]: Using balance version 0.15.0
-INFO (2026-01-26 12:38:39,397) [cli/main (line 1039)]: Running cli.main() using balance version 0.15.0
-INFO (2026-01-26 12:38:39,397) [cli/main (line 1074)]: Attributes used by main() for running adjust: {'transformations': 'default', 'formula': None, 'penalty_factor': None, 'one_hot_encoding': True, 'max_de': 1.5, 'lambda_min': 1e-05, 'lambda_max': 10, 'num_lambdas': 250, 'weight_trimming_mean_ratio': 20.0, 'sample_cls': &lt;class 'balance.sample_class.Sample'&gt;, 'sample_package_name': 'balance', 'sample_package_version': '0.15.0'}
-INFO (2026-01-26 12:38:39,407) [cli/load_and_check_input (line 869)]: Number of rows in input file: 10014
-INFO (2026-01-26 12:38:39,407) [cli/load_and_check_input (line 875)]: Number of columns in input file: 7
-INFO (2026-01-26 12:38:39,409) [cli/main (line 1085)]: Running weighting for batch = ('Female',) 
-WARNING (2026-01-26 12:38:39,559) [sample_class/from_frame (line 470)]: Casting id column to string
-WARNING (2026-01-26 12:38:39,567) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
-WARNING (2026-01-26 12:38:39,568) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
-WARNING (2026-01-26 12:38:39,568) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
+<pre>INFO (2026-01-27 09:45:21,409) [__init__/&lt;module&gt; (line 72)]: Using balance version 0.15.0
+INFO (2026-01-27 09:45:21,411) [cli/main (line 1039)]: Running cli.main() using balance version 0.15.0
+INFO (2026-01-27 09:45:21,411) [cli/main (line 1074)]: Attributes used by main() for running adjust: {'transformations': 'default', 'formula': None, 'penalty_factor': None, 'one_hot_encoding': True, 'max_de': 1.5, 'lambda_min': 1e-05, 'lambda_max': 10, 'num_lambdas': 250, 'weight_trimming_mean_ratio': 20.0, 'sample_cls': &lt;class 'balance.sample_class.Sample'&gt;, 'sample_package_name': 'balance', 'sample_package_version': '0.15.0'}
+INFO (2026-01-27 09:45:21,421) [cli/load_and_check_input (line 869)]: Number of rows in input file: 10014
+INFO (2026-01-27 09:45:21,421) [cli/load_and_check_input (line 875)]: Number of columns in input file: 7
+INFO (2026-01-27 09:45:21,423) [cli/main (line 1085)]: Running weighting for batch = ('Female',) 
+WARNING (2026-01-27 09:45:21,575) [sample_class/from_frame (line 469)]: Casting id column to string
+WARNING (2026-01-27 09:45:21,583) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
+WARNING (2026-01-27 09:45:21,584) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
+WARNING (2026-01-27 09:45:21,585) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
 id               int64
 is_respondent    int64
 dtype: object
-WARNING (2026-01-26 12:38:39,569) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
-WARNING (2026-01-26 12:38:39,569) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
+WARNING (2026-01-27 09:45:21,585) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
+WARNING (2026-01-27 09:45:21,585) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
 id                object
 is_respondent    float64
 dtype: object
-INFO (2026-01-26 12:38:39,570) [cli/process_batch (line 691)]: balance sample object: 
+INFO (2026-01-27 09:45:21,587) [cli/process_batch (line 691)]: balance sample object: 
         balance Sample object
         268 observations x 2 variables: age_group,income
         id_column: id, weight_column: weight,
         outcome_columns: happiness
         
-WARNING (2026-01-26 12:38:39,571) [sample_class/from_frame (line 470)]: Casting id column to string
-WARNING (2026-01-26 12:38:39,581) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
-WARNING (2026-01-26 12:38:39,582) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
-WARNING (2026-01-26 12:38:39,582) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
+WARNING (2026-01-27 09:45:21,588) [sample_class/from_frame (line 469)]: Casting id column to string
+WARNING (2026-01-27 09:45:21,598) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
+WARNING (2026-01-27 09:45:21,599) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
+WARNING (2026-01-27 09:45:21,599) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
 id               int64
 is_respondent    int64
 dtype: object
-WARNING (2026-01-26 12:38:39,582) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
-WARNING (2026-01-26 12:38:39,583) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
+WARNING (2026-01-27 09:45:21,599) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
+WARNING (2026-01-27 09:45:21,600) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
 id                object
 is_respondent    float64
 dtype: object
-INFO (2026-01-26 12:38:39,585) [cli/process_batch (line 702)]: balance target object: 
+INFO (2026-01-27 09:45:21,602) [cli/process_batch (line 702)]: balance target object: 
         balance Sample object
         4551 observations x 2 variables: age_group,income
         id_column: id, weight_column: weight,
         outcome_columns: happiness
         
-INFO (2026-01-26 12:38:39,587) [ipw/ipw (line 694)]: Starting ipw function
-INFO (2026-01-26 12:38:39,589) [adjustment/apply_transformations (line 433)]: Adding the variables: []
-INFO (2026-01-26 12:38:39,589) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['age_group', 'income']
-INFO (2026-01-26 12:38:39,594) [adjustment/apply_transformations (line 469)]: Final variables in output: ['age_group', 'income']
+INFO (2026-01-27 09:45:21,604) [ipw/ipw (line 694)]: Starting ipw function
+INFO (2026-01-27 09:45:21,606) [adjustment/apply_transformations (line 433)]: Adding the variables: []
+INFO (2026-01-27 09:45:21,606) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['age_group', 'income']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:39,598) [ipw/ipw (line 728)]: Building model matrix
-INFO (2026-01-26 12:38:39,632) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['income + age_group']
-INFO (2026-01-26 12:38:39,632) [ipw/ipw (line 753)]: The number of columns in the model matrix: 14
-INFO (2026-01-26 12:38:39,632) [ipw/ipw (line 754)]: The number of rows in the model matrix: 4819
+<pre>INFO (2026-01-27 09:45:21,611) [adjustment/apply_transformations (line 469)]: Final variables in output: ['age_group', 'income']
+INFO (2026-01-27 09:45:21,615) [ipw/ipw (line 728)]: Building model matrix
+INFO (2026-01-27 09:45:21,650) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['income + age_group']
+INFO (2026-01-27 09:45:21,650) [ipw/ipw (line 753)]: The number of columns in the model matrix: 14
+INFO (2026-01-27 09:45:21,650) [ipw/ipw (line 754)]: The number of rows in the model matrix: 4819
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:40,597) [ipw/ipw (line 915)]: Done with sklearn
-INFO (2026-01-26 12:38:40,597) [ipw/ipw (line 917)]: max_de: 1.5
-INFO (2026-01-26 12:38:40,597) [ipw/choose_regularization (line 371)]: Starting choosing regularisation parameters
+<pre>INFO (2026-01-27 09:45:22,627) [ipw/ipw (line 915)]: Done with sklearn
+INFO (2026-01-27 09:45:22,627) [ipw/ipw (line 917)]: max_de: 1.5
+INFO (2026-01-27 09:45:22,627) [ipw/choose_regularization (line 371)]: Starting choosing regularisation parameters
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:44,993) [ipw/choose_regularization (line 457)]: Best regularisation: 
+<pre>INFO (2026-01-27 09:45:27,062) [ipw/choose_regularization (line 457)]: Best regularisation: 
            s  s_index  trim  design_effect  asmd_improvement      asmd
 6  0.105705       82   5.0         1.4897          0.494125  0.098702
-INFO (2026-01-26 12:38:44,995) [ipw/ipw (line 972)]: Chosen lambda: 0.10570520810009826
-INFO (2026-01-26 12:38:44,995) [ipw/ipw (line 990)]: Proportion null deviance explained 0.14889612147544162
-INFO (2026-01-26 12:38:44,998) [cli/process_batch (line 725)]: Succeeded with adjusting sample to target
-INFO (2026-01-26 12:38:45,000) [cli/process_batch (line 726)]: balance adjusted object: 
+INFO (2026-01-27 09:45:27,064) [ipw/ipw (line 972)]: Chosen lambda: 0.10570520810009826
+INFO (2026-01-27 09:45:27,065) [ipw/ipw (line 990)]: Proportion null deviance explained 0.14889612147544162
+INFO (2026-01-27 09:45:27,068) [cli/process_batch (line 725)]: Succeeded with adjusting sample to target
+INFO (2026-01-27 09:45:27,070) [cli/process_batch (line 726)]: balance adjusted object: 
         Adjusted balance Sample object with target set using ipw
         268 observations x 2 variables: age_group,income
         id_column: id, weight_column: weight,
@@ -9051,11 +9051,11 @@ INFO (2026-01-26 12:38:45,000) [cli/process_batch (line 726)]: balance adjusted 
 	        
             2 common variables: age_group,income
             
-INFO (2026-01-26 12:38:45,000) [cli/process_batch (line 728)]: Condition on which rows to keep for diagnostics: None 
-INFO (2026-01-26 12:38:45,000) [cli/process_batch (line 732)]: Names of columns to keep for diagnostics: None 
-INFO (2026-01-26 12:38:45,000) [sample_class/diagnostics (line 1805)]: Starting computation of diagnostics of the fitting
-INFO (2026-01-26 12:38:45,137) [sample_class/diagnostics (line 2026)]: Done computing diagnostics
-INFO (2026-01-26 12:38:45,142) [cli/process_batch (line 741)]: balance diagnostics object:                          metric          val            var
+INFO (2026-01-27 09:45:27,070) [cli/process_batch (line 728)]: Condition on which rows to keep for diagnostics: None 
+INFO (2026-01-27 09:45:27,070) [cli/process_batch (line 732)]: Names of columns to keep for diagnostics: None 
+INFO (2026-01-27 09:45:27,070) [sample_class/diagnostics (line 1804)]: Starting computation of diagnostics of the fitting
+INFO (2026-01-27 09:45:27,210) [sample_class/diagnostics (line 2025)]: Done computing diagnostics
+INFO (2026-01-27 09:45:27,214) [cli/process_batch (line 741)]: balance diagnostics object:                          metric          val            var
 0                          size   268.000000     sample_obs
 1                          size     2.000000  sample_covars
 2                          size  4551.000000     target_obs
@@ -9069,80 +9069,80 @@ INFO (2026-01-26 12:38:45,142) [cli/process_batch (line 741)]: balance diagnosti
 82           adjustment_failure     0.000000            NaN
 
 [83 rows x 3 columns]
-INFO (2026-01-26 12:38:45,144) [cli/main (line 1102)]: Done processing batch ('Female',)
-INFO (2026-01-26 12:38:45,144) [cli/main (line 1085)]: Running weighting for batch = ('Male',) 
-WARNING (2026-01-26 12:38:45,145) [sample_class/from_frame (line 470)]: Casting id column to string
-WARNING (2026-01-26 12:38:45,153) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
-WARNING (2026-01-26 12:38:45,153) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
-WARNING (2026-01-26 12:38:45,153) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
+INFO (2026-01-27 09:45:27,217) [cli/main (line 1102)]: Done processing batch ('Female',)
+INFO (2026-01-27 09:45:27,217) [cli/main (line 1085)]: Running weighting for batch = ('Male',) 
+WARNING (2026-01-27 09:45:27,218) [sample_class/from_frame (line 469)]: Casting id column to string
+WARNING (2026-01-27 09:45:27,226) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
+WARNING (2026-01-27 09:45:27,226) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
+WARNING (2026-01-27 09:45:27,226) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
 id               int64
 is_respondent    int64
 dtype: object
-WARNING (2026-01-26 12:38:45,153) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
-WARNING (2026-01-26 12:38:45,154) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
+WARNING (2026-01-27 09:45:27,227) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
+WARNING (2026-01-27 09:45:27,227) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
 id                object
 is_respondent    float64
 dtype: object
-INFO (2026-01-26 12:38:45,155) [cli/process_batch (line 691)]: balance sample object: 
+INFO (2026-01-27 09:45:27,228) [cli/process_batch (line 691)]: balance sample object: 
         balance Sample object
         644 observations x 2 variables: age_group,income
         id_column: id, weight_column: weight,
         outcome_columns: happiness
         
-WARNING (2026-01-26 12:38:45,156) [sample_class/from_frame (line 470)]: Casting id column to string
-WARNING (2026-01-26 12:38:45,166) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
-WARNING (2026-01-26 12:38:45,166) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
-WARNING (2026-01-26 12:38:45,167) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
+WARNING (2026-01-27 09:45:27,229) [sample_class/from_frame (line 469)]: Casting id column to string
+WARNING (2026-01-27 09:45:27,239) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
+WARNING (2026-01-27 09:45:27,239) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
+WARNING (2026-01-27 09:45:27,240) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
 id               int64
 is_respondent    int64
 dtype: object
-WARNING (2026-01-26 12:38:45,167) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
-WARNING (2026-01-26 12:38:45,167) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
+WARNING (2026-01-27 09:45:27,240) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
+WARNING (2026-01-27 09:45:27,241) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
 id                object
 is_respondent    float64
 dtype: object
-INFO (2026-01-26 12:38:45,169) [cli/process_batch (line 702)]: balance target object: 
+INFO (2026-01-27 09:45:27,242) [cli/process_batch (line 702)]: balance target object: 
         balance Sample object
         4551 observations x 2 variables: age_group,income
         id_column: id, weight_column: weight,
         outcome_columns: happiness
         
-INFO (2026-01-26 12:38:45,171) [ipw/ipw (line 694)]: Starting ipw function
-INFO (2026-01-26 12:38:45,173) [adjustment/apply_transformations (line 433)]: Adding the variables: []
-INFO (2026-01-26 12:38:45,173) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['age_group', 'income']
-INFO (2026-01-26 12:38:45,177) [adjustment/apply_transformations (line 469)]: Final variables in output: ['age_group', 'income']
-INFO (2026-01-26 12:38:45,181) [ipw/ipw (line 728)]: Building model matrix
+INFO (2026-01-27 09:45:27,245) [ipw/ipw (line 694)]: Starting ipw function
+INFO (2026-01-27 09:45:27,246) [adjustment/apply_transformations (line 433)]: Adding the variables: []
+INFO (2026-01-27 09:45:27,246) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['age_group', 'income']
+INFO (2026-01-27 09:45:27,251) [adjustment/apply_transformations (line 469)]: Final variables in output: ['age_group', 'income']
+INFO (2026-01-27 09:45:27,255) [ipw/ipw (line 728)]: Building model matrix
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:45,214) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['income + age_group']
-INFO (2026-01-26 12:38:45,214) [ipw/ipw (line 753)]: The number of columns in the model matrix: 14
-INFO (2026-01-26 12:38:45,214) [ipw/ipw (line 754)]: The number of rows in the model matrix: 5195
+<pre>INFO (2026-01-27 09:45:27,288) [ipw/ipw (line 750)]: The formula used to build the model matrix: ['income + age_group']
+INFO (2026-01-27 09:45:27,288) [ipw/ipw (line 753)]: The number of columns in the model matrix: 14
+INFO (2026-01-27 09:45:27,288) [ipw/ipw (line 754)]: The number of rows in the model matrix: 5195
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:46,085) [ipw/ipw (line 915)]: Done with sklearn
-INFO (2026-01-26 12:38:46,085) [ipw/ipw (line 917)]: max_de: 1.5
-INFO (2026-01-26 12:38:46,085) [ipw/choose_regularization (line 371)]: Starting choosing regularisation parameters
+<pre>INFO (2026-01-27 09:45:28,181) [ipw/ipw (line 915)]: Done with sklearn
+INFO (2026-01-27 09:45:28,181) [ipw/ipw (line 917)]: max_de: 1.5
+INFO (2026-01-27 09:45:28,181) [ipw/choose_regularization (line 371)]: Starting choosing regularisation parameters
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:50,513) [ipw/choose_regularization (line 457)]: Best regularisation: 
+<pre>INFO (2026-01-27 09:45:32,532) [ipw/choose_regularization (line 457)]: Best regularisation: 
            s  s_index  trim  design_effect  asmd_improvement      asmd
 9  0.111736       81   5.0       1.495973          0.566289  0.087357
-INFO (2026-01-26 12:38:50,515) [ipw/ipw (line 972)]: Chosen lambda: 0.11173591019485084
-INFO (2026-01-26 12:38:50,515) [ipw/ipw (line 990)]: Proportion null deviance explained 0.14267734119400044
-INFO (2026-01-26 12:38:50,519) [cli/process_batch (line 725)]: Succeeded with adjusting sample to target
-INFO (2026-01-26 12:38:50,521) [cli/process_batch (line 726)]: balance adjusted object: 
+INFO (2026-01-27 09:45:32,534) [ipw/ipw (line 972)]: Chosen lambda: 0.11173591019485084
+INFO (2026-01-27 09:45:32,535) [ipw/ipw (line 990)]: Proportion null deviance explained 0.14267734119400044
+INFO (2026-01-27 09:45:32,538) [cli/process_batch (line 725)]: Succeeded with adjusting sample to target
+INFO (2026-01-27 09:45:32,540) [cli/process_batch (line 726)]: balance adjusted object: 
         Adjusted balance Sample object with target set using ipw
         644 observations x 2 variables: age_group,income
         id_column: id, weight_column: weight,
@@ -9164,11 +9164,11 @@ INFO (2026-01-26 12:38:50,521) [cli/process_batch (line 726)]: balance adjusted 
 	        
             2 common variables: age_group,income
             
-INFO (2026-01-26 12:38:50,521) [cli/process_batch (line 728)]: Condition on which rows to keep for diagnostics: None 
-INFO (2026-01-26 12:38:50,521) [cli/process_batch (line 732)]: Names of columns to keep for diagnostics: None 
-INFO (2026-01-26 12:38:50,521) [sample_class/diagnostics (line 1805)]: Starting computation of diagnostics of the fitting
-INFO (2026-01-26 12:38:50,663) [sample_class/diagnostics (line 2026)]: Done computing diagnostics
-INFO (2026-01-26 12:38:50,667) [cli/process_batch (line 741)]: balance diagnostics object:                          metric          val            var
+INFO (2026-01-27 09:45:32,540) [cli/process_batch (line 728)]: Condition on which rows to keep for diagnostics: None 
+INFO (2026-01-27 09:45:32,540) [cli/process_batch (line 732)]: Names of columns to keep for diagnostics: None 
+INFO (2026-01-27 09:45:32,540) [sample_class/diagnostics (line 1804)]: Starting computation of diagnostics of the fitting
+INFO (2026-01-27 09:45:32,684) [sample_class/diagnostics (line 2025)]: Done computing diagnostics
+INFO (2026-01-27 09:45:32,688) [cli/process_batch (line 741)]: balance diagnostics object:                          metric          val            var
 0                          size   644.000000     sample_obs
 1                          size     2.000000  sample_covars
 2                          size  4551.000000     target_obs
@@ -9182,8 +9182,8 @@ INFO (2026-01-26 12:38:50,667) [cli/process_batch (line 741)]: balance diagnosti
 82           adjustment_failure     0.000000            NaN
 
 [83 rows x 3 columns]
-INFO (2026-01-26 12:38:50,670) [cli/main (line 1102)]: Done processing batch ('Male',)
-INFO (2026-01-26 12:38:50,670) [cli/main (line 1128)]: Done fitting the model, writing output
+INFO (2026-01-27 09:45:32,690) [cli/main (line 1102)]: Done processing batch ('Male',)
+INFO (2026-01-27 09:45:32,691) [cli/main (line 1128)]: Done fitting the model, writing output
 </pre>
 </div>
 </div>
@@ -9409,49 +9409,49 @@ Male    644.0   7.067   4.981  2.913  3.260   5.775   9.234  35.371
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>CLI command with CBPS method:
-python -m balance.cli --input_file /tmp/tmpm87fibtw/input.csv --output_file /tmp/tmpm87fibtw/weights_cbps.csv --diagnostics_output_file /tmp/tmpm87fibtw/diagnostics_cbps.csv --covariate_columns gender,age_group,income --method cbps
+python -m balance.cli --input_file /tmp/tmpqyircjlr/input.csv --output_file /tmp/tmpqyircjlr/weights_cbps.csv --diagnostics_output_file /tmp/tmpqyircjlr/diagnostics_cbps.csv --covariate_columns gender,age_group,income --method cbps
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:52,546) [__init__/&lt;module&gt; (line 72)]: Using balance version 0.15.0
-INFO (2026-01-26 12:38:52,548) [cli/main (line 1039)]: Running cli.main() using balance version 0.15.0
-INFO (2026-01-26 12:38:52,548) [cli/main (line 1074)]: Attributes used by main() for running adjust: {'transformations': 'default', 'formula': None, 'penalty_factor': None, 'one_hot_encoding': True, 'max_de': 1.5, 'lambda_min': 1e-05, 'lambda_max': 10, 'num_lambdas': 250, 'weight_trimming_mean_ratio': 20.0, 'sample_cls': &lt;class 'balance.sample_class.Sample'&gt;, 'sample_package_name': 'balance', 'sample_package_version': '0.15.0'}
-INFO (2026-01-26 12:38:52,558) [cli/load_and_check_input (line 869)]: Number of rows in input file: 11000
-INFO (2026-01-26 12:38:52,558) [cli/load_and_check_input (line 875)]: Number of columns in input file: 7
-WARNING (2026-01-26 12:38:52,709) [sample_class/from_frame (line 470)]: Casting id column to string
-WARNING (2026-01-26 12:38:52,717) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
-WARNING (2026-01-26 12:38:52,718) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
-WARNING (2026-01-26 12:38:52,719) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
+<pre>INFO (2026-01-27 09:45:34,735) [__init__/&lt;module&gt; (line 72)]: Using balance version 0.15.0
+INFO (2026-01-27 09:45:34,737) [cli/main (line 1039)]: Running cli.main() using balance version 0.15.0
+INFO (2026-01-27 09:45:34,737) [cli/main (line 1074)]: Attributes used by main() for running adjust: {'transformations': 'default', 'formula': None, 'penalty_factor': None, 'one_hot_encoding': True, 'max_de': 1.5, 'lambda_min': 1e-05, 'lambda_max': 10, 'num_lambdas': 250, 'weight_trimming_mean_ratio': 20.0, 'sample_cls': &lt;class 'balance.sample_class.Sample'&gt;, 'sample_package_name': 'balance', 'sample_package_version': '0.15.0'}
+INFO (2026-01-27 09:45:34,748) [cli/load_and_check_input (line 869)]: Number of rows in input file: 11000
+INFO (2026-01-27 09:45:34,749) [cli/load_and_check_input (line 875)]: Number of columns in input file: 7
+WARNING (2026-01-27 09:45:34,900) [sample_class/from_frame (line 469)]: Casting id column to string
+WARNING (2026-01-27 09:45:34,909) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
+WARNING (2026-01-27 09:45:34,909) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
+WARNING (2026-01-27 09:45:34,910) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
 is_respondent    int64
 id               int64
 dtype: object
-WARNING (2026-01-26 12:38:52,719) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
-WARNING (2026-01-26 12:38:52,719) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
+WARNING (2026-01-27 09:45:34,910) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
+WARNING (2026-01-27 09:45:34,911) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
 is_respondent    float64
 id                object
 dtype: object
-INFO (2026-01-26 12:38:52,721) [cli/process_batch (line 691)]: balance sample object: 
+INFO (2026-01-27 09:45:34,912) [cli/process_batch (line 691)]: balance sample object: 
         balance Sample object
         1000 observations x 3 variables: gender,age_group,income
         id_column: id, weight_column: weight,
         outcome_columns: happiness,is_respondent
         
-WARNING (2026-01-26 12:38:52,722) [sample_class/from_frame (line 470)]: Casting id column to string
-WARNING (2026-01-26 12:38:52,741) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
-WARNING (2026-01-26 12:38:52,741) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
-WARNING (2026-01-26 12:38:52,743) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
+WARNING (2026-01-27 09:45:34,914) [sample_class/from_frame (line 469)]: Casting id column to string
+WARNING (2026-01-27 09:45:34,929) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
+WARNING (2026-01-27 09:45:34,929) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
+WARNING (2026-01-27 09:45:34,930) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
 is_respondent    int64
 id               int64
 dtype: object
-WARNING (2026-01-26 12:38:52,743) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
-WARNING (2026-01-26 12:38:52,744) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
+WARNING (2026-01-27 09:45:34,930) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
+WARNING (2026-01-27 09:45:34,931) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
 is_respondent    float64
 id                object
 dtype: object
-INFO (2026-01-26 12:38:52,746) [cli/process_batch (line 702)]: balance target object: 
+INFO (2026-01-27 09:45:34,933) [cli/process_batch (line 702)]: balance target object: 
         balance Sample object
         10000 observations x 3 variables: gender,age_group,income
         id_column: id, weight_column: weight,
@@ -9463,37 +9463,37 @@ INFO (2026-01-26 12:38:52,746) [cli/process_batch (line 702)]: balance target ob
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:52,751) [cbps/cbps (line 537)]: Starting cbps function
-INFO (2026-01-26 12:38:52,753) [adjustment/apply_transformations (line 433)]: Adding the variables: []
-INFO (2026-01-26 12:38:52,753) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['gender', 'age_group', 'income']
-INFO (2026-01-26 12:38:52,762) [adjustment/apply_transformations (line 469)]: Final variables in output: ['gender', 'age_group', 'income']
-INFO (2026-01-26 12:38:52,867) [cbps/cbps (line 588)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
-INFO (2026-01-26 12:38:52,868) [cbps/cbps (line 599)]: The number of columns in the model matrix: 16
-INFO (2026-01-26 12:38:52,869) [cbps/cbps (line 600)]: The number of rows in the model matrix: 11000
-INFO (2026-01-26 12:38:52,876) [cbps/cbps (line 669)]: Finding initial estimator for GMM optimization
+<pre>INFO (2026-01-27 09:45:34,938) [cbps/cbps (line 537)]: Starting cbps function
+INFO (2026-01-27 09:45:34,940) [adjustment/apply_transformations (line 433)]: Adding the variables: []
+INFO (2026-01-27 09:45:34,940) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['gender', 'age_group', 'income']
+INFO (2026-01-27 09:45:34,950) [adjustment/apply_transformations (line 469)]: Final variables in output: ['gender', 'age_group', 'income']
+INFO (2026-01-27 09:45:35,056) [cbps/cbps (line 588)]: The formula used to build the model matrix: ['income + gender + age_group + _is_na_gender']
+INFO (2026-01-27 09:45:35,057) [cbps/cbps (line 599)]: The number of columns in the model matrix: 16
+INFO (2026-01-27 09:45:35,057) [cbps/cbps (line 600)]: The number of rows in the model matrix: 11000
+INFO (2026-01-27 09:45:35,065) [cbps/cbps (line 669)]: Finding initial estimator for GMM optimization
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:53,012) [cbps/cbps (line 696)]: Finding initial estimator for GMM optimization that minimizes the balance loss
+<pre>INFO (2026-01-27 09:45:35,196) [cbps/cbps (line 696)]: Finding initial estimator for GMM optimization that minimizes the balance loss
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:53,658) [cbps/cbps (line 732)]: Running GMM optimization
+<pre>INFO (2026-01-27 09:45:35,838) [cbps/cbps (line 732)]: Running GMM optimization
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:55,115) [cbps/cbps (line 859)]: Done cbps function
-INFO (2026-01-26 12:38:55,119) [cli/process_batch (line 725)]: Succeeded with adjusting sample to target
-INFO (2026-01-26 12:38:55,121) [cli/process_batch (line 726)]: balance adjusted object: 
+<pre>INFO (2026-01-27 09:45:37,286) [cbps/cbps (line 859)]: Done cbps function
+INFO (2026-01-27 09:45:37,290) [cli/process_batch (line 725)]: Succeeded with adjusting sample to target
+INFO (2026-01-27 09:45:37,293) [cli/process_batch (line 726)]: balance adjusted object: 
         Adjusted balance Sample object with target set using cbps
         1000 observations x 3 variables: gender,age_group,income
         id_column: id, weight_column: weight,
@@ -9514,17 +9514,17 @@ INFO (2026-01-26 12:38:55,121) [cli/process_batch (line 726)]: balance adjusted 
 	        
             3 common variables: gender,age_group,income
             
-INFO (2026-01-26 12:38:55,121) [cli/process_batch (line 728)]: Condition on which rows to keep for diagnostics: None 
-INFO (2026-01-26 12:38:55,121) [cli/process_batch (line 732)]: Names of columns to keep for diagnostics: None 
-INFO (2026-01-26 12:38:55,122) [sample_class/diagnostics (line 1805)]: Starting computation of diagnostics of the fitting
+INFO (2026-01-27 09:45:37,293) [cli/process_batch (line 728)]: Condition on which rows to keep for diagnostics: None 
+INFO (2026-01-27 09:45:37,293) [cli/process_batch (line 732)]: Names of columns to keep for diagnostics: None 
+INFO (2026-01-27 09:45:37,293) [sample_class/diagnostics (line 1804)]: Starting computation of diagnostics of the fitting
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:55,409) [sample_class/diagnostics (line 2026)]: Done computing diagnostics
-INFO (2026-01-26 12:38:55,413) [cli/process_batch (line 741)]: balance diagnostics object:                          metric       val            var
+<pre>INFO (2026-01-27 09:45:37,590) [sample_class/diagnostics (line 2025)]: Done computing diagnostics
+INFO (2026-01-27 09:45:37,595) [cli/process_batch (line 741)]: balance diagnostics object:                          metric       val            var
 0                          size    1000.0     sample_obs
 1                          size       3.0  sample_covars
 2                          size   10000.0     target_obs
@@ -9538,7 +9538,7 @@ INFO (2026-01-26 12:38:55,413) [cli/process_batch (line 741)]: balance diagnosti
 90           adjustment_failure         0            NaN
 
 [91 rows x 3 columns]
-INFO (2026-01-26 12:38:55,415) [cli/main (line 1128)]: Done fitting the model, writing output
+INFO (2026-01-27 09:45:37,597) [cli/main (line 1128)]: Done fitting the model, writing output
 </pre>
 </div>
 </div>
@@ -9630,49 +9630,49 @@ Adjustment method used:
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>CLI command with rake method:
-python -m balance.cli --input_file /tmp/tmpyil3r8c8/input.csv --output_file /tmp/tmpyil3r8c8/weights_rake.csv --diagnostics_output_file /tmp/tmpyil3r8c8/diagnostics_rake.csv --covariate_columns gender,age_group,income --method rake
+python -m balance.cli --input_file /tmp/tmpv7ilqnab/input.csv --output_file /tmp/tmpv7ilqnab/weights_rake.csv --diagnostics_output_file /tmp/tmpv7ilqnab/diagnostics_rake.csv --covariate_columns gender,age_group,income --method rake
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:57,251) [__init__/&lt;module&gt; (line 72)]: Using balance version 0.15.0
-INFO (2026-01-26 12:38:57,253) [cli/main (line 1039)]: Running cli.main() using balance version 0.15.0
-INFO (2026-01-26 12:38:57,253) [cli/main (line 1074)]: Attributes used by main() for running adjust: {'transformations': 'default', 'formula': None, 'penalty_factor': None, 'one_hot_encoding': True, 'max_de': 1.5, 'lambda_min': 1e-05, 'lambda_max': 10, 'num_lambdas': 250, 'weight_trimming_mean_ratio': 20.0, 'sample_cls': &lt;class 'balance.sample_class.Sample'&gt;, 'sample_package_name': 'balance', 'sample_package_version': '0.15.0'}
-INFO (2026-01-26 12:38:57,263) [cli/load_and_check_input (line 869)]: Number of rows in input file: 11000
-INFO (2026-01-26 12:38:57,263) [cli/load_and_check_input (line 875)]: Number of columns in input file: 7
-WARNING (2026-01-26 12:38:57,414) [sample_class/from_frame (line 470)]: Casting id column to string
-WARNING (2026-01-26 12:38:57,423) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
-WARNING (2026-01-26 12:38:57,423) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
-WARNING (2026-01-26 12:38:57,424) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
-is_respondent    int64
+<pre>INFO (2026-01-27 09:45:39,574) [__init__/&lt;module&gt; (line 72)]: Using balance version 0.15.0
+INFO (2026-01-27 09:45:39,576) [cli/main (line 1039)]: Running cli.main() using balance version 0.15.0
+INFO (2026-01-27 09:45:39,576) [cli/main (line 1074)]: Attributes used by main() for running adjust: {'transformations': 'default', 'formula': None, 'penalty_factor': None, 'one_hot_encoding': True, 'max_de': 1.5, 'lambda_min': 1e-05, 'lambda_max': 10, 'num_lambdas': 250, 'weight_trimming_mean_ratio': 20.0, 'sample_cls': &lt;class 'balance.sample_class.Sample'&gt;, 'sample_package_name': 'balance', 'sample_package_version': '0.15.0'}
+INFO (2026-01-27 09:45:39,587) [cli/load_and_check_input (line 869)]: Number of rows in input file: 11000
+INFO (2026-01-27 09:45:39,587) [cli/load_and_check_input (line 875)]: Number of columns in input file: 7
+WARNING (2026-01-27 09:45:39,739) [sample_class/from_frame (line 469)]: Casting id column to string
+WARNING (2026-01-27 09:45:39,748) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
+WARNING (2026-01-27 09:45:39,748) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
+WARNING (2026-01-27 09:45:39,749) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
 id               int64
+is_respondent    int64
 dtype: object
-WARNING (2026-01-26 12:38:57,424) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
-WARNING (2026-01-26 12:38:57,425) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
-is_respondent    float64
+WARNING (2026-01-27 09:45:39,749) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
+WARNING (2026-01-27 09:45:39,750) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
 id                object
+is_respondent    float64
 dtype: object
-INFO (2026-01-26 12:38:57,426) [cli/process_batch (line 691)]: balance sample object: 
+INFO (2026-01-27 09:45:39,751) [cli/process_batch (line 691)]: balance sample object: 
         balance Sample object
         1000 observations x 3 variables: gender,age_group,income
         id_column: id, weight_column: weight,
         outcome_columns: happiness,is_respondent
         
-WARNING (2026-01-26 12:38:57,428) [sample_class/from_frame (line 470)]: Casting id column to string
-WARNING (2026-01-26 12:38:57,442) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
-WARNING (2026-01-26 12:38:57,442) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
-WARNING (2026-01-26 12:38:57,443) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
-is_respondent    int64
+WARNING (2026-01-27 09:45:39,753) [sample_class/from_frame (line 469)]: Casting id column to string
+WARNING (2026-01-27 09:45:39,768) [pandas_utils/_warn_of_df_dtypes_change (line 492)]: The dtypes of sample._df were changed from the original dtypes of the input df, here are the differences - 
+WARNING (2026-01-27 09:45:39,768) [pandas_utils/_warn_of_df_dtypes_change (line 503)]: The (old) dtypes that changed for df (before the change):
+WARNING (2026-01-27 09:45:39,768) [pandas_utils/_warn_of_df_dtypes_change (line 506)]: 
 id               int64
+is_respondent    int64
 dtype: object
-WARNING (2026-01-26 12:38:57,443) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
-WARNING (2026-01-26 12:38:57,444) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
-is_respondent    float64
+WARNING (2026-01-27 09:45:39,769) [pandas_utils/_warn_of_df_dtypes_change (line 507)]: The (new) dtypes saved in df (after the change):
+WARNING (2026-01-27 09:45:39,769) [pandas_utils/_warn_of_df_dtypes_change (line 508)]: 
 id                object
+is_respondent    float64
 dtype: object
-INFO (2026-01-26 12:38:57,446) [cli/process_batch (line 702)]: balance target object: 
+INFO (2026-01-27 09:45:39,772) [cli/process_batch (line 702)]: balance target object: 
         balance Sample object
         10000 observations x 3 variables: gender,age_group,income
         id_column: id, weight_column: weight,
@@ -9684,12 +9684,12 @@ INFO (2026-01-26 12:38:57,446) [cli/process_batch (line 702)]: balance target ob
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:57,452) [adjustment/apply_transformations (line 433)]: Adding the variables: []
-INFO (2026-01-26 12:38:57,452) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['gender', 'age_group', 'income']
-INFO (2026-01-26 12:38:57,462) [adjustment/apply_transformations (line 469)]: Final variables in output: ['gender', 'age_group', 'income']
-INFO (2026-01-26 12:38:57,498) [rake/rake (line 274)]: Final covariates and levels that will be used in raking: {'age_group': ['18-24', '25-34', '35-44', '45+'], 'gender': ['Female', 'Male', '__NaN__'], 'income': ['(-0.0009997440000000001, 0.44]', '(0.44, 1.664]', '(1.664, 3.472]', '(11.312, 15.139]', '(15.139, 20.567]', '(20.567, 29.504]', '(29.504, 128.536]', '(3.472, 5.663]', '(5.663, 8.211]', '(8.211, 11.312]']}.
-INFO (2026-01-26 12:38:57,520) [cli/process_batch (line 725)]: Succeeded with adjusting sample to target
-INFO (2026-01-26 12:38:57,522) [cli/process_batch (line 726)]: balance adjusted object: 
+<pre>INFO (2026-01-27 09:45:39,779) [adjustment/apply_transformations (line 433)]: Adding the variables: []
+INFO (2026-01-27 09:45:39,779) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['gender', 'age_group', 'income']
+INFO (2026-01-27 09:45:39,788) [adjustment/apply_transformations (line 469)]: Final variables in output: ['gender', 'age_group', 'income']
+INFO (2026-01-27 09:45:39,825) [rake/rake (line 274)]: Final covariates and levels that will be used in raking: {'age_group': ['18-24', '25-34', '35-44', '45+'], 'gender': ['Female', 'Male', '__NaN__'], 'income': ['(-0.0009997440000000001, 0.44]', '(0.44, 1.664]', '(1.664, 3.472]', '(11.312, 15.139]', '(15.139, 20.567]', '(20.567, 29.504]', '(29.504, 128.536]', '(3.472, 5.663]', '(5.663, 8.211]', '(8.211, 11.312]']}.
+INFO (2026-01-27 09:45:39,848) [cli/process_batch (line 725)]: Succeeded with adjusting sample to target
+INFO (2026-01-27 09:45:39,850) [cli/process_batch (line 726)]: balance adjusted object: 
         Adjusted balance Sample object with target set using rake
         1000 observations x 3 variables: gender,age_group,income
         id_column: id, weight_column: weight,
@@ -9710,17 +9710,17 @@ INFO (2026-01-26 12:38:57,522) [cli/process_batch (line 726)]: balance adjusted 
 	        
             3 common variables: gender,age_group,income
             
-INFO (2026-01-26 12:38:57,522) [cli/process_batch (line 728)]: Condition on which rows to keep for diagnostics: None 
-INFO (2026-01-26 12:38:57,522) [cli/process_batch (line 732)]: Names of columns to keep for diagnostics: None 
-INFO (2026-01-26 12:38:57,522) [sample_class/diagnostics (line 1805)]: Starting computation of diagnostics of the fitting
+INFO (2026-01-27 09:45:39,850) [cli/process_batch (line 728)]: Condition on which rows to keep for diagnostics: None 
+INFO (2026-01-27 09:45:39,851) [cli/process_batch (line 732)]: Names of columns to keep for diagnostics: None 
+INFO (2026-01-27 09:45:39,851) [sample_class/diagnostics (line 1804)]: Starting computation of diagnostics of the fitting
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-01-26 12:38:57,776) [sample_class/diagnostics (line 2026)]: Done computing diagnostics
-INFO (2026-01-26 12:38:57,780) [cli/process_batch (line 741)]: balance diagnostics object:                          metric           val            var
+<pre>INFO (2026-01-27 09:45:40,113) [sample_class/diagnostics (line 2025)]: Done computing diagnostics
+INFO (2026-01-27 09:45:40,118) [cli/process_batch (line 741)]: balance diagnostics object:                          metric           val            var
 0                          size   1000.000000     sample_obs
 1                          size      3.000000  sample_covars
 2                          size  10000.000000     target_obs
@@ -9734,7 +9734,7 @@ INFO (2026-01-26 12:38:57,780) [cli/process_batch (line 741)]: balance diagnosti
 65           adjustment_failure      0.000000            NaN
 
 [66 rows x 3 columns]
-INFO (2026-01-26 12:38:57,782) [cli/main (line 1128)]: Done fitting the model, writing output
+INFO (2026-01-27 09:45:40,120) [cli/main (line 1128)]: Done fitting the model, writing output
 </pre>
 </div>
 </div>
@@ -9907,7 +9907,7 @@ traitlets                   5.14.3
 typing_extensions           NA
 uri_template                NA
 urllib3                     2.6.3
-wcwidth                     0.4.0
+wcwidth                     0.5.0
 webcolors                   NA
 websocket                   1.9.0
 yaml                        6.0.3
@@ -9924,7 +9924,7 @@ notebook            7.5.3
 Python 3.9.25 (main, Nov  3 2025, 15:16:36) [GCC 13.3.0]
 Linux-6.11.0-1018-azure-x86_64-with-glibc2.39
 -----
-Session information updated at 2026-01-26 12:39
+Session information updated at 2026-01-27 09:45
 </pre>
 </div>
 </div>
