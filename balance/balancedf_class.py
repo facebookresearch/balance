@@ -2205,7 +2205,7 @@ class BalanceDFOutcomes(BalanceDF):
 
                     mean_yw0  mean_yw1  mean_diff  diff_ci_lower  diff_ci_upper  t_stat  p_value    n
             outcome
-            outcome       2.5       4.0       -1.5         -4.547          1.547  -1.567    0.215  4.0
+            outcome       2.5       4.0        1.5         -1.547          4.547   1.567    0.215  4.0
         """
         if w1 is None:
             if self._weights is None:
@@ -2249,7 +2249,7 @@ class BalanceDFOutcomes(BalanceDF):
     def summary(
         self: "BalanceDFOutcomes",
         on_linked_samples: bool | None = None,
-        weights_impact_method: str | None = None,
+        weights_impact_method: str | None = "t_test",
         weights_impact_conf_level: float = 0.95,
     ) -> str:
         """Produces summary printable string of a BalanceDFOutcomes object.
@@ -2258,7 +2258,7 @@ class BalanceDFOutcomes(BalanceDF):
             self (BalanceDFOutcomes): Object.
             on_linked_samples (Optional[bool]): Ignored. Only here since summary overrides BalanceDF.summary.
             weights_impact_method (Optional[str]): If provided, include a paired test
-                of y*w0 vs y*w1 for each outcome (default is None).
+                of y*w0 vs y*w1 for each outcome (default is "t_test").
             weights_impact_conf_level (float): Confidence level for the mean difference
                 interval when weights_impact_method is provided. Defaults to 0.95.
 
@@ -2301,6 +2301,14 @@ class BalanceDFOutcomes(BalanceDF):
                     # o1                8.50   (7.404, 9.596)
                     # o2                6.00   (2.535, 9.465)
 
+                    # Weights impact on outcomes (t_test):
+                    #                   mean_yw0  mean_yw1  mean_diff  diff_ci_lower  diff_ci_upper  t_stat  p_value    n
+                    # outcome
+                    # _is_na_o2[False]      0.75      0.75        0.0            0.0            0.0     NaN      NaN  4.0
+                    # _is_na_o2[True]       0.25      0.25        0.0            0.0            0.0     NaN      NaN  4.0
+                    # o1                    8.50      8.50        0.0            0.0            0.0     NaN      NaN  4.0
+                    # o2                    6.00      6.00        0.0            0.0            0.0     NaN      NaN  4.0
+
                     # Response rates (relative to number of respondents in sample):
                     #       o1    o2
                     # n    4.0   3.0
@@ -2314,6 +2322,14 @@ class BalanceDFOutcomes(BalanceDF):
                     # _is_na_o2[True]   0.25   0.250  (-0.174, 0.674)    (-0.05, 0.55)
                     # o1                8.50  10.500   (7.404, 9.596)  (8.912, 12.088)
                     # o2                6.00   7.875   (2.535, 9.465)  (4.351, 11.399)
+
+                    # Weights impact on outcomes (t_test):
+                    #                   mean_yw0  mean_yw1  mean_diff  diff_ci_lower  diff_ci_upper  t_stat  p_value    n
+                    # outcome
+                    # _is_na_o2[False]      0.75      0.75        0.0            0.0            0.0     NaN      NaN  4.0
+                    # _is_na_o2[True]       0.25      0.25        0.0            0.0            0.0     NaN      NaN  4.0
+                    # o1                    8.50      8.50        0.0            0.0            0.0     NaN      NaN  4.0
+                    # o2                    6.00      6.00        0.0            0.0            0.0     NaN      NaN  4.0
 
                     # Response rates (relative to number of respondents in sample):
                     #       o1    o2

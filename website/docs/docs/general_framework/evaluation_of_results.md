@@ -209,14 +209,15 @@ the baseline means, the mean difference, and its confidence interval:
 adjusted.outcomes().weights_impact_on_outcome_ss(method="t_test")
 ```
 
-You can also include this in the printable summary:
+You can also include this in the printable summary (enabled by default):
 
 ```python
-print(adjusted.outcomes().summary(weights_impact_method="t_test"))
+print(adjusted.outcomes().summary())
 ```
 
 In diagnostics output, these appear under `weights_impact_on_outcome_*` metrics
-when the feature is enabled.
+by default (set `weights_impact_method=None` to disable in the summary, or
+pass `weights_impact_on_outcome_method=None` when calling diagnostics).
 
 To compare two adjusted models (for example, IPW vs. CBPS) on the same outcomes,
 use:

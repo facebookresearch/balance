@@ -1714,7 +1714,7 @@ class Sample:
 
     def diagnostics(
         self: "Sample",
-        weights_impact_on_outcome_method: str | None = None,
+        weights_impact_on_outcome_method: str | None = "t_test",
         weights_impact_on_outcome_conf_level: float = 0.95,
     ) -> pd.DataFrame:
         # TODO: mention the other diagnostics
@@ -1777,6 +1777,7 @@ class Sample:
             self (Sample): only after running an adjustment with Sample.adjust.
             weights_impact_on_outcome_method (Optional[str]): If provided, include
                 outcome-weight impact diagnostics using the specified method.
+                Defaults to "t_test".
             weights_impact_on_outcome_conf_level (float): Confidence level for
                 the outcome impact interval. Defaults to 0.95.
 
@@ -1852,15 +1853,17 @@ class Sample:
                 round_ndigits=None,
             )
             if outcome_impact is not None:
-                impact_rows = (
-                    outcome_impact.reset_index()
-                    .melt(id_vars="outcome", var_name="stat", value_name="val")
-                    .assign(
-                        metric=lambda df: "weights_impact_on_outcome_" + df["stat"],
-                        var=lambda df: df["outcome"],
-                    )[["metric", "val", "var"]]
+                impact_rows = outcome_impact.reset_index().melt(
+                    id_vars="outcome", var_name="stat", value_name="val"
                 )
-                diagnostics = pd.concat((diagnostics, impact_rows), ignore_index=True)
+                for stat_name in impact_rows["stat"].unique():
+                    stat_rows = impact_rows[impact_rows["stat"] == stat_name]
+                    diagnostics = _concat_metric_val_var(
+                        diagnostics,
+                        f"weights_impact_on_outcome_{stat_name}",
+                        stat_rows["val"].tolist(),
+                        stat_rows["outcome"].tolist(),
+                    )
 
         # ----------------------------------------------------
         # Diagnostics on the model

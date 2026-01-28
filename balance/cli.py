@@ -621,7 +621,7 @@ class BalanceCLI:
                         covariate_columns="x",
                         covariate_columns_for_diagnostics=None,
                         rows_to_keep_for_diagnostics=None,
-                        weights_impact_on_outcome_method="none",
+                        weights_impact_on_outcome_method="t_test",
                         batch_columns=None,
                         keep_columns=None,
                         keep_row_column=None,
@@ -1240,10 +1240,10 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
     parser.add_argument(
         "--weights_impact_on_outcome_method",
         required=False,
-        default="none",
+        default="t_test",
         help=(
-            "Method for outcome-weight impact diagnostics (default: none). "
-            "Set to 't_test' to compare y*w0 vs y*w1."
+            "Method for outcome-weight impact diagnostics (default: t_test). "
+            "Set to 'none' to disable or 't_test' to compare y*w0 vs y*w1."
         ),
     )
     parser.add_argument(

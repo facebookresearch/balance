@@ -342,6 +342,14 @@ class TestBalanceDFOutcomes(BalanceTestCase):
                 o1                8.50   (7.404, 9.596)
                 o2                6.00   (2.535, 9.465)
 
+                Weights impact on outcomes (t_test):
+                                  mean_yw0  mean_yw1  mean_diff  diff_ci_lower  diff_ci_upper  t_stat  p_value    n
+                outcome
+                _is_na_o2[False]      0.75      0.75        0.0            0.0            0.0     NaN      NaN  4.0
+                _is_na_o2[True]       0.25      0.25        0.0            0.0            0.0     NaN      NaN  4.0
+                o1                    8.50      8.50        0.0            0.0            0.0     NaN      NaN  4.0
+                o2                    6.00      6.00        0.0            0.0            0.0     NaN      NaN  4.0
+
                 Response rates (relative to number of respondents in sample):
                     o1    o2
                 n    4.0   3.0
@@ -360,6 +368,14 @@ class TestBalanceDFOutcomes(BalanceTestCase):
                 _is_na_o2[True]   0.25   0.250  (-0.174, 0.674)    (-0.05, 0.55)
                 o1                8.50  10.500   (7.404, 9.596)  (8.912, 12.088)
                 o2                6.00   7.875   (2.535, 9.465)  (4.351, 11.399)
+
+                Weights impact on outcomes (t_test):
+                                  mean_yw0  mean_yw1  mean_diff  diff_ci_lower  diff_ci_upper  t_stat  p_value    n
+                outcome
+                _is_na_o2[False]      0.75      0.75        0.0            0.0            0.0     NaN      NaN  4.0
+                _is_na_o2[True]       0.25      0.25        0.0            0.0            0.0     NaN      NaN  4.0
+                o1                    8.50      8.50        0.0            0.0            0.0     NaN      NaN  4.0
+                o2                    6.00      6.00        0.0            0.0            0.0     NaN      NaN  4.0
 
                 Response rates (relative to number of respondents in sample):
                     o1    o2
@@ -451,7 +467,7 @@ class TestBalanceDFOutcomes(BalanceTestCase):
             outcome_columns=("outcome",),
         )
 
-        summary = sample.outcomes().summary(weights_impact_method="t_test")
+        summary = sample.outcomes().summary()
         self.assertIn("Weights impact on outcomes (t_test)", summary)
 
 

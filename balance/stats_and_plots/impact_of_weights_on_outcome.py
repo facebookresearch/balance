@@ -101,10 +101,10 @@ def weights_impact_on_outcome_ss(
 
         mean_yw0         2.500
         mean_yw1         4.000
-        mean_diff       -1.500
-        diff_ci_lower   -4.547
-        diff_ci_upper    1.547
-        t_stat          -1.567
+        mean_diff        1.500
+        diff_ci_lower   -1.547
+        diff_ci_upper    4.547
+        t_stat           1.567
         p_value          0.215
         n                4.000
     """
@@ -117,8 +117,9 @@ def weights_impact_on_outcome_ss(
 
     yw0 = y_values * w0_values
     yw1 = y_values * w1_values
-    diff = yw0 - yw1
+    diff = yw1 - yw0
     n_obs = int(diff.shape[0])
+    diff_std = float(np.std(diff, ddof=1)) if n_obs > 1 else 0.0
 
     mean_yw0 = float(np.mean(yw0))
     mean_yw1 = float(np.mean(yw1))
@@ -127,15 +128,14 @@ def weights_impact_on_outcome_ss(
     if n_obs < 2:
         t_stat, p_value = np.nan, np.nan
         ci_lower, ci_upper = np.nan, np.nan
+    elif np.isclose(diff_std, 0.0):
+        t_stat, p_value = np.nan, np.nan
+        ci_lower, ci_upper = mean_diff, mean_diff
     else:
-        t_stat, p_value = stats.ttest_rel(yw0, yw1, nan_policy="omit")
-        diff_std = float(np.std(diff, ddof=1))
-        if diff_std == 0:
-            ci_lower, ci_upper = mean_diff, mean_diff
-        else:
-            t_crit = stats.t.ppf((1 + conf_level) / 2, df=n_obs - 1)
-            margin = t_crit * diff_std / np.sqrt(n_obs)
-            ci_lower, ci_upper = mean_diff - margin, mean_diff + margin
+        t_stat, p_value = stats.ttest_rel(yw1, yw0, nan_policy="omit")
+        t_crit = stats.t.ppf((1 + conf_level) / 2, df=n_obs - 1)
+        margin = t_crit * diff_std / np.sqrt(n_obs)
+        ci_lower, ci_upper = mean_diff - margin, mean_diff + margin
 
     return pd.Series(
         {
@@ -220,7 +220,7 @@ def compare_adjusted_weighted_outcome_ss(
 
             mean_yw0  mean_yw1  mean_diff  diff_ci_lower  diff_ci_upper  t_stat  p_value    n
     outcome
-    outcome       2.0     4.667     -2.667        -10.256          4.922  -1.512     0.27  3.0
+    outcome       2.0     4.667      2.667         -4.922         10.256   1.512     0.27  3.0
     """
     from balance.sample_class import Sample
 

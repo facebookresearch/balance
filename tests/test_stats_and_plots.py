@@ -216,7 +216,7 @@ class TestImpactOfWeightsOnOutcome(
         result = weights_impact_on_outcome_ss(y, w0, w1, method="t_test")
         self.assertAlmostEqual(result["mean_yw0"], 2.5)
         self.assertAlmostEqual(result["mean_yw1"], 4.0)
-        self.assertAlmostEqual(result["mean_diff"], -1.5)
+        self.assertAlmostEqual(result["mean_diff"], 1.5)
         self.assertLess(result["diff_ci_lower"], result["mean_diff"])
         self.assertGreater(result["diff_ci_upper"], result["mean_diff"])
 

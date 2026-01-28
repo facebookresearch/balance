@@ -184,7 +184,7 @@ class TestCli(
                 return self
 
             def diagnostics(
-                self, weights_impact_on_outcome_method: str | None = None
+                self, weights_impact_on_outcome_method: str | None = "t_test"
             ) -> pd.DataFrame:
                 return pd.DataFrame()
 
@@ -260,7 +260,7 @@ class TestCli(
                 ]
             )
             cli_default = BalanceCLI(args_default)
-            self.assertEqual(cli_default.weights_impact_on_outcome_method(), None)
+            self.assertEqual(cli_default.weights_impact_on_outcome_method(), "t_test")
 
     def test_cli_help(self) -> None:
         """Test that CLI help command executes without errors."""
