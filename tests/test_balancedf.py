@@ -9,6 +9,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import tempfile
 from copy import deepcopy
+from unittest.mock import PropertyMock, patch
 
 import IPython.display
 import numpy as np
@@ -397,6 +398,61 @@ class TestBalanceDFOutcomes(BalanceTestCase):
         self.assertIsInstance(impact, pd.DataFrame)
         self.assertIn("mean_diff", impact.columns)
         self.assertEqual(list(impact.index), ["outcome"])
+
+    def test_outcomes_weights_impact_on_outcome_ss_without_weights(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "outcome": (1.0, 2.0, 3.0, 4.0),
+                }
+            ),
+            id_column="id",
+            outcome_columns=("outcome",),
+        )
+
+        with patch.object(
+            BalanceDFOutcomes, "_weights", new_callable=PropertyMock, return_value=None
+        ):
+            impact = sample.outcomes().weights_impact_on_outcome_ss()
+
+        self.assertIsNone(impact)
+
+    def test_outcomes_weights_impact_on_outcome_ss_with_w0(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "weight": (1.0, 2.0, 1.0, 2.0),
+                    "outcome": (1.0, 2.0, 3.0, 4.0),
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+        )
+
+        impact = sample.outcomes().weights_impact_on_outcome_ss(
+            w0=pd.Series([1.0, 1.0, 1.0, 1.0])
+        )
+        self.assertIsNotNone(impact)
+
+    def test_outcomes_summary_with_weights_impact(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "weight": (1.0, 2.0, 1.0, 2.0),
+                    "outcome": (1.0, 2.0, 3.0, 4.0),
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+        )
+
+        summary = sample.outcomes().summary(weights_impact_method="t_test")
+        self.assertIn("Weights impact on outcomes (t_test)", summary)
 
 
 class TestBalanceDFCovars(BalanceTestCase):

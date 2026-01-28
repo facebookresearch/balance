@@ -95,7 +95,18 @@ def weights_impact_on_outcome_ss(
                 w1=pd.Series([1.0, 2.0, 1.0, 2.0]),
                 method="t_test",
             )
-            result["mean_diff"]  # -1.5
+            print(result.round(3).to_string())
+
+    .. code-block:: text
+
+        mean_yw0         2.500
+        mean_yw1         4.000
+        mean_diff       -1.500
+        diff_ci_lower   -4.547
+        diff_ci_upper    1.547
+        t_stat          -1.567
+        p_value          0.215
+        n                4.000
     """
     if method != "t_test":
         raise ValueError(f"Unsupported method: {method}")
@@ -111,10 +122,11 @@ def weights_impact_on_outcome_ss(
     mean_yw1 = float(np.mean(yw1))
     mean_diff = float(np.mean(diff))
 
-    t_stat, p_value = stats.ttest_rel(yw0, yw1, nan_policy="omit")
     if n_obs < 2:
+        t_stat, p_value = np.nan, np.nan
         ci_lower, ci_upper = np.nan, np.nan
     else:
+        t_stat, p_value = stats.ttest_rel(yw0, yw1, nan_policy="omit")
         diff_std = float(np.std(diff, ddof=1))
         if diff_std == 0:
             ci_lower, ci_upper = mean_diff, mean_diff
@@ -195,9 +207,18 @@ def compare_adjusted_weighted_outcome_ss(
             )
             adjusted_a = sample.set_target(target).adjust(method="null")
             adjusted_b = sample.set_target(target).adjust(method="null")
+            adjusted_b.set_weights(pd.Series([1.0, 2.0, 3.0], index=adjusted_b.df.index))
 
-            impact = compare_adjusted_weighted_outcome_ss(adjusted_a, adjusted_b)
-            list(impact.index)  # ['outcome']
+            impact = compare_adjusted_weighted_outcome_ss(
+                adjusted_a, adjusted_b, round_ndigits=3
+            )
+            print(impact.to_string())
+
+    .. code-block:: text
+
+            mean_yw0  mean_yw1  mean_diff  diff_ci_lower  diff_ci_upper  t_stat  p_value    n
+    outcome
+    outcome       2.0     4.667     -2.667        -10.256          4.922  -1.512     0.27  3.0
     """
     from balance.sample_class import Sample
 
@@ -247,7 +268,9 @@ def compare_adjusted_weighted_outcome_ss(
 
     mask = weights1.notna().to_numpy()
     if not np.any(mask):
-        raise ValueError("Samples do not share any common ids.")
+        raise ValueError(
+            "Samples do not share any common ids with non-missing weights in adjusted1."
+        )
 
     y0 = y0.loc[mask]
     weights0 = weights0[mask]

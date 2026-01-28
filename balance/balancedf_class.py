@@ -2193,12 +2193,19 @@ class BalanceDFOutcomes(BalanceDF):
                     id_column="id",
                     weight_column="weight",
                     outcome_columns=("outcome",),
+                    standardize_types=False,
                 )
 
                 impact = sample.outcomes().weights_impact_on_outcome_ss(
                     method="t_test", round_ndigits=3
                 )
-                impact.loc["outcome", "mean_yw0"]  # 2.5
+                print(impact.to_string())
+
+        .. code-block:: text
+
+                    mean_yw0  mean_yw1  mean_diff  diff_ci_lower  diff_ci_upper  t_stat  p_value    n
+            outcome
+            outcome       2.5       4.0       -1.5         -4.547          1.547  -1.567    0.215  4.0
         """
         if w1 is None:
             if self._weights is None:
