@@ -2698,6 +2698,43 @@ class TestSampleDiagnosticsIPWModelParams(balance.testutil.BalanceTestCase):
                         fit.intercept_ = original_intercept
 
 
+class TestSampleOutcomeImpactDiagnostics(balance.testutil.BalanceTestCase):
+    def test_diagnostics_include_outcome_weight_impact(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [1, 2, 3, 4],
+                    "x": [0.1, 0.2, 0.3, 0.4],
+                    "weight": [1.0, 1.0, 1.0, 1.0],
+                    "outcome": [1.0, 2.0, 3.0, 4.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [5, 6, 7, 8],
+                    "x": [0.1, 0.2, 0.3, 0.4],
+                    "weight": [1.0, 1.0, 1.0, 1.0],
+                    "outcome": [1.0, 2.0, 3.0, 4.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+        )
+        adjusted = sample.set_target(target).adjust(method="null")
+        diagnostics = adjusted.diagnostics(weights_impact_on_outcome_method="t_test")
+        impact_rows = diagnostics[
+            diagnostics["metric"].str.startswith("weights_impact_on_outcome_")
+        ]
+        self.assertFalse(impact_rows.empty)
+        self.assertIn("outcome", impact_rows["var"].unique())
+
+
 class TestSampleQuickAdjustmentDetailsNRows(balance.testutil.BalanceTestCase):
     """Test cases for _quick_adjustment_details with n_rows=None (line 308)."""
 

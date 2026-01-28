@@ -9,6 +9,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import tempfile
 from copy import deepcopy
+from unittest.mock import patch, PropertyMock
 
 import IPython.display
 import numpy as np
@@ -341,6 +342,14 @@ class TestBalanceDFOutcomes(BalanceTestCase):
                 o1                8.50   (7.404, 9.596)
                 o2                6.00   (2.535, 9.465)
 
+                Weights impact on outcomes (t_test):
+                                  mean_yw0  mean_yw1  mean_diff  diff_ci_lower  diff_ci_upper  t_stat  p_value    n
+                outcome
+                _is_na_o2[False]      0.75      0.75        0.0            0.0            0.0     NaN      NaN  4.0
+                _is_na_o2[True]       0.25      0.25        0.0            0.0            0.0     NaN      NaN  4.0
+                o1                    8.50      8.50        0.0            0.0            0.0     NaN      NaN  4.0
+                o2                    6.00      6.00        0.0            0.0            0.0     NaN      NaN  4.0
+
                 Response rates (relative to number of respondents in sample):
                     o1    o2
                 n    4.0   3.0
@@ -360,6 +369,14 @@ class TestBalanceDFOutcomes(BalanceTestCase):
                 o1                8.50  10.500   (7.404, 9.596)  (8.912, 12.088)
                 o2                6.00   7.875   (2.535, 9.465)  (4.351, 11.399)
 
+                Weights impact on outcomes (t_test):
+                                  mean_yw0  mean_yw1  mean_diff  diff_ci_lower  diff_ci_upper  t_stat  p_value    n
+                outcome
+                _is_na_o2[False]      0.75      0.75        0.0            0.0            0.0     NaN      NaN  4.0
+                _is_na_o2[True]       0.25      0.25        0.0            0.0            0.0     NaN      NaN  4.0
+                o1                    8.50      8.50        0.0            0.0            0.0     NaN      NaN  4.0
+                o2                    6.00      6.00        0.0            0.0            0.0     NaN      NaN  4.0
+
                 Response rates (relative to number of respondents in sample):
                     o1    o2
                 n    4.0   3.0
@@ -377,6 +394,81 @@ class TestBalanceDFOutcomes(BalanceTestCase):
             _remove_whitespace_and_newlines(s_o2.outcomes().summary()),
             _remove_whitespace_and_newlines(e_str),
         )
+
+    def test_outcomes_weights_impact_on_outcome_ss(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "weight": (1.0, 2.0, 1.0, 2.0),
+                    "outcome": (1.0, 2.0, 3.0, 4.0),
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+        )
+
+        impact = sample.outcomes().weights_impact_on_outcome_ss()
+        self.assertIsNotNone(impact)
+        self.assertIsInstance(impact, pd.DataFrame)
+        self.assertIn("mean_diff", impact.columns)
+        self.assertEqual(list(impact.index), ["outcome"])
+
+    def test_outcomes_weights_impact_on_outcome_ss_without_weights(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "outcome": (1.0, 2.0, 3.0, 4.0),
+                }
+            ),
+            id_column="id",
+            outcome_columns=("outcome",),
+        )
+
+        with patch.object(
+            BalanceDFOutcomes, "_weights", new_callable=PropertyMock, return_value=None
+        ):
+            impact = sample.outcomes().weights_impact_on_outcome_ss()
+
+        self.assertIsNone(impact)
+
+    def test_outcomes_weights_impact_on_outcome_ss_with_w0(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "weight": (1.0, 2.0, 1.0, 2.0),
+                    "outcome": (1.0, 2.0, 3.0, 4.0),
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+        )
+
+        impact = sample.outcomes().weights_impact_on_outcome_ss(
+            w0=pd.Series([1.0, 1.0, 1.0, 1.0])
+        )
+        self.assertIsNotNone(impact)
+
+    def test_outcomes_summary_with_weights_impact(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "weight": (1.0, 2.0, 1.0, 2.0),
+                    "outcome": (1.0, 2.0, 3.0, 4.0),
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+        )
+
+        summary = sample.outcomes().summary()
+        self.assertIn("Weights impact on outcomes (t_test)", summary)
 
 
 class TestBalanceDFCovars(BalanceTestCase):
