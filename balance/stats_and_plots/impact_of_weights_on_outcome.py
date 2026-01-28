@@ -110,6 +110,8 @@ def weights_impact_on_outcome_ss(
     """
     if method != "t_test":
         raise ValueError(f"Unsupported method: {method}")
+    if conf_level <= 0 or conf_level >= 1:
+        raise ValueError("conf_level must be between 0 and 1.")
 
     y_values, w0_values, w1_values = _prepare_outcome_and_weights(y, w0, w1)
 

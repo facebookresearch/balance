@@ -240,6 +240,21 @@ class TestImpactOfWeightsOnOutcome(
                 [1.0, 2.0], [1.0, 1.0], [1.0, 1.0], method="bad"
             )
 
+    def test_weights_impact_on_outcome_ss_invalid_conf_level(self) -> None:
+        from balance.stats_and_plots.impact_of_weights_on_outcome import (
+            weights_impact_on_outcome_ss,
+        )
+
+        with self.assertRaisesRegex(ValueError, "conf_level must be between 0 and 1."):
+            weights_impact_on_outcome_ss(
+                [1.0, 2.0], [1.0, 1.0], [1.0, 1.0], conf_level=1.0
+            )
+
+        with self.assertRaisesRegex(ValueError, "conf_level must be between 0 and 1."):
+            weights_impact_on_outcome_ss(
+                [1.0, 2.0], [1.0, 1.0], [1.0, 1.0], conf_level=0.0
+            )
+
     def test_weights_impact_on_outcome_ss_requires_finite_values(self) -> None:
         from balance.stats_and_plots.impact_of_weights_on_outcome import (
             weights_impact_on_outcome_ss,
