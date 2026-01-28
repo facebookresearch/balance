@@ -248,9 +248,7 @@ class TestImpactOfWeightsOnOutcome(
         with self.assertRaisesRegex(
             ValueError, "Outcome and weights must contain at least one finite value."
         ):
-            weights_impact_on_outcome_ss(
-                [float("inf")], [float("inf")], [float("inf")]
-            )
+            weights_impact_on_outcome_ss([float("inf")], [float("inf")], [float("inf")])
 
     def test_weights_impact_on_outcome_ss_single_observation(self) -> None:
         from balance.stats_and_plots.impact_of_weights_on_outcome import (
@@ -315,17 +313,13 @@ class TestImpactOfWeightsOnOutcome(
         )
 
         sample = Sample.from_frame(
-            pd.DataFrame(
-                {"id": [1, 2], "x": [0.1, 0.2], "weight": [1.0, 1.0]}
-            ),
+            pd.DataFrame({"id": [1, 2], "x": [0.1, 0.2], "weight": [1.0, 1.0]}),
             id_column="id",
             weight_column="weight",
             standardize_types=False,
         )
         target = Sample.from_frame(
-            pd.DataFrame(
-                {"id": [1, 2], "x": [0.1, 0.2], "weight": [1.0, 1.0]}
-            ),
+            pd.DataFrame({"id": [1, 2], "x": [0.1, 0.2], "weight": [1.0, 1.0]}),
             id_column="id",
             weight_column="weight",
             standardize_types=False,

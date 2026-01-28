@@ -9,7 +9,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import tempfile
 from copy import deepcopy
-from unittest.mock import PropertyMock, patch
+from unittest.mock import patch, PropertyMock
 
 import IPython.display
 import numpy as np
