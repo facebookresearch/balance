@@ -1466,13 +1466,17 @@ s_o2 = s_o.set_target(t_o)</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="balance.balancedf_class.BalanceDFOutcomes.summary">
-<span class="sig-name descname"><span class="pre">summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">on_linked_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDFOutcomes.summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDFOutcomes.summary" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">on_linked_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights_impact_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'t_test'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights_impact_conf_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.95</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDFOutcomes.summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDFOutcomes.summary" title="Link to this definition">¶</a></dt>
 <dd><p>Produces summary printable string of a BalanceDFOutcomes object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>self</strong> (<a class="reference internal" href="#balance.balancedf_class.BalanceDFOutcomes" title="balance.balancedf_class.BalanceDFOutcomes"><em>BalanceDFOutcomes</em></a>) – Object.</p></li>
 <li><p><strong>on_linked_samples</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – Ignored. Only here since summary overrides BalanceDF.summary.</p></li>
+<li><p><strong>weights_impact_method</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – If provided, include a paired test
+of y*w0 vs y*w1 for each outcome (default is “t_test”).</p></li>
+<li><p><strong>weights_impact_conf_level</strong> (<em>float</em>) – Confidence level for the mean difference
+interval when weights_impact_method is provided. Defaults to 0.95.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1521,6 +1525,13 @@ s_o2 = s_o.set_target(t_o)</p>
 # _is_na_o2[True]   0.25  (-0.174, 0.674)
 # o1                8.50   (7.404, 9.596)
 # o2                6.00   (2.535, 9.465)</p>
+<p># Weights impact on outcomes (t_test):
+#                   mean_yw0  mean_yw1  mean_diff  diff_ci_lower  diff_ci_upper  t_stat  p_value    n
+# outcome
+# _is_na_o2[False]      0.75      0.75        0.0            0.0            0.0     NaN      NaN  4.0
+# _is_na_o2[True]       0.25      0.25        0.0            0.0            0.0     NaN      NaN  4.0
+# o1                    8.50      8.50        0.0            0.0            0.0     NaN      NaN  4.0
+# o2                    6.00      6.00        0.0            0.0            0.0     NaN      NaN  4.0</p>
 <p># Response rates (relative to number of respondents in sample):
 #       o1    o2
 # n    4.0   3.0
@@ -1533,6 +1544,13 @@ s_o2 = s_o.set_target(t_o)</p>
 # _is_na_o2[True]   0.25   0.250  (-0.174, 0.674)    (-0.05, 0.55)
 # o1                8.50  10.500   (7.404, 9.596)  (8.912, 12.088)
 # o2                6.00   7.875   (2.535, 9.465)  (4.351, 11.399)</p>
+<p># Weights impact on outcomes (t_test):
+#                   mean_yw0  mean_yw1  mean_diff  diff_ci_lower  diff_ci_upper  t_stat  p_value    n
+# outcome
+# _is_na_o2[False]      0.75      0.75        0.0            0.0            0.0     NaN      NaN  4.0
+# _is_na_o2[True]       0.25      0.25        0.0            0.0            0.0     NaN      NaN  4.0
+# o1                    8.50      8.50        0.0            0.0            0.0     NaN      NaN  4.0
+# o2                    6.00      6.00        0.0            0.0            0.0     NaN      NaN  4.0</p>
 <p># Response rates (relative to number of respondents in sample):
 #       o1    o2
 # n    4.0   3.0
@@ -1608,6 +1626,68 @@ s_o = s_o.set_target(t_o)</p>
 </dd>
 </dl>
 </div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.balancedf_class.BalanceDFOutcomes.weights_impact_on_outcome_ss">
+<span class="sig-name descname"><span class="pre">weights_impact_on_outcome_ss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'t_test'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.95</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">round_ndigits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">npt.NDArray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pd.Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">npt.NDArray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pd.Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pd.DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDFOutcomes.weights_impact_on_outcome_ss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDFOutcomes.weights_impact_on_outcome_ss" title="Link to this definition">¶</a></dt>
+<dd><p>Compare weighted outcomes using paired tests on y*w0 vs y*w1.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> (<a class="reference internal" href="#balance.balancedf_class.BalanceDFOutcomes" title="balance.balancedf_class.BalanceDFOutcomes"><em>BalanceDFOutcomes</em></a>) – Object.</p></li>
+<li><p><strong>method</strong> (<em>str</em><em>, </em><em>optional</em>) – Statistical test to use. Defaults to “t_test”.</p></li>
+<li><p><strong>conf_level</strong> (<em>float</em><em>, </em><em>optional</em>) – Confidence level for the mean difference interval.
+Defaults to 0.95.</p></li>
+<li><p><strong>round_ndigits</strong> (<em>int</em><em> | </em><em>None</em><em>, </em><em>optional</em>) – Optional rounding for numeric outputs.
+Defaults to 3.</p></li>
+<li><p><strong>w0</strong> – Baseline weights. Defaults to a vector of ones.</p></li>
+<li><p><strong>w1</strong> – Alternative weights. Defaults to the BalanceDF weights.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Outcome-by-statistic table or None if weights are missing.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[pd.DataFrame]</p>
+</dd>
+</dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd</p>
+<p>from balance.sample_class import Sample</p>
+<dl>
+<dt>sample = Sample.from_frame(</dt><dd><dl>
+<dt>pd.DataFrame(</dt><dd><dl class="simple">
+<dt>{</dt><dd><p>“id”: (1, 2, 3, 4),
+“weight”: (1.0, 2.0, 1.0, 2.0),
+“outcome”: (1.0, 2.0, 3.0, 4.0),</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+outcome_columns=(“outcome”,),
+standardize_types=False,</p>
+</dd>
+</dl>
+<p>)</p>
+<dl class="simple">
+<dt>impact = sample.outcomes().weights_impact_on_outcome_ss(</dt><dd><p>method=”t_test”, round_ndigits=3</p>
+</dd>
+</dl>
+<p>)
+print(impact.to_string())</p>
+</div></blockquote>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>        mean_yw0  mean_yw1  mean_diff  diff_ci_lower  diff_ci_upper  t_stat  p_value    n
+outcome
+outcome       2.5       4.0        1.5         -1.547          4.547   1.567    0.215  4.0
+</pre></div>
+</div>
 </dd></dl>
 
 </dd></dl>
@@ -1888,6 +1968,7 @@ sample.weights().df[“weight”].max() &lt;= 100.0
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFOutcomes.relative_response_rates"><code class="docutils literal notranslate"><span class="pre">BalanceDFOutcomes.relative_response_rates()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFOutcomes.summary"><code class="docutils literal notranslate"><span class="pre">BalanceDFOutcomes.summary()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFOutcomes.target_response_rates"><code class="docutils literal notranslate"><span class="pre">BalanceDFOutcomes.target_response_rates()</span></code></a></li>
+<li><a class="reference internal" href="#balance.balancedf_class.BalanceDFOutcomes.weights_impact_on_outcome_ss"><code class="docutils literal notranslate"><span class="pre">BalanceDFOutcomes.weights_impact_on_outcome_ss()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFWeights"><code class="docutils literal notranslate"><span class="pre">BalanceDFWeights</span></code></a><ul>

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>balance.stats_and_plots.impact_of_weights_on_outcome &#8212; balance  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=fb9458d3" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="balance.stats_and_plots.weighted_comparisons_plots" href="balance.stats_and_plots.weighted_comparisons_plots.html" />
+    <link rel="prev" title="balance.stats_and_plots.general_stats" href="balance.stats_and_plots.general_stats.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.weighted_comparisons_plots.html" title="balance.stats_and_plots.weighted_comparisons_plots"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.general_stats.html" title="balance.stats_and_plots.general_stats"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" >balance</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="balance.stats_and_plots.html" accesskey="U">balance.stats_and_plots</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.impact_of_weights_on_outcome</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-balance.stats_and_plots.impact_of_weights_on_outcome">
+<span id="balance-stats-and-plots-impact-of-weights-on-outcome"></span><h1>balance.stats_and_plots.impact_of_weights_on_outcome<a class="headerlink" href="#module-balance.stats_and_plots.impact_of_weights_on_outcome" title="Link to this heading">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.impact_of_weights_on_outcome.compare_adjusted_weighted_outcome_ss">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.impact_of_weights_on_outcome.</span></span><span class="sig-name descname"><span class="pre">compare_adjusted_weighted_outcome_ss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adjusted0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="balance.sample_class.html#balance.sample_class.Sample" title="balance.sample_class.Sample"><span class="pre">Sample</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">adjusted1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="balance.sample_class.html#balance.sample_class.Sample" title="balance.sample_class.Sample"><span class="pre">Sample</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'t_test'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.95</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">round_ndigits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pd.DataFrame</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/impact_of_weights_on_outcome.html#compare_adjusted_weighted_outcome_ss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.impact_of_weights_on_outcome.compare_adjusted_weighted_outcome_ss" title="Link to this definition">¶</a></dt>
+<dd><p>Compare two adjusted Samples by testing outcomes under each set of weights.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>adjusted0</strong> – First adjusted Sample (w0).</p></li>
+<li><p><strong>adjusted1</strong> – Second adjusted Sample (w1).</p></li>
+<li><p><strong>method</strong> – Statistical test to use (“t_test”).</p></li>
+<li><p><strong>conf_level</strong> – Confidence level for the mean difference interval.</p></li>
+<li><p><strong>round_ndigits</strong> – Optional rounding for numeric outputs.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Outcome-by-statistic table comparing weighted outcomes.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd</p>
+<p>from balance.sample_class import Sample
+from balance.stats_and_plots.impact_of_weights_on_outcome import (</p>
+<blockquote>
+<div><p>compare_adjusted_weighted_outcome_ss,</p>
+</div></blockquote>
+<p>)</p>
+<dl>
+<dt>sample = Sample.from_frame(</dt><dd><dl>
+<dt>pd.DataFrame(</dt><dd><dl class="simple">
+<dt>{</dt><dd><p>“id”: [1, 2, 3],
+“x”: [0.1, 0.2, 0.3],
+“weight”: [1.0, 1.0, 1.0],
+“outcome”: [1.0, 2.0, 3.0],</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+outcome_columns=(“outcome”,),</p>
+</dd>
+</dl>
+<p>)
+target = Sample.from_frame(</p>
+<blockquote>
+<div><dl>
+<dt>pd.DataFrame(</dt><dd><dl class="simple">
+<dt>{</dt><dd><p>“id”: [4, 5, 6],
+“x”: [0.1, 0.2, 0.3],
+“weight”: [1.0, 1.0, 1.0],
+“outcome”: [1.0, 2.0, 3.0],</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+outcome_columns=(“outcome”,),</p>
+</div></blockquote>
+<p>)
+adjusted_a = sample.set_target(target).adjust(method=”null”)
+adjusted_b = sample.set_target(target).adjust(method=”null”)
+adjusted_b.set_weights(pd.Series([1.0, 2.0, 3.0], index=adjusted_b.df.index))</p>
+<dl class="simple">
+<dt>impact = compare_adjusted_weighted_outcome_ss(</dt><dd><p>adjusted_a, adjusted_b, round_ndigits=3</p>
+</dd>
+</dl>
+<p>)
+print(impact.to_string())</p>
+</div></blockquote>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>mean_yw0  mean_yw1  mean_diff  diff_ci_lower  diff_ci_upper  t_stat  p_value    n
+</pre></div>
+</div>
+<p>outcome
+outcome       2.0     4.667      2.667         -4.922         10.256   1.512     0.27  3.0</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.impact_of_weights_on_outcome.weights_impact_on_outcome_ss">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.impact_of_weights_on_outcome.</span></span><span class="sig-name descname"><span class="pre">weights_impact_on_outcome_ss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pd.Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">np.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pd.Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">np.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pd.Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">np.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'t_test'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.95</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pd.Series</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/impact_of_weights_on_outcome.html#weights_impact_on_outcome_ss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.impact_of_weights_on_outcome.weights_impact_on_outcome_ss" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate whether weighting changes the outcome by testing y*w0 vs y*w1.</p>
+<p>Note: Weights are normalized to have mean 1 before computing the weighted
+products. In the balance package, weights are typically normalized to sum
+to the sample size, so this additional normalization ensures comparability.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>y</strong> – Outcome values.</p></li>
+<li><p><strong>w0</strong> – Baseline weights.</p></li>
+<li><p><strong>w1</strong> – Alternative weights.</p></li>
+<li><p><strong>method</strong> – Statistical test to use (“t_test”).</p></li>
+<li><p><strong>conf_level</strong> – Confidence level for the mean difference interval.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Summary statistics for the weighted outcome comparison.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.Series</p>
+</dd>
+</dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd</p>
+<dl class="simple">
+<dt>from balance.stats_and_plots.impact_of_weights_on_outcome import (</dt><dd><p>weights_impact_on_outcome_ss,</p>
+</dd>
+</dl>
+<p>)</p>
+<dl class="simple">
+<dt>result = weights_impact_on_outcome_ss(</dt><dd><p>y=pd.Series([1.0, 2.0, 3.0, 4.0]),
+w0=pd.Series([1.0, 1.0, 1.0, 1.0]),
+w1=pd.Series([1.0, 2.0, 1.0, 2.0]),
+method=”t_test”,</p>
+</dd>
+</dl>
+<p>)
+print(result.round(3).to_string())</p>
+</div></blockquote>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>mean_yw0         2.500
+mean_yw1         4.000
+mean_diff        1.500
+diff_ci_lower   -1.547
+diff_ci_upper    4.547
+t_stat           1.567
+p_value          0.215
+n                4.000
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">balance.stats_and_plots.impact_of_weights_on_outcome</a><ul>
+<li><a class="reference internal" href="#balance.stats_and_plots.impact_of_weights_on_outcome.compare_adjusted_weighted_outcome_ss"><code class="docutils literal notranslate"><span class="pre">compare_adjusted_weighted_outcome_ss()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.impact_of_weights_on_outcome.weights_impact_on_outcome_ss"><code class="docutils literal notranslate"><span class="pre">weights_impact_on_outcome_ss()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="balance.stats_and_plots.general_stats.html"
+                          title="previous chapter">balance.stats_and_plots.general_stats</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="balance.stats_and_plots.weighted_comparisons_plots.html"
+                          title="next chapter">balance.stats_and_plots.weighted_comparisons_plots</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/balance.stats_and_plots.impact_of_weights_on_outcome.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.weighted_comparisons_plots.html" title="balance.stats_and_plots.weighted_comparisons_plots"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.general_stats.html" title="balance.stats_and_plots.general_stats"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" >balance</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="balance.stats_and_plots.html" >balance.stats_and_plots</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.impact_of_weights_on_outcome</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

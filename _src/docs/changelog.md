@@ -17,6 +17,10 @@ hide_title: true
 - **Support configurable ID column candidates**
   - `Sample.from_frame()` and `guess_id_column()` now accept candidate ID column names
     when auto-detecting the ID column.
+- **Outcome weight impact diagnostics**
+  - Added paired outcome-weight impact tests (`y*w0` vs `y*w1`) with confidence intervals.
+  - Exposed in `BalanceDFOutcomes`, `Sample.diagnostics()`, and the CLI via
+    `--weights_impact_on_outcome_method`.
 
 ## Bug Fixes
 

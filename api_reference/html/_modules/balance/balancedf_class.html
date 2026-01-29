@@ -56,6 +56,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sample</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">general_stats</span><span class="p">,</span>
+    <span class="n">impact_of_weights_on_outcome</span><span class="p">,</span>
     <span class="n">weighted_comparisons_plots</span><span class="p">,</span>
     <span class="n">weighted_comparisons_stats</span><span class="p">,</span>
     <span class="n">weighted_stats</span><span class="p">,</span>
@@ -2249,19 +2250,121 @@
             <span class="k">return</span> <span class="n">general_stats</span><span class="o">.</span><span class="n">relative_response_rates</span><span class="p">(</span><span class="n">self_target</span><span class="o">.</span><span class="n">df</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="BalanceDFOutcomes.weights_impact_on_outcome_ss">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDFOutcomes.weights_impact_on_outcome_ss">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">weights_impact_on_outcome_ss</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFOutcomes&quot;</span><span class="p">,</span>
+        <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;t_test&quot;</span><span class="p">,</span>
+        <span class="n">conf_level</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.95</span><span class="p">,</span>
+        <span class="n">round_ndigits</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+        <span class="n">w0</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">w1</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare weighted outcomes using paired tests on y*w0 vs y*w1.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (BalanceDFOutcomes): Object.</span>
+<span class="sd">            method (str, optional): Statistical test to use. Defaults to &quot;t_test&quot;.</span>
+<span class="sd">            conf_level (float, optional): Confidence level for the mean difference interval.</span>
+<span class="sd">                Defaults to 0.95.</span>
+<span class="sd">            round_ndigits (int | None, optional): Optional rounding for numeric outputs.</span>
+<span class="sd">                Defaults to 3.</span>
+<span class="sd">            w0: Baseline weights. Defaults to a vector of ones.</span>
+<span class="sd">            w1: Alternative weights. Defaults to the BalanceDF weights.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Optional[pd.DataFrame]: Outcome-by-statistic table or None if weights are missing.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">                import pandas as pd</span>
+
+<span class="sd">                from balance.sample_class import Sample</span>
+
+<span class="sd">                sample = Sample.from_frame(</span>
+<span class="sd">                    pd.DataFrame(</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;id&quot;: (1, 2, 3, 4),</span>
+<span class="sd">                            &quot;weight&quot;: (1.0, 2.0, 1.0, 2.0),</span>
+<span class="sd">                            &quot;outcome&quot;: (1.0, 2.0, 3.0, 4.0),</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ),</span>
+<span class="sd">                    id_column=&quot;id&quot;,</span>
+<span class="sd">                    weight_column=&quot;weight&quot;,</span>
+<span class="sd">                    outcome_columns=(&quot;outcome&quot;,),</span>
+<span class="sd">                    standardize_types=False,</span>
+<span class="sd">                )</span>
+
+<span class="sd">                impact = sample.outcomes().weights_impact_on_outcome_ss(</span>
+<span class="sd">                    method=&quot;t_test&quot;, round_ndigits=3</span>
+<span class="sd">                )</span>
+<span class="sd">                print(impact.to_string())</span>
+
+<span class="sd">        .. code-block:: text</span>
+
+<span class="sd">                    mean_yw0  mean_yw1  mean_diff  diff_ci_lower  diff_ci_upper  t_stat  p_value    n</span>
+<span class="sd">            outcome</span>
+<span class="sd">            outcome       2.5       4.0        1.5         -1.547          4.547   1.567    0.215  4.0</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">w1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No weights available for outcome impact analysis.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="n">w1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span>
+
+        <span class="n">w1_values</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">w1</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">w1</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">w1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">w0</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">w0_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">w1_values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">w0_values</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">w0</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">w0</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span>
+                <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">w0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="n">model_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_matrix</span><span class="p">()</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">model_matrix</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="n">results</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">impact_of_weights_on_outcome</span><span class="o">.</span><span class="n">weights_impact_on_outcome_ss</span><span class="p">(</span>
+                <span class="n">y</span><span class="o">=</span><span class="n">model_matrix</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                <span class="n">w0</span><span class="o">=</span><span class="n">w0_values</span><span class="p">,</span>
+                <span class="n">w1</span><span class="o">=</span><span class="n">w1_values</span><span class="p">,</span>
+                <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span>
+                <span class="n">conf_level</span><span class="o">=</span><span class="n">conf_level</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">impact_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">results</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">impact_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;outcome&quot;</span>
+        <span class="k">if</span> <span class="n">round_ndigits</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">numeric_cols</span> <span class="o">=</span> <span class="n">impact_df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;number&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span>
+            <span class="n">impact_df</span><span class="p">[</span><span class="n">numeric_cols</span><span class="p">]</span> <span class="o">=</span> <span class="n">impact_df</span><span class="p">[</span><span class="n">numeric_cols</span><span class="p">]</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">round_ndigits</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">impact_df</span></div>
+
+
     <span class="c1"># TODO: it&#39;s a question if summary should produce a printable output or a DataFrame.</span>
     <span class="c1">#       The BalanceDF.summary method only returns a DataFrame. So it&#39;s a question</span>
     <span class="c1">#       what is the best way to structure this more generally.</span>
 <div class="viewcode-block" id="BalanceDFOutcomes.summary">
 <a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDFOutcomes.summary">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFOutcomes&quot;</span><span class="p">,</span> <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFOutcomes&quot;</span><span class="p">,</span>
+        <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">weights_impact_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;t_test&quot;</span><span class="p">,</span>
+        <span class="n">weights_impact_conf_level</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.95</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Produces summary printable string of a BalanceDFOutcomes object.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (BalanceDFOutcomes): Object.</span>
 <span class="sd">            on_linked_samples (Optional[bool]): Ignored. Only here since summary overrides BalanceDF.summary.</span>
+<span class="sd">            weights_impact_method (Optional[str]): If provided, include a paired test</span>
+<span class="sd">                of y*w0 vs y*w1 for each outcome (default is &quot;t_test&quot;).</span>
+<span class="sd">            weights_impact_conf_level (float): Confidence level for the mean difference</span>
+<span class="sd">                interval when weights_impact_method is provided. Defaults to 0.95.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            str: A printable string, with mean of outcome variables and response rates.</span>
@@ -2302,6 +2405,14 @@
 <span class="sd">                    # o1                8.50   (7.404, 9.596)</span>
 <span class="sd">                    # o2                6.00   (2.535, 9.465)</span>
 
+<span class="sd">                    # Weights impact on outcomes (t_test):</span>
+<span class="sd">                    #                   mean_yw0  mean_yw1  mean_diff  diff_ci_lower  diff_ci_upper  t_stat  p_value    n</span>
+<span class="sd">                    # outcome</span>
+<span class="sd">                    # _is_na_o2[False]      0.75      0.75        0.0            0.0            0.0     NaN      NaN  4.0</span>
+<span class="sd">                    # _is_na_o2[True]       0.25      0.25        0.0            0.0            0.0     NaN      NaN  4.0</span>
+<span class="sd">                    # o1                    8.50      8.50        0.0            0.0            0.0     NaN      NaN  4.0</span>
+<span class="sd">                    # o2                    6.00      6.00        0.0            0.0            0.0     NaN      NaN  4.0</span>
+
 <span class="sd">                    # Response rates (relative to number of respondents in sample):</span>
 <span class="sd">                    #       o1    o2</span>
 <span class="sd">                    # n    4.0   3.0</span>
@@ -2315,6 +2426,14 @@
 <span class="sd">                    # _is_na_o2[True]   0.25   0.250  (-0.174, 0.674)    (-0.05, 0.55)</span>
 <span class="sd">                    # o1                8.50  10.500   (7.404, 9.596)  (8.912, 12.088)</span>
 <span class="sd">                    # o2                6.00   7.875   (2.535, 9.465)  (4.351, 11.399)</span>
+
+<span class="sd">                    # Weights impact on outcomes (t_test):</span>
+<span class="sd">                    #                   mean_yw0  mean_yw1  mean_diff  diff_ci_lower  diff_ci_upper  t_stat  p_value    n</span>
+<span class="sd">                    # outcome</span>
+<span class="sd">                    # _is_na_o2[False]      0.75      0.75        0.0            0.0            0.0     NaN      NaN  4.0</span>
+<span class="sd">                    # _is_na_o2[True]       0.25      0.25        0.0            0.0            0.0     NaN      NaN  4.0</span>
+<span class="sd">                    # o1                    8.50      8.50        0.0            0.0            0.0     NaN      NaN  4.0</span>
+<span class="sd">                    # o2                    6.00      6.00        0.0            0.0            0.0     NaN      NaN  4.0</span>
 
 <span class="sd">                    # Response rates (relative to number of respondents in sample):</span>
 <span class="sd">                    #       o1    o2</span>
@@ -2333,6 +2452,18 @@
         <span class="n">mean_outcomes_with_ci</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_with_ci</span><span class="p">()</span>
         <span class="n">relative_response_rates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relative_response_rates</span><span class="p">()</span>
         <span class="n">target_response_rates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_response_rates</span><span class="p">()</span>
+        <span class="n">weights_impact_clause</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">weights_impact_method</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">weights_impact</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights_impact_on_outcome_ss</span><span class="p">(</span>
+                <span class="n">method</span><span class="o">=</span><span class="n">weights_impact_method</span><span class="p">,</span>
+                <span class="n">conf_level</span><span class="o">=</span><span class="n">weights_impact_conf_level</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">weights_impact</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">weights_impact_clause</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="s2">&quot;Weights impact on outcomes &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">weights_impact_method</span><span class="si">}</span><span class="s2">):</span><span class="se">\n</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">weights_impact</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">max_cols</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
         <span class="k">if</span> <span class="n">target_response_rates</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">target_clause</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
             <span class="n">relative_to_target_clause</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
@@ -2355,6 +2486,7 @@
             <span class="sa">f</span><span class="s2">&quot;Mean outcomes (with 95% confidence intervals):</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="c1"># TODO: in the future consider if to add an argument to transpose (.T) the output, in case there are multiple outcomes.</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mean_outcomes_with_ci</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">max_cols</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">weights_impact_clause</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="s2">&quot;Response rates (relative to number of respondents in sample):</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">relative_response_rates</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">relative_to_target_clause</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>

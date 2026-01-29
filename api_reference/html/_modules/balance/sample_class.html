@@ -1813,7 +1813,11 @@
 
 <div class="viewcode-block" id="Sample.diagnostics">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.diagnostics">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">diagnostics</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">diagnostics</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
+        <span class="n">weights_impact_on_outcome_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;t_test&quot;</span><span class="p">,</span>
+        <span class="n">weights_impact_on_outcome_conf_level</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.95</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
         <span class="c1"># TODO: mention the other diagnostics</span>
         <span class="c1"># TODO: update/improve the wiki pages doc is linking to.</span>
         <span class="c1"># TODO: move explanation on weights normalization to some external page</span>
@@ -1872,6 +1876,11 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (Sample): only after running an adjustment with Sample.adjust.</span>
+<span class="sd">            weights_impact_on_outcome_method (Optional[str]): If provided, include</span>
+<span class="sd">                outcome-weight impact diagnostics using the specified method.</span>
+<span class="sd">                Defaults to &quot;t_test&quot;.</span>
+<span class="sd">            weights_impact_on_outcome_conf_level (float): Confidence level for</span>
+<span class="sd">                the outcome impact interval. Defaults to 0.95.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            pd.DataFrame: with 3 columns: (&quot;metric&quot;, &quot;val&quot;, &quot;var&quot;),</span>
@@ -1931,6 +1940,31 @@
             <span class="nb">list</span><span class="p">(</span><span class="n">the_weights_summary</span><span class="p">[</span><span class="s2">&quot;val&quot;</span><span class="p">]),</span>  <span class="c1"># passing a list instead of a pd.Series</span>
             <span class="nb">list</span><span class="p">(</span><span class="n">the_weights_summary</span><span class="p">[</span><span class="s2">&quot;var&quot;</span><span class="p">]),</span>
         <span class="p">)</span>
+
+        <span class="c1"># ----------------------------------------------------</span>
+        <span class="c1"># Diagnostics on the impact of weights on outcomes</span>
+        <span class="c1"># ----------------------------------------------------</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">weights_impact_on_outcome_method</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outcome_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">):</span>
+            <span class="n">outcome_impact</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">weights_impact_on_outcome_ss</span><span class="p">(</span>
+                <span class="n">method</span><span class="o">=</span><span class="n">weights_impact_on_outcome_method</span><span class="p">,</span>
+                <span class="n">conf_level</span><span class="o">=</span><span class="n">weights_impact_on_outcome_conf_level</span><span class="p">,</span>
+                <span class="n">round_ndigits</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">outcome_impact</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">impact_rows</span> <span class="o">=</span> <span class="n">outcome_impact</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span><span class="o">.</span><span class="n">melt</span><span class="p">(</span>
+                    <span class="n">id_vars</span><span class="o">=</span><span class="s2">&quot;outcome&quot;</span><span class="p">,</span> <span class="n">var_name</span><span class="o">=</span><span class="s2">&quot;stat&quot;</span><span class="p">,</span> <span class="n">value_name</span><span class="o">=</span><span class="s2">&quot;val&quot;</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">stat_name</span> <span class="ow">in</span> <span class="n">impact_rows</span><span class="p">[</span><span class="s2">&quot;stat&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">():</span>
+                    <span class="n">stat_rows</span> <span class="o">=</span> <span class="n">impact_rows</span><span class="p">[</span><span class="n">impact_rows</span><span class="p">[</span><span class="s2">&quot;stat&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">stat_name</span><span class="p">]</span>
+                    <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">_concat_metric_val_var</span><span class="p">(</span>
+                        <span class="n">diagnostics</span><span class="p">,</span>
+                        <span class="sa">f</span><span class="s2">&quot;weights_impact_on_outcome_</span><span class="si">{</span><span class="n">stat_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="n">stat_rows</span><span class="p">[</span><span class="s2">&quot;val&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                        <span class="n">stat_rows</span><span class="p">[</span><span class="s2">&quot;outcome&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                    <span class="p">)</span>
 
         <span class="c1"># ----------------------------------------------------</span>
         <span class="c1"># Diagnostics on the model</span>

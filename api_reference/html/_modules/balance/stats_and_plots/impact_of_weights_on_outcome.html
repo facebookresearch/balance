@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>balance.stats_and_plots.impact_of_weights_on_outcome &#8212; balance  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=fb9458d3" />
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../../balance.html" accesskey="U">balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.impact_of_weights_on_outcome</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for balance.stats_and_plots.impact_of_weights_on_outcome</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) Meta Platforms, Inc. and affiliates.</span>
+<span class="c1">#</span>
+<span class="c1"># This source code is licensed under the MIT license found in the</span>
+<span class="c1"># LICENSE file in the root directory of this source tree.</span>
+
+<span class="c1"># pyre-strict</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots.weights_stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">_check_weights_are_valid</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.input_validation</span><span class="w"> </span><span class="kn">import</span> <span class="n">_coerce_to_numeric_and_validate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">stats</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sample</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_prepare_outcome_and_weights</span><span class="p">(</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">w0</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">w1</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate and prepare outcome and weight arrays for comparison.</span>
+
+<span class="sd">    This function validates inputs, filters to observations with finite values,</span>
+<span class="sd">    and normalizes weights so that each weight vector has mean 1.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Outcome values.</span>
+<span class="sd">        w0: Baseline weights.</span>
+<span class="sd">        w1: Alternative weights.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (y_values, w0_normalized, w1_normalized) arrays with finite values</span>
+<span class="sd">        and weights normalized to mean 1.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If arrays have different lengths or no finite values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">y_series</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+    <span class="n">w0_series</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">w0</span><span class="p">)</span>
+    <span class="n">w1_series</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">w1</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">y_series</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">w0_series</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="ow">or</span> <span class="n">y_series</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">w1_series</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Outcome and weights must have the same number of observations.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">_check_weights_are_valid</span><span class="p">(</span><span class="n">w0_series</span><span class="p">)</span>
+    <span class="n">_check_weights_are_valid</span><span class="p">(</span><span class="n">w1_series</span><span class="p">)</span>
+
+    <span class="n">not_null_mask</span> <span class="o">=</span> <span class="n">y_series</span><span class="o">.</span><span class="n">notna</span><span class="p">()</span> <span class="o">&amp;</span> <span class="n">w0_series</span><span class="o">.</span><span class="n">notna</span><span class="p">()</span> <span class="o">&amp;</span> <span class="n">w1_series</span><span class="o">.</span><span class="n">notna</span><span class="p">()</span>
+    <span class="n">y_series</span> <span class="o">=</span> <span class="n">y_series</span><span class="p">[</span><span class="n">not_null_mask</span><span class="p">]</span>
+    <span class="n">w0_series</span> <span class="o">=</span> <span class="n">w0_series</span><span class="p">[</span><span class="n">not_null_mask</span><span class="p">]</span>
+    <span class="n">w1_series</span> <span class="o">=</span> <span class="n">w1_series</span><span class="p">[</span><span class="n">not_null_mask</span><span class="p">]</span>
+
+    <span class="n">y_numeric</span><span class="p">,</span> <span class="n">w0_values</span> <span class="o">=</span> <span class="n">_coerce_to_numeric_and_validate</span><span class="p">(</span>
+        <span class="n">y_series</span><span class="p">,</span> <span class="n">w0_series</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="s2">&quot;outcome&quot;</span>
+    <span class="p">)</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">w1_values</span> <span class="o">=</span> <span class="n">_coerce_to_numeric_and_validate</span><span class="p">(</span>
+        <span class="n">y_series</span><span class="p">,</span> <span class="n">w1_series</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="s2">&quot;outcome&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">finite_mask</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">w0_values</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">w1_values</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">y_numeric</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">finite_mask</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Outcome and weights must contain at least one finite value.&quot;</span><span class="p">)</span>
+
+    <span class="n">w0_finite</span> <span class="o">=</span> <span class="n">w0_values</span><span class="p">[</span><span class="n">finite_mask</span><span class="p">]</span>
+    <span class="n">w1_finite</span> <span class="o">=</span> <span class="n">w1_values</span><span class="p">[</span><span class="n">finite_mask</span><span class="p">]</span>
+    <span class="n">w0_normalized</span> <span class="o">=</span> <span class="n">w0_finite</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">w0_finite</span><span class="p">)</span>
+    <span class="n">w1_normalized</span> <span class="o">=</span> <span class="n">w1_finite</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">w1_finite</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">y_numeric</span><span class="p">[</span><span class="n">finite_mask</span><span class="p">],</span> <span class="n">w0_normalized</span><span class="p">,</span> <span class="n">w1_normalized</span>
+
+
+<div class="viewcode-block" id="weights_impact_on_outcome_ss">
+<a class="viewcode-back" href="../../../balance.stats_and_plots.impact_of_weights_on_outcome.html#balance.stats_and_plots.impact_of_weights_on_outcome.weights_impact_on_outcome_ss">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">weights_impact_on_outcome_ss</span><span class="p">(</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">w0</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">w1</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;t_test&quot;</span><span class="p">,</span>
+    <span class="n">conf_level</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.95</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Evaluate whether weighting changes the outcome by testing y*w0 vs y*w1.</span>
+
+<span class="sd">    Note: Weights are normalized to have mean 1 before computing the weighted</span>
+<span class="sd">    products. In the balance package, weights are typically normalized to sum</span>
+<span class="sd">    to the sample size, so this additional normalization ensures comparability.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Outcome values.</span>
+<span class="sd">        w0: Baseline weights.</span>
+<span class="sd">        w1: Alternative weights.</span>
+<span class="sd">        method: Statistical test to use (&quot;t_test&quot;).</span>
+<span class="sd">        conf_level: Confidence level for the mean difference interval.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.Series: Summary statistics for the weighted outcome comparison.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">            import pandas as pd</span>
+
+<span class="sd">            from balance.stats_and_plots.impact_of_weights_on_outcome import (</span>
+<span class="sd">                weights_impact_on_outcome_ss,</span>
+<span class="sd">            )</span>
+
+<span class="sd">            result = weights_impact_on_outcome_ss(</span>
+<span class="sd">                y=pd.Series([1.0, 2.0, 3.0, 4.0]),</span>
+<span class="sd">                w0=pd.Series([1.0, 1.0, 1.0, 1.0]),</span>
+<span class="sd">                w1=pd.Series([1.0, 2.0, 1.0, 2.0]),</span>
+<span class="sd">                method=&quot;t_test&quot;,</span>
+<span class="sd">            )</span>
+<span class="sd">            print(result.round(3).to_string())</span>
+
+<span class="sd">    .. code-block:: text</span>
+
+<span class="sd">        mean_yw0         2.500</span>
+<span class="sd">        mean_yw1         4.000</span>
+<span class="sd">        mean_diff        1.500</span>
+<span class="sd">        diff_ci_lower   -1.547</span>
+<span class="sd">        diff_ci_upper    4.547</span>
+<span class="sd">        t_stat           1.567</span>
+<span class="sd">        p_value          0.215</span>
+<span class="sd">        n                4.000</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="o">!=</span> <span class="s2">&quot;t_test&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported method: </span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">conf_level</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">conf_level</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;conf_level must be between 0 and 1.&quot;</span><span class="p">)</span>
+
+    <span class="n">y_values</span><span class="p">,</span> <span class="n">w0_values</span><span class="p">,</span> <span class="n">w1_values</span> <span class="o">=</span> <span class="n">_prepare_outcome_and_weights</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">w0</span><span class="p">,</span> <span class="n">w1</span><span class="p">)</span>
+
+    <span class="n">yw0</span> <span class="o">=</span> <span class="n">y_values</span> <span class="o">*</span> <span class="n">w0_values</span>
+    <span class="n">yw1</span> <span class="o">=</span> <span class="n">y_values</span> <span class="o">*</span> <span class="n">w1_values</span>
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">yw1</span> <span class="o">-</span> <span class="n">yw0</span>
+    <span class="n">n_obs</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">diff</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">diff_std</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">diff</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span> <span class="k">if</span> <span class="n">n_obs</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mf">0.0</span>
+
+    <span class="n">mean_yw0</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">yw0</span><span class="p">))</span>
+    <span class="n">mean_yw1</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">yw1</span><span class="p">))</span>
+    <span class="n">mean_diff</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">diff</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">n_obs</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">t_stat</span><span class="p">,</span> <span class="n">p_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="n">ci_lower</span><span class="p">,</span> <span class="n">ci_upper</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+    <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">diff_std</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">):</span>
+        <span class="n">t_stat</span><span class="p">,</span> <span class="n">p_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="n">ci_lower</span><span class="p">,</span> <span class="n">ci_upper</span> <span class="o">=</span> <span class="n">mean_diff</span><span class="p">,</span> <span class="n">mean_diff</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">t_stat</span><span class="p">,</span> <span class="n">p_value</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">ttest_rel</span><span class="p">(</span><span class="n">yw1</span><span class="p">,</span> <span class="n">yw0</span><span class="p">,</span> <span class="n">nan_policy</span><span class="o">=</span><span class="s2">&quot;omit&quot;</span><span class="p">)</span>
+        <span class="n">t_crit</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">ppf</span><span class="p">((</span><span class="mi">1</span> <span class="o">+</span> <span class="n">conf_level</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="n">n_obs</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">margin</span> <span class="o">=</span> <span class="n">t_crit</span> <span class="o">*</span> <span class="n">diff_std</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n_obs</span><span class="p">)</span>
+        <span class="n">ci_lower</span><span class="p">,</span> <span class="n">ci_upper</span> <span class="o">=</span> <span class="n">mean_diff</span> <span class="o">-</span> <span class="n">margin</span><span class="p">,</span> <span class="n">mean_diff</span> <span class="o">+</span> <span class="n">margin</span>
+
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;mean_yw0&quot;</span><span class="p">:</span> <span class="n">mean_yw0</span><span class="p">,</span>
+            <span class="s2">&quot;mean_yw1&quot;</span><span class="p">:</span> <span class="n">mean_yw1</span><span class="p">,</span>
+            <span class="s2">&quot;mean_diff&quot;</span><span class="p">:</span> <span class="n">mean_diff</span><span class="p">,</span>
+            <span class="s2">&quot;diff_ci_lower&quot;</span><span class="p">:</span> <span class="n">ci_lower</span><span class="p">,</span>
+            <span class="s2">&quot;diff_ci_upper&quot;</span><span class="p">:</span> <span class="n">ci_upper</span><span class="p">,</span>
+            <span class="s2">&quot;t_stat&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">t_stat</span><span class="p">)</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">t_stat</span><span class="p">)</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
+            <span class="s2">&quot;p_value&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">p_value</span><span class="p">)</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">p_value</span><span class="p">)</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
+            <span class="s2">&quot;n&quot;</span><span class="p">:</span> <span class="n">n_obs</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_validate_adjusted_samples</span><span class="p">(</span>
+    <span class="n">adjusted0</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
+    <span class="n">adjusted1</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="s2">&quot;pd.DataFrame&quot;</span><span class="p">,</span> <span class="s2">&quot;pd.DataFrame&quot;</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate adjusted Samples and return their outcome model matrices.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        adjusted0: First adjusted Sample.</span>
+<span class="sd">        adjusted1: Second adjusted Sample.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (outcomes0_model_matrix, outcomes1_model_matrix).</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If inputs are not Samples, not adjusted, missing outcomes,</span>
+<span class="sd">            or have mismatched outcome columns.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sample</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">adjusted0</span><span class="p">,</span> <span class="n">Sample</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">adjusted1</span><span class="p">,</span> <span class="n">Sample</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;compare_adjusted_weighted_outcome_ss expects Sample inputs.&quot;</span><span class="p">)</span>
+
+    <span class="n">adjusted0</span><span class="o">.</span><span class="n">_check_if_adjusted</span><span class="p">()</span>
+    <span class="n">adjusted1</span><span class="o">.</span><span class="n">_check_if_adjusted</span><span class="p">()</span>
+
+    <span class="n">outcomes0</span> <span class="o">=</span> <span class="n">adjusted0</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span>
+    <span class="n">outcomes1</span> <span class="o">=</span> <span class="n">adjusted1</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">outcomes0</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">outcomes1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Both Samples must include outcomes.&quot;</span><span class="p">)</span>
+
+    <span class="n">y0</span> <span class="o">=</span> <span class="n">outcomes0</span><span class="o">.</span><span class="n">model_matrix</span><span class="p">()</span>
+    <span class="n">y1</span> <span class="o">=</span> <span class="n">outcomes1</span><span class="o">.</span><span class="n">model_matrix</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">list</span><span class="p">(</span><span class="n">y0</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">list</span><span class="p">(</span><span class="n">y1</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Outcome columns must match between adjusted Samples.&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">y0</span><span class="p">,</span> <span class="n">y1</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_align_samples_by_id</span><span class="p">(</span>
+    <span class="n">adjusted0</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
+    <span class="n">adjusted1</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
+    <span class="n">y0</span><span class="p">:</span> <span class="s2">&quot;pd.DataFrame&quot;</span><span class="p">,</span>
+    <span class="n">y1</span><span class="p">:</span> <span class="s2">&quot;pd.DataFrame&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="s2">&quot;pd.DataFrame&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Align samples by ID and extract weights for common observations.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        adjusted0: First adjusted Sample.</span>
+<span class="sd">        adjusted1: Second adjusted Sample.</span>
+<span class="sd">        y0: Outcome model matrix from adjusted0.</span>
+<span class="sd">        y1: Outcome model matrix from adjusted1.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (y_aligned, weights0_aligned, weights1_aligned) where y_aligned</span>
+<span class="sd">        is the outcome DataFrame for common IDs with valid weights.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If IDs have duplicates, no common IDs exist, outcome values</span>
+<span class="sd">            differ, or no valid weights exist.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ids0</span> <span class="o">=</span> <span class="n">adjusted0</span><span class="o">.</span><span class="n">id_column</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+    <span class="n">ids1</span> <span class="o">=</span> <span class="n">adjusted1</span><span class="o">.</span><span class="n">id_column</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">ids0</span><span class="p">)</span><span class="o">.</span><span class="n">has_duplicates</span> <span class="ow">or</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">ids1</span><span class="p">)</span><span class="o">.</span><span class="n">has_duplicates</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Samples must have unique ids to compare outcomes.&quot;</span><span class="p">)</span>
+
+    <span class="n">y0_indexed</span> <span class="o">=</span> <span class="n">y0</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">adjusted0</span><span class="o">.</span><span class="n">id_column</span><span class="p">)</span>
+    <span class="n">y1_indexed</span> <span class="o">=</span> <span class="n">y1</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">adjusted1</span><span class="o">.</span><span class="n">id_column</span><span class="p">)</span>
+
+    <span class="n">common_ids</span> <span class="o">=</span> <span class="n">y0_indexed</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">y1_indexed</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">common_ids</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Samples do not share any common ids.&quot;</span><span class="p">)</span>
+
+    <span class="n">y0_common</span> <span class="o">=</span> <span class="n">y0_indexed</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">common_ids</span><span class="p">]</span>
+    <span class="n">y1_common</span> <span class="o">=</span> <span class="n">y1_indexed</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">common_ids</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">y0_common</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">y1_common</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Outcome values differ between adjusted Samples for common ids.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">weights0</span> <span class="o">=</span> <span class="n">adjusted0</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+    <span class="n">weights0_series</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">weights0</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">ids0</span><span class="p">)</span>
+    <span class="n">weights0_aligned</span> <span class="o">=</span> <span class="n">weights0_series</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">common_ids</span><span class="p">)</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+
+    <span class="n">weights1_series</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+        <span class="n">adjusted1</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+        <span class="n">index</span><span class="o">=</span><span class="n">ids1</span><span class="p">,</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">common_ids</span><span class="p">)</span>
+
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">weights1_series</span><span class="o">.</span><span class="n">notna</span><span class="p">()</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">mask</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Samples do not share any common ids with non-missing weights in adjusted1.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">y_aligned</span> <span class="o">=</span> <span class="n">y0_common</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+    <span class="n">weights0_aligned</span> <span class="o">=</span> <span class="n">weights0_aligned</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+    <span class="n">weights1_aligned</span> <span class="o">=</span> <span class="n">weights1_series</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()[</span><span class="n">mask</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">y_aligned</span><span class="p">,</span> <span class="n">weights0_aligned</span><span class="p">,</span> <span class="n">weights1_aligned</span>
+
+
+<div class="viewcode-block" id="compare_adjusted_weighted_outcome_ss">
+<a class="viewcode-back" href="../../../balance.stats_and_plots.impact_of_weights_on_outcome.html#balance.stats_and_plots.impact_of_weights_on_outcome.compare_adjusted_weighted_outcome_ss">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compare_adjusted_weighted_outcome_ss</span><span class="p">(</span>
+    <span class="n">adjusted0</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
+    <span class="n">adjusted1</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;t_test&quot;</span><span class="p">,</span>
+    <span class="n">conf_level</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.95</span><span class="p">,</span>
+    <span class="n">round_ndigits</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compare two adjusted Samples by testing outcomes under each set of weights.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        adjusted0: First adjusted Sample (w0).</span>
+<span class="sd">        adjusted1: Second adjusted Sample (w1).</span>
+<span class="sd">        method: Statistical test to use (&quot;t_test&quot;).</span>
+<span class="sd">        conf_level: Confidence level for the mean difference interval.</span>
+<span class="sd">        round_ndigits: Optional rounding for numeric outputs.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.DataFrame: Outcome-by-statistic table comparing weighted outcomes.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">            import pandas as pd</span>
+
+<span class="sd">            from balance.sample_class import Sample</span>
+<span class="sd">            from balance.stats_and_plots.impact_of_weights_on_outcome import (</span>
+<span class="sd">                compare_adjusted_weighted_outcome_ss,</span>
+<span class="sd">            )</span>
+
+<span class="sd">            sample = Sample.from_frame(</span>
+<span class="sd">                pd.DataFrame(</span>
+<span class="sd">                    {</span>
+<span class="sd">                        &quot;id&quot;: [1, 2, 3],</span>
+<span class="sd">                        &quot;x&quot;: [0.1, 0.2, 0.3],</span>
+<span class="sd">                        &quot;weight&quot;: [1.0, 1.0, 1.0],</span>
+<span class="sd">                        &quot;outcome&quot;: [1.0, 2.0, 3.0],</span>
+<span class="sd">                    }</span>
+<span class="sd">                ),</span>
+<span class="sd">                id_column=&quot;id&quot;,</span>
+<span class="sd">                weight_column=&quot;weight&quot;,</span>
+<span class="sd">                outcome_columns=(&quot;outcome&quot;,),</span>
+<span class="sd">            )</span>
+<span class="sd">            target = Sample.from_frame(</span>
+<span class="sd">                pd.DataFrame(</span>
+<span class="sd">                    {</span>
+<span class="sd">                        &quot;id&quot;: [4, 5, 6],</span>
+<span class="sd">                        &quot;x&quot;: [0.1, 0.2, 0.3],</span>
+<span class="sd">                        &quot;weight&quot;: [1.0, 1.0, 1.0],</span>
+<span class="sd">                        &quot;outcome&quot;: [1.0, 2.0, 3.0],</span>
+<span class="sd">                    }</span>
+<span class="sd">                ),</span>
+<span class="sd">                id_column=&quot;id&quot;,</span>
+<span class="sd">                weight_column=&quot;weight&quot;,</span>
+<span class="sd">                outcome_columns=(&quot;outcome&quot;,),</span>
+<span class="sd">            )</span>
+<span class="sd">            adjusted_a = sample.set_target(target).adjust(method=&quot;null&quot;)</span>
+<span class="sd">            adjusted_b = sample.set_target(target).adjust(method=&quot;null&quot;)</span>
+<span class="sd">            adjusted_b.set_weights(pd.Series([1.0, 2.0, 3.0], index=adjusted_b.df.index))</span>
+
+<span class="sd">            impact = compare_adjusted_weighted_outcome_ss(</span>
+<span class="sd">                adjusted_a, adjusted_b, round_ndigits=3</span>
+<span class="sd">            )</span>
+<span class="sd">            print(impact.to_string())</span>
+
+<span class="sd">    .. code-block:: text</span>
+
+<span class="sd">            mean_yw0  mean_yw1  mean_diff  diff_ci_lower  diff_ci_upper  t_stat  p_value    n</span>
+<span class="sd">    outcome</span>
+<span class="sd">    outcome       2.0     4.667      2.667         -4.922         10.256   1.512     0.27  3.0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">y0</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="n">_validate_adjusted_samples</span><span class="p">(</span><span class="n">adjusted0</span><span class="p">,</span> <span class="n">adjusted1</span><span class="p">)</span>
+    <span class="n">y_aligned</span><span class="p">,</span> <span class="n">weights0</span><span class="p">,</span> <span class="n">weights1</span> <span class="o">=</span> <span class="n">_align_samples_by_id</span><span class="p">(</span><span class="n">adjusted0</span><span class="p">,</span> <span class="n">adjusted1</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">y1</span><span class="p">)</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">y_aligned</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="n">results</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">weights_impact_on_outcome_ss</span><span class="p">(</span>
+            <span class="n">y_aligned</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+            <span class="n">w0</span><span class="o">=</span><span class="n">weights0</span><span class="p">,</span>
+            <span class="n">w1</span><span class="o">=</span><span class="n">weights1</span><span class="p">,</span>
+            <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span>
+            <span class="n">conf_level</span><span class="o">=</span><span class="n">conf_level</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">impact_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">results</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">impact_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;outcome&quot;</span>
+    <span class="k">if</span> <span class="n">round_ndigits</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">numeric_cols</span> <span class="o">=</span> <span class="n">impact_df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;number&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span>
+        <span class="n">impact_df</span><span class="p">[</span><span class="n">numeric_cols</span><span class="p">]</span> <span class="o">=</span> <span class="n">impact_df</span><span class="p">[</span><span class="n">numeric_cols</span><span class="p">]</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">round_ndigits</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">impact_df</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../../balance.html" >balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.impact_of_weights_on_outcome</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

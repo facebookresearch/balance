@@ -381,7 +381,7 @@ sample.df.columns.tolist()
 
 <dl class="py method">
 <dt class="sig sig-object py" id="balance.sample_class.Sample.diagnostics">
-<span class="sig-name descname"><span class="pre">diagnostics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.diagnostics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.diagnostics" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">diagnostics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights_impact_on_outcome_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'t_test'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights_impact_on_outcome_conf_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.95</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pd.DataFrame</span></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.diagnostics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.diagnostics" title="Link to this definition">¶</a></dt>
 <dd><p>Output a table of diagnostics about adjusted Sample object.</p>
 <section id="size">
 <h2>size<a class="headerlink" href="#size" title="Link to this heading">¶</a></h2>
@@ -449,6 +449,21 @@ and have a large influence on the conclusion we draw from the survey.</p>
 </dd>
 <dt class="field-even">type self<span class="colon">:</span></dt>
 <dd class="field-even"><p>Sample</p>
+</dd>
+<dt class="field-odd">param weights_impact_on_outcome_method<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If provided, include
+outcome-weight impact diagnostics using the specified method.
+Defaults to “t_test”.</p>
+</dd>
+<dt class="field-even">type weights_impact_on_outcome_method<span class="colon">:</span></dt>
+<dd class="field-even"><p>Optional[str]</p>
+</dd>
+<dt class="field-odd">param weights_impact_on_outcome_conf_level<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Confidence level for
+the outcome impact interval. Defaults to 0.95.</p>
+</dd>
+<dt class="field-even">type weights_impact_on_outcome_conf_level<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
 </dd>
 <dt class="field-odd">returns<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">

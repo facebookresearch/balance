@@ -293,6 +293,28 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">rows_to_keep_for_diagnostics</span></div>
 
 
+<div class="viewcode-block" id="BalanceCLI.weights_impact_on_outcome_method">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.weights_impact_on_outcome_method">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">weights_impact_on_outcome_method</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the outcome weight impact method for diagnostics.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The method name or ``None`` if disabled.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(</span>
+<span class="sd">                    Namespace(weights_impact_on_outcome_method=&quot;t_test&quot;)</span>
+<span class="sd">                ).weights_impact_on_outcome_method()</span>
+<span class="sd">                # &#39;t_test&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="s2">&quot;weights_impact_on_outcome_method&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">method</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">method</span></div>
+
+
 <div class="viewcode-block" id="BalanceCLI.has_batch_columns">
 <a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.has_batch_columns">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">has_batch_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
@@ -727,6 +749,7 @@
 <span class="sd">                        covariate_columns=&quot;x&quot;,</span>
 <span class="sd">                        covariate_columns_for_diagnostics=None,</span>
 <span class="sd">                        rows_to_keep_for_diagnostics=None,</span>
+<span class="sd">                        weights_impact_on_outcome_method=&quot;t_test&quot;,</span>
 <span class="sd">                        batch_columns=None,</span>
 <span class="sd">                        keep_columns=None,</span>
 <span class="sd">                        keep_row_column=None,</span>
@@ -803,6 +826,7 @@
         <span class="c1"># definitions for diagnostics</span>
         <span class="n">covariate_columns_for_diagnostics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariate_columns_for_diagnostics</span><span class="p">()</span>
         <span class="n">rows_to_keep_for_diagnostics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rows_to_keep_for_diagnostics</span><span class="p">()</span>
+        <span class="n">weights_impact_on_outcome_method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights_impact_on_outcome_method</span><span class="p">()</span>
 
         <span class="n">sample</span> <span class="o">=</span> <span class="n">sample_cls</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
             <span class="n">sample_df</span><span class="p">,</span>
@@ -862,7 +886,9 @@
             <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">adjusted</span><span class="o">.</span><span class="n">keep_only_some_rows_columns</span><span class="p">(</span>
                 <span class="n">rows_to_keep</span><span class="o">=</span><span class="n">rows_to_keep_for_diagnostics</span><span class="p">,</span>
                 <span class="n">columns_to_keep</span><span class="o">=</span><span class="n">covariate_columns_for_diagnostics</span><span class="p">,</span>
-            <span class="p">)</span><span class="o">.</span><span class="n">diagnostics</span><span class="p">()</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">diagnostics</span><span class="p">(</span>
+                <span class="n">weights_impact_on_outcome_method</span><span class="o">=</span><span class="n">weights_impact_on_outcome_method</span>
+            <span class="p">)</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                 <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> diagnostics object: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sample_package_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">diagnostics</span><span class="p">))</span>
             <span class="p">)</span>
@@ -1357,6 +1383,15 @@
 <span class="s2">             The condition should be based on the list of covariate_columns and result in a bool pd.Series </span><span class="se">\</span>
 <span class="s2">             (e.g.: &#39;is_married&#39; or &#39;is_married &amp; age &gt;= 18&#39;, etc.) </span><span class="se">\</span>
 <span class="s2">             (if not supplied the default is None, which means to use all rows without filtering&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--weights_impact_on_outcome_method&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;t_test&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;Method for outcome-weight impact diagnostics (default: t_test). &quot;</span>
+            <span class="s2">&quot;Set to &#39;none&#39; to disable or &#39;t_test&#39; to compare y*w0 vs y*w1.&quot;</span>
+        <span class="p">),</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--batch_columns&quot;</span><span class="p">,</span>
