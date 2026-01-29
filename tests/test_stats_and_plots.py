@@ -200,6 +200,712 @@ class TestBalance_weights_stats(
         }
         self.assertEqual({k: v.to_list() for k, v in result_dict.items()}, expected)
 
+
+class TestImpactOfWeightsOnOutcome(
+    balance.testutil.BalanceTestCase,
+):
+    def test_weights_impact_on_outcome_ss(self) -> None:
+        from balance.stats_and_plots.impact_of_weights_on_outcome import (
+            weights_impact_on_outcome_ss,
+        )
+
+        y = pd.Series([1.0, 2.0, 3.0, 4.0])
+        w0 = pd.Series([1.0, 1.0, 1.0, 1.0])
+        w1 = pd.Series([1.0, 2.0, 1.0, 2.0])
+
+        result = weights_impact_on_outcome_ss(y, w0, w1, method="t_test")
+        self.assertAlmostEqual(result["mean_yw0"], 2.5)
+        self.assertAlmostEqual(result["mean_yw1"], 8 / 3)
+        self.assertAlmostEqual(result["mean_diff"], 1 / 6)
+        self.assertLess(result["diff_ci_lower"], result["mean_diff"])
+        self.assertGreater(result["diff_ci_upper"], result["mean_diff"])
+
+    def test_weights_impact_on_outcome_ss_length_mismatch(self) -> None:
+        from balance.stats_and_plots.impact_of_weights_on_outcome import (
+            weights_impact_on_outcome_ss,
+        )
+
+        with self.assertRaisesRegex(
+            ValueError, "Outcome and weights must have the same number of observations."
+        ):
+            weights_impact_on_outcome_ss([1.0, 2.0], [1.0], [1.0, 1.0])
+
+    def test_weights_impact_on_outcome_ss_invalid_method(self) -> None:
+        from balance.stats_and_plots.impact_of_weights_on_outcome import (
+            weights_impact_on_outcome_ss,
+        )
+
+        with self.assertRaisesRegex(ValueError, "Unsupported method"):
+            weights_impact_on_outcome_ss(
+                [1.0, 2.0], [1.0, 1.0], [1.0, 1.0], method="bad"
+            )
+
+    def test_weights_impact_on_outcome_ss_invalid_conf_level(self) -> None:
+        from balance.stats_and_plots.impact_of_weights_on_outcome import (
+            weights_impact_on_outcome_ss,
+        )
+
+        with self.assertRaisesRegex(ValueError, "conf_level must be between 0 and 1."):
+            weights_impact_on_outcome_ss(
+                [1.0, 2.0], [1.0, 1.0], [1.0, 1.0], conf_level=1.0
+            )
+
+        with self.assertRaisesRegex(ValueError, "conf_level must be between 0 and 1."):
+            weights_impact_on_outcome_ss(
+                [1.0, 2.0], [1.0, 1.0], [1.0, 1.0], conf_level=0.0
+            )
+
+    def test_weights_impact_on_outcome_ss_requires_finite_values(self) -> None:
+        from balance.stats_and_plots.impact_of_weights_on_outcome import (
+            weights_impact_on_outcome_ss,
+        )
+
+        with self.assertRaisesRegex(
+            ValueError, "Outcome and weights must contain at least one finite value."
+        ):
+            weights_impact_on_outcome_ss([float("inf")], [float("inf")], [float("inf")])
+
+    def test_weights_impact_on_outcome_ss_single_observation(self) -> None:
+        from balance.stats_and_plots.impact_of_weights_on_outcome import (
+            weights_impact_on_outcome_ss,
+        )
+
+        result = weights_impact_on_outcome_ss([1.0], [1.0], [2.0])
+        self.assertTrue(np.isnan(result["diff_ci_lower"]))
+        self.assertTrue(np.isnan(result["diff_ci_upper"]))
+
+    def test_weights_impact_on_outcome_ss_scalar_invariance(self) -> None:
+        from balance.stats_and_plots.impact_of_weights_on_outcome import (
+            weights_impact_on_outcome_ss,
+        )
+
+        y = pd.Series([1.0, 2.0, 3.0, 4.0])
+        w0 = pd.Series([1.0, 1.0, 1.0, 1.0])
+        w1 = pd.Series([1.0, 2.0, 1.0, 2.0])
+
+        result_base = weights_impact_on_outcome_ss(y, w0, w1, method="t_test")
+        result_scaled = weights_impact_on_outcome_ss(
+            y, w0 * 5, w1 * 10, method="t_test"
+        )
+
+        self.assertAlmostEqual(result_base["mean_yw0"], result_scaled["mean_yw0"])
+        self.assertAlmostEqual(result_base["mean_yw1"], result_scaled["mean_yw1"])
+        self.assertAlmostEqual(result_base["mean_diff"], result_scaled["mean_diff"])
+        self.assertAlmostEqual(
+            result_base["diff_ci_lower"], result_scaled["diff_ci_lower"]
+        )
+        self.assertAlmostEqual(
+            result_base["diff_ci_upper"], result_scaled["diff_ci_upper"]
+        )
+
+    def test_compare_adjusted_weighted_outcome_ss(self) -> None:
+        from balance.stats_and_plots.impact_of_weights_on_outcome import (
+            compare_adjusted_weighted_outcome_ss,
+        )
+
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [1, 2, 3],
+                    "x": [0.1, 0.2, 0.3],
+                    "weight": [1.0, 1.0, 1.0],
+                    "outcome": [1.0, 2.0, 3.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [4, 5, 6],
+                    "x": [0.1, 0.2, 0.3],
+                    "weight": [1.0, 1.0, 1.0],
+                    "outcome": [1.0, 2.0, 3.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+        )
+        adjusted0 = sample.set_target(target).adjust(method="null")
+        adjusted1 = sample.set_target(target).adjust(method="null")
+
+        impact = compare_adjusted_weighted_outcome_ss(adjusted0, adjusted1)
+        self.assertIn("mean_diff", impact.columns)
+        self.assertEqual(list(impact.index), ["outcome"])
+
+    def test_compare_adjusted_weighted_outcome_ss_invalid_inputs(self) -> None:
+        from balance.stats_and_plots.impact_of_weights_on_outcome import (
+            compare_adjusted_weighted_outcome_ss,
+        )
+
+        with self.assertRaisesRegex(
+            ValueError, "compare_adjusted_weighted_outcome_ss expects Sample inputs."
+        ):
+            compare_adjusted_weighted_outcome_ss("nope", "nope")  # type: ignore[arg-type]
+
+    def test_compare_adjusted_weighted_outcome_ss_missing_outcomes(self) -> None:
+        from balance.stats_and_plots.impact_of_weights_on_outcome import (
+            compare_adjusted_weighted_outcome_ss,
+        )
+
+        sample = Sample.from_frame(
+            pd.DataFrame({"id": [1, 2], "x": [0.1, 0.2], "weight": [1.0, 1.0]}),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        target = Sample.from_frame(
+            pd.DataFrame({"id": [1, 2], "x": [0.1, 0.2], "weight": [1.0, 1.0]}),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        adjusted0 = sample.set_target(target).adjust(method="null")
+        adjusted1 = sample.set_target(target).adjust(method="null")
+
+        with self.assertRaisesRegex(ValueError, "Both Samples must include outcomes."):
+            compare_adjusted_weighted_outcome_ss(adjusted0, adjusted1)
+
+    def test_compare_adjusted_weighted_outcome_ss_mismatched_outcomes(self) -> None:
+        from balance.stats_and_plots.impact_of_weights_on_outcome import (
+            compare_adjusted_weighted_outcome_ss,
+        )
+
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [1, 2],
+                    "x": [0.1, 0.2],
+                    "weight": [1.0, 1.0],
+                    "outcome": [1.0, 2.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            standardize_types=False,
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [1, 2],
+                    "x": [0.1, 0.2],
+                    "weight": [1.0, 1.0],
+                    "outcome": [1.0, 2.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            standardize_types=False,
+        )
+        sample_alt = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [1, 2],
+                    "x": [0.1, 0.2],
+                    "weight": [1.0, 1.0],
+                    "outcome_alt": [1.0, 2.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome_alt",),
+            standardize_types=False,
+        )
+        target_alt = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [1, 2],
+                    "x": [0.1, 0.2],
+                    "weight": [1.0, 1.0],
+                    "outcome_alt": [1.0, 2.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome_alt",),
+            standardize_types=False,
+        )
+        adjusted0 = sample.set_target(target).adjust(method="null")
+        adjusted1 = sample_alt.set_target(target_alt).adjust(method="null")
+
+        with self.assertRaisesRegex(
+            ValueError, "Outcome columns must match between adjusted Samples."
+        ):
+            compare_adjusted_weighted_outcome_ss(adjusted0, adjusted1)
+
+    def test_compare_adjusted_weighted_outcome_ss_duplicate_ids(self) -> None:
+        from balance.stats_and_plots.impact_of_weights_on_outcome import (
+            compare_adjusted_weighted_outcome_ss,
+        )
+
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [1, 1],
+                    "x": [0.1, 0.2],
+                    "weight": [1.0, 1.0],
+                    "outcome": [1.0, 2.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            check_id_uniqueness=False,
+            standardize_types=False,
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [1, 1],
+                    "x": [0.1, 0.2],
+                    "weight": [1.0, 1.0],
+                    "outcome": [1.0, 2.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            check_id_uniqueness=False,
+            standardize_types=False,
+        )
+        adjusted0 = sample.set_target(target).adjust(method="null")
+        adjusted1 = sample.set_target(target).adjust(method="null")
+
+        with self.assertRaisesRegex(
+            ValueError, "Samples must have unique ids to compare outcomes."
+        ):
+            compare_adjusted_weighted_outcome_ss(adjusted0, adjusted1)
+
+    def test_compare_adjusted_weighted_outcome_ss_no_common_ids(self) -> None:
+        from balance.stats_and_plots.impact_of_weights_on_outcome import (
+            compare_adjusted_weighted_outcome_ss,
+        )
+
+        sample_a = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [1, 2],
+                    "x": [0.1, 0.2],
+                    "weight": [1.0, 1.0],
+                    "outcome": [1.0, 2.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            standardize_types=False,
+        )
+        target_a = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [1, 2],
+                    "x": [0.1, 0.2],
+                    "weight": [1.0, 1.0],
+                    "outcome": [1.0, 2.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            standardize_types=False,
+        )
+        sample_b = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [3, 4],
+                    "x": [0.1, 0.2],
+                    "weight": [1.0, 1.0],
+                    "outcome": [1.0, 2.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            standardize_types=False,
+        )
+        target_b = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [3, 4],
+                    "x": [0.1, 0.2],
+                    "weight": [1.0, 1.0],
+                    "outcome": [1.0, 2.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            standardize_types=False,
+        )
+        adjusted0 = sample_a.set_target(target_a).adjust(method="null")
+        adjusted1 = sample_b.set_target(target_b).adjust(method="null")
+
+        with self.assertRaisesRegex(ValueError, "Samples do not share any common ids."):
+            compare_adjusted_weighted_outcome_ss(adjusted0, adjusted1)
+
+    def test_compare_adjusted_weighted_outcome_ss_outcome_mismatch(self) -> None:
+        from balance.stats_and_plots.impact_of_weights_on_outcome import (
+            compare_adjusted_weighted_outcome_ss,
+        )
+
+        sample_a = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [1, 2],
+                    "x": [0.1, 0.2],
+                    "weight": [1.0, 1.0],
+                    "outcome": [1.0, 2.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            standardize_types=False,
+        )
+        target_a = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [1, 2],
+                    "x": [0.1, 0.2],
+                    "weight": [1.0, 1.0],
+                    "outcome": [1.0, 2.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            standardize_types=False,
+        )
+        sample_b = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [1, 2],
+                    "x": [0.1, 0.2],
+                    "weight": [1.0, 1.0],
+                    "outcome": [10.0, 20.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            standardize_types=False,
+        )
+        target_b = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [1, 2],
+                    "x": [0.1, 0.2],
+                    "weight": [1.0, 1.0],
+                    "outcome": [10.0, 20.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            standardize_types=False,
+        )
+        adjusted0 = sample_a.set_target(target_a).adjust(method="null")
+        adjusted1 = sample_b.set_target(target_b).adjust(method="null")
+
+        with self.assertRaisesRegex(
+            ValueError, "Outcome values differ between adjusted Samples for common ids."
+        ):
+            compare_adjusted_weighted_outcome_ss(adjusted0, adjusted1)
+
+    def test_compare_adjusted_weighted_outcome_ss_missing_weights(self) -> None:
+        from balance.stats_and_plots.impact_of_weights_on_outcome import (
+            compare_adjusted_weighted_outcome_ss,
+        )
+
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [1, 2],
+                    "x": [0.1, 0.2],
+                    "weight": [1.0, 1.0],
+                    "outcome": [1.0, 2.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            standardize_types=False,
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [1, 2],
+                    "x": [0.1, 0.2],
+                    "weight": [1.0, 1.0],
+                    "outcome": [1.0, 2.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            standardize_types=False,
+        )
+        adjusted0 = sample.set_target(target).adjust(method="null")
+        adjusted1 = sample.set_target(target).adjust(method="null")
+        adjusted1.set_weights(pd.Series([np.nan, np.nan], index=adjusted1.df.index))
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "Samples do not share any common ids with non-missing weights in adjusted1.",
+        ):
+            compare_adjusted_weighted_outcome_ss(adjusted0, adjusted1)
+
+    def test_validate_adjusted_samples_not_adjusted(self) -> None:
+        from balance.stats_and_plots.impact_of_weights_on_outcome import (
+            _validate_adjusted_samples,
+        )
+
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [1, 2],
+                    "x": [0.1, 0.2],
+                    "weight": [1.0, 1.0],
+                    "outcome": [1.0, 2.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            standardize_types=False,
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [3, 4],
+                    "x": [0.1, 0.2],
+                    "weight": [1.0, 1.0],
+                    "outcome": [1.0, 2.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            standardize_types=False,
+        )
+        adjusted = sample.set_target(target).adjust(method="null")
+
+        with self.assertRaisesRegex(ValueError, "This is not an adjusted Sample"):
+            _validate_adjusted_samples(sample, adjusted)
+
+        with self.assertRaisesRegex(ValueError, "This is not an adjusted Sample"):
+            _validate_adjusted_samples(adjusted, sample)
+
+    def test_validate_adjusted_samples_success(self) -> None:
+        from balance.stats_and_plots.impact_of_weights_on_outcome import (
+            _validate_adjusted_samples,
+        )
+
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [1, 2],
+                    "x": [0.1, 0.2],
+                    "weight": [1.0, 1.0],
+                    "outcome": [1.0, 2.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            standardize_types=False,
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [3, 4],
+                    "x": [0.1, 0.2],
+                    "weight": [1.0, 1.0],
+                    "outcome": [1.0, 2.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            standardize_types=False,
+        )
+        adjusted0 = sample.set_target(target).adjust(method="null")
+        adjusted1 = sample.set_target(target).adjust(method="null")
+
+        y0, y1 = _validate_adjusted_samples(adjusted0, adjusted1)
+        self.assertIsInstance(y0, pd.DataFrame)
+        self.assertIsInstance(y1, pd.DataFrame)
+        self.assertEqual(list(y0.columns), list(y1.columns))
+        self.assertIn("outcome", y0.columns)
+
+    def test_align_samples_by_id_success(self) -> None:
+        from balance.stats_and_plots.impact_of_weights_on_outcome import (
+            _align_samples_by_id,
+            _validate_adjusted_samples,
+        )
+
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [1, 2, 3],
+                    "x": [0.1, 0.2, 0.3],
+                    "weight": [1.0, 1.0, 1.0],
+                    "outcome": [1.0, 2.0, 3.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            standardize_types=False,
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [4, 5, 6],
+                    "x": [0.1, 0.2, 0.3],
+                    "weight": [1.0, 1.0, 1.0],
+                    "outcome": [1.0, 2.0, 3.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            standardize_types=False,
+        )
+        adjusted0 = sample.set_target(target).adjust(method="null")
+        adjusted1 = sample.set_target(target).adjust(method="null")
+        adjusted1.set_weights(pd.Series([2.0, 3.0, 4.0], index=adjusted1.df.index))
+
+        y0, y1 = _validate_adjusted_samples(adjusted0, adjusted1)
+        y_aligned, w0, w1 = _align_samples_by_id(adjusted0, adjusted1, y0, y1)
+
+        self.assertEqual(len(y_aligned), 3)
+        self.assertEqual(len(w0), 3)
+        self.assertEqual(len(w1), 3)
+        np.testing.assert_array_equal(w1, [2.0, 3.0, 4.0])
+
+    def test_align_samples_by_id_partial_overlap(self) -> None:
+        from balance.stats_and_plots.impact_of_weights_on_outcome import (
+            _align_samples_by_id,
+            _validate_adjusted_samples,
+        )
+
+        sample_a = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [1, 2, 3],
+                    "x": [0.1, 0.2, 0.3],
+                    "weight": [1.0, 1.0, 1.0],
+                    "outcome": [1.0, 2.0, 3.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            standardize_types=False,
+        )
+        target_a = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [10, 11, 12],
+                    "x": [0.1, 0.2, 0.3],
+                    "weight": [1.0, 1.0, 1.0],
+                    "outcome": [1.0, 2.0, 3.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            standardize_types=False,
+        )
+        sample_b = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [2, 3, 4],
+                    "x": [0.2, 0.3, 0.4],
+                    "weight": [1.0, 1.0, 1.0],
+                    "outcome": [2.0, 3.0, 4.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            standardize_types=False,
+        )
+        target_b = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [20, 21, 22],
+                    "x": [0.2, 0.3, 0.4],
+                    "weight": [1.0, 1.0, 1.0],
+                    "outcome": [2.0, 3.0, 4.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            standardize_types=False,
+        )
+        adjusted0 = sample_a.set_target(target_a).adjust(method="null")
+        adjusted1 = sample_b.set_target(target_b).adjust(method="null")
+
+        y0, y1 = _validate_adjusted_samples(adjusted0, adjusted1)
+        y_aligned, w0, w1 = _align_samples_by_id(adjusted0, adjusted1, y0, y1)
+
+        self.assertEqual(len(y_aligned), 2)
+        self.assertEqual(list(y_aligned.index), ["2", "3"])
+
+    def test_align_samples_by_id_with_some_missing_weights(self) -> None:
+        from balance.stats_and_plots.impact_of_weights_on_outcome import (
+            _align_samples_by_id,
+            _validate_adjusted_samples,
+        )
+
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [1, 2, 3],
+                    "x": [0.1, 0.2, 0.3],
+                    "weight": [1.0, 1.0, 1.0],
+                    "outcome": [1.0, 2.0, 3.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            standardize_types=False,
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [4, 5, 6],
+                    "x": [0.1, 0.2, 0.3],
+                    "weight": [1.0, 1.0, 1.0],
+                    "outcome": [1.0, 2.0, 3.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=("outcome",),
+            standardize_types=False,
+        )
+        adjusted0 = sample.set_target(target).adjust(method="null")
+        adjusted1 = sample.set_target(target).adjust(method="null")
+        adjusted1.set_weights(pd.Series([np.nan, 2.0, 3.0], index=adjusted1.df.index))
+
+        y0, y1 = _validate_adjusted_samples(adjusted0, adjusted1)
+        y_aligned, w0, w1 = _align_samples_by_id(adjusted0, adjusted1, y0, y1)
+
+        self.assertEqual(len(y_aligned), 2)
+        self.assertEqual(len(w0), 2)
+        self.assertEqual(len(w1), 2)
+        np.testing.assert_array_equal(w1, [2.0, 3.0])
+
     def test_weighted_median_breakdown_point(self) -> None:
         """Test calculation of weighted median breakdown point.
 

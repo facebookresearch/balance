@@ -183,7 +183,9 @@ class TestCli(
             ) -> "RecordingSample":
                 return self
 
-            def diagnostics(self) -> pd.DataFrame:
+            def diagnostics(
+                self, weights_impact_on_outcome_method: str | None = "t_test"
+            ) -> pd.DataFrame:
                 return pd.DataFrame()
 
         return RecordingSample
@@ -226,6 +228,54 @@ class TestCli(
         cli = self._make_cli(outcome_columns="missing")
         with self.assertRaises(AssertionError):
             cli.check_input_columns(self._make_batch_df().columns)
+
+    def test_cli_weights_impact_on_outcome_method(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            input_file = os.path.join(temp_dir, "input.csv")
+            output_file = os.path.join(temp_dir, "output.csv")
+            parser = make_parser()
+            args = parser.parse_args(
+                [
+                    "--input_file",
+                    input_file,
+                    "--output_file",
+                    output_file,
+                    "--covariate_columns",
+                    "covar_a,covar_b",
+                    "--weights_impact_on_outcome_method",
+                    "t_test",
+                ]
+            )
+            cli = BalanceCLI(args)
+            self.assertEqual(cli.weights_impact_on_outcome_method(), "t_test")
+
+            args_default = parser.parse_args(
+                [
+                    "--input_file",
+                    input_file,
+                    "--output_file",
+                    output_file,
+                    "--covariate_columns",
+                    "covar_a,covar_b",
+                ]
+            )
+            cli_default = BalanceCLI(args_default)
+            self.assertEqual(cli_default.weights_impact_on_outcome_method(), "t_test")
+
+            args_none = parser.parse_args(
+                [
+                    "--input_file",
+                    input_file,
+                    "--output_file",
+                    output_file,
+                    "--covariate_columns",
+                    "covar_a,covar_b",
+                    "--weights_impact_on_outcome_method",
+                    "none",
+                ]
+            )
+            cli_none = BalanceCLI(args_none)
+            self.assertIsNone(cli_none.weights_impact_on_outcome_method())
 
     def test_cli_help(self) -> None:
         """Test that CLI help command executes without errors."""
