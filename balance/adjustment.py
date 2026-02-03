@@ -211,7 +211,7 @@ def trim_weights(
     original_name = getattr(weights, "name", None)
 
     if isinstance(weights, pd.Series):
-        weights = weights.astype(np.float64, copy=False)
+        weights = weights.astype(np.float64)
     elif isinstance(weights, (np.ndarray, list, tuple)):
         weights = pd.Series(
             np.asarray(weights, dtype=np.float64), dtype=np.float64, name=original_name

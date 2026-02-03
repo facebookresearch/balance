@@ -199,6 +199,7 @@ def _is_discrete_series(series: pd.Series) -> bool:
     return (
         is_binary_indicator
         or pd.api.types.is_object_dtype(series)
+        or pd.api.types.is_string_dtype(series)
         or isinstance(series.dtype, pd.CategoricalDtype)
         or pd.api.types.is_bool_dtype(series)
     )
@@ -351,6 +352,7 @@ def _is_arraylike(o: Any) -> bool:
     return (
         isinstance(o, np.ndarray)
         or isinstance(o, pd.Series)
+        or isinstance(o, pd.api.extensions.ExtensionArray)
         or (
             hasattr(pd.arrays, "NumpyExtensionArray")
             and isinstance(o, pd.arrays.NumpyExtensionArray)
@@ -400,7 +402,9 @@ def rm_mutual_nas(*args: Any) -> List[Any]:
         if isinstance(x, np.ndarray):
             return lambda obj: np.array(obj, dtype=x.dtype)
         # same with pd.arrays.PandasArray, pd.arrays.StringArray, etc.
-        elif "pandas.core.arrays" in str(type(x)):
+        elif isinstance(x, pd.api.extensions.ExtensionArray) or (
+            "pandas.core.arrays" in str(type(x))
+        ):
             return lambda obj: pd.array(obj, dtype=x.dtype)
         else:
             return type(x)

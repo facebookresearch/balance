@@ -122,13 +122,31 @@ class TestUtil(
             {"id": (1, 2), "a": (1, 2), "forest": ("tree", "banana")}
         )
 
-        self.assertEqual(
-            df.dtypes.to_dict(),
-            {"id": dtype("O"), "a": dtype("float64"), "weight": dtype("float64")},
+        id_dtype = df.dtypes.to_dict()["id"]
+        self.assertTrue(
+            pd.api.types.is_object_dtype(id_dtype)
+            or pd.api.types.is_string_dtype(id_dtype)
         )
         self.assertEqual(
-            df_orig.dtypes.to_dict(),
-            {"id": dtype("int64"), "a": dtype("int64"), "forest": dtype("O")},
+            df.dtypes.to_dict()["a"],
+            dtype("float64"),
+        )
+        self.assertEqual(
+            df.dtypes.to_dict()["weight"],
+            dtype("float64"),
+        )
+        forest_dtype = df_orig.dtypes.to_dict()["forest"]
+        self.assertTrue(
+            pd.api.types.is_object_dtype(forest_dtype)
+            or pd.api.types.is_string_dtype(forest_dtype)
+        )
+        self.assertEqual(
+            df_orig.dtypes.to_dict()["id"],
+            dtype("int64"),
+        )
+        self.assertEqual(
+            df_orig.dtypes.to_dict()["a"],
+            dtype("int64"),
         )
 
         df_fixed = balance_util._astype_in_df_from_dtypes(df, df_orig.dtypes)
@@ -220,6 +238,18 @@ class TestUtil(
         )
         expected = pd.Series(["a", "x", "c"], dtype="object")
         pd.testing.assert_series_equal(result, expected)
+
+        # Test with DataFrame containing object columns (covers line 268)
+        df_with_obj = pd.DataFrame(
+            {"a": [1.0, np.inf, 2.0], "b": ["x", "y", "z"]}, dtype=object
+        )
+        result = balance_util._safe_replace_and_infer(df_with_obj)
+        expected = pd.DataFrame(
+            {"a": [1.0, np.nan, 2.0], "b": ["x", "y", "z"]}, dtype=object
+        )
+        pd.testing.assert_frame_equal(result, expected)
+        self.assertEqual(result["a"].dtype, object)
+        self.assertEqual(result["b"].dtype, object)
 
     def test__safe_fillna_and_infer(self) -> None:
         """Test safe NA filling and dtype inference to avoid pandas deprecation warnings."""

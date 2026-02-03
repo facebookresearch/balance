@@ -11,6 +11,8 @@
   - Added paired outcome-weight impact tests (`y*w0` vs `y*w1`) with confidence intervals.
   - Exposed in `BalanceDFOutcomes`, `Sample.diagnostics()`, and the CLI via
     `--weights_impact_on_outcome_method`.
+- **Pandas 3 support**
+  - Updated compatibility and tests for pandas 3.x
 
 ## Bug Fixes
 
@@ -18,11 +20,13 @@
   - Replaced deprecated `setup.py` with `pyproject.toml` build in CI to avoid build failure.
 - **Hardened ID column candidate validation**
   - `guess_id_column()` now ignores duplicate candidate names and validates that candidates are non-empty strings.
+- **Hardened pandas 3 compatibility paths**
+  - Updated string/NA handling and discrete checks for pandas 3 dtypes, and refreshed tests to accept string-backed dtypes.
 
 ## Packaging & Tests
 
-- **Pandas 2.x compatibility and upper bound (<3.0.0)**
-  - Constrained the pandas dependency to `>=2,<3.0.0` to avoid untested pandas 3.x API and dtype changes.
+- **Pandas 3.x compatibility**
+  - Expanded the pandas dependency range to allow pandas 3.x releases.
 
 ## Breaking Changes
 

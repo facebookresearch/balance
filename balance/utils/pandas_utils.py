@@ -249,13 +249,24 @@ def _safe_replace_and_infer(
         to_replace = [np.inf, -np.inf]
     if value is None:
         value = np.nan
+    original_dtypes = data.dtypes if isinstance(data, pd.DataFrame) else data.dtype
     with warnings.catch_warnings():
         warnings.filterwarnings(
             "ignore",
             message="Downcasting behavior in `replace` is deprecated.*",
             category=FutureWarning,
         )
-        return data.replace(to_replace, value).infer_objects(copy=False)
+        result = data.replace(to_replace, value).infer_objects()
+
+    if isinstance(result, pd.Series):
+        if original_dtypes == "object" and result.dtype != "object":
+            result = result.astype("object")
+        return result
+
+    object_cols = [col for col, dtype in original_dtypes.items() if dtype == "object"]
+    if object_cols:
+        result = result.astype(dict.fromkeys(object_cols, "object"))
+    return result
 
 
 def _safe_fillna_and_infer(
@@ -275,12 +286,23 @@ def _safe_fillna_and_infer(
     if value is None:
         value = np.nan
 
+    original_dtypes = data.dtypes if isinstance(data, pd.DataFrame) else data.dtype
     # Suppress pandas FutureWarnings about downcasting during fillna operations
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", FutureWarning)
         filled_data = data.fillna(value)
 
-    return filled_data.infer_objects(copy=False)
+    result = filled_data.infer_objects()
+
+    if isinstance(result, pd.Series):
+        if original_dtypes == "object" and result.dtype != "object":
+            result = result.astype("object")
+        return result
+
+    object_cols = [col for col, dtype in original_dtypes.items() if dtype == "object"]
+    if object_cols:
+        result = result.astype(dict.fromkeys(object_cols, "object"))
+    return result
 
 
 def _safe_groupby_apply(

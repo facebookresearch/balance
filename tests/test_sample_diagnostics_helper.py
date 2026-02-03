@@ -103,7 +103,17 @@ def test_concat_string_values() -> None:
         }
     )
 
-    pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
+    result = result.reset_index(drop=True)
+    if "note" in result.columns:
+        result["note"] = result["note"].where(~result["note"].isna(), np.nan)
+    if "note" in expected.columns:
+        expected["note"] = expected["note"].where(~expected["note"].isna(), np.nan)
+
+    pd.testing.assert_frame_equal(
+        result,
+        expected,
+        check_dtype=False,
+    )
 
 
 def test_concat_empty_list_returns_copy() -> None:
@@ -153,7 +163,17 @@ def test_concat_retains_existing_columns() -> None:
         }
     )
 
-    pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
+    result = result.reset_index(drop=True)
+    if "note" in result.columns:
+        result["note"] = result["note"].where(~result["note"].isna(), np.nan)
+    if "note" in expected.columns:
+        expected["note"] = expected["note"].where(~expected["note"].isna(), np.nan)
+
+    pd.testing.assert_frame_equal(
+        result,
+        expected,
+        check_dtype=False,
+    )
 
 
 def test_concat_respects_empty_frame_column_order() -> None:
