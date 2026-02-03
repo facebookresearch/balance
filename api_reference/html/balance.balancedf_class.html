@@ -1734,6 +1734,23 @@ round(sample.weights().design_effect(), 3)
 </div></blockquote>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="balance.balancedf_class.BalanceDFWeights.df">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">df</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span></em><a class="headerlink" href="#balance.balancedf_class.BalanceDFWeights.df" title="Link to this definition">¶</a></dt>
+<dd><p>Return the current weight column as a DataFrame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>self</strong> (<a class="reference internal" href="#balance.balancedf_class.BalanceDFWeights" title="balance.balancedf_class.BalanceDFWeights"><em>BalanceDFWeights</em></a>) – The BalanceDFWeights instance.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>DataFrame containing the current weight column.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="balance.balancedf_class.BalanceDFWeights.plot">
 <span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">on_linked_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">npt.NDArray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Figure</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDFWeights.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDFWeights.plot" title="Link to this definition">¶</a></dt>
@@ -1973,6 +1990,7 @@ sample.weights().df[“weight”].max() &lt;= 100.0
 </li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFWeights"><code class="docutils literal notranslate"><span class="pre">BalanceDFWeights</span></code></a><ul>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFWeights.design_effect"><code class="docutils literal notranslate"><span class="pre">BalanceDFWeights.design_effect()</span></code></a></li>
+<li><a class="reference internal" href="#balance.balancedf_class.BalanceDFWeights.df"><code class="docutils literal notranslate"><span class="pre">BalanceDFWeights.df</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFWeights.plot"><code class="docutils literal notranslate"><span class="pre">BalanceDFWeights.plot()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFWeights.summary"><code class="docutils literal notranslate"><span class="pre">BalanceDFWeights.summary()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFWeights.trim"><code class="docutils literal notranslate"><span class="pre">BalanceDFWeights.trim()</span></code></a></li>

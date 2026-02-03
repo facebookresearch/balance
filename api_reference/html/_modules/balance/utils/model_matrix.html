@@ -430,7 +430,7 @@
     <span class="k">if</span> <span class="n">fix_columns_names</span><span class="p">:</span>
         <span class="n">all_data</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">all_data</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
             <span class="sa">r</span><span class="s2">&quot;[^\w]&quot;</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="kc">True</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">infer_objects</span><span class="p">(</span><span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">infer_objects</span><span class="p">()</span>
         <span class="n">all_data</span> <span class="o">=</span> <span class="n">_make_df_column_names_unique</span><span class="p">(</span><span class="n">all_data</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;all_data&quot;</span><span class="p">:</span> <span class="n">all_data</span><span class="p">,</span> <span class="s2">&quot;sample_n&quot;</span><span class="p">:</span> <span class="n">sample_n</span><span class="p">}</span>

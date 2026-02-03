@@ -2476,7 +2476,7 @@
             <span class="n">target_clause</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Response rates (in the target):</span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">target_response_rates</span><span class="si">}</span><span class="s2">&quot;</span>
 
         <span class="n">n_outcomes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">list_outcomes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">list_outcomes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
         <span class="n">mean_outcomes_with_ci</span> <span class="o">=</span> <span class="n">mean_outcomes_with_ci</span>
         <span class="n">relative_response_rates</span> <span class="o">=</span> <span class="n">relative_response_rates</span>
         <span class="n">target_clause</span> <span class="o">=</span> <span class="n">target_clause</span>
@@ -2571,6 +2571,18 @@
 <span class="sd">            sample (Sample): Object</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">to_frame</span><span class="p">(),</span> <span class="n">sample</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;weights&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">df</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFWeights&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the current weight column as a DataFrame.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (BalanceDFWeights): The BalanceDFWeights instance.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame: DataFrame containing the current weight column.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
 
     <span class="c1"># TODO: maybe add better control if there are no weights for unadjusted or target (the current default shows them in the legend, but not in the figure)</span>
 <div class="viewcode-block" id="BalanceDFWeights.plot">

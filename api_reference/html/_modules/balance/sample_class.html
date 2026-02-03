@@ -48,6 +48,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">importlib.metadata</span><span class="w"> </span><span class="kn">import</span> <span class="n">version</span> <span class="k">as</span> <span class="n">importlib_version</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -540,7 +541,7 @@
             <span class="c1">#           for x in df.columns:</span>
             <span class="c1">#               if (is_numeric_dtype(df[x])) and (not is_bool_dtype(df[x])):</span>
             <span class="c1">#                   df[x] = df[x].astype(&quot;float64&quot;)</span>
-            <span class="n">input_type</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Int64&quot;</span><span class="p">,</span> <span class="s2">&quot;Int32&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">,</span> <span class="s2">&quot;int32&quot;</span><span class="p">,</span> <span class="s2">&quot;int16&quot;</span><span class="p">,</span> <span class="s2">&quot;int8&quot;</span><span class="p">,</span> <span class="s2">&quot;string&quot;</span><span class="p">]</span>
+            <span class="n">input_type</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Int64&quot;</span><span class="p">,</span> <span class="s2">&quot;Int32&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">,</span> <span class="s2">&quot;int32&quot;</span><span class="p">,</span> <span class="s2">&quot;int16&quot;</span><span class="p">,</span> <span class="s2">&quot;int8&quot;</span><span class="p">]</span>
             <span class="n">output_type</span> <span class="o">=</span> <span class="p">[</span>
                 <span class="s2">&quot;float64&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;float32&quot;</span><span class="p">,</span>  <span class="c1"># This changes Int32Dtype() into dtype(&#39;int32&#39;) (from pandas to numpy)</span>
@@ -548,8 +549,15 @@
                 <span class="s2">&quot;float32&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;float16&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;float16&quot;</span><span class="p">,</span>  <span class="c1"># Using float16 since float8 doesn&#39;t exist, see: https://stackoverflow.com/a/40507235/256662</span>
-                <span class="s2">&quot;object&quot;</span><span class="p">,</span>
             <span class="p">]</span>
+            <span class="c1"># TODO:(after 2026) that if pandas &gt;=3, this doesn&#39;t cause issues for users importing data from SQL</span>
+            <span class="c1"># In pandas &lt; 3, convert string dtype to object for compatibility</span>
+            <span class="n">_pd_version</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+                <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">importlib_version</span><span class="p">(</span><span class="s2">&quot;pandas&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[:</span><span class="mi">2</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">_pd_version</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="n">input_type</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;string&quot;</span><span class="p">)</span>
+                <span class="n">output_type</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;object&quot;</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">i_input</span><span class="p">,</span> <span class="n">i_output</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">input_type</span><span class="p">,</span> <span class="n">output_type</span><span class="p">):</span>
                 <span class="n">sample</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">_pd_convert_all_types</span><span class="p">(</span>
                     <span class="n">sample</span><span class="o">.</span><span class="n">_df</span><span class="p">,</span> <span class="n">i_input</span><span class="p">,</span> <span class="n">i_output</span>
@@ -1187,7 +1195,8 @@
                 <span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
 
             <span class="c1"># Now assign the weights</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">weights</span>
+            <span class="n">weights_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">weights</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">weights_value</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">name</span><span class="p">]</span></div>
 
