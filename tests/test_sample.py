@@ -422,6 +422,32 @@ class TestSample(
         self.assertEqual(Sample.from_frame(df).df.a.dtype.type, np.float16)
         # TODO: add tests for other types of conversions
 
+    def test_Sample_from_frame_string_dtype_conversion_pandas2(self) -> None:
+        """Test string dtype to object conversion for pandas < 3.0.
+
+        Verifies that from_frame correctly converts string dtype columns
+        to object dtype when running on pandas versions < 3.0. This is
+        necessary for compatibility with older pandas versions that don't
+        handle string dtype consistently.
+        """
+        from unittest.mock import patch
+
+        # Create a DataFrame with a string dtype column
+        df = pd.DataFrame(
+            {"id": (1, 2), "a": ("x", "y")},
+        )
+        df["a"] = df["a"].astype("string")
+        self.assertEqual(str(df.a.dtype), "string")
+
+        # Mock importlib.metadata.version to return pandas 2.x
+        with patch(
+            "balance.sample_class.importlib_version",
+            return_value="2.2.0",
+        ):
+            sample = Sample.from_frame(df)
+            # In pandas < 3.0, string dtype should be converted to object
+            self.assertEqual(sample.df.a.dtype, np.object_)
+
     def test_Sample_from_frame_deepcopy_behavior(self) -> None:
         """Test deepcopy parameter behavior.
 
@@ -431,15 +457,24 @@ class TestSample(
         # Test with use_deepcopy=False - original DataFrame should be modified
         df = pd.DataFrame({"id": (1, 2), "a": (1, 2)})
         self.assertEqual(df.id.dtype.type, np.int64)
-        self.assertEqual(
-            Sample.from_frame(df, use_deepcopy=False).df.id.dtype.type, np.object_
+        dtype_type = Sample.from_frame(df, use_deepcopy=False).df.id.dtype
+        self.assertTrue(
+            pd.api.types.is_object_dtype(dtype_type)
+            or pd.api.types.is_string_dtype(dtype_type)
         )
-        self.assertEqual(df.id.dtype.type, np.object_)
+        self.assertTrue(
+            pd.api.types.is_object_dtype(df.id.dtype)
+            or pd.api.types.is_string_dtype(df.id.dtype)
+        )
 
         # Test with use_deepcopy=True (default) - original DataFrame should be preserved
         df = pd.DataFrame({"id": (1, 2), "a": (1, 2)})
         self.assertEqual(df.id.dtype.type, np.int64)
-        self.assertEqual(Sample.from_frame(df).df.id.dtype.type, np.object_)
+        dtype_type = Sample.from_frame(df).df.id.dtype
+        self.assertTrue(
+            pd.api.types.is_object_dtype(dtype_type)
+            or pd.api.types.is_string_dtype(dtype_type)
+        )
         self.assertEqual(df.id.dtype.type, np.int64)
 
     def test_Sample_adjust(self) -> None:
@@ -1603,16 +1638,9 @@ class TestSample_NA_behavior(balance.testutil.BalanceTestCase):
         smpl_to_adj = get_sample_to_adjust(df)
         self.assertIsInstance(smpl_to_adj.adjust(method="ipw"), Sample)
 
-        # This should raise a TypeError:
-        with self.assertRaisesRegex(
-            TypeError,
-            "boolean value of NA is ambiguous",
-        ):
-            smpl_to_adj = get_sample_to_adjust(df)
-            # smpl_to_adj._df.iloc[0, 0] = pd.NA
-            smpl_to_adj._df.iloc[0, 1] = pd.NA
-            # This will raise the error:
-            smpl_to_adj.adjust(method="ipw")
+        smpl_to_adj = get_sample_to_adjust(df)
+        smpl_to_adj._df.iloc[0, 1] = pd.NA
+        self.assertIsInstance(smpl_to_adj.adjust(method="ipw"), Sample)
 
         # This works fine
         df.iloc[0, 0] = np.nan
@@ -1626,15 +1654,9 @@ class TestSample_NA_behavior(balance.testutil.BalanceTestCase):
         smpl_to_adj = get_sample_to_adjust(df)
         self.assertIsInstance(smpl_to_adj.adjust(method="ipw"), Sample)
 
-        # Turning standardize_types to False should raise a TypeError (since we have pd.NA):
-        with self.assertRaisesRegex(
-            TypeError,
-            "boolean value of NA is ambiguous",
-        ):
-            # df.iloc[0, 0] = pd.NA
-            df.iloc[0, 1] = pd.NA
-            smpl_to_adj = get_sample_to_adjust(df, standardize_types=False)
-            smpl_to_adj.adjust(method="ipw")
+        df.iloc[0, 1] = pd.NA
+        smpl_to_adj = get_sample_to_adjust(df, standardize_types=False)
+        self.assertIsInstance(smpl_to_adj.adjust(method="ipw"), Sample)
 
 
 class TestSample_high_cardinality_warnings(balance.testutil.BalanceTestCase):

@@ -67,7 +67,7 @@ def add_na_indicator(
             filled_col = (
                 df[c].cat.add_categories(replace_val_obj).fillna(replace_val_obj)
             )
-            df[c] = filled_col.infer_objects(copy=False)
+            df[c] = filled_col.infer_objects()
         elif c in non_numeric_cols:
             df[c] = _safe_fillna_and_infer(df[c], replace_val_obj)
         else:
@@ -319,7 +319,7 @@ def fct_lump(s: pd.Series, prop: float = 0.05) -> pd.Series:
         props = s.value_counts() / s.shape[0]
 
     # Ensure proper dtype inference on the index
-    props.index = props.index.infer_objects(copy=False)
+    props.index = props.index.infer_objects()
 
     small_categories = props[props < prop].index.tolist()
 
@@ -327,11 +327,13 @@ def fct_lump(s: pd.Series, prop: float = 0.05) -> pd.Series:
     while remainder_category_name in props.index:
         remainder_category_name = remainder_category_name * 2
 
-    # Convert to object dtype
-    s = s.astype("object")
+    # Convert to object dtype unless already string dtype
+    if not pd.api.types.is_string_dtype(s.dtype):
+        s = s.astype("object")
 
     # Replace small categories with the remainder category name
-    s.loc[s.apply(lambda x: x in small_categories)] = remainder_category_name
+    mask = s.isin(small_categories).fillna(False)
+    s.loc[mask] = remainder_category_name
     return s
 
 
@@ -349,12 +351,12 @@ def fct_lump_by(s: pd.Series, by: pd.Series, prop: float = 0.05) -> pd.Series:
         pd.Series: pd.series, we keep the index of s as the index of the result.
     """
     res = copy.deepcopy(s)
-    pd.options.mode.copy_on_write = True
     # pandas groupby doesnt preserve order
     for subgroup in pd.unique(by):
         mask = by == subgroup
         grouped_res = fct_lump(res.loc[mask], prop=prop)
         # Ensure dtype compatibility before assignment
-        res = res.astype("object")
+        if not pd.api.types.is_string_dtype(res.dtype):
+            res = res.astype("object")
         res.loc[mask] = grouped_res
     return res
