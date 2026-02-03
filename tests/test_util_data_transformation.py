@@ -383,7 +383,11 @@ class TestUtil(
         """
         # Count above the threshold, value preserved
         s = pd.Series(["a"] * 95 + ["b"] * 5)
-        self.assertEqual(balance_util.fct_lump(s), s)
+        pd.testing.assert_series_equal(
+            balance_util.fct_lump(s),
+            s,
+            check_dtype=False,
+        )
 
         # Move the threshold up
         self.assertEqual(
@@ -406,21 +410,24 @@ class TestUtil(
         - Work with categorical data types
         """
         # Multiple categories combined
-        self.assertEqual(
+        pd.testing.assert_series_equal(
             balance_util.fct_lump(pd.Series(["a"] * 96 + ["b"] * 2 + ["c"] * 2)),
             pd.Series(["a"] * 96 + ["_lumped_other"] * 4),
+            check_dtype=False,
         )
 
         # Category already called '_lumped_other' is handled
-        self.assertEqual(
+        pd.testing.assert_series_equal(
             balance_util.fct_lump(pd.Series(["a"] * 96 + ["_lumped_other"] * 4)),
             pd.Series(["a"] * 96 + ["_lumped_other_lumped_other"] * 4),
+            check_dtype=False,
         )
 
         # Categorical series type
-        self.assertEqual(
+        pd.testing.assert_series_equal(
             balance_util.fct_lump(pd.Series(["a"] * 96 + ["b"] * 4, dtype="category")),
             pd.Series(["a"] * 96 + ["_lumped_other"] * 4),
+            check_dtype=False,
         )
 
     def _create_wine_test_data(self) -> tuple[Sample, Sample]:

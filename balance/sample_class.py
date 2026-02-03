@@ -499,7 +499,7 @@ class Sample:
             #           for x in df.columns:
             #               if (is_numeric_dtype(df[x])) and (not is_bool_dtype(df[x])):
             #                   df[x] = df[x].astype("float64")
-            input_type = ["Int64", "Int32", "int64", "int32", "int16", "int8", "string"]
+            input_type = ["Int64", "Int32", "int64", "int32", "int16", "int8"]
             output_type = [
                 "float64",
                 "float32",  # This changes Int32Dtype() into dtype('int32') (from pandas to numpy)
@@ -507,7 +507,6 @@ class Sample:
                 "float32",
                 "float16",
                 "float16",  # Using float16 since float8 doesn't exist, see: https://stackoverflow.com/a/40507235/256662
-                "object",
             ]
             for i_input, i_output in zip(input_type, output_type):
                 sample._df = balance_util._pd_convert_all_types(
@@ -1122,7 +1121,8 @@ class Sample:
                 ].astype("float64")
 
             # Now assign the weights
-            self._df.loc[:, self.weight_column.name] = weights
+            weights_value = np.nan if weights is None else weights
+            self._df.loc[:, self.weight_column.name] = weights_value
 
         self.weight_column = self._df[self.weight_column.name]
 

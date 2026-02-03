@@ -157,6 +157,10 @@ class BalanceTestCase(unittest.TestCase):
         lazy: bool = kwargs.get("lazy", False)
         if isinstance(first, np.ndarray) or isinstance(second, np.ndarray):
             np.testing.assert_array_equal(first, second, **kwargs)
+        elif isinstance(first, pd.api.extensions.ExtensionArray) or isinstance(
+            second, pd.api.extensions.ExtensionArray
+        ):
+            np.testing.assert_array_equal(np.array(first), np.array(second), **kwargs)
         elif isinstance(first, pd.DataFrame) or isinstance(second, pd.DataFrame):
             _assert_frame_equal_lazy(
                 first,

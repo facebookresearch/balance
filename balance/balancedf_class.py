@@ -2372,7 +2372,7 @@ class BalanceDFOutcomes(BalanceDF):
             target_clause = f"Response rates (in the target):\n {target_response_rates}"
 
         n_outcomes = self.df.shape[1]
-        list_outcomes = self.df.columns.values
+        list_outcomes = np.array(self.df.columns, dtype=object)
         mean_outcomes_with_ci = mean_outcomes_with_ci
         relative_response_rates = relative_response_rates
         target_clause = target_clause
@@ -2457,6 +2457,18 @@ class BalanceDFWeights(BalanceDF):
             sample (Sample): Object
         """
         super().__init__(sample.weight_column.to_frame(), sample, name="weights")
+
+    @property
+    def df(self: "BalanceDFWeights") -> pd.DataFrame:
+        """Return the current weight column as a DataFrame.
+
+        Args:
+            self (BalanceDFWeights): The BalanceDFWeights instance.
+
+        Returns:
+            pd.DataFrame: DataFrame containing the current weight column.
+        """
+        return self._sample.weight_column.to_frame()
 
     # TODO: maybe add better control if there are no weights for unadjusted or target (the current default shows them in the legend, but not in the figure)
     def plot(
