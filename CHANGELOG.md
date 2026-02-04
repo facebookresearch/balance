@@ -27,6 +27,8 @@
 
 - **Pandas 3.x compatibility**
   - Expanded the pandas dependency range to allow pandas 3.x releases.
+- **Direct util imports in tests**
+  - Refactored util test modules to import helpers directly from their modules instead of via `balance_util`.
 
 ## Breaking Changes
 
