@@ -12,12 +12,25 @@ from copy import deepcopy
 import balance.testutil
 import numpy as np
 import pandas as pd
-
-# TODO: remove the use of balance_util in most cases, and just import the functions to be tested directly
-from balance import util as balance_util
 from balance.sample_class import Sample
 from balance.util import _coerce_scalar
-from balance.utils.pandas_utils import _sorted_unique_categories
+from balance.utils.pandas_utils import (
+    _are_dtypes_equal,
+    _astype_in_df_from_dtypes,
+    _detect_high_cardinality_features,
+    _dict_intersect,
+    _is_categorical_dtype,
+    _make_df_column_names_unique,
+    _pd_convert_all_types,
+    _process_series_for_missing_mask,
+    _safe_divide_with_zero_handling,
+    _safe_fillna_and_infer,
+    _safe_groupby_apply,
+    _safe_replace_and_infer,
+    _safe_show_legend,
+    _sorted_unique_categories,
+    _warn_of_df_dtypes_change,
+)
 from numpy import dtype
 
 
@@ -33,7 +46,7 @@ class TestUtil(
         series = pd.Series(["a", "b", "c"])
 
         # Execute: Check if dtype is categorical
-        result = balance_util._is_categorical_dtype(series)
+        result = _is_categorical_dtype(series)
 
         # Assert: Object type should return True
         self.assertTrue(result)
@@ -48,8 +61,8 @@ class TestUtil(
         float_series = pd.Series([4.0, 5.0, 6.0])
 
         # Execute: Check if dtypes are categorical
-        int_result = balance_util._is_categorical_dtype(int_series)
-        float_result = balance_util._is_categorical_dtype(float_series)
+        int_result = _is_categorical_dtype(int_series)
+        float_result = _is_categorical_dtype(float_series)
 
         # Assert: Numeric types should return False
         self.assertFalse(int_result)
@@ -64,7 +77,7 @@ class TestUtil(
         series = pd.Series(pd.Categorical(["a", "b", "c"]))
 
         # Execute: Check if dtype is categorical
-        result = balance_util._is_categorical_dtype(series)
+        result = _is_categorical_dtype(series)
 
         # Assert: Categorical dtype should return True
         self.assertTrue(result)
@@ -78,7 +91,7 @@ class TestUtil(
         series = pd.Series(["a", "b", "c"], dtype="string")
 
         # Execute: Check if dtype is categorical
-        result = balance_util._is_categorical_dtype(series)
+        result = _is_categorical_dtype(series)
 
         # Assert: String dtype should return True
         self.assertTrue(result)
@@ -92,7 +105,7 @@ class TestUtil(
         series = pd.Series([True, False, True])
 
         # Execute: Check if dtype is categorical
-        result = balance_util._is_categorical_dtype(series)
+        result = _is_categorical_dtype(series)
 
         # Assert: Boolean types are not categorical, should return False
         self.assertFalse(result)
@@ -114,7 +127,7 @@ class TestUtil(
     def test__dict_intersect(self) -> None:
         d1 = {"a": 1, "b": 2}
         d2 = {"c": 3, "b": 2222}
-        self.assertEqual(balance_util._dict_intersect(d1, d2), {"b": 2})
+        self.assertEqual(_dict_intersect(d1, d2), {"b": 2})
 
     def test__astype_in_df_from_dtypes(self) -> None:
         df = pd.DataFrame({"id": ("1", "2"), "a": (1.0, 2.0), "weight": (1.0, 2.0)})
@@ -149,7 +162,7 @@ class TestUtil(
             dtype("int64"),
         )
 
-        df_fixed = balance_util._astype_in_df_from_dtypes(df, df_orig.dtypes)
+        df_fixed = _astype_in_df_from_dtypes(df, df_orig.dtypes)
         self.assertEqual(
             df_fixed.dtypes.to_dict(),
             {"id": dtype("int64"), "a": dtype("int64"), "weight": dtype("float64")},
@@ -162,15 +175,9 @@ class TestUtil(
             {"int": np.arange(5), "flt": np.random.randn(5), "miao": np.random.randn(5)}
         )
 
-        self.assertTrue(
-            balance_util._are_dtypes_equal(df1.dtypes, df1.dtypes)["is_equal"]
-        )
-        self.assertFalse(
-            balance_util._are_dtypes_equal(df1.dtypes, df2.dtypes)["is_equal"]
-        )
-        self.assertFalse(
-            balance_util._are_dtypes_equal(df11.dtypes, df2.dtypes)["is_equal"]
-        )
+        self.assertTrue(_are_dtypes_equal(df1.dtypes, df1.dtypes)["is_equal"])
+        self.assertFalse(_are_dtypes_equal(df1.dtypes, df2.dtypes)["is_equal"])
+        self.assertFalse(_are_dtypes_equal(df11.dtypes, df2.dtypes)["is_equal"])
 
     def test__warn_of_df_dtypes_change(self) -> None:
         df = pd.DataFrame({"int": np.arange(5), "flt": np.random.randn(5)})
@@ -180,7 +187,7 @@ class TestUtil(
 
         self.assertWarnsRegexp(
             "The dtypes of new_df were changed from the original dtypes of the input df, here are the differences - ",
-            balance_util._warn_of_df_dtypes_change,
+            _warn_of_df_dtypes_change,
             df.dtypes,
             new_df.dtypes,
         )
@@ -200,7 +207,7 @@ class TestUtil(
         # TODO: understand in the future why the names here appear to be consistent while when using the function in
         # `model_matrix` it does not appear to work.
         self.assertEqual(
-            balance_util._make_df_column_names_unique(df1).to_dict(),
+            _make_df_column_names_unique(df1).to_dict(),
             {
                 "A": {0: 1, 1: 2, 2: 3},
                 "B": {0: 4, 1: 5, 2: 6},
@@ -213,29 +220,25 @@ class TestUtil(
         """Test safe replacement and dtype inference to avoid pandas deprecation warnings."""
         # Test with Series containing infinities
         series_with_inf = pd.Series([1.0, np.inf, 2.0, -np.inf, 3.0])
-        result = balance_util._safe_replace_and_infer(series_with_inf)
+        result = _safe_replace_and_infer(series_with_inf)
         expected = pd.Series([1.0, np.nan, 2.0, np.nan, 3.0])
         pd.testing.assert_series_equal(result, expected)
 
         # Test with DataFrame
         df_with_inf = pd.DataFrame({"a": [1.0, np.inf, 2.0], "b": [-np.inf, 3.0, 4.0]})
-        result = balance_util._safe_replace_and_infer(df_with_inf)
+        result = _safe_replace_and_infer(df_with_inf)
         expected = pd.DataFrame({"a": [1.0, np.nan, 2.0], "b": [np.nan, 3.0, 4.0]})
         pd.testing.assert_frame_equal(result, expected)
 
         # Test with custom replace values
         series_test = pd.Series([1, 2, 3, 4])
-        result = balance_util._safe_replace_and_infer(
-            series_test, to_replace=2, value=99
-        )
+        result = _safe_replace_and_infer(series_test, to_replace=2, value=99)
         expected = pd.Series([1, 99, 3, 4])
         pd.testing.assert_series_equal(result, expected)
 
         # Test with object dtype
         series_obj = pd.Series(["a", "b", "c"], dtype="object")
-        result = balance_util._safe_replace_and_infer(
-            series_obj, to_replace="b", value="x"
-        )
+        result = _safe_replace_and_infer(series_obj, to_replace="b", value="x")
         expected = pd.Series(["a", "x", "c"], dtype="object")
         pd.testing.assert_series_equal(result, expected)
 
@@ -243,7 +246,7 @@ class TestUtil(
         df_with_obj = pd.DataFrame(
             {"a": [1.0, np.inf, 2.0], "b": ["x", "y", "z"]}, dtype=object
         )
-        result = balance_util._safe_replace_and_infer(df_with_obj)
+        result = _safe_replace_and_infer(df_with_obj)
         expected = pd.DataFrame(
             {"a": [1.0, np.nan, 2.0], "b": ["x", "y", "z"]}, dtype=object
         )
@@ -255,25 +258,25 @@ class TestUtil(
         """Test safe NA filling and dtype inference to avoid pandas deprecation warnings."""
         # Test with Series containing NaN values
         series_with_nan = pd.Series([1.0, np.nan, 2.0, np.nan, 3.0])
-        result = balance_util._safe_fillna_and_infer(series_with_nan, value=0)
+        result = _safe_fillna_and_infer(series_with_nan, value=0)
         expected = pd.Series([1.0, 0.0, 2.0, 0.0, 3.0])
         pd.testing.assert_series_equal(result, expected)
 
         # Test with DataFrame
         df_with_nan = pd.DataFrame({"a": [1.0, np.nan, 2.0], "b": [np.nan, 3.0, 4.0]})
-        result = balance_util._safe_fillna_and_infer(df_with_nan, value=-1)
+        result = _safe_fillna_and_infer(df_with_nan, value=-1)
         expected = pd.DataFrame({"a": [1.0, -1.0, 2.0], "b": [-1.0, 3.0, 4.0]})
         pd.testing.assert_frame_equal(result, expected)
 
         # Test with string replacement
         series_str = pd.Series(["a", None, "c"])
-        result = balance_util._safe_fillna_and_infer(series_str, value="_NA")
+        result = _safe_fillna_and_infer(series_str, value="_NA")
         expected = pd.Series(["a", "_NA", "c"])
         pd.testing.assert_series_equal(result, expected)
 
         # Test with no value provided (default None -> nan)
         series_test = pd.Series([1, None, 3])
-        result = balance_util._safe_fillna_and_infer(series_test)
+        result = _safe_fillna_and_infer(series_test)
         expected = pd.Series([1.0, np.nan, 3.0])  # Type gets converted to float
         pd.testing.assert_series_equal(result, expected)
 
@@ -289,9 +292,7 @@ class TestUtil(
         )
 
         # Test with simple aggregation function
-        result = balance_util._safe_groupby_apply(
-            df, "group", lambda x: x["value"].sum()
-        )
+        result = _safe_groupby_apply(df, "group", lambda x: x["value"].sum())
         expected = pd.Series([3, 7, 5], index=pd.Index(["A", "B", "C"], name="group"))
         pd.testing.assert_series_equal(result, expected)
 
@@ -303,7 +304,7 @@ class TestUtil(
                 "value": [1, 2, 3, 4],
             }
         )
-        result = balance_util._safe_groupby_apply(
+        result = _safe_groupby_apply(
             df_multi, ["group1", "group2"], lambda x: x["value"].mean()
         )
         expected = pd.Series(
@@ -316,7 +317,7 @@ class TestUtil(
         pd.testing.assert_series_equal(result, expected)
 
         # Test with function that accesses the grouping column
-        result = balance_util._safe_groupby_apply(df, "group", len)
+        result = _safe_groupby_apply(df, "group", len)
         expected = pd.Series([2, 2, 1], index=pd.Index(["A", "B", "C"], name="group"))
         pd.testing.assert_series_equal(result, expected)
 
@@ -330,7 +331,7 @@ class TestUtil(
         ax.plot([1, 2, 3], [3, 2, 1], label="line2")
 
         # This should not raise a warning
-        balance_util._safe_show_legend(ax)
+        _safe_show_legend(ax)
 
         # Verify legend was created
         legend = ax.get_legend()
@@ -345,7 +346,7 @@ class TestUtil(
         ax.plot([1, 2, 3], [3, 2, 1])  # No label
 
         # This should not create a legend or raise warnings
-        balance_util._safe_show_legend(ax)
+        _safe_show_legend(ax)
 
         # Verify no legend was created
         legend = ax.get_legend()
@@ -358,7 +359,7 @@ class TestUtil(
         ax.plot([1, 2, 3], [1, 2, 3], label="labeled")
         ax.plot([1, 2, 3], [3, 2, 1])  # No label
 
-        balance_util._safe_show_legend(ax)
+        _safe_show_legend(ax)
 
         # Verify legend was created with only labeled items
         legend = ax.get_legend()
@@ -371,20 +372,20 @@ class TestUtil(
     def test__safe_divide_with_zero_handling(self) -> None:
         """Test safe division with proper numpy error state management."""
         # Test normal division
-        result = balance_util._safe_divide_with_zero_handling(10, 2)
+        result = _safe_divide_with_zero_handling(10, 2)
         self.assertEqual(result, 5.0)
 
         # Test with numpy arrays - the main use case for this function
         numerator = np.array([1, 2, 3, 4])
         denominator = np.array([1, 0, 3, 2])
-        result = balance_util._safe_divide_with_zero_handling(numerator, denominator)
+        result = _safe_divide_with_zero_handling(numerator, denominator)
         expected = np.array([1.0, np.inf, 1.0, 2.0])
         np.testing.assert_array_equal(result, expected)
 
         # Test with pandas Series
         num_series = pd.Series([10, 20, 30])
         den_series = pd.Series([2, 0, 5])
-        result = balance_util._safe_divide_with_zero_handling(num_series, den_series)
+        result = _safe_divide_with_zero_handling(num_series, den_series)
         expected = pd.Series([5.0, np.inf, 6.0])
         pd.testing.assert_series_equal(result, expected)
 
@@ -411,7 +412,7 @@ class TestUtil(
 
         for input_series, expected_mask, description in test_cases:
             with self.subTest(description=description):
-                result = balance_util._process_series_for_missing_mask(input_series)
+                result = _process_series_for_missing_mask(input_series)
                 pd.testing.assert_series_equal(result, expected_mask)
 
     def test__pd_convert_all_types(self) -> None:
@@ -423,7 +424,7 @@ class TestUtil(
                 "b": pd.array([4.0, 5.0, 6.0], dtype=np.float64),
             }
         )
-        result1 = balance_util._pd_convert_all_types(df1, "Int64", "float64")
+        result1 = _pd_convert_all_types(df1, "Int64", "float64")
         self.assertEqual(result1["a"].dtype, np.float64)  # Int64 -> float64
         self.assertEqual(result1["b"].dtype, np.float64)  # float64 unchanged
 
@@ -435,7 +436,7 @@ class TestUtil(
                 "m": pd.array([5, 6], dtype=pd.Int64Dtype()),
             }
         )
-        result2 = balance_util._pd_convert_all_types(df2, "Int64", "float64")
+        result2 = _pd_convert_all_types(df2, "Int64", "float64")
         # Check conversions
         self.assertEqual(result2["z"].dtype, np.float64)
         self.assertEqual(result2["a"].dtype, np.float64)  # Already float64
@@ -642,7 +643,7 @@ class TestDetectHighCardinalityEdgeCases(balance.testutil.BalanceTestCase):
             }
         )
 
-        result = balance_util._detect_high_cardinality_features(df, threshold=0.5)
+        result = _detect_high_cardinality_features(df, threshold=0.5)
 
         # The all_null column should be skipped (no unique values)
         # normal column: 3 unique / 3 total = 1.0 ratio >= 0.5 threshold

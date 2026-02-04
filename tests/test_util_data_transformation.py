@@ -12,11 +12,19 @@ from unittest.mock import patch
 import balance.testutil
 import numpy as np
 import pandas as pd
-
-# TODO: remove the use of balance_util in most cases, and just import the functions to be tested directly
-from balance import util as balance_util
 from balance.sample_class import Sample
 from balance.util import _verify_value_type
+from balance.utils.data_transformation import (
+    add_na_indicator,
+    auto_aggregate,
+    auto_spread,
+    drop_na_rows,
+    fct_lump,
+    fct_lump_by,
+    qcut,
+    quantize,
+    row_pairwise_diffs,
+)
 
 
 class TestUtil(
@@ -41,14 +49,14 @@ class TestUtil(
             },
             columns=("a", "b", "_is_na_a", "_is_na_b"),
         )
-        r = balance_util.add_na_indicator(df)
+        r = add_na_indicator(df)
         self.assertEqual(r, e)
 
         # No change if no missing variables
         df = pd.DataFrame(
             {"a": (0, 1, 2), "b": ("a", "b", ""), "c": pd.Categorical(("a", "b", "a"))}
         )
-        self.assertEqual(balance_util.add_na_indicator(df), df)
+        self.assertEqual(add_na_indicator(df), df)
 
         # Test that it works with categorical variables
         df = pd.DataFrame(
@@ -67,7 +75,7 @@ class TestUtil(
             },
             columns=("c", "d", "_is_na_d"),
         )
-        self.assertEqual(balance_util.add_na_indicator(df), e)
+        self.assertEqual(add_na_indicator(df), e)
 
         # test arguments
         df = pd.DataFrame({"a": (0, None, 2, np.nan), "b": (None, "b", "", np.nan)})
@@ -80,7 +88,7 @@ class TestUtil(
             },
             columns=("a", "b", "_is_na_a", "_is_na_b"),
         )
-        r = balance_util.add_na_indicator(df, replace_val_obj="AAA", replace_val_num=42)
+        r = add_na_indicator(df, replace_val_obj="AAA", replace_val_num=42)
         self.assertEqual(r, e)
 
         # check exceptions
@@ -88,14 +96,14 @@ class TestUtil(
         self.assertRaisesRegex(
             Exception,
             "Can't add NA indicator to columns containing NAs and the value '_NA', ",
-            balance_util.add_na_indicator,
+            add_na_indicator,
             d,
         )
         d = pd.DataFrame({"a": [0, 1, np.nan, None], "_is_na_b": ["x", "y", "z", None]})
         self.assertRaisesRegex(
             Exception,
             "Can't add NA indicator to DataFrame which contains",
-            balance_util.add_na_indicator,
+            add_na_indicator,
             d,
         )
 
@@ -114,7 +122,7 @@ class TestUtil(
         (
             sample_df,
             sample_weights,
-        ) = balance_util.drop_na_rows(sample_df, sample_weights, "sample")
+        ) = drop_na_rows(sample_df, sample_weights, "sample")
         self.assertEqual(sample_df, pd.DataFrame({"a": (2.0), "b": ("c")}, index=[2]))
         self.assertEqual(sample_weights, pd.Series([3], index=[2]))
 
@@ -124,7 +132,7 @@ class TestUtil(
         self.assertRaisesRegex(
             ValueError,
             "Dropping rows led to empty",
-            balance_util.drop_na_rows,
+            drop_na_rows,
             sample_df,
             sample_weights,
             "sample",
@@ -133,7 +141,7 @@ class TestUtil(
     def test_qcut(self) -> None:
         d = pd.Series([0, 1, 2, 3, 4])
         self.assertEqual(
-            balance_util.qcut(d, 4).astype(str),
+            qcut(d, 4).astype(str),
             pd.Series(
                 [
                     "(-0.001, 1.0]",
@@ -144,10 +152,10 @@ class TestUtil(
                 ]
             ),
         )
-        self.assertEqual(balance_util.qcut(d, 6), d)
+        self.assertEqual(qcut(d, 6), d)
         self.assertWarnsRegexp(
             "Not quantizing, too few values",
-            balance_util.qcut,
+            qcut,
             d,
             6,
         )
@@ -157,31 +165,31 @@ class TestUtil(
         d = d.rename(columns={i: "ab"[i] for i in range(0, 2)})
         d["c"] = ["x"] * 1000
 
-        r = balance_util.quantize(d, variables=["a"])
+        r = quantize(d, variables=["a"])
         self.assertTrue(isinstance(r["a"][0], pd.Interval))
         self.assertTrue(isinstance(r["b"][0], float))
         self.assertEqual(r["c"][0], "x")
 
-        r = balance_util.quantize(d)
+        r = quantize(d)
         self.assertTrue(isinstance(r["a"][0], pd.Interval))
         self.assertTrue(isinstance(r["b"][0], pd.Interval))
         self.assertEqual(r["c"][0], "x")
 
         # Test that it does not affect categorical columns
         d["d"] = pd.Categorical(["y"] * 1000)
-        r = balance_util.quantize(d)
+        r = quantize(d)
         self.assertEqual(r["d"][0], "y")
 
         # Test on Series input
-        r = balance_util.quantize(pd.Series(np.random.uniform(0, 1, 100)), 7)
+        r = quantize(pd.Series(np.random.uniform(0, 1, 100)), 7)
         self.assertEqual(len(set(r.values)), 7)
 
         # Test on numpy array input
-        r = balance_util.quantize(np.random.uniform(0, 1, 100), 7)
+        r = quantize(np.random.uniform(0, 1, 100), 7)
         self.assertEqual(len(set(r.values)), 7)
 
         # Test on single integer input
-        r = balance_util.quantize(pd.Series([1]), 1)
+        r = quantize(pd.Series([1]), 1)
         self.assertEqual(len(set(r.values)), 1)
 
     def test_quantize_preserves_column_order(self) -> None:
@@ -193,7 +201,7 @@ class TestUtil(
             }
         )
 
-        result = balance_util.quantize(df, q=4, variables=["first", "third"])
+        result = quantize(df, q=4, variables=["first", "third"])
 
         self.assertListEqual(list(result.columns), ["first", "second", "third"])
         self.assertIsInstance(result.loc[0, "first"], pd.Interval)
@@ -204,7 +212,7 @@ class TestUtil(
         self.assertRaisesRegex(
             TypeError,
             "series must be numeric",
-            balance_util.quantize,
+            quantize,
             pd.Series(["x", "y", "z"]),
         )
 
@@ -235,7 +243,7 @@ class TestUtil(
             self.assertRaisesRegex(
                 TypeError,
                 "df must be a pandas DataFrame",
-                balance_util.quantize,
+                quantize,
                 123,  # Input that's not Series or DataFrame
             )
 
@@ -245,7 +253,7 @@ class TestUtil(
             {"a": (1, 2, 3, 1, 2, 1), "b": (-42, 8, 2, 50, 44, -6)},
             index=(0, 1, 2, "1 - 0", "2 - 0", "2 - 1"),
         )
-        self.assertEqual(balance_util.row_pairwise_diffs(d), e)
+        self.assertEqual(row_pairwise_diffs(d), e)
 
     def test_auto_spread(self) -> None:
         data = pd.DataFrame(
@@ -264,7 +272,7 @@ class TestUtil(
             },
             columns=("id", "key_a_value", "key_b_value"),
         )
-        self.assertEqual(expected, balance_util.auto_spread(data))
+        self.assertEqual(expected, auto_spread(data))
 
         data = pd.DataFrame(
             {
@@ -275,9 +283,7 @@ class TestUtil(
             }
         )
 
-        self.assertEqual(
-            expected, balance_util.auto_spread(data, features=["key", "value"])
-        )
+        self.assertEqual(expected, auto_spread(data, features=["key", "value"]))
 
         expected = pd.DataFrame(
             {
@@ -295,7 +301,7 @@ class TestUtil(
                 "key_b_value",
             ),
         )
-        self.assertEqual(expected, balance_util.auto_spread(data), lazy=True)
+        self.assertEqual(expected, auto_spread(data), lazy=True)
 
         data = pd.DataFrame(
             {
@@ -304,7 +310,7 @@ class TestUtil(
                 "value": (1, 1, 2, 4, 1),
             }
         )
-        self.assertWarnsRegexp("no unique groupings", balance_util.auto_spread, data)
+        self.assertWarnsRegexp("no unique groupings", auto_spread, data)
 
     def test_auto_spread_multiple_groupings(self) -> None:
         # Multiple possible groupings
@@ -323,11 +329,11 @@ class TestUtil(
             },
             columns=("id", "key_a_value", "key_b_value"),
         )
-        self.assertEqual(expected, balance_util.auto_spread(data))
-        self.assertWarnsRegexp("2 possible groupings", balance_util.auto_spread, data)
+        self.assertEqual(expected, auto_spread(data))
+        self.assertWarnsRegexp("2 possible groupings", auto_spread, data)
 
     def test_auto_aggregate(self) -> None:
-        r = balance_util.auto_aggregate(
+        r = auto_aggregate(
             pd.DataFrame(
                 {"x": [1, 2, 3, 4], "y": [1, 1, 1, np.nan], "id": [1, 1, 2, 3]}
             )
@@ -338,13 +344,13 @@ class TestUtil(
 
         self.assertRaises(
             ValueError,
-            balance_util.auto_aggregate,
+            auto_aggregate,
             pd.DataFrame({"b": ["a", "b", "b"], "id": [1, 1, 2]}),
         )
 
         self.assertRaises(
             ValueError,
-            balance_util.auto_aggregate,
+            auto_aggregate,
             r,
             None,
             "id2",
@@ -352,7 +358,7 @@ class TestUtil(
 
         self.assertRaises(
             ValueError,
-            balance_util.auto_aggregate,
+            auto_aggregate,
             r,
             None,
             aggfunc="not_sum",
@@ -371,7 +377,7 @@ class TestUtil(
 
         # Test that passing features parameter triggers deprecation warning
         with self.assertWarns(DeprecationWarning):
-            balance_util.auto_aggregate(df, features=["x", "y"])  # type: ignore[arg-type]
+            auto_aggregate(df, features=["x", "y"])  # type: ignore[arg-type]
 
     def test_fct_lump_basic_functionality(self) -> None:
         """Test basic functionality of fct_lump for category lumping.
@@ -384,20 +390,20 @@ class TestUtil(
         # Count above the threshold, value preserved
         s = pd.Series(["a"] * 95 + ["b"] * 5)
         pd.testing.assert_series_equal(
-            balance_util.fct_lump(s),
+            fct_lump(s),
             s,
             check_dtype=False,
         )
 
         # Move the threshold up
         self.assertEqual(
-            balance_util.fct_lump(s, 0.10),
+            fct_lump(s, 0.10),
             pd.Series(["a"] * 95 + ["_lumped_other"] * 5),
         )
 
         # Default threshold, slightly below number of values
         self.assertEqual(
-            balance_util.fct_lump(pd.Series(["a"] * 96 + ["b"] * 4)),
+            fct_lump(pd.Series(["a"] * 96 + ["b"] * 4)),
             pd.Series(["a"] * 96 + ["_lumped_other"] * 4),
         )
 
@@ -411,21 +417,21 @@ class TestUtil(
         """
         # Multiple categories combined
         pd.testing.assert_series_equal(
-            balance_util.fct_lump(pd.Series(["a"] * 96 + ["b"] * 2 + ["c"] * 2)),
+            fct_lump(pd.Series(["a"] * 96 + ["b"] * 2 + ["c"] * 2)),
             pd.Series(["a"] * 96 + ["_lumped_other"] * 4),
             check_dtype=False,
         )
 
         # Category already called '_lumped_other' is handled
         pd.testing.assert_series_equal(
-            balance_util.fct_lump(pd.Series(["a"] * 96 + ["_lumped_other"] * 4)),
+            fct_lump(pd.Series(["a"] * 96 + ["_lumped_other"] * 4)),
             pd.Series(["a"] * 96 + ["_lumped_other_lumped_other"] * 4),
             check_dtype=False,
         )
 
         # Categorical series type
         pd.testing.assert_series_equal(
-            balance_util.fct_lump(pd.Series(["a"] * 96 + ["b"] * 4, dtype="category")),
+            fct_lump(pd.Series(["a"] * 96 + ["b"] * 4, dtype="category")),
             pd.Series(["a"] * 96 + ["_lumped_other"] * 4),
             check_dtype=False,
         )
@@ -501,16 +507,16 @@ class TestUtil(
         wine_survey, wine_survey_copy = self._create_wine_test_data()
 
         transformations = {
-            "alcohol": lambda x: balance_util.fct_lump(x, prop=0.05),
-            "flavanoids": balance_util.quantize,
-            "total_phenols": balance_util.quantize,
-            "nonflavanoid_phenols": balance_util.quantize,
-            "color_intensity": balance_util.quantize,
-            "hue": balance_util.quantize,
-            "ash": balance_util.quantize,
-            "alcalinity_of_ash": balance_util.quantize,
-            "malic_acid": balance_util.quantize,
-            "magnesium": balance_util.quantize,
+            "alcohol": lambda x: fct_lump(x, prop=0.05),
+            "flavanoids": quantize,
+            "total_phenols": quantize,
+            "nonflavanoid_phenols": quantize,
+            "color_intensity": quantize,
+            "hue": quantize,
+            "ash": quantize,
+            "alcalinity_of_ash": quantize,
+            "malic_acid": quantize,
+            "magnesium": quantize,
         }
 
         # Generate weights for both categorical and string versions
@@ -543,7 +549,7 @@ class TestUtil(
         s = pd.Series([1, 1, 1, 2, 3, 1, 2])
         by = pd.Series(["a", "a", "a", "a", "a", "b", "b"])
         self.assertEqual(
-            balance_util.fct_lump_by(s, by, 0.5),
+            fct_lump_by(s, by, 0.5),
             pd.Series([1, 1, 1, "_lumped_other", "_lumped_other", 1, 2]),
         )
 
@@ -551,7 +557,7 @@ class TestUtil(
         s = pd.Series([1, 1, 1, 2, 3, 1, 2])
         by = pd.Series(["a", "a", "a", "a", "a", "a", "a"])
         self.assertEqual(
-            balance_util.fct_lump_by(s, by, 0.5),
+            fct_lump_by(s, by, 0.5),
             pd.Series(
                 [1, 1, 1, "_lumped_other", "_lumped_other", 1, "_lumped_other"],
             ),
@@ -563,7 +569,7 @@ class TestUtil(
             {"d": [2, 3, 1, 2], "e": ["a2", "a2", "a1", "a2"]}, index=(0, 1, 2, 3)
         )
         df = pd.concat([s, t])
-        r = balance_util.fct_lump_by(df.d, df.e, 0.5)
+        r = fct_lump_by(df.d, df.e, 0.5)
         e = pd.Series(
             [1, "_lumped_other", 1, 2, "_lumped_other", 1, 2],
             index=(0, 6, 7, 0, 1, 2, 3),

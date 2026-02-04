@@ -11,14 +11,19 @@ import balance.testutil
 import numpy as np
 import numpy.testing
 import pandas as pd
-
-# TODO: remove the use of balance_util in most cases, and just import the functions to be tested directly
-from balance import util as balance_util
 from balance.sample_class import Sample
 from balance.util import _verify_value_type
 from balance.utils.input_validation import (
+    _check_weighting_methods_input,
     _extract_series_and_weights,
+    _float_or_none,
+    _is_arraylike,
     _isinstance_sample,
+    _true_false_str_to_bool,
+    choose_variables,
+    find_items_index_in_list,
+    get_items_from_list_via_indices,
+    guess_id_column,
 )
 
 
@@ -37,7 +42,7 @@ class TestUtil(
         self.assertRaisesRegex(
             TypeError,
             "sample_df must be a pandas DataFrame",
-            balance_util._check_weighting_methods_input,
+            _check_weighting_methods_input,
             df=1,
             weights=pd.Series(1),
             object_name="sample",
@@ -45,7 +50,7 @@ class TestUtil(
         self.assertRaisesRegex(
             TypeError,
             "sample_weights must be a pandas Series",
-            balance_util._check_weighting_methods_input,
+            _check_weighting_methods_input,
             df=pd.DataFrame({"a": (1, 2)}),
             weights=1,
             object_name="sample",
@@ -53,7 +58,7 @@ class TestUtil(
         self.assertRaisesRegex(
             ValueError,
             "sample_weights must be the same length as sample_df",
-            balance_util._check_weighting_methods_input,
+            _check_weighting_methods_input,
             df=pd.DataFrame({"a": [1, 2]}),
             weights=pd.Series([1]),
             object_name="sample",
@@ -61,7 +66,7 @@ class TestUtil(
         self.assertRaisesRegex(
             ValueError,
             "sample_df index must be the same as sample_weights index",
-            balance_util._check_weighting_methods_input,
+            _check_weighting_methods_input,
             df=pd.DataFrame({"a": [1, 2]}, index=[1, 2]),
             weights=pd.Series([1, 1], index=[3, 4]),
             object_name="sample",
@@ -85,10 +90,10 @@ class TestUtil(
                 "id": (1, 2, 3),
             }
         )
-        self.assertEqual(balance_util.guess_id_column(df), "id")
+        self.assertEqual(guess_id_column(df), "id")
         self.assertWarnsRegexp(
             "Guessed id column name id for the data",
-            balance_util.guess_id_column,
+            guess_id_column,
             df,
         )
 
@@ -100,7 +105,7 @@ class TestUtil(
             }
         )
         self.assertEqual(
-            balance_util.guess_id_column(
+            guess_id_column(
                 df,
                 possible_id_columns=["user_id", "id"],
             ),
@@ -108,12 +113,12 @@ class TestUtil(
         )
         self.assertWarnsRegexp(
             "Guessed id column name user_id for the data",
-            balance_util.guess_id_column,
+            guess_id_column,
             df,
             possible_id_columns="user_id",
         )
         self.assertEqual(
-            balance_util.guess_id_column(
+            guess_id_column(
                 df,
                 possible_id_columns=["user_id", "user_id"],
             ),
@@ -124,7 +129,7 @@ class TestUtil(
             ValueError,
             "possible_id_columns cannot contain empty values",
         ):
-            balance_util.guess_id_column(
+            guess_id_column(
                 df,
                 possible_id_columns=["user_id", ""],
             )
@@ -133,7 +138,7 @@ class TestUtil(
             TypeError,
             "possible_id_columns must contain only string column names",
         ):
-            balance_util.guess_id_column(
+            guess_id_column(
                 df,
                 # pyre-ignore[6]: Intentionally passing invalid type to test error handling
                 possible_id_columns=["user_id", 1],
@@ -142,7 +147,7 @@ class TestUtil(
             TypeError,
             "possible_id_columns must be a string or a sequence of strings",
         ):
-            balance_util.guess_id_column(
+            guess_id_column(
                 df,
                 # pyre-ignore[6]: Intentionally passing invalid type to test error handling
                 possible_id_columns=1,
@@ -155,24 +160,24 @@ class TestUtil(
                 "b": (1, 2, 3),
             }
         )
-        self.assertEqual(balance_util.guess_id_column(df, column_name="b"), "b")
+        self.assertEqual(guess_id_column(df, column_name="b"), "b")
         with self.assertRaisesRegex(
             ValueError,
             "Dataframe does not have column*",
         ):
-            balance_util.guess_id_column(df, column_name="c")
+            guess_id_column(df, column_name="c")
 
         # test when no id column is passed and no id column in dataframe
         with self.assertRaisesRegex(
             ValueError,
             "Cannot guess id column name for this DataFrame. None of the possible_id_columns candidates",
         ):
-            balance_util.guess_id_column(df)
+            guess_id_column(df)
         with self.assertRaisesRegex(
             ValueError,
             "Cannot guess id column name for this DataFrame. Please provide a value in column_name or possible_id_columns",
         ):
-            balance_util.guess_id_column(df, possible_id_columns=[])
+            guess_id_column(df, possible_id_columns=[])
 
         df = pd.DataFrame(
             {
@@ -184,7 +189,7 @@ class TestUtil(
             ValueError,
             "Multiple candidate id columns found in the DataFrame. Matched columns",
         ):
-            balance_util.guess_id_column(
+            guess_id_column(
                 df,
                 possible_id_columns=["id", "user_id"],
             )
@@ -209,14 +214,14 @@ class TestUtil(
         self.assertTrue(_isinstance_sample(s))
 
     def test_isarraylike(self) -> None:
-        self.assertFalse(balance_util._is_arraylike(""))
-        self.assertFalse(balance_util._is_arraylike("test"))
-        self.assertTrue(balance_util._is_arraylike(()))
-        self.assertTrue(balance_util._is_arraylike([]))
-        self.assertTrue(balance_util._is_arraylike([1, 2]))
-        self.assertTrue(balance_util._is_arraylike(range(10)))
-        self.assertTrue(balance_util._is_arraylike(np.array([1, 2, "a"])))
-        self.assertTrue(balance_util._is_arraylike(pd.Series((1, 2, 3))))
+        self.assertFalse(_is_arraylike(""))
+        self.assertFalse(_is_arraylike("test"))
+        self.assertTrue(_is_arraylike(()))
+        self.assertTrue(_is_arraylike([]))
+        self.assertTrue(_is_arraylike([1, 2]))
+        self.assertTrue(_is_arraylike(range(10)))
+        self.assertTrue(_is_arraylike(np.array([1, 2, "a"])))
+        self.assertTrue(_is_arraylike(pd.Series((1, 2, 3))))
 
     def test_rm_mutual_nas_basic_functionality(self) -> None:
         """Test basic functionality of rm_mutual_nas with simple arrays."""
@@ -567,13 +572,13 @@ class TestUtil(
         )
 
     def test__true_false_str_to_bool(self) -> None:
-        self.assertFalse(balance_util._true_false_str_to_bool("falsE"))
-        self.assertTrue(balance_util._true_false_str_to_bool("TrUe"))
+        self.assertFalse(_true_false_str_to_bool("falsE"))
+        self.assertTrue(_true_false_str_to_bool("TrUe"))
         with self.assertRaisesRegex(
             ValueError,
             "Banana is not an accepted value, please pass either 'True' or 'False'*",
         ):
-            balance_util._true_false_str_to_bool("Banana")
+            _true_false_str_to_bool("Banana")
 
     def test__verify_value_type(self) -> None:
         """Test _verify_value_type with various inputs including error cases."""
@@ -634,7 +639,7 @@ class TestUtil(
 
         for input_value, expected_result, description in test_cases:
             with self.subTest(description=description):
-                result = balance_util._float_or_none(input_value)
+                result = _float_or_none(input_value)
                 self.assertEqual(result, expected_result)
                 if expected_result is not None:
                     self.assertIsInstance(result, float)
@@ -664,7 +669,7 @@ class TestUtil(
 
         for a_list, items, expected, description in all_test_cases:
             with self.subTest(description=description):
-                result = balance_util.find_items_index_in_list(a_list, items)
+                result = find_items_index_in_list(a_list, items)
                 self.assertEqual(result, expected)
                 if result:  # Check type only if result is not empty
                     self.assertIsInstance(result[0], int)
@@ -682,12 +687,12 @@ class TestUtil(
 
         for a_list, indices, expected, description in test_cases:
             with self.subTest(description=description):
-                result = balance_util.get_items_from_list_via_indices(a_list, indices)
+                result = get_items_from_list_via_indices(a_list, indices)
                 self.assertEqual(result, expected)
 
         # Test IndexError case separately
         with self.assertRaises(IndexError):
-            balance_util.get_items_from_list_via_indices(["a", "b", "c"], [100])
+            get_items_from_list_via_indices(["a", "b", "c"], [100])
 
 
 class TestExtractSeriesAndWeights(balance.testutil.BalanceTestCase):
@@ -732,7 +737,7 @@ class TestChooseVariablesEmptySet(balance.testutil.BalanceTestCase):
         df2 = pd.DataFrame({"a": [5, 6], "b": [7, 8]})
 
         # Empty set should be treated as None and return intersection of columns
-        result = balance_util.choose_variables(df1, df2, variables=set())
+        result = choose_variables(df1, df2, variables=set())
         self.assertIn("a", result)
         self.assertIn("b", result)
 
@@ -742,7 +747,7 @@ class TestChooseVariablesEmptySet(balance.testutil.BalanceTestCase):
         df2 = pd.DataFrame({"a": [5, 6], "c": [7, 8]})
 
         # Empty list should be treated as None
-        result = balance_util.choose_variables(df1, df2, variables=[])
+        result = choose_variables(df1, df2, variables=[])
         # Should return intersection (only 'a')
         self.assertEqual(result, ["a"])
 

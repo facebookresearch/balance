@@ -10,9 +10,7 @@ from __future__ import annotations
 import logging
 
 import balance.testutil
-
-# TODO: remove the use of balance_util in most cases, and just import the functions to be tested directly
-from balance import util as balance_util
+from balance.utils.logging_utils import _truncate_text, TruncationFormatter
 
 
 class TestUtil(
@@ -20,10 +18,10 @@ class TestUtil(
 ):
     def test_truncate_text(self) -> None:
         self.assertEqual(
-            balance_util._truncate_text("a" * 6, length=5), "a" * 5 + "..."
+            _truncate_text("a" * 6, length=5), "a" * 5 + "..."
         )
-        self.assertEqual(balance_util._truncate_text("a" * 4, length=5), "a" * 4)
-        self.assertEqual(balance_util._truncate_text("a" * 5, length=5), "a" * 5)
+        self.assertEqual(_truncate_text("a" * 4, length=5), "a" * 4)
+        self.assertEqual(_truncate_text("a" * 5, length=5), "a" * 5)
 
     def test__truncate_text(self) -> None:
         """Test _truncate_text with various string lengths."""
@@ -41,14 +39,14 @@ class TestUtil(
 
         for input_text, length, expected_result, description in test_cases:
             with self.subTest(description=description):
-                result = balance_util._truncate_text(input_text, length)
+                result = _truncate_text(input_text, length)
                 self.assertEqual(result, expected_result)
                 if len(input_text) > length:
                     self.assertEqual(len(result), length + 3)  # length + '...'
 
     def test_TruncationFormatter(self) -> None:
         """Test TruncationFormatter with long and short log messages."""
-        formatter = balance_util.TruncationFormatter("%(message)s")
+        formatter = TruncationFormatter("%(message)s")
         MAX_MESSAGE_LENGTH = 2000  # TruncationFormatter truncates at 2000 characters
         ELLIPSIS_LENGTH = 3
 

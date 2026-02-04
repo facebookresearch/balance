@@ -10,11 +10,15 @@ from __future__ import annotations
 import balance.testutil
 import numpy as np
 import pandas as pd
-
-# TODO: remove the use of balance_util in most cases, and just import the functions to be tested directly
-from balance import util as balance_util
 from balance.sample_class import Sample
 from balance.util import _verify_value_type
+from balance.utils.model_matrix import (
+    build_model_matrix,
+    dot_expansion,
+    formula_generator,
+    model_matrix,
+    process_formula,
+)
 from scipy.sparse import csc_matrix
 
 
@@ -29,42 +33,40 @@ class TestUtil(
         - Convert variable lists to combined formula strings
         - Handle unsupported formula types with appropriate errors
         """
-        self.assertEqual(balance_util.formula_generator(["a"]), "a")
-        self.assertEqual(balance_util.formula_generator(["a", "b", "c"]), "c + b + a")
+        self.assertEqual(formula_generator(["a"]), "a")
+        self.assertEqual(.formula_generator(["a", "b", "c"]), "c + b + a")
         # check exceptions
         self.assertRaisesRegex(
             ValueError,
             "This formula type is not supported",
-            balance_util.formula_generator,
+            formula_generator,
             ["aa"],
             "interaction",
         )
 
     def test_dot_expansion(self) -> None:
+        self.assertEqual(dot_expansion(".", ["a", "b", "c", "d"]), "(a+b+c+d)")
         self.assertEqual(
-            balance_util.dot_expansion(".", ["a", "b", "c", "d"]), "(a+b+c+d)"
-        )
-        self.assertEqual(
-            balance_util.dot_expansion("b:(. - a)", ["a", "b", "c", "d"]),
+            dot_expansion("b:(. - a)", ["a", "b", "c", "d"]),
             "b:((a+b+c+d) - a)",
         )
-        self.assertEqual(balance_util.dot_expansion("a*b", ["a", "b", "c", "d"]), "a*b")
+        self.assertEqual(dot_expansion("a*b", ["a", "b", "c", "d"]), "a*b")
         d = {"a": ["a1", "a2", "a1", "a1"]}
         df = pd.DataFrame(data=d)
-        self.assertEqual(balance_util.dot_expansion(".", list(df.columns)), "(a)")
+        self.assertEqual(dot_expansion(".", list(df.columns)), "(a)")
 
         # check exceptions
         self.assertRaisesRegex(
             TypeError,
             "Variables should not be empty. Please provide a list of strings.",
-            balance_util.dot_expansion,
+            dot_expansion,
             ".",
             None,
         )
         self.assertRaisesRegex(
             TypeError,
             "Variables should be a list of strings and have to be included.",
-            balance_util.dot_expansion,
+            dot_expansion,
             ".",
             df,
         )
@@ -72,7 +74,7 @@ class TestUtil(
     def test_process_formula(self) -> None:
         from patsy import EvalFactor, Term  # pyre-ignore[21]
 
-        f1 = balance_util.process_formula("a:(b+aab)", ["a", "b", "aab"])
+        f1 = process_formula("a:(b+aab)", ["a", "b", "aab"])
         self.assertEqual(
             f1.rhs_termlist,
             [
@@ -81,7 +83,7 @@ class TestUtil(
             ],
         )
 
-        f2 = balance_util.process_formula("a:(b+aab)", ["a", "b", "aab"], ["a", "b"])
+        f2 = process_formula("a:(b+aab)", ["a", "b", "aab"], ["a", "b"])
         self.assertEqual(
             f2.rhs_termlist,
             [
@@ -110,7 +112,7 @@ class TestUtil(
         self.assertRaisesRegex(
             ValueError,
             "Not all factor variables are contained in variables",
-            balance_util.process_formula,
+            process_formula,
             formula="a:(b+aab)",
             variables=["a", "b", "aab"],
             factor_variables="c",
@@ -124,12 +126,12 @@ class TestUtil(
             {"a[a1]": (1.0, 0.0, 1.0, 1.0), "a[a2]": (0.0, 1.0, 0.0, 0.0)}
         )
         # explicit formula
-        x_matrix = balance_util.build_model_matrix(df, "a")
+        x_matrix = build_model_matrix(df, "a")
         self.assertEqual(x_matrix["model_matrix"], res)
         self.assertEqual(x_matrix["model_matrix_columns"], res.columns.tolist())
 
         # formula with dot
-        x_matrix = balance_util.build_model_matrix(df, ".")
+        x_matrix = build_model_matrix(df, ".")
         res = pd.DataFrame(
             {
                 "a[a1]": (1.0, 0.0, 1.0, 1.0),
@@ -142,7 +144,7 @@ class TestUtil(
         self.assertEqual(x_matrix["model_matrix_columns"], res.columns.tolist())
 
         # formula with factor_variables
-        x_matrix = balance_util.build_model_matrix(df, ".", factor_variables=["a"])
+        x_matrix = build_model_matrix(df, ".", factor_variables=["a"])
         res = pd.DataFrame(
             {
                 "C(a, one_hot_encoding_greater_2)[a2]": (0.0, 1.0, 0.0, 0.0),
@@ -154,7 +156,7 @@ class TestUtil(
         self.assertEqual(x_matrix["model_matrix_columns"], res.columns.tolist())
 
         # Sparse output
-        x_matrix = balance_util.build_model_matrix(df, "a", return_sparse=True)
+        x_matrix = build_model_matrix(df, "a", return_sparse=True)
         res = [[1.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 0.0]]
         self.assertEqual(x_matrix["model_matrix"].toarray(), res)
         self.assertEqual(x_matrix["model_matrix_columns"], ["a[a1]", "a[a2]"])
@@ -164,7 +166,7 @@ class TestUtil(
         self.assertRaisesRegex(
             ValueError,
             "Not all factor variables are contained in df",
-            balance_util.build_model_matrix,
+            build_model_matrix,
             df,
             formula="a",
             factor_variables="c",
@@ -174,7 +176,7 @@ class TestUtil(
         self.assertRaisesRegex(
             ValueError,
             "Variable names cannot contain characters",
-            balance_util.build_model_matrix,
+            build_model_matrix,
             df,
             "a",
         )
@@ -184,7 +186,7 @@ class TestUtil(
         df = df.astype(dtype={"a": "Int64"})
         res = pd.DataFrame({"a": (1.0, 2.0, 3.0, 4.0)})
         # explicit formula
-        x_matrix = balance_util.build_model_matrix(df, "a")
+        x_matrix = build_model_matrix(df, "a")
         self.assertEqual(x_matrix["model_matrix"], res)
         self.assertEqual(x_matrix["model_matrix_columns"], res.columns.tolist())
 
@@ -209,7 +211,7 @@ class TestUtil(
                 "c[b]": (0.0, 1.0, 0.0),
             }
         )
-        r = balance_util.model_matrix(s)
+        r = model_matrix(s)
         sample_result_433 = _verify_value_type(r["sample"])
         self.assertEqual(sample_result_433, e, lazy=True)
         self.assertIsNone(r["target"])
@@ -224,7 +226,7 @@ class TestUtil(
                 "c[b]": (0.0, 1.0, 0.0),
             }
         )
-        r = balance_util.model_matrix(s_df[["a", "b", "c"]])
+        r = model_matrix(s_df[["a", "b", "c"]])
         sample_result_447 = _verify_value_type(r["sample"], pd.DataFrame)
         self.assertEqual(sample_result_447.sort_index(axis=1), e, lazy=True)
 
@@ -240,7 +242,7 @@ class TestUtil(
             )
         )
 
-        r = balance_util.model_matrix(s, t)
+        r = model_matrix(s, t)
         e_s = pd.DataFrame(
             {
                 "a": (0.0, 1.0, 2.0),
@@ -267,7 +269,7 @@ class TestUtil(
         self.assertEqual(target_result_481.sort_index(axis=1), e_t, lazy=True)
 
         # Test passing DataFrames rather than Samples
-        r = balance_util.model_matrix(
+        r = model_matrix(
             pd.DataFrame({"a": (0, 1, 2), "b": (0, None, 2), "c": ("a", "b", "a")}),
             pd.DataFrame(
                 {"a": (0, 1, 2, None), "d": (0, 2, 2, 1), "c": ("a", "b", "a", "c")}
@@ -283,7 +285,7 @@ class TestUtil(
         # Check warnings for variables not present in both
         self.assertWarnsRegexp(
             "Ignoring variables not present in all Samples",
-            balance_util.model_matrix,
+            model_matrix,
             s,
             t,
         )
@@ -292,7 +294,7 @@ class TestUtil(
         self.assertRaisesRegex(
             AssertionError,
             "sample must have more than zero rows",
-            balance_util.model_matrix,
+            model_matrix,
             pd.DataFrame(),
         )
 
@@ -305,7 +307,7 @@ class TestUtil(
                 "id": (1, 2, 3),
             }
         )
-        r = balance_util.model_matrix(s_df_bad_col_names)
+        r = model_matrix(s_df_bad_col_names)
         exp = ["_is_na_b__b[T.True]", "a______a", "b__b", "c___c[a]", "c___c[b]", "id"]
         self.assertEqual(r["model_matrix_columns_names"], exp)
         exp = {
@@ -329,7 +331,7 @@ class TestUtil(
                 "id": (1, 2, 3),
             }
         )
-        r = balance_util.model_matrix(s_df_bad_col_names)
+        r = model_matrix(s_df_bad_col_names)
         exp = [
             "_is_na_b1_[T.True]",
             "b1_",
@@ -376,7 +378,7 @@ class TestUtil(
             )
         )
         # Test variables argument
-        r = balance_util.model_matrix(s, variables=["c"])
+        r = model_matrix(s, variables=["c"])
         e = pd.DataFrame({"c[a]": (1.0, 0.0, 1.0), "c[b]": (0.0, 1.0, 0.0)})
         self.assertEqual(r["sample"], e)
         self.assertIsNone(r["target"])
@@ -385,7 +387,7 @@ class TestUtil(
         self.assertRaisesRegex(
             ValueError,
             "requested variables are not in all Samples",
-            balance_util.model_matrix,
+            model_matrix,
             s,
             t,
             ["b"],
@@ -398,9 +400,7 @@ class TestUtil(
         target_with_na = pd.DataFrame(
             {"a": [1.0, None], "b": [1.0, 2.0], "c": ["keep", "keep"]}
         )
-        add_na_result = balance_util.model_matrix(
-            sample_no_na, target_with_na, add_na=True
-        )
+        add_na_result = model_matrix(sample_no_na, target_with_na, add_na=True)
         add_na_sample = _verify_value_type(add_na_result["sample"], pd.DataFrame)
         add_na_target = _verify_value_type(add_na_result["target"], pd.DataFrame)
         self.assertIn("_is_na_a[T.True]", add_na_sample.columns)
@@ -412,9 +412,9 @@ class TestUtil(
             {"a": (0.0, 2.0), "b": (0.0, 2.0), "c[a]": (1.0, 1.0), "c[b]": (0.0, 0.0)},
             index=(0, 2),
         )
-        r = balance_util.model_matrix(s, add_na=False)
+        r = model_matrix(s, add_na=False)
         self.assertWarnsRegexp(
-            "Dropping all rows with NAs", balance_util.model_matrix, s, add_na=False
+            "Dropping all rows with NAs", model_matrix, s, add_na=False
         )
         sample_add_na = _verify_value_type(r["sample"], pd.DataFrame)
         self.assertEqual(sample_add_na.sort_index(axis=1), e)
@@ -423,7 +423,7 @@ class TestUtil(
         self.assertRaisesRegex(
             ValueError,
             "Dropping rows led to empty sample. Consider using add_na=True",
-            balance_util.model_matrix,
+            model_matrix,
             pd.DataFrame({"a": [None], "b": [None], "c": [None]}),
             add_na=False,
         )
@@ -431,7 +431,7 @@ class TestUtil(
         self.assertRaisesRegex(
             ValueError,
             "Dropping rows led to empty target. Consider using add_na=True",
-            balance_util.model_matrix,
+            model_matrix,
             pd.DataFrame({"a": [1.0], "b": [1.0], "c": ["keep"]}),
             pd.DataFrame({"a": [None], "b": [None], "c": [None]}),
             add_na=False,
@@ -446,7 +446,7 @@ class TestUtil(
                 ),
             }
         )
-        cat_result = balance_util.model_matrix(cat_df, add_na=False)["sample"]
+        cat_result = model_matrix(cat_df, add_na=False)["sample"]
         cat_result = _verify_value_type(cat_result, pd.DataFrame)
         self.assertIn("c[drop]", cat_result.columns)
         self.assertTrue((cat_result["c[drop]"] == 0.0).all())
@@ -458,7 +458,7 @@ class TestUtil(
                 "c": pd.Series(["keep", "string_only", "keep"], dtype="string"),
             }
         )
-        string_result = balance_util.model_matrix(string_df, add_na=False)["sample"]
+        string_result = model_matrix(string_df, add_na=False)["sample"]
         string_result = _verify_value_type(string_result, pd.DataFrame)
         self.assertIn("c[string_only]", string_result.columns)
         self.assertTrue((string_result["c[string_only]"] == 0.0).all())
@@ -470,7 +470,7 @@ class TestUtil(
                 "c": ["keep", "in_dropped_row", "keep"],
             }
         )
-        obj_result = balance_util.model_matrix(obj_df.copy(), add_na=False)["sample"]
+        obj_result = model_matrix(obj_df.copy(), add_na=False)["sample"]
         obj_result = _verify_value_type(obj_result, pd.DataFrame)
         self.assertIn("c[in_dropped_row]", obj_result.columns)
         self.assertTrue((obj_result["c[in_dropped_row]"] == 0.0).all())
@@ -482,7 +482,7 @@ class TestUtil(
                 "c": ["keep", "target_only"],
             }
         )
-        combined = balance_util.model_matrix(obj_df.copy(), target_df, add_na=False)
+        combined = model_matrix(obj_df.copy(), target_df, add_na=False)
         sample_combined = _verify_value_type(combined["sample"], pd.DataFrame)
         target_combined = _verify_value_type(combined["target"], pd.DataFrame)
         self.assertIn("c[target_only]", sample_combined.columns)
@@ -491,7 +491,7 @@ class TestUtil(
         self.assertTrue((target_combined["c[target_only]"] == 0.0).all())
 
         #  Test return_type argument
-        r_one = balance_util.model_matrix(s, t, return_type="one")["model_matrix"]
+        r_one = model_matrix(s, t, return_type="one")["model_matrix"]
         e_s = pd.DataFrame(
             {
                 "a": (0.0, 1.0, 2.0),
@@ -514,14 +514,12 @@ class TestUtil(
         self.assertEqual(r_one.sort_index(axis=1), pd.concat((e_s, e_t)), lazy=True)
 
         # Test return_var_type argument
-        r_df = balance_util.model_matrix(
-            s, t, return_type="one", return_var_type="dataframe"
-        )["model_matrix"]
+        r_df = model_matrix(s, t, return_type="one", return_var_type="dataframe")[
+            "model_matrix"
+        ]
         r_df = _verify_value_type(r_df, pd.DataFrame)
         self.assertEqual(r_df.sort_index(axis=1), pd.concat((e_s, e_t)), lazy=True)
-        r_mat = balance_util.model_matrix(
-            s, t, return_type="one", return_var_type="matrix"
-        )
+        r_mat = model_matrix(s, t, return_type="one", return_var_type="matrix")
         model_matrix_mat = _verify_value_type(r_mat["model_matrix"])
         self.assertEqual(
             model_matrix_mat,
@@ -529,9 +527,7 @@ class TestUtil(
             .reindex(columns=r_mat["model_matrix_columns_names"])
             .values,
         )
-        r_sparse = balance_util.model_matrix(
-            s, t, return_type="one", return_var_type="sparse"
-        )
+        r_sparse = model_matrix(s, t, return_type="one", return_var_type="sparse")
         model_matrix_sparse = _verify_value_type(r_sparse["model_matrix"], csc_matrix)
         self.assertEqual(
             model_matrix_sparse.toarray(),
@@ -547,7 +543,7 @@ class TestUtil(
 
         # Test formula argument
         result_a_plus_b = _verify_value_type(
-            balance_util.model_matrix(s, formula="a + b")["sample"], pd.DataFrame
+            model_matrix(s, formula="a + b")["sample"], pd.DataFrame
         )
         self.assertEqual(
             result_a_plus_b.sort_index(axis=1),
@@ -555,14 +551,14 @@ class TestUtil(
         )
 
         result_b = _verify_value_type(
-            balance_util.model_matrix(s, formula="b ")["sample"], pd.DataFrame
+            model_matrix(s, formula="b ")["sample"], pd.DataFrame
         )
         self.assertEqual(
             result_b.sort_index(axis=1),
             pd.DataFrame({"b": (0.0, 0.0, 2.0)}),
         )
         result_a_times_c = _verify_value_type(
-            balance_util.model_matrix(s, formula="a * c ")["sample"], pd.DataFrame
+            model_matrix(s, formula="a * c ")["sample"], pd.DataFrame
         )
         self.assertEqual(
             result_a_times_c.sort_index(axis=1),
@@ -576,7 +572,7 @@ class TestUtil(
             ),
         )
         result_a_b_list = _verify_value_type(
-            balance_util.model_matrix(s, formula=["a", "b"])["sample"], pd.DataFrame
+            model_matrix(s, formula=["a", "b"])["sample"], pd.DataFrame
         )
         self.assertEqual(
             result_a_b_list.sort_index(axis=1),
@@ -585,25 +581,23 @@ class TestUtil(
 
         # Test penalty_factor argument
         self.assertEqual(
-            balance_util.model_matrix(s, formula=["a", "b"])["penalty_factor"],
+            model_matrix(s, formula=["a", "b"])["penalty_factor"],
             np.array([1, 1]),
         )
         self.assertEqual(
-            balance_util.model_matrix(s, formula=["a", "b"], penalty_factor=[1, 2])[
+            model_matrix(s, formula=["a", "b"], penalty_factor=[1, 2])[
                 "penalty_factor"
             ],
             np.array([1, 2]),
         )
         self.assertEqual(
-            balance_util.model_matrix(s, formula="a+b", penalty_factor=[2])[
-                "penalty_factor"
-            ],
+            model_matrix(s, formula="a+b", penalty_factor=[2])["penalty_factor"],
             np.array([2, 2]),
         )
         self.assertRaisesRegex(
             AssertionError,
             "penalty factor and formula must have the same length",
-            balance_util.model_matrix,
+            model_matrix,
             s,
             formula="a+b",
             penalty_factor=[1, 2],
@@ -618,7 +612,7 @@ class TestUtil(
                 "b": (0.0, 0.0, 2.0),
             }
         )
-        r = balance_util.model_matrix(s, one_hot_encoding=True)
+        r = model_matrix(s, one_hot_encoding=True)
         sample_result_750 = _verify_value_type(r["sample"], pd.DataFrame)
         self.assertEqual(sample_result_750.sort_index(axis=1), e, lazy=True)
 
@@ -686,7 +680,7 @@ class TestModelMatrixEdgeCases(balance.testutil.BalanceTestCase):
         with self.assertRaisesRegex(
             ValueError, "Variable names cannot contain characters"
         ):
-            balance_util.model_matrix(sample_df, target_df)
+            model_matrix(sample_df, target_df)
 
     def test_model_matrix_with_bracket_in_multiple_variables(self) -> None:
         """Test that model_matrix reports all bracket-containing variables."""
@@ -708,7 +702,7 @@ class TestModelMatrixEdgeCases(balance.testutil.BalanceTestCase):
         with self.assertRaisesRegex(
             ValueError, "Variable names cannot contain characters.*\\[.*\\]"
         ):
-            balance_util.model_matrix(sample_df, target_df)
+            model_matrix(sample_df, target_df)
 
     def test_model_matrix_empty_target_after_dropna(self) -> None:
         """Test that model_matrix raises error when target is empty after dropna (line 362)."""
@@ -717,4 +711,4 @@ class TestModelMatrixEdgeCases(balance.testutil.BalanceTestCase):
         target_df = pd.DataFrame({"a": [np.nan, np.nan, np.nan], "b": [1, 2, 3]})
 
         with self.assertRaisesRegex(ValueError, "Dropping rows led to empty target"):
-            balance_util.model_matrix(sample_df, target_df, add_na=False)
+            model_matrix(sample_df, target_df, add_na=False)
