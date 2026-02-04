@@ -41,7 +41,7 @@ The CBPS implementation in balance was written by Luke Sonnet and Tal Sarig.
 
 A full description of the methodology and details are described in [Imai and Ratkovic (2014)](https://imai.fas.harvard.edu/research/files/CBPS.pdf). We provide here a short description of the methodology.
 
-Consider a sample of respondents of size $n$ and a random sample from a target populaiton of size $N$. For each $i \in Sample \cup Target$, let $I_i$ be the indicator for inclusion in sample (0 for target and 1 for sample) and $X_i$ be a vector of observed covariates. The propensity score is defined as the conditional probability of being included in the sample conditioned on the covariates, $P(I_i=1 | X_i=x)$.
+Consider a sample of respondents of size $n$ and a random sample from a target population of size $N$. For each $i \in Sample \cup Target$, let $I_i$ be the indicator for inclusion in sample (0 for target and 1 for sample) and $X_i$ be a vector of observed covariates. The propensity score is defined as the conditional probability of being included in the sample conditioned on the covariates, $P(I_i=1 | X_i=x)$.
 
 Let $Y_i$ be the potential outcome observed only for $i\in Sample$.
 

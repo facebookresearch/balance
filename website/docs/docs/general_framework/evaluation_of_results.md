@@ -50,7 +50,7 @@ This will return several results:
 - Covariate mean ASMD improvement: ASMD is "Absolute Standardized Mean Difference". For continuous variables, this measure is the same as taking the absolute value of [Cohen's d statistic](https://en.wikipedia.org/wiki/Effect_size#Cohen's_d) (also related to [SSMD](https://en.wikipedia.org/wiki/Strictly_standardized_mean_difference)), when using the (weighted) standard deviation of the target population. For categorical variables it uses [one-hot encoding](https://en.wikipedia.org/wiki/One-hot).
 - [Design effect](https://en.wikipedia.org/wiki/Design_effect)
 - Covariate mean Adjusted Standardized Mean Deviation (ASMD) versus Unadjusted covariate mean ASMD
-- Model proportion deviance explained (if inverese propensity weighting method was used)
+- Model proportion deviance explained (if inverse propensity weighting method was used)
 
 Output:
 
@@ -174,7 +174,7 @@ adjusted.weights().design_effect()
 The `.summary()` method gives us the response rates (if we have missing values in the outcome), and the weighted means before and after applying the weights:
 
 ```python
-print(adjust.outcomes().summary())
+print(adjusted.outcomes().summary())
 ```
 
 To get:
@@ -193,7 +193,7 @@ n     1000.0
 %      100.0
 ```
 
-For example, we see that the estimated mean happiness according to our sample is 48 without any adjustment and 54 with adjustment.  The following shows the distribution of happinnes before and after applying the weights:
+For example, we see that the estimated mean happiness according to our sample is 48 without any adjustment and 54 with adjustment.  The following shows the distribution of happiness before and after applying the weights:
 
 ```python
 adjusted.outcomes().plot()
