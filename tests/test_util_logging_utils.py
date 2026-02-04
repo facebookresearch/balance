@@ -17,9 +17,7 @@ class TestUtil(
     balance.testutil.BalanceTestCase,
 ):
     def test_truncate_text(self) -> None:
-        self.assertEqual(
-            _truncate_text("a" * 6, length=5), "a" * 5 + "..."
-        )
+        self.assertEqual(_truncate_text("a" * 6, length=5), "a" * 5 + "...")
         self.assertEqual(_truncate_text("a" * 4, length=5), "a" * 4)
         self.assertEqual(_truncate_text("a" * 5, length=5), "a" * 5)
 
