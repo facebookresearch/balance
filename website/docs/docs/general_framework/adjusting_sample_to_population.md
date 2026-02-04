@@ -30,9 +30,9 @@ The output of this method is an adjusted `Sample` class object of the form:
             target:
                  
 	        balance Sample object
-	        10000 observations x 4 variables: gender,age_group,income,happiness
+	        10000 observations x 3 variables: gender,age_group,income
 	        id_column: id, weight_column: weight,
-	        outcome_columns: None
+	        outcome_columns: happiness
 	        
             3 common variables: gender,age_group,income
 ```
