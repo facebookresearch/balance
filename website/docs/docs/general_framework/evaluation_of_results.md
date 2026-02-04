@@ -135,7 +135,7 @@ mean(asmd)          0.119597    0.326799           0.207202
 ```
 
 We can see that on average the ASMD improved from 0.33 to 0.12 thanks to the weights. We got improvements in income, gender, and age_group.
-Although we can see that `age_group[T.25-34]` and `gender[_NA]` didn't get improved.
+Although we can see that `age_group[T.25-34]` and `gender[_NA]` didn't improve.
 
 
 ## Understanding the model
