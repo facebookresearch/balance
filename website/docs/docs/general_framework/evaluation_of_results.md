@@ -39,11 +39,11 @@ Output:
                 
             target:
                  
-	        balance Sample object
-	        10000 observations x 3 variables: gender,age_group,income
-	        id_column: id, weight_column: weight,
-	        outcome_columns: happiness
-	        
+            balance Sample object
+            10000 observations x 3 variables: gender,age_group,income
+            id_column: id, weight_column: weight,
+            outcome_columns: happiness
+            
             3 common variables: gender,age_group,income
             
 ```
@@ -111,7 +111,7 @@ gender[_NA]             0.086776   0.089800    0.088000
 income                 10.060068  12.737608    6.297302
 ```
 
-The `self` is the adjusted ASMD, while `unadjusted` is the unadjusted ASMD.
+Here, `self` is the adjusted (weighted) covariate mean, `target` is the target mean, and `unadjusted` is the unadjusted sample mean.
 
 
 And `.asmd()` to get ASMD:
@@ -200,7 +200,7 @@ adjusted.weights().design_effect()
 The `.summary()` method gives us the response rates (if we have missing values in the outcome), and the weighted means before and after applying the weights:
 
 ```python
-print(adjust.outcomes().summary())
+print(adjusted.outcomes().summary())
 ```
 
 To get:
@@ -209,6 +209,11 @@ To get:
 Mean outcomes (with 95% confidence intervals):
 source       self  target  unadjusted           self_ci         target_ci     unadjusted_ci
 happiness  53.295  56.278      48.559  (52.096, 54.495)  (55.961, 56.595)  (47.669, 49.449)
+```
+
+Note: The `target` column and target-based response rates appear only when the target `Sample` has outcome data. If your target has no outcomes, you will only see `self` and `unadjusted` columns.
+
+```
 
 Weights impact on outcomes (t_test):
            mean_yw0  mean_yw1  mean_diff  diff_ci_lower  diff_ci_upper  t_stat  p_value       n
