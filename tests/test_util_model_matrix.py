@@ -34,7 +34,7 @@ class TestUtil(
         - Handle unsupported formula types with appropriate errors
         """
         self.assertEqual(formula_generator(["a"]), "a")
-        self.assertEqual(.formula_generator(["a", "b", "c"]), "c + b + a")
+        self.assertEqual(formula_generator(["a", "b", "c"]), "c + b + a")
         # check exceptions
         self.assertRaisesRegex(
             ValueError,
