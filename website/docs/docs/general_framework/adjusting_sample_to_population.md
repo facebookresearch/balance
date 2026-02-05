@@ -15,24 +15,31 @@ adjusted = sample.adjust()
 The output of this method is an adjusted `Sample` class object of the form:
 
 ```
-    Adjusted balance Sample object with target set using ipw
-    1000 observations x 3 variables: gender,age_group,income
-    id_column: id, weight_column: weight,
-    outcome_columns: happiness
+        Adjusted balance Sample object with target set using ipw
+        1000 observations x 3 variables: gender,age_group,income
+        id_column: id, weight_column: weight,
+        outcome_columns: happiness
 
-        target:
+        adjustment details:
+            method: ipw
+            weight trimming mean ratio: 20
+            design effect (Deff): 1.880
+            effective sample size proportion (ESSP): 0.532
+            effective sample size (ESS): 531.9
 
-            balance Sample object
-            10000 observations x 3 variables: gender,age_group,income
-            id_column: id, weight_column: weight,
-            outcome_columns: None
+            target:
 
-        3 common variables: income,gender,age_group
+                balance Sample object
+                10000 observations x 3 variables: gender,age_group,income
+                id_column: id, weight_column: weight,
+                outcome_columns: happiness
+
+            3 common variables: gender,age_group,income
 ```
 Note that the `adjust` method in balance is performing three main steps:
 1. **Pre-processing** of the data - getting data ready for adjustment using best practices in the field:
     * Handling missing values - balance handles missing values automatically by adding a column '_is_na' to any variable that contains missing values. The advantage of this is that these are then considered as a separate category for the adjustment.
-    * Feature engineering -  by default, balance applies feature engineering to be able to fit the covariate distribution better, and not only the first moment. Specifically, each continues variable is bucketed into 10 quantiles buckets. Furthermore, rare categories in categorical variables are grouped together so to avoid overfitting rare events.
+    * Feature engineering -  by default, balance applies feature engineering to be able to fit the covariate distribution better, and not only the first moment. Specifically, each continuous variable is bucketed into 10 quantiles buckets. Furthermore, rare categories in categorical variables are grouped together so to avoid overfitting rare events.
 2. **Fitting the model** and calculating the weights: the model fitted depends on the ```method``` chosen by the user. Current options are [inverse propensity score weighting](../statistical_methods/ipw.md) using regularized logistic regression (```ipw```), [covariate balancing propensity score](../statistical_methods/cbps.md) (```cbps```), [post-stratification](../statistical_methods/poststratify.md) (```poststratify```), and [raking](../statistical_methods/rake.md) (```rake```).
 3. **Post-processing** of the weights:
     * Trimming weights - balance trims the weights in order to avoid over fitting of the model and unnecessary variance inflation.
