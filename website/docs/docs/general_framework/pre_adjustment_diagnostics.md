@@ -133,7 +133,7 @@ To make these plots, simply use the following:
 sample_with_target.covars().plot(variables = ['age_group', 'gender', ])
 ```
 
-### Plotting all varibales
+### Plotting all variables
 
 If you do not specify a variables list in the plot method, all covariates of you sample object will be plotted:
 
