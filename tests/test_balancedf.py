@@ -24,6 +24,7 @@ from balance.sample_class import Sample
 from balance.stats_and_plots import weighted_comparisons_stats
 from balance.testutil import BalanceTestCase, tempfile_path
 from balance.utils.model_matrix import model_matrix
+from patsy import PatsyError  # pyre-ignore[21]
 
 
 class TestDataFactory:
@@ -1758,6 +1759,11 @@ class TestBalanceDF(BalanceTestCase):
             ],
         )
         pd.testing.assert_frame_equal(cached_after, cached_before)
+
+    def testBalanceDF_model_matrix_with_invalid_formula(self) -> None:
+        covars = s1.covars()
+        with self.assertRaises(PatsyError):
+            covars.model_matrix(formula="missing_column + a")
 
     def test_check_if_not_BalanceDF(self) -> None:
         with self.assertRaisesRegex(ValueError, "number must be balancedf_class"):
