@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 from balance.stats_and_plots import weighted_comparisons_plots, weighted_stats
 from balance.stats_and_plots.weighted_comparisons_plots import DataFrameWithWeight
-from balance.util import _verify_value_type
+from balance.util import _assert_type
 
 
 class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
@@ -201,7 +201,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
             library="seaborn",
             return_axes=True,
         )
-        plot_result = _verify_value_type(plot_result, list)
+        plot_result = _assert_type(plot_result, list)
         plot_axes = plot_result[0]
 
         # Verify that the returned object is a matplotlib Axes
@@ -375,7 +375,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
                 dist_type=dist_type,
                 return_axes=True,
             )
-            plot_result = _verify_value_type(plot_result, list)
+            plot_result = _assert_type(plot_result, list)
             axes_types.append(type(plot_result[0]))
 
         # Verify all returned objects are matplotlib Axes subclasses
@@ -433,7 +433,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
 
         # Verify dictionary structure and contents
         self.assertEqual(type(dict_of_figures), dict)
-        dict_of_figures = _verify_value_type(dict_of_figures, dict)
+        dict_of_figures = _assert_type(dict_of_figures, dict)
         self.assertEqual(
             sorted(dict_of_figures.keys()),
             ["v1", "v2", "v3"],
@@ -1277,7 +1277,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         self.assertIn("v1", result_weighted)  # type: ignore[arg-type]
 
         # Extract trace data from weighted plot
-        result_weighted = _verify_value_type(result_weighted, dict)
+        result_weighted = _assert_type(result_weighted, dict)
         fig_weighted = result_weighted["v1"]
         traces_weighted = fig_weighted.data
         if len(traces_weighted) >= 1:
@@ -1317,7 +1317,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         )
 
         # Extract trace data from unweighted plot
-        result_unweighted = _verify_value_type(result_unweighted, dict)
+        result_unweighted = _assert_type(result_unweighted, dict)
         fig_unweighted = result_unweighted["v1"]
         traces_unweighted = fig_unweighted.data
         if len(traces_unweighted) >= 1:
@@ -1378,7 +1378,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         self.assertIn("v1", result_weighted)  # type: ignore[arg-type]
 
         # Extract trace data from weighted plot
-        result_weighted = _verify_value_type(result_weighted, dict)
+        result_weighted = _assert_type(result_weighted, dict)
         fig_weighted = result_weighted["v1"]
         traces_weighted = fig_weighted.data
         if len(traces_weighted) >= 2:
@@ -1423,7 +1423,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         )
 
         # Extract trace data from unweighted plot
-        result_unweighted = _verify_value_type(result_unweighted, dict)
+        result_unweighted = _assert_type(result_unweighted, dict)
         fig_unweighted = result_unweighted["v1"]
         traces_unweighted = fig_unweighted.data
         if len(traces_unweighted) >= 2:
@@ -1486,7 +1486,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         self.assertIn("cat1", result_weighted)  # type: ignore[arg-type]
 
         # Extract trace data from weighted plot
-        result_weighted = _verify_value_type(result_weighted, dict)
+        result_weighted = _assert_type(result_weighted, dict)
         fig_weighted = result_weighted["cat1"]
         traces_weighted = fig_weighted.data
         if len(traces_weighted) >= 2:
@@ -1531,7 +1531,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         )
 
         # Extract trace data from unweighted plot
-        result_unweighted = _verify_value_type(result_unweighted, dict)
+        result_unweighted = _assert_type(result_unweighted, dict)
         fig_unweighted = result_unweighted["cat1"]
         traces_unweighted = fig_unweighted.data
         if len(traces_unweighted) >= 2:

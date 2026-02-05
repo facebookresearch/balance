@@ -262,84 +262,84 @@ class TestTestUtil_BalanceTestCase_Print(
 class TestNoneThrows(
     balance.testutil.BalanceTestCase,
 ):
-    """Test cases for the _verify_value_type utility function."""
+    """Test cases for the _assert_type utility function."""
 
-    def test__verify_value_type_returns_non_none_value(self) -> None:
-        """Test that _verify_value_type returns the value when it is not None."""
+    def test__assert_type_returns_non_none_value(self) -> None:
+        """Test that _assert_type returns the value when it is not None."""
         value = "test_value"
-        result = balance.testutil._verify_value_type(value)
+        result = balance.testutil._assert_type(value)
         self.assertEqual(result, "test_value")
 
-    def test__verify_value_type_raises_value_error_on_none(self) -> None:
-        """Test that _verify_value_type raises ValueError when value is None."""
+    def test__assert_type_raises_value_error_on_none(self) -> None:
+        """Test that _assert_type raises ValueError when value is None."""
         with self.assertRaises(ValueError) as context:
-            balance.testutil._verify_value_type(None)
+            balance.testutil._assert_type(None)
         self.assertIn("Unexpected None value", str(context.exception))
 
-    def test__verify_value_type_with_correct_type_single_type(self) -> None:
-        """Test that _verify_value_type accepts value with correct single type."""
+    def test__assert_type_with_correct_type_single_type(self) -> None:
+        """Test that _assert_type accepts value with correct single type."""
         df = pd.DataFrame({"a": [1, 2, 3]})
-        result = balance.testutil._verify_value_type(df, pd.DataFrame)
+        result = balance.testutil._assert_type(df, pd.DataFrame)
         self.assertIsInstance(result, pd.DataFrame)
         self.assertEqual(result, df)
 
-    def test__verify_value_type_with_incorrect_type_single_type(self) -> None:
-        """Test that _verify_value_type raises TypeError when value has incorrect single type."""
+    def test__assert_type_with_incorrect_type_single_type(self) -> None:
+        """Test that _assert_type raises TypeError when value has incorrect single type."""
         value = "not a dataframe"
         with self.assertRaises(TypeError) as context:
-            balance.testutil._verify_value_type(value, pd.DataFrame)
+            balance.testutil._assert_type(value, pd.DataFrame)
         self.assertIn("Expected type", str(context.exception))
         self.assertIn("DataFrame", str(context.exception))
         self.assertIn("str", str(context.exception))
 
-    def test__verify_value_type_with_correct_type_tuple_of_types(self) -> None:
-        """Test that _verify_value_type accepts value when it matches one of multiple types."""
+    def test__assert_type_with_correct_type_tuple_of_types(self) -> None:
+        """Test that _assert_type accepts value when it matches one of multiple types."""
         # Test with string (first type in tuple)
         str_value = "test"
         # pyre-fixme[6]: Tuple types work at runtime but overloads don't support union narrowing
-        result_str = balance.testutil._verify_value_type(str_value, (str, int))
+        result_str = balance.testutil._assert_type(str_value, (str, int))
         self.assertEqual(result_str, "test")
 
         # Test with int (second type in tuple)
         int_value = 42
         # pyre-fixme[6]: Tuple types work at runtime but overloads don't support union narrowing
-        result_int = balance.testutil._verify_value_type(int_value, (str, int))
+        result_int = balance.testutil._assert_type(int_value, (str, int))
         self.assertEqual(result_int, 42)
 
-    def test__verify_value_type_with_incorrect_type_tuple_of_types(self) -> None:
-        """Test that _verify_value_type raises TypeError when value doesn't match any type in tuple."""
+    def test__assert_type_with_incorrect_type_tuple_of_types(self) -> None:
+        """Test that _assert_type raises TypeError when value doesn't match any type in tuple."""
         value = 3.14  # float, not in (str, int)
         with self.assertRaises(TypeError) as context:
             # pyre-fixme[6]: Tuple types work at runtime but overloads don't support union narrowing
-            balance.testutil._verify_value_type(value, (str, int))
+            balance.testutil._assert_type(value, (str, int))
         self.assertIn("Expected type", str(context.exception))
         self.assertIn("float", str(context.exception))
 
-    def test__verify_value_type_without_type_check(self) -> None:
-        """Test that _verify_value_type works without type checking (backward compatibility)."""
+    def test__assert_type_without_type_check(self) -> None:
+        """Test that _assert_type works without type checking (backward compatibility)."""
         # Test with various types without type checking
-        self.assertEqual(balance.testutil._verify_value_type("test"), "test")
-        self.assertEqual(balance.testutil._verify_value_type(42), 42)
-        self.assertEqual(balance.testutil._verify_value_type([1, 2, 3]), [1, 2, 3])
+        self.assertEqual(balance.testutil._assert_type("test"), "test")
+        self.assertEqual(balance.testutil._assert_type(42), 42)
+        self.assertEqual(balance.testutil._assert_type([1, 2, 3]), [1, 2, 3])
 
-    def test__verify_value_type_with_none_and_type_check(self) -> None:
-        """Test that _verify_value_type raises ValueError for None even when type checking is enabled."""
+    def test__assert_type_with_none_and_type_check(self) -> None:
+        """Test that _assert_type raises ValueError for None even when type checking is enabled."""
         # ValueError should be raised before TypeError check
         with self.assertRaises(ValueError) as context:
-            balance.testutil._verify_value_type(None, pd.DataFrame)
+            balance.testutil._assert_type(None, pd.DataFrame)
         self.assertIn("Unexpected None value", str(context.exception))
 
-    def test__verify_value_type_with_numpy_array(self) -> None:
-        """Test that _verify_value_type works with numpy arrays."""
+    def test__assert_type_with_numpy_array(self) -> None:
+        """Test that _assert_type works with numpy arrays."""
         arr = np.array([1, 2, 3])
-        result = balance.testutil._verify_value_type(arr, np.ndarray)
+        result = balance.testutil._assert_type(arr, np.ndarray)
         self.assertIsInstance(result, np.ndarray)
         np.testing.assert_array_equal(result, arr)
 
-    def test__verify_value_type_with_pandas_series(self) -> None:
-        """Test that _verify_value_type works with pandas Series."""
+    def test__assert_type_with_pandas_series(self) -> None:
+        """Test that _assert_type works with pandas Series."""
         series = pd.Series([1, 2, 3])
-        result = balance.testutil._verify_value_type(series, pd.Series)
+        result = balance.testutil._assert_type(series, pd.Series)
         self.assertIsInstance(result, pd.Series)
         pd.testing.assert_series_equal(result, series)
 

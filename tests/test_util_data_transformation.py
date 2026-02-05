@@ -13,7 +13,7 @@ import balance.testutil
 import numpy as np
 import pandas as pd
 from balance.sample_class import Sample
-from balance.util import _verify_value_type
+from balance.util import _assert_type
 from balance.utils.data_transformation import (
     add_na_indicator,
     auto_aggregate,
@@ -530,8 +530,8 @@ class TestUtil(
         # Check that model coefficients are identical
         output_cat_var_model = output_cat_var.model()
         output_string_var_model = output_string_var.model()
-        output_cat_var_model = _verify_value_type(output_cat_var_model)
-        output_string_var_model = _verify_value_type(output_string_var_model)
+        output_cat_var_model = _assert_type(output_cat_var_model)
+        output_string_var_model = _assert_type(output_string_var_model)
         self.assertEqual(
             output_cat_var_model["perf"]["coefs"],
             output_string_var_model["perf"]["coefs"],

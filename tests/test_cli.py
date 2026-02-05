@@ -16,7 +16,7 @@ import balance.testutil
 import numpy as np
 import pandas as pd
 from balance.cli import BalanceCLI, make_parser
-from balance.util import _float_or_none, _verify_value_type
+from balance.util import _float_or_none, _assert_type
 from numpy import dtype
 from sklearn.linear_model import LogisticRegression
 
@@ -308,7 +308,7 @@ class TestCli(
         self.assertEqual(kwargs["solver"], "liblinear")
         self.assertEqual(kwargs["max_iter"], 321)
 
-        model = _verify_value_type(cli.logistic_regression_model())
+        model = _assert_type(cli.logistic_regression_model())
         self.assertIsInstance(model, LogisticRegression)
         if isinstance(model, LogisticRegression):
             self.assertEqual(model.solver, "liblinear")

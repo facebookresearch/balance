@@ -266,7 +266,7 @@
     compatibility
   - Enhanced plotting function type safety with `TypedDict` definitions and
     proper type narrowing
-  - Replaced assert-based type narrowing with `_verify_value_type()` helper for
+  - Replaced assert-based type narrowing with `_assert_type()` helper for
     better error messages and pyre-strict compliance
 
 - **Renamed Balance**_DF to BalanceDF_\*\*\*\*

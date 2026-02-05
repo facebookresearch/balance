@@ -27,7 +27,7 @@ from balance.stats_and_plots import (
 )
 from balance.typing import FilePathOrBuffer
 from balance.util import find_items_index_in_list, get_items_from_list_via_indices
-from balance.utils.input_validation import _verify_value_type
+from balance.utils.input_validation import _assert_type
 from IPython.lib.display import FileLink
 from plotly.graph_objs import Figure
 
@@ -460,7 +460,7 @@ class BalanceDF:
                 )["model_matrix"]
             return self._model_matrix
 
-        return _verify_value_type(
+        return _assert_type(
             balance_util.model_matrix(
                 self.df, add_na=True, return_type="one", formula=formula
             )["model_matrix"],
