@@ -44,15 +44,15 @@ sample_with_target.covars().mean().T
 An example of the output:
 
 ```
-source                    self     target
-_is_na_gender[T.True]  0.08800   0.089800
-age_group[T.25-34]     0.30900   0.297400
-age_group[T.35-44]     0.17200   0.299200
-age_group[T.45+]       0.04600   0.206300
-gender[Female]         0.26800   0.455100
-gender[Male]           0.64400   0.455100
-gender[_NA]            0.08800   0.089800
-income                 5.99102  12.737608
+source                     self     target
+_is_na_gender[T.True]  0.088000   0.089800
+age_group[T.25-34]     0.300000   0.297400
+age_group[T.35-44]     0.156000   0.299200
+age_group[T.45+]       0.053000   0.206300
+gender[Female]         0.268000   0.455100
+gender[Male]           0.644000   0.455100
+gender[_NA]            0.088000   0.089800
+income                 6.297302  12.737608
 ```
 
 (TODO: the one hot encoding acts a bit differently for different variables - this will be resolved in future releases)
@@ -70,14 +70,14 @@ An example of the output:
 
 ```
 source                  self
-age_group[T.25-34]  0.025375
-age_group[T.35-44]  0.277771
-age_group[T.45+]    0.396127
+age_group[T.25-34]  0.005688
+age_group[T.35-44]  0.312711
+age_group[T.45+]    0.378828
 gender[Female]      0.375699
 gender[Male]        0.379314
 gender[_NA]         0.006296
-income              0.517721
-mean(asmd)          0.334860
+income              0.494217
+mean(asmd)          0.326799
 ```
 
 For categorical variables the ASMD can be calculated as the average of the ASMD applied to each of the [one-hot encoding](https://en.wikipedia.org/wiki/One-hot) of the categories of the variable by using the `aggregate_by_main_covar` argument:
@@ -90,10 +90,10 @@ The output:
 
 ```
 source          self
-age_group   0.233091
+age_group   0.232409
 gender      0.253769
-income      0.517721
-mean(asmd)  0.334860
+income      0.494217
+mean(asmd)  0.326799
 ```
 
 An average ASMD is calculated for all covariates. It is a simple average of the ASMD for each covariate.  Each ASMD value of categorical variable is used once after aggregated the ASMD from all the [dummy variables](https://en.wikipedia.org/wiki/Dummy_variable_(statistics)).
@@ -133,7 +133,7 @@ To make these plots, simply use the following:
 sample_with_target.covars().plot(variables = ['age_group', 'gender', ])
 ```
 
-### Plotting all varibales
+### Plotting all variables
 
 If you do not specify a variables list in the plot method, all covariates of you sample object will be plotted:
 
