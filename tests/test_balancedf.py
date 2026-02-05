@@ -14,7 +14,6 @@ from unittest.mock import patch, PropertyMock
 import IPython.display
 import numpy as np
 import pandas as pd
-from balance.utils.model_matrix import model_matrix
 from balance.balancedf_class import (  # noqa
     BalanceDF,
     BalanceDFCovars,  # noqa
@@ -24,6 +23,7 @@ from balance.balancedf_class import (  # noqa
 from balance.sample_class import Sample
 from balance.stats_and_plots import weighted_comparisons_stats
 from balance.testutil import BalanceTestCase, tempfile_path
+from balance.utils.model_matrix import model_matrix
 
 
 class TestDataFactory:
