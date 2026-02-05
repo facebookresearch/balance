@@ -11,7 +11,7 @@ import balance.testutil
 import numpy as np
 import pandas as pd
 from balance.datasets import load_cbps_data, load_data, load_sim_data
-from balance.util import _verify_value_type
+from balance.util import _assert_type
 
 
 class TestDatasets(
@@ -20,8 +20,8 @@ class TestDatasets(
     def test_load_data(self) -> None:
         target_df, sample_df = load_data()
 
-        sample_df = _verify_value_type(sample_df)
-        target_df = _verify_value_type(target_df)
+        sample_df = _assert_type(sample_df)
+        target_df = _assert_type(target_df)
 
         self.assertEqual(sample_df.shape, (1000, 5))
         self.assertEqual(target_df.shape, (10000, 5))
@@ -59,8 +59,8 @@ class TestDatasets(
     def test_load_data_cbps(self) -> None:
         target_df, sample_df = load_data("sim_data_cbps")
 
-        sample_df = _verify_value_type(sample_df)
-        target_df = _verify_value_type(target_df)
+        sample_df = _assert_type(sample_df)
+        target_df = _assert_type(target_df)
 
         self.assertEqual(sample_df.shape, (246, 7))
         self.assertEqual(target_df.shape, (254, 7))
@@ -110,8 +110,8 @@ class TestDatasets(
         self.assertIsInstance(target_df, pd.DataFrame)
         self.assertIsInstance(sample_df, pd.DataFrame)
 
-        target_df = _verify_value_type(target_df)
-        sample_df = _verify_value_type(sample_df)
+        target_df = _assert_type(target_df)
+        sample_df = _assert_type(sample_df)
 
         # Check dimensions
         self.assertEqual(target_df.shape, (10000, 5))
@@ -144,10 +144,10 @@ class TestDatasets(
         target_df1, sample_df1 = load_sim_data(version="01")
         target_df2, sample_df2 = load_sim_data(version="01")
 
-        target_df1 = _verify_value_type(target_df1)
-        sample_df1 = _verify_value_type(sample_df1)
-        target_df2 = _verify_value_type(target_df2)
-        sample_df2 = _verify_value_type(sample_df2)
+        target_df1 = _assert_type(target_df1)
+        sample_df1 = _assert_type(sample_df1)
+        target_df2 = _assert_type(target_df2)
+        sample_df2 = _assert_type(sample_df2)
 
         # Check that the DataFrames are identical
         pd.testing.assert_frame_equal(target_df1, target_df2)
@@ -157,8 +157,8 @@ class TestDatasets(
         """Test that load_sim_data returns data with valid values and expected properties."""
         target_df, sample_df = load_sim_data(version="01")
 
-        target_df = _verify_value_type(target_df)
-        sample_df = _verify_value_type(sample_df)
+        target_df = _assert_type(target_df)
+        sample_df = _assert_type(sample_df)
 
         # Test gender values and missing data
         expected_gender_values = {"Male", "Female"}
@@ -228,8 +228,8 @@ class TestDatasets(
         self.assertIsInstance(target_df, pd.DataFrame)
         self.assertIsInstance(sample_df, pd.DataFrame)
 
-        target_df = _verify_value_type(target_df)
-        sample_df = _verify_value_type(sample_df)
+        target_df = _assert_type(target_df)
+        sample_df = _assert_type(sample_df)
 
         # Check dimensions
         self.assertEqual(target_df.shape, (254, 7))
@@ -250,10 +250,10 @@ class TestDatasets(
         target_df1, sample_df1 = load_cbps_data()
         target_df2, sample_df2 = load_cbps_data()
 
-        target_df1 = _verify_value_type(target_df1)
-        sample_df1 = _verify_value_type(sample_df1)
-        target_df2 = _verify_value_type(target_df2)
-        sample_df2 = _verify_value_type(sample_df2)
+        target_df1 = _assert_type(target_df1)
+        sample_df1 = _assert_type(sample_df1)
+        target_df2 = _assert_type(target_df2)
+        sample_df2 = _assert_type(sample_df2)
 
         # Check that the DataFrames are identical
         pd.testing.assert_frame_equal(target_df1, target_df2)
@@ -263,8 +263,8 @@ class TestDatasets(
         """Test that load_cbps_data returns data with valid values and properties."""
         target_df, sample_df = load_cbps_data()
 
-        target_df = _verify_value_type(target_df)
-        sample_df = _verify_value_type(sample_df)
+        target_df = _assert_type(target_df)
+        sample_df = _assert_type(sample_df)
 
         # No missing values should be present
         self.assertEqual(target_df.isna().sum().sum(), 0)
@@ -293,8 +293,8 @@ class TestDatasets(
         target_df, sample_df = load_data()
         self.assertIsNotNone(target_df)
         self.assertIsNotNone(sample_df)
-        target_df = _verify_value_type(target_df)
-        sample_df = _verify_value_type(sample_df)
+        target_df = _assert_type(target_df)
+        sample_df = _assert_type(sample_df)
         self.assertEqual(target_df.shape, (10000, 5))
         self.assertEqual(sample_df.shape, (1000, 5))
 
@@ -302,8 +302,8 @@ class TestDatasets(
         target_df, sample_df = load_data(source="sim_data_01")
         self.assertIsNotNone(target_df)
         self.assertIsNotNone(sample_df)
-        target_df = _verify_value_type(target_df)
-        sample_df = _verify_value_type(sample_df)
+        target_df = _assert_type(target_df)
+        sample_df = _assert_type(sample_df)
         self.assertEqual(target_df.shape, (10000, 5))
         self.assertEqual(sample_df.shape, (1000, 5))
 
@@ -311,8 +311,8 @@ class TestDatasets(
         target_df, sample_df = load_data(source="sim_data_cbps")
         self.assertIsNotNone(target_df)
         self.assertIsNotNone(sample_df)
-        target_df = _verify_value_type(target_df)
-        sample_df = _verify_value_type(sample_df)
+        target_df = _assert_type(target_df)
+        sample_df = _assert_type(sample_df)
         self.assertEqual(target_df.shape, (254, 7))
         self.assertEqual(sample_df.shape, (246, 7))
 
@@ -321,10 +321,10 @@ class TestDatasets(
         target_df1, sample_df1 = load_data(source="sim_data_01")
         target_df2, sample_df2 = load_sim_data(version="01")
 
-        target_df1 = _verify_value_type(target_df1)
-        sample_df1 = _verify_value_type(sample_df1)
-        target_df2 = _verify_value_type(target_df2)
-        sample_df2 = _verify_value_type(sample_df2)
+        target_df1 = _assert_type(target_df1)
+        sample_df1 = _assert_type(sample_df1)
+        target_df2 = _assert_type(target_df2)
+        sample_df2 = _assert_type(sample_df2)
 
         # Should be identical
         pd.testing.assert_frame_equal(target_df1, target_df2)
@@ -335,10 +335,10 @@ class TestDatasets(
         target_df1, sample_df1 = load_data(source="sim_data_cbps")
         target_df2, sample_df2 = load_cbps_data()
 
-        target_df1 = _verify_value_type(target_df1)
-        sample_df1 = _verify_value_type(sample_df1)
-        target_df2 = _verify_value_type(target_df2)
-        sample_df2 = _verify_value_type(sample_df2)
+        target_df1 = _assert_type(target_df1)
+        sample_df1 = _assert_type(sample_df1)
+        target_df2 = _assert_type(target_df2)
+        sample_df2 = _assert_type(sample_df2)
 
         # Should be identical
         pd.testing.assert_frame_equal(target_df1, target_df2)

@@ -12,7 +12,7 @@ import numpy as np
 import numpy.testing
 import pandas as pd
 from balance.sample_class import Sample
-from balance.util import _verify_value_type
+from balance.util import _assert_type
 from balance.utils.input_validation import (
     _check_weighting_methods_input,
     _extract_series_and_weights,
@@ -580,8 +580,8 @@ class TestUtil(
         ):
             _true_false_str_to_bool("Banana")
 
-    def test__verify_value_type(self) -> None:
-        """Test _verify_value_type with various inputs including error cases."""
+    def test__assert_type(self) -> None:
+        """Test _assert_type with various inputs including error cases."""
         # Test successful cases
         success_cases = [
             # (value, expected_type, description)
@@ -603,7 +603,7 @@ class TestUtil(
         for value, expected_type, description in success_cases:
             with self.subTest(description=description):
                 # pyre-ignore[6]: Testing runtime behavior with various types
-                result = _verify_value_type(value, expected_type)
+                result = _assert_type(value, expected_type)
                 self.assertEqual(result, value)
 
         # Test error cases
@@ -624,7 +624,7 @@ class TestUtil(
             with self.subTest(description=description):
                 with self.assertRaises(expected_exception):
                     # pyre-ignore[6]: Testing runtime behavior with various types
-                    _verify_value_type(value, expected_type)
+                    _assert_type(value, expected_type)
 
     def test__float_or_none(self) -> None:
         """Test _float_or_none with various inputs."""

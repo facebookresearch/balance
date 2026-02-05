@@ -22,13 +22,12 @@ from balance.stats_and_plots import weights_stats
 from balance.stats_and_plots.weighted_comparisons_stats import outcome_variance_ratio
 from balance.typing import DiagnosticScalar, FilePathOrBuffer
 from balance.util import (
+    _assert_type,
     _coerce_scalar,
     _detect_high_cardinality_features,
-    _verify_value_type,
     HighCardinalityFeature,
 )
 from IPython.lib.display import FileLink
-
 
 logger: logging.Logger = logging.getLogger(__package__)
 
@@ -211,7 +210,7 @@ class Sample:
         n_variables = self._covar_columns().shape[1]
         has_target = self.has_target() * " with target set"
         adjustment_method = (
-            " using " + _verify_value_type(self.model())["method"]
+            " using " + _assert_type(self.model())["method"]
             if self.model() is not None
             else ""
         )
@@ -901,7 +900,7 @@ class Sample:
             sample.model_matrix().shape
             # (2, 1)
         """
-        res = _verify_value_type(
+        res = _assert_type(
             balance_util.model_matrix(self, add_na=True)["sample"], pd.DataFrame
         )
         return res
@@ -1640,7 +1639,7 @@ class Sample:
         # model performance
 
         if self.model() is not None:
-            self_model = _verify_value_type(self.model())
+            self_model = _assert_type(self.model())
             if self_model["method"] == "ipw":
                 model_summary = (
                     "Model proportion deviance explained: {dev_exp:.3f}".format(
@@ -1877,7 +1876,7 @@ class Sample:
         # ----------------------------------------------------
         # Diagnostics on the model
         # ----------------------------------------------------
-        model = _verify_value_type(self.model())
+        model = _assert_type(self.model())
         diagnostics = _concat_metric_val_var(
             diagnostics,
             "adjustment_method",

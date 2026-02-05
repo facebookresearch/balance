@@ -11,7 +11,7 @@ import balance.testutil
 import numpy as np
 import pandas as pd
 from balance.sample_class import Sample
-from balance.util import _verify_value_type
+from balance.util import _assert_type
 from balance.utils.model_matrix import (
     build_model_matrix,
     dot_expansion,
@@ -212,7 +212,7 @@ class TestUtil(
             }
         )
         r = model_matrix(s)
-        sample_result_433 = _verify_value_type(r["sample"])
+        sample_result_433 = _assert_type(r["sample"])
         self.assertEqual(sample_result_433, e, lazy=True)
         self.assertIsNone(r["target"])
 
@@ -227,7 +227,7 @@ class TestUtil(
             }
         )
         r = model_matrix(s_df[["a", "b", "c"]])
-        sample_result_447 = _verify_value_type(r["sample"], pd.DataFrame)
+        sample_result_447 = _assert_type(r["sample"], pd.DataFrame)
         self.assertEqual(sample_result_447.sort_index(axis=1), e, lazy=True)
 
         # Tests on a single sample with a target
@@ -263,8 +263,8 @@ class TestUtil(
         )
         sample_result_480 = r["sample"]
         target_result_481 = r["target"]
-        sample_result_480 = _verify_value_type(sample_result_480, pd.DataFrame)
-        target_result_481 = _verify_value_type(target_result_481, pd.DataFrame)
+        sample_result_480 = _assert_type(sample_result_480, pd.DataFrame)
+        target_result_481 = _assert_type(target_result_481, pd.DataFrame)
         self.assertEqual(sample_result_480.sort_index(axis=1), e_s, lazy=True)
         self.assertEqual(target_result_481.sort_index(axis=1), e_t, lazy=True)
 
@@ -277,8 +277,8 @@ class TestUtil(
         )
         sample_result_494 = r["sample"]
         target_result_495 = r["target"]
-        sample_result_494 = _verify_value_type(sample_result_494, pd.DataFrame)
-        target_result_495 = _verify_value_type(target_result_495, pd.DataFrame)
+        sample_result_494 = _assert_type(sample_result_494, pd.DataFrame)
+        target_result_495 = _assert_type(target_result_495, pd.DataFrame)
         self.assertEqual(sample_result_494.sort_index(axis=1), e_s, lazy=True)
         self.assertEqual(target_result_495.sort_index(axis=1), e_t, lazy=True)
 
@@ -318,7 +318,7 @@ class TestUtil(
             "c___c[b]": {0: 0.0, 1: 1.0, 2: 0.0},
             "id": {0: 1.0, 1: 2.0, 2: 3.0},
         }
-        sample_result_536 = _verify_value_type(r["sample"], pd.DataFrame)
+        sample_result_536 = _assert_type(r["sample"], pd.DataFrame)
         self.assertEqual(sample_result_536.to_dict(), exp)
 
         # Tests that we can handle multiple columns what would be turned to have the same column name
@@ -354,7 +354,7 @@ class TestUtil(
             "b1__3[c]": {0: 0.0, 1: 0.0, 2: 1.0},
             "id": {0: 1.0, 1: 2.0, 2: 3.0},
         }
-        sample_result_571 = _verify_value_type(r["sample"], pd.DataFrame)
+        sample_result_571 = _assert_type(r["sample"], pd.DataFrame)
         self.assertEqual(sample_result_571.to_dict(), exp)
 
     def test_model_matrix_arguments(self) -> None:
@@ -401,8 +401,8 @@ class TestUtil(
             {"a": [1.0, None], "b": [1.0, 2.0], "c": ["keep", "keep"]}
         )
         add_na_result = model_matrix(sample_no_na, target_with_na, add_na=True)
-        add_na_sample = _verify_value_type(add_na_result["sample"], pd.DataFrame)
-        add_na_target = _verify_value_type(add_na_result["target"], pd.DataFrame)
+        add_na_sample = _assert_type(add_na_result["sample"], pd.DataFrame)
+        add_na_target = _assert_type(add_na_result["target"], pd.DataFrame)
         self.assertIn("_is_na_a[T.True]", add_na_sample.columns)
         self.assertIn("_is_na_a[T.True]", add_na_target.columns)
         self.assertTrue((add_na_sample["_is_na_a[T.True]"] == 0.0).all())
@@ -416,7 +416,7 @@ class TestUtil(
         self.assertWarnsRegexp(
             "Dropping all rows with NAs", model_matrix, s, add_na=False
         )
-        sample_add_na = _verify_value_type(r["sample"], pd.DataFrame)
+        sample_add_na = _assert_type(r["sample"], pd.DataFrame)
         self.assertEqual(sample_add_na.sort_index(axis=1), e)
         self.assertIsNone(r["target"])
 
@@ -447,7 +447,7 @@ class TestUtil(
             }
         )
         cat_result = model_matrix(cat_df, add_na=False)["sample"]
-        cat_result = _verify_value_type(cat_result, pd.DataFrame)
+        cat_result = _assert_type(cat_result, pd.DataFrame)
         self.assertIn("c[drop]", cat_result.columns)
         self.assertTrue((cat_result["c[drop]"] == 0.0).all())
 
@@ -459,7 +459,7 @@ class TestUtil(
             }
         )
         string_result = model_matrix(string_df, add_na=False)["sample"]
-        string_result = _verify_value_type(string_result, pd.DataFrame)
+        string_result = _assert_type(string_result, pd.DataFrame)
         self.assertIn("c[string_only]", string_result.columns)
         self.assertTrue((string_result["c[string_only]"] == 0.0).all())
 
@@ -471,7 +471,7 @@ class TestUtil(
             }
         )
         obj_result = model_matrix(obj_df.copy(), add_na=False)["sample"]
-        obj_result = _verify_value_type(obj_result, pd.DataFrame)
+        obj_result = _assert_type(obj_result, pd.DataFrame)
         self.assertIn("c[in_dropped_row]", obj_result.columns)
         self.assertTrue((obj_result["c[in_dropped_row]"] == 0.0).all())
 
@@ -483,8 +483,8 @@ class TestUtil(
             }
         )
         combined = model_matrix(obj_df.copy(), target_df, add_na=False)
-        sample_combined = _verify_value_type(combined["sample"], pd.DataFrame)
-        target_combined = _verify_value_type(combined["target"], pd.DataFrame)
+        sample_combined = _assert_type(combined["sample"], pd.DataFrame)
+        target_combined = _assert_type(combined["target"], pd.DataFrame)
         self.assertIn("c[target_only]", sample_combined.columns)
         self.assertIn("c[target_only]", target_combined.columns)
         self.assertTrue((sample_combined["c[target_only]"] == 0.0).all())
@@ -510,17 +510,17 @@ class TestUtil(
                 "c[c]": (0.0, 0.0, 0.0, 1.0),
             }
         )
-        r_one = _verify_value_type(r_one, pd.DataFrame)
+        r_one = _assert_type(r_one, pd.DataFrame)
         self.assertEqual(r_one.sort_index(axis=1), pd.concat((e_s, e_t)), lazy=True)
 
         # Test return_var_type argument
         r_df = model_matrix(s, t, return_type="one", return_var_type="dataframe")[
             "model_matrix"
         ]
-        r_df = _verify_value_type(r_df, pd.DataFrame)
+        r_df = _assert_type(r_df, pd.DataFrame)
         self.assertEqual(r_df.sort_index(axis=1), pd.concat((e_s, e_t)), lazy=True)
         r_mat = model_matrix(s, t, return_type="one", return_var_type="matrix")
-        model_matrix_mat = _verify_value_type(r_mat["model_matrix"])
+        model_matrix_mat = _assert_type(r_mat["model_matrix"])
         self.assertEqual(
             model_matrix_mat,
             pd.concat((e_s, e_t))
@@ -528,7 +528,7 @@ class TestUtil(
             .values,
         )
         r_sparse = model_matrix(s, t, return_type="one", return_var_type="sparse")
-        model_matrix_sparse = _verify_value_type(r_sparse["model_matrix"], csc_matrix)
+        model_matrix_sparse = _assert_type(r_sparse["model_matrix"], csc_matrix)
         self.assertEqual(
             model_matrix_sparse.toarray(),
             pd.concat((e_s, e_t))
@@ -542,7 +542,7 @@ class TestUtil(
         self.assertIs(type(model_matrix_sparse), csc_matrix)
 
         # Test formula argument
-        result_a_plus_b = _verify_value_type(
+        result_a_plus_b = _assert_type(
             model_matrix(s, formula="a + b")["sample"], pd.DataFrame
         )
         self.assertEqual(
@@ -550,14 +550,12 @@ class TestUtil(
             pd.DataFrame({"a": (0.0, 1.0, 2.0), "b": (0.0, 0.0, 2.0)}),
         )
 
-        result_b = _verify_value_type(
-            model_matrix(s, formula="b ")["sample"], pd.DataFrame
-        )
+        result_b = _assert_type(model_matrix(s, formula="b ")["sample"], pd.DataFrame)
         self.assertEqual(
             result_b.sort_index(axis=1),
             pd.DataFrame({"b": (0.0, 0.0, 2.0)}),
         )
-        result_a_times_c = _verify_value_type(
+        result_a_times_c = _assert_type(
             model_matrix(s, formula="a * c ")["sample"], pd.DataFrame
         )
         self.assertEqual(
@@ -571,7 +569,7 @@ class TestUtil(
                 }
             ),
         )
-        result_a_b_list = _verify_value_type(
+        result_a_b_list = _assert_type(
             model_matrix(s, formula=["a", "b"])["sample"], pd.DataFrame
         )
         self.assertEqual(
@@ -613,7 +611,7 @@ class TestUtil(
             }
         )
         r = model_matrix(s, one_hot_encoding=True)
-        sample_result_750 = _verify_value_type(r["sample"], pd.DataFrame)
+        sample_result_750 = _assert_type(r["sample"], pd.DataFrame)
         self.assertEqual(sample_result_750.sort_index(axis=1), e, lazy=True)
 
     def test_one_hot_encoding_greater_2(self) -> None:

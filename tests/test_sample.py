@@ -33,7 +33,7 @@ import numpy as np
 import pandas as pd
 from balance.sample_class import Sample
 from balance.testutil import tempfile_path
-from balance.util import _verify_value_type
+from balance.util import _assert_type
 
 
 # Test sample fixtures - shared across multiple test methods
@@ -386,7 +386,7 @@ class TestSample(
             ignore_columns=["a", "a", "meta"],
             weight_column=None,
         )
-        ignored = _verify_value_type(sample.ignored_columns())
+        ignored = _assert_type(sample.ignored_columns())
         self.assertListEqual(ignored.columns.tolist(), ["a", "meta"])
         self.assertListEqual(sample.covars().names(), [])
 
@@ -641,7 +641,7 @@ class TestSample_base_and_adjust_methods(
         a = s.adjust(t, max_de=None, method="null")
         m = a.model()
 
-        self.assertEqual(_verify_value_type(m)["method"], "null_adjustment")
+        self.assertEqual(_assert_type(m)["method"], "null_adjustment")
 
     def test_Sample_model_ipw_adjustment(self) -> None:
         """Test model information for IPW adjustment method.
@@ -655,12 +655,12 @@ class TestSample_base_and_adjust_methods(
         a = s.adjust(t, max_de=None)
         m = a.model()
 
-        self.assertEqual(_verify_value_type(m)["method"], "ipw")
+        self.assertEqual(_assert_type(m)["method"], "ipw")
 
         # Test structure of IPW output
-        self.assertTrue("perf" in _verify_value_type(m).keys())
-        self.assertTrue("fit" in _verify_value_type(m).keys())
-        self.assertTrue("coefs" in _verify_value_type(m)["perf"].keys())
+        self.assertTrue("perf" in _assert_type(m).keys())
+        self.assertTrue("fit" in _assert_type(m).keys())
+        self.assertTrue("coefs" in _assert_type(m)["perf"].keys())
 
     def test_Sample_model_matrix(self) -> None:
         """Test model matrix generation for samples.
@@ -1885,7 +1885,7 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
         target = Sample.from_frame(target_df, id_column="id", weight_column="weight")
 
         logs = self._collect_warnings(
-            lambda: _verify_value_type(sample.adjust(target, method="null"))
+            lambda: _assert_type(sample.adjust(target, method="null"))
         )
 
         self.assertTrue(any("Large target detected" in log for log in logs))
@@ -1898,7 +1898,7 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
         target = Sample.from_frame(target_df, id_column="id", weight_column="weight")
 
         logs = self._collect_warnings(
-            lambda: _verify_value_type(sample.adjust(target, method="null"))
+            lambda: _assert_type(sample.adjust(target, method="null"))
         )
 
         self.assertFalse(any("Large target detected" in log for log in logs))
@@ -1911,7 +1911,7 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
         target = Sample.from_frame(target_df, id_column="id", weight_column="weight")
 
         logs = self._collect_warnings(
-            lambda: _verify_value_type(sample.adjust(target, method="null"))
+            lambda: _assert_type(sample.adjust(target, method="null"))
         )
 
         self.assertTrue(any("Large target detected" in log for log in logs))
@@ -1924,7 +1924,7 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
         target = Sample.from_frame(target_df, id_column="id", weight_column="weight")
 
         logs = self._collect_warnings(
-            lambda: _verify_value_type(sample.adjust(target, method="null"))
+            lambda: _assert_type(sample.adjust(target, method="null"))
         )
 
         self.assertFalse(any("Large target detected" in log for log in logs))
@@ -1937,7 +1937,7 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
         target = Sample.from_frame(target_df, id_column="id", weight_column="weight")
 
         logs = self._collect_warnings(
-            lambda: _verify_value_type(sample.adjust(target, method="null"))
+            lambda: _assert_type(sample.adjust(target, method="null"))
         )
 
         self.assertFalse(any("Large target detected" in log for log in logs))
@@ -1950,7 +1950,7 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
         target = Sample.from_frame(target_df, id_column="id", weight_column="weight")
 
         logs = self._collect_warnings(
-            lambda: _verify_value_type(sample.adjust(target, method="null"))
+            lambda: _assert_type(sample.adjust(target, method="null"))
         )
 
         self.assertFalse(any("Large target detected" in log for log in logs))

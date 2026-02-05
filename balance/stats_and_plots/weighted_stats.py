@@ -15,7 +15,7 @@ import numpy.typing as npt
 import pandas as pd
 from balance.stats_and_plots.weights_stats import _check_weights_are_valid
 from balance.util import model_matrix, rm_mutual_nas
-from balance.utils.input_validation import _verify_value_type
+from balance.utils.input_validation import _assert_type
 from scipy.stats import norm
 from statsmodels.stats.weightstats import DescrStatsW
 
@@ -551,7 +551,7 @@ def descriptive_stats(
                 # 0      0.67      0.33  2.0            0.67
 
     """
-    df = _verify_value_type(df, pd.DataFrame)
+    df = _assert_type(df, pd.DataFrame)
     if formula is not None:
         model_matrix_result = model_matrix(
             df, add_na=add_na, return_type="one", formula=formula

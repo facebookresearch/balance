@@ -33,20 +33,20 @@ T = TypeVar("T")
 
 
 @overload
-def _verify_value_type(  # noqa: E704
+def _assert_type(  # noqa: E704
     optional: Optional[Any],
     expected_type: Type[T],
 ) -> T: ...
 
 
 @overload
-def _verify_value_type(  # noqa: E704
+def _assert_type(  # noqa: E704
     optional: Optional[T],
     expected_type: None = None,
 ) -> T: ...
 
 
-def _verify_value_type(
+def _assert_type(
     optional: Optional[T],
     expected_type: Optional[Union[Type[Any], Tuple[Type[Any], ...]]] = None,
 ) -> T:
