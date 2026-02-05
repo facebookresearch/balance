@@ -23,6 +23,8 @@ from balance.balancedf_class import (  # noqa
 from balance.sample_class import Sample
 from balance.stats_and_plots import weighted_comparisons_stats
 from balance.testutil import BalanceTestCase, tempfile_path
+from balance.utils.model_matrix import model_matrix
+from patsy import PatsyError  # pyre-ignore[21]
 
 
 class TestDataFactory:
@@ -1720,6 +1722,48 @@ class TestBalanceDF(BalanceTestCase):
                 "c[z]": {0: 0.0, 1: 0.0, 2: 1.0, 3: 0.0},
             },
         )
+
+    def testBalanceDF_model_matrix_with_formula(self) -> None:
+        covars = s1.covars()
+        expected = model_matrix(
+            covars.df, add_na=True, return_type="one", formula="a + b"
+        )["model_matrix"]
+        result = covars.model_matrix(formula="a + b")
+        pd.testing.assert_frame_equal(result, expected)
+
+    def testBalanceDF_model_matrix_with_formula_list(self) -> None:
+        covars = s1.covars()
+        expected = model_matrix(
+            covars.df, add_na=True, return_type="one", formula=["a", "b"]
+        )["model_matrix"]
+        result = covars.model_matrix(formula=["a", "b"])
+        pd.testing.assert_frame_equal(result, expected)
+
+    def testBalanceDF_model_matrix_with_interaction_formula(self) -> None:
+        covars = s1.covars()
+        expected = model_matrix(
+            covars.df, add_na=True, return_type="one", formula="a * c"
+        )["model_matrix"]
+        result = covars.model_matrix(formula="a * c")
+        pd.testing.assert_frame_equal(result, expected)
+
+    def testBalanceDF_model_matrix_formula_does_not_affect_cache(self) -> None:
+        covars = s1.covars()
+        cached_before = covars.model_matrix()
+        formula_result = covars.model_matrix(formula="a")
+        cached_after = covars.model_matrix()
+        pd.testing.assert_frame_equal(
+            formula_result,
+            model_matrix(covars.df, add_na=True, return_type="one", formula="a")[
+                "model_matrix"
+            ],
+        )
+        pd.testing.assert_frame_equal(cached_after, cached_before)
+
+    def testBalanceDF_model_matrix_with_invalid_formula(self) -> None:
+        covars = s1.covars()
+        with self.assertRaises(PatsyError):
+            covars.model_matrix(formula="missing_column + a")
 
     def test_check_if_not_BalanceDF(self) -> None:
         with self.assertRaisesRegex(ValueError, "number must be balancedf_class"):

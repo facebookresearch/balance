@@ -13,6 +13,9 @@
     `--weights_impact_on_outcome_method`.
 - **Pandas 3 support**
   - Updated compatibility and tests for pandas 3.x
+- **Formula support for BalanceDF model matrices**
+  - `BalanceDF.model_matrix()` now accepts a `formula` argument to build
+    custom model matrices without precomputing them manually.
 
 ## Bug Fixes
 
