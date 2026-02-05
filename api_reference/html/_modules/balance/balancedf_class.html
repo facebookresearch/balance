@@ -64,6 +64,7 @@
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">FilePathOrBuffer</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_items_index_in_list</span><span class="p">,</span> <span class="n">get_items_from_list_via_indices</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.input_validation</span><span class="w"> </span><span class="kn">import</span> <span class="n">_verify_value_type</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.lib.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileLink</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">plotly.graph_objs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Figure</span>
 
@@ -431,20 +432,21 @@
         <span class="c1">#     if v is not None and k not in exclude</span>
         <span class="c1"># )</span>
 
-    <span class="c1"># TODO: add the ability to pass formula argument to model_matrix</span>
-    <span class="c1">#       but in which case - notice that we&#39;d want the ability to track</span>
-    <span class="c1">#       which object is stored in _model_matrix (and to run it over)</span>
-    <span class="c1">#       Also, the output may sometimes no longer only be pd.DataFrame</span>
-    <span class="c1">#       so such work will require update the type hinting here.</span>
 <div class="viewcode-block" id="BalanceDF.model_matrix">
 <a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.model_matrix">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">model_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">model_matrix</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span> <span class="n">formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a model_matrix version of the df inside the BalanceDF object using balance_util.model_matrix</span>
 
 <span class="sd">        This can be used to turn all character columns into a one hot encoding columns.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (BalanceDF): Object</span>
+<span class="sd">            formula (str | list[str] | None, optional): Optional formula string (or list of</span>
+<span class="sd">                formula strings) to pass to :func:`balance_util.model_matrix`. When</span>
+<span class="sd">                provided, the model matrix is computed on demand for the formula and</span>
+<span class="sd">                not cached on the object. Defaults to None.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            pd.DataFrame: The output from :func:`balance_util.model_matrix`</span>
@@ -484,12 +486,27 @@
 <span class="sd">                    # 1  2.0   8.0   0.0   0.0   1.0   0.0</span>
 <span class="sd">                    # 2  3.0   2.0   0.0   0.0   0.0   1.0</span>
 <span class="sd">                    # 3  1.0 -42.0   1.0   0.0   0.0   0.0</span>
+
+<span class="sd">                print(s1.covars().model_matrix(formula=&quot;a + b&quot;))</span>
+<span class="sd">                    #      a     b</span>
+<span class="sd">                    # 0  1.0 -42.0</span>
+<span class="sd">                    # 1  2.0   8.0</span>
+<span class="sd">                    # 2  3.0   2.0</span>
+<span class="sd">                    # 3  1.0 -42.0</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_model_matrix&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model_matrix</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_model_matrix</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">model_matrix</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="n">add_na</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;one&quot;</span>
-            <span class="p">)[</span><span class="s2">&quot;model_matrix&quot;</span><span class="p">]</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model_matrix</span></div>
+        <span class="k">if</span> <span class="n">formula</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_model_matrix&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model_matrix</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_model_matrix</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">model_matrix</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="n">add_na</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;one&quot;</span>
+                <span class="p">)[</span><span class="s2">&quot;model_matrix&quot;</span><span class="p">]</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model_matrix</span>
+
+        <span class="k">return</span> <span class="n">_verify_value_type</span><span class="p">(</span>
+            <span class="n">balance_util</span><span class="o">.</span><span class="n">model_matrix</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="n">add_na</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;one&quot;</span><span class="p">,</span> <span class="n">formula</span><span class="o">=</span><span class="n">formula</span>
+            <span class="p">)[</span><span class="s2">&quot;model_matrix&quot;</span><span class="p">],</span>
+            <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="p">)</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_descriptive_stats</span><span class="p">(</span>
