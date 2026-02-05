@@ -550,9 +550,7 @@ class TestUtil(
             pd.DataFrame({"a": (0.0, 1.0, 2.0), "b": (0.0, 0.0, 2.0)}),
         )
 
-        result_b = _assert_type(
-            model_matrix(s, formula="b ")["sample"], pd.DataFrame
-        )
+        result_b = _assert_type(model_matrix(s, formula="b ")["sample"], pd.DataFrame)
         self.assertEqual(
             result_b.sort_index(axis=1),
             pd.DataFrame({"b": (0.0, 0.0, 2.0)}),

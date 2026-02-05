@@ -22,13 +22,12 @@ from balance.stats_and_plots import weights_stats
 from balance.stats_and_plots.weighted_comparisons_stats import outcome_variance_ratio
 from balance.typing import DiagnosticScalar, FilePathOrBuffer
 from balance.util import (
+    _assert_type,
     _coerce_scalar,
     _detect_high_cardinality_features,
-    _assert_type,
     HighCardinalityFeature,
 )
 from IPython.lib.display import FileLink
-
 
 logger: logging.Logger = logging.getLogger(__package__)
 
@@ -239,9 +238,7 @@ class Sample:
                 desc += """
         adjustment details:
             {details}
-                """.format(
-                    details="\n            ".join(adjustment_details)
-                )
+                """.format(details="\n            ".join(adjustment_details))
 
         if self.has_target():
             common_variables = balance_util.choose_variables(

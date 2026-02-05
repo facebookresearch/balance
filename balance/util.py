@@ -22,12 +22,12 @@ from balance.utils.data_transformation import (
 )
 from balance.utils.file_utils import _to_download
 from balance.utils.input_validation import (
+    _assert_type,
     _check_weighting_methods_input,
     _float_or_none,
     _is_arraylike,
     _isinstance_sample,
     _true_false_str_to_bool,
-    _assert_type,
     choose_variables,
     find_items_index_in_list,
     get_items_from_list_via_indices,

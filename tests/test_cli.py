@@ -16,7 +16,7 @@ import balance.testutil
 import numpy as np
 import pandas as pd
 from balance.cli import BalanceCLI, make_parser
-from balance.util import _float_or_none, _assert_type
+from balance.util import _assert_type, _float_or_none
 from numpy import dtype
 from sklearn.linear_model import LogisticRegression
 
