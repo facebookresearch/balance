@@ -392,18 +392,19 @@ class BalanceDF:
         #     if v is not None and k not in exclude
         # )
 
-    # TODO: add the ability to pass formula argument to model_matrix
-    #       but in which case - notice that we'd want the ability to track
-    #       which object is stored in _model_matrix (and to run it over)
-    #       Also, the output may sometimes no longer only be pd.DataFrame
-    #       so such work will require update the type hinting here.
-    def model_matrix(self: "BalanceDF") -> pd.DataFrame:
+    def model_matrix(
+        self: "BalanceDF", formula: str | list[str] | None = None
+    ) -> pd.DataFrame:
         """Return a model_matrix version of the df inside the BalanceDF object using balance_util.model_matrix
 
         This can be used to turn all character columns into a one hot encoding columns.
 
         Args:
             self (BalanceDF): Object
+            formula (str | list[str] | None, optional): Optional formula string (or list of
+                formula strings) to pass to :func:`balance_util.model_matrix`. When
+                provided, the model matrix is computed on demand for the formula and
+                not cached on the object. Defaults to None.
 
         Returns:
             pd.DataFrame: The output from :func:`balance_util.model_matrix`
@@ -443,12 +444,24 @@ class BalanceDF:
                     # 1  2.0   8.0   0.0   0.0   1.0   0.0
                     # 2  3.0   2.0   0.0   0.0   0.0   1.0
                     # 3  1.0 -42.0   1.0   0.0   0.0   0.0
+
+                print(s1.covars().model_matrix(formula="a + b"))
+                    #      a     b
+                    # 0  1.0 -42.0
+                    # 1  2.0   8.0
+                    # 2  3.0   2.0
+                    # 3  1.0 -42.0
         """
-        if not hasattr(self, "_model_matrix") or self._model_matrix is None:
-            self._model_matrix = balance_util.model_matrix(
-                self.df, add_na=True, return_type="one"
-            )["model_matrix"]
-        return self._model_matrix
+        if formula is None:
+            if not hasattr(self, "_model_matrix") or self._model_matrix is None:
+                self._model_matrix = balance_util.model_matrix(
+                    self.df, add_na=True, return_type="one"
+                )["model_matrix"]
+            return self._model_matrix
+
+        return balance_util.model_matrix(
+            self.df, add_na=True, return_type="one", formula=formula
+        )["model_matrix"]
 
     def _descriptive_stats(
         self: "BalanceDF",

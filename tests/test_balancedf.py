@@ -14,6 +14,7 @@ from unittest.mock import patch, PropertyMock
 import IPython.display
 import numpy as np
 import pandas as pd
+from balance.utils.model_matrix import model_matrix
 from balance.balancedf_class import (  # noqa
     BalanceDF,
     BalanceDFCovars,  # noqa
@@ -1720,6 +1721,14 @@ class TestBalanceDF(BalanceTestCase):
                 "c[z]": {0: 0.0, 1: 0.0, 2: 1.0, 3: 0.0},
             },
         )
+
+    def testBalanceDF_model_matrix_with_formula(self) -> None:
+        covars = s1.covars()
+        expected = model_matrix(
+            covars.df, add_na=True, return_type="one", formula="a + b"
+        )["model_matrix"]
+        result = covars.model_matrix(formula="a + b")
+        pd.testing.assert_frame_equal(result, expected)
 
     def test_check_if_not_BalanceDF(self) -> None:
         with self.assertRaisesRegex(ValueError, "number must be balancedf_class"):
