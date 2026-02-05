@@ -1738,6 +1738,14 @@ class TestBalanceDF(BalanceTestCase):
         result = covars.model_matrix(formula=["a", "b"])
         pd.testing.assert_frame_equal(result, expected)
 
+    def testBalanceDF_model_matrix_with_interaction_formula(self) -> None:
+        covars = s1.covars()
+        expected = model_matrix(
+            covars.df, add_na=True, return_type="one", formula="a * c"
+        )["model_matrix"]
+        result = covars.model_matrix(formula="a * c")
+        pd.testing.assert_frame_equal(result, expected)
+
     def testBalanceDF_model_matrix_formula_does_not_affect_cache(self) -> None:
         covars = s1.covars()
         cached_before = covars.model_matrix()
