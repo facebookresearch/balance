@@ -238,7 +238,9 @@ class Sample:
                 desc += """
         adjustment details:
             {details}
-                """.format(details="\n            ".join(adjustment_details))
+                """.format(
+                    details="\n            ".join(adjustment_details)
+                )
 
         if self.has_target():
             common_variables = balance_util.choose_variables(
