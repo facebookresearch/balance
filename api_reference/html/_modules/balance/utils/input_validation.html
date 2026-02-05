@@ -70,20 +70,20 @@
 
 
 <span class="nd">@overload</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">_verify_value_type</span><span class="p">(</span>  <span class="c1"># noqa: E704</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_assert_type</span><span class="p">(</span>  <span class="c1"># noqa: E704</span>
     <span class="n">optional</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span>
     <span class="n">expected_type</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span> <span class="o">...</span>
 
 
 <span class="nd">@overload</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">_verify_value_type</span><span class="p">(</span>  <span class="c1"># noqa: E704</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_assert_type</span><span class="p">(</span>  <span class="c1"># noqa: E704</span>
     <span class="n">optional</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">T</span><span class="p">],</span>
     <span class="n">expected_type</span><span class="p">:</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span> <span class="o">...</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_verify_value_type</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_assert_type</span><span class="p">(</span>
     <span class="n">optional</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">T</span><span class="p">],</span>
     <span class="n">expected_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="o">...</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
