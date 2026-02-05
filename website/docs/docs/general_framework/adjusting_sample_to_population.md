@@ -15,19 +15,26 @@ adjusted = sample.adjust()
 The output of this method is an adjusted `Sample` class object of the form:
 
 ```
-    Adjusted balance Sample object with target set using ipw
-    1000 observations x 3 variables: gender,age_group,income
-    id_column: id, weight_column: weight,
-    outcome_columns: happiness
+        Adjusted balance Sample object with target set using ipw
+        1000 observations x 3 variables: gender,age_group,income
+        id_column: id, weight_column: weight,
+        outcome_columns: happiness
 
-        target:
+        adjustment details:
+            method: ipw
+            weight trimming mean ratio: 20
+            design effect (Deff): 1.880
+            effective sample size proportion (ESSP): 0.532
+            effective sample size (ESS): 531.9
 
-            balance Sample object
-            10000 observations x 3 variables: gender,age_group,income
-            id_column: id, weight_column: weight,
-            outcome_columns: None
+            target:
 
-        3 common variables: income,gender,age_group
+                balance Sample object
+                10000 observations x 3 variables: gender,age_group,income
+                id_column: id, weight_column: weight,
+                outcome_columns: happiness
+
+            3 common variables: gender,age_group,income
 ```
 Note that the `adjust` method in balance is performing three main steps:
 1. **Pre-processing** of the data - getting data ready for adjustment using best practices in the field:
