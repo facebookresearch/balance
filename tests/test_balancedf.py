@@ -1730,6 +1730,27 @@ class TestBalanceDF(BalanceTestCase):
         result = covars.model_matrix(formula="a + b")
         pd.testing.assert_frame_equal(result, expected)
 
+    def testBalanceDF_model_matrix_with_formula_list(self) -> None:
+        covars = s1.covars()
+        expected = model_matrix(
+            covars.df, add_na=True, return_type="one", formula=["a", "b"]
+        )["model_matrix"]
+        result = covars.model_matrix(formula=["a", "b"])
+        pd.testing.assert_frame_equal(result, expected)
+
+    def testBalanceDF_model_matrix_formula_does_not_affect_cache(self) -> None:
+        covars = s1.covars()
+        cached_before = covars.model_matrix()
+        formula_result = covars.model_matrix(formula="a")
+        cached_after = covars.model_matrix()
+        pd.testing.assert_frame_equal(
+            formula_result,
+            model_matrix(covars.df, add_na=True, return_type="one", formula="a")[
+                "model_matrix"
+            ],
+        )
+        pd.testing.assert_frame_equal(cached_after, cached_before)
+
     def test_check_if_not_BalanceDF(self) -> None:
         with self.assertRaisesRegex(ValueError, "number must be balancedf_class"):
             BalanceDF._check_if_not_BalanceDF(
