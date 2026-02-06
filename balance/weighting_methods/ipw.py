@@ -544,13 +544,20 @@ def ipw(
             and only 1 column for variables with 2 levels (treatment contrast). Defaults to False.
         use_model_matrix (bool, optional): whether to build the model matrix using
             :func:`model_matrix`. When set to False, the model is fit on the raw
-            covariate data after applying transformations, adding NA indicators,
-            and encoding categorical columns as integer codes. This is useful for
-            tree-based models that do not require one-hot encoding when a custom
-            sklearn classifier is passed via ``model``. The built-in logistic-regression
-            path (i.e., when ``model`` is ``None`` or the default) currently requires
-            ``use_model_matrix=True`` and will raise if ``use_model_matrix=False``.
-            Defaults to True.
+            covariate data after applying transformations and adding NA indicators,
+            and categorical columns are encoded as integer codes (i.e., an ordinal
+            / label encoding based on the category codes in the input data). For
+            scikit-learn tree-based models, these integer-coded features are treated
+            as ordered numeric variables with threshold-based splits, which is not
+            equivalent to true unordered categorical handling and can change results
+            depending on how categories are coded. In settings where invariance to
+            category coding is important (e.g., most linear models, or when using
+            trees/forests without native categorical support), prefer
+            ``use_model_matrix=True`` with appropriate one-hot encoding, or use a
+            model that natively supports categorical features. The built-in
+            logistic-regression path (i.e., when ``model`` is ``None`` or the
+            default) currently requires ``use_model_matrix=True`` and will raise if
+            ``use_model_matrix=False``. Defaults to True.
         random_seed (int, optional): Random seed to use. Defaults to 2020.
 
     Examples:
