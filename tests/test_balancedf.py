@@ -240,6 +240,16 @@ class TestBalanceDFOutcomes(BalanceTestCase):
         self.assertEqual(raw_df["a"].tolist(), [0.0, 0.0, 2.0])
         self.assertEqual(raw_df["_is_na_a"].tolist(), [False, True, False])
 
+        raw_df_no_na, raw_weights_no_na = s4.covars()._get_df_and_weights(
+            use_model_matrix=False, add_na=False
+        )
+        self.assertEqual(type(raw_df_no_na), pd.DataFrame)
+        self.assertEqual(raw_weights_no_na, np.array([1.0, 1.0, 1.0]))
+        self.assertEqual(raw_df_no_na.columns.tolist(), ["a"])
+        self.assertEqual(raw_df_no_na["a"].tolist()[0], 0.0)
+        self.assertTrue(pd.isna(raw_df_no_na["a"].tolist()[1]))
+        self.assertEqual(raw_df_no_na["a"].tolist()[2], 2.0)
+
     def test_BalanceDFOutcomes_names(self) -> None:
         """Test that BalanceDFOutcomes.names() returns correct outcome column names."""
         self.assertEqual(o.names(), ["o"])
