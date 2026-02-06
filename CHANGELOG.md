@@ -45,12 +45,6 @@
   - **Migration:** ensure your weights include at least one positive value
     before calling these diagnostics, or catch the `ValueError` if all-zero
     weights are possible in your workflow.
-- **Distribution metrics now report categorical variables as single columns**
-  - KLD/EMD/CVMD/KS on `BalanceDF.covars()` now return a single column per
-    categorical variable instead of one column per one-hot encoded level.
-  - **Migration:** update downstream code expecting `foo[level]` column names
-    to use the main covariate name (e.g., `foo`) or derive one-hot columns
-    explicitly if needed for custom reporting.
 
 # 0.15.0 (2026-01-20)
 

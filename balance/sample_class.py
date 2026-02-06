@@ -955,7 +955,10 @@ class Sample:
                 adjusted = sample_with_target.adjust()
 
                 rf = RandomForestClassifier(n_estimators=200, random_state=0)
-                adjusted_rf = sample_with_target.adjust(model = rf)
+                adjusted_rf = sample_with_target.adjust(
+                    model=rf,
+                    use_model_matrix=False,
+                )
 
                 # Print ASMD tables for both adjusted and adjusted_rf
                 print("\\n=== Adjusted ASMD ===")

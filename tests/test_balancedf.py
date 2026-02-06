@@ -1233,6 +1233,118 @@ class TestBalanceDF_asmd(BalanceTestCase):
 
         self.assertEqual(output.round(6), expected)
 
+    def test_BalanceDF_emd_categorical(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "a": (1, 2, 3, 4),
+                    "c": ("x", "x", "y", "z"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "a": (1, 2, 2, 3),
+                    "c": ("x", "y", "y", "z"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+
+        sample_with_target = sample.set_target(target)
+        output = sample_with_target.covars().emd(on_linked_samples=False)
+
+        expected = weighted_comparisons_stats.emd(
+            sample.covars().df, target.covars().df
+        )
+        expected = pd.DataFrame([expected], index=("covars",))
+        expected.index.name = output.index.name
+
+        self.assertEqual(output.round(6), expected.round(6))
+
+    def test_BalanceDF_cvmd_categorical(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "a": (1, 2, 3, 4),
+                    "c": ("x", "x", "y", "z"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "a": (1, 2, 2, 3),
+                    "c": ("x", "y", "y", "z"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+
+        sample_with_target = sample.set_target(target)
+        output = sample_with_target.covars().cvmd(on_linked_samples=False)
+
+        expected = weighted_comparisons_stats.cvmd(
+            sample.covars().df, target.covars().df
+        )
+        expected = pd.DataFrame([expected], index=("covars",))
+        expected.index.name = output.index.name
+
+        self.assertEqual(output.round(6), expected.round(6))
+
+    def test_BalanceDF_ks_categorical(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "a": (1, 2, 3, 4),
+                    "c": ("x", "x", "y", "z"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "a": (1, 2, 2, 3),
+                    "c": ("x", "y", "y", "z"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+
+        sample_with_target = sample.set_target(target)
+        output = sample_with_target.covars().ks(on_linked_samples=False)
+
+        expected = weighted_comparisons_stats.ks(sample.covars().df, target.covars().df)
+        expected = pd.DataFrame([expected], index=("covars",))
+        expected.index.name = output.index.name
+
+        self.assertEqual(output.round(6), expected.round(6))
+
     def test_BalanceDF_kld_aggregate_by_main_covar(self) -> None:
         covars = s3.covars()
 

@@ -485,6 +485,7 @@ def ipw(
     one_hot_encoding: bool = False,
     # TODO: This is set to be false in order to keep reproducibility of works that uses balance.
     # The best practice is for this to be true.
+    use_model_matrix: bool = True,
     random_seed: int = 2020,
     *args: Any,
     **kwargs: Any,
@@ -541,6 +542,11 @@ def ipw(
             categorical variables with more than 2 categories (i.e. the
             number of columns will be equal to the number of categories),
             and only 1 column for variables with 2 levels (treatment contrast). Defaults to False.
+        use_model_matrix (bool, optional): whether to build the model matrix using
+            :func:`model_matrix`. When set to False, the model is fit on the raw
+            covariate data after applying transformations, adding NA indicators,
+            and encoding categorical columns as integer codes. This is useful for
+            tree-based models that do not require one-hot encoding. Defaults to True.
         random_seed (int, optional): Random seed to use. Defaults to 2020.
 
     Examples:
@@ -571,6 +577,7 @@ def ipw(
                 target_weights,
                 variables=["gender", "age_group", "income"],
                 model=rf,
+                use_model_matrix=False,
             )
             print("RandomForestClassifier result:")
             print(result_rf)
@@ -725,33 +732,64 @@ def ipw(
     variables = list(sample_df.columns)
     logger.debug(f"Final variables in the model: {variables}")
 
-    logger.info("Building model matrix")
-    # Convert formula to List[str] if it's a single string
-    formula_list: list[str] | None = [formula] if isinstance(formula, str) else formula
-    model_matrix_output = balance_util.model_matrix(
-        sample_df,
-        target_df,
-        variables,
-        add_na=(na_action == "add_indicator"),
-        return_type="one",
-        return_var_type="sparse",
-        formula=formula_list,
-        penalty_factor=penalty_factor,
-        one_hot_encoding=one_hot_encoding,
-    )
-    X_matrix = cast(
-        Union[pd.DataFrame, np.ndarray, csc_matrix],
-        model_matrix_output["model_matrix"],
-    )
-    X_matrix_columns_names = cast(
-        List[str], model_matrix_output["model_matrix_columns_names"]
-    )
-    penalty_factor_expanded = cast(List[float], model_matrix_output["penalty_factor"])
-    logger.info(
-        f"The formula used to build the model matrix: {model_matrix_output['formula']}"
-    )
-    logger.info(f"The number of columns in the model matrix: {X_matrix.shape[1]}")
-    logger.info(f"The number of rows in the model matrix: {X_matrix.shape[0]}")
+    if use_model_matrix:
+        logger.info("Building model matrix")
+        # Convert formula to List[str] if it's a single string
+        formula_list: list[str] | None = (
+            [formula] if isinstance(formula, str) else formula
+        )
+        model_matrix_output = balance_util.model_matrix(
+            sample_df,
+            target_df,
+            variables,
+            add_na=(na_action == "add_indicator"),
+            return_type="one",
+            return_var_type="sparse",
+            formula=formula_list,
+            penalty_factor=penalty_factor,
+            one_hot_encoding=one_hot_encoding,
+        )
+        X_matrix = cast(
+            Union[pd.DataFrame, np.ndarray, csc_matrix],
+            model_matrix_output["model_matrix"],
+        )
+        X_matrix_columns_names = cast(
+            List[str], model_matrix_output["model_matrix_columns_names"]
+        )
+        penalty_factor_expanded = cast(
+            List[float], model_matrix_output["penalty_factor"]
+        )
+        logger.info(
+            f"The formula used to build the model matrix: {model_matrix_output['formula']}"
+        )
+        logger.info(f"The number of columns in the model matrix: {X_matrix.shape[1]}")
+        logger.info(f"The number of rows in the model matrix: {X_matrix.shape[0]}")
+    else:
+        if custom_model is None:
+            raise ValueError(
+                "use_model_matrix=False is only supported when providing a custom "
+                "sklearn classifier (e.g., RandomForestClassifier)."
+            )
+
+        if na_action == "add_indicator":
+            combined = balance_util.add_na_indicator(
+                pd.concat([sample_df, target_df], axis=0)
+            )
+        else:
+            combined = pd.concat([sample_df, target_df], axis=0)
+
+        categorical_cols = combined.select_dtypes(
+            ["category", "string", "boolean", "object"]
+        ).columns
+        for col in categorical_cols:
+            combined[col] = pd.Categorical(combined[col]).codes
+
+        X_matrix = combined.to_numpy()
+        X_matrix_columns_names = combined.columns.tolist()
+        penalty_factor_expanded = [1.0] * combined.shape[1]
+        logger.info("Fitting model on raw covariates without model matrix encoding.")
+        logger.info(f"The number of columns in the raw matrix: {X_matrix.shape[1]}")
+        logger.info(f"The number of rows in the raw matrix: {X_matrix.shape[0]}")
 
     y = np.concatenate((np.ones(sample_n), np.zeros(target_n)))
     _n_unique = np.unique(y.reshape(y.shape[0]))

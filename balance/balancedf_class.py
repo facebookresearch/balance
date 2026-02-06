@@ -1508,9 +1508,11 @@ class BalanceDF:
                 If None then it looks for a target in the self linked objects. Defaults to None.
             aggregate_by_main_covar (bool, optional): Defaults to False.
                 If True, it will return the KLD results after aggregating columns
-                that share a main covariate name (e.g., columns like ``"age[young]"``,
-                ``"age[old]"`` would be aggregated to a single ``"age"`` metric). See
-                :func:`_aggregate_statistic_by_main_covar` for more details.
+                that share a main covariate name into a single metric. This applies
+                to columns created from the same underlying covariate via formula
+                transformations or interactions (e.g., ``"age"``, ``"log(age)"``,
+                ``"age:squared"``), not specifically to categorical one-hot encoding.
+                See :func:`_aggregate_statistic_by_main_covar` for more details.
 
         Raises:
             ValueError:
@@ -1558,9 +1560,9 @@ class BalanceDF:
 
                 # Compare only self to target without linked samples
                 print(sample_with_target.covars().kld(on_linked_samples=False).round(6))
-                    #            a     c[x]     c[y]  c[z]  mean(kld)
+                    #            a        c  mean(kld)
                     # index
-                    # covars   0.0  0.143841  0.130812   0.0   0.045776
+                    # covars   0.0  0.173287   0.086643
         """
 
         target_from_self = self._BalanceDF_child_from_linked_samples().get("target")
