@@ -1508,8 +1508,8 @@ class BalanceDF:
                 If None then it looks for a target in the self linked objects. Defaults to None.
             aggregate_by_main_covar (bool, optional): Defaults to False.
                 If True, it will return the KLD results after aggregating columns
-                that share a main covariate name (useful when columns already
-                represent one-hot encoded levels). See
+                that share a main covariate name (e.g., columns like ``"age[young]"``,
+                ``"age[old]"`` would be aggregated to a single ``"age"`` metric). See
                 :func:`_aggregate_statistic_by_main_covar` for more details.
 
         Raises:
