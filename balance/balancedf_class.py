@@ -1111,22 +1111,32 @@ class BalanceDF:
 
     def _get_df_and_weights(
         self: "BalanceDF",
+        use_model_matrix: bool = True,
+        add_na: bool = True,
     ) -> Tuple[pd.DataFrame, npt.NDArray | None]:
-        """Extract covars df (after using model_matrix) and weights from a BalanceDF object.
+        """Extract df values and weights from a BalanceDF object.
 
         Args:
             self (BalanceDF): Object
+            use_model_matrix (bool, optional): If True, use :func:`model_matrix`.
+                If False, use the raw df (optionally with NA indicators). Defaults to True.
+            add_na (bool, optional): If True and use_model_matrix is False, add NA
+                indicator columns via :func:`add_na_indicator`. Defaults to True.
 
         Returns:
             Tuple[pd.DataFrame, np.ndarray | None]:
-                A pd.DataFrame output from running :func:`model_matrix`, and
+                A pd.DataFrame output from running :func:`model_matrix` or using the raw df, and
                 A np.ndarray of weights from :func:`_weights`, or just None (if there are no weights).
         """
-        # get df values (like in BalanceDF._descriptive_stats)
-        df_model_matrix = self.model_matrix()
+        if use_model_matrix:
+            df_values = self.model_matrix()
+        else:
+            df_values = self.df.copy()
+            if add_na:
+                df_values = balance_util.add_na_indicator(df_values)
         # get weights (like in BalanceDF._descriptive_stats)
         weights = self._weights.values if (self._weights is not None) else None
-        return df_model_matrix, weights
+        return df_values, weights
 
     @staticmethod
     def _apply_comparison_stat_to_BalanceDF(
@@ -1134,6 +1144,8 @@ class BalanceDF:
         sample_BalanceDF: "BalanceDF",
         target_BalanceDF: "BalanceDF",
         aggregate_by_main_covar: bool = False,
+        use_model_matrix: bool = True,
+        add_na: bool = True,
         **kwargs: Any,
     ) -> pd.Series:
         """Generic helper to apply a weighted comparison statistic function to two BalanceDF objects.
@@ -1151,6 +1163,10 @@ class BalanceDF:
             target_BalanceDF (BalanceDF): Target object.
             aggregate_by_main_covar (bool, optional): Whether to aggregate by main covariate.
                 Defaults to False. Passed to the comparison function.
+            use_model_matrix (bool, optional): If True, use :func:`model_matrix` on the
+                BalanceDF objects. Defaults to True.
+            add_na (bool, optional): If True and use_model_matrix is False, add NA indicator
+                columns via :func:`add_na_indicator`. Defaults to True.
             **kwargs: Additional keyword arguments to pass to the comparison function
                 (e.g., std_type for asmd).
 
@@ -1160,8 +1176,14 @@ class BalanceDF:
         BalanceDF._check_if_not_BalanceDF(sample_BalanceDF, "sample_BalanceDF")
         BalanceDF._check_if_not_BalanceDF(target_BalanceDF, "target_BalanceDF")
 
-        sample_df_values, sample_weights = sample_BalanceDF._get_df_and_weights()
-        target_df_values, target_weights = target_BalanceDF._get_df_and_weights()
+        sample_df_values, sample_weights = sample_BalanceDF._get_df_and_weights(
+            use_model_matrix=use_model_matrix,
+            add_na=add_na,
+        )
+        target_df_values, target_weights = target_BalanceDF._get_df_and_weights(
+            use_model_matrix=use_model_matrix,
+            add_na=add_na,
+        )
 
         return comparison_func(
             sample_df_values,
@@ -1234,8 +1256,8 @@ class BalanceDF:
     ) -> pd.Series:
         """Run KLD on two BalanceDF objects.
 
-        Prepares the BalanceDF objects by passing them through :func:`_get_df_and_weights`, and
-        then pass the df and weights from the two objects into :func:`weighted_comparisons_stats.kld`.
+        Prepares the BalanceDF objects by using their raw df (with NA indicators), and
+        then passes the df and weights from the two objects into :func:`weighted_comparisons_stats.kld`.
 
         Args:
             sample_BalanceDF (BalanceDF): Object
@@ -1250,6 +1272,7 @@ class BalanceDF:
             sample_BalanceDF,
             target_BalanceDF,
             aggregate_by_main_covar,
+            use_model_matrix=False,
         )
 
     @staticmethod
@@ -1260,7 +1283,7 @@ class BalanceDF:
     ) -> pd.Series:
         """Run EMD on two BalanceDF objects.
 
-        Prepares the BalanceDF objects by passing them through :func:`_get_df_and_weights`, and
+        Prepares the BalanceDF objects by using their raw df (with NA indicators), and
         then passes the df and weights into :func:`weighted_comparisons_stats.emd`.
 
         Args:
@@ -1276,6 +1299,7 @@ class BalanceDF:
             sample_BalanceDF,
             target_BalanceDF,
             aggregate_by_main_covar,
+            use_model_matrix=False,
         )
 
     @staticmethod
@@ -1286,7 +1310,7 @@ class BalanceDF:
     ) -> pd.Series:
         """Run CVMD on two BalanceDF objects.
 
-        Prepares the BalanceDF objects by passing them through :func:`_get_df_and_weights`, and
+        Prepares the BalanceDF objects by using their raw df (with NA indicators), and
         then passes the df and weights into :func:`weighted_comparisons_stats.cvmd`.
 
         Args:
@@ -1302,6 +1326,7 @@ class BalanceDF:
             sample_BalanceDF,
             target_BalanceDF,
             aggregate_by_main_covar,
+            use_model_matrix=False,
         )
 
     @staticmethod
@@ -1312,7 +1337,7 @@ class BalanceDF:
     ) -> pd.Series:
         """Run KS on two BalanceDF objects.
 
-        Prepares the BalanceDF objects by passing them through :func:`_get_df_and_weights`, and
+        Prepares the BalanceDF objects by using their raw df (with NA indicators), and
         then passes the df and weights into :func:`weighted_comparisons_stats.ks`.
 
         Args:
@@ -1328,6 +1353,7 @@ class BalanceDF:
             sample_BalanceDF,
             target_BalanceDF,
             aggregate_by_main_covar,
+            use_model_matrix=False,
         )
 
     def asmd(
@@ -1481,9 +1507,11 @@ class BalanceDF:
             target (Optional["BalanceDF"], optional): A BalanceDF (of the same type as the one used in self) to compare against.
                 If None then it looks for a target in the self linked objects. Defaults to None.
             aggregate_by_main_covar (bool, optional): Defaults to False.
-                If True, it will make sure to return the kld DataFrame after averaging
-                all the columns from using the one-hot encoding for categorical variables.
-                See :func:`_aggregate_statistic_by_main_covar` for more details.
+                If True, it will return the KLD results after aggregating columns
+                that share a main covariate name (useful when columns already
+                represent one-hot encoded levels). See
+                :func:`_aggregate_statistic_by_main_covar` for more details.
+
 
         Raises:
             ValueError:

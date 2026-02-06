@@ -1223,10 +1223,8 @@ class TestBalanceDF_asmd(BalanceTestCase):
         expected = pd.DataFrame(
             {
                 "a": 0.0,
-                "c[x]": 0.143841,
-                "c[y]": 0.130812,
-                "c[z]": 0.0,
-                "mean(kld)": 0.045776,
+                "c": 0.173287,
+                "mean(kld)": 0.086643,
             },
             index=("covars",),
         )
@@ -1256,9 +1254,15 @@ class TestBalanceDF_asmd(BalanceTestCase):
         self.assertIn("unadjusted", links)
         self.assertIn("target", links)
 
-        self_df, self_weights = links["self"]._get_df_and_weights()
-        target_df, target_weights = links["target"]._get_df_and_weights()
-        unadj_df, unadj_weights = links["unadjusted"]._get_df_and_weights()
+        self_df, self_weights = links["self"]._get_df_and_weights(
+            use_model_matrix=False
+        )
+        target_df, target_weights = links["target"]._get_df_and_weights(
+            use_model_matrix=False
+        )
+        unadj_df, unadj_weights = links["unadjusted"]._get_df_and_weights(
+            use_model_matrix=False
+        )
 
         expected_self = weighted_comparisons_stats.kld(
             self_df,
