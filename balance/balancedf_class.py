@@ -1179,12 +1179,19 @@ class BalanceDF:
 
         sample_df_values, sample_weights = sample_BalanceDF._get_df_and_weights(
             use_model_matrix=use_model_matrix,
-            add_na=add_na,
+            add_na=False if (add_na and not use_model_matrix) else add_na,
         )
         target_df_values, target_weights = target_BalanceDF._get_df_and_weights(
             use_model_matrix=use_model_matrix,
-            add_na=add_na,
+            add_na=False if (add_na and not use_model_matrix) else add_na,
         )
+        if add_na and not use_model_matrix:
+            combined = balance_util.add_na_indicator(
+                pd.concat([sample_df_values, target_df_values], axis=0)
+            )
+            sample_n = sample_df_values.shape[0]
+            sample_df_values = combined.iloc[:sample_n].copy()
+            target_df_values = combined.iloc[sample_n:].copy()
 
         return comparison_func(
             sample_df_values,
