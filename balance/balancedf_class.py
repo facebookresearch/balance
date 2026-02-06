@@ -1512,7 +1512,6 @@ class BalanceDF:
                 represent one-hot encoded levels). See
                 :func:`_aggregate_statistic_by_main_covar` for more details.
 
-
         Raises:
             ValueError:
                 If self has no target and no target is supplied.
