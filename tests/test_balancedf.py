@@ -221,6 +221,7 @@ class TestBalanceDFOutcomes(BalanceTestCase):
         - Returns correct DataFrame and numpy array types
         - DataFrame values match expected outcome data
         - Weights array contains correct weight values
+        - Raw covariate mode adds NA indicator columns when requested
         """
         df, w = BalanceDF._get_df_and_weights(o)
         # Check types
@@ -229,6 +230,15 @@ class TestBalanceDFOutcomes(BalanceTestCase):
         # Check values
         self.assertEqual(df.to_dict(), {"o": {0: 7.0, 1: 8.0, 2: 9.0, 3: 10.0}})
         self.assertEqual(w, np.array([0.5, 2.0, 1.0, 1.0]))
+
+        raw_df, raw_weights = s4.covars()._get_df_and_weights(
+            use_model_matrix=False, add_na=True
+        )
+        self.assertEqual(type(raw_df), pd.DataFrame)
+        self.assertEqual(raw_weights, np.array([1.0, 1.0, 1.0]))
+        self.assertEqual(raw_df.columns.tolist(), ["a", "_is_na_a"])
+        self.assertEqual(raw_df["a"].tolist(), [0.0, 0.0, 2.0])
+        self.assertEqual(raw_df["_is_na_a"].tolist(), [False, True, False])
 
     def test_BalanceDFOutcomes_names(self) -> None:
         """Test that BalanceDFOutcomes.names() returns correct outcome column names."""
