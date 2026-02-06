@@ -19,6 +19,9 @@
 - **Categorical distribution metrics without one-hot encoding**
   - KLD/EMD/CVMD/KS on `BalanceDF.covars()` now operate on raw categorical variables
     (with NA indicators) instead of one-hot encoded columns.
+- **Raw-covariate adjustment for custom models**
+  - `Sample.adjust()` now supports fitting models on raw covariates (without a model matrix)
+    for IPW, enabling tree-based estimators to consume categorical codes directly.
 
 ## Bug Fixes
 
