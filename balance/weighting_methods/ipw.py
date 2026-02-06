@@ -791,12 +791,6 @@ def ipw(
                 "Argument 'one_hot_encoding' is ignored because use_model_matrix=False; "
                 "no model matrix will be constructed."
             )
-        if penalty_factor is not None:
-            logger.warning(
-                "Argument 'penalty_factor' is ignored because use_model_matrix=False "
-                "with a custom sklearn model; this argument only applies when "
-                "use_model_matrix=True with the built-in logistic regression model."
-            )
 
         if na_action == "add_indicator":
             combined = balance_util.add_na_indicator(
