@@ -353,6 +353,42 @@ class TestIPW(
         )
         self.assertEqual(len(result_no_indicator["weight"]), len(sample))
 
+    def test_ipw_use_model_matrix_false_warns_on_ignored_args(self) -> None:
+        """Raw-covariate IPW warns when model-matrix-only args are provided."""
+
+        sample = pd.DataFrame({"a": (0, 1, 1, 0), "b": (1, 2, 3, 4)})
+        target = pd.DataFrame({"a": (1, 0, 0, 1), "b": (4, 3, 2, 1)})
+
+        model = RandomForestClassifier(n_estimators=5, random_state=0)
+        with self.assertLogs(balance_ipw.logger, level="WARNING") as logs:
+            balance_ipw.ipw(
+                sample_df=sample,
+                sample_weights=pd.Series(np.ones(len(sample))),
+                target_df=target,
+                target_weights=pd.Series(np.ones(len(target))),
+                model=model,
+                transformations=None,
+                num_lambdas=1,
+                max_de=1.5,
+                formula="a + b",
+                penalty_factor=[1.0],
+                one_hot_encoding=True,
+                use_model_matrix=False,
+            )
+
+        self.assertTrue(
+            any("formula" in message for message in logs.output),
+            msg=f"Expected formula warning; logs={logs.output}",
+        )
+        self.assertTrue(
+            any("one_hot_encoding" in message for message in logs.output),
+            msg=f"Expected one_hot_encoding warning; logs={logs.output}",
+        )
+        self.assertTrue(
+            any("penalty_factor" in message for message in logs.output),
+            msg=f"Expected penalty_factor warning; logs={logs.output}",
+        )
+
     def test_ipw_supports_dense_only_estimators(self) -> None:
         """Estimators that require dense matrices (e.g., GaussianNB) are supported."""
 

@@ -546,7 +546,11 @@ def ipw(
             :func:`model_matrix`. When set to False, the model is fit on the raw
             covariate data after applying transformations, adding NA indicators,
             and encoding categorical columns as integer codes. This is useful for
-            tree-based models that do not require one-hot encoding. Defaults to True.
+            tree-based models that do not require one-hot encoding when a custom
+            sklearn classifier is passed via ``model``. The built-in logistic-regression
+            path (i.e., when ``model`` is ``None`` or the default) currently requires
+            ``use_model_matrix=True`` and will raise if ``use_model_matrix=False``.
+            Defaults to True.
         random_seed (int, optional): Random seed to use. Defaults to 2020.
 
     Examples:
@@ -770,13 +774,12 @@ def ipw(
                 "use_model_matrix=False is only supported when providing a custom "
                 "sklearn classifier (e.g., RandomForestClassifier)."
             )
-
         if formula is not None:
             logger.warning(
                 "Argument 'formula' is ignored because use_model_matrix=False; "
                 "no model matrix will be constructed."
             )
-        if one_hot_encoding is not None:
+        if one_hot_encoding:
             logger.warning(
                 "Argument 'one_hot_encoding' is ignored because use_model_matrix=False; "
                 "no model matrix will be constructed."
