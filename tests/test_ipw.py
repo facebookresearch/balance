@@ -282,6 +282,77 @@ class TestIPW(
         self.assertTrue(np.isnan(result["model"]["lambda"]))
         self.assertEqual(len(result["weight"]), len(sample))
 
+    def test_ipw_use_model_matrix_false_requires_custom_model(self) -> None:
+        """use_model_matrix=False is only supported with custom sklearn estimators."""
+
+        sample = pd.DataFrame({"a": (0, 1, 1, 0)})
+        target = pd.DataFrame({"a": (1, 0, 0, 1)})
+
+        with self.assertRaisesRegex(ValueError, "use_model_matrix=False"):
+            balance_ipw.ipw(
+                sample_df=sample,
+                sample_weights=pd.Series((1,) * len(sample)),
+                target_df=target,
+                target_weights=pd.Series((1,) * len(target)),
+                transformations=None,
+                use_model_matrix=False,
+            )
+
+    def test_ipw_use_model_matrix_false_encodes_categoricals(self) -> None:
+        """Raw-covariate IPW encodes categoricals and supports NA indicators."""
+
+        sample = pd.DataFrame(
+            {
+                "age_group": pd.Series(
+                    ("young", "adult", None, "young"), dtype="string"
+                ),
+                "gender": pd.Series(("f", "m", "f", None), dtype="string"),
+                "score": (1.0, 2.0, 3.0, 4.0),
+            }
+        )
+        target = pd.DataFrame(
+            {
+                "age_group": pd.Series(("adult", "senior", "young"), dtype="string"),
+                "gender": pd.Series(("m", "f", "m"), dtype="string"),
+                "score": (1.5, 2.5, 3.5),
+            }
+        )
+
+        model = RandomForestClassifier(n_estimators=10, random_state=0)
+        result = balance_ipw.ipw(
+            sample_df=sample,
+            sample_weights=pd.Series(np.ones(len(sample))),
+            target_df=target,
+            target_weights=pd.Series(np.ones(len(target))),
+            model=model,
+            transformations=None,
+            num_lambdas=1,
+            max_de=1.5,
+            na_action="add_indicator",
+            use_model_matrix=False,
+        )
+
+        self.assertIsInstance(result["model"]["fit"], RandomForestClassifier)
+        self.assertEqual(len(result["weight"]), len(sample))
+
+        result_no_indicator = balance_ipw.ipw(
+            sample_df=sample.fillna("missing"),
+            sample_weights=pd.Series(np.ones(len(sample))),
+            target_df=target.fillna("missing"),
+            target_weights=pd.Series(np.ones(len(target))),
+            model=model,
+            transformations=None,
+            num_lambdas=1,
+            max_de=1.5,
+            na_action="drop",
+            use_model_matrix=False,
+        )
+
+        self.assertIsInstance(
+            result_no_indicator["model"]["fit"], RandomForestClassifier
+        )
+        self.assertEqual(len(result_no_indicator["weight"]), len(sample))
+
     def test_ipw_supports_dense_only_estimators(self) -> None:
         """Estimators that require dense matrices (e.g., GaussianNB) are supported."""
 
