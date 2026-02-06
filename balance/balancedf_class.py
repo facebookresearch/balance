@@ -1131,9 +1131,10 @@ class BalanceDF:
         if use_model_matrix:
             df_values = self.model_matrix()
         else:
-            df_values = self.df.copy()
             if add_na:
-                df_values = balance_util.add_na_indicator(df_values)
+                df_values = balance_util.add_na_indicator(self.df.copy())
+            else:
+                df_values = self.df
         # get weights (like in BalanceDF._descriptive_stats)
         weights = self._weights.values if (self._weights is not None) else None
         return df_values, weights

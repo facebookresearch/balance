@@ -482,9 +482,9 @@ def ipw(
     num_lambdas: int = 250,
     formula: str | list[str] | None = None,
     penalty_factor: list[float] | None = None,
-    one_hot_encoding: bool = False,
     # TODO: This is set to be false in order to keep reproducibility of works that uses balance.
     # The best practice is for this to be true.
+    one_hot_encoding: bool = False,
     use_model_matrix: bool = True,
     random_seed: int = 2020,
     *args: Any,
@@ -769,6 +769,22 @@ def ipw(
             raise ValueError(
                 "use_model_matrix=False is only supported when providing a custom "
                 "sklearn classifier (e.g., RandomForestClassifier)."
+            )
+
+        if formula is not None:
+            logger.warning(
+                "Argument 'formula' is ignored because use_model_matrix=False; "
+                "no model matrix will be constructed."
+            )
+        if one_hot_encoding is not None:
+            logger.warning(
+                "Argument 'one_hot_encoding' is ignored because use_model_matrix=False; "
+                "no model matrix will be constructed."
+            )
+        if penalty_factor is not None:
+            logger.warning(
+                "Argument 'penalty_factor' is ignored because use_model_matrix=False; "
+                "a default penalty_factor_expanded will be used instead."
             )
 
         if na_action == "add_indicator":
