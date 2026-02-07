@@ -1186,9 +1186,25 @@ class BalanceDF:
             add_na=False if (add_na and not use_model_matrix) else add_na,
         )
         if add_na and not use_model_matrix:
-            combined = balance_util.add_na_indicator(
-                pd.concat([sample_df_values, target_df_values], axis=0)
+            combined_raw = pd.concat([sample_df_values, target_df_values], axis=0)
+            existing_indicator_cols = [
+                col
+                for col in combined_raw.columns
+                if isinstance(col, str) and col.startswith("_is_na_")
+            ]
+            base_cols = [
+                col for col in combined_raw.columns if col not in existing_indicator_cols
+            ]
+            combined_with_indicators = balance_util.add_na_indicator(
+                combined_raw[base_cols]
             )
+            if existing_indicator_cols:
+                combined = pd.concat(
+                    [combined_with_indicators, combined_raw[existing_indicator_cols]],
+                    axis=1,
+                )
+            else:
+                combined = combined_with_indicators
             sample_n = sample_df_values.shape[0]
             sample_df_values = combined.iloc[:sample_n].copy()
             target_df_values = combined.iloc[sample_n:].copy()

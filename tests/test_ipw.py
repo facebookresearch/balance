@@ -389,6 +389,35 @@ class TestIPW(
             msg=f"Expected penalty_factor warning; logs={logs.output}",
         )
 
+    def test_ipw_use_model_matrix_false_existing_na_indicators(self) -> None:
+        """Raw-covariate IPW handles pre-existing NA indicator columns."""
+
+        df = pd.DataFrame(
+            {
+                "id": [1, 2, 3, 4],
+                "a": [1.0, None, 2.0, 3.0],
+                "_is_na_a": [0, 1, 0, 0],
+            }
+        )
+        sample = df.iloc[:2].copy()
+        target = df.iloc[2:].copy()
+        model = RandomForestClassifier(n_estimators=5, random_state=0)
+
+        result = balance_ipw.ipw(
+            sample_df=sample.drop(columns=["id"]),
+            sample_weights=pd.Series(np.ones(len(sample)), index=sample.index),
+            target_df=target.drop(columns=["id"]),
+            target_weights=pd.Series(np.ones(len(target)), index=target.index),
+            model=model,
+            transformations=None,
+            num_lambdas=1,
+            max_de=1.5,
+            na_action="add_indicator",
+            use_model_matrix=False,
+        )
+
+        self.assertIsInstance(result["model"]["fit"], RandomForestClassifier)
+
     def test_ipw_supports_dense_only_estimators(self) -> None:
         """Estimators that require dense matrices (e.g., GaussianNB) are supported."""
 

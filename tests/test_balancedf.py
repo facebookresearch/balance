@@ -250,6 +250,41 @@ class TestBalanceDFOutcomes(BalanceTestCase):
         self.assertTrue(pd.isna(raw_df_no_na["a"].tolist()[1]))
         self.assertEqual(raw_df_no_na["a"].tolist()[2], 2.0)
 
+    def test_kld_with_existing_na_indicators(self) -> None:
+        """Test raw-covariate KLD with pre-existing NA indicator columns."""
+        sample_df = pd.DataFrame(
+            {
+                "id": ["1", "2", "3"],
+                "a": [1.0, None, 3.0],
+                "_is_na_a": [0, 1, 0],
+                "weight": [1.0, 1.0, 1.0],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": ["4", "5", "6"],
+                "a": [1.0, 2.0, None],
+                "_is_na_a": [0, 0, 1],
+                "weight": [1.0, 1.0, 1.0],
+            }
+        )
+        sample = Sample.from_frame(
+            sample_df,
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        target = Sample.from_frame(
+            target_df,
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        linked = sample.set_target(target)
+
+        kld = linked.covars().kld(on_linked_samples=False)
+        self.assertIn("a", kld.columns)
+
     def test_BalanceDFOutcomes_names(self) -> None:
         """Test that BalanceDFOutcomes.names() returns correct outcome column names."""
         self.assertEqual(o.names(), ["o"])

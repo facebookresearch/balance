@@ -791,13 +791,31 @@ def ipw(
                 "Argument 'one_hot_encoding' is ignored because use_model_matrix=False; "
                 "no model matrix will be constructed."
             )
-
-        if na_action == "add_indicator":
-            combined = balance_util.add_na_indicator(
-                pd.concat([sample_df, target_df], axis=0)
+        if penalty_factor is not None:
+            logger.warning(
+                "Argument 'penalty_factor' is ignored because use_model_matrix=False "
+                "with a custom sklearn model; this argument only applies when "
+                "use_model_matrix=True with the built-in logistic regression model."
             )
-        else:
-            combined = pd.concat([sample_df, target_df], axis=0)
+
+        combined = pd.concat([sample_df, target_df], axis=0)
+        if na_action == "add_indicator":
+            existing_indicator_cols = [
+                col
+                for col in combined.columns
+                if isinstance(col, str) and col.startswith("_is_na_")
+            ]
+            if not existing_indicator_cols:
+                combined = balance_util.add_na_indicator(combined)
+            else:
+                base_cols = [
+                    col for col in combined.columns if col not in existing_indicator_cols
+                ]
+                combined_base = balance_util.add_na_indicator(combined[base_cols])
+                combined = pd.concat(
+                    [combined_base, combined[existing_indicator_cols]],
+                    axis=1,
+                )
 
         categorical_cols = combined.select_dtypes(
             ["category", "string", "boolean", "object"]
