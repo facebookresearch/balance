@@ -1193,7 +1193,9 @@ class BalanceDF:
                 if isinstance(col, str) and col.startswith("_is_na_")
             ]
             base_cols = [
-                col for col in combined_raw.columns if col not in existing_indicator_cols
+                col
+                for col in combined_raw.columns
+                if col not in existing_indicator_cols
             ]
             combined_with_indicators = balance_util.add_na_indicator(
                 combined_raw[base_cols]

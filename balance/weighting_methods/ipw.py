@@ -809,7 +809,9 @@ def ipw(
                 combined = balance_util.add_na_indicator(combined)
             else:
                 base_cols = [
-                    col for col in combined.columns if col not in existing_indicator_cols
+                    col
+                    for col in combined.columns
+                    if col not in existing_indicator_cols
                 ]
                 combined_base = balance_util.add_na_indicator(combined[base_cols])
                 combined = pd.concat(
