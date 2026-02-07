@@ -411,7 +411,7 @@ class TestIPW(
             model=model,
             transformations=None,
             num_lambdas=1,
-            max_de=1.5,
+            max_de=100.0,
             na_action="add_indicator",
             use_model_matrix=False,
         )

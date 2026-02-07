@@ -1200,6 +1200,9 @@ class BalanceDF:
             combined_with_indicators = balance_util.add_na_indicator(
                 combined_raw[base_cols]
             )
+            combined_with_indicators = combined_with_indicators.drop(
+                columns=existing_indicator_cols, errors="ignore"
+            )
             if existing_indicator_cols:
                 combined = pd.concat(
                     [combined_with_indicators, combined_raw[existing_indicator_cols]],
