@@ -16,6 +16,9 @@
 - **Formula support for BalanceDF model matrices**
   - `BalanceDF.model_matrix()` now accepts a `formula` argument to build
     custom model matrices without precomputing them manually.
+- **Categorical distribution metrics without one-hot encoding**
+  - KLD/EMD/CVMD/KS on `BalanceDF.covars()` now operate on raw categorical variables
+    (with NA indicators) instead of one-hot encoded columns.
 
 ## Bug Fixes
 

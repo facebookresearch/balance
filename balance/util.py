@@ -11,6 +11,7 @@ import logging
 
 from balance.utils.data_transformation import (
     add_na_indicator,
+    add_na_indicator_to_combined,
     auto_aggregate,
     auto_spread,
     drop_na_rows,
@@ -97,6 +98,7 @@ __all__ = [
     "_assert_type",
     "_warn_of_df_dtypes_change",
     "add_na_indicator",
+    "add_na_indicator_to_combined",
     "auto_aggregate",
     "auto_spread",
     "build_model_matrix",

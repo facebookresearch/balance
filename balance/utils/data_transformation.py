@@ -76,6 +76,47 @@ def add_na_indicator(
     return pd.concat((df, na_indicators), axis=1)
 
 
+def add_na_indicator_to_combined(df: pd.DataFrame) -> pd.DataFrame:
+    """Add NA indicator columns to a DataFrame, handling pre-existing ``_is_na_*`` columns.
+
+    :func:`add_na_indicator` raises when the input already contains columns whose
+    names start with ``_is_na_``.  This wrapper splits those columns out first,
+    applies :func:`add_na_indicator` to the remaining base columns, and then
+    re-attaches the original indicator columns so that nothing is duplicated.
+
+    Args:
+        df (pd.DataFrame): The input DataFrame, which may or may not already
+            contain ``_is_na_*`` columns.
+
+    Returns:
+        pd.DataFrame: The DataFrame with NA indicator columns added for every
+            base column that contains missing values.
+    """
+    existing_indicator_cols = [
+        col for col in df.columns if isinstance(col, str) and col.startswith("_is_na_")
+    ]
+    if not existing_indicator_cols:
+        return add_na_indicator(df)
+
+    base_cols = [col for col in df.columns if col not in existing_indicator_cols]
+    combined_base = add_na_indicator(df[base_cols])
+    # add_na_indicator will create "_is_na_<col>" for every base column that has
+    # NAs.  If the input already carried a matching indicator (e.g. "_is_na_foo"
+    # exists and "foo" still has NAs), the newly created column would clash with
+    # the pre-existing one.  Drop the duplicates so the original indicators are
+    # preserved unchanged when we re-attach them below.
+    overlapping = [c for c in existing_indicator_cols if c in combined_base.columns]
+    if overlapping:
+        logger.debug(
+            "add_na_indicator_to_combined: dropping %d newly created indicator "
+            "column(s) that overlap with pre-existing ones: %s",
+            len(overlapping),
+            overlapping,
+        )
+    combined_base = combined_base.drop(columns=overlapping, errors="ignore")
+    return pd.concat([combined_base, df[existing_indicator_cols]], axis=1)
+
+
 def drop_na_rows(
     sample_df: pd.DataFrame, sample_weights: pd.Series, name: str = "sample object"
 ) -> Tuple[pd.DataFrame, pd.Series]:

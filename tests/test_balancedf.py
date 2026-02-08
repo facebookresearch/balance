@@ -9,6 +9,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import tempfile
 from copy import deepcopy
+from typing import Callable
 from unittest.mock import patch, PropertyMock
 
 import IPython.display
@@ -24,7 +25,7 @@ from balance.sample_class import Sample
 from balance.stats_and_plots import weighted_comparisons_stats
 from balance.testutil import BalanceTestCase, tempfile_path
 from balance.utils.model_matrix import model_matrix
-from patsy import PatsyError  # pyre-ignore[21]
+from patsy import PatsyError
 
 
 class TestDataFactory:
@@ -221,6 +222,7 @@ class TestBalanceDFOutcomes(BalanceTestCase):
         - Returns correct DataFrame and numpy array types
         - DataFrame values match expected outcome data
         - Weights array contains correct weight values
+        - Raw covariate mode returns the raw df without model_matrix transformation
         """
         df, w = BalanceDF._get_df_and_weights(o)
         # Check types
@@ -229,6 +231,51 @@ class TestBalanceDFOutcomes(BalanceTestCase):
         # Check values
         self.assertEqual(df.to_dict(), {"o": {0: 7.0, 1: 8.0, 2: 9.0, 3: 10.0}})
         self.assertEqual(w, np.array([0.5, 2.0, 1.0, 1.0]))
+
+        raw_df, raw_weights = s4.covars()._get_df_and_weights(
+            use_model_matrix=False,
+        )
+        self.assertEqual(type(raw_df), pd.DataFrame)
+        self.assertEqual(raw_weights, np.array([1.0, 1.0, 1.0]))
+        self.assertEqual(raw_df.columns.tolist(), ["a"])
+        self.assertEqual(raw_df["a"].tolist()[0], 0.0)
+        self.assertTrue(pd.isna(raw_df["a"].tolist()[1]))
+        self.assertEqual(raw_df["a"].tolist()[2], 2.0)
+
+    def test_kld_with_existing_na_indicators(self) -> None:
+        """Test raw-covariate KLD with pre-existing NA indicator columns."""
+        sample_df = pd.DataFrame(
+            {
+                "id": ["1", "2", "3"],
+                "a": [1.0, None, 3.0],
+                "_is_na_a": [0, 1, 0],
+                "weight": [1.0, 1.0, 1.0],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": ["4", "5", "6"],
+                "a": [1.0, 2.0, None],
+                "_is_na_a": [0, 0, 1],
+                "weight": [1.0, 1.0, 1.0],
+            }
+        )
+        sample = Sample.from_frame(
+            sample_df,
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        target = Sample.from_frame(
+            target_df,
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        linked = sample.set_target(target)
+
+        kld = linked.covars().kld(on_linked_samples=False)
+        self.assertIn("a", kld.columns)
 
     def test_BalanceDFOutcomes_names(self) -> None:
         """Test that BalanceDFOutcomes.names() returns correct outcome column names."""
@@ -1223,10 +1270,8 @@ class TestBalanceDF_asmd(BalanceTestCase):
         expected = pd.DataFrame(
             {
                 "a": 0.0,
-                "c[x]": 0.143841,
-                "c[y]": 0.130812,
-                "c[z]": 0.0,
-                "mean(kld)": 0.045776,
+                "c": 0.173287,
+                "mean(kld)": 0.086643,
             },
             index=("covars",),
         )
@@ -1234,6 +1279,58 @@ class TestBalanceDF_asmd(BalanceTestCase):
         expected.index.name = "index"
 
         self.assertEqual(output.round(6), expected)
+
+    def _assert_categorical_stat(
+        self,
+        stat_method_name: str,
+        comparison_func: "Callable[..., pd.Series]",
+    ) -> None:
+        """Helper: verify that a distribution metric works on raw categorical covariates."""
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "a": (1, 2, 3, 4),
+                    "c": ("x", "x", "y", "z"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "a": (1, 2, 2, 3),
+                    "c": ("x", "y", "y", "z"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+
+        sample_with_target = sample.set_target(target)
+        output = getattr(sample_with_target.covars(), stat_method_name)(
+            on_linked_samples=False
+        )
+
+        expected = comparison_func(sample.covars().df, target.covars().df)
+        expected = pd.DataFrame([expected], index=("covars",))
+        expected.index.name = output.index.name
+
+        self.assertEqual(output.round(6), expected.round(6))
+
+    def test_BalanceDF_emd_categorical(self) -> None:
+        self._assert_categorical_stat("emd", weighted_comparisons_stats.emd)
+
+    def test_BalanceDF_cvmd_categorical(self) -> None:
+        self._assert_categorical_stat("cvmd", weighted_comparisons_stats.cvmd)
+
+    def test_BalanceDF_ks_categorical(self) -> None:
+        self._assert_categorical_stat("ks", weighted_comparisons_stats.ks)
 
     def test_BalanceDF_kld_aggregate_by_main_covar(self) -> None:
         covars = s3.covars()
@@ -1256,9 +1353,15 @@ class TestBalanceDF_asmd(BalanceTestCase):
         self.assertIn("unadjusted", links)
         self.assertIn("target", links)
 
-        self_df, self_weights = links["self"]._get_df_and_weights()
-        target_df, target_weights = links["target"]._get_df_and_weights()
-        unadj_df, unadj_weights = links["unadjusted"]._get_df_and_weights()
+        self_df, self_weights = links["self"]._get_df_and_weights(
+            use_model_matrix=False
+        )
+        target_df, target_weights = links["target"]._get_df_and_weights(
+            use_model_matrix=False
+        )
+        unadj_df, unadj_weights = links["unadjusted"]._get_df_and_weights(
+            use_model_matrix=False
+        )
 
         expected_self = weighted_comparisons_stats.kld(
             self_df,
@@ -1285,6 +1388,94 @@ class TestBalanceDF_asmd(BalanceTestCase):
         )
 
         output = covars.kld(aggregate_by_main_covar=True)
+        expected.index.name = output.index.name
+
+        self.assertEqual(output.round(6), expected.round(6))
+
+    def test_BalanceDF_kld_on_linked_samples_with_na(self) -> None:
+        """Test that KLD on linked samples correctly applies NA indicators.
+
+        Uses samples with NAs so that add_na_indicator_to_combined is exercised
+        in the on_linked_samples=True path, and verifies the internal df is not
+        mutated after calling kld.
+        """
+        from balance.util import add_na_indicator_to_combined
+
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "a": (1.0, None, 3.0, 4.0),
+                    "c": ("x", "y", "z", "x"),
+                    "w": (1, 2, 3, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (5, 6, 7),
+                    "a": (1.0, 2.0, None),
+                    "c": ("x", "y", "z"),
+                    "w": (1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+        linked = sample.set_target(target)
+        null_adj = linked.adjust(method="null")
+        null_adj_custom = deepcopy(null_adj)
+        null_adj_custom.set_weights(pd.Series([1, 1, 1, 1], index=null_adj.df.index))
+
+        covars = null_adj_custom.covars()
+
+        # Snapshot the internal df before calling kld
+        original_df = covars.df.copy()
+
+        output = covars.kld(aggregate_by_main_covar=False)
+
+        # Verify internal df was not mutated
+        pd.testing.assert_frame_equal(covars.df, original_df)
+
+        # Build expected values using the same NA-indicator logic
+        links = covars._BalanceDF_child_from_linked_samples()
+        self_df, self_w = links["self"]._get_df_and_weights(use_model_matrix=False)
+        target_df, target_w = links["target"]._get_df_and_weights(
+            use_model_matrix=False
+        )
+        unadj_df, unadj_w = links["unadjusted"]._get_df_and_weights(
+            use_model_matrix=False
+        )
+
+        # Apply NA indicators the same way _apply_comparison_stat_to_BalanceDF does
+        combined_self_target = add_na_indicator_to_combined(
+            pd.concat([self_df, target_df], axis=0)
+        )
+        n_self = self_df.shape[0]
+        self_df_na = combined_self_target.iloc[:n_self]
+        target_df_na_for_self = combined_self_target.iloc[n_self:]
+
+        combined_unadj_target = add_na_indicator_to_combined(
+            pd.concat([unadj_df, target_df], axis=0)
+        )
+        n_unadj = unadj_df.shape[0]
+        unadj_df_na = combined_unadj_target.iloc[:n_unadj]
+        target_df_na_for_unadj = combined_unadj_target.iloc[n_unadj:]
+
+        expected_self = weighted_comparisons_stats.kld(
+            self_df_na, target_df_na_for_self, self_w, target_w
+        )
+        expected_unadj = weighted_comparisons_stats.kld(
+            unadj_df_na, target_df_na_for_unadj, unadj_w, target_w
+        )
+
+        expected = pd.DataFrame(
+            [expected_self, expected_unadj, expected_unadj - expected_self],
+            index=["self", "unadjusted", "unadjusted - self"],
+        )
         expected.index.name = output.index.name
 
         self.assertEqual(output.round(6), expected.round(6))
