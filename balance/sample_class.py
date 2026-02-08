@@ -510,10 +510,9 @@ class Sample:
             ]
             # TODO:(after 2026) that if pandas >=3, this doesn't cause issues for users importing data from SQL
             # In pandas < 3, convert string dtype to object for compatibility
-            _pd_version = tuple(
-                int(x) for x in importlib_version("pandas").split(".")[:2]
-            )
-            if _pd_version < (3, 0):
+            from packaging.version import Version
+
+            if Version(importlib_version("pandas")) < Version("3.0"):
                 input_type.append("string")
                 output_type.append("object")
             for i_input, i_output in zip(input_type, output_type):
@@ -940,31 +939,38 @@ class Sample:
         .. code-block:: python
 
                 import balance
-                from sklearn.ensemble import RandomForestClassifier
+                from sklearn.ensemble import HistGradientBoostingClassifier
                 from balance import Sample
                 from balance import load_data
 
                 # Load simulated data
                 target_df, sample_df = load_data()
 
+                sample
+
                 sample = Sample.from_frame(sample_df, outcome_columns=["happiness"])
-                # Often times we don'y have the outcome for the target. In this case we've added it just to validate later that the weights indeed help us reduce the bias
+                # Often times we don't have the outcome for the target. In this case we've added it just to validate later that the weights indeed help us reduce the bias
                 target = Sample.from_frame(target_df, outcome_columns=["happiness"])
 
                 sample_with_target = sample.set_target(target)
                 adjusted = sample_with_target.adjust()
 
-                rf = RandomForestClassifier(n_estimators=200, random_state=0)
-                adjusted_rf = sample_with_target.adjust(model = rf)
+                hgb = HistGradientBoostingClassifier(
+                    random_state=0, categorical_features="from_dtype"
+                )
+                adjusted_hgb = sample_with_target.adjust(
+                    model=hgb,
+                    use_model_matrix=False,
+                )
 
-                # Print ASMD tables for both adjusted and adjusted_rf
+                # Print ASMD tables for both adjusted and adjusted_hgb
                 print("\\n=== Adjusted ASMD ===")
                 print(adjusted.covars().asmd().T)
 
-                print("\\n=== Adjusted_RF ASMD ===")
-                print(adjusted_rf.covars().asmd().T)
+                print("\\n=== Adjusted_HGB ASMD ===")
+                print(adjusted_hgb.covars().asmd().T)
 
-                # output
+                # output (values will vary by model and random seed)
                 #
                 # === Adjusted ASMD ===
                 # source                  self  unadjusted  unadjusted - self
@@ -977,16 +983,16 @@ class Sample:
                 # income              0.205469    0.494217           0.288748
                 # mean(asmd)          0.119597    0.326799           0.207202
                 #
-                # === Adjusted_RF ASMD ===
+                # === Adjusted_HGB ASMD ===
                 # source                  self  unadjusted  unadjusted - self
-                # age_group[T.25-34]  0.074491    0.005688          -0.068804
-                # age_group[T.35-44]  0.022383    0.312711           0.290328
-                # age_group[T.45+]    0.145628    0.378828           0.233201
-                # gender[Female]      0.037700    0.375699           0.337999
-                # gender[Male]        0.067392    0.379314           0.311922
-                # gender[_NA]         0.051718    0.006296          -0.045422
-                # income              0.140655    0.494217           0.353562
-                # mean(asmd)          0.091253    0.326799           0.235546
+                # age_group[T.25-34]       ...    0.005688            ...
+                # age_group[T.35-44]       ...    0.312711            ...
+                # age_group[T.45+]         ...    0.378828            ...
+                # gender[Female]           ...    0.375699            ...
+                # gender[Male]             ...    0.379314            ...
+                # gender[_NA]              ...    0.006296            ...
+                # income                   ...    0.494217            ...
+                # mean(asmd)               ...    0.326799            ...
         """
         if target is None:
             self._no_target_error()

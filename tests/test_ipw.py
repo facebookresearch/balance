@@ -13,17 +13,23 @@ from __future__ import (
     unicode_literals,
 )
 
+import unittest
+
 import balance.testutil
 import numpy as np
 import pandas as pd
+import sklearn
 from balance.sample_class import Sample
 from balance.weighting_methods import ipw as balance_ipw
-from sklearn.ensemble import RandomForestClassifier
+from packaging.version import Version
+from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import log_loss
 from sklearn.naive_bayes import GaussianNB
 from sklearn.svm import LinearSVC
 from sklearn.tree import DecisionTreeClassifier
+
+_SKLEARN_LT_1_4: bool = Version(sklearn.__version__) < Version("1.4")
 
 
 class TestIPW(
@@ -281,6 +287,290 @@ class TestIPW(
         self.assertIsInstance(result["model"]["fit"], RandomForestClassifier)
         self.assertTrue(np.isnan(result["model"]["lambda"]))
         self.assertEqual(len(result["weight"]), len(sample))
+
+    def test_ipw_use_model_matrix_false_requires_custom_model(self) -> None:
+        """use_model_matrix=False is only supported with custom sklearn estimators."""
+
+        sample = pd.DataFrame({"a": (0, 1, 1, 0)})
+        target = pd.DataFrame({"a": (1, 0, 0, 1)})
+
+        with self.assertRaisesRegex(ValueError, "use_model_matrix=False"):
+            balance_ipw.ipw(
+                sample_df=sample,
+                sample_weights=pd.Series((1,) * len(sample)),
+                target_df=target,
+                target_weights=pd.Series((1,) * len(target)),
+                transformations=None,
+                use_model_matrix=False,
+            )
+
+    @unittest.skipIf(
+        _SKLEARN_LT_1_4,
+        "categorical_features='from_dtype' requires scikit-learn >= 1.4",
+    )
+    def test_ipw_use_model_matrix_false_preserves_categoricals(self) -> None:
+        """Raw-covariate IPW preserves categorical dtype for native sklearn categorical support."""
+
+        sample = pd.DataFrame(
+            {
+                "age_group": pd.Series(
+                    ("young", "adult", None, "young"), dtype="string"
+                ),
+                "gender": pd.Series(("f", "m", "f", None), dtype="string"),
+                "score": (1.0, 2.0, 3.0, 4.0),
+            }
+        )
+        target = pd.DataFrame(
+            {
+                "age_group": pd.Series(("adult", "senior", "young"), dtype="string"),
+                "gender": pd.Series(("m", "f", "m"), dtype="string"),
+                "score": (1.5, 2.5, 3.5),
+            }
+        )
+
+        # Use HistGradientBoostingClassifier with categorical_features="from_dtype"
+        # which natively handles pandas Categorical columns (sklearn 1.4+).
+        model = HistGradientBoostingClassifier(
+            random_state=0, categorical_features="from_dtype"
+        )
+        result = balance_ipw.ipw(
+            sample_df=sample,
+            sample_weights=pd.Series(np.ones(len(sample))),
+            target_df=target,
+            target_weights=pd.Series(np.ones(len(target))),
+            model=model,
+            transformations=None,
+            num_lambdas=1,
+            max_de=1.5,
+            na_action="add_indicator",
+            use_model_matrix=False,
+        )
+
+        self.assertIsInstance(result["model"]["fit"], HistGradientBoostingClassifier)
+        self.assertEqual(len(result["weight"]), len(sample))
+
+        result_no_indicator = balance_ipw.ipw(
+            sample_df=sample.fillna("missing"),
+            sample_weights=pd.Series(np.ones(len(sample))),
+            target_df=target.fillna("missing"),
+            target_weights=pd.Series(np.ones(len(target))),
+            model=HistGradientBoostingClassifier(
+                random_state=0, categorical_features="from_dtype"
+            ),
+            transformations=None,
+            num_lambdas=1,
+            max_de=1.5,
+            na_action="drop",
+            use_model_matrix=False,
+        )
+
+        self.assertIsInstance(
+            result_no_indicator["model"]["fit"], HistGradientBoostingClassifier
+        )
+        self.assertEqual(len(result_no_indicator["weight"]), len(sample))
+
+    @unittest.skipIf(
+        _SKLEARN_LT_1_4,
+        "categorical_features='from_dtype' requires scikit-learn >= 1.4",
+    )
+    def test_ipw_use_model_matrix_false_raises_on_old_sklearn(self) -> None:
+        """ValueError is raised when sklearn < 1.4 and categorical columns are present."""
+        from unittest.mock import patch
+
+        sample = pd.DataFrame(
+            {
+                "gender": pd.Series(("f", "m", "f", "m"), dtype="string"),
+                "score": (1.0, 2.0, 3.0, 4.0),
+            }
+        )
+        target = pd.DataFrame(
+            {
+                "gender": pd.Series(("m", "f", "m"), dtype="string"),
+                "score": (1.5, 2.5, 3.5),
+            }
+        )
+
+        model = HistGradientBoostingClassifier(
+            random_state=0, categorical_features="from_dtype"
+        )
+
+        with patch("sklearn.__version__", "1.3.2"):
+            with self.assertRaises(ValueError) as ctx:
+                balance_ipw.ipw(
+                    sample_df=sample,
+                    sample_weights=pd.Series(np.ones(len(sample))),
+                    target_df=target,
+                    target_weights=pd.Series(np.ones(len(target))),
+                    model=model,
+                    transformations=None,
+                    num_lambdas=1,
+                    max_de=1.5,
+                    use_model_matrix=False,
+                )
+            self.assertIn("scikit-learn >= 1.4", str(ctx.exception))
+            self.assertIn("1.3.2", str(ctx.exception))
+
+    @unittest.skipIf(
+        _SKLEARN_LT_1_4,
+        "categorical_features='from_dtype' requires scikit-learn >= 1.4",
+    )
+    def test_ipw_use_model_matrix_false_no_error_on_new_sklearn(self) -> None:
+        """No version error when sklearn >= 1.4 and categorical columns are present."""
+        from unittest.mock import patch
+
+        sample = pd.DataFrame(
+            {
+                "gender": pd.Series(("f", "m", "f", "m"), dtype="string"),
+                "score": (1.0, 2.0, 3.0, 4.0),
+            }
+        )
+        target = pd.DataFrame(
+            {
+                "gender": pd.Series(("m", "f", "m"), dtype="string"),
+                "score": (1.5, 2.5, 3.5),
+            }
+        )
+
+        model = HistGradientBoostingClassifier(
+            random_state=0, categorical_features="from_dtype"
+        )
+
+        with patch("sklearn.__version__", "1.4.0"):
+            result = balance_ipw.ipw(
+                sample_df=sample,
+                sample_weights=pd.Series(np.ones(len(sample))),
+                target_df=target,
+                target_weights=pd.Series(np.ones(len(target))),
+                model=model,
+                transformations=None,
+                num_lambdas=1,
+                max_de=1.5,
+                use_model_matrix=False,
+            )
+        self.assertEqual(len(result["weight"]), len(sample))
+        self.assertIsInstance(result["model"]["fit"], HistGradientBoostingClassifier)
+
+    def test_ipw_use_model_matrix_false_no_error_numeric_only(self) -> None:
+        """No version error when all columns are numeric (no categorical columns)."""
+        from unittest.mock import patch
+
+        sample = pd.DataFrame({"a": (0, 1, 1, 0), "b": (1.0, 2.0, 3.0, 4.0)})
+        target = pd.DataFrame({"a": (1, 0, 0, 1), "b": (4.0, 3.0, 2.0, 1.0)})
+
+        model = RandomForestClassifier(n_estimators=5, random_state=0)
+
+        with patch("sklearn.__version__", "1.2.0"):
+            result = balance_ipw.ipw(
+                sample_df=sample,
+                sample_weights=pd.Series(np.ones(len(sample))),
+                target_df=target,
+                target_weights=pd.Series(np.ones(len(target))),
+                model=model,
+                transformations=None,
+                num_lambdas=1,
+                max_de=1.5,
+                use_model_matrix=False,
+            )
+        self.assertEqual(len(result["weight"]), len(sample))
+
+    def test_ipw_use_model_matrix_false_warns_on_ignored_args(self) -> None:
+        """Raw-covariate IPW warns when model-matrix-only args are provided."""
+
+        sample = pd.DataFrame({"a": (0, 1, 1, 0), "b": (1, 2, 3, 4)})
+        target = pd.DataFrame({"a": (1, 0, 0, 1), "b": (4, 3, 2, 1)})
+
+        model = RandomForestClassifier(n_estimators=5, random_state=0)
+        with self.assertLogs(balance_ipw.logger, level="WARNING") as logs:
+            balance_ipw.ipw(
+                sample_df=sample,
+                sample_weights=pd.Series(np.ones(len(sample))),
+                target_df=target,
+                target_weights=pd.Series(np.ones(len(target))),
+                model=model,
+                transformations=None,
+                num_lambdas=1,
+                max_de=1.5,
+                formula="a + b",
+                penalty_factor=[1.0],
+                one_hot_encoding=True,
+                use_model_matrix=False,
+            )
+
+        self.assertTrue(
+            any("formula" in message for message in logs.output),
+            msg=f"Expected formula warning; logs={logs.output}",
+        )
+        self.assertTrue(
+            any("one_hot_encoding" in message for message in logs.output),
+            msg=f"Expected one_hot_encoding warning; logs={logs.output}",
+        )
+        self.assertTrue(
+            any("penalty_factor" in message for message in logs.output),
+            msg=f"Expected penalty_factor warning; logs={logs.output}",
+        )
+
+    def test_ipw_use_model_matrix_false_existing_na_indicators(self) -> None:
+        """Raw-covariate IPW handles pre-existing NA indicator columns."""
+
+        df = pd.DataFrame(
+            {
+                "id": [1, 2, 3, 4],
+                "a": [1.0, None, 2.0, 3.0],
+                "_is_na_a": [0, 1, 0, 0],
+            }
+        )
+        sample = df.iloc[:2].copy()
+        target = df.iloc[2:].copy()
+        model = RandomForestClassifier(n_estimators=5, random_state=0)
+
+        result = balance_ipw.ipw(
+            sample_df=sample.drop(columns=["id"]),
+            sample_weights=pd.Series(np.ones(len(sample)), index=sample.index),
+            target_df=target.drop(columns=["id"]),
+            target_weights=pd.Series(np.ones(len(target)), index=target.index),
+            model=model,
+            transformations=None,
+            num_lambdas=1,
+            max_de=100.0,
+            na_action="add_indicator",
+            use_model_matrix=False,
+        )
+
+        self.assertIsInstance(result["model"]["fit"], RandomForestClassifier)
+
+    def test_ipw_use_model_matrix_false_na_action_drop(self) -> None:
+        """Raw-covariate IPW with na_action='drop' removes rows with NaN values."""
+
+        sample = pd.DataFrame(
+            {
+                "x": [1.0, 2.0, None, 4.0, 5.0],
+                "y": [10.0, 20.0, 30.0, None, 50.0],
+            }
+        )
+        target = pd.DataFrame(
+            {
+                "x": [1.5, 2.5, 3.5, 4.5],
+                "y": [15.0, 25.0, 35.0, 45.0],
+            }
+        )
+
+        model = RandomForestClassifier(n_estimators=10, random_state=0)
+        result = balance_ipw.ipw(
+            sample_df=sample,
+            sample_weights=pd.Series(np.ones(len(sample))),
+            target_df=target,
+            target_weights=pd.Series(np.ones(len(target))),
+            model=model,
+            transformations=None,
+            num_lambdas=1,
+            max_de=1.5,
+            na_action="drop",
+            use_model_matrix=False,
+        )
+
+        self.assertIsInstance(result["model"]["fit"], RandomForestClassifier)
+        # Two sample rows contain NaN and should be dropped, leaving 3 weights
+        self.assertEqual(len(result["weight"]), 3)
 
     def test_ipw_supports_dense_only_estimators(self) -> None:
         """Estimators that require dense matrices (e.g., GaussianNB) are supported."""

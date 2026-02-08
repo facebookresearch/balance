@@ -2,23 +2,32 @@
 
 ## New Features
 
-- **Validate weights include positive values**
-  - Added a guard in weight diagnostics to error when all weights are zero.
-- **Support configurable ID column candidates**
-  - `Sample.from_frame()` and `guess_id_column()` now accept candidate ID column names
-    when auto-detecting the ID column.
 - **Outcome weight impact diagnostics**
   - Added paired outcome-weight impact tests (`y*w0` vs `y*w1`) with confidence intervals.
   - Exposed in `BalanceDFOutcomes`, `Sample.diagnostics()`, and the CLI via
     `--weights_impact_on_outcome_method`.
 - **Pandas 3 support**
   - Updated compatibility and tests for pandas 3.x
-- **Formula support for BalanceDF model matrices**
-  - `BalanceDF.model_matrix()` now accepts a `formula` argument to build
-    custom model matrices without precomputing them manually.
 - **Categorical distribution metrics without one-hot encoding**
   - KLD/EMD/CVMD/KS on `BalanceDF.covars()` now operate on raw categorical variables
     (with NA indicators) instead of one-hot encoded columns.
+- **Misc**
+  - **Raw-covariate adjustment for custom models**
+    - `Sample.adjust()` now supports fitting models on raw covariates (without a model matrix)
+      for IPW via `use_model_matrix=False`. String, object, and boolean columns are converted
+      to pandas `Categorical` dtype, allowing sklearn estimators with native categorical
+      support (e.g., `HistGradientBoostingClassifier` with `categorical_features="from_dtype"`)
+      to handle them correctly. Requires scikit-learn >= 1.4 when categorical columns are
+      present.
+  - **Validate weights include positive values**
+    - Added a guard in weight diagnostics to error when all weights are zero.
+  - **Support configurable ID column candidates**
+    - `Sample.from_frame()` and `guess_id_column()` now accept candidate ID column names
+      when auto-detecting the ID column.
+  - **Formula support for BalanceDF model matrices**
+    - `BalanceDF.model_matrix()` now accepts a `formula` argument to build
+      custom model matrices without precomputing them manually.
+
 
 ## Bug Fixes
 
