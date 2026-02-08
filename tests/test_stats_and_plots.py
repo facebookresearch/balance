@@ -2213,6 +2213,21 @@ class TestKLDivergence(balance.testutil.BalanceTestCase):
         # Allow some tolerance for numerical computation
         self.assertAlmostEqual(kld_result["category"], abs(expected_kld), places=2)
 
+    def test_kld_warns_on_column_mismatch(self) -> None:
+        from balance.stats_and_plots import weighted_comparisons_stats
+
+        sample_df = pd.DataFrame({"category": ["A", "B", "C"]})
+        target_df = pd.DataFrame({"group": ["A", "B", "C"]})
+
+        with self.assertLogs(
+            weighted_comparisons_stats.logger, level="WARNING"
+        ) as logs:
+            weighted_comparisons_stats.kld(sample_df, target_df)
+
+        self.assertTrue(
+            any("must have the same column names" in message for message in logs.output)
+        )
+
     def test_kld_with_numeric_continuous_data(self) -> None:
         """Test KLD calculation with continuous numeric data.
 
