@@ -482,9 +482,10 @@ def ipw(
     num_lambdas: int = 250,
     formula: str | list[str] | None = None,
     penalty_factor: list[float] | None = None,
-    one_hot_encoding: bool = False,
     # TODO: This is set to be false in order to keep reproducibility of works that uses balance.
     # The best practice is for this to be true.
+    one_hot_encoding: bool = False,
+    use_model_matrix: bool = True,
     random_seed: int = 2020,
     *args: Any,
     **kwargs: Any,
@@ -541,17 +542,31 @@ def ipw(
             categorical variables with more than 2 categories (i.e. the
             number of columns will be equal to the number of categories),
             and only 1 column for variables with 2 levels (treatment contrast). Defaults to False.
+        use_model_matrix (bool, optional): whether to build the model matrix using
+            :func:`model_matrix`. When set to False, the model is fit on the raw
+            covariate data after applying transformations and adding NA indicators.
+            String, object, and boolean columns are converted to pandas
+            ``Categorical`` dtype, which allows sklearn estimators that support
+            native categorical features (e.g.,
+            :class:`~sklearn.ensemble.HistGradientBoostingClassifier` with
+            ``categorical_features="from_dtype"``) to handle them correctly.
+            Requires scikit-learn >= 1.4 when categorical columns are present;
+            a ``ValueError`` is raised on older versions.
+            The built-in logistic-regression path (i.e., when
+            ``model`` is ``None`` or the default) currently requires
+            ``use_model_matrix=True`` and will raise if ``use_model_matrix=False``.
+            Defaults to True.
         random_seed (int, optional): Random seed to use. Defaults to 2020.
 
     Examples:
-        Example 1: Using RandomForestClassifier
+        Example 1: Using HistGradientBoostingClassifier with native categorical support
 
         .. code-block:: python
 
             import pandas as pd
             from balance.datasets import load_sim_data
             from balance.weighting_methods.ipw import ipw
-            from sklearn.ensemble import RandomForestClassifier
+            from sklearn.ensemble import HistGradientBoostingClassifier
 
             # Load simulated data
             target_df, sample_df = load_sim_data()
@@ -560,35 +575,32 @@ def ipw(
             sample_weights = pd.Series(1, index=sample_df.index)
             target_weights = pd.Series(1, index=target_df.index)
 
-            # Define model
-            rf = RandomForestClassifier(n_estimators=200, random_state=0)
+            # Define model (categorical_features="from_dtype" tells sklearn
+            # to treat pandas Categorical columns as unordered categoricals)
+            hgb = HistGradientBoostingClassifier(
+                random_state=0, categorical_features="from_dtype"
+            )
 
-            # Run IPW with sklearn model
-            result_rf = ipw(
+            # Run IPW with sklearn model on raw covariates
+            result_hgb = ipw(
                 sample_df,
                 sample_weights,
                 target_df,
                 target_weights,
                 variables=["gender", "age_group", "income"],
-                model=rf,
+                model=hgb,
+                use_model_matrix=False,
             )
-            print("RandomForestClassifier result:")
-            print(result_rf)
+            print("HistGradientBoostingClassifier result:")
+            print(result_hgb)
 
-        Output::
+        Output (values will vary by model and random seed)::
 
-            RandomForestClassifier result:
-            {'weight': 0      6.727622
-            1      6.811271
-            2      1.861028
-            3      5.023780
-            4      8.212948
-                     ...
-            995    8.302406
-            996    2.229000
-            997    8.344916
-            998    9.747695
-            999    6.018009
+            HistGradientBoostingClassifier result:
+            {'weight': 0      ...
+            1      ...
+            ...
+            999    ...
             Length: 1000, dtype: float64, 'model': {'method': 'ipw', ...}}
 
         Example 2: Using default sklearn model (LogisticRegression)
@@ -630,19 +642,19 @@ def ipw(
             import pandas as pd
             # Combine weights into a DataFrame
             comparison_df = pd.DataFrame({
-                'RandomForest': result_rf['weight'],
+                'HGB': result_hgb['weight'],
                 'Sklearn': result_sklearn['weight']
             })
             # Calculate difference
-            comparison_df['Difference'] = comparison_df['RandomForest'] - comparison_df['Sklearn']
+            comparison_df['Difference'] = comparison_df['HGB'] - comparison_df['Sklearn']
             # Print summary statistics
             print("\nMean difference:", comparison_df['Difference'].mean())
             print("Std difference:", comparison_df['Difference'].std())
 
-        Output::
+        Output (values will vary by model and random seed)::
 
-            Mean difference: -2.9416469260468146e-15
-            Std difference: 8.043311719328154
+            Mean difference: ...
+            Std difference: ...
 
     Raises:
         Exception: f"Sample indicator only has value {_n_unique}. This can happen when your sample or target are empty from unknown reason"
@@ -725,33 +737,99 @@ def ipw(
     variables = list(sample_df.columns)
     logger.debug(f"Final variables in the model: {variables}")
 
-    logger.info("Building model matrix")
-    # Convert formula to List[str] if it's a single string
-    formula_list: list[str] | None = [formula] if isinstance(formula, str) else formula
-    model_matrix_output = balance_util.model_matrix(
-        sample_df,
-        target_df,
-        variables,
-        add_na=(na_action == "add_indicator"),
-        return_type="one",
-        return_var_type="sparse",
-        formula=formula_list,
-        penalty_factor=penalty_factor,
-        one_hot_encoding=one_hot_encoding,
-    )
-    X_matrix = cast(
-        Union[pd.DataFrame, np.ndarray, csc_matrix],
-        model_matrix_output["model_matrix"],
-    )
-    X_matrix_columns_names = cast(
-        List[str], model_matrix_output["model_matrix_columns_names"]
-    )
-    penalty_factor_expanded = cast(List[float], model_matrix_output["penalty_factor"])
-    logger.info(
-        f"The formula used to build the model matrix: {model_matrix_output['formula']}"
-    )
-    logger.info(f"The number of columns in the model matrix: {X_matrix.shape[1]}")
-    logger.info(f"The number of rows in the model matrix: {X_matrix.shape[0]}")
+    if use_model_matrix:
+        logger.info("Building model matrix")
+        # Convert formula to List[str] if it's a single string
+        formula_list: list[str] | None = (
+            [formula] if isinstance(formula, str) else formula
+        )
+        model_matrix_output = balance_util.model_matrix(
+            sample_df,
+            target_df,
+            variables,
+            add_na=(na_action == "add_indicator"),
+            return_type="one",
+            return_var_type="sparse",
+            formula=formula_list,
+            penalty_factor=penalty_factor,
+            one_hot_encoding=one_hot_encoding,
+        )
+        X_matrix = cast(
+            Union[pd.DataFrame, np.ndarray, csc_matrix],
+            model_matrix_output["model_matrix"],
+        )
+        X_matrix_columns_names = cast(
+            List[str], model_matrix_output["model_matrix_columns_names"]
+        )
+        penalty_factor_expanded = cast(
+            List[float], model_matrix_output["penalty_factor"]
+        )
+        logger.info(
+            f"The formula used to build the model matrix: {model_matrix_output['formula']}"
+        )
+        logger.info(f"The number of columns in the model matrix: {X_matrix.shape[1]}")
+        logger.info(f"The number of rows in the model matrix: {X_matrix.shape[0]}")
+    else:
+        if custom_model is None:
+            raise ValueError(
+                "use_model_matrix=False is only supported when providing a custom "
+                "sklearn classifier (e.g., HistGradientBoostingClassifier)."
+            )
+        if formula is not None:
+            logger.warning(
+                "Argument 'formula' is ignored because use_model_matrix=False; "
+                "no model matrix will be constructed."
+            )
+        if one_hot_encoding:
+            logger.warning(
+                "Argument 'one_hot_encoding' is ignored because use_model_matrix=False; "
+                "no model matrix will be constructed."
+            )
+        if penalty_factor is not None:
+            logger.warning(
+                "Argument 'penalty_factor' is ignored because use_model_matrix=False "
+                "with a custom sklearn model; this argument only applies when "
+                "use_model_matrix=True with the built-in logistic regression model."
+            )
+
+        combined = pd.concat([sample_df, target_df], axis=0)
+        if na_action == "add_indicator":
+            combined = balance_util.add_na_indicator_to_combined(combined)
+
+        categorical_cols = combined.select_dtypes(
+            ["string", "boolean", "object"]
+        ).columns
+        for col in categorical_cols:
+            combined[col] = pd.Categorical(combined[col])
+
+        has_categorical = len(combined.select_dtypes(["category"]).columns) > 0
+        if has_categorical:
+            import sklearn as _sklearn_mod
+            from packaging.version import Version
+
+            if Version(_sklearn_mod.__version__) < Version("1.4"):
+                raise ValueError(
+                    "use_model_matrix=False with categorical columns requires "
+                    f"scikit-learn >= 1.4. Current version: {_sklearn_mod.__version__}. "
+                    "Either upgrade scikit-learn, pre-encode categorical columns "
+                    "manually, or use use_model_matrix=True."
+                )
+
+        X_matrix = combined
+        X_matrix_columns_names = combined.columns.tolist()
+        penalty_factor_expanded = [1.0] * combined.shape[1]
+        logger.info(
+            "Fitting model on raw covariates without model matrix encoding. "
+            "Categorical columns are preserved as pandas Categorical dtype."
+        )
+        logger.info(f"The number of columns: {X_matrix.shape[1]}")
+        logger.info(f"The number of rows: {X_matrix.shape[0]}")
+
+        # Convert extension string dtypes in the original DataFrames to plain
+        # object so that downstream calls (e.g. asmd → model_matrix → patsy
+        # dmatrix) don't encounter unsupported dtypes like ``string[python]``.
+        sample_df = balance_util._pd_convert_all_types(sample_df, "string", "object")
+        target_df = balance_util._pd_convert_all_types(target_df, "string", "object")
 
     y = np.concatenate((np.ones(sample_n), np.zeros(target_n)))
     _n_unique = np.unique(y.reshape(y.shape[0]))

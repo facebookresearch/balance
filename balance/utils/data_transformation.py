@@ -91,6 +91,29 @@ def add_na_indicator_to_combined(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: The DataFrame with NA indicator columns added for every
             base column that contains missing values.
+
+    Examples:
+        Basic usage on a DataFrame without pre-existing indicators:
+
+        >>> import pandas as pd
+        >>> from balance.utils.data_transformation import add_na_indicator_to_combined
+        >>> df = pd.DataFrame({"x": [1.0, None, 3.0], "y": [0, 1, 2]})
+        >>> result = add_na_indicator_to_combined(df)
+        >>> result.columns.tolist()
+        ['x', 'y', '_is_na_x']
+
+        When the input already contains ``_is_na_*`` columns, they are preserved
+        and not duplicated:
+
+        >>> df2 = pd.DataFrame(
+        ...     {
+        ...         "x": [1.0, None, 3.0],
+        ...         "_is_na_y": [0, 1, 0],
+        ...     }
+        ... )
+        >>> result2 = add_na_indicator_to_combined(df2)
+        >>> result2.columns.tolist()
+        ['x', '_is_na_x', '_is_na_y']
     """
     existing_indicator_cols = [
         col for col in df.columns if isinstance(col, str) and col.startswith("_is_na_")

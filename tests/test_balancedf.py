@@ -1283,7 +1283,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
     def _assert_categorical_stat(
         self,
         stat_method_name: str,
-        comparison_func: "Callable[..., pd.Series]",
+        comparison_func: Callable[..., pd.Series],
     ) -> None:
         """Helper: verify that a distribution metric works on raw categorical covariates."""
         sample = Sample.from_frame(
