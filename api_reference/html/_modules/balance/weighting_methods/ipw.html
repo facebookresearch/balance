@@ -6,10 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>balance.weighting_methods.ipw &#8212; balance  documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=fb9458d3" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=29da98fa" />
     <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -536,9 +536,10 @@
     <span class="n">num_lambdas</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">250</span><span class="p">,</span>
     <span class="n">formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">penalty_factor</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">one_hot_encoding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="c1"># TODO: This is set to be false in order to keep reproducibility of works that uses balance.</span>
     <span class="c1"># The best practice is for this to be true.</span>
+    <span class="n">one_hot_encoding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">use_model_matrix</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">random_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2020</span><span class="p">,</span>
     <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
@@ -595,17 +596,31 @@
 <span class="sd">            categorical variables with more than 2 categories (i.e. the</span>
 <span class="sd">            number of columns will be equal to the number of categories),</span>
 <span class="sd">            and only 1 column for variables with 2 levels (treatment contrast). Defaults to False.</span>
+<span class="sd">        use_model_matrix (bool, optional): whether to build the model matrix using</span>
+<span class="sd">            :func:`model_matrix`. When set to False, the model is fit on the raw</span>
+<span class="sd">            covariate data after applying transformations and adding NA indicators.</span>
+<span class="sd">            String, object, and boolean columns are converted to pandas</span>
+<span class="sd">            ``Categorical`` dtype, which allows sklearn estimators that support</span>
+<span class="sd">            native categorical features (e.g.,</span>
+<span class="sd">            :class:`~sklearn.ensemble.HistGradientBoostingClassifier` with</span>
+<span class="sd">            ``categorical_features=&quot;from_dtype&quot;``) to handle them correctly.</span>
+<span class="sd">            Requires scikit-learn &gt;= 1.4 when categorical columns are present;</span>
+<span class="sd">            a ``ValueError`` is raised on older versions.</span>
+<span class="sd">            The built-in logistic-regression path (i.e., when</span>
+<span class="sd">            ``model`` is ``None`` or the default) currently requires</span>
+<span class="sd">            ``use_model_matrix=True`` and will raise if ``use_model_matrix=False``.</span>
+<span class="sd">            Defaults to True.</span>
 <span class="sd">        random_seed (int, optional): Random seed to use. Defaults to 2020.</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        Example 1: Using RandomForestClassifier</span>
+<span class="sd">        Example 1: Using HistGradientBoostingClassifier with native categorical support</span>
 
 <span class="sd">        .. code-block:: python</span>
 
 <span class="sd">            import pandas as pd</span>
 <span class="sd">            from balance.datasets import load_sim_data</span>
 <span class="sd">            from balance.weighting_methods.ipw import ipw</span>
-<span class="sd">            from sklearn.ensemble import RandomForestClassifier</span>
+<span class="sd">            from sklearn.ensemble import HistGradientBoostingClassifier</span>
 
 <span class="sd">            # Load simulated data</span>
 <span class="sd">            target_df, sample_df = load_sim_data()</span>
@@ -614,35 +629,32 @@
 <span class="sd">            sample_weights = pd.Series(1, index=sample_df.index)</span>
 <span class="sd">            target_weights = pd.Series(1, index=target_df.index)</span>
 
-<span class="sd">            # Define model</span>
-<span class="sd">            rf = RandomForestClassifier(n_estimators=200, random_state=0)</span>
+<span class="sd">            # Define model (categorical_features=&quot;from_dtype&quot; tells sklearn</span>
+<span class="sd">            # to treat pandas Categorical columns as unordered categoricals)</span>
+<span class="sd">            hgb = HistGradientBoostingClassifier(</span>
+<span class="sd">                random_state=0, categorical_features=&quot;from_dtype&quot;</span>
+<span class="sd">            )</span>
 
-<span class="sd">            # Run IPW with sklearn model</span>
-<span class="sd">            result_rf = ipw(</span>
+<span class="sd">            # Run IPW with sklearn model on raw covariates</span>
+<span class="sd">            result_hgb = ipw(</span>
 <span class="sd">                sample_df,</span>
 <span class="sd">                sample_weights,</span>
 <span class="sd">                target_df,</span>
 <span class="sd">                target_weights,</span>
 <span class="sd">                variables=[&quot;gender&quot;, &quot;age_group&quot;, &quot;income&quot;],</span>
-<span class="sd">                model=rf,</span>
+<span class="sd">                model=hgb,</span>
+<span class="sd">                use_model_matrix=False,</span>
 <span class="sd">            )</span>
-<span class="sd">            print(&quot;RandomForestClassifier result:&quot;)</span>
-<span class="sd">            print(result_rf)</span>
+<span class="sd">            print(&quot;HistGradientBoostingClassifier result:&quot;)</span>
+<span class="sd">            print(result_hgb)</span>
 
-<span class="sd">        Output::</span>
+<span class="sd">        Output (values will vary by model and random seed)::</span>
 
-<span class="sd">            RandomForestClassifier result:</span>
-<span class="sd">            {&#39;weight&#39;: 0      6.727622</span>
-<span class="sd">            1      6.811271</span>
-<span class="sd">            2      1.861028</span>
-<span class="sd">            3      5.023780</span>
-<span class="sd">            4      8.212948</span>
-<span class="sd">                     ...</span>
-<span class="sd">            995    8.302406</span>
-<span class="sd">            996    2.229000</span>
-<span class="sd">            997    8.344916</span>
-<span class="sd">            998    9.747695</span>
-<span class="sd">            999    6.018009</span>
+<span class="sd">            HistGradientBoostingClassifier result:</span>
+<span class="sd">            {&#39;weight&#39;: 0      ...</span>
+<span class="sd">            1      ...</span>
+<span class="sd">            ...</span>
+<span class="sd">            999    ...</span>
 <span class="sd">            Length: 1000, dtype: float64, &#39;model&#39;: {&#39;method&#39;: &#39;ipw&#39;, ...}}</span>
 
 <span class="sd">        Example 2: Using default sklearn model (LogisticRegression)</span>
@@ -684,19 +696,19 @@
 <span class="sd">            import pandas as pd</span>
 <span class="sd">            # Combine weights into a DataFrame</span>
 <span class="sd">            comparison_df = pd.DataFrame({</span>
-<span class="sd">                &#39;RandomForest&#39;: result_rf[&#39;weight&#39;],</span>
+<span class="sd">                &#39;HGB&#39;: result_hgb[&#39;weight&#39;],</span>
 <span class="sd">                &#39;Sklearn&#39;: result_sklearn[&#39;weight&#39;]</span>
 <span class="sd">            })</span>
 <span class="sd">            # Calculate difference</span>
-<span class="sd">            comparison_df[&#39;Difference&#39;] = comparison_df[&#39;RandomForest&#39;] - comparison_df[&#39;Sklearn&#39;]</span>
+<span class="sd">            comparison_df[&#39;Difference&#39;] = comparison_df[&#39;HGB&#39;] - comparison_df[&#39;Sklearn&#39;]</span>
 <span class="sd">            # Print summary statistics</span>
 <span class="sd">            print(&quot;\nMean difference:&quot;, comparison_df[&#39;Difference&#39;].mean())</span>
 <span class="sd">            print(&quot;Std difference:&quot;, comparison_df[&#39;Difference&#39;].std())</span>
 
-<span class="sd">        Output::</span>
+<span class="sd">        Output (values will vary by model and random seed)::</span>
 
-<span class="sd">            Mean difference: -2.9416469260468146e-15</span>
-<span class="sd">            Std difference: 8.043311719328154</span>
+<span class="sd">            Mean difference: ...</span>
+<span class="sd">            Std difference: ...</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        Exception: f&quot;Sample indicator only has value {_n_unique}. This can happen when your sample or target are empty from unknown reason&quot;</span>
@@ -779,33 +791,99 @@
     <span class="n">variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Final variables in the model: </span><span class="si">{</span><span class="n">variables</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Building model matrix&quot;</span><span class="p">)</span>
-    <span class="c1"># Convert formula to List[str] if it&#39;s a single string</span>
-    <span class="n">formula_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="p">[</span><span class="n">formula</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">formula</span>
-    <span class="n">model_matrix_output</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">model_matrix</span><span class="p">(</span>
-        <span class="n">sample_df</span><span class="p">,</span>
-        <span class="n">target_df</span><span class="p">,</span>
-        <span class="n">variables</span><span class="p">,</span>
-        <span class="n">add_na</span><span class="o">=</span><span class="p">(</span><span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">),</span>
-        <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;one&quot;</span><span class="p">,</span>
-        <span class="n">return_var_type</span><span class="o">=</span><span class="s2">&quot;sparse&quot;</span><span class="p">,</span>
-        <span class="n">formula</span><span class="o">=</span><span class="n">formula_list</span><span class="p">,</span>
-        <span class="n">penalty_factor</span><span class="o">=</span><span class="n">penalty_factor</span><span class="p">,</span>
-        <span class="n">one_hot_encoding</span><span class="o">=</span><span class="n">one_hot_encoding</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
-        <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">csc_matrix</span><span class="p">],</span>
-        <span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">&quot;model_matrix&quot;</span><span class="p">],</span>
-    <span class="p">)</span>
-    <span class="n">X_matrix_columns_names</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
-        <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">&quot;model_matrix_columns_names&quot;</span><span class="p">]</span>
-    <span class="p">)</span>
-    <span class="n">penalty_factor_expanded</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">&quot;penalty_factor&quot;</span><span class="p">])</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;The formula used to build the model matrix: </span><span class="si">{</span><span class="n">model_matrix_output</span><span class="p">[</span><span class="s1">&#39;formula&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
-    <span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The number of columns in the model matrix: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The number of rows in the model matrix: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">use_model_matrix</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Building model matrix&quot;</span><span class="p">)</span>
+        <span class="c1"># Convert formula to List[str] if it&#39;s a single string</span>
+        <span class="n">formula_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">[</span><span class="n">formula</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">formula</span>
+        <span class="p">)</span>
+        <span class="n">model_matrix_output</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">model_matrix</span><span class="p">(</span>
+            <span class="n">sample_df</span><span class="p">,</span>
+            <span class="n">target_df</span><span class="p">,</span>
+            <span class="n">variables</span><span class="p">,</span>
+            <span class="n">add_na</span><span class="o">=</span><span class="p">(</span><span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">),</span>
+            <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;one&quot;</span><span class="p">,</span>
+            <span class="n">return_var_type</span><span class="o">=</span><span class="s2">&quot;sparse&quot;</span><span class="p">,</span>
+            <span class="n">formula</span><span class="o">=</span><span class="n">formula_list</span><span class="p">,</span>
+            <span class="n">penalty_factor</span><span class="o">=</span><span class="n">penalty_factor</span><span class="p">,</span>
+            <span class="n">one_hot_encoding</span><span class="o">=</span><span class="n">one_hot_encoding</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+            <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">csc_matrix</span><span class="p">],</span>
+            <span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">&quot;model_matrix&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">X_matrix_columns_names</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+            <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">&quot;model_matrix_columns_names&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">penalty_factor_expanded</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+            <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">&quot;penalty_factor&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;The formula used to build the model matrix: </span><span class="si">{</span><span class="n">model_matrix_output</span><span class="p">[</span><span class="s1">&#39;formula&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The number of columns in the model matrix: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The number of rows in the model matrix: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">custom_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;use_model_matrix=False is only supported when providing a custom &quot;</span>
+                <span class="s2">&quot;sklearn classifier (e.g., HistGradientBoostingClassifier).&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">formula</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Argument &#39;formula&#39; is ignored because use_model_matrix=False; &quot;</span>
+                <span class="s2">&quot;no model matrix will be constructed.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">one_hot_encoding</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Argument &#39;one_hot_encoding&#39; is ignored because use_model_matrix=False; &quot;</span>
+                <span class="s2">&quot;no model matrix will be constructed.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">penalty_factor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Argument &#39;penalty_factor&#39; is ignored because use_model_matrix=False &quot;</span>
+                <span class="s2">&quot;with a custom sklearn model; this argument only applies when &quot;</span>
+                <span class="s2">&quot;use_model_matrix=True with the built-in logistic regression model.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">combined</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">:</span>
+            <span class="n">combined</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">add_na_indicator_to_combined</span><span class="p">(</span><span class="n">combined</span><span class="p">)</span>
+
+        <span class="n">categorical_cols</span> <span class="o">=</span> <span class="n">combined</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span>
+            <span class="p">[</span><span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="s2">&quot;boolean&quot;</span><span class="p">,</span> <span class="s2">&quot;object&quot;</span><span class="p">]</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">columns</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">categorical_cols</span><span class="p">:</span>
+            <span class="n">combined</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">combined</span><span class="p">[</span><span class="n">col</span><span class="p">])</span>
+
+        <span class="n">has_categorical</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">combined</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">([</span><span class="s2">&quot;category&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">has_categorical</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">sklearn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_sklearn_mod</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">packaging.version</span><span class="w"> </span><span class="kn">import</span> <span class="n">Version</span>
+
+            <span class="k">if</span> <span class="n">Version</span><span class="p">(</span><span class="n">_sklearn_mod</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">Version</span><span class="p">(</span><span class="s2">&quot;1.4&quot;</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;use_model_matrix=False with categorical columns requires &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;scikit-learn &gt;= 1.4. Current version: </span><span class="si">{</span><span class="n">_sklearn_mod</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">. &quot;</span>
+                    <span class="s2">&quot;Either upgrade scikit-learn, pre-encode categorical columns &quot;</span>
+                    <span class="s2">&quot;manually, or use use_model_matrix=True.&quot;</span>
+                <span class="p">)</span>
+
+        <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">combined</span>
+        <span class="n">X_matrix_columns_names</span> <span class="o">=</span> <span class="n">combined</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">penalty_factor_expanded</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">]</span> <span class="o">*</span> <span class="n">combined</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;Fitting model on raw covariates without model matrix encoding. &quot;</span>
+            <span class="s2">&quot;Categorical columns are preserved as pandas Categorical dtype.&quot;</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The number of columns: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The number of rows: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Convert extension string dtypes in the original DataFrames to plain</span>
+        <span class="c1"># object so that downstream calls (e.g. asmd → model_matrix → patsy</span>
+        <span class="c1"># dmatrix) don&#39;t encounter unsupported dtypes like ``string[python]``.</span>
+        <span class="n">sample_df</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">_pd_convert_all_types</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="s2">&quot;object&quot;</span><span class="p">)</span>
+        <span class="n">target_df</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">_pd_convert_all_types</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="s2">&quot;object&quot;</span><span class="p">)</span>
 
     <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">sample_n</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">target_n</span><span class="p">)))</span>
     <span class="n">_n_unique</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>

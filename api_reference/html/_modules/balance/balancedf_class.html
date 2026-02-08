@@ -6,10 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>balance.balancedf_class &#8212; balance  documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
-    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=fb9458d3" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=29da98fa" />
     <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head><body>
@@ -1180,22 +1180,27 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_df_and_weights</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
+        <span class="n">use_model_matrix</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract covars df (after using model_matrix) and weights from a BalanceDF object.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract df values and weights from a BalanceDF object.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (BalanceDF): Object</span>
+<span class="sd">            use_model_matrix (bool, optional): If True, use :func:`model_matrix`.</span>
+<span class="sd">                If False, use the raw df. Defaults to True.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Tuple[pd.DataFrame, np.ndarray | None]:</span>
-<span class="sd">                A pd.DataFrame output from running :func:`model_matrix`, and</span>
+<span class="sd">                A pd.DataFrame output from running :func:`model_matrix` or using the raw df, and</span>
 <span class="sd">                A np.ndarray of weights from :func:`_weights`, or just None (if there are no weights).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># get df values (like in BalanceDF._descriptive_stats)</span>
-        <span class="n">df_model_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_matrix</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">use_model_matrix</span><span class="p">:</span>
+            <span class="n">df_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_matrix</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">df_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="c1"># get weights (like in BalanceDF._descriptive_stats)</span>
         <span class="n">weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="o">.</span><span class="n">values</span> <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
-        <span class="k">return</span> <span class="n">df_model_matrix</span><span class="p">,</span> <span class="n">weights</span>
+        <span class="k">return</span> <span class="n">df_values</span><span class="p">,</span> <span class="n">weights</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_apply_comparison_stat_to_BalanceDF</span><span class="p">(</span>
@@ -1203,6 +1208,7 @@
         <span class="n">sample_BalanceDF</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
         <span class="n">target_BalanceDF</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
         <span class="n">aggregate_by_main_covar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">use_model_matrix</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Generic helper to apply a weighted comparison statistic function to two BalanceDF objects.</span>
@@ -1213,6 +1219,11 @@
 <span class="sd">        2. Extracting df and weights from both objects</span>
 <span class="sd">        3. Calling the comparison function with the extracted data</span>
 
+<span class="sd">        When ``use_model_matrix`` is False, the raw DataFrames are combined, NA</span>
+<span class="sd">        indicator columns are added via</span>
+<span class="sd">        :func:`balance.util.add_na_indicator_to_combined`, and the result is</span>
+<span class="sd">        split back so that both frames share consistent indicator columns.</span>
+
 <span class="sd">        Args:</span>
 <span class="sd">            comparison_func (Callable[..., pd.Series]): The comparison function from</span>
 <span class="sd">                weighted_comparisons_stats to apply (e.g., asmd, kld, emd, cvmd, ks).</span>
@@ -1220,6 +1231,9 @@
 <span class="sd">            target_BalanceDF (BalanceDF): Target object.</span>
 <span class="sd">            aggregate_by_main_covar (bool, optional): Whether to aggregate by main covariate.</span>
 <span class="sd">                Defaults to False. Passed to the comparison function.</span>
+<span class="sd">            use_model_matrix (bool, optional): If True, use :func:`model_matrix` on the</span>
+<span class="sd">                BalanceDF objects. If False, use raw covariates with NA indicators.</span>
+<span class="sd">                Defaults to True.</span>
 <span class="sd">            **kwargs: Additional keyword arguments to pass to the comparison function</span>
 <span class="sd">                (e.g., std_type for asmd).</span>
 
@@ -1229,8 +1243,19 @@
         <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_check_if_not_BalanceDF</span><span class="p">(</span><span class="n">sample_BalanceDF</span><span class="p">,</span> <span class="s2">&quot;sample_BalanceDF&quot;</span><span class="p">)</span>
         <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_check_if_not_BalanceDF</span><span class="p">(</span><span class="n">target_BalanceDF</span><span class="p">,</span> <span class="s2">&quot;target_BalanceDF&quot;</span><span class="p">)</span>
 
-        <span class="n">sample_df_values</span><span class="p">,</span> <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">sample_BalanceDF</span><span class="o">.</span><span class="n">_get_df_and_weights</span><span class="p">()</span>
-        <span class="n">target_df_values</span><span class="p">,</span> <span class="n">target_weights</span> <span class="o">=</span> <span class="n">target_BalanceDF</span><span class="o">.</span><span class="n">_get_df_and_weights</span><span class="p">()</span>
+        <span class="n">sample_df_values</span><span class="p">,</span> <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">sample_BalanceDF</span><span class="o">.</span><span class="n">_get_df_and_weights</span><span class="p">(</span>
+            <span class="n">use_model_matrix</span><span class="o">=</span><span class="n">use_model_matrix</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">target_df_values</span><span class="p">,</span> <span class="n">target_weights</span> <span class="o">=</span> <span class="n">target_BalanceDF</span><span class="o">.</span><span class="n">_get_df_and_weights</span><span class="p">(</span>
+            <span class="n">use_model_matrix</span><span class="o">=</span><span class="n">use_model_matrix</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">use_model_matrix</span><span class="p">:</span>
+            <span class="n">combined</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">add_na_indicator_to_combined</span><span class="p">(</span>
+                <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">sample_df_values</span><span class="p">,</span> <span class="n">target_df_values</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">sample_n</span> <span class="o">=</span> <span class="n">sample_df_values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">sample_df_values</span> <span class="o">=</span> <span class="n">combined</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span><span class="n">sample_n</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">target_df_values</span> <span class="o">=</span> <span class="n">combined</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">sample_n</span><span class="p">:]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="n">comparison_func</span><span class="p">(</span>
             <span class="n">sample_df_values</span><span class="p">,</span>
@@ -1303,8 +1328,8 @@
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Run KLD on two BalanceDF objects.</span>
 
-<span class="sd">        Prepares the BalanceDF objects by passing them through :func:`_get_df_and_weights`, and</span>
-<span class="sd">        then pass the df and weights from the two objects into :func:`weighted_comparisons_stats.kld`.</span>
+<span class="sd">        Prepares the BalanceDF objects by using their raw df (with NA indicators), and</span>
+<span class="sd">        then passes the df and weights from the two objects into :func:`weighted_comparisons_stats.kld`.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            sample_BalanceDF (BalanceDF): Object</span>
@@ -1319,6 +1344,7 @@
             <span class="n">sample_BalanceDF</span><span class="p">,</span>
             <span class="n">target_BalanceDF</span><span class="p">,</span>
             <span class="n">aggregate_by_main_covar</span><span class="p">,</span>
+            <span class="n">use_model_matrix</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
@@ -1329,7 +1355,7 @@
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Run EMD on two BalanceDF objects.</span>
 
-<span class="sd">        Prepares the BalanceDF objects by passing them through :func:`_get_df_and_weights`, and</span>
+<span class="sd">        Prepares the BalanceDF objects by using their raw df (with NA indicators), and</span>
 <span class="sd">        then passes the df and weights into :func:`weighted_comparisons_stats.emd`.</span>
 
 <span class="sd">        Args:</span>
@@ -1345,6 +1371,7 @@
             <span class="n">sample_BalanceDF</span><span class="p">,</span>
             <span class="n">target_BalanceDF</span><span class="p">,</span>
             <span class="n">aggregate_by_main_covar</span><span class="p">,</span>
+            <span class="n">use_model_matrix</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
@@ -1355,7 +1382,7 @@
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Run CVMD on two BalanceDF objects.</span>
 
-<span class="sd">        Prepares the BalanceDF objects by passing them through :func:`_get_df_and_weights`, and</span>
+<span class="sd">        Prepares the BalanceDF objects by using their raw df (with NA indicators), and</span>
 <span class="sd">        then passes the df and weights into :func:`weighted_comparisons_stats.cvmd`.</span>
 
 <span class="sd">        Args:</span>
@@ -1371,6 +1398,7 @@
             <span class="n">sample_BalanceDF</span><span class="p">,</span>
             <span class="n">target_BalanceDF</span><span class="p">,</span>
             <span class="n">aggregate_by_main_covar</span><span class="p">,</span>
+            <span class="n">use_model_matrix</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
@@ -1381,7 +1409,7 @@
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Run KS on two BalanceDF objects.</span>
 
-<span class="sd">        Prepares the BalanceDF objects by passing them through :func:`_get_df_and_weights`, and</span>
+<span class="sd">        Prepares the BalanceDF objects by using their raw df (with NA indicators), and</span>
 <span class="sd">        then passes the df and weights into :func:`weighted_comparisons_stats.ks`.</span>
 
 <span class="sd">        Args:</span>
@@ -1397,6 +1425,7 @@
             <span class="n">sample_BalanceDF</span><span class="p">,</span>
             <span class="n">target_BalanceDF</span><span class="p">,</span>
             <span class="n">aggregate_by_main_covar</span><span class="p">,</span>
+            <span class="n">use_model_matrix</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="p">)</span>
 
 <div class="viewcode-block" id="BalanceDF.asmd">
@@ -1555,8 +1584,11 @@
 <span class="sd">            target (Optional[&quot;BalanceDF&quot;], optional): A BalanceDF (of the same type as the one used in self) to compare against.</span>
 <span class="sd">                If None then it looks for a target in the self linked objects. Defaults to None.</span>
 <span class="sd">            aggregate_by_main_covar (bool, optional): Defaults to False.</span>
-<span class="sd">                If True, it will make sure to return the kld DataFrame after averaging</span>
-<span class="sd">                all the columns from using the one-hot encoding for categorical variables.</span>
+<span class="sd">                If True, it will return the KLD results after aggregating columns</span>
+<span class="sd">                that share a main covariate name into a single metric. This applies</span>
+<span class="sd">                to columns created from the same underlying covariate via formula</span>
+<span class="sd">                transformations or interactions (e.g., ``&quot;age&quot;``, ``&quot;log(age)&quot;``,</span>
+<span class="sd">                ``&quot;age:squared&quot;``), not specifically to categorical one-hot encoding.</span>
 <span class="sd">                See :func:`_aggregate_statistic_by_main_covar` for more details.</span>
 
 <span class="sd">        Raises:</span>
@@ -1605,9 +1637,9 @@
 
 <span class="sd">                # Compare only self to target without linked samples</span>
 <span class="sd">                print(sample_with_target.covars().kld(on_linked_samples=False).round(6))</span>
-<span class="sd">                    #            a     c[x]     c[y]  c[z]  mean(kld)</span>
+<span class="sd">                    #            a        c  mean(kld)</span>
 <span class="sd">                    # index</span>
-<span class="sd">                    # covars   0.0  0.143841  0.130812   0.0   0.045776</span>
+<span class="sd">                    # covars   0.0  0.173287   0.086643</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">target_from_self</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_BalanceDF_child_from_linked_samples</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>

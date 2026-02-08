@@ -6,10 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>balance.utils.data_transformation &#8212; balance  documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=fb9458d3" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=29da98fa" />
     <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -113,6 +113,73 @@
             <span class="n">df</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">_safe_fillna_and_infer</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">c</span><span class="p">],</span> <span class="n">replace_val_num</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">df</span><span class="p">,</span> <span class="n">na_indicators</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="add_na_indicator_to_combined">
+<a class="viewcode-back" href="../../../balance.util.html#balance.util.add_na_indicator_to_combined">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_na_indicator_to_combined</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add NA indicator columns to a DataFrame, handling pre-existing ``_is_na_*`` columns.</span>
+
+<span class="sd">    :func:`add_na_indicator` raises when the input already contains columns whose</span>
+<span class="sd">    names start with ``_is_na_``.  This wrapper splits those columns out first,</span>
+<span class="sd">    applies :func:`add_na_indicator` to the remaining base columns, and then</span>
+<span class="sd">    re-attaches the original indicator columns so that nothing is duplicated.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df (pd.DataFrame): The input DataFrame, which may or may not already</span>
+<span class="sd">            contain ``_is_na_*`` columns.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.DataFrame: The DataFrame with NA indicator columns added for every</span>
+<span class="sd">            base column that contains missing values.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        Basic usage on a DataFrame without pre-existing indicators:</span>
+
+<span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">        &gt;&gt;&gt; from balance.utils.data_transformation import add_na_indicator_to_combined</span>
+<span class="sd">        &gt;&gt;&gt; df = pd.DataFrame({&quot;x&quot;: [1.0, None, 3.0], &quot;y&quot;: [0, 1, 2]})</span>
+<span class="sd">        &gt;&gt;&gt; result = add_na_indicator_to_combined(df)</span>
+<span class="sd">        &gt;&gt;&gt; result.columns.tolist()</span>
+<span class="sd">        [&#39;x&#39;, &#39;y&#39;, &#39;_is_na_x&#39;]</span>
+
+<span class="sd">        When the input already contains ``_is_na_*`` columns, they are preserved</span>
+<span class="sd">        and not duplicated:</span>
+
+<span class="sd">        &gt;&gt;&gt; df2 = pd.DataFrame(</span>
+<span class="sd">        ...     {</span>
+<span class="sd">        ...         &quot;x&quot;: [1.0, None, 3.0],</span>
+<span class="sd">        ...         &quot;_is_na_y&quot;: [0, 1, 0],</span>
+<span class="sd">        ...     }</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; result2 = add_na_indicator_to_combined(df2)</span>
+<span class="sd">        &gt;&gt;&gt; result2.columns.tolist()</span>
+<span class="sd">        [&#39;x&#39;, &#39;_is_na_x&#39;, &#39;_is_na_y&#39;]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">existing_indicator_cols</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">col</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_is_na_&quot;</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">existing_indicator_cols</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">add_na_indicator</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+    <span class="n">base_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">existing_indicator_cols</span><span class="p">]</span>
+    <span class="n">combined_base</span> <span class="o">=</span> <span class="n">add_na_indicator</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">base_cols</span><span class="p">])</span>
+    <span class="c1"># add_na_indicator will create &quot;_is_na_&lt;col&gt;&quot; for every base column that has</span>
+    <span class="c1"># NAs.  If the input already carried a matching indicator (e.g. &quot;_is_na_foo&quot;</span>
+    <span class="c1"># exists and &quot;foo&quot; still has NAs), the newly created column would clash with</span>
+    <span class="c1"># the pre-existing one.  Drop the duplicates so the original indicators are</span>
+    <span class="c1"># preserved unchanged when we re-attach them below.</span>
+    <span class="n">overlapping</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">existing_indicator_cols</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">combined_base</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">overlapping</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="s2">&quot;add_na_indicator_to_combined: dropping </span><span class="si">%d</span><span class="s2"> newly created indicator &quot;</span>
+            <span class="s2">&quot;column(s) that overlap with pre-existing ones: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">overlapping</span><span class="p">),</span>
+            <span class="n">overlapping</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="n">combined_base</span> <span class="o">=</span> <span class="n">combined_base</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">overlapping</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">combined_base</span><span class="p">,</span> <span class="n">df</span><span class="p">[</span><span class="n">existing_indicator_cols</span><span class="p">]],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
 
 
 

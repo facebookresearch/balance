@@ -6,10 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>balance.sample_class &#8212; balance  documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
-    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=fb9458d3" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=29da98fa" />
     <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="../../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head><body>
@@ -551,10 +551,9 @@
             <span class="p">]</span>
             <span class="c1"># TODO:(after 2026) that if pandas &gt;=3, this doesn&#39;t cause issues for users importing data from SQL</span>
             <span class="c1"># In pandas &lt; 3, convert string dtype to object for compatibility</span>
-            <span class="n">_pd_version</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
-                <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">importlib_version</span><span class="p">(</span><span class="s2">&quot;pandas&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[:</span><span class="mi">2</span><span class="p">]</span>
-            <span class="p">)</span>
-            <span class="k">if</span> <span class="n">_pd_version</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">packaging.version</span><span class="w"> </span><span class="kn">import</span> <span class="n">Version</span>
+
+            <span class="k">if</span> <span class="n">Version</span><span class="p">(</span><span class="n">importlib_version</span><span class="p">(</span><span class="s2">&quot;pandas&quot;</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">Version</span><span class="p">(</span><span class="s2">&quot;3.0&quot;</span><span class="p">):</span>
                 <span class="n">input_type</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;string&quot;</span><span class="p">)</span>
                 <span class="n">output_type</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;object&quot;</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">i_input</span><span class="p">,</span> <span class="n">i_output</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">input_type</span><span class="p">,</span> <span class="n">output_type</span><span class="p">):</span>
@@ -1002,31 +1001,38 @@
 <span class="sd">        .. code-block:: python</span>
 
 <span class="sd">                import balance</span>
-<span class="sd">                from sklearn.ensemble import RandomForestClassifier</span>
+<span class="sd">                from sklearn.ensemble import HistGradientBoostingClassifier</span>
 <span class="sd">                from balance import Sample</span>
 <span class="sd">                from balance import load_data</span>
 
 <span class="sd">                # Load simulated data</span>
 <span class="sd">                target_df, sample_df = load_data()</span>
 
+<span class="sd">                sample</span>
+
 <span class="sd">                sample = Sample.from_frame(sample_df, outcome_columns=[&quot;happiness&quot;])</span>
-<span class="sd">                # Often times we don&#39;y have the outcome for the target. In this case we&#39;ve added it just to validate later that the weights indeed help us reduce the bias</span>
+<span class="sd">                # Often times we don&#39;t have the outcome for the target. In this case we&#39;ve added it just to validate later that the weights indeed help us reduce the bias</span>
 <span class="sd">                target = Sample.from_frame(target_df, outcome_columns=[&quot;happiness&quot;])</span>
 
 <span class="sd">                sample_with_target = sample.set_target(target)</span>
 <span class="sd">                adjusted = sample_with_target.adjust()</span>
 
-<span class="sd">                rf = RandomForestClassifier(n_estimators=200, random_state=0)</span>
-<span class="sd">                adjusted_rf = sample_with_target.adjust(model = rf)</span>
+<span class="sd">                hgb = HistGradientBoostingClassifier(</span>
+<span class="sd">                    random_state=0, categorical_features=&quot;from_dtype&quot;</span>
+<span class="sd">                )</span>
+<span class="sd">                adjusted_hgb = sample_with_target.adjust(</span>
+<span class="sd">                    model=hgb,</span>
+<span class="sd">                    use_model_matrix=False,</span>
+<span class="sd">                )</span>
 
-<span class="sd">                # Print ASMD tables for both adjusted and adjusted_rf</span>
+<span class="sd">                # Print ASMD tables for both adjusted and adjusted_hgb</span>
 <span class="sd">                print(&quot;\\n=== Adjusted ASMD ===&quot;)</span>
 <span class="sd">                print(adjusted.covars().asmd().T)</span>
 
-<span class="sd">                print(&quot;\\n=== Adjusted_RF ASMD ===&quot;)</span>
-<span class="sd">                print(adjusted_rf.covars().asmd().T)</span>
+<span class="sd">                print(&quot;\\n=== Adjusted_HGB ASMD ===&quot;)</span>
+<span class="sd">                print(adjusted_hgb.covars().asmd().T)</span>
 
-<span class="sd">                # output</span>
+<span class="sd">                # output (values will vary by model and random seed)</span>
 <span class="sd">                #</span>
 <span class="sd">                # === Adjusted ASMD ===</span>
 <span class="sd">                # source                  self  unadjusted  unadjusted - self</span>
@@ -1039,16 +1045,16 @@
 <span class="sd">                # income              0.205469    0.494217           0.288748</span>
 <span class="sd">                # mean(asmd)          0.119597    0.326799           0.207202</span>
 <span class="sd">                #</span>
-<span class="sd">                # === Adjusted_RF ASMD ===</span>
+<span class="sd">                # === Adjusted_HGB ASMD ===</span>
 <span class="sd">                # source                  self  unadjusted  unadjusted - self</span>
-<span class="sd">                # age_group[T.25-34]  0.074491    0.005688          -0.068804</span>
-<span class="sd">                # age_group[T.35-44]  0.022383    0.312711           0.290328</span>
-<span class="sd">                # age_group[T.45+]    0.145628    0.378828           0.233201</span>
-<span class="sd">                # gender[Female]      0.037700    0.375699           0.337999</span>
-<span class="sd">                # gender[Male]        0.067392    0.379314           0.311922</span>
-<span class="sd">                # gender[_NA]         0.051718    0.006296          -0.045422</span>
-<span class="sd">                # income              0.140655    0.494217           0.353562</span>
-<span class="sd">                # mean(asmd)          0.091253    0.326799           0.235546</span>
+<span class="sd">                # age_group[T.25-34]       ...    0.005688            ...</span>
+<span class="sd">                # age_group[T.35-44]       ...    0.312711            ...</span>
+<span class="sd">                # age_group[T.45+]         ...    0.378828            ...</span>
+<span class="sd">                # gender[Female]           ...    0.375699            ...</span>
+<span class="sd">                # gender[Male]             ...    0.379314            ...</span>
+<span class="sd">                # gender[_NA]              ...    0.006296            ...</span>
+<span class="sd">                # income                   ...    0.494217            ...</span>
+<span class="sd">                # mean(asmd)               ...    0.326799            ...</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_no_target_error</span><span class="p">()</span>
