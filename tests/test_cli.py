@@ -147,7 +147,7 @@ class TestCli(
     # pyre-ignore[3]: Intentionally returning a dynamically created class
     def _recording_sample_cls(self):
         class RecordingSample:
-            calls: list[tuple[str, ...]] = []
+            calls: list[tuple[str, ...] | None] = []
             ignore_calls: list[list[str] | None] = []
 
             def __init__(self, df: pd.DataFrame) -> None:
@@ -164,8 +164,6 @@ class TestCli(
                 ignore_columns: list[str] | None = None,
                 **kwargs: object,
             ) -> "RecordingSample":
-                if outcome_columns is None:
-                    raise AssertionError("Expected outcome_columns to be provided.")
                 cls.calls.append(outcome_columns)
                 cls.ignore_calls.append(ignore_columns)
                 return cls(df)
@@ -190,7 +188,7 @@ class TestCli(
 
         return RecordingSample
 
-    def test_cli_outcome_columns_default_inference_preserves_order(self) -> None:
+    def test_cli_unmentioned_columns_go_to_ignore(self) -> None:
         RecordingSample = self._recording_sample_cls()
         cli = self._make_cli()
         cli.process_batch(
@@ -200,12 +198,15 @@ class TestCli(
         )
         self.assertEqual(
             RecordingSample.calls,
+            [None, None],
+        )
+        self.assertEqual(
+            RecordingSample.ignore_calls,
             [
-                ("is_respondent", "outcome_b", "outcome_a", "extra"),
-                ("is_respondent", "outcome_b", "outcome_a", "extra"),
+                ["is_respondent", "outcome_b", "outcome_a", "extra"],
+                ["is_respondent", "outcome_b", "outcome_a", "extra"],
             ],
         )
-        self.assertEqual(RecordingSample.ignore_calls, [None, None])
 
     def test_cli_outcome_columns_explicit_selection(self) -> None:
         RecordingSample = self._recording_sample_cls()
@@ -1323,6 +1324,52 @@ class TestBalanceCLI_keep_columns(balance.testutil.BalanceTestCase):
         columns = ["id", "weight", "x", "y", "is_respondent"]
         with self.assertRaises(AssertionError):
             cli.check_input_columns(columns)
+
+    def test_keep_columns_preserved_in_adjusted_output(self) -> None:
+        """Test that --keep_columns columns survive adjustment via ignore_columns.
+
+        A keep column that is not id, weight, covariate, or outcome should be
+        routed to ignore_columns by process_batch, carried through the Sample,
+        and available for adapt_output to subset without KeyError.
+        """
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as in_file,
+        ):
+            in_contents = (
+                "x,y,is_respondent,id,weight,extra_col\n"
+                + ("1.0,50,1,1,1,abc\n" * 100)
+                + ("2.0,60,0,1,1,def\n" * 100)
+            )
+            in_file.write(in_contents)
+            in_file.close()
+            out_file = os.path.join(temp_dir, "out.csv")
+
+            parser = make_parser()
+            args = parser.parse_args(
+                [
+                    "--input_file",
+                    in_file.name,
+                    "--output_file",
+                    out_file,
+                    "--covariate_columns",
+                    "x,y",
+                    "--keep_columns",
+                    "id,weight,extra_col",
+                ]
+            )
+            cli = BalanceCLI(args)
+            cli.update_attributes_for_main_used_by_adjust()
+            cli.main()
+
+            self.assertTrue(os.path.isfile(out_file))
+            pd_out = pd.read_csv(out_file)
+            # adapt_output should have subsetted to exactly these columns
+            self.assertEqual(
+                sorted(pd_out.columns.tolist()), ["extra_col", "id", "weight"]
+            )
+            # extra_col values should be preserved from the sample rows
+            self.assertTrue((pd_out["extra_col"] == "abc").all())
 
 
 class TestBalanceCLI_num_lambdas(balance.testutil.BalanceTestCase):

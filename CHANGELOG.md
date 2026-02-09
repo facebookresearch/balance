@@ -1,3 +1,24 @@
+# 0.17.0 (TBD)
+
+## Breaking Changes
+
+- **CLI: unmentioned columns now go to `ignore_columns` instead of `outcome_columns`**
+  - Previously, when `--outcome_columns` was not explicitly set, all columns that
+    were not the id, weight, or a covariate were automatically classified as
+    outcome columns. Now those columns are placed into `ignore_columns` instead.
+  - Columns that are explicitly mentioned — the id column, weight column,
+    covariate columns, and outcome columns — are **not** ignored.
+
+## Documentation
+
+- **Improved `keep_columns` documentation**
+  - Updated docstrings for `has_keep_columns()`, `keep_columns()`, and the
+    `--keep_columns` argument to clarify that keep columns control which columns
+    appear in the final output CSV. Keep columns that are not id, weight,
+    covariate, or outcome columns will be placed into ``ignore_columns`` during
+    processing but are still retained and available in the output.
+
+
 # 0.16.0 (2026-02-09)
 
 ## New Features
