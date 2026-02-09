@@ -151,6 +151,13 @@
 <dt class="sig sig-object py" id="balance.cli.BalanceCLI.has_keep_columns">
 <span class="sig-name descname"><span class="pre">has_keep_columns</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/balance/cli.html#BalanceCLI.has_keep_columns"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.cli.BalanceCLI.has_keep_columns" title="Link to this definition">¶</a></dt>
 <dd><p>Return True when output keep columns are supplied.</p>
+<p>Keep columns control which columns appear in the final output CSV.
+After adjustment, the output DataFrame is subsetted to contain
+<strong>only</strong> these columns (see <a class="reference internal" href="#balance.cli.BalanceCLI.adapt_output" title="balance.cli.BalanceCLI.adapt_output"><code class="xref py py-meth docutils literal notranslate"><span class="pre">adapt_output()</span></code></a>).</p>
+<p>Note that keep columns that are not the id, weight, a covariate,
+or an explicit outcome column will be placed into
+<code class="docutils literal notranslate"><span class="pre">ignore_columns</span></code> by <a class="reference internal" href="#balance.cli.BalanceCLI.process_batch" title="balance.cli.BalanceCLI.process_batch"><code class="xref py py-meth docutils literal notranslate"><span class="pre">process_batch()</span></code></a>.  They are still
+carried through the <code class="docutils literal notranslate"><span class="pre">Sample</span></code> and available in the output.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if keep columns are set, otherwise <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p>
@@ -199,6 +206,11 @@
 <dt class="sig sig-object py" id="balance.cli.BalanceCLI.keep_columns">
 <span class="sig-name descname"><span class="pre">keep_columns</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/balance/cli.html#BalanceCLI.keep_columns"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.cli.BalanceCLI.keep_columns" title="Link to this definition">¶</a></dt>
 <dd><p>Return the subset of columns to keep in outputs.</p>
+<p>These columns are used to filter the final output DataFrame.
+Keep columns that are not the id, weight, a covariate, or an
+explicit outcome column will be placed into <code class="docutils literal notranslate"><span class="pre">ignore_columns</span></code>
+during processing but are still retained by the <code class="docutils literal notranslate"><span class="pre">Sample</span></code> and
+included in the output.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>List of columns to keep or <code class="docutils literal notranslate"><span class="pre">None</span></code> if unspecified.</p>

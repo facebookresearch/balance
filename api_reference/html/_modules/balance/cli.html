@@ -354,6 +354,15 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">has_keep_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True when output keep columns are supplied.</span>
 
+<span class="sd">        Keep columns control which columns appear in the final output CSV.</span>
+<span class="sd">        After adjustment, the output DataFrame is subsetted to contain</span>
+<span class="sd">        **only** these columns (see :meth:`adapt_output`).</span>
+
+<span class="sd">        Note that keep columns that are not the id, weight, a covariate,</span>
+<span class="sd">        or an explicit outcome column will be placed into</span>
+<span class="sd">        ``ignore_columns`` by :meth:`process_batch`.  They are still</span>
+<span class="sd">        carried through the ``Sample`` and available in the output.</span>
+
 <span class="sd">        Returns:</span>
 <span class="sd">            ``True`` if keep columns are set, otherwise ``False``.</span>
 
@@ -370,6 +379,12 @@
 <a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.keep_columns">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">keep_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the subset of columns to keep in outputs.</span>
+
+<span class="sd">        These columns are used to filter the final output DataFrame.</span>
+<span class="sd">        Keep columns that are not the id, weight, a covariate, or an</span>
+<span class="sd">        explicit outcome column will be placed into ``ignore_columns``</span>
+<span class="sd">        during processing but are still retained by the ``Sample`` and</span>
+<span class="sd">        included in the output.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List of columns to keep or ``None`` if unspecified.</span>
@@ -795,33 +810,22 @@
                 <span class="p">),</span>
             <span class="p">}</span>
 
-        <span class="c1"># Stuff everything that is not id, weight, or covariate into outcomes</span>
+        <span class="c1"># Build the set of explicitly mentioned columns.  Any column not in</span>
+        <span class="c1"># this set is placed into ignore_columns so it is carried through</span>
+        <span class="c1"># the Sample but does not participate in the adjustment.</span>
         <span class="n">outcome_columns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcome_columns</span><span class="p">()</span>
-        <span class="n">ignore_columns</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="n">outcome_columns</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">outcome_columns</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="n">column</span>
-                <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">batch_df</span><span class="o">.</span><span class="n">columns</span>
-                <span class="k">if</span> <span class="n">column</span>
-                <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">id_column</span><span class="p">(),</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="p">(),</span>
-                    <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">covariate_columns</span><span class="p">(),</span>
-                <span class="p">}</span>
-            <span class="p">]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">ignore_columns</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="n">column</span>
-                <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">batch_df</span><span class="o">.</span><span class="n">columns</span>
-                <span class="k">if</span> <span class="n">column</span>
-                <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">id_column</span><span class="p">(),</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="p">(),</span>
-                    <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">covariate_columns</span><span class="p">(),</span>
-                    <span class="o">*</span><span class="n">outcome_columns</span><span class="p">,</span>
-                <span class="p">}</span>
-            <span class="p">]</span>
-        <span class="n">outcome_columns</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">outcome_columns</span><span class="p">)</span>
+        <span class="n">explicitly_mentioned</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">id_column</span><span class="p">(),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="p">(),</span>
+            <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">covariate_columns</span><span class="p">(),</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">outcome_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">explicitly_mentioned</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">outcome_columns</span><span class="p">)</span>
+
+        <span class="n">ignore_columns</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">column</span> <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">batch_df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">column</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">explicitly_mentioned</span>
+        <span class="p">]</span>
+        <span class="n">outcome_columns</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">outcome_columns</span><span class="p">)</span> <span class="k">if</span> <span class="n">outcome_columns</span> <span class="k">else</span> <span class="kc">None</span>
 
         <span class="c1"># definitions for diagnostics</span>
         <span class="n">covariate_columns_for_diagnostics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariate_columns_for_diagnostics</span><span class="p">()</span>
@@ -1365,8 +1369,9 @@
         <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="p">(</span>
-            <span class="s2">&quot;Set of columns used as outcomes. If not supplied, all columns that are &quot;</span>
-            <span class="s2">&quot;not in id, weight, or covariate columns are treated as outcomes.&quot;</span>
+            <span class="s2">&quot;Comma-separated columns used as outcomes. If not supplied, &quot;</span>
+            <span class="s2">&quot;columns that are not id, weight, or covariates are placed into &quot;</span>
+            <span class="s2">&quot;ignore_columns (carried through but not used in adjustment).&quot;</span>
         <span class="p">),</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
@@ -1402,7 +1407,10 @@
         <span class="s2">&quot;--keep_columns&quot;</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
         <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Set of columns we include in the output csv file&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;Comma-separated columns to include in the output csv file. &quot;</span>
+            <span class="s2">&quot;The output will be subsetted to only these columns.&quot;</span>
+        <span class="p">),</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--keep_row_column&quot;</span><span class="p">,</span>
