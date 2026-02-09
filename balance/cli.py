@@ -280,6 +280,15 @@ class BalanceCLI:
     def has_keep_columns(self) -> bool:
         """Return True when output keep columns are supplied.
 
+        Keep columns control which columns appear in the final output CSV.
+        After adjustment, the output DataFrame is subsetted to contain
+        **only** these columns (see :meth:`adapt_output`).
+
+        Note that keep columns that are not the id, weight, a covariate,
+        or an explicit outcome column will be placed into
+        ``ignore_columns`` by :meth:`process_batch`.  They are still
+        carried through the ``Sample`` and available in the output.
+
         Returns:
             ``True`` if keep columns are set, otherwise ``False``.
 
@@ -293,6 +302,12 @@ class BalanceCLI:
 
     def keep_columns(self) -> List[str] | None:
         """Return the subset of columns to keep in outputs.
+
+        These columns are used to filter the final output DataFrame.
+        Keep columns that are not the id, weight, a covariate, or an
+        explicit outcome column will be placed into ``ignore_columns``
+        during processing but are still retained by the ``Sample`` and
+        included in the output.
 
         Returns:
             List of columns to keep or ``None`` if unspecified.
@@ -667,33 +682,22 @@ class BalanceCLI:
                 ),
             }
 
-        # Stuff everything that is not id, weight, or covariate into outcomes
+        # Build the set of explicitly mentioned columns.  Any column not in
+        # this set is placed into ignore_columns so it is carried through
+        # the Sample but does not participate in the adjustment.
         outcome_columns = self.outcome_columns()
-        ignore_columns = None
-        if outcome_columns is None:
-            outcome_columns = [
-                column
-                for column in batch_df.columns
-                if column
-                not in {
-                    self.id_column(),
-                    self.weight_column(),
-                    *self.covariate_columns(),
-                }
-            ]
-        else:
-            ignore_columns = [
-                column
-                for column in batch_df.columns
-                if column
-                not in {
-                    self.id_column(),
-                    self.weight_column(),
-                    *self.covariate_columns(),
-                    *outcome_columns,
-                }
-            ]
-        outcome_columns = tuple(outcome_columns)
+        explicitly_mentioned: set[str] = {
+            self.id_column(),
+            self.weight_column(),
+            *self.covariate_columns(),
+        }
+        if outcome_columns is not None:
+            explicitly_mentioned.update(outcome_columns)
+
+        ignore_columns = [
+            column for column in batch_df.columns if column not in explicitly_mentioned
+        ]
+        outcome_columns = tuple(outcome_columns) if outcome_columns else None
 
         # definitions for diagnostics
         covariate_columns_for_diagnostics = self.covariate_columns_for_diagnostics()
@@ -1218,8 +1222,9 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
         required=False,
         default=None,
         help=(
-            "Set of columns used as outcomes. If not supplied, all columns that are "
-            "not in id, weight, or covariate columns are treated as outcomes."
+            "Comma-separated columns used as outcomes. If not supplied, "
+            "columns that are not id, weight, or covariates are placed into "
+            "ignore_columns (carried through but not used in adjustment)."
         ),
     )
     parser.add_argument(
@@ -1255,7 +1260,10 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
         "--keep_columns",
         type=str,
         required=False,
-        help="Set of columns we include in the output csv file",
+        help=(
+            "Comma-separated columns to include in the output csv file. "
+            "The output will be subsetted to only these columns."
+        ),
     )
     parser.add_argument(
         "--keep_row_column",
