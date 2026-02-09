@@ -49,7 +49,8 @@ jobs:
         run: git fetch --prune --unshallow
       - name: Build wheels pkg
         run: |
-          python setup.py sdist bdist_wheel
+          python -m pip install --upgrade pip build
+          python -m build --wheel --outdir dist
       - name: Publish a Python distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
