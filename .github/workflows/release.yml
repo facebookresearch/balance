@@ -29,7 +29,8 @@ jobs:
           python -m pytest -ra
       - name: Build wheels pkg
         run: |
-          python setup.py bdist_wheel
+          python -m pip install --upgrade pip build
+          python -m build --wheel --outdir dist
 
   deploy:
     needs: tests # only run if previous step succeeds

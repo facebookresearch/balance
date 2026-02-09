@@ -1,3 +1,9 @@
+# 0.17.x (Unreleased)
+
+## Packaging & Tests
+
+- Updated the release workflow to build wheels with `python -m build` instead of deprecated `setup.py`.
+
 # 0.16.0 (2026-02-09)
 
 ## New Features
@@ -28,7 +34,6 @@
     - `BalanceDF.model_matrix()` now accepts a `formula` argument to build
       custom model matrices without precomputing them manually.
 
-
 ## Bug Fixes
 
 - **Removed deprecated setup build**
@@ -54,6 +59,10 @@
   - **Migration:** ensure your weights include at least one positive value
     before calling these diagnostics, or catch the `ValueError` if all-zero
     weights are possible in your workflow.
+
+## Contributors
+
+@neuralsorcerer, @talgalili
 
 # 0.15.0 (2026-01-20)
 
