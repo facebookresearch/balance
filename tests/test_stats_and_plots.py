@@ -1055,6 +1055,18 @@ class TestImpactOfWeightsOnOutcome(
             weighted_median_breakdown_point(pd.Series((1, 1, 1, 1, 10))), 0.2
         )
 
+    def test_weighted_median_breakdown_point_returns_np_float64(self) -> None:
+        """Ensure weighted_median_breakdown_point consistently returns np.float64."""
+        from balance.stats_and_plots.weights_stats import (
+            weighted_median_breakdown_point,
+        )
+
+        result_regular = weighted_median_breakdown_point(pd.Series([1, 1, 1, 10]))
+        result_majority = weighted_median_breakdown_point(pd.Series([60, 20, 20]))
+
+        self.assertIsInstance(result_regular, np.float64)
+        self.assertIsInstance(result_majority, np.float64)
+
     def test_design_effect_with_two_values(self) -> None:
         """Test design effect with two weight values.
 
