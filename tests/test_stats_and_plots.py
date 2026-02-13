@@ -45,10 +45,10 @@ class TestBalance_weights_stats(
         )  # checking only the first column
 
         # Test invalid weight types
-        with self.assertRaisesRegex(TypeError, "weights \\(w\\) must be a number*"):
+        with self.assertRaisesRegex(TypeError, "weights \\(w\\) must be a number.*"):
             _check_weights_are_valid([str(x) for x in w])
 
-        with self.assertRaisesRegex(TypeError, "weights \\(w\\) must be a number*"):
+        with self.assertRaisesRegex(TypeError, "weights \\(w\\) must be a number.*"):
             invalid_w = ["a", "b"]
             _check_weights_are_valid(invalid_w)
 
@@ -70,7 +70,7 @@ class TestBalance_weights_stats(
         self.assertEqual(_check_weights_are_valid([0, 0, 0]), None)
 
         # Empty weights should fail as non-numeric inputs
-        with self.assertRaisesRegex(TypeError, "weights \\(w\\) must be a number*"):
+        with self.assertRaisesRegex(TypeError, "weights \\(w\\) must be a number.*"):
             _check_weights_are_valid([], require_positive=True)
 
         # All-NaN weights should fail when positive weights are required
@@ -78,6 +78,23 @@ class TestBalance_weights_stats(
             ValueError, "weights \\(w\\) must include at least one positive value."
         ):
             _check_weights_are_valid([np.nan, np.nan], require_positive=True)
+
+        # DataFrame with no columns should fail fast with a clear error
+        with self.assertRaisesRegex(
+            TypeError, "weights \\(w\\) DataFrame must include at least one column."
+        ):
+            _check_weights_are_valid(pd.DataFrame(index=[0, 1]))
+
+        # Validation should always use first DataFrame column, even if later columns are valid
+        with self.assertRaisesRegex(TypeError, "weights \\(w\\) must be a number.*"):
+            _check_weights_are_valid(
+                pd.DataFrame(
+                    {
+                        "bad_first": ["a", "b", "c"],
+                        "good_second": [1.0, 2.0, 3.0],
+                    }
+                )
+            )
 
     def test_design_effect(self) -> None:
         """Test calculation of design effect for weighted samples.
@@ -199,6 +216,119 @@ class TestBalance_weights_stats(
             "above": [0.5, 0.0, 0.0, 0.0, 0.0],
         }
         self.assertEqual({k: v.to_list() for k, v in result_dict.items()}, expected)
+
+    def test_weights_diagnostics_accept_list_and_ndarray_input(self) -> None:
+        """Ensure diagnostics are equivalent across list/ndarray/Series inputs."""
+        from balance.stats_and_plots.weights_stats import (
+            design_effect,
+            nonparametric_skew,
+            prop_above_and_below,
+            weighted_median_breakdown_point,
+        )
+
+        w_list = [1.0, 2.0, 3.0, 4.0]
+        w_array = np.array(w_list)
+        w_series = pd.Series(w_list)
+
+        self.assertEqual(design_effect(w_list), design_effect(w_series))
+        self.assertEqual(design_effect(w_array), design_effect(w_series))
+        self.assertEqual(nonparametric_skew(w_list), nonparametric_skew(w_series))
+        self.assertEqual(nonparametric_skew(w_array), nonparametric_skew(w_series))
+        self.assertEqual(
+            weighted_median_breakdown_point(w_list),
+            weighted_median_breakdown_point(w_series),
+        )
+        self.assertEqual(
+            weighted_median_breakdown_point(w_array),
+            weighted_median_breakdown_point(w_series),
+        )
+
+        list_prop = prop_above_and_below(w_list)
+        array_prop = prop_above_and_below(w_array)
+        series_prop = prop_above_and_below(w_series)
+        self.assertIsNotNone(list_prop)
+        self.assertIsNotNone(array_prop)
+        self.assertIsNotNone(series_prop)
+        pd.testing.assert_series_equal(
+            _assert_type(list_prop, pd.Series), _assert_type(series_prop, pd.Series)
+        )
+        pd.testing.assert_series_equal(
+            _assert_type(array_prop, pd.Series), _assert_type(series_prop, pd.Series)
+        )
+
+    def test_weights_diagnostics_dataframe_first_column_errors(self) -> None:
+        """Ensure diagnostics consistently evaluate the first DataFrame column only."""
+        from balance.stats_and_plots.weights_stats import (
+            design_effect,
+            nonparametric_skew,
+            prop_above_and_below,
+            weighted_median_breakdown_point,
+        )
+
+        bad_first_col_df = pd.DataFrame(
+            {
+                "bad_first": ["a", "b", "c"],
+                "good_second": [1.0, 2.0, 3.0],
+            }
+        )
+
+        for fn in (
+            design_effect,
+            nonparametric_skew,
+            prop_above_and_below,
+            weighted_median_breakdown_point,
+        ):
+            with self.assertRaisesRegex(
+                TypeError, "weights \\(w\\) must be a number.*"
+            ):
+                fn(bad_first_col_df)
+
+        empty_df = pd.DataFrame(index=[0, 1])
+        for fn in (
+            design_effect,
+            nonparametric_skew,
+            prop_above_and_below,
+            weighted_median_breakdown_point,
+        ):
+            with self.assertRaisesRegex(
+                TypeError,
+                "weights \\(w\\) DataFrame must include at least one column.",
+            ):
+                fn(empty_df)
+
+    def test_weights_diagnostics_accept_dataframe_input(self) -> None:
+        """Ensure weight diagnostics consume DataFrame input via first column."""
+        from balance.stats_and_plots.weights_stats import (
+            design_effect,
+            nonparametric_skew,
+            prop_above_and_below,
+            weighted_median_breakdown_point,
+        )
+
+        w_series = pd.Series((1.0, 2.0, 3.0, 4.0), name="weights")
+        w_df = pd.DataFrame(
+            {
+                "weights": w_series,
+                # This second column should be ignored by diagnostic helpers.
+                "other": (100.0, 100.0, 100.0, 100.0),
+            }
+        )
+
+        self.assertEqual(design_effect(w_df), design_effect(w_series))
+        self.assertEqual(nonparametric_skew(w_df), nonparametric_skew(w_series))
+        self.assertEqual(
+            weighted_median_breakdown_point(w_df),
+            weighted_median_breakdown_point(w_series),
+        )
+
+        df_prop = prop_above_and_below(w_df)
+        series_prop = prop_above_and_below(w_series)
+        self.assertIsNotNone(df_prop)
+        self.assertIsNotNone(series_prop)
+        pd.testing.assert_series_equal(
+            _assert_type(df_prop, pd.Series),
+            _assert_type(series_prop, pd.Series),
+        )
 
 
 class TestImpactOfWeightsOnOutcome(
@@ -926,6 +1056,18 @@ class TestImpactOfWeightsOnOutcome(
         self.assertEqual(
             weighted_median_breakdown_point(pd.Series((1, 1, 1, 1, 10))), 0.2
         )
+
+    def test_weighted_median_breakdown_point_returns_np_float64(self) -> None:
+        """Ensure weighted_median_breakdown_point consistently returns np.float64."""
+        from balance.stats_and_plots.weights_stats import (
+            weighted_median_breakdown_point,
+        )
+
+        result_regular = weighted_median_breakdown_point(pd.Series([1, 1, 1, 10]))
+        result_majority = weighted_median_breakdown_point(pd.Series([60, 20, 20]))
+
+        self.assertIsInstance(result_regular, np.float64)
+        self.assertIsInstance(result_majority, np.float64)
 
     def test_design_effect_with_two_values(self) -> None:
         """Test design effect with two weight values.

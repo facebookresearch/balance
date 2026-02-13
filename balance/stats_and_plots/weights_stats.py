@@ -24,6 +24,60 @@ logger: logging.Logger = logging.getLogger(__package__)
 ##########################################
 
 
+def _weights_to_series(
+    w: list[Any] | pd.Series | npt.NDArray | pd.DataFrame,
+) -> pd.Series:
+    """Normalize supported weight inputs to a pandas Series.
+
+    If ``w`` is a DataFrame, only the first column is used (the historical
+    behavior in this module).
+
+    Args:
+        w (list[Any] | pd.Series | npt.NDArray | pd.DataFrame):
+            Candidate weight container to normalize.
+
+    Returns:
+        pd.Series: Normalized weight values.
+
+    Raises:
+        TypeError: If ``w`` is a DataFrame with zero columns.
+    """
+    if isinstance(w, pd.DataFrame):
+        if w.shape[1] == 0:
+            raise TypeError("weights (w) DataFrame must include at least one column.")
+        return w.iloc[:, 0]
+    if isinstance(w, pd.Series):
+        return w
+    return pd.Series(w)
+
+
+def _check_weights_series_are_valid(
+    w: pd.Series,
+    *,
+    require_positive: bool = False,
+) -> None:
+    """Validate a normalized weight Series.
+
+    Args:
+        w (pd.Series): Weights represented as a pandas Series.
+        require_positive (bool, optional): If True, require at least one weight
+            to be strictly positive. Defaults to False.
+
+    Raises:
+        TypeError: If ``w`` is not numeric.
+        ValueError: If ``w`` includes any negative value.
+        ValueError: If ``require_positive`` is True and all weights are zero.
+    """
+    if not pd.api.types.is_numeric_dtype(w):
+        raise TypeError(
+            f"weights (w) must be a number but instead they are of type: {w.dtype}."
+        )
+    if any(w < 0):
+        raise ValueError("weights (w) must all be non-negative values.")
+    if require_positive and not any(w > 0):
+        raise ValueError("weights (w) must include at least one positive value.")
+
+
 def _check_weights_are_valid(
     w: list[Any] | pd.Series | npt.NDArray | pd.DataFrame | None,
     *,
@@ -39,7 +93,7 @@ def _check_weights_are_valid(
             to be strictly positive. Defaults to False.
 
     Raises:
-        ValueError: if weights are not numeric.
+        TypeError: if weights are not numeric, or if ``w`` is an empty DataFrame.
         ValueError: if weights include a negative value.
         ValueError: if ``require_positive`` is True and all weights are zero.
 
@@ -48,27 +102,15 @@ def _check_weights_are_valid(
     """
     if w is None:
         return None
-    if isinstance(w, pd.DataFrame):
-        w = w.iloc[:, 0]  # if DataFrame, we check only the first column.
-    if not isinstance(w, pd.Series):
-        w = pd.Series(w)
-        # TODO: (p2) consider having a check for each type of w, instead of
-        #            turning w into pd.Series (since this solution might not be very efficient)
-    if not pd.api.types.is_numeric_dtype(w):
-        raise TypeError(
-            f"weights (w) must be a number but instead they are of type: {w.dtype}."
-        )
-    if any(w < 0):
-        raise ValueError("weights (w) must all be non-negative values.")
-    if require_positive and not any(w > 0):
-        raise ValueError("weights (w) must include at least one positive value.")
+    w_series = _weights_to_series(w)
+    _check_weights_series_are_valid(w_series, require_positive=require_positive)
 
     return None
 
 
-# TODO: if the input is pd.DataFrame than the output will be pd.Series.
-#       we could make the support of this more official in the future.
-def design_effect(w: pd.Series) -> np.float64:
+def design_effect(
+    w: list[Any] | pd.Series | npt.NDArray | pd.DataFrame,
+) -> np.float64:
     """
     Kish's design effect measure.
 
@@ -86,7 +128,9 @@ def design_effect(w: pd.Series) -> np.float64:
     ISSN 2470-6345. https://en.wikipedia.org/wiki/Design_effect
 
     Args:
-        w (pd.Series): A pandas series of weights (non negative, float/int) values.
+        w (list[Any] | pd.Series | npt.NDArray | pd.DataFrame):
+            Weights container with non-negative numeric values. If ``w`` is a
+            DataFrame, only the first column is used.
 
     Returns:
         np.float64: An estimator saying by how much the variance of the mean is expected to increase, compared to a random sample mean,
@@ -105,14 +149,17 @@ def design_effect(w: pd.Series) -> np.float64:
                 # 2.9880418803112336
                 # As expected. With a single dominating weight - the Deff is almost equal to the sample size.
     """
-    _check_weights_are_valid(w, require_positive=True)
+    w = _weights_to_series(w)
+    _check_weights_series_are_valid(w, require_positive=True)
     from balance.util import _safe_divide_with_zero_handling
 
     # Avoid divide by zero warning
     return _safe_divide_with_zero_handling((w**2).mean(), w.mean() ** 2)
 
 
-def nonparametric_skew(w: pd.Series) -> float:
+def nonparametric_skew(
+    w: list[Any] | pd.Series | npt.NDArray | pd.DataFrame,
+) -> float:
     # TODO (p2): consider adding other skew measures (https://en.wikipedia.org/wiki/Skewness)
     #            look more in the literature (are there references for using this vs another, or none at all?)
     #            update the doc with insights, once done:
@@ -125,7 +172,9 @@ def nonparametric_skew(w: pd.Series) -> float:
     - https://en.wikipedia.org/wiki/Nonparametric_skew
 
     Args:
-        w (pd.Series): A pandas series of weights (non negative, float/int) values.
+        w (list[Any] | pd.Series | npt.NDArray | pd.DataFrame):
+            Weights container with non-negative numeric values. If ``w`` is a
+            DataFrame, only the first column is used.
 
     Returns:
         np.float64: A value of skew, between -1 to 1, but for weights it's often positive (i.e.: right tailed distribution).
@@ -143,14 +192,15 @@ def nonparametric_skew(w: pd.Series) -> float:
             nonparametric_skew(pd.Series((-1,1,1, 1)))   #-0.5
 
     """
-    _check_weights_are_valid(w, require_positive=True)
+    w = _weights_to_series(w)
+    _check_weights_series_are_valid(w, require_positive=True)
     if (len(w) == 1) or (w.std() == 0):
         return float(0)
     return (w.mean() - w.median()) / w.std()
 
 
 def prop_above_and_below(
-    w: pd.Series,
+    w: list[Any] | pd.Series | npt.NDArray | pd.DataFrame,
     below: tuple[float, ...] | list[float] | None = (1 / 10, 1 / 5, 1 / 3, 1 / 2, 1),
     above: tuple[float, ...] | list[float] | None = (1, 2, 3, 5, 10),
     return_as_series: bool = True,
@@ -169,7 +219,9 @@ def prop_above_and_below(
     Note that below and above can overlap, be unordered, etc. The user is responsible for the order.
 
     Args:
-        w (pd.Series): A pandas series of weights (float, non negative) values.
+        w (list[Any] | pd.Series | npt.NDArray | pd.DataFrame):
+            Weights container with non-negative numeric values. If ``w`` is a
+            DataFrame, only the first column is used.
         below (tuple[float, ...] | list[float] | None, optional):
             values to check which proportion of normalized weights are *below* them.
             Using None returns None.
@@ -238,7 +290,8 @@ def prop_above_and_below(
                 # dtype: float64}
 
     """
-    _check_weights_are_valid(w, require_positive=True)
+    w = _weights_to_series(w)
+    _check_weights_series_are_valid(w, require_positive=True)
 
     # normalize weight to sample size:
     w = w / w.mean()
@@ -276,7 +329,9 @@ def prop_above_and_below(
     return out  # pyre-ignore[7]:  TODO: see if we can fix this pyre
 
 
-def weighted_median_breakdown_point(w: pd.Series) -> np.float64:
+def weighted_median_breakdown_point(
+    w: list[Any] | pd.Series | npt.NDArray | pd.DataFrame,
+) -> np.float64:
     # TODO (p2): do we want to have weighted_quantile_breakdown_point
     # so to check for quantiles other than 50%?
     """
@@ -288,7 +343,9 @@ def weighted_median_breakdown_point(w: pd.Series) -> np.float64:
     - https://en.wikipedia.org/wiki/Robust_statistics#Breakdown_point
 
     Args:
-        w (pd.Series): A pandas series of weights (float, non negative values).
+        w (list[Any] | pd.Series | npt.NDArray | pd.DataFrame):
+            Weights container with non-negative numeric values. If ``w`` is a
+            DataFrame, only the first column is used.
 
     Returns:
         np.float64: A minimal percent of users that contain at least 50% of the weights.
@@ -308,7 +365,8 @@ def weighted_median_breakdown_point(w: pd.Series) -> np.float64:
             w = pd.Series([1,1,1,1, 10])
             print(weighted_median_breakdown_point(w)) # 0.2
     """
-    _check_weights_are_valid(w, require_positive=True)
+    w = _weights_to_series(w)
+    _check_weights_series_are_valid(w, require_positive=True)
 
     # normalize weight to sample size:
 
@@ -323,4 +381,4 @@ def weighted_median_breakdown_point(w: pd.Series) -> np.float64:
         )
     # find minimal proportion of samples needed to reach 50%
     # the +1 trick is to deal with cases that 1 user has a weight that is larget then 50%.
-    return numerator / n  # breakdown_point
+    return np.float64(numerator / n)  # breakdown_point
