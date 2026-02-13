@@ -24,6 +24,33 @@ logger: logging.Logger = logging.getLogger(__package__)
 ##########################################
 
 
+def _weights_to_series(
+    w: list[Any] | pd.Series | npt.NDArray | pd.DataFrame,
+) -> pd.Series:
+    """Normalize supported weight inputs to a pandas Series.
+
+    If ``w`` is a DataFrame, only the first column is used (the historical
+    behavior in this module).
+
+    Args:
+        w (list[Any] | pd.Series | npt.NDArray | pd.DataFrame):
+            Candidate weight container to normalize.
+
+    Returns:
+        pd.Series: Normalized weight values.
+
+    Raises:
+        TypeError: If ``w`` is a DataFrame with zero columns.
+    """
+    if isinstance(w, pd.DataFrame):
+        if w.shape[1] == 0:
+            raise TypeError("weights (w) DataFrame must include at least one column.")
+        return w.iloc[:, 0]
+    if isinstance(w, pd.Series):
+        return w
+    return pd.Series(w)
+
+
 def _check_weights_are_valid(
     w: list[Any] | pd.Series | npt.NDArray | pd.DataFrame | None,
     *,
@@ -48,12 +75,7 @@ def _check_weights_are_valid(
     """
     if w is None:
         return None
-    if isinstance(w, pd.DataFrame):
-        w = w.iloc[:, 0]  # if DataFrame, we check only the first column.
-    if not isinstance(w, pd.Series):
-        w = pd.Series(w)
-        # TODO: (p2) consider having a check for each type of w, instead of
-        #            turning w into pd.Series (since this solution might not be very efficient)
+    w = _weights_to_series(w)
     if not pd.api.types.is_numeric_dtype(w):
         raise TypeError(
             f"weights (w) must be a number but instead they are of type: {w.dtype}."
@@ -66,9 +88,9 @@ def _check_weights_are_valid(
     return None
 
 
-# TODO: if the input is pd.DataFrame than the output will be pd.Series.
-#       we could make the support of this more official in the future.
-def design_effect(w: pd.Series) -> np.float64:
+def design_effect(
+    w: list[Any] | pd.Series | npt.NDArray | pd.DataFrame,
+) -> np.float64:
     """
     Kish's design effect measure.
 
@@ -106,13 +128,16 @@ def design_effect(w: pd.Series) -> np.float64:
                 # As expected. With a single dominating weight - the Deff is almost equal to the sample size.
     """
     _check_weights_are_valid(w, require_positive=True)
+    w = _weights_to_series(w)
     from balance.util import _safe_divide_with_zero_handling
 
     # Avoid divide by zero warning
     return _safe_divide_with_zero_handling((w**2).mean(), w.mean() ** 2)
 
 
-def nonparametric_skew(w: pd.Series) -> float:
+def nonparametric_skew(
+    w: list[Any] | pd.Series | npt.NDArray | pd.DataFrame,
+) -> float:
     # TODO (p2): consider adding other skew measures (https://en.wikipedia.org/wiki/Skewness)
     #            look more in the literature (are there references for using this vs another, or none at all?)
     #            update the doc with insights, once done:
@@ -144,13 +169,14 @@ def nonparametric_skew(w: pd.Series) -> float:
 
     """
     _check_weights_are_valid(w, require_positive=True)
+    w = _weights_to_series(w)
     if (len(w) == 1) or (w.std() == 0):
         return float(0)
     return (w.mean() - w.median()) / w.std()
 
 
 def prop_above_and_below(
-    w: pd.Series,
+    w: list[Any] | pd.Series | npt.NDArray | pd.DataFrame,
     below: tuple[float, ...] | list[float] | None = (1 / 10, 1 / 5, 1 / 3, 1 / 2, 1),
     above: tuple[float, ...] | list[float] | None = (1, 2, 3, 5, 10),
     return_as_series: bool = True,
@@ -239,6 +265,7 @@ def prop_above_and_below(
 
     """
     _check_weights_are_valid(w, require_positive=True)
+    w = _weights_to_series(w)
 
     # normalize weight to sample size:
     w = w / w.mean()
@@ -276,7 +303,9 @@ def prop_above_and_below(
     return out  # pyre-ignore[7]:  TODO: see if we can fix this pyre
 
 
-def weighted_median_breakdown_point(w: pd.Series) -> np.float64:
+def weighted_median_breakdown_point(
+    w: list[Any] | pd.Series | npt.NDArray | pd.DataFrame,
+) -> np.float64:
     # TODO (p2): do we want to have weighted_quantile_breakdown_point
     # so to check for quantiles other than 50%?
     """
@@ -309,6 +338,7 @@ def weighted_median_breakdown_point(w: pd.Series) -> np.float64:
             print(weighted_median_breakdown_point(w)) # 0.2
     """
     _check_weights_are_valid(w, require_positive=True)
+    w = _weights_to_series(w)
 
     # normalize weight to sample size:
 
