@@ -28,6 +28,13 @@ hide_title: true
     covariate, or outcome columns will be placed into ``ignore_columns`` during
     processing but are still retained and available in the output.
 
+## Bug Fixes
+
+- **Weight diagnostics now consistently accept DataFrame inputs**
+  - `design_effect`, `nonparametric_skew`, `prop_above_and_below`, and
+    `weighted_median_breakdown_point` now explicitly normalize DataFrame inputs
+    to their first column before computation, matching validation behavior and
+    returning scalar/Series outputs consistently.
 
 # 0.16.0 (2026-02-09)
 
