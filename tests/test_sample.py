@@ -174,17 +174,18 @@ class TestSample(
         """
         # Test automatic id column detection
         df = pd.DataFrame({"id": (1, 2), "a": (1, 2)})
-        self.assertWarnsRegexp(
-            "Guessed id column name id for the data", Sample.from_frame, df
+        with self.assertLogs("balance", level="WARNING") as captured_logs:
+            sample = Sample.from_frame(df)
+
+        warning_messages = "\n".join(captured_logs.output)
+
+        self.assertIn("Guessed id column name id for the data", warning_messages)
+        self.assertIn("Casting id column to string", warning_messages)
+        self.assertIn(
+            "No weights passed. Adding a 'weight' column and setting all values to 1",
+            warning_messages,
         )
-        # TODO: add tests for the two other warnings:
-        # - self.assertWarnsRegexp("Casting id column to string", Sample.from_frame, df)
-        # - self.assertWarnsRegexp("No weights passed, setting all weights to 1", Sample.from_frame, df)
-        # Using the above would fail since the warnings are sent sequentially and using self.assertWarnsRegexp
-        # only catches the first warning.
-        self.assertEqual(
-            Sample.from_frame(df).id_column, pd.Series((1, 2), name="id").astype(str)
-        )
+        self.assertEqual(sample.id_column, pd.Series((1, 2), name="id").astype(str))
 
         # Test explicit id column specification
         df = pd.DataFrame({"b": (1, 2), "a": (1, 2)})
