@@ -36,6 +36,11 @@ hide_title: true
     to their first column before computation, matching validation behavior and
     returning scalar/Series outputs consistently.
 
+## Tests
+
+- **Expanded warning coverage for `Sample.from_frame()` ID inference**
+  - Added assertions that validate all three expected warnings are emitted when inferring an `id` column and default weights, including ID guessing, ID string casting, and automatic weight creation.
+
 # 0.16.0 (2026-02-09)
 
 ## New Features
