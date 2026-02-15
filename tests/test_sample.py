@@ -174,7 +174,7 @@ class TestSample(
         """
         # Test automatic id column detection
         df = pd.DataFrame({"id": (1, 2), "a": (1, 2)})
-        with self.assertLogs(level="WARNING") as captured_logs:
+        with self.assertLogs("balance", level="WARNING") as captured_logs:
             sample = Sample.from_frame(df)
 
         warning_messages = "\n".join(captured_logs.output)
