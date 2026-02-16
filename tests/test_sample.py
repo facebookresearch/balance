@@ -31,7 +31,11 @@ import balance.testutil
 import IPython.display
 import numpy as np
 import pandas as pd
-from balance.sample_class import Sample
+from balance.sample_class import (
+    _target_variance_component_fraction,
+    NEGLIGIBLE_TARGET_VARIANCE_FRACTION,
+    Sample,
+)
 from balance.testutil import tempfile_path
 from balance.util import _assert_type
 
@@ -1847,6 +1851,25 @@ class TestSample_high_cardinality_warnings(balance.testutil.BalanceTestCase):
         )
 
 
+class TestTargetVarianceComponentFraction(balance.testutil.BalanceTestCase):
+    def test_zero_target_rows_returns_zero(self) -> None:
+        self.assertEqual(_target_variance_component_fraction(10, 0), 0.0)
+
+    def test_non_positive_sample_rows_with_positive_target_returns_one(self) -> None:
+        self.assertEqual(_target_variance_component_fraction(0, 10), 1.0)
+        self.assertEqual(_target_variance_component_fraction(-3, 10), 1.0)
+
+    def test_formula_matches_closed_form(self) -> None:
+        sample_n = 1000
+        target_n = 19_000
+        expected = sample_n / (sample_n + target_n)
+        self.assertAlmostEqual(
+            _target_variance_component_fraction(sample_n, target_n),
+            expected,
+        )
+        self.assertAlmostEqual(expected, NEGLIGIBLE_TARGET_VARIANCE_FRACTION)
+
+
 class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
     @staticmethod
     def _build_frame(prefix: str, rows: int) -> pd.DataFrame:
@@ -1891,7 +1914,7 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
 
         self.assertTrue(any("Large target detected" in log for log in logs))
 
-    def test_no_warning_when_target_not_large_enough(self) -> None:
+    def test_warns_when_target_variance_share_is_negligible(self) -> None:
         sample_df = self._build_frame("s", 1000)
         target_df = self._build_frame("t", 100_000)
 
@@ -1902,9 +1925,9 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
             lambda: _assert_type(sample.adjust(target, method="null"))
         )
 
-        self.assertFalse(any("Large target detected" in log for log in logs))
+        self.assertTrue(any("Large target detected" in log for log in logs))
 
-    def test_warns_at_exact_ten_to_one_ratio(self) -> None:
+    def test_no_warning_when_target_share_is_not_negligible(self) -> None:
         sample_df = self._build_frame("s", 10_000)
         target_df = self._build_frame("t", 100_001)
 
@@ -1915,9 +1938,22 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
             lambda: _assert_type(sample.adjust(target, method="null"))
         )
 
+        self.assertFalse(any("Large target detected" in log for log in logs))
+
+    def test_warns_at_negligible_variance_boundary(self) -> None:
+        sample_df = self._build_frame("s", 1_000)
+        target_df = self._build_frame("t", 19_000)
+
+        sample = Sample.from_frame(sample_df, id_column="id", weight_column="weight")
+        target = Sample.from_frame(target_df, id_column="id", weight_column="weight")
+
+        logs = self._collect_warnings(
+            lambda: _assert_type(sample.adjust(target, method="null"))
+        )
+
         self.assertTrue(any("Large target detected" in log for log in logs))
 
-    def test_no_warning_when_target_under_ten_to_one_ratio(self) -> None:
+    def test_no_warning_when_target_variance_share_exceeds_threshold(self) -> None:
         sample_df = self._build_frame("s", 10_001)
         target_df = self._build_frame("t", 100_001)
 
@@ -1946,6 +1982,47 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
     def test_no_warning_when_sample_empty(self) -> None:
         sample_df = self._build_frame("s", 0)
         target_df = self._build_frame("t", 100_001)
+
+        sample = Sample.from_frame(sample_df, id_column="id", weight_column="weight")
+        target = Sample.from_frame(target_df, id_column="id", weight_column="weight")
+
+        logs = self._collect_warnings(
+            lambda: _assert_type(sample.adjust(target, method="null"))
+        )
+
+        self.assertFalse(any("Large target detected" in log for log in logs))
+
+    def test_no_warning_just_below_negligible_variance_boundary(self) -> None:
+        sample_df = self._build_frame("s", 1_000)
+        target_df = self._build_frame("t", 18_999)
+
+        sample = Sample.from_frame(sample_df, id_column="id", weight_column="weight")
+        target = Sample.from_frame(target_df, id_column="id", weight_column="weight")
+
+        logs = self._collect_warnings(
+            lambda: _assert_type(sample.adjust(target, method="null"))
+        )
+
+        self.assertFalse(any("Large target detected" in log for log in logs))
+
+    def test_warning_reports_estimated_variance_share(self) -> None:
+        sample_df = self._build_frame("s", 1_000)
+        target_df = self._build_frame("t", 19_000)
+
+        sample = Sample.from_frame(sample_df, id_column="id", weight_column="weight")
+        target = Sample.from_frame(target_df, id_column="id", weight_column="weight")
+
+        logs = self._collect_warnings(
+            lambda: _assert_type(sample.adjust(target, method="null"))
+        )
+
+        large_target_logs = [log for log in logs if "Large target detected" in log]
+        self.assertTrue(large_target_logs)
+        self.assertIn("estimated 5.00% of 1/n variance", large_target_logs[0])
+
+    def test_no_warning_when_target_is_empty(self) -> None:
+        sample_df = self._build_frame("s", 100)
+        target_df = self._build_frame("t", 0)
 
         sample = Sample.from_frame(sample_df, id_column="id", weight_column="weight")
         target = Sample.from_frame(target_df, id_column="id", weight_column="weight")

@@ -25,6 +25,9 @@
     `weighted_median_breakdown_point` now explicitly normalize DataFrame inputs
     to their first column before computation, matching validation behavior and
     returning scalar/Series outputs consistently.
+- **Large-target warning now uses variance contribution instead of fixed row-count cutoffs**
+  - `Sample.adjust()` now warns based on the target's estimated share of two-sample 1/n variance (<=5%) rather than hard-coded row thresholds.
+  - This yields a principled warning criterion tied directly to inferential impact and removes dependence on arbitrary absolute counts.
 
 ## Tests
 

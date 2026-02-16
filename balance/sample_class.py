@@ -31,6 +31,38 @@ from IPython.lib.display import FileLink
 
 logger: logging.Logger = logging.getLogger(__package__)
 
+# The target's 1/n contribution to total variance is considered negligible
+# once it is at most 5% of the two-sample 1/n variance decomposition.
+NEGLIGIBLE_TARGET_VARIANCE_FRACTION: float = 0.05
+
+
+def _target_variance_component_fraction(sample_n: int, target_n: int) -> float:
+    """Return the fraction of total 1/n variance contributed by the target.
+
+    For two independent samples, standard error often scales with
+    ``1 / n_sample + 1 / n_target``. This helper reports the target's share of
+    that quantity:
+
+    ``(1 / n_target) / (1 / n_sample + 1 / n_target)``.
+
+    Args:
+        sample_n: Number of rows in the sample.
+        target_n: Number of rows in the target.
+
+    Returns:
+        float: Target's variance share in ``[0, 1]``. Returns ``0.0`` for
+            non-positive target sizes and ``1.0`` when sample size is
+            non-positive while target size is positive.
+    """
+    if target_n <= 0:
+        return 0.0
+    if sample_n <= 0:
+        return 1.0
+
+    inv_sample = 1.0 / float(sample_n)
+    inv_target = 1.0 / float(target_n)
+    return inv_target / (inv_sample + inv_target)
+
 
 def _concat_metric_val_var(
     diagnostics: pd.DataFrame,
@@ -1012,21 +1044,24 @@ class Sample:
 
         num_rows_sample = sample_covars_df.shape[0]
         num_rows_target = target_covars_df.shape[0]
+        target_variance_fraction = _target_variance_component_fraction(
+            num_rows_sample, num_rows_target
+        )
         if (
             num_rows_sample > 0
-            # TODO: the values of 100_000 and 10 are arbitrary,
-            #       and should be replaced with a more principled approach (in the far future)
-            and num_rows_target > 100_000
-            and num_rows_target >= 10 * num_rows_sample
+            and num_rows_target > num_rows_sample
+            and target_variance_fraction <= NEGLIGIBLE_TARGET_VARIANCE_FRACTION
         ):
             logger.warning(
                 "Large target detected: %s target rows vs %s sample rows. "
-                "When the target is much larger than the sample (here >10x and >100k rows), "
-                "the target's contribution to variance becomes negligible. "
+                "When the target is much larger than the sample, "
+                "the target's contribution to variance becomes negligible "
+                "(estimated %.2f%% of 1/n variance). "
                 "Standard errors will be driven almost entirely by the sample, "
                 "similar to a one-sample inference setting.",
                 num_rows_target,
                 num_rows_sample,
+                100.0 * target_variance_fraction,
             )
 
         sample_high_card = _detect_high_cardinality_features(sample_covars_df)
