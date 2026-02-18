@@ -11,6 +11,7 @@ import os.path
 import tempfile
 import warnings
 from argparse import Namespace
+from typing import Any
 
 import balance.testutil
 import numpy as np
@@ -144,8 +145,7 @@ class TestCli(
             }
         )
 
-    # pyre-ignore[3]: Intentionally returning a dynamically created class
-    def _recording_sample_cls(self):
+    def _recording_sample_cls(self) -> type[Any]:
         class RecordingSample:
             calls: list[tuple[str, ...] | None] = []
             ignore_calls: list[list[str] | None] = []
