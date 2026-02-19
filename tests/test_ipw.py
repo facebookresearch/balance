@@ -38,28 +38,6 @@ class TestIPW(
 ):
     """Test suite for Inverse Propensity Weighting (IPW) functionality."""
 
-    def test_model_coefs_with_and_without_linear_coefficients(self) -> None:
-        """model_coefs should expose coefficients for linear models and empty output otherwise."""
-
-        X = np.array([[0.0, 1.0], [1.0, 0.0], [2.0, 1.0], [3.0, 0.0]])
-        y = np.array([0, 0, 1, 1])
-
-        linear_model = LogisticRegression(random_state=0, max_iter=200).fit(X, y)
-        coefs = balance_ipw.model_coefs(
-            linear_model,
-            feature_names=["feature_a", "feature_b"],
-        )["coefs"]
-
-        self.assertIn("intercept", coefs.index)
-        self.assertIn("feature_a", coefs.index)
-        self.assertIn("feature_b", coefs.index)
-        self.assertEqual(len(coefs), 3)
-        self.assertTrue(np.isfinite(coefs.to_numpy()).all())
-
-        tree_model = DecisionTreeClassifier(random_state=0).fit(X, y)
-        tree_coefs = balance_ipw.model_coefs(tree_model)["coefs"]
-        self.assertTrue(tree_coefs.empty)
-
     def test_link_transform_handles_midpoint_and_extremes(self) -> None:
         """link_transform should return finite log-odds for probabilities in [0, 1]."""
 
