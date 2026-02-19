@@ -30,7 +30,6 @@ from sklearn.preprocessing import StandardScaler
 logger: logging.Logger = logging.getLogger(__package__)
 
 
-# TODO: Add tests for model_coefs()
 # TODO: Improve interpretability of model coefficients, as variables are no longer zero-centered.
 def model_coefs(
     model: ClassifierMixin,
@@ -94,7 +93,6 @@ def model_coefs(
     }
 
 
-# TODO: Add tests for link_transform()
 def link_transform(pred: np.ndarray) -> np.ndarray:
     """Transforms probabilities into log odds (link function).
 
@@ -184,7 +182,6 @@ def _convert_to_dense_array(
     return X_matrix
 
 
-# TODO: Add tests for calc_dev()
 def calc_dev(
     X_matrix: csr_matrix,
     y: np.ndarray,
