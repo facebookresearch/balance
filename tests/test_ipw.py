@@ -22,6 +22,7 @@ import sklearn
 from balance.sample_class import Sample
 from balance.weighting_methods import ipw as balance_ipw
 from packaging.version import Version
+from scipy.sparse import csr_matrix
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import log_loss
@@ -36,6 +37,38 @@ class TestIPW(
     balance.testutil.BalanceTestCase,
 ):
     """Test suite for Inverse Propensity Weighting (IPW) functionality."""
+
+    def test_link_transform_handles_midpoint_and_extremes(self) -> None:
+        """link_transform should return finite log-odds for probabilities in [0, 1]."""
+
+        transformed = balance_ipw.link_transform(np.array([0.5, 0.0, 1.0]))
+        self.assertAlmostEqual(transformed[0], 0.0, places=10)
+        self.assertTrue(np.isfinite(transformed[1]))
+        self.assertTrue(np.isfinite(transformed[2]))
+        self.assertLess(transformed[1], 0)
+        self.assertGreater(transformed[2], 0)
+
+    def test_calc_dev_returns_finite_mean_and_sd(self) -> None:
+        """calc_dev should run 10-fold CV and return finite deviance summary."""
+
+        rng = np.random.RandomState(42)
+        X = rng.normal(size=(40, 2))
+        y = np.array([0] * 20 + [1] * 20)
+        foldids = np.tile(np.arange(10), 4)
+        model_weights = np.ones(40)
+
+        dev_mean, dev_sd = balance_ipw.calc_dev(
+            csr_matrix(X),
+            y,
+            LogisticRegression(random_state=0, max_iter=300),
+            model_weights,
+            foldids,
+        )
+
+        self.assertTrue(np.isfinite(dev_mean))
+        self.assertTrue(np.isfinite(dev_sd))
+        self.assertGreaterEqual(dev_mean, 0.0)
+        self.assertGreaterEqual(dev_sd, 0.0)
 
     def test_ipw_weights_order(self) -> None:
         """Test that IPW assigns correct relative weight ordering.
