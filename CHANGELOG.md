@@ -31,7 +31,7 @@
 - **Expanded warning coverage for `Sample.from_frame()` ID inference**
   - Added assertions that validate all three expected warnings are emitted when inferring an `id` column and default weights, including ID guessing, ID string casting, and automatic weight creation.
 - **Added focused unit coverage for IPW helpers**
-  - Added tests for `model_coefs()`, `link_transform()`, and `calc_dev()` to validate behavior for linear/non-linear models, extreme probabilities, and finite 10-fold deviance summaries.
+  - Added tests for `link_transform()`, and `calc_dev()` to validate behavior for extreme probabilities, and finite 10-fold deviance summaries.
 
 # 0.16.0 (2026-02-09)
 
