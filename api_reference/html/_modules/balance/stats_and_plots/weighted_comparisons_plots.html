@@ -1443,15 +1443,16 @@
     <span class="n">variables</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">numeric_n_values_threshold</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span>
     <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">dist_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;kde&quot;</span><span class="p">,</span> <span class="s2">&quot;hist&quot;</span><span class="p">,</span> <span class="s2">&quot;qq&quot;</span><span class="p">,</span> <span class="s2">&quot;ecdf&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">library</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;plotly&quot;</span><span class="p">,</span> <span class="s2">&quot;seaborn&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;plotly&quot;</span><span class="p">,</span>
+    <span class="n">dist_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;kde&quot;</span><span class="p">,</span> <span class="s2">&quot;hist&quot;</span><span class="p">,</span> <span class="s2">&quot;qq&quot;</span><span class="p">,</span> <span class="s2">&quot;ecdf&quot;</span><span class="p">,</span> <span class="s2">&quot;hist_ascii&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">library</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;plotly&quot;</span><span class="p">,</span> <span class="s2">&quot;seaborn&quot;</span><span class="p">,</span> <span class="s2">&quot;balance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;plotly&quot;</span><span class="p">,</span>
     <span class="n">ylim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">]</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plots the variables of a DataFrame by using either seaborn or plotly.</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">]</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plots the variables of a DataFrame by using either seaborn, plotly, or ASCII text.</span>
 
 <span class="sd">    If using plotly then using kde (or qq) plots for numeric variables and bar plots for categorical variables. Uses :func:`plotly_plot_dist`.</span>
 <span class="sd">    If using seaborn then various types of plots are possible for the variables (see dist_type for details). Uses :func:`seaborn_plot_dist`</span>
+<span class="sd">    If using balance then ASCII text histograms and barplots are printed to stdout. Uses :func:`ascii_plot_dist`.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        dfs (List[Dict[str, Union[pd.DataFrame, pd.Series]]]): a list (of length 1 or more) of dictionaries which describe the DataFrames and weights</span>
@@ -1467,21 +1468,24 @@
 <span class="sd">        variables (Optional[List[str]], optional): a list of variables to use for plotting. Default (i.e.: if None) is to use the list of all variables.</span>
 <span class="sd">        numeric_n_values_threshold (int, optional): How many numbers should be in a column so that it is considered to be a &quot;category&quot;? Defaults to 15.</span>
 <span class="sd">        weighted (bool, optional): If to use the weights with the plots. Defaults to True.</span>
-<span class="sd">        dist_type (Literal[&quot;kde&quot;, &quot;hist&quot;, &quot;qq&quot;, &quot;ecdf&quot;], optional): The type of plot to draw. The &#39;qq&#39; and &#39;kde&#39; options are available for library=&quot;plotly&quot;,</span>
-<span class="sd">            While all options are available if using library=&quot;seaborn&quot;. Defaults to &quot;kde&quot;.</span>
-<span class="sd">        library (Literal[&quot;plotly&quot;, &quot;seaborn&quot;], optional): Whichever library to use for the plot. Defaults to &quot;plotly&quot;.</span>
+<span class="sd">        dist_type (Literal[&quot;kde&quot;, &quot;hist&quot;, &quot;qq&quot;, &quot;ecdf&quot;, &quot;hist_ascii&quot;], optional): The type of plot to draw. The &#39;qq&#39; and &#39;kde&#39; options are available for library=&quot;plotly&quot;,</span>
+<span class="sd">            while all options except hist_ascii are available if using library=&quot;seaborn&quot;. The &#39;hist_ascii&#39; option is used with library=&quot;balance&quot;;</span>
+<span class="sd">            it is the only dist_type supported when library=&quot;balance&quot;. Defaults to &quot;kde&quot;.</span>
+<span class="sd">        library (Literal[&quot;plotly&quot;, &quot;seaborn&quot;, &quot;balance&quot;], optional): Whichever library to use for the plot.</span>
+<span class="sd">            Use &quot;balance&quot; for ASCII text output suitable for LLM consumption (only dist_type=&quot;hist_ascii&quot; is supported). Defaults to &quot;plotly&quot;.</span>
 <span class="sd">        ylim (Optional[Tuple[float, float]], optional): A tuple with two float values representing the lower and upper limits of the y-axis.</span>
 <span class="sd">            If not provided, the y-axis range is determined automatically. Defaults to None.</span>
 <span class="sd">            passed to bar plots only.</span>
 <span class="sd">        **kwargs: Additional keyword arguments to pass to plotly_plot_dist or seaborn_plot_dist.</span>
 
 <span class="sd">    Raises:</span>
-<span class="sd">        ValueError: if library is not in (&quot;plotly&quot;, &quot;seaborn&quot;).</span>
+<span class="sd">        ValueError: if library is not in (&quot;plotly&quot;, &quot;seaborn&quot;, &quot;balance&quot;).</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:</span>
+<span class="sd">        Union[Union[List, np.ndarray], Dict[str, go.Figure], str, None]:</span>
 <span class="sd">            If library=&quot;plotly&quot; then returns a dictionary containing plots if return_dict_of_figures is True. None otherwise.</span>
 <span class="sd">            If library=&quot;seaborn&quot; then returns None, unless return_axes is True. Then either a list or an np.array of matplotlib axis.</span>
+<span class="sd">            If library=&quot;balance&quot; then returns a string with the ASCII text output.</span>
 
 <span class="sd">    Examples:</span>
 <span class="sd">        ::</span>
@@ -1520,8 +1524,10 @@
 <span class="sd">            plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], ylim = (0,1))</span>
 <span class="sd">            plot_dist(dfs1, names=[&quot;self&quot;, &quot;unadjusted&quot;, &quot;target&quot;], library=&quot;seaborn&quot;, dist_type = &quot;qq&quot;, ylim = (0,1))</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">library</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;plotly&quot;</span><span class="p">,</span> <span class="s2">&quot;seaborn&quot;</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;library must be either &#39;plotly&#39; or &#39;seaborn&#39;, is </span><span class="si">{</span><span class="n">library</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">library</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;plotly&quot;</span><span class="p">,</span> <span class="s2">&quot;seaborn&quot;</span><span class="p">,</span> <span class="s2">&quot;balance&quot;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;library must be &#39;plotly&#39;, &#39;seaborn&#39;, or &#39;balance&#39;, is </span><span class="si">{</span><span class="n">library</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
 
     <span class="c1">#  Set default names for samples</span>
     <span class="c1"># TODO: this will work only with seaborn. Will need to change to something that also works for plotly.</span>
@@ -1529,13 +1535,23 @@
         <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;sample </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">dfs</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
 
     <span class="k">if</span> <span class="n">library</span> <span class="o">==</span> <span class="s2">&quot;seaborn&quot;</span><span class="p">:</span>
+        <span class="n">dist_type_for_seaborn</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;kde&quot;</span><span class="p">,</span> <span class="s2">&quot;hist&quot;</span><span class="p">,</span> <span class="s2">&quot;qq&quot;</span><span class="p">,</span> <span class="s2">&quot;ecdf&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">dist_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dist_type_for_seaborn</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="n">dist_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;kde&quot;</span><span class="p">,</span> <span class="s2">&quot;hist&quot;</span><span class="p">,</span> <span class="s2">&quot;qq&quot;</span><span class="p">,</span> <span class="s2">&quot;ecdf&quot;</span><span class="p">):</span>
+            <span class="n">dist_type_for_seaborn</span> <span class="o">=</span> <span class="n">dist_type</span>  <span class="c1"># pyre-ignore[9]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;seaborn library does not support dist_type=&#39;</span><span class="si">{</span><span class="n">dist_type</span><span class="si">}</span><span class="s2">&#39;. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Use dist_type=&#39;kde&#39;, &#39;hist&#39;, &#39;qq&#39;, or &#39;ecdf&#39; with seaborn, or use library=&#39;balance&#39; for ASCII output.&quot;</span>
+            <span class="p">)</span>
         <span class="k">return</span> <span class="n">seaborn_plot_dist</span><span class="p">(</span>
             <span class="n">dfs</span><span class="o">=</span><span class="n">dfs</span><span class="p">,</span>
             <span class="n">names</span><span class="o">=</span><span class="n">names</span><span class="p">,</span>
             <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
             <span class="n">numeric_n_values_threshold</span><span class="o">=</span><span class="n">numeric_n_values_threshold</span><span class="p">,</span>
             <span class="n">weighted</span><span class="o">=</span><span class="n">weighted</span><span class="p">,</span>
-            <span class="n">dist_type</span><span class="o">=</span><span class="n">dist_type</span><span class="p">,</span>
+            <span class="n">dist_type</span><span class="o">=</span><span class="n">dist_type_for_seaborn</span><span class="p">,</span>
             <span class="n">ylim</span><span class="o">=</span><span class="n">ylim</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span>
@@ -1555,10 +1571,10 @@
             <span class="n">dist_type_for_plotly</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">elif</span> <span class="n">dist_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;kde&quot;</span><span class="p">,</span> <span class="s2">&quot;qq&quot;</span><span class="p">):</span>
             <span class="n">dist_type_for_plotly</span> <span class="o">=</span> <span class="n">dist_type</span>
-        <span class="k">elif</span> <span class="n">dist_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;hist&quot;</span><span class="p">,</span> <span class="s2">&quot;ecdf&quot;</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="n">dist_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;hist&quot;</span><span class="p">,</span> <span class="s2">&quot;ecdf&quot;</span><span class="p">,</span> <span class="s2">&quot;hist_ascii&quot;</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;plotly library does not support dist_type=&#39;</span><span class="si">{</span><span class="n">dist_type</span><span class="si">}</span><span class="s2">&#39;. &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;Use dist_type=&#39;kde&#39; or &#39;qq&#39; with plotly, or use library=&#39;seaborn&#39; for all dist_type options.&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Use dist_type=&#39;kde&#39; or &#39;qq&#39; with plotly, or use library=&#39;balance&#39; for ASCII output.&quot;</span>
             <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">plotly_plot_dist</span><span class="p">(</span>
@@ -1568,6 +1584,22 @@
             <span class="n">weighted</span><span class="p">,</span>
             <span class="n">dist_type</span><span class="o">=</span><span class="n">dist_type_for_plotly</span><span class="p">,</span>
             <span class="n">ylim</span><span class="o">=</span><span class="n">ylim</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">library</span> <span class="o">==</span> <span class="s2">&quot;balance&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">dist_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">dist_type</span> <span class="o">!=</span> <span class="s2">&quot;hist_ascii&quot;</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;library=&#39;balance&#39; only supports dist_type=&#39;hist_ascii&#39;. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Ignoring dist_type=&#39;</span><span class="si">{</span><span class="n">dist_type</span><span class="si">}</span><span class="s2">&#39; and using &#39;hist_ascii&#39;.&quot;</span>
+            <span class="p">)</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots.ascii_plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">ascii_plot_dist</span>
+
+        <span class="k">return</span> <span class="n">ascii_plot_dist</span><span class="p">(</span>
+            <span class="n">dfs</span><span class="o">=</span><span class="n">dfs</span><span class="p">,</span>
+            <span class="n">names</span><span class="o">=</span><span class="n">names</span><span class="p">,</span>
+            <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
+            <span class="n">numeric_n_values_threshold</span><span class="o">=</span><span class="n">numeric_n_values_threshold</span><span class="p">,</span>
+            <span class="n">weighted</span><span class="o">=</span><span class="n">weighted</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span></div>
 

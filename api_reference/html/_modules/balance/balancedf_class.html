@@ -668,11 +668,13 @@
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
         <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Figure</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Figure</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Plots the variables in the df of the BalanceDF object.</span>
 
 <span class="sd">        See :func:`weighted_comparisons_plots.plot_dist` for details of various arguments that can be passed.</span>
-<span class="sd">        The default plotting engine is plotly, but seaborn can be used for static plots.</span>
+<span class="sd">        The default plotting engine is plotly, but seaborn can be used for static plots, or &quot;balance&quot;</span>
+<span class="sd">        can be used for ASCII text output suitable for LLM consumption (only dist_type=&quot;hist_ascii&quot; is supported</span>
+<span class="sd">        with library=&quot;balance&quot;).</span>
 
 <span class="sd">        This function is inherited as is when invoking BalanceDFCovars.plot, but some modifications are made when</span>
 <span class="sd">        preparing the data for BalanceDFOutcomes.plot and BalanceDFWeights.plot.</span>
@@ -684,9 +686,10 @@
 <span class="sd">            **kwargs: passed to :func:`weighted_comparisons_plots.plot_dist`.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Union[Union[List, np.ndarray], Dict[str, Figure], None]:</span>
+<span class="sd">            Union[Union[List, np.ndarray], Dict[str, Figure], str, None]:</span>
 <span class="sd">                If library=&quot;plotly&quot; then returns a dictionary containing plots if return_dict_of_figures is True. None otherwise.</span>
 <span class="sd">                If library=&quot;seaborn&quot; then returns None, unless return_axes is True. Then either a list or an np.array of matplotlib axis.</span>
+<span class="sd">                If library=&quot;balance&quot; then returns a string with the ASCII text output.</span>
 
 <span class="sd">        Examples:</span>
 <span class="sd">        .. code-block:: python</span>
@@ -730,6 +733,9 @@
 
 <span class="sd">                # Returning plotly qq plots:</span>
 <span class="sd">                s3_null.covars().plot(dist_type = &quot;qq&quot;)</span>
+
+<span class="sd">                # ASCII text output (suitable for LLM consumption):</span>
+<span class="sd">                s3_null.covars().plot(library = &quot;balance&quot;, dist_type = &quot;hist_ascii&quot;)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">on_linked_samples</span><span class="p">:</span>
             <span class="n">dfs_to_add</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_BalanceDF_child_from_linked_samples</span><span class="p">()</span>
@@ -2638,7 +2644,7 @@
 <a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDFWeights.plot">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">plot</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFWeights&quot;</span><span class="p">,</span> <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Figure</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Figure</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Plots kde (kernal density estimation) of the weights in a BalanceDFWeights object using seaborn (as default).</span>
 
 <span class="sd">        It&#39;s possible to use other plots using dist_type with arguments such as &quot;hist&quot;, &quot;kde&quot; (default), &quot;qq&quot;, and &quot;ecdf&quot;.</span>

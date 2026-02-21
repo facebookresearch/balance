@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>balance.stats_and_plots.ascii_plots &#8212; balance  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=29da98fa" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="balance.stats_and_plots.general_stats" href="balance.stats_and_plots.general_stats.html" />
+    <link rel="prev" title="balance.stats_and_plots" href="balance.stats_and_plots.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.general_stats.html" title="balance.stats_and_plots.general_stats"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.html" title="balance.stats_and_plots"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" >balance</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="balance.stats_and_plots.html" accesskey="U">balance.stats_and_plots</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.ascii_plots</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-balance.stats_and_plots.ascii_plots">
+<span id="balance-stats-and-plots-ascii-plots"></span><h1>balance.stats_and_plots.ascii_plots<a class="headerlink" href="#module-balance.stats_and_plots.ascii_plots" title="Link to this heading">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.ascii_plots.ascii_comparative_hist">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.ascii_plots.</span></span><span class="sig-name descname"><span class="pre">ascii_comparative_hist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dfs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.DataFrameWithWeight" title="balance.stats_and_plots.weighted_comparisons_plots.DataFrameWithWeight"><span class="pre">DataFrameWithWeight</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighted</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_bins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bar_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/ascii_plots.html#ascii_comparative_hist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.ascii_plots.ascii_comparative_hist" title="Link to this definition">¶</a></dt>
+<dd><p>Produces a columnar, baseline-relative ASCII histogram.</p>
+<p>The first dataset is the baseline. Subsequent datasets show bars split
+into segments that indicate how each bin compares to the baseline.</p>
+<dl>
+<dt>How to read the output:</dt><dd><p>Each row is a bin range. The first column is the baseline dataset,
+shown with solid <code class="docutils literal notranslate"><span class="pre">█</span></code> bars. For every other column:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">█</span></code> (solid fill) = the portion of the bar that matches the
+baseline proportion. This is the “common” part.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">▒</span></code> (medium shade) = the portion that <strong>exceeds</strong> the baseline.
+The bin has more mass than the baseline in this range.</p></li>
+<li><p>``   ]`` (right bracket) = a <strong>deficit</strong> relative to the baseline.
+The gap before the bracket shows how much mass is missing compared to
+the baseline in this range.</p></li>
+<li><p>A number without any bar means the percentage is too small to
+render at the chosen <code class="docutils literal notranslate"><span class="pre">bar_width</span></code>.</p></li>
+</ul>
+<p>All percentages are normalized so each column sums to 100%.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dfs</strong> – List of DataFrameWithWeight dicts. The first entry is used as
+the baseline for comparison.</p></li>
+<li><p><strong>names</strong> – Names for each DataFrame (e.g., [“Target”, “Sample”]).</p></li>
+<li><p><strong>column</strong> – The numeric column name to plot.</p></li>
+<li><p><strong>weighted</strong> – Whether to use weights. Defaults to True.</p></li>
+<li><p><strong>n_bins</strong> – Number of histogram bins. Defaults to 10.</p></li>
+<li><p><strong>bar_width</strong> – Maximum character width for bars. Defaults to 20.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>ASCII comparative histogram text.</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">ascii_comparative_hist</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Target&quot;</span><span class="p">,</span> <span class="s2">&quot;Sample&quot;</span><span class="p">],</span>
+<span class="gp">... </span>      <span class="n">column</span><span class="o">=</span><span class="s2">&quot;income&quot;</span><span class="p">,</span> <span class="n">n_bins</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">bar_width</span><span class="o">=</span><span class="mi">20</span><span class="p">))</span>
+<span class="go">Range          | Target (%)         | Sample (%)</span>
+<span class="go">---------------------------------------------------------------</span>
+<span class="go">[10.00, 25.00) | █████████████ 50.0 | █████████████▒▒▒▒▒▒▒ 75.0</span>
+<span class="go">[25.00, 40.00] | █████████████ 50.0 | ███████     ] 25.0</span>
+<span class="go">---------------------------------------------------------------</span>
+<span class="go">Total          | 100.0              | 100.0</span>
+</pre></div>
+</div>
+<p>In the Sample column above, bin [10, 25) shows <code class="docutils literal notranslate"><span class="pre">▒</span></code> excess
+(75% vs 50% baseline) while bin [25, 40] shows ``     ]``
+deficit (25% vs 50% baseline).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.ascii_plots.ascii_plot_bar">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.ascii_plots.</span></span><span class="sig-name descname"><span class="pre">ascii_plot_bar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dfs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.DataFrameWithWeight" title="balance.stats_and_plots.weighted_comparisons_plots.DataFrameWithWeight"><span class="pre">DataFrameWithWeight</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighted</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bar_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/ascii_plots.html#ascii_plot_bar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.ascii_plots.ascii_plot_bar" title="Link to this definition">¶</a></dt>
+<dd><p>Produces an ASCII grouped barplot for a single categorical variable.</p>
+<p>Uses <code class="xref py py-func docutils literal notranslate"><span class="pre">relative_frequency_table()</span></code> to compute weighted proportions for
+each dataset, then renders grouped horizontal bars.</p>
+<dl class="simple">
+<dt>How to read the output:</dt><dd><p>Each row is a category value. Within a row, each dataset gets its
+own bar drawn with a distinct fill character (<code class="docutils literal notranslate"><span class="pre">█</span></code>, <code class="docutils literal notranslate"><span class="pre">▓</span></code>, etc.).</p>
+<ul class="simple">
+<li><p>The percentage at the end of each bar is the weighted proportion
+of that category within its dataset (i.e., proportions within
+each dataset sum to 100%).</p></li>
+<li><p>Bar lengths are scaled so that the longest bar across all
+datasets spans the full <code class="docutils literal notranslate"><span class="pre">bar_width</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dfs</strong> – List of DataFrameWithWeight dicts.</p></li>
+<li><p><strong>names</strong> – Names for each DataFrame (e.g., [“self”, “target”]).</p></li>
+<li><p><strong>column</strong> – The categorical column name to plot.</p></li>
+<li><p><strong>weighted</strong> – Whether to use weights. Defaults to True.</p></li>
+<li><p><strong>bar_width</strong> – Maximum character width for bars. Defaults to 40.</p></li>
+<li><p><strong>dist_type</strong> – Accepted for compatibility but only “hist_ascii” is supported.
+A warning is logged if any other value is passed.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>ASCII barplot text for this variable.</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df_a</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="s2">&quot;green&quot;</span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df_b</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="s2">&quot;green&quot;</span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dfs</span> <span class="o">=</span> <span class="p">[</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">df_a</span><span class="p">,</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])},</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">df_b</span><span class="p">,</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])},</span>
+<span class="gp">... </span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">ascii_plot_bar</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">],</span>
+<span class="gp">... </span>      <span class="n">column</span><span class="o">=</span><span class="s2">&quot;color&quot;</span><span class="p">,</span> <span class="n">bar_width</span><span class="o">=</span><span class="mi">20</span><span class="p">))</span>
+<span class="go">=== color (categorical) ===</span>
+
+<span class="go">Category | sample  population</span>
+<span class="go">         |</span>
+<span class="go">blue     | ████████████████████ (50.0%)</span>
+<span class="go">         | ▒▒▒▒▒▒▒▒▒▒ (25.0%)</span>
+<span class="go">green    | ██████████ (25.0%)</span>
+<span class="go">         | ▒▒▒▒▒▒▒▒▒▒ (25.0%)</span>
+<span class="go">red      | ██████████ (25.0%)</span>
+<span class="go">         | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (50.0%)</span>
+
+<span class="go">Legend: █ sample  ▒ population</span>
+<span class="go">Bar lengths are proportional to weighted frequency within each dataset.</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.ascii_plots.ascii_plot_dist">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.ascii_plots.</span></span><span class="sig-name descname"><span class="pre">ascii_plot_dist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dfs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.DataFrameWithWeight" title="balance.stats_and_plots.weighted_comparisons_plots.DataFrameWithWeight"><span class="pre">DataFrameWithWeight</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numeric_n_values_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">15</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighted</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_bins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bar_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/ascii_plots.html#ascii_plot_dist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.ascii_plots.ascii_plot_dist" title="Link to this definition">¶</a></dt>
+<dd><p>Produces ASCII text comparing weighted distributions across datasets.</p>
+<p>Iterates over variables, classifying each as categorical or numeric
+(using the same logic as <code class="xref py py-func docutils literal notranslate"><span class="pre">seaborn_plot_dist()</span></code>), then delegates to
+<a class="reference internal" href="#balance.stats_and_plots.ascii_plots.ascii_plot_bar" title="balance.stats_and_plots.ascii_plots.ascii_plot_bar"><code class="xref py py-func docutils literal notranslate"><span class="pre">ascii_plot_bar()</span></code></a> or <a class="reference internal" href="#balance.stats_and_plots.ascii_plots.ascii_plot_hist" title="balance.stats_and_plots.ascii_plots.ascii_plot_hist"><code class="xref py py-func docutils literal notranslate"><span class="pre">ascii_plot_hist()</span></code></a> respectively.</p>
+<p>The output is both printed to stdout and returned as a string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dfs</strong> – List of DataFrameWithWeight dicts.</p></li>
+<li><p><strong>names</strong> – Names for each DataFrame (e.g., [“self”, “unadjusted”, “target”]).
+If None, defaults to “df_0”, “df_1”, etc.</p></li>
+<li><p><strong>variables</strong> – Subset of variables to plot. None means all.</p></li>
+<li><p><strong>numeric_n_values_threshold</strong> – Columns with fewer unique values than this
+are treated as categorical. Defaults to 15.</p></li>
+<li><p><strong>weighted</strong> – Whether to use weights. Defaults to True.</p></li>
+<li><p><strong>n_bins</strong> – Number of bins for numeric histograms. Defaults to 10.</p></li>
+<li><p><strong>bar_width</strong> – Maximum character width for the longest bar. Defaults to 40.</p></li>
+<li><p><strong>dist_type</strong> – Accepted for compatibility but only “hist_ascii” is supported.
+A warning is logged if any other value is passed.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The full ASCII output text.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots.ascii_plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">ascii_plot_dist</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df_a</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+<span class="gp">... </span>    <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="s2">&quot;green&quot;</span><span class="p">],</span>
+<span class="gp">... </span>    <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">,</span> <span class="mf">30.0</span><span class="p">,</span> <span class="mf">40.0</span><span class="p">],</span>
+<span class="gp">... </span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df_b</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+<span class="gp">... </span>    <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="s2">&quot;green&quot;</span><span class="p">],</span>
+<span class="gp">... </span>    <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">40.0</span><span class="p">],</span>
+<span class="gp">... </span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dfs</span> <span class="o">=</span> <span class="p">[</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">df_a</span><span class="p">,</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])},</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">df_b</span><span class="p">,</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])},</span>
+<span class="gp">... </span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">ascii_plot_dist</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">],</span>
+<span class="gp">... </span>      <span class="n">numeric_n_values_threshold</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_bins</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">bar_width</span><span class="o">=</span><span class="mi">20</span><span class="p">))</span>
+<span class="go">=== color (categorical) ===</span>
+
+<span class="go">Category | sample  population</span>
+<span class="go">         |</span>
+<span class="go">blue     | ████████████████████ (50.0%)</span>
+<span class="go">         | ▒▒▒▒▒▒▒▒▒▒ (25.0%)</span>
+<span class="go">green    | ██████████ (25.0%)</span>
+<span class="go">         | ▒▒▒▒▒▒▒▒▒▒ (25.0%)</span>
+<span class="go">red      | ██████████ (25.0%)</span>
+<span class="go">         | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (50.0%)</span>
+
+<span class="go">Legend: █ sample  ▒ population</span>
+<span class="go">Bar lengths are proportional to weighted frequency within each dataset.</span>
+
+<span class="go">=== age (numeric) ===</span>
+
+<span class="go">Bin            | sample  population</span>
+<span class="go">               |</span>
+<span class="go">[10.00, 25.00) | █████████████ (50.0%)</span>
+<span class="go">               | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (75.0%)</span>
+<span class="go">[25.00, 40.00] | █████████████ (50.0%)</span>
+<span class="go">               | ▒▒▒▒▒▒▒ (25.0%)</span>
+
+<span class="go">Legend: █ sample  ▒ population</span>
+<span class="go">Bar lengths are proportional to weighted frequency within each dataset.</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.ascii_plots.ascii_plot_hist">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.ascii_plots.</span></span><span class="sig-name descname"><span class="pre">ascii_plot_hist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dfs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.DataFrameWithWeight" title="balance.stats_and_plots.weighted_comparisons_plots.DataFrameWithWeight"><span class="pre">DataFrameWithWeight</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighted</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_bins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bar_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/ascii_plots.html#ascii_plot_hist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.ascii_plots.ascii_plot_hist" title="Link to this definition">¶</a></dt>
+<dd><p>Produces an ASCII histogram for a single numeric variable.</p>
+<p>Computes weighted histogram bins across all datasets using a shared
+bin range, then renders grouped horizontal bars for each bin.</p>
+<dl class="simple">
+<dt>How to read the output:</dt><dd><p>Each row is a numeric bin range. Within a row, each dataset gets
+its own bar drawn with a distinct fill character (<code class="docutils literal notranslate"><span class="pre">█</span></code>, <code class="docutils literal notranslate"><span class="pre">▓</span></code>, etc.).</p>
+<ul class="simple">
+<li><p>The percentage at the end of each bar is the weighted proportion
+of observations falling in that bin within its dataset (i.e.,
+proportions within each dataset sum to 100%).</p></li>
+<li><p>Bar lengths are scaled so that the longest bar across all
+datasets spans the full <code class="docutils literal notranslate"><span class="pre">bar_width</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dfs</strong> – List of DataFrameWithWeight dicts.</p></li>
+<li><p><strong>names</strong> – Names for each DataFrame (e.g., [“self”, “target”]).</p></li>
+<li><p><strong>column</strong> – The numeric column name to plot.</p></li>
+<li><p><strong>weighted</strong> – Whether to use weights. Defaults to True.</p></li>
+<li><p><strong>n_bins</strong> – Number of histogram bins. Defaults to 10.</p></li>
+<li><p><strong>bar_width</strong> – Maximum character width for bars. Defaults to 40.</p></li>
+<li><p><strong>dist_type</strong> – Accepted for compatibility but only “hist_ascii” is supported.
+A warning is logged if any other value is passed.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>ASCII histogram text for this variable.</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df_a</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">,</span> <span class="mf">30.0</span><span class="p">,</span> <span class="mf">40.0</span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df_b</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">40.0</span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dfs</span> <span class="o">=</span> <span class="p">[</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">df_a</span><span class="p">,</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])},</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">df_b</span><span class="p">,</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])},</span>
+<span class="gp">... </span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">ascii_plot_hist</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">],</span>
+<span class="gp">... </span>      <span class="n">column</span><span class="o">=</span><span class="s2">&quot;age&quot;</span><span class="p">,</span> <span class="n">n_bins</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">bar_width</span><span class="o">=</span><span class="mi">20</span><span class="p">))</span>
+<span class="go">=== age (numeric) ===</span>
+
+<span class="go">Bin            | sample  population</span>
+<span class="go">               |</span>
+<span class="go">[10.00, 25.00) | █████████████ (50.0%)</span>
+<span class="go">               | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (75.0%)</span>
+<span class="go">[25.00, 40.00] | █████████████ (50.0%)</span>
+<span class="go">               | ▒▒▒▒▒▒▒ (25.0%)</span>
+
+<span class="go">Legend: █ sample  ▒ population</span>
+<span class="go">Bar lengths are proportional to weighted frequency within each dataset.</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">balance.stats_and_plots.ascii_plots</a><ul>
+<li><a class="reference internal" href="#balance.stats_and_plots.ascii_plots.ascii_comparative_hist"><code class="docutils literal notranslate"><span class="pre">ascii_comparative_hist()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.ascii_plots.ascii_plot_bar"><code class="docutils literal notranslate"><span class="pre">ascii_plot_bar()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.ascii_plots.ascii_plot_dist"><code class="docutils literal notranslate"><span class="pre">ascii_plot_dist()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.ascii_plots.ascii_plot_hist"><code class="docutils literal notranslate"><span class="pre">ascii_plot_hist()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="balance.stats_and_plots.html"
+                          title="previous chapter">balance.stats_and_plots</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="balance.stats_and_plots.general_stats.html"
+                          title="next chapter">balance.stats_and_plots.general_stats</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/balance.stats_and_plots.ascii_plots.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.general_stats.html" title="balance.stats_and_plots.general_stats"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.html" title="balance.stats_and_plots"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" >balance</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="balance.stats_and_plots.html" >balance.stats_and_plots</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.ascii_plots</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>
