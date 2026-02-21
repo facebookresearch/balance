@@ -441,7 +441,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         self.assertEqual(type(dict_of_figures["v1"]), go.Figure)
 
         # Test error handling for invalid library parameter
-        with self.assertRaisesRegex(ValueError, "library must be either*"):
+        with self.assertRaisesRegex(ValueError, "library must be"):
             plot_dist(
                 test_datasets,
                 names=["self", "unadjusted", "target"],
@@ -1948,3 +1948,87 @@ class TestPlotDistPlotlyUnsupportedDistType(balance.testutil.BalanceTestCase):
                 dist_type="ecdf",
             )
         self.assertIn("plotly library does not support", str(context.exception))
+
+    def test_plot_dist_plotly_raises_on_hist_ascii_dist_type(self) -> None:
+        """Test plot_dist with plotly library raises on hist_ascii dist_type."""
+        df = pd.DataFrame({"v1": [1.0, 2.0, 3.0]})
+        dfs: List[DataFrameWithWeight] = [
+            {"df": df, "weight": None},
+            {"df": df.copy(), "weight": None},
+        ]
+        with self.assertRaises(ValueError) as context:
+            weighted_comparisons_plots.plot_dist(
+                dfs,
+                names=["self", "target"],
+                library="plotly",
+                dist_type="hist_ascii",
+            )
+        self.assertIn("plotly library does not support", str(context.exception))
+        self.assertIn("hist_ascii", str(context.exception))
+
+
+class TestPlotDistBalanceUnsupportedDistType(balance.testutil.BalanceTestCase):
+    """Test that plot_dist with balance library warns on unsupported dist_type."""
+
+    def test_plot_dist_balance_warns_on_non_hist_ascii_dist_type(self) -> None:
+        """Test plot_dist with balance library logs warning for non-hist_ascii dist_type."""
+        import io
+        import logging
+        from unittest.mock import patch
+
+        df = pd.DataFrame({"v1": ["a", "a", "b"]})
+        dfs: List[DataFrameWithWeight] = [
+            {"df": df, "weight": pd.Series([1.0, 1.0, 1.0])},
+        ]
+        with self.assertLogs(
+            "balance.stats_and_plots", level=logging.WARNING
+        ) as log_ctx:
+            with patch("sys.stdout", new_callable=io.StringIO):
+                weighted_comparisons_plots.plot_dist(
+                    dfs,
+                    names=["self"],
+                    library="balance",
+                    dist_type="kde",
+                )
+        self.assertTrue(
+            any("only supports dist_type='hist_ascii'" in msg for msg in log_ctx.output)
+        )
+
+
+class TestPlotDistSeabornDistType(balance.testutil.BalanceTestCase):
+    """Test plot_dist with seaborn library and various dist_type values."""
+
+    def test_plot_dist_seaborn_default_dist_type(self) -> None:
+        """Test plot_dist with seaborn and dist_type=None uses kde default."""
+        df = pd.DataFrame({"v1": [1.0, 2.0, 3.0, 4.0, 5.0]})
+        dfs: List[DataFrameWithWeight] = [
+            {"df": df, "weight": pd.Series(np.ones(5))},
+            {"df": df.copy(), "weight": pd.Series(np.ones(5))},
+        ]
+        # dist_type=None should work without error for seaborn
+        result = weighted_comparisons_plots.plot_dist(
+            dfs,
+            names=["self", "target"],
+            library="seaborn",
+            dist_type=None,
+        )
+        # seaborn returns None by default (no return_axes)
+        self.assertIsNone(result)
+        plt.close("all")
+
+    def test_plot_dist_seaborn_raises_on_hist_ascii(self) -> None:
+        """Test plot_dist with seaborn raises on hist_ascii dist_type."""
+        df = pd.DataFrame({"v1": [1.0, 2.0, 3.0]})
+        dfs: List[DataFrameWithWeight] = [
+            {"df": df, "weight": pd.Series(np.ones(3))},
+            {"df": df.copy(), "weight": pd.Series(np.ones(3))},
+        ]
+        with self.assertRaises(ValueError) as context:
+            weighted_comparisons_plots.plot_dist(
+                dfs,
+                names=["self", "target"],
+                library="seaborn",
+                dist_type="hist_ascii",
+            )
+        self.assertIn("seaborn library does not support", str(context.exception))
+        self.assertIn("hist_ascii", str(context.exception))

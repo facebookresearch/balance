@@ -9,8 +9,25 @@
   - Columns that are explicitly mentioned — the id column, weight column,
     covariate columns, and outcome columns — are **not** ignored.
 
+## New Features
+
+- **ASCII comparative histogram (`ascii_comparative_hist`)**
+  - Added a new plot function that compares multiple distributions against a
+    baseline using inline visual indicators: `█` for shared mass, `▒` for excess,
+    and `]` for deficit relative to the baseline. Uses visually distinct fill
+    characters (`█`, `▒`, `▐`, `░`) for better readability when comparing
+    multiple datasets.
+
 ## Documentation
 
+- **ASCII plot docstring examples and `library="balance"` docs**
+  - Added rendered text-plot examples to `ascii_plot_bar`, `ascii_plot_hist`,
+    and `ascii_plot_dist` docstrings. Documented that `library="balance"` only
+    supports `dist_type="hist_ascii"` in `plot_dist()` and `BalanceDF.plot()`.
+- **Updated quickstart tutorial with ASCII plot examples**
+  - Added cells to `balance_quickstart.ipynb` showing adjusted vs unadjusted
+    ASCII plots, including numeric variable histograms and comparative
+    histograms.
 - **Improved `keep_columns` documentation**
   - Updated docstrings for `has_keep_columns()`, `keep_columns()`, and the
     `--keep_columns` argument to clarify that keep columns control which columns
@@ -28,6 +45,10 @@
 
 ## Tests
 
+- **Added end-to-end adjustment test with ASCII plot output**
+  - `TestAsciiPlotsAdjustmentEndToEnd` runs the full `Sample.from_frame()` →
+    `set_target()` → `adjust()` → `covars().plot(library="balance")` pipeline
+    and asserts exact expected ASCII output.
 - **Expanded warning coverage for `Sample.from_frame()` ID inference**
   - Added assertions that validate all three expected warnings are emitted when inferring an `id` column and default weights, including ID guessing, ID string casting, and automatic weight creation.
 - **Added focused unit coverage for IPW helpers**
