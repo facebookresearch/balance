@@ -1368,15 +1368,16 @@ def plot_dist(
     variables: Optional[List[str]] = None,
     numeric_n_values_threshold: int = 15,
     weighted: bool = True,
-    dist_type: Optional[Literal["kde", "hist", "qq", "ecdf"]] = None,
-    library: Literal["plotly", "seaborn"] = "plotly",
+    dist_type: Optional[Literal["kde", "hist", "qq", "ecdf", "hist_ascii"]] = None,
+    library: Literal["plotly", "seaborn", "balance"] = "plotly",
     ylim: Optional[Tuple[float, float]] = None,
     **kwargs: Any,
-) -> List[plt.Axes] | npt.NDArray | Dict[str, go.Figure] | None:
-    """Plots the variables of a DataFrame by using either seaborn or plotly.
+) -> List[plt.Axes] | npt.NDArray | Dict[str, go.Figure] | str | None:
+    """Plots the variables of a DataFrame by using either seaborn, plotly, or ASCII text.
 
     If using plotly then using kde (or qq) plots for numeric variables and bar plots for categorical variables. Uses :func:`plotly_plot_dist`.
     If using seaborn then various types of plots are possible for the variables (see dist_type for details). Uses :func:`seaborn_plot_dist`
+    If using balance then ASCII text histograms and barplots are printed to stdout. Uses :func:`ascii_plot_dist`.
 
     Args:
         dfs (List[Dict[str, Union[pd.DataFrame, pd.Series]]]): a list (of length 1 or more) of dictionaries which describe the DataFrames and weights
@@ -1392,21 +1393,24 @@ def plot_dist(
         variables (Optional[List[str]], optional): a list of variables to use for plotting. Default (i.e.: if None) is to use the list of all variables.
         numeric_n_values_threshold (int, optional): How many numbers should be in a column so that it is considered to be a "category"? Defaults to 15.
         weighted (bool, optional): If to use the weights with the plots. Defaults to True.
-        dist_type (Literal["kde", "hist", "qq", "ecdf"], optional): The type of plot to draw. The 'qq' and 'kde' options are available for library="plotly",
-            While all options are available if using library="seaborn". Defaults to "kde".
-        library (Literal["plotly", "seaborn"], optional): Whichever library to use for the plot. Defaults to "plotly".
+        dist_type (Literal["kde", "hist", "qq", "ecdf", "hist_ascii"], optional): The type of plot to draw. The 'qq' and 'kde' options are available for library="plotly",
+            while all options except hist_ascii are available if using library="seaborn". The 'hist_ascii' option is used with library="balance";
+            it is the only dist_type supported when library="balance". Defaults to "kde".
+        library (Literal["plotly", "seaborn", "balance"], optional): Whichever library to use for the plot.
+            Use "balance" for ASCII text output suitable for LLM consumption (only dist_type="hist_ascii" is supported). Defaults to "plotly".
         ylim (Optional[Tuple[float, float]], optional): A tuple with two float values representing the lower and upper limits of the y-axis.
             If not provided, the y-axis range is determined automatically. Defaults to None.
             passed to bar plots only.
         **kwargs: Additional keyword arguments to pass to plotly_plot_dist or seaborn_plot_dist.
 
     Raises:
-        ValueError: if library is not in ("plotly", "seaborn").
+        ValueError: if library is not in ("plotly", "seaborn", "balance").
 
     Returns:
-        Union[Union[List, np.ndarray], Dict[str, go.Figure], None]:
+        Union[Union[List, np.ndarray], Dict[str, go.Figure], str, None]:
             If library="plotly" then returns a dictionary containing plots if return_dict_of_figures is True. None otherwise.
             If library="seaborn" then returns None, unless return_axes is True. Then either a list or an np.array of matplotlib axis.
+            If library="balance" then returns a string with the ASCII text output.
 
     Examples:
         ::
@@ -1445,8 +1449,10 @@ def plot_dist(
             plot_dist(dfs1, names=["self", "unadjusted", "target"], ylim = (0,1))
             plot_dist(dfs1, names=["self", "unadjusted", "target"], library="seaborn", dist_type = "qq", ylim = (0,1))
     """
-    if library not in ("plotly", "seaborn"):
-        raise ValueError(f"library must be either 'plotly' or 'seaborn', is {library}")
+    if library not in ("plotly", "seaborn", "balance"):
+        raise ValueError(
+            f"library must be 'plotly', 'seaborn', or 'balance', is {library}"
+        )
 
     #  Set default names for samples
     # TODO: this will work only with seaborn. Will need to change to something that also works for plotly.
@@ -1454,13 +1460,23 @@ def plot_dist(
         names = [f"sample {i}" for i in range(1, len(dfs) + 1)]
 
     if library == "seaborn":
+        dist_type_for_seaborn: Literal["kde", "hist", "qq", "ecdf"] | None = None
+        if dist_type is None:
+            dist_type_for_seaborn = None
+        elif dist_type in ("kde", "hist", "qq", "ecdf"):
+            dist_type_for_seaborn = dist_type  # pyre-ignore[9]
+        else:
+            raise ValueError(
+                f"seaborn library does not support dist_type='{dist_type}'. "
+                f"Use dist_type='kde', 'hist', 'qq', or 'ecdf' with seaborn, or use library='balance' for ASCII output."
+            )
         return seaborn_plot_dist(
             dfs=dfs,
             names=names,
             variables=variables,
             numeric_n_values_threshold=numeric_n_values_threshold,
             weighted=weighted,
-            dist_type=dist_type,
+            dist_type=dist_type_for_seaborn,
             ylim=ylim,
             **kwargs,
         )
@@ -1480,10 +1496,10 @@ def plot_dist(
             dist_type_for_plotly = None
         elif dist_type in ("kde", "qq"):
             dist_type_for_plotly = dist_type
-        elif dist_type in ("hist", "ecdf"):
+        elif dist_type in ("hist", "ecdf", "hist_ascii"):
             raise ValueError(
                 f"plotly library does not support dist_type='{dist_type}'. "
-                f"Use dist_type='kde' or 'qq' with plotly, or use library='seaborn' for all dist_type options."
+                f"Use dist_type='kde' or 'qq' with plotly, or use library='balance' for ASCII output."
             )
 
         return plotly_plot_dist(
@@ -1493,6 +1509,22 @@ def plot_dist(
             weighted,
             dist_type=dist_type_for_plotly,
             ylim=ylim,
+            **kwargs,
+        )
+    elif library == "balance":
+        if dist_type is not None and dist_type != "hist_ascii":
+            logger.warning(
+                f"library='balance' only supports dist_type='hist_ascii'. "
+                f"Ignoring dist_type='{dist_type}' and using 'hist_ascii'."
+            )
+        from balance.stats_and_plots.ascii_plots import ascii_plot_dist
+
+        return ascii_plot_dist(
+            dfs=dfs,
+            names=names,
+            variables=variables,
+            numeric_n_values_threshold=numeric_n_values_threshold,
+            weighted=weighted,
             **kwargs,
         )
 

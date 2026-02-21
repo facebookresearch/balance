@@ -618,11 +618,13 @@ class BalanceDF:
         self: "BalanceDF",
         on_linked_samples: bool = True,
         **kwargs: Any,
-    ) -> list[Any] | npt.NDArray[Any] | dict[str, Figure] | None:
+    ) -> list[Any] | npt.NDArray[Any] | dict[str, Figure] | str | None:
         """Plots the variables in the df of the BalanceDF object.
 
         See :func:`weighted_comparisons_plots.plot_dist` for details of various arguments that can be passed.
-        The default plotting engine is plotly, but seaborn can be used for static plots.
+        The default plotting engine is plotly, but seaborn can be used for static plots, or "balance"
+        can be used for ASCII text output suitable for LLM consumption (only dist_type="hist_ascii" is supported
+        with library="balance").
 
         This function is inherited as is when invoking BalanceDFCovars.plot, but some modifications are made when
         preparing the data for BalanceDFOutcomes.plot and BalanceDFWeights.plot.
@@ -634,9 +636,10 @@ class BalanceDF:
             **kwargs: passed to :func:`weighted_comparisons_plots.plot_dist`.
 
         Returns:
-            Union[Union[List, np.ndarray], Dict[str, Figure], None]:
+            Union[Union[List, np.ndarray], Dict[str, Figure], str, None]:
                 If library="plotly" then returns a dictionary containing plots if return_dict_of_figures is True. None otherwise.
                 If library="seaborn" then returns None, unless return_axes is True. Then either a list or an np.array of matplotlib axis.
+                If library="balance" then returns a string with the ASCII text output.
 
         Examples:
         .. code-block:: python
@@ -680,6 +683,9 @@ class BalanceDF:
 
                 # Returning plotly qq plots:
                 s3_null.covars().plot(dist_type = "qq")
+
+                # ASCII text output (suitable for LLM consumption):
+                s3_null.covars().plot(library = "balance", dist_type = "hist_ascii")
         """
         if on_linked_samples:
             dfs_to_add = self._BalanceDF_child_from_linked_samples()
@@ -2522,7 +2528,7 @@ class BalanceDFWeights(BalanceDF):
     # TODO: maybe add better control if there are no weights for unadjusted or target (the current default shows them in the legend, but not in the figure)
     def plot(
         self: "BalanceDFWeights", on_linked_samples: bool = True, **kwargs: Any
-    ) -> list[Any] | npt.NDArray[Any] | dict[str, Figure] | None:
+    ) -> list[Any] | npt.NDArray[Any] | dict[str, Figure] | str | None:
         """Plots kde (kernal density estimation) of the weights in a BalanceDFWeights object using seaborn (as default).
 
         It's possible to use other plots using dist_type with arguments such as "hist", "kde" (default), "qq", and "ecdf".
