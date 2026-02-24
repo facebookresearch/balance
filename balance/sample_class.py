@@ -1404,7 +1404,6 @@ class Sample:
 
         return (deff_adjusted - deff_unadjusted) / deff_unadjusted
 
-    # TODO: add unittest for this function
     def plot_weight_density(self) -> None:
         """Plot the density of weights of Sample.
 
