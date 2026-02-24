@@ -28,6 +28,27 @@ logger: logging.Logger = logging.getLogger(__package__)
 BAR_CHARS: List[str] = ["█", "▒", "▐", "░", "▄", "▀"]
 
 
+def _auto_n_bins(n_samples: int, n_unique: int) -> int:
+    """Pick a number of bins using Sturges' rule, capped at unique values."""
+    import math
+
+    if n_samples <= 1:
+        return 1
+    sturges = math.ceil(math.log2(n_samples) + 1)
+    # Don't exceed the number of unique values, and clamp to [2, 50]
+    return max(2, min(sturges, n_unique, 50))
+
+
+def _auto_bar_width(label_width: int, n_datasets: int) -> int:
+    """Pick bar_width to fit within terminal width."""
+    import shutil
+
+    term_width = shutil.get_terminal_size((80, 24)).columns
+    # Each line: label_width + " | " (3) + bar + " (XX.X%)" (9)
+    available = term_width - label_width - 3 - 9
+    return max(10, available)
+
+
 def _weighted_histogram(
     values: pd.Series,
     weights: Optional[pd.Series],
@@ -65,7 +86,9 @@ def _render_horizontal_bars(
     """Renders a group of horizontal bars for one category or bin.
 
     Each dataset gets its own line with a distinct character and a percentage
-    label at the end.
+    label at the end.  When a proportion is non-zero but too small to render
+    even one bar character, a single dot (``.``) is shown so that the reader
+    can distinguish "present but tiny" from "truly zero".
 
     Args:
         label: The category label or bin range string.
@@ -86,7 +109,13 @@ def _render_horizontal_bars(
             bar_len = int(round((prop / max_value) * bar_width))
         else:
             bar_len = 0
-        bar = char * bar_len
+        if bar_len > 0:
+            bar = char * bar_len
+        elif prop > 0:
+            # Non-zero proportion too small to render — show a dot
+            bar = "."
+        else:
+            bar = ""
         if i == 0:
             prefix = label.ljust(label_width)
         else:
@@ -121,8 +150,9 @@ def ascii_plot_bar(
     names: List[str],
     column: str,
     weighted: bool = True,
-    bar_width: int = 40,
+    bar_width: Optional[int] = None,
     dist_type: Optional[str] = None,
+    separate_categories: bool = True,
 ) -> str:
     """Produces an ASCII grouped barplot for a single categorical variable.
 
@@ -147,6 +177,8 @@ def ascii_plot_bar(
         bar_width: Maximum character width for bars. Defaults to 40.
         dist_type: Accepted for compatibility but only "hist_ascii" is supported.
             A warning is logged if any other value is passed.
+        separate_categories: If True, insert a blank line between categories
+            for readability. Defaults to True.
 
     Returns:
         ASCII barplot text for this variable.
@@ -168,8 +200,10 @@ def ascii_plot_bar(
                      |
             blue     | ████████████████████ (50.0%)
                      | ▒▒▒▒▒▒▒▒▒▒ (25.0%)
+            <BLANKLINE>
             green    | ██████████ (25.0%)
                      | ▒▒▒▒▒▒▒▒▒▒ (25.0%)
+            <BLANKLINE>
             red      | ██████████ (25.0%)
                      | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (50.0%)
             <BLANKLINE>
@@ -208,6 +242,9 @@ def ascii_plot_bar(
     label_width = max(len(str(c)) for c in categories) if categories else 8
     label_width = max(label_width, 8)  # minimum width for "Category"
 
+    if bar_width is None:
+        bar_width = _auto_bar_width(label_width, len(legend_names))
+
     # Build output
     lines: List[str] = []
     lines.append(f"=== {column} (categorical) ===")
@@ -218,7 +255,9 @@ def ascii_plot_bar(
     lines.append(f"{header_label} | {'  '.join(legend_names)}")
     lines.append(f"{' ' * label_width} |")
 
-    for cat in categories:
+    for ci, cat in enumerate(categories):
+        if separate_categories and ci > 0:
+            lines.append("")
         cat_data = combined[combined[column] == cat]
         proportions: Dict[str, float] = {}
         for _, row in cat_data.iterrows():
@@ -241,8 +280,8 @@ def ascii_plot_hist(
     names: List[str],
     column: str,
     weighted: bool = True,
-    n_bins: int = 10,
-    bar_width: int = 40,
+    n_bins: Optional[int] = None,
+    bar_width: Optional[int] = None,
     dist_type: Optional[str] = None,
 ) -> str:
     """Produces an ASCII histogram for a single numeric variable.
@@ -322,6 +361,9 @@ def ascii_plot_hist(
     if len(combined_values) == 0:
         return f"=== {column} (numeric) ===\n\nNo data available.\n"
 
+    if n_bins is None:
+        n_bins = _auto_n_bins(len(combined_values), combined_values.nunique())
+
     global_min = float(combined_values.min())
     global_max = float(combined_values.max())
 
@@ -351,6 +393,9 @@ def ascii_plot_hist(
     # Compute label width
     label_width = max(len(lbl) for lbl in bin_labels) if bin_labels else 8
     label_width = max(label_width, 3)  # minimum width for "Bin"
+
+    if bar_width is None:
+        bar_width = _auto_bar_width(label_width, len(legend_names))
 
     # Build output
     lines: List[str] = []
@@ -384,8 +429,8 @@ def ascii_comparative_hist(
     names: List[str],
     column: str,
     weighted: bool = True,
-    n_bins: int = 10,
-    bar_width: int = 20,
+    n_bins: Optional[int] = None,
+    bar_width: Optional[int] = None,
 ) -> str:
     """Produces a columnar, baseline-relative ASCII histogram.
 
@@ -456,6 +501,9 @@ def ascii_comparative_hist(
     if len(combined_values) == 0:
         return "No data available."
 
+    if n_bins is None:
+        n_bins = _auto_n_bins(len(combined_values), combined_values.nunique())
+
     global_min = float(combined_values.min())
     global_max = float(combined_values.max())
 
@@ -484,6 +532,20 @@ def ascii_comparative_hist(
         right = bin_edges[i + 1]
         bracket_right = "]" if i == n_bins - 1 else ")"
         bin_labels.append(f"[{left:,.2f}, {right:,.2f}{bracket_right}")
+
+    # Range column width (computed early so bar_width auto-detection can use it)
+    range_header = "Range"
+    range_width = max(len(range_header), max(len(lbl) for lbl in bin_labels))
+
+    if bar_width is None:
+        import shutil
+
+        term_width = shutil.get_terminal_size((80, 24)).columns
+        n_cols = len(legend_names)
+        # Each column needs: bar_width + pct string (~6) + spacing (3)
+        available = term_width - range_width - 4  # "  | " separator
+        per_col = max(10, (available - (n_cols - 1) * 3) // n_cols - 6)
+        bar_width = per_col
 
     # Baseline percentages (first dataset)
     baseline_pcts = hist_pcts[0]
@@ -533,10 +595,6 @@ def ascii_comparative_hist(
         max_cell_w = max(len(cell_strings[di][bi]) for bi in range(n_bins))
         col_widths.append(max(header_w, max_cell_w))
 
-    # Range column width
-    range_header = "Range"
-    range_width = max(len(range_header), max(len(lbl) for lbl in bin_labels))
-
     # Build output
     lines: List[str] = []
 
@@ -583,9 +641,10 @@ def ascii_plot_dist(
     variables: Optional[List[str]] = None,
     numeric_n_values_threshold: int = 15,
     weighted: bool = True,
-    n_bins: int = 10,
-    bar_width: int = 40,
+    n_bins: Optional[int] = None,
+    bar_width: Optional[int] = None,
     dist_type: Optional[str] = None,
+    separate_categories: bool = True,
 ) -> str:
     """Produces ASCII text comparing weighted distributions across datasets.
 
@@ -607,6 +666,8 @@ def ascii_plot_dist(
         bar_width: Maximum character width for the longest bar. Defaults to 40.
         dist_type: Accepted for compatibility but only "hist_ascii" is supported.
             A warning is logged if any other value is passed.
+        separate_categories: If True, insert a blank line between categories
+            in barplots for readability. Defaults to True.
 
     Returns:
         The full ASCII output text.
@@ -636,8 +697,10 @@ def ascii_plot_dist(
                      |
             blue     | ████████████████████ (50.0%)
                      | ▒▒▒▒▒▒▒▒▒▒ (25.0%)
+            <BLANKLINE>
             green    | ██████████ (25.0%)
                      | ▒▒▒▒▒▒▒▒▒▒ (25.0%)
+            <BLANKLINE>
             red      | ██████████ (25.0%)
                      | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (50.0%)
             <BLANKLINE>
@@ -684,7 +747,14 @@ def ascii_plot_dist(
 
         if categorical:
             output_parts.append(
-                ascii_plot_bar(dfs, names, o, weighted=weighted, bar_width=bar_width)
+                ascii_plot_bar(
+                    dfs,
+                    names,
+                    o,
+                    weighted=weighted,
+                    bar_width=bar_width,
+                    separate_categories=separate_categories,
+                )
             )
         else:
             output_parts.append(
