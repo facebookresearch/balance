@@ -65,6 +65,27 @@
 <span class="n">BAR_CHARS</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;█&quot;</span><span class="p">,</span> <span class="s2">&quot;▒&quot;</span><span class="p">,</span> <span class="s2">&quot;▐&quot;</span><span class="p">,</span> <span class="s2">&quot;░&quot;</span><span class="p">,</span> <span class="s2">&quot;▄&quot;</span><span class="p">,</span> <span class="s2">&quot;▀&quot;</span><span class="p">]</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_auto_n_bins</span><span class="p">(</span><span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">n_unique</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pick a number of bins using Sturges&#39; rule, capped at unique values.&quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+
+    <span class="k">if</span> <span class="n">n_samples</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">1</span>
+    <span class="n">sturges</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># Don&#39;t exceed the number of unique values, and clamp to [2, 50]</span>
+    <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">sturges</span><span class="p">,</span> <span class="n">n_unique</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_auto_bar_width</span><span class="p">(</span><span class="n">label_width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">n_datasets</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pick bar_width to fit within terminal width.&quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+
+    <span class="n">term_width</span> <span class="o">=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">get_terminal_size</span><span class="p">((</span><span class="mi">80</span><span class="p">,</span> <span class="mi">24</span><span class="p">))</span><span class="o">.</span><span class="n">columns</span>
+    <span class="c1"># Each line: label_width + &quot; | &quot; (3) + bar + &quot; (XX.X%)&quot; (9)</span>
+    <span class="n">available</span> <span class="o">=</span> <span class="n">term_width</span> <span class="o">-</span> <span class="n">label_width</span> <span class="o">-</span> <span class="mi">3</span> <span class="o">-</span> <span class="mi">9</span>
+    <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">available</span><span class="p">)</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_weighted_histogram</span><span class="p">(</span>
     <span class="n">values</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">],</span>
@@ -102,7 +123,9 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Renders a group of horizontal bars for one category or bin.</span>
 
 <span class="sd">    Each dataset gets its own line with a distinct character and a percentage</span>
-<span class="sd">    label at the end.</span>
+<span class="sd">    label at the end.  When a proportion is non-zero but too small to render</span>
+<span class="sd">    even one bar character, a single dot (``.``) is shown so that the reader</span>
+<span class="sd">    can distinguish &quot;present but tiny&quot; from &quot;truly zero&quot;.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        label: The category label or bin range string.</span>
@@ -123,7 +146,13 @@
             <span class="n">bar_len</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">((</span><span class="n">prop</span> <span class="o">/</span> <span class="n">max_value</span><span class="p">)</span> <span class="o">*</span> <span class="n">bar_width</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">bar_len</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">bar</span> <span class="o">=</span> <span class="n">char</span> <span class="o">*</span> <span class="n">bar_len</span>
+        <span class="k">if</span> <span class="n">bar_len</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">bar</span> <span class="o">=</span> <span class="n">char</span> <span class="o">*</span> <span class="n">bar_len</span>
+        <span class="k">elif</span> <span class="n">prop</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Non-zero proportion too small to render — show a dot</span>
+            <span class="n">bar</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">bar</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
         <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">prefix</span> <span class="o">=</span> <span class="n">label</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="n">label_width</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -160,8 +189,9 @@
     <span class="n">names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="n">column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">bar_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">40</span><span class="p">,</span>
+    <span class="n">bar_width</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">dist_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">separate_categories</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Produces an ASCII grouped barplot for a single categorical variable.</span>
 
@@ -186,6 +216,8 @@
 <span class="sd">        bar_width: Maximum character width for bars. Defaults to 40.</span>
 <span class="sd">        dist_type: Accepted for compatibility but only &quot;hist_ascii&quot; is supported.</span>
 <span class="sd">            A warning is logged if any other value is passed.</span>
+<span class="sd">        separate_categories: If True, insert a blank line between categories</span>
+<span class="sd">            for readability. Defaults to True.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        ASCII barplot text for this variable.</span>
@@ -207,8 +239,10 @@
 <span class="sd">                     |</span>
 <span class="sd">            blue     | ████████████████████ (50.0%)</span>
 <span class="sd">                     | ▒▒▒▒▒▒▒▒▒▒ (25.0%)</span>
+<span class="sd">            &lt;BLANKLINE&gt;</span>
 <span class="sd">            green    | ██████████ (25.0%)</span>
 <span class="sd">                     | ▒▒▒▒▒▒▒▒▒▒ (25.0%)</span>
+<span class="sd">            &lt;BLANKLINE&gt;</span>
 <span class="sd">            red      | ██████████ (25.0%)</span>
 <span class="sd">                     | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (50.0%)</span>
 <span class="sd">            &lt;BLANKLINE&gt;</span>
@@ -247,6 +281,9 @@
     <span class="n">label_width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="p">))</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">categories</span><span class="p">)</span> <span class="k">if</span> <span class="n">categories</span> <span class="k">else</span> <span class="mi">8</span>
     <span class="n">label_width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">label_width</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>  <span class="c1"># minimum width for &quot;Category&quot;</span>
 
+    <span class="k">if</span> <span class="n">bar_width</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">bar_width</span> <span class="o">=</span> <span class="n">_auto_bar_width</span><span class="p">(</span><span class="n">label_width</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">legend_names</span><span class="p">))</span>
+
     <span class="c1"># Build output</span>
     <span class="n">lines</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;=== </span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s2"> (categorical) ===&quot;</span><span class="p">)</span>
@@ -257,7 +294,9 @@
     <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">header_label</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="s1">&#39;  &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">legend_names</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39; &#39;</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">label_width</span><span class="si">}</span><span class="s2"> |&quot;</span><span class="p">)</span>
 
-    <span class="k">for</span> <span class="n">cat</span> <span class="ow">in</span> <span class="n">categories</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">ci</span><span class="p">,</span> <span class="n">cat</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">categories</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">separate_categories</span> <span class="ow">and</span> <span class="n">ci</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
         <span class="n">cat_data</span> <span class="o">=</span> <span class="n">combined</span><span class="p">[</span><span class="n">combined</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">==</span> <span class="n">cat</span><span class="p">]</span>
         <span class="n">proportions</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">cat_data</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
@@ -283,8 +322,8 @@
     <span class="n">names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="n">column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">n_bins</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
-    <span class="n">bar_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">40</span><span class="p">,</span>
+    <span class="n">n_bins</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">bar_width</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">dist_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Produces an ASCII histogram for a single numeric variable.</span>
@@ -364,6 +403,9 @@
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">combined_values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;=== </span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s2"> (numeric) ===</span><span class="se">\n\n</span><span class="s2">No data available.</span><span class="se">\n</span><span class="s2">&quot;</span>
 
+    <span class="k">if</span> <span class="n">n_bins</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">n_bins</span> <span class="o">=</span> <span class="n">_auto_n_bins</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">combined_values</span><span class="p">),</span> <span class="n">combined_values</span><span class="o">.</span><span class="n">nunique</span><span class="p">())</span>
+
     <span class="n">global_min</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">combined_values</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
     <span class="n">global_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">combined_values</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
 
@@ -393,6 +435,9 @@
     <span class="c1"># Compute label width</span>
     <span class="n">label_width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lbl</span><span class="p">)</span> <span class="k">for</span> <span class="n">lbl</span> <span class="ow">in</span> <span class="n">bin_labels</span><span class="p">)</span> <span class="k">if</span> <span class="n">bin_labels</span> <span class="k">else</span> <span class="mi">8</span>
     <span class="n">label_width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">label_width</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>  <span class="c1"># minimum width for &quot;Bin&quot;</span>
+
+    <span class="k">if</span> <span class="n">bar_width</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">bar_width</span> <span class="o">=</span> <span class="n">_auto_bar_width</span><span class="p">(</span><span class="n">label_width</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">legend_names</span><span class="p">))</span>
 
     <span class="c1"># Build output</span>
     <span class="n">lines</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -429,8 +474,8 @@
     <span class="n">names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="n">column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">n_bins</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
-    <span class="n">bar_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
+    <span class="n">n_bins</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">bar_width</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Produces a columnar, baseline-relative ASCII histogram.</span>
 
@@ -501,6 +546,9 @@
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">combined_values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="s2">&quot;No data available.&quot;</span>
 
+    <span class="k">if</span> <span class="n">n_bins</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">n_bins</span> <span class="o">=</span> <span class="n">_auto_n_bins</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">combined_values</span><span class="p">),</span> <span class="n">combined_values</span><span class="o">.</span><span class="n">nunique</span><span class="p">())</span>
+
     <span class="n">global_min</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">combined_values</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
     <span class="n">global_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">combined_values</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
 
@@ -529,6 +577,20 @@
         <span class="n">right</span> <span class="o">=</span> <span class="n">bin_edges</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
         <span class="n">bracket_right</span> <span class="o">=</span> <span class="s2">&quot;]&quot;</span> <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">n_bins</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">&quot;)&quot;</span>
         <span class="n">bin_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">left</span><span class="si">:</span><span class="s2">,.2f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">right</span><span class="si">:</span><span class="s2">,.2f</span><span class="si">}{</span><span class="n">bracket_right</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Range column width (computed early so bar_width auto-detection can use it)</span>
+    <span class="n">range_header</span> <span class="o">=</span> <span class="s2">&quot;Range&quot;</span>
+    <span class="n">range_width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">range_header</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lbl</span><span class="p">)</span> <span class="k">for</span> <span class="n">lbl</span> <span class="ow">in</span> <span class="n">bin_labels</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">bar_width</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+
+        <span class="n">term_width</span> <span class="o">=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">get_terminal_size</span><span class="p">((</span><span class="mi">80</span><span class="p">,</span> <span class="mi">24</span><span class="p">))</span><span class="o">.</span><span class="n">columns</span>
+        <span class="n">n_cols</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">legend_names</span><span class="p">)</span>
+        <span class="c1"># Each column needs: bar_width + pct string (~6) + spacing (3)</span>
+        <span class="n">available</span> <span class="o">=</span> <span class="n">term_width</span> <span class="o">-</span> <span class="n">range_width</span> <span class="o">-</span> <span class="mi">4</span>  <span class="c1"># &quot;  | &quot; separator</span>
+        <span class="n">per_col</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="p">(</span><span class="n">available</span> <span class="o">-</span> <span class="p">(</span><span class="n">n_cols</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span> <span class="o">//</span> <span class="n">n_cols</span> <span class="o">-</span> <span class="mi">6</span><span class="p">)</span>
+        <span class="n">bar_width</span> <span class="o">=</span> <span class="n">per_col</span>
 
     <span class="c1"># Baseline percentages (first dataset)</span>
     <span class="n">baseline_pcts</span> <span class="o">=</span> <span class="n">hist_pcts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -577,10 +639,6 @@
         <span class="n">header_w</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">legend_names</span><span class="p">[</span><span class="n">di</span><span class="p">]</span><span class="si">}</span><span class="s2"> (%)&quot;</span><span class="p">)</span>
         <span class="n">max_cell_w</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cell_strings</span><span class="p">[</span><span class="n">di</span><span class="p">][</span><span class="n">bi</span><span class="p">])</span> <span class="k">for</span> <span class="n">bi</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_bins</span><span class="p">))</span>
         <span class="n">col_widths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">header_w</span><span class="p">,</span> <span class="n">max_cell_w</span><span class="p">))</span>
-
-    <span class="c1"># Range column width</span>
-    <span class="n">range_header</span> <span class="o">=</span> <span class="s2">&quot;Range&quot;</span>
-    <span class="n">range_width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">range_header</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lbl</span><span class="p">)</span> <span class="k">for</span> <span class="n">lbl</span> <span class="ow">in</span> <span class="n">bin_labels</span><span class="p">))</span>
 
     <span class="c1"># Build output</span>
     <span class="n">lines</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -631,9 +689,10 @@
     <span class="n">variables</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">numeric_n_values_threshold</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span>
     <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">n_bins</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
-    <span class="n">bar_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">40</span><span class="p">,</span>
+    <span class="n">n_bins</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">bar_width</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">dist_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">separate_categories</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Produces ASCII text comparing weighted distributions across datasets.</span>
 
@@ -655,6 +714,8 @@
 <span class="sd">        bar_width: Maximum character width for the longest bar. Defaults to 40.</span>
 <span class="sd">        dist_type: Accepted for compatibility but only &quot;hist_ascii&quot; is supported.</span>
 <span class="sd">            A warning is logged if any other value is passed.</span>
+<span class="sd">        separate_categories: If True, insert a blank line between categories</span>
+<span class="sd">            in barplots for readability. Defaults to True.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        The full ASCII output text.</span>
@@ -684,8 +745,10 @@
 <span class="sd">                     |</span>
 <span class="sd">            blue     | ████████████████████ (50.0%)</span>
 <span class="sd">                     | ▒▒▒▒▒▒▒▒▒▒ (25.0%)</span>
+<span class="sd">            &lt;BLANKLINE&gt;</span>
 <span class="sd">            green    | ██████████ (25.0%)</span>
 <span class="sd">                     | ▒▒▒▒▒▒▒▒▒▒ (25.0%)</span>
+<span class="sd">            &lt;BLANKLINE&gt;</span>
 <span class="sd">            red      | ██████████ (25.0%)</span>
 <span class="sd">                     | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (50.0%)</span>
 <span class="sd">            &lt;BLANKLINE&gt;</span>
@@ -732,7 +795,14 @@
 
         <span class="k">if</span> <span class="n">categorical</span><span class="p">:</span>
             <span class="n">output_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="n">ascii_plot_bar</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">o</span><span class="p">,</span> <span class="n">weighted</span><span class="o">=</span><span class="n">weighted</span><span class="p">,</span> <span class="n">bar_width</span><span class="o">=</span><span class="n">bar_width</span><span class="p">)</span>
+                <span class="n">ascii_plot_bar</span><span class="p">(</span>
+                    <span class="n">dfs</span><span class="p">,</span>
+                    <span class="n">names</span><span class="p">,</span>
+                    <span class="n">o</span><span class="p">,</span>
+                    <span class="n">weighted</span><span class="o">=</span><span class="n">weighted</span><span class="p">,</span>
+                    <span class="n">bar_width</span><span class="o">=</span><span class="n">bar_width</span><span class="p">,</span>
+                    <span class="n">separate_categories</span><span class="o">=</span><span class="n">separate_categories</span><span class="p">,</span>
+                <span class="p">)</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">output_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
