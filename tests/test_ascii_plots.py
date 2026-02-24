@@ -8,6 +8,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import io
+import os
 import textwrap
 from typing import List
 from unittest.mock import patch
@@ -16,6 +17,8 @@ import balance.testutil
 import numpy as np
 import pandas as pd
 from balance.stats_and_plots.ascii_plots import (
+    _auto_bar_width,
+    _auto_n_bins,
     _build_legend,
     _render_horizontal_bars,
     _weighted_histogram,
@@ -120,6 +123,21 @@ class TestRenderHorizontalBars(balance.testutil.BalanceTestCase):
             label_width=5,
         )
         self.assertIn("0.0%", result)
+        self.assertNotIn(".", result.split("(")[0])  # no dot for truly zero
+
+    def test_tiny_nonzero_proportion_shows_dot(self) -> None:
+        """Test that a non-zero proportion too small for a bar shows a dot."""
+        result = _render_horizontal_bars(
+            label="x",
+            proportions={"sample": 0.001},
+            legend_names=["sample"],
+            bar_width=20,
+            max_value=1.0,
+            label_width=5,
+        )
+        # 0.001/1.0 * 20 = 0.02, rounds to 0 chars, but prop > 0 => dot
+        self.assertIn(".", result)
+        self.assertIn("0.1%", result)
 
     def test_bar_width_scaling(self) -> None:
         """Test that bars scale correctly to bar_width."""
@@ -456,7 +474,9 @@ class TestAsciiPlotsEndToEnd(balance.testutil.BalanceTestCase):
             Category | sample
                      |
             blue     | ████████████████████ (50.0%)
+
             green    | ██████████ (25.0%)
+
             red      | ██████████ (25.0%)
 
             Legend: █ sample
@@ -484,8 +504,10 @@ class TestAsciiPlotsEndToEnd(balance.testutil.BalanceTestCase):
                      |
             blue     | ████████████████████ (50.0%)
                      | ▒▒▒▒▒▒▒▒▒▒ (25.0%)
+
             green    | ██████████ (25.0%)
                      | ▒▒▒▒▒▒▒▒▒▒ (25.0%)
+
             red      | ██████████ (25.0%)
                      | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (50.0%)
 
@@ -575,8 +597,10 @@ class TestAsciiPlotsEndToEnd(balance.testutil.BalanceTestCase):
                      |
             blue     | ████████████████████ (50.0%)
                      | ▒▒▒▒▒▒▒▒▒▒ (25.0%)
+
             green    | ██████████ (25.0%)
                      | ▒▒▒▒▒▒▒▒▒▒ (25.0%)
+
             red      | ██████████ (25.0%)
                      | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (50.0%)
 
@@ -619,7 +643,9 @@ class TestAsciiPlotsEndToEnd(balance.testutil.BalanceTestCase):
             Category | sample
                      |
             blue     | ████████████████████ (50.0%)
+
             green    | ██████████ (25.0%)
+
             red      | ██████████ (25.0%)
 
             Legend: █ sample
@@ -786,6 +812,7 @@ class TestAsciiPlotsAdjustmentEndToEnd(balance.testutil.BalanceTestCase):
             female   | ███████ (25.0%)
                      | ▒▒▒▒▒▒▒ (26.2%)
                      | ▐▐▐▐▐▐▐▐▐▐▐▐▐ (50.0%)
+
             male     | ████████████████████ (75.0%)
                      | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (73.8%)
                      | ▐▐▐▐▐▐▐▐▐▐▐▐▐ (50.0%)
@@ -800,6 +827,7 @@ class TestAsciiPlotsAdjustmentEndToEnd(balance.testutil.BalanceTestCase):
             old      | ████████████ (37.5%)
                      | ▒▒▒▒▒▒▒▒▒▒▒▒ (38.6%)
                      | ▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐ (50.0%)
+
             young    | ████████████████████ (62.5%)
                      | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (61.4%)
                      | ▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐ (50.0%)
@@ -1034,3 +1062,143 @@ class TestAsciiPlotDistAllNanVariable(balance.testutil.BalanceTestCase):
         self.assertIn("good", result)
         # The warning should mention the bad variable
         self.assertTrue(any("bad" in m for m in ctx.output))
+
+
+class TestAutoNBins(balance.testutil.BalanceTestCase):
+    """Tests for _auto_n_bins helper."""
+
+    def test_sturges_formula(self) -> None:
+        """Test Sturges' rule: ceil(log2(n) + 1)."""
+        # n=100, log2(100)=6.64, ceil(6.64+1)=8
+        result = _auto_n_bins(100, 100)
+        self.assertEqual(result, 8)
+
+    def test_capped_at_unique_values(self) -> None:
+        """Test that bins don't exceed unique values."""
+        # Sturges for 1000 would be ceil(log2(1000)+1)=11, but only 5 unique
+        result = _auto_n_bins(1000, 5)
+        self.assertEqual(result, 5)
+
+    def test_capped_at_50(self) -> None:
+        """Test that bins are capped at 50."""
+        # Very large n_samples with many unique values
+        result = _auto_n_bins(2**60, 10000)
+        self.assertEqual(result, 50)
+
+    def test_minimum_is_2(self) -> None:
+        """Test that result is at least 2 for n_samples > 1."""
+        result = _auto_n_bins(2, 2)
+        self.assertEqual(result, 2)
+
+    def test_n_samples_zero(self) -> None:
+        """Test edge case n_samples=0."""
+        result = _auto_n_bins(0, 0)
+        self.assertEqual(result, 1)
+
+    def test_n_samples_one(self) -> None:
+        """Test edge case n_samples=1."""
+        result = _auto_n_bins(1, 1)
+        self.assertEqual(result, 1)
+
+    def test_n_unique_one(self) -> None:
+        """Test when there is only one unique value but multiple samples."""
+        # Sturges for 100 = 8, but min(8, 1, 50) = 1, then max(2, 1) = 2
+        result = _auto_n_bins(100, 1)
+        self.assertEqual(result, 2)
+
+
+class TestAutoBarWidth(balance.testutil.BalanceTestCase):
+    """Tests for _auto_bar_width helper."""
+
+    def test_default_terminal_width(self) -> None:
+        """Test bar width computed from mocked terminal width."""
+        with patch(
+            "shutil.get_terminal_size", return_value=os.terminal_size((120, 24))
+        ):
+            result = _auto_bar_width(10, 2)
+        # available = 120 - 10 - 3 - 9 = 98
+        self.assertEqual(result, 98)
+
+    def test_narrow_terminal(self) -> None:
+        """Test that bar_width is clamped to minimum 10."""
+        with patch("shutil.get_terminal_size", return_value=os.terminal_size((20, 24))):
+            result = _auto_bar_width(15, 1)
+        # available = 20 - 15 - 3 - 9 = -7, clamped to 10
+        self.assertEqual(result, 10)
+
+    def test_standard_terminal(self) -> None:
+        """Test with standard 80-column terminal."""
+        with patch("shutil.get_terminal_size", return_value=os.terminal_size((80, 24))):
+            result = _auto_bar_width(8, 1)
+        # available = 80 - 8 - 3 - 9 = 60
+        self.assertEqual(result, 60)
+
+
+class TestAutoDetectionIntegration(balance.testutil.BalanceTestCase):
+    """Tests that auto-detection of n_bins and bar_width works end-to-end."""
+
+    def test_ascii_plot_bar_auto_bar_width(self) -> None:
+        """Test ascii_plot_bar without explicit bar_width."""
+        df = pd.DataFrame({"group": ("a", "b", "c")})
+        dfs: List[DataFrameWithWeight] = [
+            {"df": df, "weight": pd.Series((1, 1, 1))},
+        ]
+        result = ascii_plot_bar(dfs, names=["self"], column="group")
+        self.assertIn("=== group (categorical) ===", result)
+        self.assertIn("a", result)
+        self.assertIn("b", result)
+        self.assertIn("c", result)
+
+    def test_ascii_plot_hist_auto_n_bins_and_bar_width(self) -> None:
+        """Test ascii_plot_hist without explicit n_bins or bar_width."""
+        df = pd.DataFrame({"v1": np.linspace(0, 10, 50)})
+        dfs: List[DataFrameWithWeight] = [
+            {"df": df, "weight": pd.Series(np.ones(50))},
+        ]
+        result = ascii_plot_hist(dfs, names=["self"], column="v1")
+        self.assertIn("=== v1 (numeric) ===", result)
+        self.assertIn("Legend:", result)
+
+    def test_ascii_plot_dist_auto_detection(self) -> None:
+        """Test ascii_plot_dist without explicit n_bins or bar_width."""
+        df = pd.DataFrame(
+            {
+                "gender": ["male", "female", "female", "male"],
+                "age": [25.0, 35.0, 45.0, 55.0],
+            }
+        )
+        dfs: List[DataFrameWithWeight] = [
+            {"df": df, "weight": pd.Series([1, 1, 1, 1])},
+        ]
+        with patch("sys.stdout", new_callable=io.StringIO):
+            result = ascii_plot_dist(dfs, names=["self"], numeric_n_values_threshold=0)
+        self.assertIn("(categorical)", result)
+        self.assertIn("(numeric)", result)
+
+    def test_ascii_comparative_hist_auto_detection(self) -> None:
+        """Test ascii_comparative_hist without explicit n_bins or bar_width."""
+        df_a = pd.DataFrame({"v": [1.0, 2.0, 3.0, 4.0]})
+        df_b = pd.DataFrame({"v": [1.0, 1.0, 3.0, 4.0]})
+        dfs: List[DataFrameWithWeight] = [
+            {"df": df_a, "weight": pd.Series([1.0, 1.0, 1.0, 1.0])},
+            {"df": df_b, "weight": pd.Series([1.0, 1.0, 1.0, 1.0])},
+        ]
+        result = ascii_comparative_hist(dfs, names=["Base", "Test"], column="v")
+        self.assertIn("Base", result)
+        self.assertIn("Test", result)
+        self.assertIn("Total", result)
+
+    def test_explicit_values_still_work(self) -> None:
+        """Test that explicit n_bins and bar_width override auto-detection."""
+        df = pd.DataFrame({"v1": np.linspace(0, 10, 100)})
+        dfs: List[DataFrameWithWeight] = [
+            {"df": df, "weight": pd.Series(np.ones(100))},
+        ]
+        result = ascii_plot_hist(
+            dfs, names=["self"], column="v1", n_bins=5, bar_width=20
+        )
+        # Should have exactly 5 bins
+        bin_lines = [
+            line for line in result.split("\n") if line.strip().startswith("[")
+        ]
+        self.assertEqual(len(bin_lines), 5)
