@@ -10,7 +10,7 @@ from __future__ import annotations
 import copy
 import logging
 import warnings
-from typing import Any, Dict, NamedTuple
+from typing import Any, Dict, NamedTuple, Set
 
 import numpy as np
 import pandas as pd
@@ -579,7 +579,7 @@ def _make_df_column_names_unique(df: pd.DataFrame) -> pd.DataFrame:
                     To avoid issues, make sure to change your original column names to be unique (and without special characters)."""
     )
     col_counts: Dict[Any, int] = {}
-    used_names: set[Any] = set()
+    used_names: Set[Any] = set()
     new_columns = []
 
     for col in df.columns:
