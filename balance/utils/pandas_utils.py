@@ -578,20 +578,26 @@ def _make_df_column_names_unique(df: pd.DataFrame) -> pd.DataFrame:
                     A suffix will be added to them but their order might change from one iteration to another.
                     To avoid issues, make sure to change your original column names to be unique (and without special characters)."""
     )
-    col_counts = {}
+    col_counts: Dict[Any, int] = {}
+    used_names: set[Any] = set()
     new_columns = []
 
     for col in df.columns:
-        if col in col_counts:
-            col_counts[col] += 1
-            new_col_name = f"{col}_{col_counts[col]}"
+        if col in used_names:
+            next_suffix = col_counts.get(col, 0) + 1
+            new_col_name = f"{col}_{next_suffix}"
+            while new_col_name in used_names:
+                next_suffix += 1
+                new_col_name = f"{col}_{next_suffix}"
+            col_counts[col] = next_suffix
             logger.warning(
                 f"Column {col} already exists in the DataFrame, renaming it to be {new_col_name}"
             )
         else:
-            col_counts[col] = 0
+            col_counts.setdefault(col, 0)
             new_col_name = col
         new_columns.append(new_col_name)
+        used_names.add(new_col_name)
 
     df.columns = new_columns
 
