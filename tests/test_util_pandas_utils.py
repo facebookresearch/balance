@@ -204,8 +204,6 @@ class TestUtil(
         df1 = pd.DataFrame(data)
         df1.columns = ["A", "B", "A", "A"]
 
-        # TODO: understand in the future why the names here appear to be consistent while when using the function in
-        # `model_matrix` it does not appear to work.
         self.assertEqual(
             _make_df_column_names_unique(df1).to_dict(),
             {
@@ -215,6 +213,34 @@ class TestUtil(
                 "A_2": {0: 10, 1: 11, 2: 12},
             },
         )
+
+    def test__make_df_column_names_unique_existing_suffixes(self) -> None:
+        """Ensure duplicate renaming does not collide with existing suffixed names."""
+
+        df = pd.DataFrame([[1, 2, 3, 4]], columns=["a", "a_1", "a", "a_2"])
+
+        result = _make_df_column_names_unique(df)
+
+        self.assertEqual(result.columns.tolist(), ["a", "a_1", "a_2", "a_2_1"])
+
+    def test__make_df_column_names_unique_non_string_columns(self) -> None:
+        """Ensure duplicate renaming works for non-string column labels."""
+
+        df = pd.DataFrame([[1, 2, 3, 4]], columns=[1, "1_1", 1, "1_2"])
+
+        result = _make_df_column_names_unique(df)
+
+        self.assertEqual(result.columns.tolist(), [1, "1_1", "1_2", "1_2_1"])
+
+    def test__make_df_column_names_unique_when_already_unique(self) -> None:
+        """Return the input DataFrame unchanged when columns are already unique."""
+
+        df = pd.DataFrame([[1, 2]], columns=["a", "b"])
+
+        result = _make_df_column_names_unique(df)
+
+        self.assertIs(result, df)
+        self.assertEqual(result.columns.tolist(), ["a", "b"])
 
     def test__safe_replace_and_infer(self) -> None:
         """Test safe replacement and dtype inference to avoid pandas deprecation warnings."""
@@ -267,6 +293,16 @@ class TestUtil(
         result = _safe_fillna_and_infer(df_with_nan, value=-1)
         expected = pd.DataFrame({"a": [1.0, -1.0, 2.0], "b": [-1.0, 3.0, 4.0]})
         pd.testing.assert_frame_equal(result, expected)
+
+        # Test with DataFrame containing object columns to cover object-cast branch
+        df_with_obj = pd.DataFrame({"a": ["x", None], "b": [1, None]}, dtype=object)
+        result = _safe_fillna_and_infer(df_with_obj, value="missing")
+        expected = pd.DataFrame(
+            {"a": ["x", "missing"], "b": [1, "missing"]}, dtype=object
+        )
+        pd.testing.assert_frame_equal(result, expected)
+        self.assertEqual(result["a"].dtype, object)
+        self.assertEqual(result["b"].dtype, object)
 
         # Test with string replacement
         series_str = pd.Series(["a", None, "c"])

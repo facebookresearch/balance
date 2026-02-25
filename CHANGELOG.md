@@ -42,6 +42,11 @@
     `weighted_median_breakdown_point` now explicitly normalize DataFrame inputs
     to their first column before computation, matching validation behavior and
     returning scalar/Series outputs consistently.
+- **Robust duplicate model-matrix column renaming**
+  - `_make_df_column_names_unique()` now avoids suffix collisions when columns
+    like `a`, `a_1`, and repeated `a` names appear together.
+  - Duplicate columns are now renamed deterministically to guaranteed-unique
+    names, preventing downstream clashes after formula sanitization.
 
 ## Tests
 
