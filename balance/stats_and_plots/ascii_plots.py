@@ -39,14 +39,36 @@ def _auto_n_bins(n_samples: int, n_unique: int) -> int:
     return max(2, min(sturges, n_unique, 50))
 
 
-def _auto_bar_width(label_width: int, n_datasets: int) -> int:
-    """Pick bar_width to fit within terminal width."""
+def _auto_bar_width(label_width: int) -> int:
+    """Pick bar_width to fit within terminal width.
+
+    Used by grouped barplots and histograms where each dataset gets its own
+    line within a row (single bar per line).
+    """
     import shutil
 
     term_width = shutil.get_terminal_size((80, 24)).columns
     # Each line: label_width + " | " (3) + bar + " (XX.X%)" (9)
     available = term_width - label_width - 3 - 9
     return max(10, available)
+
+
+def _auto_bar_width_columnar(range_width: int, n_columns: int) -> int:
+    """Pick per-column bar_width for a columnar (side-by-side) layout.
+
+    Used by :func:`ascii_comparative_hist` where all datasets are rendered as
+    columns on the same line.  Each column needs space for the bar, a
+    percentage string (~6 chars), and inter-column separators (`` | ``, 3
+    chars each).
+    """
+    import shutil
+
+    term_width = shutil.get_terminal_size((80, 24)).columns
+    # "Range  | col1 | col2 | ..."
+    # range_width + " | " (3+1 for padding) consumed by the label column
+    available = term_width - range_width - 4
+    per_col = max(10, (available - (n_columns - 1) * 3) // n_columns - 6)
+    return per_col
 
 
 def _weighted_histogram(
@@ -174,7 +196,8 @@ def ascii_plot_bar(
         names: Names for each DataFrame (e.g., ["self", "target"]).
         column: The categorical column name to plot.
         weighted: Whether to use weights. Defaults to True.
-        bar_width: Maximum character width for bars. Defaults to 40.
+        bar_width: Maximum character width for bars. Defaults to None,
+            which auto-detects based on terminal width.
         dist_type: Accepted for compatibility but only "hist_ascii" is supported.
             A warning is logged if any other value is passed.
         separate_categories: If True, insert a blank line between categories
@@ -243,7 +266,7 @@ def ascii_plot_bar(
     label_width = max(label_width, 8)  # minimum width for "Category"
 
     if bar_width is None:
-        bar_width = _auto_bar_width(label_width, len(legend_names))
+        bar_width = _auto_bar_width(label_width)
 
     # Build output
     lines: List[str] = []
@@ -304,8 +327,10 @@ def ascii_plot_hist(
         names: Names for each DataFrame (e.g., ["self", "target"]).
         column: The numeric column name to plot.
         weighted: Whether to use weights. Defaults to True.
-        n_bins: Number of histogram bins. Defaults to 10.
-        bar_width: Maximum character width for bars. Defaults to 40.
+        n_bins: Number of histogram bins. Defaults to None, which
+            auto-detects using Sturges' rule.
+        bar_width: Maximum character width for bars. Defaults to None,
+            which auto-detects based on terminal width.
         dist_type: Accepted for compatibility but only "hist_ascii" is supported.
             A warning is logged if any other value is passed.
 
@@ -395,7 +420,7 @@ def ascii_plot_hist(
     label_width = max(label_width, 3)  # minimum width for "Bin"
 
     if bar_width is None:
-        bar_width = _auto_bar_width(label_width, len(legend_names))
+        bar_width = _auto_bar_width(label_width)
 
     # Build output
     lines: List[str] = []
@@ -459,8 +484,10 @@ def ascii_comparative_hist(
         names: Names for each DataFrame (e.g., ["Target", "Sample"]).
         column: The numeric column name to plot.
         weighted: Whether to use weights. Defaults to True.
-        n_bins: Number of histogram bins. Defaults to 10.
-        bar_width: Maximum character width for bars. Defaults to 20.
+        n_bins: Number of histogram bins. Defaults to None, which
+            auto-detects using Sturges' rule.
+        bar_width: Maximum character width for bars. Defaults to None,
+            which auto-detects based on terminal width.
 
     Returns:
         ASCII comparative histogram text.
@@ -470,6 +497,8 @@ def ascii_comparative_hist(
 
             >>> print(ascii_comparative_hist(dfs, names=["Target", "Sample"],
             ...       column="income", n_bins=2, bar_width=20))
+            === income (numeric, comparative) ===
+            <BLANKLINE>
             Range          | Target (%)         | Sample (%)
             ---------------------------------------------------------------
             [10.00, 25.00) | █████████████ 50.0 | █████████████▒▒▒▒▒▒▒ 75.0
@@ -538,14 +567,7 @@ def ascii_comparative_hist(
     range_width = max(len(range_header), max(len(lbl) for lbl in bin_labels))
 
     if bar_width is None:
-        import shutil
-
-        term_width = shutil.get_terminal_size((80, 24)).columns
-        n_cols = len(legend_names)
-        # Each column needs: bar_width + pct string (~6) + spacing (3)
-        available = term_width - range_width - 4  # "  | " separator
-        per_col = max(10, (available - (n_cols - 1) * 3) // n_cols - 6)
-        bar_width = per_col
+        bar_width = _auto_bar_width_columnar(range_width, len(legend_names))
 
     # Baseline percentages (first dataset)
     baseline_pcts = hist_pcts[0]
@@ -597,6 +619,8 @@ def ascii_comparative_hist(
 
     # Build output
     lines: List[str] = []
+    lines.append(f"=== {column} (numeric, comparative) ===")
+    lines.append("")
 
     # Header row
     header_parts = [range_header.ljust(range_width)]
@@ -650,7 +674,7 @@ def ascii_plot_dist(
 
     Iterates over variables, classifying each as categorical or numeric
     (using the same logic as :func:`seaborn_plot_dist`), then delegates to
-    :func:`ascii_plot_bar` or :func:`ascii_plot_hist` respectively.
+    :func:`ascii_plot_bar` or :func:`ascii_comparative_hist` respectively.
 
     The output is both printed to stdout and returned as a string.
 
@@ -662,8 +686,10 @@ def ascii_plot_dist(
         numeric_n_values_threshold: Columns with fewer unique values than this
             are treated as categorical. Defaults to 15.
         weighted: Whether to use weights. Defaults to True.
-        n_bins: Number of bins for numeric histograms. Defaults to 10.
-        bar_width: Maximum character width for the longest bar. Defaults to 40.
+        n_bins: Number of bins for numeric histograms. Defaults to None,
+            which auto-detects using Sturges' rule.
+        bar_width: Maximum character width for the longest bar. Defaults to
+            None, which auto-detects based on terminal width.
         dist_type: Accepted for compatibility but only "hist_ascii" is supported.
             A warning is logged if any other value is passed.
         separate_categories: If True, insert a blank line between categories
@@ -707,17 +733,16 @@ def ascii_plot_dist(
             Legend: █ sample  ▒ population
             Bar lengths are proportional to weighted frequency within each dataset.
             <BLANKLINE>
-            === age (numeric) ===
+            === age (numeric, comparative) ===
             <BLANKLINE>
-            Bin            | sample  population
-                           |
-            [10.00, 25.00) | █████████████ (50.0%)
-                           | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (75.0%)
-            [25.00, 40.00] | █████████████ (50.0%)
-                           | ▒▒▒▒▒▒▒ (25.0%)
+            Range          | sample (%)         | population (%)
+            ---------------------------------------------------------------
+            [10.00, 25.00) | █████████████ 50.0 | █████████████▒▒▒▒▒▒▒ 75.0
+            [25.00, 40.00] | █████████████ 50.0 | ███████     ] 25.0
+            ---------------------------------------------------------------
+            Total          | 100.0              | 100.0
             <BLANKLINE>
-            Legend: █ sample  ▒ population
-            Bar lengths are proportional to weighted frequency within each dataset.
+            Key: █ = shared with sample, ▒ = excess,    ] = deficit
     """
     if dist_type is not None and dist_type != "hist_ascii":
         logger.warning(
@@ -758,7 +783,7 @@ def ascii_plot_dist(
             )
         else:
             output_parts.append(
-                ascii_plot_hist(
+                ascii_comparative_hist(
                     dfs,
                     names,
                     o,
