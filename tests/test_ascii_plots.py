@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 from balance.stats_and_plots.ascii_plots import (
     _auto_bar_width,
+    _auto_bar_width_columnar,
     _auto_n_bins,
     _build_legend,
     _render_horizontal_bars,
@@ -362,7 +363,7 @@ class TestAsciiPlotDist(balance.testutil.BalanceTestCase):
             dfs, names=["self", "target"], numeric_n_values_threshold=0
         )
         self.assertIn("(categorical)", result)
-        self.assertIn("(numeric)", result)
+        self.assertIn("(numeric, comparative)", result)
 
     def test_respects_numeric_n_values_threshold(self) -> None:
         """Test that low-cardinality numeric columns are treated as categorical."""
@@ -376,7 +377,7 @@ class TestAsciiPlotDist(balance.testutil.BalanceTestCase):
 
         # With threshold=0, treated as numeric
         result = ascii_plot_dist(dfs, names=["self"], numeric_n_values_threshold=0)
-        self.assertIn("(numeric)", result)
+        self.assertIn("(numeric, comparative)", result)
 
     def test_returns_string(self) -> None:
         """Test that the function returns a string."""
@@ -593,31 +594,30 @@ class TestAsciiPlotsEndToEnd(balance.testutil.BalanceTestCase):
             """\
             === color (categorical) ===
 
-            Category | sample  population
+            Category | population  sample
                      |
-            blue     | ████████████████████ (50.0%)
-                     | ▒▒▒▒▒▒▒▒▒▒ (25.0%)
+            blue     | ██████████ (25.0%)
+                     | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (50.0%)
 
             green    | ██████████ (25.0%)
                      | ▒▒▒▒▒▒▒▒▒▒ (25.0%)
 
-            red      | ██████████ (25.0%)
-                     | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (50.0%)
+            red      | ████████████████████ (50.0%)
+                     | ▒▒▒▒▒▒▒▒▒▒ (25.0%)
 
-            Legend: █ sample  ▒ population
+            Legend: █ population  ▒ sample
             Bar lengths are proportional to weighted frequency within each dataset.
 
-            === age (numeric) ===
+            === age (numeric, comparative) ===
 
-            Bin            | sample  population
-                           |
-            [10.00, 25.00) | █████████████ (50.0%)
-                           | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (75.0%)
-            [25.00, 40.00] | █████████████ (50.0%)
-                           | ▒▒▒▒▒▒▒ (25.0%)
+            Range          | population (%)            | sample (%)
+            ----------------------------------------------------------------------
+            [10.00, 25.00) | ████████████████████ 75.0 | █████████████      ] 50.0
+            [25.00, 40.00] | ███████ 25.0              | ███████▒▒▒▒▒▒ 50.0
+            ----------------------------------------------------------------------
+            Total          | 100.0                     | 100.0
 
-            Legend: █ sample  ▒ population
-            Bar lengths are proportional to weighted frequency within each dataset.
+            Key: █ = shared with population, ▒ = excess,    ] = deficit
             """,
         )
 
@@ -675,6 +675,8 @@ class TestAsciiComparativeHistEndToEnd(balance.testutil.BalanceTestCase):
         self._assert_lines_equal(
             result,
             """\
+            === age (numeric, comparative) ===
+
             Range          | Normal (%)
             ------------------------------------------
             [10.00, 25.00) | ████████████████████ 50.0
@@ -698,6 +700,8 @@ class TestAsciiComparativeHistEndToEnd(balance.testutil.BalanceTestCase):
         self._assert_lines_equal(
             result,
             """\
+            === age (numeric, comparative) ===
+
             Range          | Normal (%)         | Skewed (%)
             ---------------------------------------------------------------
             [10.00, 25.00) | █████████████ 50.0 | █████████████▒▒▒▒▒▒▒ 75.0
@@ -726,6 +730,8 @@ class TestAsciiComparativeHistEndToEnd(balance.testutil.BalanceTestCase):
         self._assert_lines_equal(
             result,
             """\
+            === v (numeric, comparative) ===
+
             Range        | Baseline (%)    | Left (%)             | Right (%)
             ---------------------------------------------------------------------------------
             [1.00, 1.67) | ██████████ 33.3 | ██████████▒▒▒▒▒ 50.0 | █████    ] 16.7
@@ -795,9 +801,9 @@ class TestAsciiPlotsAdjustmentEndToEnd(balance.testutil.BalanceTestCase):
         # Verify the full output matches expected ASCII plots.
         #
         # The plot shows three datasets per variable:
-        #   █ sample     = unadjusted (original biased sample)
+        #   █ population = target population
         #   ▒ adjusted   = after IPW bias correction
-        #   ▐ population = target population
+        #   ▐ sample     = unadjusted (original biased sample)
         #
         # For gender: sample is 75% male / 25% female, population is 50/50.
         #   IPW adjustment shifts adjusted slightly toward the target.
@@ -807,32 +813,32 @@ class TestAsciiPlotsAdjustmentEndToEnd(balance.testutil.BalanceTestCase):
             """\
             === gender (categorical) ===
 
-            Category | sample  adjusted  population
+            Category | population  adjusted  sample
                      |
-            female   | ███████ (25.0%)
+            female   | █████████████ (50.0%)
                      | ▒▒▒▒▒▒▒ (26.2%)
-                     | ▐▐▐▐▐▐▐▐▐▐▐▐▐ (50.0%)
+                     | ▐▐▐▐▐▐▐ (25.0%)
 
-            male     | ████████████████████ (75.0%)
+            male     | █████████████ (50.0%)
                      | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (73.8%)
-                     | ▐▐▐▐▐▐▐▐▐▐▐▐▐ (50.0%)
+                     | ▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐ (75.0%)
 
-            Legend: █ sample  ▒ adjusted  ▐ population
+            Legend: █ population  ▒ adjusted  ▐ sample
             Bar lengths are proportional to weighted frequency within each dataset.
 
             === age_group (categorical) ===
 
-            Category | sample  adjusted  population
+            Category | population  adjusted  sample
                      |
-            old      | ████████████ (37.5%)
+            old      | ████████████████ (50.0%)
                      | ▒▒▒▒▒▒▒▒▒▒▒▒ (38.6%)
-                     | ▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐ (50.0%)
+                     | ▐▐▐▐▐▐▐▐▐▐▐▐ (37.5%)
 
-            young    | ████████████████████ (62.5%)
+            young    | ████████████████ (50.0%)
                      | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (61.4%)
-                     | ▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐ (50.0%)
+                     | ▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐ (62.5%)
 
-            Legend: █ sample  ▒ adjusted  ▐ population
+            Legend: █ population  ▒ adjusted  ▐ sample
             Bar lengths are proportional to weighted frequency within each dataset.
             """,
         )
@@ -1108,30 +1114,46 @@ class TestAutoNBins(balance.testutil.BalanceTestCase):
 
 
 class TestAutoBarWidth(balance.testutil.BalanceTestCase):
-    """Tests for _auto_bar_width helper."""
+    """Tests for _auto_bar_width and _auto_bar_width_columnar helpers."""
 
     def test_default_terminal_width(self) -> None:
         """Test bar width computed from mocked terminal width."""
         with patch(
             "shutil.get_terminal_size", return_value=os.terminal_size((120, 24))
         ):
-            result = _auto_bar_width(10, 2)
+            result = _auto_bar_width(10)
         # available = 120 - 10 - 3 - 9 = 98
         self.assertEqual(result, 98)
 
     def test_narrow_terminal(self) -> None:
         """Test that bar_width is clamped to minimum 10."""
         with patch("shutil.get_terminal_size", return_value=os.terminal_size((20, 24))):
-            result = _auto_bar_width(15, 1)
+            result = _auto_bar_width(15)
         # available = 20 - 15 - 3 - 9 = -7, clamped to 10
         self.assertEqual(result, 10)
 
     def test_standard_terminal(self) -> None:
         """Test with standard 80-column terminal."""
         with patch("shutil.get_terminal_size", return_value=os.terminal_size((80, 24))):
-            result = _auto_bar_width(8, 1)
+            result = _auto_bar_width(8)
         # available = 80 - 8 - 3 - 9 = 60
         self.assertEqual(result, 60)
+
+    def test_columnar_default_terminal(self) -> None:
+        """Test columnar bar width for two columns on a standard terminal."""
+        with patch("shutil.get_terminal_size", return_value=os.terminal_size((80, 24))):
+            result = _auto_bar_width_columnar(14, 2)
+        # available = 80 - 14 - 4 = 62
+        # per_col = max(10, (62 - 3) // 2 - 6) = max(10, 23) = 23
+        self.assertEqual(result, 23)
+
+    def test_columnar_narrow_terminal(self) -> None:
+        """Test columnar bar width clamps to minimum 10."""
+        with patch("shutil.get_terminal_size", return_value=os.terminal_size((30, 24))):
+            result = _auto_bar_width_columnar(14, 3)
+        # available = 30 - 14 - 4 = 12
+        # per_col = max(10, (12 - 6) // 3 - 6) = max(10, -4) = 10
+        self.assertEqual(result, 10)
 
 
 class TestAutoDetectionIntegration(balance.testutil.BalanceTestCase):
@@ -1173,7 +1195,7 @@ class TestAutoDetectionIntegration(balance.testutil.BalanceTestCase):
         with patch("sys.stdout", new_callable=io.StringIO):
             result = ascii_plot_dist(dfs, names=["self"], numeric_n_values_threshold=0)
         self.assertIn("(categorical)", result)
-        self.assertIn("(numeric)", result)
+        self.assertIn("(numeric, comparative)", result)
 
     def test_ascii_comparative_hist_auto_detection(self) -> None:
         """Test ascii_comparative_hist without explicit n_bins or bar_width."""
