@@ -45,7 +45,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">npt</span>
@@ -64,6 +64,34 @@
 <span class="c1"># Each dataset gets a unique character from this list.</span>
 <span class="n">BAR_CHARS</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;█&quot;</span><span class="p">,</span> <span class="s2">&quot;▒&quot;</span><span class="p">,</span> <span class="s2">&quot;▐&quot;</span><span class="p">,</span> <span class="s2">&quot;░&quot;</span><span class="p">,</span> <span class="s2">&quot;▄&quot;</span><span class="p">,</span> <span class="s2">&quot;▀&quot;</span><span class="p">]</span>
 
+<span class="c1"># Preferred ordering for comparative plots: population first, then adjusted,</span>
+<span class="c1"># then sample.  Known internal names are placed in this order; any unknown</span>
+<span class="c1"># names are appended at the end in their original order.</span>
+<span class="n">_PREFERRED_NAME_ORDER</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;adjusted&quot;</span><span class="p">,</span> <span class="s2">&quot;unadjusted&quot;</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_reorder_dfs_and_names</span><span class="p">(</span>
+    <span class="n">dfs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DataFrameWithWeight</span><span class="p">],</span>
+    <span class="n">names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">DataFrameWithWeight</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reorder *dfs* and *names* to the preferred display order.</span>
+
+<span class="sd">    The canonical display order is: population (``target``), adjusted</span>
+<span class="sd">    (``self`` when ``unadjusted`` is also present), sample</span>
+<span class="sd">    (``unadjusted``).  Names not in the preferred list keep their</span>
+<span class="sd">    original relative order and are appended after the known names.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">order_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">_PREFERRED_NAME_ORDER</span><span class="p">)}</span>
+    <span class="n">indexed</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">names</span><span class="p">))</span>
+    <span class="c1"># Stable sort: known names by preferred position, unknown names stay in</span>
+    <span class="c1"># their original order at the end.</span>
+    <span class="n">indexed</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">order_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">_PREFERRED_NAME_ORDER</span><span class="p">)),</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="n">reordered_indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">indexed</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="p">[</span><span class="n">dfs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">reordered_indices</span><span class="p">],</span>
+        <span class="p">[</span><span class="n">names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">reordered_indices</span><span class="p">],</span>
+    <span class="p">)</span>
+
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_auto_n_bins</span><span class="p">(</span><span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">n_unique</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Pick a number of bins using Sturges&#39; rule, capped at unique values.&quot;&quot;&quot;</span>
@@ -76,14 +104,36 @@
     <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">sturges</span><span class="p">,</span> <span class="n">n_unique</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_auto_bar_width</span><span class="p">(</span><span class="n">label_width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">n_datasets</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pick bar_width to fit within terminal width.&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_auto_bar_width</span><span class="p">(</span><span class="n">label_width</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pick bar_width to fit within terminal width.</span>
+
+<span class="sd">    Used by grouped barplots and histograms where each dataset gets its own</span>
+<span class="sd">    line within a row (single bar per line).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
 
     <span class="n">term_width</span> <span class="o">=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">get_terminal_size</span><span class="p">((</span><span class="mi">80</span><span class="p">,</span> <span class="mi">24</span><span class="p">))</span><span class="o">.</span><span class="n">columns</span>
     <span class="c1"># Each line: label_width + &quot; | &quot; (3) + bar + &quot; (XX.X%)&quot; (9)</span>
     <span class="n">available</span> <span class="o">=</span> <span class="n">term_width</span> <span class="o">-</span> <span class="n">label_width</span> <span class="o">-</span> <span class="mi">3</span> <span class="o">-</span> <span class="mi">9</span>
     <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">available</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_auto_bar_width_columnar</span><span class="p">(</span><span class="n">range_width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">n_columns</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pick per-column bar_width for a columnar (side-by-side) layout.</span>
+
+<span class="sd">    Used by :func:`ascii_comparative_hist` where all datasets are rendered as</span>
+<span class="sd">    columns on the same line.  Each column needs space for the bar, a</span>
+<span class="sd">    percentage string (~6 chars), and inter-column separators (`` | ``, 3</span>
+<span class="sd">    chars each).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+
+    <span class="n">term_width</span> <span class="o">=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">get_terminal_size</span><span class="p">((</span><span class="mi">80</span><span class="p">,</span> <span class="mi">24</span><span class="p">))</span><span class="o">.</span><span class="n">columns</span>
+    <span class="c1"># &quot;Range  | col1 | col2 | ...&quot;</span>
+    <span class="c1"># range_width + &quot; | &quot; (3+1 for padding) consumed by the label column</span>
+    <span class="n">available</span> <span class="o">=</span> <span class="n">term_width</span> <span class="o">-</span> <span class="n">range_width</span> <span class="o">-</span> <span class="mi">4</span>
+    <span class="n">per_col</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="p">(</span><span class="n">available</span> <span class="o">-</span> <span class="p">(</span><span class="n">n_columns</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span> <span class="o">//</span> <span class="n">n_columns</span> <span class="o">-</span> <span class="mi">6</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">per_col</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_weighted_histogram</span><span class="p">(</span>
@@ -213,7 +263,8 @@
 <span class="sd">        names: Names for each DataFrame (e.g., [&quot;self&quot;, &quot;target&quot;]).</span>
 <span class="sd">        column: The categorical column name to plot.</span>
 <span class="sd">        weighted: Whether to use weights. Defaults to True.</span>
-<span class="sd">        bar_width: Maximum character width for bars. Defaults to 40.</span>
+<span class="sd">        bar_width: Maximum character width for bars. Defaults to None,</span>
+<span class="sd">            which auto-detects based on terminal width.</span>
 <span class="sd">        dist_type: Accepted for compatibility but only &quot;hist_ascii&quot; is supported.</span>
 <span class="sd">            A warning is logged if any other value is passed.</span>
 <span class="sd">        separate_categories: If True, insert a blank line between categories</span>
@@ -282,7 +333,7 @@
     <span class="n">label_width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">label_width</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>  <span class="c1"># minimum width for &quot;Category&quot;</span>
 
     <span class="k">if</span> <span class="n">bar_width</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">bar_width</span> <span class="o">=</span> <span class="n">_auto_bar_width</span><span class="p">(</span><span class="n">label_width</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">legend_names</span><span class="p">))</span>
+        <span class="n">bar_width</span> <span class="o">=</span> <span class="n">_auto_bar_width</span><span class="p">(</span><span class="n">label_width</span><span class="p">)</span>
 
     <span class="c1"># Build output</span>
     <span class="n">lines</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -346,8 +397,10 @@
 <span class="sd">        names: Names for each DataFrame (e.g., [&quot;self&quot;, &quot;target&quot;]).</span>
 <span class="sd">        column: The numeric column name to plot.</span>
 <span class="sd">        weighted: Whether to use weights. Defaults to True.</span>
-<span class="sd">        n_bins: Number of histogram bins. Defaults to 10.</span>
-<span class="sd">        bar_width: Maximum character width for bars. Defaults to 40.</span>
+<span class="sd">        n_bins: Number of histogram bins. Defaults to None, which</span>
+<span class="sd">            auto-detects using Sturges&#39; rule.</span>
+<span class="sd">        bar_width: Maximum character width for bars. Defaults to None,</span>
+<span class="sd">            which auto-detects based on terminal width.</span>
 <span class="sd">        dist_type: Accepted for compatibility but only &quot;hist_ascii&quot; is supported.</span>
 <span class="sd">            A warning is logged if any other value is passed.</span>
 
@@ -437,7 +490,7 @@
     <span class="n">label_width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">label_width</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>  <span class="c1"># minimum width for &quot;Bin&quot;</span>
 
     <span class="k">if</span> <span class="n">bar_width</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">bar_width</span> <span class="o">=</span> <span class="n">_auto_bar_width</span><span class="p">(</span><span class="n">label_width</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">legend_names</span><span class="p">))</span>
+        <span class="n">bar_width</span> <span class="o">=</span> <span class="n">_auto_bar_width</span><span class="p">(</span><span class="n">label_width</span><span class="p">)</span>
 
     <span class="c1"># Build output</span>
     <span class="n">lines</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -504,8 +557,10 @@
 <span class="sd">        names: Names for each DataFrame (e.g., [&quot;Target&quot;, &quot;Sample&quot;]).</span>
 <span class="sd">        column: The numeric column name to plot.</span>
 <span class="sd">        weighted: Whether to use weights. Defaults to True.</span>
-<span class="sd">        n_bins: Number of histogram bins. Defaults to 10.</span>
-<span class="sd">        bar_width: Maximum character width for bars. Defaults to 20.</span>
+<span class="sd">        n_bins: Number of histogram bins. Defaults to None, which</span>
+<span class="sd">            auto-detects using Sturges&#39; rule.</span>
+<span class="sd">        bar_width: Maximum character width for bars. Defaults to None,</span>
+<span class="sd">            which auto-detects based on terminal width.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        ASCII comparative histogram text.</span>
@@ -515,6 +570,8 @@
 
 <span class="sd">            &gt;&gt;&gt; print(ascii_comparative_hist(dfs, names=[&quot;Target&quot;, &quot;Sample&quot;],</span>
 <span class="sd">            ...       column=&quot;income&quot;, n_bins=2, bar_width=20))</span>
+<span class="sd">            === income (numeric, comparative) ===</span>
+<span class="sd">            &lt;BLANKLINE&gt;</span>
 <span class="sd">            Range          | Target (%)         | Sample (%)</span>
 <span class="sd">            ---------------------------------------------------------------</span>
 <span class="sd">            [10.00, 25.00) | █████████████ 50.0 | █████████████▒▒▒▒▒▒▒ 75.0</span>
@@ -583,14 +640,7 @@
     <span class="n">range_width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">range_header</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lbl</span><span class="p">)</span> <span class="k">for</span> <span class="n">lbl</span> <span class="ow">in</span> <span class="n">bin_labels</span><span class="p">))</span>
 
     <span class="k">if</span> <span class="n">bar_width</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
-
-        <span class="n">term_width</span> <span class="o">=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">get_terminal_size</span><span class="p">((</span><span class="mi">80</span><span class="p">,</span> <span class="mi">24</span><span class="p">))</span><span class="o">.</span><span class="n">columns</span>
-        <span class="n">n_cols</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">legend_names</span><span class="p">)</span>
-        <span class="c1"># Each column needs: bar_width + pct string (~6) + spacing (3)</span>
-        <span class="n">available</span> <span class="o">=</span> <span class="n">term_width</span> <span class="o">-</span> <span class="n">range_width</span> <span class="o">-</span> <span class="mi">4</span>  <span class="c1"># &quot;  | &quot; separator</span>
-        <span class="n">per_col</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="p">(</span><span class="n">available</span> <span class="o">-</span> <span class="p">(</span><span class="n">n_cols</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span> <span class="o">//</span> <span class="n">n_cols</span> <span class="o">-</span> <span class="mi">6</span><span class="p">)</span>
-        <span class="n">bar_width</span> <span class="o">=</span> <span class="n">per_col</span>
+        <span class="n">bar_width</span> <span class="o">=</span> <span class="n">_auto_bar_width_columnar</span><span class="p">(</span><span class="n">range_width</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">legend_names</span><span class="p">))</span>
 
     <span class="c1"># Baseline percentages (first dataset)</span>
     <span class="n">baseline_pcts</span> <span class="o">=</span> <span class="n">hist_pcts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -642,6 +692,8 @@
 
     <span class="c1"># Build output</span>
     <span class="n">lines</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;=== </span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s2"> (numeric, comparative) ===&quot;</span><span class="p">)</span>
+    <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
 
     <span class="c1"># Header row</span>
     <span class="n">header_parts</span> <span class="o">=</span> <span class="p">[</span><span class="n">range_header</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="n">range_width</span><span class="p">)]</span>
@@ -693,12 +745,27 @@
     <span class="n">bar_width</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">dist_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">separate_categories</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">comparative</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Produces ASCII text comparing weighted distributions across datasets.</span>
 
 <span class="sd">    Iterates over variables, classifying each as categorical or numeric</span>
 <span class="sd">    (using the same logic as :func:`seaborn_plot_dist`), then delegates to</span>
-<span class="sd">    :func:`ascii_plot_bar` or :func:`ascii_plot_hist` respectively.</span>
+<span class="sd">    the appropriate plotting function.</span>
+
+<span class="sd">    Two display modes are available for numeric variables:</span>
+
+<span class="sd">    - **comparative** (``comparative=True``, the default): numeric variables</span>
+<span class="sd">      are rendered with :func:`ascii_comparative_hist`, a columnar layout</span>
+<span class="sd">      where the first dataset is the baseline and subsequent datasets show</span>
+<span class="sd">      excess / deficit relative to it.</span>
+<span class="sd">    - **grouped** (``comparative=False``): numeric variables are rendered</span>
+<span class="sd">      with :func:`ascii_plot_hist`, a grouped-bar layout where each dataset</span>
+<span class="sd">      gets its own bar per bin (the same style used for categorical</span>
+<span class="sd">      variables).</span>
+
+<span class="sd">    Categorical variables always use :func:`ascii_plot_bar` regardless of</span>
+<span class="sd">    this setting.</span>
 
 <span class="sd">    The output is both printed to stdout and returned as a string.</span>
 
@@ -710,12 +777,19 @@
 <span class="sd">        numeric_n_values_threshold: Columns with fewer unique values than this</span>
 <span class="sd">            are treated as categorical. Defaults to 15.</span>
 <span class="sd">        weighted: Whether to use weights. Defaults to True.</span>
-<span class="sd">        n_bins: Number of bins for numeric histograms. Defaults to 10.</span>
-<span class="sd">        bar_width: Maximum character width for the longest bar. Defaults to 40.</span>
+<span class="sd">        n_bins: Number of bins for numeric histograms. Defaults to None,</span>
+<span class="sd">            which auto-detects using Sturges&#39; rule.</span>
+<span class="sd">        bar_width: Maximum character width for the longest bar. Defaults to</span>
+<span class="sd">            None, which auto-detects based on terminal width.</span>
 <span class="sd">        dist_type: Accepted for compatibility but only &quot;hist_ascii&quot; is supported.</span>
 <span class="sd">            A warning is logged if any other value is passed.</span>
 <span class="sd">        separate_categories: If True, insert a blank line between categories</span>
 <span class="sd">            in barplots for readability. Defaults to True.</span>
+<span class="sd">        comparative: If True (default), numeric variables use a columnar</span>
+<span class="sd">            comparative histogram (:func:`ascii_comparative_hist`) that</span>
+<span class="sd">            highlights differences relative to a baseline dataset.  If</span>
+<span class="sd">            False, numeric variables use a grouped-bar histogram</span>
+<span class="sd">            (:func:`ascii_plot_hist`) instead.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        The full ASCII output text.</span>
@@ -741,31 +815,52 @@
 <span class="sd">            ...       numeric_n_values_threshold=0, n_bins=2, bar_width=20))</span>
 <span class="sd">            === color (categorical) ===</span>
 <span class="sd">            &lt;BLANKLINE&gt;</span>
-<span class="sd">            Category | sample  population</span>
+<span class="sd">            Category | population  sample</span>
 <span class="sd">                     |</span>
-<span class="sd">            blue     | ████████████████████ (50.0%)</span>
-<span class="sd">                     | ▒▒▒▒▒▒▒▒▒▒ (25.0%)</span>
+<span class="sd">            blue     | ██████████ (25.0%)</span>
+<span class="sd">                     | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (50.0%)</span>
 <span class="sd">            &lt;BLANKLINE&gt;</span>
 <span class="sd">            green    | ██████████ (25.0%)</span>
 <span class="sd">                     | ▒▒▒▒▒▒▒▒▒▒ (25.0%)</span>
 <span class="sd">            &lt;BLANKLINE&gt;</span>
-<span class="sd">            red      | ██████████ (25.0%)</span>
-<span class="sd">                     | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (50.0%)</span>
+<span class="sd">            red      | ████████████████████ (50.0%)</span>
+<span class="sd">                     | ▒▒▒▒▒▒▒▒▒▒ (25.0%)</span>
 <span class="sd">            &lt;BLANKLINE&gt;</span>
-<span class="sd">            Legend: █ sample  ▒ population</span>
+<span class="sd">            Legend: █ population  ▒ sample</span>
 <span class="sd">            Bar lengths are proportional to weighted frequency within each dataset.</span>
 <span class="sd">            &lt;BLANKLINE&gt;</span>
+<span class="sd">            === age (numeric, comparative) ===</span>
+<span class="sd">            &lt;BLANKLINE&gt;</span>
+<span class="sd">            Range          | population (%)     | sample (%)</span>
+<span class="sd">            ---------------------------------------------------------------</span>
+<span class="sd">            [10.00, 25.00) | █████████████ 50.0 | █████████████▒▒▒▒▒▒▒ 75.0</span>
+<span class="sd">            [25.00, 40.00] | █████████████ 50.0 | ███████     ] 25.0</span>
+<span class="sd">            ---------------------------------------------------------------</span>
+<span class="sd">            Total          | 100.0              | 100.0</span>
+<span class="sd">            &lt;BLANKLINE&gt;</span>
+<span class="sd">            Key: █ = shared with population, ▒ = excess,    ] = deficit</span>
+
+<span class="sd">        To use grouped-bar histograms (same style as categorical) instead</span>
+<span class="sd">        of comparative histograms for numeric variables, pass</span>
+<span class="sd">        ``comparative=False``::</span>
+
+<span class="sd">            &gt;&gt;&gt; print(ascii_plot_dist(dfs, names=[&quot;self&quot;, &quot;target&quot;],</span>
+<span class="sd">            ...       numeric_n_values_threshold=0, n_bins=2, bar_width=20,</span>
+<span class="sd">            ...       comparative=False))</span>
+<span class="sd">            === color (categorical) ===</span>
+<span class="sd">            ...</span>
 <span class="sd">            === age (numeric) ===</span>
 <span class="sd">            &lt;BLANKLINE&gt;</span>
-<span class="sd">            Bin            | sample  population</span>
+<span class="sd">            Bin            | population  sample</span>
 <span class="sd">                           |</span>
-<span class="sd">            [10.00, 25.00) | █████████████ (50.0%)</span>
-<span class="sd">                           | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (75.0%)</span>
-<span class="sd">            [25.00, 40.00] | █████████████ (50.0%)</span>
-<span class="sd">                           | ▒▒▒▒▒▒▒ (25.0%)</span>
+<span class="sd">            [10.00, 25.00) | ████████████████████ (75.0%)</span>
+<span class="sd">                           | ▒▒▒▒▒▒▒▒▒▒▒▒▒ (50.0%)</span>
+<span class="sd">            [25.00, 40.00] | ███████ (25.0%)</span>
+<span class="sd">                           | ▒▒▒▒▒▒▒▒▒▒▒▒▒ (50.0%)</span>
 <span class="sd">            &lt;BLANKLINE&gt;</span>
-<span class="sd">            Legend: █ sample  ▒ population</span>
+<span class="sd">            Legend: █ population  ▒ sample</span>
 <span class="sd">            Bar lengths are proportional to weighted frequency within each dataset.</span>
+<span class="sd">            &lt;BLANKLINE&gt;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">dist_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">dist_type</span> <span class="o">!=</span> <span class="s2">&quot;hist_ascii&quot;</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
@@ -774,6 +869,9 @@
         <span class="p">)</span>
     <span class="k">if</span> <span class="n">names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;df_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dfs</span><span class="p">))]</span>
+
+    <span class="c1"># Reorder so comparative plots show: population, adjusted, sample</span>
+    <span class="n">dfs</span><span class="p">,</span> <span class="n">names</span> <span class="o">=</span> <span class="n">_reorder_dfs_and_names</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">names</span><span class="p">)</span>
 
     <span class="n">variables</span> <span class="o">=</span> <span class="n">choose_variables</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;df&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dfs</span><span class="p">),</span> <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ASCII plotting variables </span><span class="si">{</span><span class="n">variables</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -805,16 +903,28 @@
                 <span class="p">)</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">output_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="n">ascii_plot_hist</span><span class="p">(</span>
-                    <span class="n">dfs</span><span class="p">,</span>
-                    <span class="n">names</span><span class="p">,</span>
-                    <span class="n">o</span><span class="p">,</span>
-                    <span class="n">weighted</span><span class="o">=</span><span class="n">weighted</span><span class="p">,</span>
-                    <span class="n">n_bins</span><span class="o">=</span><span class="n">n_bins</span><span class="p">,</span>
-                    <span class="n">bar_width</span><span class="o">=</span><span class="n">bar_width</span><span class="p">,</span>
+            <span class="k">if</span> <span class="n">comparative</span><span class="p">:</span>
+                <span class="n">output_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">ascii_comparative_hist</span><span class="p">(</span>
+                        <span class="n">dfs</span><span class="p">,</span>
+                        <span class="n">names</span><span class="p">,</span>
+                        <span class="n">o</span><span class="p">,</span>
+                        <span class="n">weighted</span><span class="o">=</span><span class="n">weighted</span><span class="p">,</span>
+                        <span class="n">n_bins</span><span class="o">=</span><span class="n">n_bins</span><span class="p">,</span>
+                        <span class="n">bar_width</span><span class="o">=</span><span class="n">bar_width</span><span class="p">,</span>
+                    <span class="p">)</span>
                 <span class="p">)</span>
-            <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">output_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">ascii_plot_hist</span><span class="p">(</span>
+                        <span class="n">dfs</span><span class="p">,</span>
+                        <span class="n">names</span><span class="p">,</span>
+                        <span class="n">o</span><span class="p">,</span>
+                        <span class="n">weighted</span><span class="o">=</span><span class="n">weighted</span><span class="p">,</span>
+                        <span class="n">n_bins</span><span class="o">=</span><span class="n">n_bins</span><span class="p">,</span>
+                        <span class="n">bar_width</span><span class="o">=</span><span class="n">bar_width</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
 
     <span class="n">result</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_parts</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>

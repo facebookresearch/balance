@@ -27,6 +27,16 @@ hide_title: true
     and `]` for deficit relative to the baseline. Uses visually distinct fill
     characters (`█`, `▒`, `▐`, `░`) for better readability when comparing
     multiple datasets.
+- **ASCII plot display order: population → adjusted → sample**
+  - Comparative ASCII plots now order datasets as population, adjusted, sample
+    (instead of sample, adjusted, population) so the target distribution appears
+    first.
+- **`comparative` parameter for ASCII numeric plots**
+  - `ascii_plot_dist` (and `BalanceDF.plot(library="balance")`) accepts a new
+    `comparative` keyword (default `True`). When `True`, numeric variables use
+    the columnar comparative histogram (`ascii_comparative_hist`). Set
+    `comparative=False` to use grouped-bar histograms (`ascii_plot_hist`) for
+    numeric variables instead, matching the style used for categorical variables.
 
 ## Documentation
 

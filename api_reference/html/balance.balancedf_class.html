@@ -977,6 +977,10 @@ s1.outcomes().names()
 The default plotting engine is plotly, but seaborn can be used for static plots, or “balance”
 can be used for ASCII text output suitable for LLM consumption (only dist_type=”hist_ascii” is supported
 with library=”balance”).</p>
+<p>When using <code class="docutils literal notranslate"><span class="pre">library=&quot;balance&quot;</span></code>, numeric variables are rendered as
+comparative histograms by default (showing excess/deficit vs. a
+baseline).  Pass <code class="docutils literal notranslate"><span class="pre">comparative=False</span></code> to use grouped-bar histograms
+instead (same style as categorical variables).</p>
 <p>This function is inherited as is when invoking BalanceDFCovars.plot, but some modifications are made when
 preparing the data for BalanceDFOutcomes.plot and BalanceDFWeights.plot.</p>
 <dl class="field-list simple">
@@ -1039,6 +1043,8 @@ s3_null.covars().plot(library = “seaborn”,ylim = (0,1), dist_type = “hist�
 s3_null.covars().plot(dist_type = “qq”)</p>
 <p># ASCII text output (suitable for LLM consumption):
 s3_null.covars().plot(library = “balance”, dist_type = “hist_ascii”)</p>
+<p># ASCII with grouped-bar histograms instead of comparative:
+s3_null.covars().plot(library = “balance”, comparative = False)</p>
 </div></blockquote>
 </dd></dl>
 

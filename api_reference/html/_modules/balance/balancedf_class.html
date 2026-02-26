@@ -676,6 +676,11 @@
 <span class="sd">        can be used for ASCII text output suitable for LLM consumption (only dist_type=&quot;hist_ascii&quot; is supported</span>
 <span class="sd">        with library=&quot;balance&quot;).</span>
 
+<span class="sd">        When using ``library=&quot;balance&quot;``, numeric variables are rendered as</span>
+<span class="sd">        comparative histograms by default (showing excess/deficit vs. a</span>
+<span class="sd">        baseline).  Pass ``comparative=False`` to use grouped-bar histograms</span>
+<span class="sd">        instead (same style as categorical variables).</span>
+
 <span class="sd">        This function is inherited as is when invoking BalanceDFCovars.plot, but some modifications are made when</span>
 <span class="sd">        preparing the data for BalanceDFOutcomes.plot and BalanceDFWeights.plot.</span>
 
@@ -736,6 +741,9 @@
 
 <span class="sd">                # ASCII text output (suitable for LLM consumption):</span>
 <span class="sd">                s3_null.covars().plot(library = &quot;balance&quot;, dist_type = &quot;hist_ascii&quot;)</span>
+
+<span class="sd">                # ASCII with grouped-bar histograms instead of comparative:</span>
+<span class="sd">                s3_null.covars().plot(library = &quot;balance&quot;, comparative = False)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">on_linked_samples</span><span class="p">:</span>
             <span class="n">dfs_to_add</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_BalanceDF_child_from_linked_samples</span><span class="p">()</span>
