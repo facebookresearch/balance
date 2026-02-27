@@ -626,6 +626,11 @@ class BalanceDF:
         can be used for ASCII text output suitable for LLM consumption (only dist_type="hist_ascii" is supported
         with library="balance").
 
+        When using ``library="balance"``, numeric variables are rendered as
+        comparative histograms by default (showing excess/deficit vs. a
+        baseline).  Pass ``comparative=False`` to use grouped-bar histograms
+        instead (same style as categorical variables).
+
         This function is inherited as is when invoking BalanceDFCovars.plot, but some modifications are made when
         preparing the data for BalanceDFOutcomes.plot and BalanceDFWeights.plot.
 
@@ -686,6 +691,9 @@ class BalanceDF:
 
                 # ASCII text output (suitable for LLM consumption):
                 s3_null.covars().plot(library = "balance", dist_type = "hist_ascii")
+
+                # ASCII with grouped-bar histograms instead of comparative:
+                s3_null.covars().plot(library = "balance", comparative = False)
         """
         if on_linked_samples:
             dfs_to_add = self._BalanceDF_child_from_linked_samples()

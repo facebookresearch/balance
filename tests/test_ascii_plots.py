@@ -594,30 +594,30 @@ class TestAsciiPlotsEndToEnd(balance.testutil.BalanceTestCase):
             """\
             === color (categorical) ===
 
-            Category | sample  population
+            Category | population  sample
                      |
-            blue     | ████████████████████ (50.0%)
-                     | ▒▒▒▒▒▒▒▒▒▒ (25.0%)
+            blue     | ██████████ (25.0%)
+                     | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (50.0%)
 
             green    | ██████████ (25.0%)
                      | ▒▒▒▒▒▒▒▒▒▒ (25.0%)
 
-            red      | ██████████ (25.0%)
-                     | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (50.0%)
+            red      | ████████████████████ (50.0%)
+                     | ▒▒▒▒▒▒▒▒▒▒ (25.0%)
 
-            Legend: █ sample  ▒ population
+            Legend: █ population  ▒ sample
             Bar lengths are proportional to weighted frequency within each dataset.
 
             === age (numeric, comparative) ===
 
-            Range          | sample (%)         | population (%)
-            ---------------------------------------------------------------
-            [10.00, 25.00) | █████████████ 50.0 | █████████████▒▒▒▒▒▒▒ 75.0
-            [25.00, 40.00] | █████████████ 50.0 | ███████     ] 25.0
-            ---------------------------------------------------------------
-            Total          | 100.0              | 100.0
+            Range          | population (%)            | sample (%)
+            ----------------------------------------------------------------------
+            [10.00, 25.00) | ████████████████████ 75.0 | █████████████      ] 50.0
+            [25.00, 40.00] | ███████ 25.0              | ███████▒▒▒▒▒▒ 50.0
+            ----------------------------------------------------------------------
+            Total          | 100.0                     | 100.0
 
-            Key: █ = shared with sample, ▒ = excess,    ] = deficit
+            Key: █ = shared with population, ▒ = excess,    ] = deficit
             """,
         )
 
@@ -801,9 +801,9 @@ class TestAsciiPlotsAdjustmentEndToEnd(balance.testutil.BalanceTestCase):
         # Verify the full output matches expected ASCII plots.
         #
         # The plot shows three datasets per variable:
-        #   █ sample     = unadjusted (original biased sample)
+        #   █ population = target population
         #   ▒ adjusted   = after IPW bias correction
-        #   ▐ population = target population
+        #   ▐ sample     = unadjusted (original biased sample)
         #
         # For gender: sample is 75% male / 25% female, population is 50/50.
         #   IPW adjustment shifts adjusted slightly toward the target.
@@ -813,32 +813,32 @@ class TestAsciiPlotsAdjustmentEndToEnd(balance.testutil.BalanceTestCase):
             """\
             === gender (categorical) ===
 
-            Category | sample  adjusted  population
+            Category | population  adjusted  sample
                      |
-            female   | ███████ (25.0%)
+            female   | █████████████ (50.0%)
                      | ▒▒▒▒▒▒▒ (26.2%)
-                     | ▐▐▐▐▐▐▐▐▐▐▐▐▐ (50.0%)
+                     | ▐▐▐▐▐▐▐ (25.0%)
 
-            male     | ████████████████████ (75.0%)
+            male     | █████████████ (50.0%)
                      | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (73.8%)
-                     | ▐▐▐▐▐▐▐▐▐▐▐▐▐ (50.0%)
+                     | ▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐ (75.0%)
 
-            Legend: █ sample  ▒ adjusted  ▐ population
+            Legend: █ population  ▒ adjusted  ▐ sample
             Bar lengths are proportional to weighted frequency within each dataset.
 
             === age_group (categorical) ===
 
-            Category | sample  adjusted  population
+            Category | population  adjusted  sample
                      |
-            old      | ████████████ (37.5%)
+            old      | ████████████████ (50.0%)
                      | ▒▒▒▒▒▒▒▒▒▒▒▒ (38.6%)
-                     | ▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐ (50.0%)
+                     | ▐▐▐▐▐▐▐▐▐▐▐▐ (37.5%)
 
-            young    | ████████████████████ (62.5%)
+            young    | ████████████████ (50.0%)
                      | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (61.4%)
-                     | ▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐ (50.0%)
+                     | ▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐ (62.5%)
 
-            Legend: █ sample  ▒ adjusted  ▐ population
+            Legend: █ population  ▒ adjusted  ▐ sample
             Bar lengths are proportional to weighted frequency within each dataset.
             """,
         )

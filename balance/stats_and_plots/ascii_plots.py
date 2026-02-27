@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -26,6 +26,34 @@ logger: logging.Logger = logging.getLogger(__package__)
 # Characters used to distinguish datasets in ASCII bars.
 # Each dataset gets a unique character from this list.
 BAR_CHARS: List[str] = ["█", "▒", "▐", "░", "▄", "▀"]
+
+# Preferred ordering for comparative plots: population first, then adjusted,
+# then sample.  Known internal names are placed in this order; any unknown
+# names are appended at the end in their original order.
+_PREFERRED_NAME_ORDER: List[str] = ["target", "self", "adjusted", "unadjusted"]
+
+
+def _reorder_dfs_and_names(
+    dfs: List[DataFrameWithWeight],
+    names: List[str],
+) -> Tuple[List[DataFrameWithWeight], List[str]]:
+    """Reorder *dfs* and *names* to the preferred display order.
+
+    The canonical display order is: population (``target``), adjusted
+    (``self`` when ``unadjusted`` is also present), sample
+    (``unadjusted``).  Names not in the preferred list keep their
+    original relative order and are appended after the known names.
+    """
+    order_map = {name: i for i, name in enumerate(_PREFERRED_NAME_ORDER)}
+    indexed = list(enumerate(names))
+    # Stable sort: known names by preferred position, unknown names stay in
+    # their original order at the end.
+    indexed.sort(key=lambda x: (order_map.get(x[1], len(_PREFERRED_NAME_ORDER)), x[0]))
+    reordered_indices = [i for i, _ in indexed]
+    return (
+        [dfs[i] for i in reordered_indices],
+        [names[i] for i in reordered_indices],
+    )
 
 
 def _auto_n_bins(n_samples: int, n_unique: int) -> int:
@@ -669,12 +697,27 @@ def ascii_plot_dist(
     bar_width: Optional[int] = None,
     dist_type: Optional[str] = None,
     separate_categories: bool = True,
+    comparative: bool = True,
 ) -> str:
     """Produces ASCII text comparing weighted distributions across datasets.
 
     Iterates over variables, classifying each as categorical or numeric
     (using the same logic as :func:`seaborn_plot_dist`), then delegates to
-    :func:`ascii_plot_bar` or :func:`ascii_comparative_hist` respectively.
+    the appropriate plotting function.
+
+    Two display modes are available for numeric variables:
+
+    - **comparative** (``comparative=True``, the default): numeric variables
+      are rendered with :func:`ascii_comparative_hist`, a columnar layout
+      where the first dataset is the baseline and subsequent datasets show
+      excess / deficit relative to it.
+    - **grouped** (``comparative=False``): numeric variables are rendered
+      with :func:`ascii_plot_hist`, a grouped-bar layout where each dataset
+      gets its own bar per bin (the same style used for categorical
+      variables).
+
+    Categorical variables always use :func:`ascii_plot_bar` regardless of
+    this setting.
 
     The output is both printed to stdout and returned as a string.
 
@@ -694,6 +737,11 @@ def ascii_plot_dist(
             A warning is logged if any other value is passed.
         separate_categories: If True, insert a blank line between categories
             in barplots for readability. Defaults to True.
+        comparative: If True (default), numeric variables use a columnar
+            comparative histogram (:func:`ascii_comparative_hist`) that
+            highlights differences relative to a baseline dataset.  If
+            False, numeric variables use a grouped-bar histogram
+            (:func:`ascii_plot_hist`) instead.
 
     Returns:
         The full ASCII output text.
@@ -719,30 +767,52 @@ def ascii_plot_dist(
             ...       numeric_n_values_threshold=0, n_bins=2, bar_width=20))
             === color (categorical) ===
             <BLANKLINE>
-            Category | sample  population
+            Category | population  sample
                      |
-            blue     | ████████████████████ (50.0%)
-                     | ▒▒▒▒▒▒▒▒▒▒ (25.0%)
+            blue     | ██████████ (25.0%)
+                     | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (50.0%)
             <BLANKLINE>
             green    | ██████████ (25.0%)
                      | ▒▒▒▒▒▒▒▒▒▒ (25.0%)
             <BLANKLINE>
-            red      | ██████████ (25.0%)
-                     | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (50.0%)
+            red      | ████████████████████ (50.0%)
+                     | ▒▒▒▒▒▒▒▒▒▒ (25.0%)
             <BLANKLINE>
-            Legend: █ sample  ▒ population
+            Legend: █ population  ▒ sample
             Bar lengths are proportional to weighted frequency within each dataset.
             <BLANKLINE>
             === age (numeric, comparative) ===
             <BLANKLINE>
-            Range          | sample (%)         | population (%)
+            Range          | population (%)     | sample (%)
             ---------------------------------------------------------------
             [10.00, 25.00) | █████████████ 50.0 | █████████████▒▒▒▒▒▒▒ 75.0
             [25.00, 40.00] | █████████████ 50.0 | ███████     ] 25.0
             ---------------------------------------------------------------
             Total          | 100.0              | 100.0
             <BLANKLINE>
-            Key: █ = shared with sample, ▒ = excess,    ] = deficit
+            Key: █ = shared with population, ▒ = excess,    ] = deficit
+
+        To use grouped-bar histograms (same style as categorical) instead
+        of comparative histograms for numeric variables, pass
+        ``comparative=False``::
+
+            >>> print(ascii_plot_dist(dfs, names=["self", "target"],
+            ...       numeric_n_values_threshold=0, n_bins=2, bar_width=20,
+            ...       comparative=False))
+            === color (categorical) ===
+            ...
+            === age (numeric) ===
+            <BLANKLINE>
+            Bin            | population  sample
+                           |
+            [10.00, 25.00) | ████████████████████ (75.0%)
+                           | ▒▒▒▒▒▒▒▒▒▒▒▒▒ (50.0%)
+            [25.00, 40.00] | ███████ (25.0%)
+                           | ▒▒▒▒▒▒▒▒▒▒▒▒▒ (50.0%)
+            <BLANKLINE>
+            Legend: █ population  ▒ sample
+            Bar lengths are proportional to weighted frequency within each dataset.
+            <BLANKLINE>
     """
     if dist_type is not None and dist_type != "hist_ascii":
         logger.warning(
@@ -751,6 +821,9 @@ def ascii_plot_dist(
         )
     if names is None:
         names = [f"df_{i}" for i in range(len(dfs))]
+
+    # Reorder so comparative plots show: population, adjusted, sample
+    dfs, names = _reorder_dfs_and_names(dfs, names)
 
     variables = choose_variables(*(d["df"] for d in dfs), variables=variables)
     logger.debug(f"ASCII plotting variables {variables}")
@@ -782,16 +855,28 @@ def ascii_plot_dist(
                 )
             )
         else:
-            output_parts.append(
-                ascii_comparative_hist(
-                    dfs,
-                    names,
-                    o,
-                    weighted=weighted,
-                    n_bins=n_bins,
-                    bar_width=bar_width,
+            if comparative:
+                output_parts.append(
+                    ascii_comparative_hist(
+                        dfs,
+                        names,
+                        o,
+                        weighted=weighted,
+                        n_bins=n_bins,
+                        bar_width=bar_width,
+                    )
                 )
-            )
+            else:
+                output_parts.append(
+                    ascii_plot_hist(
+                        dfs,
+                        names,
+                        o,
+                        weighted=weighted,
+                        n_bins=n_bins,
+                        bar_width=bar_width,
+                    )
+                )
 
     result = "\n".join(output_parts)
     print(result)
