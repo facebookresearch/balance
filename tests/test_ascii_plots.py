@@ -412,22 +412,20 @@ class TestAsciiPlotDist(balance.testutil.BalanceTestCase):
             {"df": df, "weight": pd.Series(np.ones(4))},
         ]
 
-        with (
-            patch(
-                "balance.stats_and_plots.ascii_plots.ascii_plot_hist",
-                return_value="HIST_BRANCH",
-            ) as mock_hist,
-            patch(
+        with patch(
+            "balance.stats_and_plots.ascii_plots.ascii_plot_hist",
+            return_value="HIST_BRANCH",
+        ) as mock_hist:
+            with patch(
                 "balance.stats_and_plots.ascii_plots.ascii_comparative_hist",
                 return_value="COMPARATIVE_BRANCH",
-            ) as mock_comp,
-        ):
-            result = ascii_plot_dist(
-                dfs,
-                names=["self"],
-                numeric_n_values_threshold=0,
-                comparative=False,
-            )
+            ) as mock_comp:
+                result = ascii_plot_dist(
+                    dfs,
+                    names=["self"],
+                    numeric_n_values_threshold=0,
+                    comparative=False,
+                )
 
         mock_hist.assert_called_once()
         mock_comp.assert_not_called()
@@ -447,26 +445,24 @@ class TestAsciiPlotDist(balance.testutil.BalanceTestCase):
             {"df": df, "weight": pd.Series(np.ones(4))},
         ]
 
-        with (
-            patch(
-                "balance.stats_and_plots.ascii_plots.ascii_plot_bar",
-                side_effect=["BAR_BRANCH"],
-            ) as mock_bar,
-            patch(
+        with patch(
+            "balance.stats_and_plots.ascii_plots.ascii_plot_bar",
+            side_effect=["BAR_BRANCH"],
+        ) as mock_bar:
+            with patch(
                 "balance.stats_and_plots.ascii_plots.ascii_plot_hist",
                 side_effect=["HIST_BRANCH"],
-            ) as mock_hist,
-            patch(
-                "balance.stats_and_plots.ascii_plots.ascii_comparative_hist",
-                side_effect=["COMPARATIVE_BRANCH"],
-            ) as mock_comp,
-        ):
-            result = ascii_plot_dist(
-                dfs,
-                names=["self"],
-                numeric_n_values_threshold=0,
-                comparative=False,
-            )
+            ) as mock_hist:
+                with patch(
+                    "balance.stats_and_plots.ascii_plots.ascii_comparative_hist",
+                    side_effect=["COMPARATIVE_BRANCH"],
+                ) as mock_comp:
+                    result = ascii_plot_dist(
+                        dfs,
+                        names=["self"],
+                        numeric_n_values_threshold=0,
+                        comparative=False,
+                    )
 
         mock_bar.assert_called_once()
         mock_hist.assert_called_once()
