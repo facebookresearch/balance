@@ -44,6 +44,10 @@
     appear in the final output CSV. Keep columns that are not id, weight,
     covariate, or outcome columns will be placed into ``ignore_columns`` during
     processing but are still retained and available in the output.
+- **Clarified `_prepare_input_model_matrix` argument docs**
+  - Updated docstrings in `balance.utils.model_matrix` with
+    explicit descriptions for `sample`, `target`, `variables`, and `add_na`
+    behavior when preparing model-matrix inputs.
 
 ## Bug Fixes
 
