@@ -332,7 +332,7 @@ def _prepare_input_model_matrix(
         sample_df = sample._df
     else:
         sample_df = sample
-    if sample_df.shape[0] == 0:
+    if sample_df.empty:
         raise ValueError("sample must have more than zero rows")
     # NOTE: .copy() not needed as it is copied anyway in _concat_frames
     sample_n = sample_df.shape[0]
