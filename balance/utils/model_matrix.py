@@ -308,9 +308,10 @@ def _prepare_input_model_matrix(
             unique. Defaults to True.
 
     Raises:
-        ValueError: If requested ``variables`` are not present in both inputs,
-            if variables contain ``[`` or ``]``, or if ``add_na=False`` drops
-            all rows from sample/target.
+        ValueError: If requested ``variables`` are not present in the
+            provided input frame(s) (and in both sample and target when target
+            is supplied), if variables contain ``[`` or ``]``, or if
+            ``add_na=False`` drops all rows from sample/target.
 
     Returns:
         Dict[str, Any]: returns a dictionary containing two keys: 'all_data' and 'sample_n'.
