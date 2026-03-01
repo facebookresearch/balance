@@ -78,6 +78,8 @@ hide_title: true
   - Added assertions that validate all three expected warnings are emitted when inferring an `id` column and default weights, including ID guessing, ID string casting, and automatic weight creation.
 - **Added focused unit coverage for IPW helpers**
   - Added tests for `link_transform()`, and `calc_dev()` to validate behavior for extreme probabilities, and finite 10-fold deviance summaries.
+- **Expanded ASCII plot dispatcher edge-case coverage**
+  - Added tests for `ascii_plot_dist` with `comparative=False` to verify direct dispatch to `ascii_plot_hist` and mixed categorical+numeric routing in a single call.
 
 # 0.16.0 (2026-02-09)
 
