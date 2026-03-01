@@ -290,7 +290,7 @@ class TestUtil(
             t,
         )
 
-        # Test zero rows warning:
+        # Test zero rows error:
         self.assertRaisesRegex(
             ValueError,
             "sample must have more than zero rows",

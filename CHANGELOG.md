@@ -61,6 +61,11 @@
     like `a`, `a_1`, and repeated `a` names appear together.
   - Duplicate columns are now renamed deterministically to guaranteed-unique
     names, preventing downstream clashes after formula sanitization.
+- **`model_matrix` empty-sample errors now raise `ValueError`**
+  - `_prepare_input_model_matrix()` now raises a deterministic `ValueError`
+    when the input sample has zero rows, instead of relying on an assertion.
+  - This aligns runtime behavior with documented exceptions and avoids
+    optimization-dependent assert behavior.
 
 ## Tests
 
