@@ -388,6 +388,87 @@ class TestAsciiPlotDist(balance.testutil.BalanceTestCase):
         result = ascii_plot_dist(dfs, names=["self"])
         self.assertIsInstance(result, str)
 
+    def test_non_comparative_numeric_dispatches_to_hist(self) -> None:
+        """Test that comparative=False uses the non-comparative numeric histogram."""
+        df = pd.DataFrame({"v1": [1.0, 2.0, 3.0, 4.0]})
+        dfs: List[DataFrameWithWeight] = [
+            {"df": df, "weight": pd.Series(np.ones(4))},
+        ]
+
+        result = ascii_plot_dist(
+            dfs,
+            names=["self"],
+            numeric_n_values_threshold=0,
+            comparative=False,
+        )
+
+        self.assertIn("(numeric)", result)
+        self.assertNotIn("(numeric, comparative)", result)
+
+    def test_non_comparative_numeric_dispatches_via_ascii_plot_hist(self) -> None:
+        """Test dispatcher calls ascii_plot_hist (not comparative) when comparative=False."""
+        df = pd.DataFrame({"v1": [1.0, 2.0, 3.0, 4.0]})
+        dfs: List[DataFrameWithWeight] = [
+            {"df": df, "weight": pd.Series(np.ones(4))},
+        ]
+
+        with patch(
+            "balance.stats_and_plots.ascii_plots.ascii_plot_hist",
+            return_value="HIST_BRANCH",
+        ) as mock_hist:
+            with patch(
+                "balance.stats_and_plots.ascii_plots.ascii_comparative_hist",
+                return_value="COMPARATIVE_BRANCH",
+            ) as mock_comp:
+                result = ascii_plot_dist(
+                    dfs,
+                    names=["self"],
+                    numeric_n_values_threshold=0,
+                    comparative=False,
+                )
+
+        mock_hist.assert_called_once()
+        mock_comp.assert_not_called()
+        self.assertEqual(result, "HIST_BRANCH")
+
+    def test_non_comparative_mixed_dispatches_categorical_and_numeric_once(
+        self,
+    ) -> None:
+        """Edge case: mixed columns still route correctly when comparative=False."""
+        df = pd.DataFrame(
+            {
+                "category": ["a", "b", "a", "b"],
+                "value": [1.0, 2.0, 3.0, 4.0],
+            }
+        )
+        dfs: List[DataFrameWithWeight] = [
+            {"df": df, "weight": pd.Series(np.ones(4))},
+        ]
+
+        with patch(
+            "balance.stats_and_plots.ascii_plots.ascii_plot_bar",
+            side_effect=["BAR_BRANCH"],
+        ) as mock_bar:
+            with patch(
+                "balance.stats_and_plots.ascii_plots.ascii_plot_hist",
+                side_effect=["HIST_BRANCH"],
+            ) as mock_hist:
+                with patch(
+                    "balance.stats_and_plots.ascii_plots.ascii_comparative_hist",
+                    side_effect=["COMPARATIVE_BRANCH"],
+                ) as mock_comp:
+                    result = ascii_plot_dist(
+                        dfs,
+                        names=["self"],
+                        numeric_n_values_threshold=0,
+                        comparative=False,
+                    )
+
+        mock_bar.assert_called_once()
+        mock_hist.assert_called_once()
+        mock_comp.assert_not_called()
+        self.assertEqual(result, "BAR_BRANCH\nHIST_BRANCH")
+
     def test_prints_to_stdout(self) -> None:
         """Test that the function prints output to stdout."""
         df = pd.DataFrame({"v1": [1.0, 2.0, 3.0]})
