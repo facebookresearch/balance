@@ -286,23 +286,29 @@ def _prepare_input_model_matrix(
 
     Args:
         sample (pd.DataFrame | Any): Input sample data as either a DataFrame or
-            a ``Sample``-like object that stores the data in ``._df``.
+            a ``Sample``-like object that stores the underlying frame in
+            ``._df``.
         target (pd.DataFrame | Any | None, optional): Optional target data as
-            either a DataFrame or a ``Sample``-like object. If provided, rows
-            are concatenated with sample rows for downstream matrix creation.
-            Defaults to None.
-        variables (List[str] | None, optional): Explicit variables to keep from
-            ``sample``/``target`` before concatenation. If None, variables are
-            inferred via ``choose_variables`` on the provided inputs.
-        add_na (bool, optional): If True, add missingness indicator columns to
-            the concatenated data. If False, drop rows with missing values and
-            preserve target-only-all-NA validation behavior. Defaults to True.
-        fix_columns_names (bool, optional): Defaults to True. If to fix the
-            column names of the DataFrame by changing special characters to
-            '_'.
+            either a DataFrame or a ``Sample``-like object. If provided, the
+            model-matrix inputs are prepared from a sample/target union of
+            variables and rows. Defaults to None.
+        variables (List[str] | None, optional): Variables to use from both
+            inputs. If provided, `choose_variables` validates that each
+            requested variable exists in both sample and target (when target is
+            supplied), otherwise it raises ``ValueError``. If None, variables
+            are inferred by `choose_variables`.
+        add_na (bool, optional): If True, add NA indicator columns before
+            model-matrix creation. If False, drop rows containing missing
+            values; this can raise ``ValueError`` if dropping rows empties the
+            sample or target. Defaults to True.
+        fix_columns_names (bool, optional): Whether to sanitize column names by
+            replacing non-word characters with ``_`` and making duplicate names
+            unique. Defaults to True.
 
     Raises:
-        Exception: "Variable names cannot contain characters '[' or ']'"
+        ValueError: If requested ``variables`` are not present in both inputs,
+            if variables contain ``[`` or ``]``, or if ``add_na=False`` drops
+            all rows from sample/target.
 
     Returns:
         Dict[str, Any]: returns a dictionary containing two keys: 'all_data' and 'sample_n'.
