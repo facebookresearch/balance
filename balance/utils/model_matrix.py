@@ -295,8 +295,10 @@ def _prepare_input_model_matrix(
         variables (List[str] | None, optional): Variables to use from both
             inputs. If provided, `choose_variables` validates that each
             requested variable exists in both sample and target (when target is
-            supplied), otherwise it raises ``ValueError``. If None, variables
-            are inferred by `choose_variables`.
+            supplied), otherwise it raises ``ValueError``. For ``Sample``
+            inputs, this validation/inference is based on covariate names
+            (``sample.covars().names()``), not all raw ``._df`` columns. If
+            None, variables are inferred by `choose_variables`.
         add_na (bool, optional): If True, add NA indicator columns before
             model-matrix creation. If False, drop rows containing missing
             values; this can raise ``ValueError`` if dropping rows empties the
