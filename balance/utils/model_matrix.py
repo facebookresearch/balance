@@ -285,11 +285,11 @@ def _prepare_input_model_matrix(
         - Add na indicator if required.
 
     Args:
-        sample (pd.DataFrame | Any): Input sample data as either a DataFrame or
-            a ``Sample``-like object that stores the underlying frame in
-            ``._df``.
+        sample (pd.DataFrame | Any): Input sample data as either a
+            ``pandas.DataFrame`` or a ``Sample`` object from
+            ``balance.sample_class`` (recognized via ``_isinstance_sample``).
         target (pd.DataFrame | Any | None, optional): Optional target data as
-            either a DataFrame or a ``Sample``-like object. If provided, the
+            either a ``DataFrame`` or a ``Sample`` object. If provided, the
             model-matrix inputs are prepared from a sample/target union of
             variables and rows. Defaults to None.
         variables (List[str] | None, optional): Variables to use from both
@@ -311,7 +311,8 @@ def _prepare_input_model_matrix(
         ValueError: If requested ``variables`` are not present in the
             provided input frame(s) (and in both sample and target when target
             is supplied), if variables contain ``[`` or ``]``, or if
-            ``add_na=False`` drops all rows from sample/target.
+            ``add_na=False`` drops all rows from sample/target, or if
+            sample has zero rows.
 
     Returns:
         Dict[str, Any]: returns a dictionary containing two keys: 'all_data' and 'sample_n'.
