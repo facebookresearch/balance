@@ -219,7 +219,8 @@ def prop_above_and_below(
     w: list[Any] | pd.Series | npt.NDArray | pd.DataFrame,
     below: tuple[float, ...] | list[float] | None = (1 / 10, 1 / 5, 1 / 3, 1 / 2, 1),
     above: tuple[float, ...] | list[float] | None = (1, 2, 3, 5, 10),
-    return_as_series: Literal[False] = False,
+    *,
+    return_as_series: Literal[False],
 ) -> PropAboveBelowResult | None:
     pass
 
@@ -249,14 +250,15 @@ def prop_above_and_below(
             DataFrame, only the first column is used.
         below (tuple[float, ...] | list[float] | None, optional):
             values to check which proportion of normalized weights are *below* them.
-            Using None returns None.
+            Using None omits below-threshold calculations.
             Defaults to (1/10, 1/5, 1/3, 1/2, 1).
         above (tuple[float, ...] | list[float] | None, optional):
             values to check which proportion of normalized weights are *above* (or equal) to them.
-            Using None returns None.
+            Using None omits above-threshold calculations.
             Defaults to (1, 2, 3, 5, 10).
         return_as_series (bool, optional): If true returns one pd.Series of values.
-            If False will return a dict with two pd.Series (one for below and one for above).
+            If False returns ``PropAboveBelowResult`` with ``below``/``above`` entries
+            containing a ``pd.Series`` or ``None`` for omitted groups.
             Defaults to True.
 
     Returns:
