@@ -230,6 +230,20 @@ class TestBalance_weights_stats(
         self.assertEqual(result_empty.to_list(), [])
         self.assertEqual(result_empty.index.to_list(), [])
 
+        # Empty iterables are distinct from omitted groups in dict mode.
+        result_dict_empty = prop_above_and_below(
+            weights,
+            below=(),
+            above=(),
+            return_as_series=False,
+        )
+        self.assertIsNotNone(result_dict_empty)
+        result_dict_empty = _assert_type(result_dict_empty)
+        self.assertIsNotNone(result_dict_empty["below"])
+        self.assertIsNotNone(result_dict_empty["above"])
+        self.assertEqual(result_dict_empty["below"].to_list(), [])
+        self.assertEqual(result_dict_empty["above"].to_list(), [])
+
         # Dict mode should preserve None for omitted threshold groups.
         result_dict_only_above = prop_above_and_below(
             weights,

@@ -262,11 +262,14 @@ def prop_above_and_below(
             Defaults to True.
 
     Returns:
-        pd.Series | dict:
+        pd.Series | PropAboveBelowResult | None:
         If return_as_series is True we get pd.Series with proportions of (normalized weights)
         that are below/above some numbers, the index indicates which threshold was checked
         (the values in the index are rounded up to 3 points for printing purposes).
-        If return_as_series is False we get a dict with 'below' and 'above' with the relevant pd.Series (or None).
+        If return_as_series is False we get ``PropAboveBelowResult`` with
+        ``below`` and ``above`` keys whose values are the relevant pd.Series
+        (or ``None`` when a side is omitted). If both ``below`` and ``above``
+        are ``None``, the function returns ``None``.
 
     Examples:
         ::
@@ -345,7 +348,7 @@ def prop_above_and_below(
     # decide if to return one series or a dict
     if return_as_series:
         pieces = [s for s in (prop_below_series, prop_above_series) if s is not None]
-        out = pd.concat(pieces) if pieces else None
+        out = pd.concat(pieces)
     else:
         out = PropAboveBelowResult(below=prop_below_series, above=prop_above_series)
 
