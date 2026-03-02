@@ -54,6 +54,10 @@ hide_title: true
     appear in the final output CSV. Keep columns that are not id, weight,
     covariate, or outcome columns will be placed into ``ignore_columns`` during
     processing but are still retained and available in the output.
+- **Clarified `_prepare_input_model_matrix` argument docs**
+  - Updated docstrings in `balance.utils.model_matrix` with
+    explicit descriptions for `sample`, `target`, `variables`, and `add_na`
+    behavior when preparing model-matrix inputs.
 
 ## Bug Fixes
 
@@ -67,6 +71,11 @@ hide_title: true
     like `a`, `a_1`, and repeated `a` names appear together.
   - Duplicate columns are now renamed deterministically to guaranteed-unique
     names, preventing downstream clashes after formula sanitization.
+- **`model_matrix` empty-sample errors now raise `ValueError`**
+  - `_prepare_input_model_matrix()` now raises a deterministic `ValueError`
+    when the input sample has zero rows, instead of relying on an assertion.
+  - This aligns runtime behavior with documented exceptions and avoids
+    optimization-dependent assert behavior.
 
 ## Tests
 

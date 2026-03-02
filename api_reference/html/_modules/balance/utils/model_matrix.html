@@ -337,14 +337,34 @@
 <span class="sd">        - Add na indicator if required.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        sample (pd.DataFrame | Any): This can either be a DataFrame or a Sample object. TODO: add text.</span>
-<span class="sd">        target (pd.DataFrame | Any | None, optional): This can either be a DataFrame or a Sample object.. Defaults to None.</span>
-<span class="sd">        variables (List[str] | None, optional): Defaults to None. TODO: add text.</span>
-<span class="sd">        add_na (bool, optional): Defaults to True. TODO: add text.</span>
-<span class="sd">        fix_columns_names (bool, optional): Defaults to True. If to fix the column names of the DataFrame by changing special characters to &#39;_&#39;.</span>
+<span class="sd">        sample (pd.DataFrame | Any): Input sample data as either a</span>
+<span class="sd">            ``pandas.DataFrame`` or a ``Sample`` object from</span>
+<span class="sd">            ``balance.sample_class`` (recognized via ``_isinstance_sample``).</span>
+<span class="sd">        target (pd.DataFrame | Any | None, optional): Optional target data as</span>
+<span class="sd">            either a ``DataFrame`` or a ``Sample`` object. If provided, the</span>
+<span class="sd">            model-matrix inputs are prepared from a sample/target union of</span>
+<span class="sd">            variables and rows. Defaults to None.</span>
+<span class="sd">        variables (List[str] | None, optional): Variables to use from both</span>
+<span class="sd">            inputs. If provided, `choose_variables` validates that each</span>
+<span class="sd">            requested variable exists in both sample and target (when target is</span>
+<span class="sd">            supplied), otherwise it raises ``ValueError``. For ``Sample``</span>
+<span class="sd">            inputs, this validation/inference is based on covariate names</span>
+<span class="sd">            (``sample.covars().names()``), not all raw ``._df`` columns. If</span>
+<span class="sd">            None, variables are inferred by `choose_variables`.</span>
+<span class="sd">        add_na (bool, optional): If True, add NA indicator columns before</span>
+<span class="sd">            model-matrix creation. If False, drop rows containing missing</span>
+<span class="sd">            values; this can raise ``ValueError`` if dropping rows empties the</span>
+<span class="sd">            sample or target. Defaults to True.</span>
+<span class="sd">        fix_columns_names (bool, optional): Whether to sanitize column names by</span>
+<span class="sd">            replacing non-word characters with ``_`` and making duplicate names</span>
+<span class="sd">            unique. Defaults to True.</span>
 
 <span class="sd">    Raises:</span>
-<span class="sd">        Exception: &quot;Variable names cannot contain characters &#39;[&#39; or &#39;]&#39;&quot;</span>
+<span class="sd">        ValueError: If requested ``variables`` are not present in the</span>
+<span class="sd">            provided input frame(s) (and in both sample and target when target</span>
+<span class="sd">            is supplied), if variables contain ``[`` or ``]``, or if</span>
+<span class="sd">            ``add_na=False`` drops all rows from sample/target, or if</span>
+<span class="sd">            sample has zero rows.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict[str, Any]: returns a dictionary containing two keys: &#39;all_data&#39; and &#39;sample_n&#39;.</span>
@@ -364,7 +384,8 @@
         <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample</span>
-    <span class="k">assert</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;sample must have more than zero rows&quot;</span>
+    <span class="k">if</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;sample must have more than zero rows&quot;</span><span class="p">)</span>
     <span class="c1"># NOTE: .copy() not needed as it is copied anyway in _concat_frames</span>
     <span class="n">sample_n</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
