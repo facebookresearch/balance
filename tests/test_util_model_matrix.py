@@ -290,9 +290,9 @@ class TestUtil(
             t,
         )
 
-        # Test zero rows warning:
+        # Test zero rows error:
         self.assertRaisesRegex(
-            AssertionError,
+            ValueError,
             "sample must have more than zero rows",
             model_matrix,
             pd.DataFrame(),
