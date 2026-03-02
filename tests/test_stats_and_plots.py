@@ -217,6 +217,58 @@ class TestBalance_weights_stats(
         }
         self.assertEqual({k: v.to_list() for k, v in result_dict.items()}, expected)
 
+    def test_prop_above_and_below_edge_cases(self) -> None:
+        """Cover edge combinations for thresholds and return formats."""
+        from balance.stats_and_plots.weights_stats import prop_above_and_below
+
+        weights = pd.Series((1.0, 2.0, 3.0, 4.0))
+
+        # Empty threshold iterables should return an empty Series in series mode.
+        result_empty = prop_above_and_below(weights, below=(), above=())
+        self.assertIsNotNone(result_empty)
+        result_empty = _assert_type(result_empty, pd.Series)
+        self.assertEqual(result_empty.to_list(), [])
+        self.assertEqual(result_empty.index.to_list(), [])
+
+        # Dict mode should preserve None for omitted threshold groups.
+        result_dict_only_above = prop_above_and_below(
+            weights,
+            below=None,
+            above=(1, 2),
+            return_as_series=False,
+        )
+        self.assertIsNotNone(result_dict_only_above)
+        result_dict_only_above = _assert_type(result_dict_only_above)
+        self.assertIsNone(result_dict_only_above["below"])
+        self.assertEqual(
+            result_dict_only_above["above"].index.to_list(),
+            ["prop(w >= 1)", "prop(w >= 2)"],
+        )
+
+        result_dict_only_below = prop_above_and_below(
+            weights,
+            below=(0.5, 1),
+            above=None,
+            return_as_series=False,
+        )
+        self.assertIsNotNone(result_dict_only_below)
+        result_dict_only_below = _assert_type(result_dict_only_below)
+        self.assertEqual(
+            result_dict_only_below["below"].index.to_list(),
+            ["prop(w < 0.5)", "prop(w < 1)"],
+        )
+        self.assertIsNone(result_dict_only_below["above"])
+
+        # If both groups are omitted, function should return None in all modes.
+        self.assertIsNone(
+            prop_above_and_below(
+                weights,
+                below=None,
+                above=None,
+                return_as_series=False,
+            )
+        )
+
     def test_weights_diagnostics_accept_list_and_ndarray_input(self) -> None:
         """Ensure diagnostics are equivalent across list/ndarray/Series inputs."""
         from balance.stats_and_plots.weights_stats import (
