@@ -8,13 +8,18 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, Literal, overload, TypedDict
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 
 logger: logging.Logger = logging.getLogger(__package__)
+
+
+class PropAboveBelowResult(TypedDict):
+    below: pd.Series | None
+    above: pd.Series | None
 
 
 ##########################################
@@ -199,12 +204,33 @@ def nonparametric_skew(
     return (w.mean() - w.median()) / w.std()
 
 
+@overload
+def prop_above_and_below(
+    w: list[Any] | pd.Series | npt.NDArray | pd.DataFrame,
+    below: tuple[float, ...] | list[float] | None = (1 / 10, 1 / 5, 1 / 3, 1 / 2, 1),
+    above: tuple[float, ...] | list[float] | None = (1, 2, 3, 5, 10),
+    return_as_series: Literal[True] = True,
+) -> pd.Series | None:
+    pass
+
+
+@overload
+def prop_above_and_below(
+    w: list[Any] | pd.Series | npt.NDArray | pd.DataFrame,
+    below: tuple[float, ...] | list[float] | None = (1 / 10, 1 / 5, 1 / 3, 1 / 2, 1),
+    above: tuple[float, ...] | list[float] | None = (1, 2, 3, 5, 10),
+    *,
+    return_as_series: Literal[False],
+) -> PropAboveBelowResult | None:
+    pass
+
+
 def prop_above_and_below(
     w: list[Any] | pd.Series | npt.NDArray | pd.DataFrame,
     below: tuple[float, ...] | list[float] | None = (1 / 10, 1 / 5, 1 / 3, 1 / 2, 1),
     above: tuple[float, ...] | list[float] | None = (1, 2, 3, 5, 10),
     return_as_series: bool = True,
-) -> pd.Series | dict[Any, Any] | None:
+) -> pd.Series | PropAboveBelowResult | None:
     # TODO (p2): look more in the literature (are there references for using this vs another, or none at all?)
     #            update the doc with insights, once done.
     """
@@ -224,22 +250,26 @@ def prop_above_and_below(
             DataFrame, only the first column is used.
         below (tuple[float, ...] | list[float] | None, optional):
             values to check which proportion of normalized weights are *below* them.
-            Using None returns None.
+            Using None omits below-threshold calculations.
             Defaults to (1/10, 1/5, 1/3, 1/2, 1).
         above (tuple[float, ...] | list[float] | None, optional):
             values to check which proportion of normalized weights are *above* (or equal) to them.
-            Using None returns None.
+            Using None omits above-threshold calculations.
             Defaults to (1, 2, 3, 5, 10).
         return_as_series (bool, optional): If true returns one pd.Series of values.
-            If False will return a dict with two pd.Series (one for below and one for above).
+            If False returns ``PropAboveBelowResult`` with ``below``/``above`` entries
+            containing a ``pd.Series`` or ``None`` for omitted groups.
             Defaults to True.
 
     Returns:
-        pd.Series | dict:
+        pd.Series | PropAboveBelowResult | None:
         If return_as_series is True we get pd.Series with proportions of (normalized weights)
         that are below/above some numbers, the index indicates which threshold was checked
         (the values in the index are rounded up to 3 points for printing purposes).
-        If return_as_series is False we get a dict with 'below' and 'above' with the relevant pd.Series (or None).
+        If return_as_series is False we get ``PropAboveBelowResult`` with
+        ``below`` and ``above`` keys whose values are the relevant pd.Series
+        (or ``None`` when a side is omitted). If both ``below`` and ``above``
+        are ``None``, the function returns ``None``.
 
     Examples:
         ::
@@ -317,16 +347,12 @@ def prop_above_and_below(
 
     # decide if to return one series or a dict
     if return_as_series:
-        out = pd.concat(
-            [  # pyre-ignore[6]: pd.concat supports Series.
-                prop_below_series,
-                prop_above_series,
-            ]
-        )
+        pieces = [s for s in (prop_below_series, prop_above_series) if s is not None]
+        out = pd.concat(pieces)
     else:
-        out = {"below": prop_below_series, "above": prop_above_series}
+        out = PropAboveBelowResult(below=prop_below_series, above=prop_above_series)
 
-    return out  # pyre-ignore[7]:  TODO: see if we can fix this pyre
+    return out
 
 
 def weighted_median_breakdown_point(
