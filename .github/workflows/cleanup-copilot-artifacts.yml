@@ -19,8 +19,9 @@ jobs:
         run: |
           echo "Deleting artifacts for run ID: ${{ github.event.workflow_run.id }}"
           mapfile -t artifact_ids < <(gh api \
+            --paginate \
             -H "Accept: application/vnd.github+json" \
-            /repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}/artifacts \
+            /repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}/artifacts?per_page=100 \
             --jq '.artifacts[].id')
           if [ ${#artifact_ids[@]} -eq 0 ]; then
             echo "No artifacts found for this run."
