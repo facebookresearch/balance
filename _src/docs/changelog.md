@@ -76,6 +76,11 @@ hide_title: true
     when the input sample has zero rows, instead of relying on an assertion.
   - This aligns runtime behavior with documented exceptions and avoids
     optimization-dependent assert behavior.
+- **Stabilized `prop_above_and_below()` return paths**
+  - `prop_above_and_below()` now builds concatenated outputs only from present
+    Series objects and returns `None` when both `below` and `above` are `None`,
+    avoiding ambiguous concat inputs while preserving existing behavior for valid
+    threshold sets.
 
 ## Tests
 
@@ -89,6 +94,8 @@ hide_title: true
   - Added tests for `link_transform()`, and `calc_dev()` to validate behavior for extreme probabilities, and finite 10-fold deviance summaries.
 - **Expanded ASCII plot dispatcher edge-case coverage**
   - Added tests for `ascii_plot_dist` with `comparative=False` to verify direct dispatch to `ascii_plot_hist` and mixed categorical+numeric routing in a single call.
+- **Expanded `prop_above_and_below()` edge-case coverage**
+  - Added focused tests for empty threshold iterables, mixed `None` threshold groups in dict mode, and explicit all-`None` threshold handling across return formats.
 
 # 0.16.0 (2026-02-09)
 
