@@ -18,20 +18,20 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Deleting artifacts for run ID: ${{ github.event.workflow_run.id }}"
-          artifact_ids=$(gh api \
+          mapfile -t artifact_ids < <(gh api \
             -H "Accept: application/vnd.github+json" \
             /repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}/artifacts \
             --jq '.artifacts[].id')
-          if [ -z "$artifact_ids" ]; then
+          if [ ${#artifact_ids[@]} -eq 0 ]; then
             echo "No artifacts found for this run."
           else
-            while read -r artifact_id; do
+            for artifact_id in "${artifact_ids[@]}"; do
               gh api \
                 --silent \
                 -X DELETE \
                 -H "Accept: application/vnd.github+json" \
                 /repos/${{ github.repository }}/actions/artifacts/"$artifact_id" \
                 || echo "Warning: failed to delete artifact $artifact_id"
-            done <<< "$artifact_ids"
+            done
           fi
           echo "Artifact cleanup completed"
