@@ -1,0 +1,38 @@
+name: Cleanup Copilot Artifacts
+
+on:
+  workflow_run:
+    workflows: ["Copilot code review"]
+    types:
+      - completed
+
+permissions:
+  actions: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete artifacts from Copilot code review run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Deleting artifacts for run ID: ${{ github.event.workflow_run.id }}"
+          mapfile -t artifact_ids < <(gh api \
+            --paginate \
+            -H "Accept: application/vnd.github+json" \
+            /repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}/artifacts?per_page=100 \
+            --jq '.artifacts[].id')
+          if [ ${#artifact_ids[@]} -eq 0 ]; then
+            echo "No artifacts found for this run."
+          else
+            for artifact_id in "${artifact_ids[@]}"; do
+              gh api \
+                --silent \
+                -X DELETE \
+                -H "Accept: application/vnd.github+json" \
+                /repos/${{ github.repository }}/actions/artifacts/"$artifact_id" \
+                || echo "Warning: failed to delete artifact $artifact_id"
+            done
+          fi
+          echo "Artifact cleanup completed"
