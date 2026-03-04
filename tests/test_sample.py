@@ -2507,6 +2507,15 @@ class TestSampleDiagnosticsIPWModelParams(balance.testutil.BalanceTestCase):
         )
         return sample.set_target(target).adjust(method="ipw", max_de=1.5)
 
+    def _get_ipw_fit(self, adjusted: Sample) -> Any:
+        """Return the fitted sklearn estimator for an IPW-adjusted sample."""
+        model = adjusted.model()
+        self.assertIsNotNone(model)
+        self.assertIn("fit", model)
+        fit = model["fit"]
+        self.assertIsNotNone(fit)
+        return fit
+
     def test_diagnostics_includes_n_iter_intercept(self) -> None:
         """Test diagnostics includes n_iter_ and intercept_ from IPW fit.
 
@@ -2567,63 +2576,62 @@ class TestSampleDiagnosticsIPWModelParams(balance.testutil.BalanceTestCase):
             & (diagnostics["var"] == "l1_ratio")
         ]
         self.assertEqual(len(l1_ratio_rows), 1)
-        self.assertTrue(np.isfinite(float(l1_ratio_rows["val"].iloc[0])))
+
+        diag_l1_ratio = float(l1_ratio_rows["val"].iloc[0])
+        fit = self._get_ipw_fit(adjusted)
+        fit_l1_ratio = fit.get_params(deep=False).get("l1_ratio", None)
+        if fit_l1_ratio is None:
+            self.assertTrue(np.isnan(diag_l1_ratio))
+        else:
+            self.assertAlmostEqual(diag_l1_ratio, float(fit_l1_ratio))
 
     def test_diagnostics_skip_non_string_solver_and_penalty(self) -> None:
         """Non-string solver/penalty values should not emit dedicated diagnostics rows."""
         adjusted = self._make_adjusted_ipw_sample()
 
-        if adjusted._adjustment_model is not None:
-            fit = adjusted._adjustment_model.get("fit")
-            if fit is not None:
-                original_solver = getattr(fit, "solver", None)
-                original_penalty = getattr(fit, "penalty", None)
-                try:
-                    fit.solver = 123
-                    fit.penalty = None
-                    diagnostics = adjusted.diagnostics()
-                    self.assertEqual(
-                        len(diagnostics[diagnostics["metric"] == "ipw_solver"]),
-                        0,
-                    )
-                    self.assertEqual(
-                        len(diagnostics[diagnostics["metric"] == "ipw_penalty"]),
-                        0,
-                    )
-                finally:
-                    if original_solver is not None:
-                        fit.solver = original_solver
-                    if original_penalty is not None:
-                        fit.penalty = original_penalty
+        fit = self._get_ipw_fit(adjusted)
+        original_solver = getattr(fit, "solver", None)
+        original_penalty = getattr(fit, "penalty", None)
+        try:
+            fit.solver = 123
+            fit.penalty = None
+            diagnostics = adjusted.diagnostics()
+            self.assertEqual(
+                len(diagnostics[diagnostics["metric"] == "ipw_solver"]),
+                0,
+            )
+            self.assertEqual(
+                len(diagnostics[diagnostics["metric"] == "ipw_penalty"]),
+                0,
+            )
+        finally:
+            fit.solver = original_solver
+            fit.penalty = original_penalty
 
     def test_diagnostics_coerces_non_scalar_tol_and_l1_ratio(self) -> None:
         """Non-scalar values for tol/l1_ratio should be coerced to NaN."""
         adjusted = self._make_adjusted_ipw_sample()
 
-        if adjusted._adjustment_model is not None:
-            fit = adjusted._adjustment_model.get("fit")
-            if fit is not None:
-                original_tol = getattr(fit, "tol", None)
-                original_l1_ratio = getattr(fit, "l1_ratio", None)
-                try:
-                    fit.tol = [0.1, 0.2]
-                    fit.l1_ratio = {"unexpected": "value"}
-                    diagnostics = adjusted.diagnostics()
-                    tol_row = diagnostics[
-                        (diagnostics["metric"] == "model_glance")
-                        & (diagnostics["var"] == "tol")
-                    ]
-                    l1_ratio_row = diagnostics[
-                        (diagnostics["metric"] == "model_glance")
-                        & (diagnostics["var"] == "l1_ratio")
-                    ]
-                    self.assertTrue(np.isnan(float(tol_row["val"].iloc[0])))
-                    self.assertTrue(np.isnan(float(l1_ratio_row["val"].iloc[0])))
-                finally:
-                    if original_tol is not None:
-                        fit.tol = original_tol
-                    if original_l1_ratio is not None:
-                        fit.l1_ratio = original_l1_ratio
+        fit = self._get_ipw_fit(adjusted)
+        original_tol = getattr(fit, "tol", None)
+        original_l1_ratio = getattr(fit, "l1_ratio", None)
+        try:
+            fit.tol = [0.1, 0.2]
+            fit.l1_ratio = {"unexpected": "value"}
+            diagnostics = adjusted.diagnostics()
+            tol_row = diagnostics[
+                (diagnostics["metric"] == "model_glance")
+                & (diagnostics["var"] == "tol")
+            ]
+            l1_ratio_row = diagnostics[
+                (diagnostics["metric"] == "model_glance")
+                & (diagnostics["var"] == "l1_ratio")
+            ]
+            self.assertTrue(np.isnan(float(tol_row["val"].iloc[0])))
+            self.assertTrue(np.isnan(float(l1_ratio_row["val"].iloc[0])))
+        finally:
+            fit.tol = original_tol
+            fit.l1_ratio = original_l1_ratio
 
     def test_diagnostics_multi_class_converted_to_string(self) -> None:
         """Test diagnostics converts non-string multi_class to string.
@@ -2635,26 +2643,21 @@ class TestSampleDiagnosticsIPWModelParams(balance.testutil.BalanceTestCase):
 
         # Modify the model's fit object to have a non-string multi_class
         # to test the conversion path (lines 1878-1879)
-        if adjusted._adjustment_model is not None:
-            fit = adjusted._adjustment_model.get("fit")
-            if fit is not None:
-                # Temporarily override multi_class with a non-string value
-                original_multi_class = getattr(fit, "multi_class", None)
-                try:
-                    # Set multi_class to a non-string value (e.g., an int)
-                    fit.multi_class = 123
-                    diagnostics = adjusted.diagnostics()
-                    # Check that ipw_multi_class is present and is a string
-                    multi_class_rows = diagnostics[
-                        diagnostics["metric"] == "ipw_multi_class"
-                    ]
-                    self.assertGreater(len(multi_class_rows), 0)
-                    # The value should be converted to string "123"
-                    self.assertEqual(multi_class_rows["var"].iloc[0], "123")
-                finally:
-                    # Restore original value
-                    if original_multi_class is not None:
-                        fit.multi_class = original_multi_class
+        fit = self._get_ipw_fit(adjusted)
+        # Temporarily override multi_class with a non-string value
+        original_multi_class = getattr(fit, "multi_class", None)
+        try:
+            # Set multi_class to a non-string value (e.g., an int)
+            fit.multi_class = 123
+            diagnostics = adjusted.diagnostics()
+            # Check that ipw_multi_class is present and is a string
+            multi_class_rows = diagnostics[diagnostics["metric"] == "ipw_multi_class"]
+            self.assertGreater(len(multi_class_rows), 0)
+            # The value should be converted to string "123"
+            self.assertEqual(multi_class_rows["var"].iloc[0], "123")
+        finally:
+            # Restore original value
+            fit.multi_class = original_multi_class
 
     def test_diagnostics_n_iter_array_larger_than_one(self) -> None:
         """Test diagnostics handles n_iter_ array with size > 1.
@@ -2666,26 +2669,23 @@ class TestSampleDiagnosticsIPWModelParams(balance.testutil.BalanceTestCase):
 
         # Modify the model's fit object to have n_iter_ as an array with size > 1
         # to test the path where we skip the value (line 1838)
-        if adjusted._adjustment_model is not None:
-            fit = adjusted._adjustment_model.get("fit")
-            if fit is not None:
-                original_n_iter = getattr(fit, "n_iter_", None)
-                try:
-                    # Set n_iter_ to an array with size > 1
-                    fit.n_iter_ = np.array([10, 20, 30])
-                    diagnostics = adjusted.diagnostics()
-                    # Check that diagnostics still works
-                    self.assertIsNotNone(diagnostics)
-                    # n_iter_ should NOT be in ipw_model_glance since size > 1
-                    n_iter_rows = diagnostics[
-                        (diagnostics["metric"] == "ipw_model_glance")
-                        & (diagnostics["var"] == "n_iter_")
-                    ]
-                    self.assertEqual(len(n_iter_rows), 0)
-                finally:
-                    # Restore original value
-                    if original_n_iter is not None:
-                        fit.n_iter_ = original_n_iter
+        fit = self._get_ipw_fit(adjusted)
+        original_n_iter = getattr(fit, "n_iter_", None)
+        try:
+            # Set n_iter_ to an array with size > 1
+            fit.n_iter_ = np.array([10, 20, 30])
+            diagnostics = adjusted.diagnostics()
+            # Check that diagnostics still works
+            self.assertIsNotNone(diagnostics)
+            # n_iter_ should NOT be in ipw_model_glance since size > 1
+            n_iter_rows = diagnostics[
+                (diagnostics["metric"] == "ipw_model_glance")
+                & (diagnostics["var"] == "n_iter_")
+            ]
+            self.assertEqual(len(n_iter_rows), 0)
+        finally:
+            # Restore original value
+            fit.n_iter_ = original_n_iter
 
     def test_diagnostics_n_iter_intercept_none_continue(self) -> None:
         """Test diagnostics continues when n_iter_ or intercept_ is None.
@@ -2697,36 +2697,32 @@ class TestSampleDiagnosticsIPWModelParams(balance.testutil.BalanceTestCase):
 
         # Modify the model's fit object to have n_iter_ and intercept_ set to None
         # to test the continue path (line 1838)
-        if adjusted._adjustment_model is not None:
-            fit = adjusted._adjustment_model.get("fit")
-            if fit is not None:
-                original_n_iter = getattr(fit, "n_iter_", None)
-                original_intercept = getattr(fit, "intercept_", None)
-                try:
-                    # Set n_iter_ and intercept_ to None to trigger line 1838
-                    fit.n_iter_ = None
-                    fit.intercept_ = None
-                    diagnostics = adjusted.diagnostics()
-                    # Check that diagnostics still works
-                    self.assertIsNotNone(diagnostics)
-                    # n_iter_ should NOT be in ipw_model_glance since it's None
-                    n_iter_rows = diagnostics[
-                        (diagnostics["metric"] == "ipw_model_glance")
-                        & (diagnostics["var"] == "n_iter_")
-                    ]
-                    self.assertEqual(len(n_iter_rows), 0)
-                    # intercept_ should NOT be in ipw_model_glance since it's None
-                    intercept_rows = diagnostics[
-                        (diagnostics["metric"] == "ipw_model_glance")
-                        & (diagnostics["var"] == "intercept_")
-                    ]
-                    self.assertEqual(len(intercept_rows), 0)
-                finally:
-                    # Restore original values
-                    if original_n_iter is not None:
-                        fit.n_iter_ = original_n_iter
-                    if original_intercept is not None:
-                        fit.intercept_ = original_intercept
+        fit = self._get_ipw_fit(adjusted)
+        original_n_iter = getattr(fit, "n_iter_", None)
+        original_intercept = getattr(fit, "intercept_", None)
+        try:
+            # Set n_iter_ and intercept_ to None to trigger line 1838
+            fit.n_iter_ = None
+            fit.intercept_ = None
+            diagnostics = adjusted.diagnostics()
+            # Check that diagnostics still works
+            self.assertIsNotNone(diagnostics)
+            # n_iter_ should NOT be in ipw_model_glance since it's None
+            n_iter_rows = diagnostics[
+                (diagnostics["metric"] == "ipw_model_glance")
+                & (diagnostics["var"] == "n_iter_")
+            ]
+            self.assertEqual(len(n_iter_rows), 0)
+            # intercept_ should NOT be in ipw_model_glance since it's None
+            intercept_rows = diagnostics[
+                (diagnostics["metric"] == "ipw_model_glance")
+                & (diagnostics["var"] == "intercept_")
+            ]
+            self.assertEqual(len(intercept_rows), 0)
+        finally:
+            # Restore original values
+            fit.n_iter_ = original_n_iter
+            fit.intercept_ = original_intercept
 
 
 class TestSampleOutcomeImpactDiagnostics(balance.testutil.BalanceTestCase):
