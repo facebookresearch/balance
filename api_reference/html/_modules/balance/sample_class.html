@@ -1995,7 +1995,6 @@
 
             <span class="n">fit_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
-            <span class="c1"># TODO: add tests checking these values</span>
             <span class="k">for</span> <span class="n">array_key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;n_iter_&quot;</span><span class="p">,</span> <span class="s2">&quot;intercept_&quot;</span><span class="p">):</span>
                 <span class="n">array_val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">fit</span><span class="p">,</span> <span class="n">array_key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">array_val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -2012,7 +2011,6 @@
                         <span class="p">)</span>
                     <span class="p">)</span>
 
-            <span class="c1"># TODO: add tests checking these values</span>
             <span class="k">for</span> <span class="n">param_key</span><span class="p">,</span> <span class="n">metric_name</span> <span class="ow">in</span> <span class="p">(</span>
                 <span class="p">(</span><span class="s2">&quot;penalty&quot;</span><span class="p">,</span> <span class="s2">&quot;ipw_penalty&quot;</span><span class="p">),</span>
                 <span class="p">(</span><span class="s2">&quot;solver&quot;</span><span class="p">,</span> <span class="s2">&quot;ipw_solver&quot;</span><span class="p">),</span>
@@ -2035,7 +2033,6 @@
                     <span class="p">)</span>
                 <span class="p">)</span>
 
-            <span class="c1"># TODO: add tests checking these values</span>
             <span class="n">multi_class</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;multi_class&quot;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">fit</span><span class="p">,</span> <span class="s2">&quot;multi_class&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
             <span class="k">if</span> <span class="n">multi_class</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">multi_class</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span>
