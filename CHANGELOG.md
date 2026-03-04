@@ -86,6 +86,8 @@
   - Added tests for `ascii_plot_dist` with `comparative=False` to verify direct dispatch to `ascii_plot_hist` and mixed categorical+numeric routing in a single call.
 - **Expanded `prop_above_and_below()` edge-case coverage**
   - Added focused tests for empty threshold iterables, mixed `None` threshold groups in dict mode, and explicit all-`None` threshold handling across return formats.
+- **Expanded IPW diagnostics coverage for fit-parameter reporting**
+  - Refactored diagnostics tests to use a shared IPW setup helper (removing repeated fixture construction), added edge-case assertions for filtered non-string solver/penalty values and NaN coercion of non-scalar `tol`/`l1_ratio` inputs, and now assert solver/penalty labels match fitted model parameters.
 
 # 0.16.0 (2026-02-09)
 

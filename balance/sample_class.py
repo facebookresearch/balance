@@ -1894,7 +1894,6 @@ class Sample:
 
             fit_list: List[pd.DataFrame] = []
 
-            # TODO: add tests checking these values
             for array_key in ("n_iter_", "intercept_"):
                 array_val = getattr(fit, array_key, None)
                 if array_val is None:
@@ -1911,7 +1910,6 @@ class Sample:
                         )
                     )
 
-            # TODO: add tests checking these values
             for param_key, metric_name in (
                 ("penalty", "ipw_penalty"),
                 ("solver", "ipw_solver"),
@@ -1934,7 +1932,6 @@ class Sample:
                     )
                 )
 
-            # TODO: add tests checking these values
             multi_class = params.get("multi_class", getattr(fit, "multi_class", None))
             if multi_class is None:
                 multi_class = "auto"
