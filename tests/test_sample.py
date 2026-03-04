@@ -2551,13 +2551,17 @@ class TestSampleDiagnosticsIPWModelParams(balance.testutil.BalanceTestCase):
         adjusted = self._make_adjusted_ipw_sample()
 
         diagnostics = adjusted.diagnostics().set_index(["metric", "var"])["val"]
+        fit = self._get_ipw_fit(adjusted)
+        fit_params = fit.get_params(deep=False)
+
         penalty_rows = [idx for idx in diagnostics.index if idx[0] == "ipw_penalty"]
         self.assertEqual(len(penalty_rows), 1)
+        self.assertEqual(penalty_rows[0][1], str(fit_params.get("penalty")))
         self.assertEqual(diagnostics[penalty_rows[0]], 0)
 
         solver_rows = [idx for idx in diagnostics.index if idx[0] == "ipw_solver"]
         self.assertEqual(len(solver_rows), 1)
-        self.assertEqual(solver_rows[0][1], "lbfgs")
+        self.assertEqual(solver_rows[0][1], str(fit_params.get("solver")))
         self.assertEqual(diagnostics[solver_rows[0]], 0)
 
     def test_diagnostics_include_tol_and_l1_ratio_scalars(self) -> None:
