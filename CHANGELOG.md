@@ -28,6 +28,14 @@
     `comparative=False` to use grouped-bar histograms (`ascii_plot_hist`) for
     numeric variables instead, matching the style used for categorical variables.
 
+## Code Quality & Refactoring
+
+- **Moved dataset loading implementations out of `balance.datasets.__init__`**
+  - Refactored `load_sim_data`, `load_cbps_data`, and `load_data` into
+    `balance.datasets.loading_data` and re-exported them from
+    `balance.datasets` to preserve the public API while keeping module
+    responsibilities focused.
+
 ## Documentation
 
 - **ASCII plot docstring examples and `library="balance"` docs**
