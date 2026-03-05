@@ -19,6 +19,7 @@ import pandas as pd
 # balance package. It supports loading simulation data with reproducible random
 # seeds for testing and examples.
 
+
 def load_sim_data(
     version: str = "01",
 ) -> Tuple[pd.DataFrame | None, pd.DataFrame | None]:
