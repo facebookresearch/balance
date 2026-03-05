@@ -211,7 +211,7 @@ def prop_above_and_below(
     above: tuple[float, ...] | list[float] | None = (1, 2, 3, 5, 10),
     return_as_series: Literal[True] = True,
 ) -> pd.Series | None:
-    pass
+    pass  # pragma: no cover
 
 
 @overload
@@ -222,7 +222,7 @@ def prop_above_and_below(
     *,
     return_as_series: Literal[False],
 ) -> PropAboveBelowResult | None:
-    pass
+    pass  # pragma: no cover
 
 
 def prop_above_and_below(
