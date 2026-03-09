@@ -278,6 +278,174 @@ class TestCli(
             cli_none = BalanceCLI(args_none)
             self.assertIsNone(cli_none.weights_impact_on_outcome_method())
 
+    def test_process_batch_returns_failure_payload_for_empty_sample(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            input_file = os.path.join(temp_dir, "input.csv")
+            output_file = os.path.join(temp_dir, "output.csv")
+            parser = make_parser()
+            args = parser.parse_args(
+                [
+                    "--input_file",
+                    input_file,
+                    "--output_file",
+                    output_file,
+                    "--sample_column",
+                    "is_respondent",
+                    "--covariate_columns",
+                    "x",
+                ]
+            )
+            cli = BalanceCLI(args)
+
+            batch_df = pd.DataFrame(
+                {
+                    "is_respondent": [0, 0],
+                    "id": [1, 2],
+                    "weight": [1.0, 1.0],
+                    "x": [1.0, 2.0],
+                }
+            )
+            result = cli.process_batch(batch_df)
+
+            self.assertTrue(result["adjusted"].empty)
+            self.assertEqual(
+                result["diagnostics"].to_dict("records"),
+                [
+                    {
+                        "metric": "adjustment_failure",
+                        "var": None,
+                        "val": 1,
+                    },
+                    {
+                        "metric": "adjustment_failure_reason",
+                        "var": None,
+                        "val": "No input data",
+                    },
+                ],
+            )
+
+    def test_load_and_check_input_reads_file_and_columns(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            input_file = os.path.join(temp_dir, "input.csv")
+            output_file = os.path.join(temp_dir, "output.csv")
+            parser = make_parser()
+            args = parser.parse_args(
+                [
+                    "--input_file",
+                    input_file,
+                    "--output_file",
+                    output_file,
+                    "--sample_column",
+                    "is_respondent",
+                    "--covariate_columns",
+                    "x",
+                    "--keep_row_column",
+                    "keep",
+                ]
+            )
+            cli = BalanceCLI(args)
+
+            input_df = pd.DataFrame(
+                {
+                    "is_respondent": [1, 0],
+                    "id": [1, 2],
+                    "weight": [1.0, 1.0],
+                    "x": [1.0, 2.0],
+                    "keep": [1, 0],
+                }
+            )
+            input_df.to_csv(input_file, index=False)
+
+            loaded = cli.load_and_check_input()
+            pd.testing.assert_frame_equal(loaded, input_df)
+
+    def test_write_outputs_skips_diagnostics_when_no_output_path(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            input_file = os.path.join(temp_dir, "input.csv")
+            output_file = os.path.join(temp_dir, "output.csv")
+            parser = make_parser()
+            args = parser.parse_args(
+                [
+                    "--input_file",
+                    input_file,
+                    "--output_file",
+                    output_file,
+                    "--sample_column",
+                    "is_respondent",
+                    "--covariate_columns",
+                    "x",
+                ]
+            )
+            cli = BalanceCLI(args)
+
+            output_df = pd.DataFrame({"id": [1], "weight": [1.25]})
+            diagnostics_df = pd.DataFrame(
+                {"metric": ["adjustment_failure"], "var": [None], "val": [0]}
+            )
+
+            cli.write_outputs(output_df, diagnostics_df)
+
+            pd.testing.assert_frame_equal(
+                pd.read_csv(output_file, sep=cli.args.sep_output_file),
+                output_df,
+            )
+            self.assertIsNone(cli.args.diagnostics_output_file)
+
+    def test_write_outputs_writes_adjusted_and_diagnostics_with_custom_seps(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            input_file = os.path.join(temp_dir, "input.csv")
+            output_file = os.path.join(temp_dir, "output.csv")
+            diagnostics_output_file = os.path.join(temp_dir, "diagnostics.csv")
+            parser = make_parser()
+            args = parser.parse_args(
+                [
+                    "--input_file",
+                    input_file,
+                    "--output_file",
+                    output_file,
+                    "--diagnostics_output_file",
+                    diagnostics_output_file,
+                    "--sample_column",
+                    "is_respondent",
+                    "--covariate_columns",
+                    "x",
+                    "--sep_output_file",
+                    "\t",
+                    "--sep_diagnostics_output_file",
+                    ";",
+                ]
+            )
+            cli = BalanceCLI(args)
+
+            output_df = pd.DataFrame({"id": [1], "weight": [1.25]})
+            diagnostics_df = pd.DataFrame(
+                {
+                    "metric": ["adjustment_failure"],
+                    "var": [None],
+                    "val": [0],
+                }
+            )
+
+            cli.write_outputs(output_df, diagnostics_df)
+
+            pd.testing.assert_frame_equal(
+                pd.read_csv(output_file, sep=cli.args.sep_output_file),
+                output_df,
+            )
+
+            diagnostics_loaded = pd.read_csv(
+                diagnostics_output_file,
+                sep=cli.args.sep_diagnostics_output_file,
+            )
+            self.assertEqual(
+                diagnostics_loaded.loc[0, "metric"],
+                "adjustment_failure",
+            )
+            self.assertTrue(pd.isna(diagnostics_loaded.loc[0, "var"]))
+            self.assertEqual(diagnostics_loaded.loc[0, "val"], 0)
+
     def test_cli_help(self) -> None:
         """Test that CLI help command executes without errors."""
         parser = make_parser()

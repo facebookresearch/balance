@@ -667,7 +667,6 @@ class BalanceCLI:
                 set(result.keys()) == {"adjusted", "diagnostics"}
                 # True
         """
-        # TODO: add unit tests
         sample_df, target_df = self.split_sample(batch_df)
 
         if sample_df.shape[0] == 0:
@@ -890,7 +889,6 @@ class BalanceCLI:
                     loaded.shape
                     # (1, 2)
         """
-        # TODO: Add unit tests for function
         # Load and check input
         input_df = pd.read_csv(self.args.input_file, sep=self.args.sep_input_file)
         logger.info("Number of rows in input file: %d" % input_df.shape[0])
@@ -932,7 +930,6 @@ class BalanceCLI:
                 )
                 cli.write_outputs(output_df, diagnostics_df)
         """
-        # TODO: Add unit tests for function
         # Write output
         output_df.to_csv(
             path_or_buf=self.args.output_file,
