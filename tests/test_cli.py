@@ -386,10 +386,65 @@ class TestCli(
             cli.write_outputs(output_df, diagnostics_df)
 
             pd.testing.assert_frame_equal(
-                pd.read_csv(output_file, sep=","),
+                pd.read_csv(output_file, sep=cli.args.sep_output_file),
                 output_df,
             )
             self.assertIsNone(cli.args.diagnostics_output_file)
+
+    def test_write_outputs_writes_adjusted_and_diagnostics_with_custom_seps(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            input_file = os.path.join(temp_dir, "input.csv")
+            output_file = os.path.join(temp_dir, "output.csv")
+            diagnostics_output_file = os.path.join(temp_dir, "diagnostics.csv")
+            parser = make_parser()
+            args = parser.parse_args(
+                [
+                    "--input_file",
+                    input_file,
+                    "--output_file",
+                    output_file,
+                    "--diagnostics_output_file",
+                    diagnostics_output_file,
+                    "--sample_column",
+                    "is_respondent",
+                    "--covariate_columns",
+                    "x",
+                    "--sep_output_file",
+                    "\t",
+                    "--sep_diagnostics_output_file",
+                    ";",
+                ]
+            )
+            cli = BalanceCLI(args)
+
+            output_df = pd.DataFrame({"id": [1], "weight": [1.25]})
+            diagnostics_df = pd.DataFrame(
+                {
+                    "metric": ["adjustment_failure"],
+                    "var": [None],
+                    "val": [0],
+                }
+            )
+
+            cli.write_outputs(output_df, diagnostics_df)
+
+            pd.testing.assert_frame_equal(
+                pd.read_csv(output_file, sep=cli.args.sep_output_file),
+                output_df,
+            )
+
+            diagnostics_loaded = pd.read_csv(
+                diagnostics_output_file,
+                sep=cli.args.sep_diagnostics_output_file,
+            )
+            self.assertEqual(
+                diagnostics_loaded.loc[0, "metric"],
+                "adjustment_failure",
+            )
+            self.assertTrue(pd.isna(diagnostics_loaded.loc[0, "var"]))
+            self.assertEqual(diagnostics_loaded.loc[0, "val"], 0)
 
     def test_cli_help(self) -> None:
         """Test that CLI help command executes without errors."""
