@@ -795,7 +795,6 @@
 <span class="sd">                set(result.keys()) == {&quot;adjusted&quot;, &quot;diagnostics&quot;}</span>
 <span class="sd">                # True</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># TODO: add unit tests</span>
         <span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_sample</span><span class="p">(</span><span class="n">batch_df</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -1024,7 +1023,6 @@
 <span class="sd">                    loaded.shape</span>
 <span class="sd">                    # (1, 2)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># TODO: Add unit tests for function</span>
         <span class="c1"># Load and check input</span>
         <span class="n">input_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">input_file</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">sep_input_file</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Number of rows in input file: </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">input_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
@@ -1069,7 +1067,6 @@
 <span class="sd">                )</span>
 <span class="sd">                cli.write_outputs(output_df, diagnostics_df)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># TODO: Add unit tests for function</span>
         <span class="c1"># Write output</span>
         <span class="n">output_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span>
             <span class="n">path_or_buf</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">output_file</span><span class="p">,</span>
