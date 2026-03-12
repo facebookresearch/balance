@@ -89,6 +89,12 @@ hide_title: true
     Series objects and returns `None` when both `below` and `above` are `None`,
     avoiding ambiguous concat inputs while preserving existing behavior for valid
     threshold sets.
+- **Validated and normalized comma-separated CLI column arguments**
+  - CLI column-list arguments now trim surrounding whitespace and reject empty
+    entries (for example, `"id,,weight"`) with clear `ValueError` messages,
+    preventing malformed column specifications from silently propagating.
+  - Applied to `--covariate_columns`, `--covariate_columns_for_diagnostics`,
+    `--batch_columns`, `--keep_columns`, and `--outcome_columns` parsing.
 
 ## Tests
 
