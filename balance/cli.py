@@ -12,7 +12,7 @@ import json
 import logging
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 import balance
 import pandas as pd
@@ -25,7 +25,7 @@ from sklearn.linear_model import LogisticRegression
 logger: logging.Logger = logging.getLogger(__package__)
 
 
-def _parse_csv_columns_arg(value: str | None, arg_name: str) -> List[str]:
+def _parse_csv_columns_arg(value: Optional[str], arg_name: str) -> List[str]:
     """Parse a comma-separated CLI columns argument into a validated list.
 
     Args:
@@ -348,7 +348,7 @@ class BalanceCLI:
                 BalanceCLI(Namespace(keep_columns="id,weight")).keep_columns()
                 # ['id', 'weight']
         """
-        if self.args.keep_columns:
+        if self.args.keep_columns is not None:
             return _parse_csv_columns_arg(self.args.keep_columns, "--keep_columns")
         return None
 
@@ -406,7 +406,7 @@ class BalanceCLI:
                 BalanceCLI(Namespace(outcome_columns="y,z")).outcome_columns()
                 # ['y', 'z']
         """
-        if self.args.outcome_columns:
+        if self.args.outcome_columns is not None:
             return _parse_csv_columns_arg(
                 self.args.outcome_columns, "--outcome_columns"
             )

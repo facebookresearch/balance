@@ -1462,6 +1462,16 @@ class TestBalanceCLI_keep_columns(balance.testutil.BalanceTestCase):
         ):
             cli.keep_columns()
 
+    def test_keep_columns_raises_for_empty_string(self) -> None:
+        """Test keep_columns rejects an explicitly provided empty string."""
+        args = Namespace(keep_columns="")
+        cli = BalanceCLI(args)
+        with self.assertRaisesRegex(
+            ValueError,
+            "--keep_columns must be a comma-separated list of non-empty column names",
+        ):
+            cli.keep_columns()
+
     def test_has_keep_columns_with_keep_columns(self) -> None:
         """Test has_keep_columns returns True when keep_columns is set."""
         args = Namespace(keep_columns="id,weight")
@@ -1520,6 +1530,15 @@ class TestBalanceCLI_csv_column_parsing(balance.testutil.BalanceTestCase):
 
     def test_outcome_columns_raise_for_empty_name(self) -> None:
         args = Namespace(outcome_columns="y,,z")
+        cli = BalanceCLI(args)
+        with self.assertRaisesRegex(
+            ValueError,
+            "--outcome_columns must be a comma-separated list of non-empty column names",
+        ):
+            cli.outcome_columns()
+
+    def test_outcome_columns_raise_for_empty_string(self) -> None:
+        args = Namespace(outcome_columns="")
         cli = BalanceCLI(args)
         with self.assertRaisesRegex(
             ValueError,
