@@ -1446,6 +1446,22 @@ class TestBalanceCLI_keep_columns(balance.testutil.BalanceTestCase):
         result = cli.keep_columns()
         self.assertIsNone(result)
 
+    def test_keep_columns_strips_whitespace(self) -> None:
+        """Test keep_columns trims whitespace around comma-separated names."""
+        args = Namespace(keep_columns=" id, weight ,extra ")
+        cli = BalanceCLI(args)
+        self.assertEqual(cli.keep_columns(), ["id", "weight", "extra"])
+
+    def test_keep_columns_raises_for_empty_column_name(self) -> None:
+        """Test keep_columns rejects empty names in comma-separated input."""
+        args = Namespace(keep_columns="id,,weight")
+        cli = BalanceCLI(args)
+        with self.assertRaisesRegex(
+            ValueError,
+            "--keep_columns must be a comma-separated list of non-empty column names",
+        ):
+            cli.keep_columns()
+
     def test_has_keep_columns_with_keep_columns(self) -> None:
         """Test has_keep_columns returns True when keep_columns is set."""
         args = Namespace(keep_columns="id,weight")
@@ -1492,6 +1508,38 @@ class TestBalanceCLI_keep_columns(balance.testutil.BalanceTestCase):
         columns = ["id", "weight", "x", "y", "is_respondent"]
         with self.assertRaises(AssertionError):
             cli.check_input_columns(columns)
+
+
+class TestBalanceCLI_csv_column_parsing(balance.testutil.BalanceTestCase):
+    """Test normalized parsing of comma-separated column arguments."""
+
+    def test_covariate_columns_strip_whitespace(self) -> None:
+        args = Namespace(covariate_columns=" a, b ,c ")
+        cli = BalanceCLI(args)
+        self.assertEqual(cli.covariate_columns(), ["a", "b", "c"])
+
+    def test_outcome_columns_raise_for_empty_name(self) -> None:
+        args = Namespace(outcome_columns="y,,z")
+        cli = BalanceCLI(args)
+        with self.assertRaisesRegex(
+            ValueError,
+            "--outcome_columns must be a comma-separated list of non-empty column names",
+        ):
+            cli.outcome_columns()
+
+    def test_batch_columns_raise_for_empty_name(self) -> None:
+        args = Namespace(batch_columns="region,")
+        cli = BalanceCLI(args)
+        with self.assertRaisesRegex(
+            ValueError,
+            "--batch_columns must be a comma-separated list of non-empty column names",
+        ):
+            cli.batch_columns()
+
+    def test_covariate_columns_for_diagnostics_strip_whitespace(self) -> None:
+        args = Namespace(covariate_columns_for_diagnostics=" x, y ")
+        cli = BalanceCLI(args)
+        self.assertEqual(cli.covariate_columns_for_diagnostics(), ["x", "y"])
 
     def test_keep_columns_preserved_in_adjusted_output(self) -> None:
         """Test that --keep_columns columns survive adjustment via ignore_columns.

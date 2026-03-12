@@ -25,6 +25,30 @@ from sklearn.linear_model import LogisticRegression
 logger: logging.Logger = logging.getLogger(__package__)
 
 
+def _parse_csv_columns_arg(value: str | None, arg_name: str) -> List[str]:
+    """Parse a comma-separated CLI columns argument into a validated list.
+
+    Args:
+        value: Raw argparse string value.
+        arg_name: Argument name used for error context.
+
+    Returns:
+        A list of non-empty, trimmed column names.
+
+    Raises:
+        ValueError: If the value is missing or contains empty column names.
+    """
+    if value is None:
+        raise ValueError(f"{arg_name} cannot be None")
+
+    columns = [c.strip() for c in value.split(",")]
+    if not columns or any(c == "" for c in columns):
+        raise ValueError(
+            f"{arg_name} must be a comma-separated list of non-empty column names"
+        )
+    return columns
+
+
 class BalanceCLI:
     """Helper class that encapsulates CLI argument handling and execution.
 
@@ -195,7 +219,9 @@ class BalanceCLI:
                 BalanceCLI(Namespace(covariate_columns="x,y")).covariate_columns()
                 # ['x', 'y']
         """
-        return self.args.covariate_columns.split(",")
+        return _parse_csv_columns_arg(
+            self.args.covariate_columns, "--covariate_columns"
+        )
 
     def covariate_columns_for_diagnostics(self) -> List[str] | None:
         """Return covariate columns used for diagnostics reporting.
@@ -212,7 +238,11 @@ class BalanceCLI:
                 # ['x', 'y']
         """
         out = self.args.covariate_columns_for_diagnostics
-        return None if out is None else out.split(",")
+        return (
+            None
+            if out is None
+            else _parse_csv_columns_arg(out, "--covariate_columns_for_diagnostics")
+        )
 
     def rows_to_keep_for_diagnostics(self) -> str | None:
         """Return the diagnostics row-filter expression.
@@ -275,7 +305,7 @@ class BalanceCLI:
                 BalanceCLI(Namespace(batch_columns="region,team")).batch_columns()
                 # ['region', 'team']
         """
-        return self.args.batch_columns.split(",")
+        return _parse_csv_columns_arg(self.args.batch_columns, "--batch_columns")
 
     def has_keep_columns(self) -> bool:
         """Return True when output keep columns are supplied.
@@ -319,7 +349,7 @@ class BalanceCLI:
                 # ['id', 'weight']
         """
         if self.args.keep_columns:
-            return self.args.keep_columns.split(",")
+            return _parse_csv_columns_arg(self.args.keep_columns, "--keep_columns")
         return None
 
     def has_keep_row_column(self) -> bool:
@@ -377,7 +407,9 @@ class BalanceCLI:
                 # ['y', 'z']
         """
         if self.args.outcome_columns:
-            return self.args.outcome_columns.split(",")
+            return _parse_csv_columns_arg(
+                self.args.outcome_columns, "--outcome_columns"
+            )
         return None
 
     def max_de(self) -> float | None:
