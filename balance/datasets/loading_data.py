@@ -14,7 +14,6 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 
-
 # This module provides data loading utilities for simulated datasets used in the
 # balance package. It supports loading simulation data with reproducible random
 # seeds for testing and examples.

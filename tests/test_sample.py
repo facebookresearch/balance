@@ -35,7 +35,6 @@ from balance.sample_class import Sample
 from balance.testutil import tempfile_path
 from balance.util import _assert_type
 
-
 # Test sample fixtures - shared across multiple test methods
 # These represent common test scenarios for Sample functionality
 
@@ -1080,9 +1079,7 @@ class TestSample_metrics_methods(
 
         adjusted = survey.set_target(target).adjust(method="null")
 
-        expected_lines = (
-            dedent(
-                """
+        expected_lines = dedent("""
             Adjustment details:
                 method: null_adjustment
             Covariate diagnostics:
@@ -1099,11 +1096,7 @@ class TestSample_metrics_methods(
             source
             self       0.480
             unadjusted 0.480
-            """
-            )
-            .strip()
-            .splitlines()
-        )
+            """).strip().splitlines()
 
         summary_lines = [line.rstrip() for line in adjusted.summary().splitlines()]
 

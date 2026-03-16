@@ -75,12 +75,10 @@ def relative_response_rates(
         if (len(df.columns) != len(df_target.columns)) or (
             df.columns.tolist() != df_target.columns.tolist()
         ):
-            raise ValueError(
-                f"""
+            raise ValueError(f"""
                 df and df_target must have the exact same columns.
                 Instead, thes column names are, (df, df_target) = ({df.columns.tolist()}, {df_target.columns.tolist()})
-                """
-            )
+                """)
 
         # If they are, we can proceed forward:
         target_n_notnull_rows = df_target.notnull().sum()
@@ -88,12 +86,10 @@ def relative_response_rates(
         target_n_notnull_rows = df_target.notnull().all(axis=1).sum()
 
     if any(df_n_notnull_rows > target_n_notnull_rows):
-        raise ValueError(
-            f"""
+        raise ValueError(f"""
             The number of (notnull) rows in df MUST be smaller or equal to the number of rows in df_target.
             These were, (df_n_notnull_rows, target_n_notnull_rows) = ({df_n_notnull_rows}, {target_n_notnull_rows})
-            """
-        )
+            """)
 
     return pd.DataFrame(
         {

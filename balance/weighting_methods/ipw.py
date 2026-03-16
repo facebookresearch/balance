@@ -26,7 +26,6 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import log_loss
 from sklearn.preprocessing import StandardScaler
 
-
 logger: logging.Logger = logging.getLogger(__package__)
 
 
@@ -715,10 +714,10 @@ def ipw(
     target_df = target_df.loc[:, variables]
 
     if na_action == "drop":
-        (sample_df, sample_weights) = balance_util.drop_na_rows(
+        sample_df, sample_weights = balance_util.drop_na_rows(
             sample_df, sample_weights, "sample"
         )
-        (target_df, target_weights) = balance_util.drop_na_rows(
+        target_df, target_weights = balance_util.drop_na_rows(
             target_df, target_weights, "target"
         )
     sample_n = sample_df.shape[0]

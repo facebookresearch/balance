@@ -143,10 +143,10 @@ def poststratify(
     target_df = target_df.loc[:, variables]
 
     if na_action == "drop":
-        (sample_df, sample_weights) = balance_util.drop_na_rows(
+        sample_df, sample_weights = balance_util.drop_na_rows(
             sample_df, sample_weights, "sample"
         )
-        (target_df, target_weights) = balance_util.drop_na_rows(
+        target_df, target_weights = balance_util.drop_na_rows(
             target_df, target_weights, "target"
         )
     elif na_action == "add_indicator":
