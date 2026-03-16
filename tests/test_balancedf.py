@@ -300,7 +300,9 @@ class TestBalanceDFOutcomes(BalanceTestCase):
         """
         self.assertEqual(
             s_o.outcomes().relative_response_rates(),
-            pd.DataFrame({"o1": [100.0, 4], "o2": [75.0, 3]}, index=["%", "n"]),
+            pd.DataFrame(
+                {"o1": [100.0, 4], "o2": [75.0, 3]}, index=pd.Index(["%", "n"])
+            ),
             lazy=True,
         )
 
@@ -1384,7 +1386,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
                 expected_unadjusted,
                 expected_unadjusted - expected_self,
             ],
-            index=["self", "unadjusted", "unadjusted - self"],
+            index=pd.Index(["self", "unadjusted", "unadjusted - self"]),
         )
 
         output = covars.kld(aggregate_by_main_covar=True)
@@ -1474,7 +1476,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
 
         expected = pd.DataFrame(
             [expected_self, expected_unadj, expected_unadj - expected_self],
-            index=["self", "unadjusted", "unadjusted - self"],
+            index=pd.Index(["self", "unadjusted", "unadjusted - self"]),
         )
         expected.index.name = output.index.name
 

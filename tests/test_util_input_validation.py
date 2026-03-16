@@ -67,7 +67,7 @@ class TestUtil(
             ValueError,
             "sample_df index must be the same as sample_weights index",
             _check_weighting_methods_input,
-            df=pd.DataFrame({"a": [1, 2]}, index=[1, 2]),
+            df=pd.DataFrame({"a": [1, 2]}, index=pd.Index([1, 2])),
             weights=pd.Series([1, 1], index=[3, 4]),
             object_name="sample",
         )

@@ -83,7 +83,7 @@ class TestBalance_weights_stats(
         with self.assertRaisesRegex(
             TypeError, "weights \\(w\\) DataFrame must include at least one column."
         ):
-            _check_weights_are_valid(pd.DataFrame(index=[0, 1]))
+            _check_weights_are_valid(pd.DataFrame(index=pd.Index([0, 1])))
 
         # Validation should always use first DataFrame column, even if later columns are valid
         with self.assertRaisesRegex(TypeError, "weights \\(w\\) must be a number.*"):
@@ -355,7 +355,7 @@ class TestBalance_weights_stats(
             ):
                 fn(bad_first_col_df)
 
-        empty_df = pd.DataFrame(index=[0, 1])
+        empty_df = pd.DataFrame(index=pd.Index([0, 1]))
         for fn in (
             design_effect,
             nonparametric_skew,
