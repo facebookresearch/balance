@@ -694,7 +694,7 @@ def _realize_dicts_of_proportions(
 
 def prepare_marginal_dist_for_raking(
     dict_of_dicts: Dict[str, Dict[str, float]],
-    max_length: int = 10000,
+    max_length: numbers.Real = 10000,
 ) -> pd.DataFrame:
     """
     Realizes a nested dictionary of proportions into a DataFrame.
@@ -703,7 +703,8 @@ def prepare_marginal_dist_for_raking(
         dict_of_dicts: A nested dictionary where the outer keys are column names
                    and the inner dictionaries have keys as category labels
                    and values as their proportions (float).
-        max_length: Maximum number of rows in the resulting DataFrame. When the
+        max_length: Maximum number of rows in the resulting DataFrame. Accepts any
+                   real scalar (e.g., int, float, or NumPy real scalar types). When the
                    natural LCM-based row count would exceed this value the output
                    is capped using Hare-Niemeyer (largest remainder) allocation.
                    Default is 10000.
