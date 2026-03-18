@@ -883,9 +883,11 @@ class Testrake(
         Regression test: prepare_marginal_dist_for_raking must not produce a
         DataFrame with more than max_length rows, even for high-precision
         proportions that would previously cause LCM explosion.
+
+        These examples are taken directly from the bug report (GitHub issue #369).
         """
-        # From the bug report – previously produced (33_366_600, 5) shape.
-        pop_distribution = {
+        # Bug report example 1: 4 variables – previously produced (33_366_600, 5).
+        pop_distribution_1 = {
             "age": {"18-24": 0.362, "25-34": 0.421, "35-44": 0.216},
             "gender": {"Male": 0.495, "Female": 0.505},
             "education": {"College": 0.495, "No_College": 0.505},
@@ -900,13 +902,55 @@ class Testrake(
                 "Sikhism": 0.008,
             },
         }
-        df = prepare_marginal_dist_for_raking(pop_distribution)
+        df1 = prepare_marginal_dist_for_raking(pop_distribution_1)
         # Must be capped at the default max_length of 10 000
-        self.assertEqual(df.shape[0], 10000)
+        self.assertEqual(df1.shape[0], 10000)
         # Must have 4 covariate columns + 1 id column
-        self.assertEqual(df.shape[1], 5)
+        self.assertEqual(df1.shape[1], 5)
         # id column must be sequential
-        self.assertEqual(list(df["id"]), list(range(10000)))
+        self.assertEqual(list(df1["id"]), list(range(10000)))
+
+        # Bug report example 2: 2 variables with high-precision floats –
+        # previously produced (99_990_000, 3).
+        pop_distribution_2 = {
+            "age": {
+                "18-24": 0.3622334534532,
+                "25-34": 0.421434535,
+                "35-44": 0.216345345,
+            },
+            "gender": {
+                "Male": 0.4955666,
+                "Female": 0.505434345,
+            },
+        }
+        df2 = prepare_marginal_dist_for_raking(pop_distribution_2)
+        self.assertEqual(df2.shape[0], 10000)
+        self.assertEqual(df2.shape[1], 3)
+        self.assertEqual(list(df2["id"]), list(range(10000)))
+
+    def test__realize_dicts_of_proportions_bug_report_example(self) -> None:
+        """
+        Regression test for the third example in bug report #369, which calls
+        _realize_dicts_of_proportions directly with high-precision proportions
+        and verifies the output length is bounded.
+
+        Previously `len(target_dict["age"])` was ~99 million.
+        """
+        pop_distribution = {
+            "age": {
+                "18-24": 0.3622334534532,
+                "25-34": 0.421434535,
+                "35-44": 0.216345345,
+            },
+            "gender": {
+                "Male": 0.4955666,
+                "Female": 0.505434345,
+            },
+        }
+        target_dict = _realize_dicts_of_proportions(pop_distribution)
+        # Output must be capped at the default max_length of 10 000
+        self.assertEqual(len(target_dict["age"]), 10000)
+        self.assertEqual(len(target_dict["gender"]), 10000)
 
     def test_prepare_marginal_dist_for_raking(self) -> None:
         """

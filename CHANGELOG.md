@@ -1,4 +1,4 @@
-# 0.17.0 (2026-03-17)
+# 0.18.0 (2026-03-18)
 
 ## Bug Fixes
 
@@ -13,6 +13,8 @@
     rounding error per category.
   - A warning is logged whenever the cap is applied.
   - A new helper `_hare_niemeyer_allocation` is exposed for direct use.
+
+# 0.17.0 (2026-03-17)
 
 ## Breaking Changes
 
