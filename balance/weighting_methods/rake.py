@@ -223,10 +223,10 @@ def rake(
 
     # TODO: separate into a function that handles NA (for rake, ipw, poststratify)
     if na_action == "drop":
-        (sample_df, sample_weights) = balance_util.drop_na_rows(
+        sample_df, sample_weights = balance_util.drop_na_rows(
             sample_df, sample_weights, "sample"
         )
-        (target_df, target_weights) = balance_util.drop_na_rows(
+        target_df, target_weights = balance_util.drop_na_rows(
             target_df, target_weights, "target"
         )
     elif na_action == "add_indicator":
@@ -619,7 +619,10 @@ def _realize_dicts_of_proportions(
     # the LCM check below reliable (if each array is ≤ max_length and the LCM is
     # also ≤ max_length, the LCM-extended result is within budget).  When the LCM
     # exceeds max_length we discard these arrays and switch to Hare-Niemeyer.
-    arrays = {k: _proportional_array_from_dict(v, max_length=max_length) for k, v in dict_of_dicts.items()}
+    arrays = {
+        k: _proportional_array_from_dict(v, max_length=max_length)
+        for k, v in dict_of_dicts.items()
+    }
 
     # Find the LCM over the lengths of all the arrays
     lcm_length = _find_lcm_of_array_lengths(arrays)
@@ -680,7 +683,9 @@ def prepare_marginal_dist_for_raking(
         df.columns.tolist()
         # ['A', 'B', 'id']
     """
-    target_dict_from_marginals = _realize_dicts_of_proportions(dict_of_dicts, max_length=max_length)
+    target_dict_from_marginals = _realize_dicts_of_proportions(
+        dict_of_dicts, max_length=max_length
+    )
     target_df_from_marginals = pd.DataFrame.from_dict(target_dict_from_marginals)
     # Add an id column:
     target_df_from_marginals["id"] = range(target_df_from_marginals.shape[0])
