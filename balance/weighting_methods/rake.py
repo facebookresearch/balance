@@ -477,11 +477,12 @@ def _hare_niemeyer_allocation(
         proportions: A dictionary mapping category labels to their proportions (float).
             Zero-valued categories are ignored. Values need not sum to 1; they are
             normalized internally.
-        n: The total number of slots to allocate.
+        n: The total number of slots to allocate. Must be a positive integer.
 
     Returns:
         A list of length n with each category label repeated according to its
-        allocated count.
+        allocated count. Ties in fractional remainders are broken deterministically
+        by sorting on the category label name.
 
     Examples:
     .. code-block:: python
@@ -489,17 +490,23 @@ def _hare_niemeyer_allocation(
             _hare_niemeyer_allocation({"a": 0.2, "b": 0.8}, 5)
                 # ['a', 'b', 'b', 'b', 'b']
             _hare_niemeyer_allocation({"a": 0.5, "b": 0.5}, 3)
-                # ['a', 'b', 'b']   (or ['b', 'a', 'b'] depending on tie-breaking)
+                # ['a', 'b', 'b']
     """
-    # Validate inputs
+    # Validate n: must be a plain positive int (bool is a subclass of int but should
+    # not be accepted here as it would silently produce n=0 or n=1)
+    if isinstance(n, bool) or not isinstance(n, int) or n < 1:
+        raise ValueError(f"n must be a positive integer, got {n!r}.")
+
+    # Validate proportions
     for k, v in proportions.items():
-        if not isinstance(v, (int, float)):
+        if isinstance(v, bool) or not isinstance(v, (int, float)):
             raise ValueError(
                 f"Proportion for category '{k}' must be a numeric value, got {type(v).__name__}."
             )
-        if math.isnan(v) or math.isinf(v):
+        fv = float(v)
+        if math.isnan(fv) or math.isinf(fv):
             raise ValueError(f"Proportion for category '{k}' must be finite, got {v}.")
-        if v < 0:
+        if fv < 0:
             raise ValueError(
                 f"Proportion for category '{k}' must be non-negative, got {v}."
             )
