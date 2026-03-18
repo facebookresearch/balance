@@ -665,7 +665,10 @@ def _realize_dicts_of_proportions(
     # empty (all counts round to zero).  When either condition holds, we discard
     # these arrays and switch to Hare-Niemeyer.
     arrays = {
-        k: _proportional_array_from_dict(v, max_length=max_length)
+        k: _proportional_array_from_dict(
+            {category: float(weight) for category, weight in v.items()},
+            max_length=max_length,
+        )
         for k, v in dict_of_dicts.items()
     }
 
@@ -686,7 +689,10 @@ def _realize_dicts_of_proportions(
             f"Hare-Niemeyer (largest remainder) method."
         )
         return {
-            k: _hare_niemeyer_allocation(d, max_length)
+            k: _hare_niemeyer_allocation(
+                {category: float(weight) for category, weight in d.items()},
+                max_length,
+            )
             for k, d in dict_of_dicts.items()
         }
 
