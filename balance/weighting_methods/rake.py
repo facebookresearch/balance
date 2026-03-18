@@ -586,7 +586,7 @@ def _find_lcm_of_array_lengths(arrays: Dict[str, List[str]]) -> int:
 
 
 def _realize_dicts_of_proportions(
-    dict_of_dicts: Dict[str, Dict[str, float]],
+    dict_of_dicts: Dict[str, Dict[str, numbers.Real]],
     max_length: int = 10000,
 ) -> Dict[str, List[str]]:
     """
@@ -597,7 +597,9 @@ def _realize_dicts_of_proportions(
 
     Args:
         dict_of_dicts: A dictionary of dictionaries, where each key is a string and
-                   each value is a dictionary with keys as strings and values as their proportions (float).
+                   each value is a dictionary with keys as strings and values as their
+                   proportions as real-valued numeric types implementing ``numbers.Real``
+                   (e.g., Python floats, NumPy or pandas scalar types).
         max_length: Maximum number of rows in the output arrays. When the LCM of the
                    individual array lengths exceeds this value the output is capped at
                    ``max_length`` rows and each variable is re-allocated using the
