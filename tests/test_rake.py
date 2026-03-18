@@ -983,25 +983,37 @@ class Testrake(
         Regression test: _realize_dicts_of_proportions must not crash with a
         ZeroDivisionError when a variable has more categories than max_length.
 
-        Previously, _proportional_array_from_dict could return an empty array
-        for a variable with many equal-weight categories (> max_length), and
-        the subsequent LCM-extension step would divide by zero.  The Hare-Niemeyer
-        fallback path must handle this gracefully.
+        Two scenarios are tested:
+        1. lcm_length > max_length: 15 equal-weight categories, max_length=10.
+           _proportional_array_from_dict returns an array of length 15; LCM([15, 2])
+           = 30 > 10 triggers the Hare-Niemeyer fallback.
+        2. lcm_length == 0: 1000 equal-weight categories, max_length=10.
+           _proportional_array_from_dict returns [] (all counts round to 0);
+           LCM([0, 2]) = 0 triggers the Hare-Niemeyer fallback instead of
+           a ZeroDivisionError in the LCM-extension step.
         """
-        # Build a variable with 15 categories of equal weight, with max_length=10.
-        # _proportional_array_from_dict will produce an array of length < 15
-        # (possibly 0 or 1 entry per category), making LCM > max_length and
-        # forcing the Hare-Niemeyer path.
+        # Scenario 1: LCM > max_length path (15 categories, max_length=10)
         many_cats = {f"cat_{i}": 1 / 15 for i in range(15)}
         dict_of_dicts = {"v1": many_cats, "v2": {"a": 0.5, "b": 0.5}}
 
-        # Must not raise and must respect the cap
         result = _realize_dicts_of_proportions(dict_of_dicts, max_length=10)
         lengths = {len(v) for v in result.values()}
         self.assertEqual(len(lengths), 1)
         self.assertEqual(list(lengths)[0], 10)
-        # All 15 categories must be present or at most 10 (Hare-Niemeyer picks top 10)
         self.assertLessEqual(len(set(result["v1"])), 15)
+
+        # Scenario 2: lcm_length == 0 path (1000 categories, max_length=10).
+        # With 1000 equal-weight categories, _proportional_array_from_dict returns []
+        # because scaling_factor = 10/1000 = 0.01 makes each rounded count 0.
+        # LCM of [0, 2] = 0, which previously bypassed the cap check and caused
+        # ZeroDivisionError at `lcm_length // len(arr)`.
+        very_many_cats = {f"cat_{i}": 1 / 1000 for i in range(1000)}
+        dict_of_dicts_2 = {"v1": very_many_cats, "v2": {"a": 0.5, "b": 0.5}}
+
+        result2 = _realize_dicts_of_proportions(dict_of_dicts_2, max_length=10)
+        lengths2 = {len(v) for v in result2.values()}
+        self.assertEqual(len(lengths2), 1)
+        self.assertEqual(list(lengths2)[0], 10)
 
     def test_prepare_marginal_dist_for_raking(self) -> None:
         """

@@ -465,7 +465,7 @@ def _proportional_array_from_dict(
 
 
 def _hare_niemeyer_allocation(
-    proportions: Dict[str, float],
+    proportions: Dict[str, numbers.Real],
     n: int,
 ) -> List[str]:
     """
@@ -475,7 +475,9 @@ def _hare_niemeyer_allocation(
     the remaining slots to the categories with the largest fractional remainders.
 
     Args:
-        proportions: A dictionary mapping category labels to their proportions (float).
+        proportions: A dictionary mapping category labels to their proportions.
+            Accepts any ``numbers.Real`` value (e.g. ``float``, ``int``,
+            ``numpy.float64``, ``numpy.int64``). ``bool`` values are rejected.
             Zero-valued categories are ignored. Values need not sum to 1; they are
             normalized internally.
         n: The total number of slots to allocate. Must be a positive integer.
@@ -645,11 +647,13 @@ def _realize_dicts_of_proportions(
         or max_length < 1
     ):
         raise ValueError(f"max_length must be a positive integer, got {max_length!r}.")
-    # Generate proportional arrays for each dictionary.  We pass max_length here
-    # so that individual arrays never exceed max_length on their own, which keeps
-    # the LCM check below reliable (if each array is ≤ max_length and the LCM is
-    # also ≤ max_length, the LCM-extended result is within budget).  When the LCM
-    # exceeds max_length we discard these arrays and switch to Hare-Niemeyer.
+    # Generate proportional arrays for each dictionary.  We pass max_length so
+    # that the per-variable array length is roughly bounded, but individual arrays
+    # can still exceed max_length when there are many small-weight categories that
+    # each round up to 1.  The LCM check below catches the common case; the
+    # additional lcm_length == 0 guard handles the edge case where one array is
+    # empty (all counts round to zero).  When either condition holds, we discard
+    # these arrays and switch to Hare-Niemeyer.
     arrays = {
         k: _proportional_array_from_dict(v, max_length=max_length)
         for k, v in dict_of_dicts.items()
@@ -658,15 +662,18 @@ def _realize_dicts_of_proportions(
     # Find the LCM over the lengths of all the arrays
     lcm_length = _find_lcm_of_array_lengths(arrays)
 
-    if lcm_length > max_length:
-        # The LCM of the individual array lengths exceeds the cap.  Rather than
-        # producing a DataFrame with tens-of-millions of rows, reallocate every
-        # variable independently with Hare-Niemeyer (largest remainder) rounding
-        # against the fixed target of max_length rows.
+    if lcm_length > max_length or lcm_length == 0:
+        # The LCM of the individual array lengths exceeds the cap, or one or more
+        # arrays are empty (lcm_length == 0 when any length is 0).  Rather than
+        # producing a DataFrame with tens-of-millions of rows or crashing with a
+        # ZeroDivisionError, reallocate every variable independently with
+        # Hare-Niemeyer (largest remainder) rounding against the fixed target of
+        # max_length rows.
         logger.warning(
             f"The LCM of array lengths ({lcm_length:,}) exceeds max_length "
-            f"({max_length:,}). Capping output at {max_length:,} rows and "
-            f"reallocating counts using the Hare-Niemeyer (largest remainder) method."
+            f"({max_length:,}) or an array is empty. Capping output at "
+            f"{max_length:,} rows and reallocating counts using the "
+            f"Hare-Niemeyer (largest remainder) method."
         )
         return {
             k: _hare_niemeyer_allocation(d, max_length)
