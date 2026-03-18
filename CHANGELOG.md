@@ -1,5 +1,19 @@
 # 0.17.0 (2026-03-17)
 
+## Bug Fixes
+
+- **`prepare_marginal_dist_for_raking` / `_realize_dicts_of_proportions`: fixed memory explosion from LCM expansion**
+  - When proportions had high decimal precision or many covariates were passed,
+    the LCM of the individual per-variable array lengths could reach tens of
+    millions (or more), causing OOM crashes.
+  - Both functions now accept a `max_length` parameter (default `10000`). When
+    the natural LCM exceeds `max_length`, the output is capped at `max_length`
+    rows and counts are allocated via the **Hare-Niemeyer (largest remainder)**
+    method, which guarantees the total stays exactly `max_length` with minimal
+    rounding error per category.
+  - A warning is logged whenever the cap is applied.
+  - A new helper `_hare_niemeyer_allocation` is exposed for direct use.
+
 ## Breaking Changes
 
 - **CLI: unmentioned columns now go to `ignore_columns` instead of `outcome_columns`**

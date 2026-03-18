@@ -22,6 +22,7 @@ from balance import adjustment as balance_adjustment
 from balance.sample_class import Sample
 from balance.weighting_methods.rake import (
     _find_lcm_of_array_lengths,
+    _hare_niemeyer_allocation,
     _lcm,
     _proportional_array_from_dict,
     _realize_dicts_of_proportions,
@@ -775,6 +776,137 @@ class Testrake(
                 "v4": ["A", "B", "B", "B", "B", "B", "B", "B", "B", "B"],
             },
         )
+
+    def test__hare_niemeyer_allocation(self) -> None:
+        """
+        Test the _hare_niemeyer_allocation helper.
+
+        Verifies that the function correctly allocates n slots to categories
+        according to their proportions using the largest-remainder method, and
+        that the total length of the output always equals n.
+        """
+        # Simple 80/20 split with n=5
+        self.assertEqual(
+            _hare_niemeyer_allocation({"a": 0.2, "b": 0.8}, 5),
+            ["a", "b", "b", "b", "b"],
+        )
+
+        # Equal split – n not evenly divisible by 2 → largest remainder assigns extra to "a"
+        result = _hare_niemeyer_allocation({"a": 0.5, "b": 0.5}, 3)
+        self.assertEqual(len(result), 3)
+        # Both categories must be represented
+        self.assertIn("a", result)
+        self.assertIn("b", result)
+
+        # Proportions that don't sum to 1 are normalized internally
+        result2 = _hare_niemeyer_allocation({"x": 2.0, "y": 8.0}, 10)
+        self.assertEqual(result2.count("x"), 2)
+        self.assertEqual(result2.count("y"), 8)
+
+        # Output length always equals n
+        for n in [1, 7, 100, 9999]:
+            out = _hare_niemeyer_allocation({"p": 0.3, "q": 0.3, "r": 0.4}, n)
+            self.assertEqual(len(out), n)
+
+        # Zero-valued categories are excluded
+        result3 = _hare_niemeyer_allocation({"a": 0.5, "b": 0.0, "c": 0.5}, 4)
+        self.assertNotIn("b", result3)
+        self.assertEqual(len(result3), 4)
+
+    def test__realize_dicts_of_proportions_lcm_cap(self) -> None:
+        """
+        Test that _realize_dicts_of_proportions caps output at max_length when
+        the natural LCM of individual array lengths would exceed it.
+
+        This is the core regression test for the memory-explosion bug where
+        high-precision proportions or many variables caused LCM to reach
+        tens of millions of rows.
+        """
+        # Two variables whose individual arrays fit within max_length but whose
+        # LCM would be huge (coprime array lengths near max_length).
+        # Array lengths for each variable produced by _proportional_array_from_dict
+        # are ~9999 and ~9998 → LCM ≈ 9999 * 9998 ≈ 99 million.
+        # Using the bug-report example inputs (high-precision floats).
+        pop_distribution = {
+            "age": {
+                "18-24": 0.3622334534532,
+                "25-34": 0.421434535,
+                "35-44": 0.216345345,
+            },
+            "gender": {
+                "Male": 0.4955666,
+                "Female": 0.505434345,
+            },
+        }
+
+        result = _realize_dicts_of_proportions(pop_distribution, max_length=10000)
+        # All arrays must have the same length and never exceed max_length
+        lengths = {len(v) for v in result.values()}
+        self.assertEqual(len(lengths), 1)
+        self.assertLessEqual(list(lengths)[0], 10000)
+
+        # A warning must have been logged
+        self.assertWarnsRegexp(
+            "LCM of array lengths",
+            _realize_dicts_of_proportions,
+            pop_distribution,
+            10000,
+        )
+
+        # The custom max_length parameter is respected
+        result_small = _realize_dicts_of_proportions(pop_distribution, max_length=500)
+        lengths_small = {len(v) for v in result_small.values()}
+        self.assertEqual(list(lengths_small)[0], 500)
+
+    def test__realize_dicts_of_proportions_no_cap_for_small_lcm(self) -> None:
+        """
+        Test that _realize_dicts_of_proportions does NOT trigger the cap when
+        the LCM of array lengths is within max_length (i.e. existing behaviour
+        is preserved for well-behaved inputs).
+        """
+        dict_of_dicts = {
+            "v1": {"a": 0.2, "b": 0.6, "c": 0.2},
+            "v2": {"aa": 0.5, "bb": 0.5},
+        }
+        # LCM = 10, well below any reasonable max_length – result must be identical
+        # to the pre-fix behaviour.
+        self.assertEqual(
+            _realize_dicts_of_proportions(dict_of_dicts, max_length=10000),
+            {
+                "v1": ["a", "b", "b", "b", "c", "a", "b", "b", "b", "c"],
+                "v2": ["aa", "bb", "aa", "bb", "aa", "bb", "aa", "bb", "aa", "bb"],
+            },
+        )
+
+    def test_prepare_marginal_dist_for_raking_large_input(self) -> None:
+        """
+        Regression test: prepare_marginal_dist_for_raking must not produce a
+        DataFrame with more than max_length rows, even for high-precision
+        proportions that would previously cause LCM explosion.
+        """
+        # From the bug report – previously produced (33_366_600, 5) shape.
+        pop_distribution = {
+            "age": {"18-24": 0.362, "25-34": 0.421, "35-44": 0.216},
+            "gender": {"Male": 0.495, "Female": 0.505},
+            "education": {"College": 0.495, "No_College": 0.505},
+            "religion": {
+                "Christianity": 0.162,
+                "Sunni Islam": 0.312,
+                "Shia Islam": 0.322,
+                "Buddhism": 0.055,
+                "Hinduism": 0.077,
+                "Judaism": 0.038,
+                "No religion": 0.028,
+                "Sikhism": 0.008,
+            },
+        }
+        df = prepare_marginal_dist_for_raking(pop_distribution)
+        # Must be capped at the default max_length of 10 000
+        self.assertEqual(df.shape[0], 10000)
+        # Must have 4 covariate columns + 1 id column
+        self.assertEqual(df.shape[1], 5)
+        # id column must be sequential
+        self.assertEqual(list(df["id"]), list(range(10000)))
 
     def test_prepare_marginal_dist_for_raking(self) -> None:
         """

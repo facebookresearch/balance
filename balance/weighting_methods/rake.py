@@ -463,6 +463,68 @@ def _proportional_array_from_dict(
     return result
 
 
+def _hare_niemeyer_allocation(
+    proportions: Dict[str, float],
+    n: int,
+) -> List[str]:
+    """
+    Allocates n slots to categories using the Hare-Niemeyer (largest remainder) method.
+
+    This avoids rounding bias by first assigning floor counts then distributing
+    the remaining slots to the categories with the largest fractional remainders.
+
+    Args:
+        proportions: A dictionary mapping category labels to their proportions (float).
+            Zero-valued categories are ignored. Values need not sum to 1; they are
+            normalized internally.
+        n: The total number of slots to allocate.
+
+    Returns:
+        A list of length n with each category label repeated according to its
+        allocated count.
+
+    Examples:
+    .. code-block:: python
+
+            _hare_niemeyer_allocation({"a": 0.2, "b": 0.8}, 5)
+                # ['a', 'b', 'b', 'b', 'b']
+            _hare_niemeyer_allocation({"a": 0.5, "b": 0.5}, 3)
+                # ['a', 'b', 'b']   (or ['b', 'a', 'b'] depending on tie-breaking)
+    """
+    # Filter zeros and normalize
+    filtered = {k: v for k, v in proportions.items() if v > 0}
+    total = sum(filtered.values())
+    normalized = {k: v / total for k, v in filtered.items()}
+
+    # Ideal (real-valued) counts
+    ideals = {k: p * n for k, p in normalized.items()}
+
+    # Floor counts
+    floors = {k: int(v) for k, v in ideals.items()}
+
+    # Number of remaining slots after taking floors
+    remaining = n - sum(floors.values())
+
+    # Distribute remaining slots to categories with the largest fractional parts
+    # Use key name as secondary sort key for deterministic tie-breaking
+    sorted_keys = sorted(
+        ideals.keys(),
+        key=lambda k: (-(ideals[k] - floors[k]), k),
+    )
+
+    counts = dict(floors)
+    for i in range(int(remaining)):
+        counts[sorted_keys[i]] += 1
+
+    # Build the result list preserving the original dict insertion order
+    result: List[str] = []
+    for k in proportions:
+        if k in counts:
+            result.extend([k] * counts[k])
+
+    return result
+
+
 def _find_lcm_of_array_lengths(arrays: Dict[str, List[str]]) -> int:
     """
     Finds the least common multiple (LCM) of the lengths of arrays in the input dictionary.
@@ -498,6 +560,7 @@ def _find_lcm_of_array_lengths(arrays: Dict[str, List[str]]) -> int:
 
 def _realize_dicts_of_proportions(
     dict_of_dicts: Dict[str, Dict[str, float]],
+    max_length: int = 10000,
 ) -> Dict[str, List[str]]:
     """
     Generates proportional arrays of equal length for each input dictionary.
@@ -508,6 +571,10 @@ def _realize_dicts_of_proportions(
     Args:
         dict_of_dicts: A dictionary of dictionaries, where each key is a string and
                    each value is a dictionary with keys as strings and values as their proportions (float).
+        max_length: Maximum number of rows in the output arrays. When the LCM of the
+                   individual array lengths exceeds this value the output is capped at
+                   ``max_length`` rows and each variable is re-allocated using the
+                   Hare-Niemeyer (largest remainder) method. Default is 10000.
 
     Returns:
         A dictionary with the same keys as the input and equal length arrays as values.
@@ -547,11 +614,30 @@ def _realize_dicts_of_proportions(
                 #  'v3': ['A', 'B', 'B', 'B', 'B', 'A', 'B', 'B', 'B', 'B'],
                 #  'v4': ['A', 'B', 'B', 'B', 'B', 'B', 'B', 'B', 'B', 'B']}
     """
-    # Generate proportional arrays for each dictionary
-    arrays = {k: _proportional_array_from_dict(v) for k, v in dict_of_dicts.items()}
+    # Generate proportional arrays for each dictionary.  We pass max_length here
+    # so that individual arrays never exceed max_length on their own, which keeps
+    # the LCM check below reliable (if each array is ≤ max_length and the LCM is
+    # also ≤ max_length, the LCM-extended result is within budget).  When the LCM
+    # exceeds max_length we discard these arrays and switch to Hare-Niemeyer.
+    arrays = {k: _proportional_array_from_dict(v, max_length=max_length) for k, v in dict_of_dicts.items()}
 
     # Find the LCM over the lengths of all the arrays
     lcm_length = _find_lcm_of_array_lengths(arrays)
+
+    if lcm_length > max_length:
+        # The LCM of the individual array lengths exceeds the cap.  Rather than
+        # producing a DataFrame with tens-of-millions of rows, reallocate every
+        # variable independently with Hare-Niemeyer (largest remainder) rounding
+        # against the fixed target of max_length rows.
+        logger.warning(
+            f"The LCM of array lengths ({lcm_length:,}) exceeds max_length "
+            f"({max_length:,}). Capping output at {max_length:,} rows and "
+            f"reallocating counts using the Hare-Niemeyer (largest remainder) method."
+        )
+        return {
+            k: _hare_niemeyer_allocation(d, max_length)
+            for k, d in dict_of_dicts.items()
+        }
 
     # Extend each array to have the same LCM length while maintaining proportions
     result = {}
@@ -565,6 +651,7 @@ def _realize_dicts_of_proportions(
 
 def prepare_marginal_dist_for_raking(
     dict_of_dicts: Dict[str, Dict[str, float]],
+    max_length: int = 10000,
 ) -> pd.DataFrame:
     """
     Realizes a nested dictionary of proportions into a DataFrame.
@@ -573,6 +660,10 @@ def prepare_marginal_dist_for_raking(
         dict_of_dicts: A nested dictionary where the outer keys are column names
                    and the inner dictionaries have keys as category labels
                    and values as their proportions (float).
+        max_length: Maximum number of rows in the resulting DataFrame. When the
+                   natural LCM-based row count would exceed this value the output
+                   is capped using Hare-Niemeyer (largest remainder) allocation.
+                   Default is 10000.
 
     Returns:
         A DataFrame with columns specified by the outer keys of the input dictionary
@@ -589,7 +680,7 @@ def prepare_marginal_dist_for_raking(
         df.columns.tolist()
         # ['A', 'B', 'id']
     """
-    target_dict_from_marginals = _realize_dicts_of_proportions(dict_of_dicts)
+    target_dict_from_marginals = _realize_dicts_of_proportions(dict_of_dicts, max_length=max_length)
     target_df_from_marginals = pd.DataFrame.from_dict(target_dict_from_marginals)
     # Add an id column:
     target_df_from_marginals["id"] = range(target_df_from_marginals.shape[0])
