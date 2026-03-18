@@ -840,10 +840,11 @@ class Testrake(
         }
 
         result = _realize_dicts_of_proportions(pop_distribution, max_length=10000)
-        # All arrays must have the same length and never exceed max_length
+        # All arrays must have the same length and equal max_length exactly
+        # (the Hare-Niemeyer fallback always allocates exactly max_length slots)
         lengths = {len(v) for v in result.values()}
         self.assertEqual(len(lengths), 1)
-        self.assertLessEqual(list(lengths)[0], 10000)
+        self.assertEqual(list(lengths)[0], 10000)
 
         # A warning must have been logged
         self.assertWarnsRegexp(

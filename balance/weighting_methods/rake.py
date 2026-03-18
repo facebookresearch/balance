@@ -647,6 +647,8 @@ def _realize_dicts_of_proportions(
         or max_length < 1
     ):
         raise ValueError(f"max_length must be a positive integer, got {max_length!r}.")
+    if not dict_of_dicts:
+        raise ValueError("dict_of_dicts must be non-empty; got an empty dictionary.")
     # Generate proportional arrays for each dictionary.  We pass max_length so
     # that the per-variable array length is roughly bounded, but individual arrays
     # can still exceed max_length when there are many small-weight categories that
