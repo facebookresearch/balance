@@ -520,14 +520,20 @@ def _hare_niemeyer_allocation(
                 f"Proportion for category '{k}' must be non-negative, got {v}."
             )
 
+    # Convert to plain Python float first so that downstream arithmetic uses
+    # Python's arbitrary-precision float rather than NumPy integer/float types.
+    # NumPy integer scalars (e.g. np.int64) can silently overflow when summed,
+    # yielding wrong totals; converting early avoids this.
+    float_proportions = {k: float(v) for k, v in proportions.items()}
+
     # Filter zeros and normalize
-    filtered = {k: v for k, v in proportions.items() if v > 0}
+    filtered = {k: fv for k, fv in float_proportions.items() if fv > 0}
     if not filtered:
         raise ValueError(
             "No positive proportions found in input. At least one category must have a positive proportion."
         )
     total = sum(filtered.values())
-    normalized = {k: v / total for k, v in filtered.items()}
+    normalized = {k: fv / total for k, fv in filtered.items()}
 
     # Ideal (real-valued) counts
     ideals = {k: p * n for k, p in normalized.items()}
