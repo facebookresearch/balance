@@ -813,6 +813,74 @@ class Testrake(
         self.assertNotIn("b", result3)
         self.assertEqual(len(result3), 4)
 
+    def test__hare_niemeyer_allocation_input_validation(self) -> None:
+        """
+        Tests that _hare_niemeyer_allocation raises actionable ValueError for all
+        invalid inputs: bool/NaN/inf/negative proportions, bool/float/zero n.
+        """
+        import math
+
+        # bool proportions rejected (bool is a subclass of int/float but must be
+        # excluded to prevent silent coercion True → 1.0)
+        with self.assertRaises(ValueError):
+            _hare_niemeyer_allocation({"a": True, "b": 0.5}, 5)
+
+        # NaN proportions rejected
+        with self.assertRaises(ValueError):
+            _hare_niemeyer_allocation({"a": math.nan, "b": 0.5}, 5)
+
+        # inf proportions rejected
+        with self.assertRaises(ValueError):
+            _hare_niemeyer_allocation({"a": math.inf}, 5)
+
+        # negative proportions rejected
+        with self.assertRaises(ValueError):
+            _hare_niemeyer_allocation({"a": -0.1, "b": 0.5}, 5)
+
+        # bool n rejected
+        with self.assertRaises(ValueError):
+            _hare_niemeyer_allocation({"a": 0.5}, True)
+
+        # float n rejected
+        with self.assertRaises(ValueError):
+            _hare_niemeyer_allocation({"a": 0.5}, 5.0)
+
+        # n == 0 rejected
+        with self.assertRaises(ValueError):
+            _hare_niemeyer_allocation({"a": 0.5}, 0)
+
+        # n < 0 rejected
+        with self.assertRaises(ValueError):
+            _hare_niemeyer_allocation({"a": 0.5}, -1)
+
+    def test__realize_dicts_of_proportions_input_validation(self) -> None:
+        """
+        Tests that _realize_dicts_of_proportions raises actionable ValueError for
+        invalid inputs: empty dict_of_dicts, bool/float/zero max_length, and
+        bool proportions in inner dicts (which should propagate with variable name).
+        """
+        simple = {"v1": {"a": 0.5, "b": 0.5}}
+
+        # empty dict_of_dicts rejected
+        with self.assertRaises(ValueError):
+            _realize_dicts_of_proportions({})
+
+        # bool max_length rejected
+        with self.assertRaises(ValueError):
+            _realize_dicts_of_proportions(simple, True)
+
+        # float max_length rejected
+        with self.assertRaises(ValueError):
+            _realize_dicts_of_proportions(simple, 10000.0)
+
+        # max_length < 1 rejected
+        with self.assertRaises(ValueError):
+            _realize_dicts_of_proportions(simple, 0)
+
+        # bool proportion in inner dict rejected, error message includes variable name
+        with self.assertRaisesRegex(ValueError, "v1"):
+            _realize_dicts_of_proportions({"v1": {"a": True, "b": 0.5}}, 5)
+
     def test__realize_dicts_of_proportions_lcm_cap(self) -> None:
         """
         Test that _realize_dicts_of_proportions caps output at max_length when

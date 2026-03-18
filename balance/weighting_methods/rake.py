@@ -657,6 +657,33 @@ def _realize_dicts_of_proportions(
         raise ValueError(f"max_length must be a positive integer, got {max_length!r}.")
     if not dict_of_dicts:
         raise ValueError("dict_of_dicts must be non-empty; got an empty dictionary.")
+    # Validate all inner proportion values before any float coercion so that
+    # invalid inputs (bool, NaN, inf, negative) are always caught and reported
+    # with the variable name, regardless of whether the LCM-capping path is taken.
+    for var_name, inner_dict in dict_of_dicts.items():
+        for cat_name, v in inner_dict.items():
+            if isinstance(v, bool) or not isinstance(v, numbers.Real):
+                raise ValueError(
+                    f"Variable '{var_name}', category '{cat_name}': proportion must be "
+                    f"a real number (not bool), got {type(v).__name__}."
+                )
+            try:
+                fv = float(v)
+            except (TypeError, OverflowError) as exc:
+                raise ValueError(
+                    f"Variable '{var_name}', category '{cat_name}': proportion must be "
+                    f"convertible to float, got {v!r}."
+                ) from exc
+            if math.isnan(fv) or math.isinf(fv):
+                raise ValueError(
+                    f"Variable '{var_name}', category '{cat_name}': proportion must be "
+                    f"finite, got {v}."
+                )
+            if fv < 0:
+                raise ValueError(
+                    f"Variable '{var_name}', category '{cat_name}': proportion must be "
+                    f"non-negative, got {v}."
+                )
     # Generate proportional arrays for each dictionary.  We pass max_length so
     # that the per-variable array length is roughly bounded, but individual arrays
     # can still exceed max_length when there are many small-weight categories that
@@ -688,13 +715,13 @@ def _realize_dicts_of_proportions(
             f"{max_length:,} rows and reallocating counts using the "
             f"Hare-Niemeyer (largest remainder) method."
         )
-        return {
-            k: _hare_niemeyer_allocation(
-                {category: float(weight) for category, weight in d.items()},
-                max_length,
-            )
-            for k, d in dict_of_dicts.items()
-        }
+        result_hn = {}
+        for k, d in dict_of_dicts.items():
+            try:
+                result_hn[k] = _hare_niemeyer_allocation(d, max_length)
+            except ValueError as exc:
+                raise ValueError(f"Variable '{k}': {exc}") from exc
+        return result_hn
 
     # Extend each array to have the same LCM length while maintaining proportions
     result = {}
@@ -745,4 +772,3 @@ def prepare_marginal_dist_for_raking(
     target_df_from_marginals["id"] = range(target_df_from_marginals.shape[0])
 
     return target_df_from_marginals
-
