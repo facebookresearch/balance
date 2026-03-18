@@ -493,7 +493,7 @@ def _hare_niemeyer_allocation(
             _hare_niemeyer_allocation({"a": 0.2, "b": 0.8}, 5)
                 # ['a', 'b', 'b', 'b', 'b']
             _hare_niemeyer_allocation({"a": 0.5, "b": 0.5}, 3)
-                # ['a', 'b', 'b']
+                # ['a', 'a', 'b']
     """
     # Validate n: must be a plain positive int (bool is a subclass of int but should
     # not be accepted here as it would silently produce n=0 or n=1)
@@ -520,8 +520,8 @@ def _hare_niemeyer_allocation(
                 f"Proportion for category '{k}' must be non-negative, got {v}."
             )
 
-    # Convert to plain Python float first so that downstream arithmetic uses
-    # Python's arbitrary-precision float rather than NumPy integer/float types.
+    # Convert to plain Python float first to ensure arithmetic uses Python's
+    # standard float semantics rather than NumPy scalar types.
     # NumPy integer scalars (e.g. np.int64) can silently overflow when summed,
     # yielding wrong totals; converting early avoids this.
     float_proportions = {k: float(v) for k, v in proportions.items()}
