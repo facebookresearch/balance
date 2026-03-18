@@ -506,7 +506,13 @@ def _hare_niemeyer_allocation(
             raise ValueError(
                 f"Proportion for category '{k}' must be a numeric value, got {type(v).__name__}."
             )
-        fv = float(v)
+        try:
+            fv = float(v)
+        except (TypeError, OverflowError) as exc:
+            raise ValueError(
+                f"Proportion for category '{k}' must be finite and convertible to float, "
+                f"got {v!r} of type {type(v).__name__}."
+            ) from exc
         if math.isnan(fv) or math.isinf(fv):
             raise ValueError(f"Proportion for category '{k}' must be finite, got {v}.")
         if fv < 0:
