@@ -12,7 +12,7 @@
     method, which guarantees the total stays exactly `max_length` with minimal
     rounding error per category.
   - A warning is logged whenever the cap is applied.
-  - A new helper `_hare_niemeyer_allocation` is exposed for direct use.
+  - A new internal helper `_hare_niemeyer_allocation` implements the allocation logic.
 
 # 0.17.0 (2026-03-17)
 

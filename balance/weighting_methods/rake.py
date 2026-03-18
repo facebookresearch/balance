@@ -491,8 +491,25 @@ def _hare_niemeyer_allocation(
             _hare_niemeyer_allocation({"a": 0.5, "b": 0.5}, 3)
                 # ['a', 'b', 'b']   (or ['b', 'a', 'b'] depending on tie-breaking)
     """
+    # Validate inputs
+    for k, v in proportions.items():
+        if not isinstance(v, (int, float)):
+            raise ValueError(
+                f"Proportion for category '{k}' must be a numeric value, got {type(v).__name__}."
+            )
+        if math.isnan(v) or math.isinf(v):
+            raise ValueError(f"Proportion for category '{k}' must be finite, got {v}.")
+        if v < 0:
+            raise ValueError(
+                f"Proportion for category '{k}' must be non-negative, got {v}."
+            )
+
     # Filter zeros and normalize
     filtered = {k: v for k, v in proportions.items() if v > 0}
+    if not filtered:
+        raise ValueError(
+            "No positive proportions found in input. At least one category must have a positive proportion."
+        )
     total = sum(filtered.values())
     normalized = {k: v / total for k, v in filtered.items()}
 
@@ -614,6 +631,8 @@ def _realize_dicts_of_proportions(
                 #  'v3': ['A', 'B', 'B', 'B', 'B', 'A', 'B', 'B', 'B', 'B'],
                 #  'v4': ['A', 'B', 'B', 'B', 'B', 'B', 'B', 'B', 'B', 'B']}
     """
+    if not isinstance(max_length, int) or max_length < 1:
+        raise ValueError(f"max_length must be a positive integer, got {max_length!r}.")
     # Generate proportional arrays for each dictionary.  We pass max_length here
     # so that individual arrays never exceed max_length on their own, which keeps
     # the LCM check below reliable (if each array is ≤ max_length and the LCM is
