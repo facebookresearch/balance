@@ -10,6 +10,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import itertools
 import logging
 import math
+import numbers
 from fractions import Fraction
 from functools import reduce
 from typing import Any, Callable, Dict, List, Tuple, Union
@@ -499,7 +500,7 @@ def _hare_niemeyer_allocation(
 
     # Validate proportions
     for k, v in proportions.items():
-        if isinstance(v, bool) or not isinstance(v, (int, float)):
+        if isinstance(v, bool) or not isinstance(v, numbers.Real):
             raise ValueError(
                 f"Proportion for category '{k}' must be a numeric value, got {type(v).__name__}."
             )
@@ -638,7 +639,11 @@ def _realize_dicts_of_proportions(
                 #  'v3': ['A', 'B', 'B', 'B', 'B', 'A', 'B', 'B', 'B', 'B'],
                 #  'v4': ['A', 'B', 'B', 'B', 'B', 'B', 'B', 'B', 'B', 'B']}
     """
-    if not isinstance(max_length, int) or max_length < 1:
+    if (
+        isinstance(max_length, bool)
+        or not isinstance(max_length, int)
+        or max_length < 1
+    ):
         raise ValueError(f"max_length must be a positive integer, got {max_length!r}.")
     # Generate proportional arrays for each dictionary.  We pass max_length here
     # so that individual arrays never exceed max_length on their own, which keeps

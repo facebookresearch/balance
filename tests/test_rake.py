@@ -952,6 +952,57 @@ class Testrake(
         self.assertEqual(len(target_dict["age"]), 10000)
         self.assertEqual(len(target_dict["gender"]), 10000)
 
+    def test__hare_niemeyer_allocation_numpy_scalars(self) -> None:
+        """
+        Regression test: _hare_niemeyer_allocation must accept NumPy scalar
+        numeric types (e.g. np.float64, np.int64) that are produced when a
+        user builds the proportions dict via pandas Series.to_dict().
+        """
+        import numpy as np
+
+        # np.float64 proportions — the common case from Series.to_dict()
+        result = _hare_niemeyer_allocation(
+            {"a": np.float64(0.2), "b": np.float64(0.8)}, 5
+        )
+        self.assertEqual(result, ["a", "b", "b", "b", "b"])
+        self.assertEqual(len(result), 5)
+
+        # np.int64 proportions (unnormalized counts)
+        result2 = _hare_niemeyer_allocation({"x": np.int64(2), "y": np.int64(8)}, 10)
+        self.assertEqual(result2.count("x"), 2)
+        self.assertEqual(result2.count("y"), 8)
+
+        # Mixed Python float and np.float64
+        result3 = _hare_niemeyer_allocation({"p": 0.3, "q": np.float64(0.7)}, 10)
+        self.assertEqual(len(result3), 10)
+
+    def test__realize_dicts_of_proportions_more_categories_than_max_length(
+        self,
+    ) -> None:
+        """
+        Regression test: _realize_dicts_of_proportions must not crash with a
+        ZeroDivisionError when a variable has more categories than max_length.
+
+        Previously, _proportional_array_from_dict could return an empty array
+        for a variable with many equal-weight categories (> max_length), and
+        the subsequent LCM-extension step would divide by zero.  The Hare-Niemeyer
+        fallback path must handle this gracefully.
+        """
+        # Build a variable with 15 categories of equal weight, with max_length=10.
+        # _proportional_array_from_dict will produce an array of length < 15
+        # (possibly 0 or 1 entry per category), making LCM > max_length and
+        # forcing the Hare-Niemeyer path.
+        many_cats = {f"cat_{i}": 1 / 15 for i in range(15)}
+        dict_of_dicts = {"v1": many_cats, "v2": {"a": 0.5, "b": 0.5}}
+
+        # Must not raise and must respect the cap
+        result = _realize_dicts_of_proportions(dict_of_dicts, max_length=10)
+        lengths = {len(v) for v in result.values()}
+        self.assertEqual(len(lengths), 1)
+        self.assertEqual(list(lengths)[0], 10)
+        # All 15 categories must be present or at most 10 (Hare-Niemeyer picks top 10)
+        self.assertLessEqual(len(set(result["v1"])), 15)
+
     def test_prepare_marginal_dist_for_raking(self) -> None:
         """
         Test the prepare_marginal_dist_for_raking utility function.
