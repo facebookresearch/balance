@@ -517,7 +517,6 @@ class Testcbps(
                 f"dict containing a 'weight' Series, got {type(unconstrained_result).__name__}"
             )
             return
-        # pyre-ignore[61]: self.fail() always raises, so this is always defined
         self.assertTrue(
             unconstrained_de > MAX_DESIGN_EFFECT,
             msg=f"Unconstrained CBPS should produce high design effect (>{MAX_DESIGN_EFFECT}), got {unconstrained_de}",
@@ -555,7 +554,6 @@ class Testcbps(
                 f"dict containing a 'weight' Series, got {type(constrained_result_over).__name__}"
             )
             return
-        # pyre-ignore[61]: self.fail() always raises, so this is always defined
         self.assertTrue(
             round(constrained_de_over, 5) <= MAX_DESIGN_EFFECT,
             msg=f"Constrained CBPS ('over' method) should respect max_de={MAX_DESIGN_EFFECT}, got {constrained_de_over}",
@@ -594,7 +592,6 @@ class Testcbps(
                 f"dict containing a 'weight' Series, got {type(constrained_result_exact).__name__}"
             )
             return
-        # pyre-ignore[61]: self.fail() always raises, so this is always defined
         self.assertTrue(
             round(constrained_de_exact, 5) <= MAX_DESIGN_EFFECT,
             msg=f"Constrained CBPS ('exact' method) should respect max_de={MAX_DESIGN_EFFECT}, got {constrained_de_exact}",

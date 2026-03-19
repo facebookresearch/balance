@@ -1464,7 +1464,7 @@ def plot_dist(
         if dist_type is None:
             dist_type_for_seaborn = None
         elif dist_type in ("kde", "hist", "qq", "ecdf"):
-            dist_type_for_seaborn = dist_type  # pyre-ignore[9]
+            dist_type_for_seaborn = dist_type
         else:
             raise ValueError(
                 f"seaborn library does not support dist_type='{dist_type}'. "

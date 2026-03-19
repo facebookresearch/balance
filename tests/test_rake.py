@@ -827,7 +827,6 @@ class Testrake(
 
         # bool max_length rejected
         with self.assertRaises(ValueError):
-            # pyre-ignore[6]: Deliberately testing invalid type
             _realize_dicts_of_proportions(simple, True)
 
         # float max_length rejected
