@@ -47,6 +47,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numbers</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">fractions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Fraction</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">reduce</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
@@ -503,6 +504,70 @@
     <span class="k">return</span> <span class="n">result</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_hare_niemeyer_allocation</span><span class="p">(</span>
+    <span class="n">proportions</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+    <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Allocate *n* slots to categories using the Hare-Niemeyer (largest-remainder) method.</span>
+
+<span class="sd">    This avoids rounding bias by first assigning floor counts then distributing</span>
+<span class="sd">    the remaining slots to the categories with the largest fractional remainders.</span>
+
+<span class="sd">    See https://en.wikipedia.org/wiki/Hare_quota for background on the method.</span>
+
+<span class="sd">    .. note::</span>
+<span class="sd">       This is an internal helper.  Input validation (type checks on</span>
+<span class="sd">       proportions, NaN / inf / negative guards) is performed by the caller</span>
+<span class="sd">       :func:`_realize_dicts_of_proportions`; this function assumes its inputs</span>
+<span class="sd">       are already validated.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        proportions: Mapping of category labels to their (non-negative, finite)</span>
+<span class="sd">            proportions.  Zero-valued categories are skipped.  Values need not</span>
+<span class="sd">            sum to 1; they are normalised internally.</span>
+<span class="sd">        n: Total number of slots to allocate (positive ``int``).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A list of length *n* with each label repeated according to its allocated</span>
+<span class="sd">        count.  Ties in fractional remainders are broken deterministically by</span>
+<span class="sd">        category label (alphabetical).</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; _hare_niemeyer_allocation({&quot;a&quot;: 0.2, &quot;b&quot;: 0.8}, 5)</span>
+<span class="sd">        [&#39;a&#39;, &#39;b&#39;, &#39;b&#39;, &#39;b&#39;, &#39;b&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; _hare_niemeyer_allocation({&quot;a&quot;: 0.5, &quot;b&quot;: 0.5}, 3)</span>
+<span class="sd">        [&#39;a&#39;, &#39;a&#39;, &#39;b&#39;]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Filter zeros and normalise</span>
+    <span class="n">filtered</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">proportions</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">}</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">filtered</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;All proportions are zero or empty; cannot allocate slots.&quot;</span><span class="p">)</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">filtered</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">normalised</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="o">/</span> <span class="n">total</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">filtered</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="c1"># Ideal (real-valued) counts and floor counts</span>
+    <span class="n">ideals</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">p</span> <span class="o">*</span> <span class="n">n</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">normalised</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="n">floors</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ideals</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="c1"># Distribute remaining slots to largest fractional remainders;</span>
+    <span class="c1"># secondary sort on label for deterministic tie-breaking.</span>
+    <span class="n">remaining</span> <span class="o">=</span> <span class="n">n</span> <span class="o">-</span> <span class="nb">sum</span><span class="p">(</span><span class="n">floors</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">sorted_keys</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+        <span class="n">ideals</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
+        <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">ideals</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">-</span> <span class="n">floors</span><span class="p">[</span><span class="n">k</span><span class="p">]),</span> <span class="n">k</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">floors</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">remaining</span><span class="p">)):</span>
+        <span class="n">counts</span><span class="p">[</span><span class="n">sorted_keys</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># Build result preserving original dict insertion order</span>
+    <span class="n">result</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">proportions</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">counts</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">counts</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_find_lcm_of_array_lengths</span><span class="p">(</span><span class="n">arrays</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Finds the least common multiple (LCM) of the lengths of arrays in the input dictionary.</span>
@@ -538,6 +603,7 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_realize_dicts_of_proportions</span><span class="p">(</span>
     <span class="n">dict_of_dicts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
+    <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generates proportional arrays of equal length for each input dictionary.</span>
@@ -547,7 +613,14 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        dict_of_dicts: A dictionary of dictionaries, where each key is a string and</span>
-<span class="sd">                   each value is a dictionary with keys as strings and values as their proportions (float).</span>
+<span class="sd">                   each value is a dictionary with keys as strings and values as their</span>
+<span class="sd">                   proportions as real-valued numeric types implementing ``numbers.Real``</span>
+<span class="sd">                   (e.g., Python floats, NumPy or pandas scalar types).</span>
+<span class="sd">        max_length: Maximum number of rows in the output arrays. When the least</span>
+<span class="sd">                   common multiple (LCM) of the</span>
+<span class="sd">                   individual array lengths exceeds this value the output is capped at</span>
+<span class="sd">                   ``max_length`` rows and each variable is re-allocated using the</span>
+<span class="sd">                   Hare-Niemeyer (largest remainder) method. Default is 10000.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        A dictionary with the same keys as the input and equal length arrays as values.</span>
@@ -587,11 +660,76 @@
 <span class="sd">                #  &#39;v3&#39;: [&#39;A&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;, &#39;A&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;],</span>
 <span class="sd">                #  &#39;v4&#39;: [&#39;A&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;, &#39;B&#39;]}</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Generate proportional arrays for each dictionary</span>
-    <span class="n">arrays</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">_proportional_array_from_dict</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">dict_of_dicts</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="nb">isinstance</span><span class="p">(</span><span class="n">max_length</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">max_length</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="n">max_length</span> <span class="o">&lt;</span> <span class="mi">1</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;max_length must be a positive integer, got </span><span class="si">{</span><span class="n">max_length</span><span class="si">!r}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">dict_of_dicts</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;dict_of_dicts must be non-empty; got an empty dictionary.&quot;</span><span class="p">)</span>
+    <span class="c1"># Validate all inner proportion values before any float coercion so that</span>
+    <span class="c1"># invalid inputs (bool, NaN, inf, negative) are always caught and reported</span>
+    <span class="c1"># with the variable name, regardless of whether the LCM-capping path is taken.</span>
+    <span class="k">for</span> <span class="n">var_name</span><span class="p">,</span> <span class="n">inner_dict</span> <span class="ow">in</span> <span class="n">dict_of_dicts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">cat_name</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">inner_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Real</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Variable &#39;</span><span class="si">{</span><span class="n">var_name</span><span class="si">}</span><span class="s2">&#39;, category &#39;</span><span class="si">{</span><span class="n">cat_name</span><span class="si">}</span><span class="s2">&#39;: proportion must be &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;a real number (not bool), got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">fv</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">OverflowError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Variable &#39;</span><span class="si">{</span><span class="n">var_name</span><span class="si">}</span><span class="s2">&#39;, category &#39;</span><span class="si">{</span><span class="n">cat_name</span><span class="si">}</span><span class="s2">&#39;: proportion must be &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;convertible to float, got </span><span class="si">{</span><span class="n">v</span><span class="si">!r}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+            <span class="k">if</span> <span class="n">math</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">fv</span><span class="p">)</span> <span class="ow">or</span> <span class="n">math</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">fv</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Variable &#39;</span><span class="si">{</span><span class="n">var_name</span><span class="si">}</span><span class="s2">&#39;, category &#39;</span><span class="si">{</span><span class="n">cat_name</span><span class="si">}</span><span class="s2">&#39;: proportion must be &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;finite, got </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">fv</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Variable &#39;</span><span class="si">{</span><span class="n">var_name</span><span class="si">}</span><span class="s2">&#39;, category &#39;</span><span class="si">{</span><span class="n">cat_name</span><span class="si">}</span><span class="s2">&#39;: proportion must be &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;non-negative, got </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span>
+    <span class="c1"># Generate proportional arrays for each dictionary.  We pass max_length so</span>
+    <span class="c1"># that the per-variable array length is roughly bounded, but individual arrays</span>
+    <span class="c1"># can still exceed max_length when there are many small-weight categories that</span>
+    <span class="c1"># each round up to 1.  The LCM check below catches the common case; the</span>
+    <span class="c1"># additional lcm_length == 0 guard handles the edge case where one array is</span>
+    <span class="c1"># empty (all counts round to zero).  When either condition holds, we discard</span>
+    <span class="c1"># these arrays and switch to Hare-Niemeyer.</span>
+    <span class="n">arrays</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">k</span><span class="p">:</span> <span class="n">_proportional_array_from_dict</span><span class="p">(</span>
+            <span class="p">{</span><span class="n">category</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">weight</span><span class="p">)</span> <span class="k">for</span> <span class="n">category</span><span class="p">,</span> <span class="n">weight</span> <span class="ow">in</span> <span class="n">v</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
+            <span class="n">max_length</span><span class="o">=</span><span class="n">max_length</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">dict_of_dicts</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="p">}</span>
 
     <span class="c1"># Find the LCM over the lengths of all the arrays</span>
     <span class="n">lcm_length</span> <span class="o">=</span> <span class="n">_find_lcm_of_array_lengths</span><span class="p">(</span><span class="n">arrays</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">lcm_length</span> <span class="o">&gt;</span> <span class="n">max_length</span> <span class="ow">or</span> <span class="n">lcm_length</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># The LCM of the individual array lengths exceeds the cap, or one or more</span>
+        <span class="c1"># arrays are empty (lcm_length == 0 when any length is 0).  Rather than</span>
+        <span class="c1"># producing a DataFrame with tens-of-millions of rows or crashing with a</span>
+        <span class="c1"># ZeroDivisionError, reallocate every variable independently with</span>
+        <span class="c1"># Hare-Niemeyer (largest remainder) rounding against the fixed target of</span>
+        <span class="c1"># max_length rows.</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;The LCM of array lengths (</span><span class="si">{</span><span class="n">lcm_length</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">) exceeds max_length &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">max_length</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">) or an array is empty. Capping output at &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">max_length</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> rows and reallocating counts using the &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Hare-Niemeyer (largest remainder) method.&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="n">_hare_niemeyer_allocation</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">max_length</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dict_of_dicts</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
 
     <span class="c1"># Extend each array to have the same LCM length while maintaining proportions</span>
     <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
@@ -607,6 +745,7 @@
 <a class="viewcode-back" href="../../../balance.weighting_methods.rake.html#balance.weighting_methods.rake.prepare_marginal_dist_for_raking">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">prepare_marginal_dist_for_raking</span><span class="p">(</span>
     <span class="n">dict_of_dicts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
+    <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Realizes a nested dictionary of proportions into a DataFrame.</span>
@@ -614,7 +753,12 @@
 <span class="sd">    Args:</span>
 <span class="sd">        dict_of_dicts: A nested dictionary where the outer keys are column names</span>
 <span class="sd">                   and the inner dictionaries have keys as category labels</span>
-<span class="sd">                   and values as their proportions (float).</span>
+<span class="sd">                   and values as their proportions (real numbers).</span>
+<span class="sd">        max_length: Maximum number of rows in the resulting DataFrame. Must be</span>
+<span class="sd">                   an integer. When the natural least common multiple (LCM) based</span>
+<span class="sd">                   row count would exceed</span>
+<span class="sd">                   this value the output is capped using Hare-Niemeyer (largest</span>
+<span class="sd">                   remainder) allocation. Default is 10000.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        A DataFrame with columns specified by the outer keys of the input dictionary</span>
@@ -631,7 +775,9 @@
 <span class="sd">        df.columns.tolist()</span>
 <span class="sd">        # [&#39;A&#39;, &#39;B&#39;, &#39;id&#39;]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">target_dict_from_marginals</span> <span class="o">=</span> <span class="n">_realize_dicts_of_proportions</span><span class="p">(</span><span class="n">dict_of_dicts</span><span class="p">)</span>
+    <span class="n">target_dict_from_marginals</span> <span class="o">=</span> <span class="n">_realize_dicts_of_proportions</span><span class="p">(</span>
+        <span class="n">dict_of_dicts</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="n">max_length</span>
+    <span class="p">)</span>
     <span class="n">target_df_from_marginals</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">target_dict_from_marginals</span><span class="p">)</span>
     <span class="c1"># Add an id column:</span>
     <span class="n">target_df_from_marginals</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">target_df_from_marginals</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
