@@ -10,6 +10,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import itertools
 import logging
 import math
+import numbers
 from fractions import Fraction
 from functools import reduce
 from typing import Any, Callable, Dict, List, Tuple, Union
@@ -463,6 +464,70 @@ def _proportional_array_from_dict(
     return result
 
 
+def _hare_niemeyer_allocation(
+    proportions: Dict[str, float],
+    n: int,
+) -> List[str]:
+    """Allocate *n* slots to categories using the Hare-Niemeyer (largest-remainder) method.
+
+    This avoids rounding bias by first assigning floor counts then distributing
+    the remaining slots to the categories with the largest fractional remainders.
+
+    See https://en.wikipedia.org/wiki/Hare_quota for background on the method.
+
+    .. note::
+       This is an internal helper.  Input validation (type checks on
+       proportions, NaN / inf / negative guards) is performed by the caller
+       :func:`_realize_dicts_of_proportions`; this function assumes its inputs
+       are already validated.
+
+    Args:
+        proportions: Mapping of category labels to their (non-negative, finite)
+            proportions.  Zero-valued categories are skipped.  Values need not
+            sum to 1; they are normalised internally.
+        n: Total number of slots to allocate (positive ``int``).
+
+    Returns:
+        A list of length *n* with each label repeated according to its allocated
+        count.  Ties in fractional remainders are broken deterministically by
+        category label (alphabetical).
+
+    Examples:
+        >>> _hare_niemeyer_allocation({"a": 0.2, "b": 0.8}, 5)
+        ['a', 'b', 'b', 'b', 'b']
+        >>> _hare_niemeyer_allocation({"a": 0.5, "b": 0.5}, 3)
+        ['a', 'a', 'b']
+    """
+    # Filter zeros and normalise
+    filtered = {k: float(v) for k, v in proportions.items() if float(v) > 0}
+    if not filtered:
+        raise ValueError("All proportions are zero or empty; cannot allocate slots.")
+    total = sum(filtered.values())
+    normalised = {k: v / total for k, v in filtered.items()}
+
+    # Ideal (real-valued) counts and floor counts
+    ideals = {k: p * n for k, p in normalised.items()}
+    floors = {k: int(v) for k, v in ideals.items()}
+
+    # Distribute remaining slots to largest fractional remainders;
+    # secondary sort on label for deterministic tie-breaking.
+    remaining = n - sum(floors.values())
+    sorted_keys = sorted(
+        ideals.keys(),
+        key=lambda k: (-(ideals[k] - floors[k]), k),
+    )
+    counts = dict(floors)
+    for i in range(int(remaining)):
+        counts[sorted_keys[i]] += 1
+
+    # Build result preserving original dict insertion order
+    result: List[str] = []
+    for k in proportions:
+        if k in counts:
+            result.extend([k] * counts[k])
+    return result
+
+
 def _find_lcm_of_array_lengths(arrays: Dict[str, List[str]]) -> int:
     """
     Finds the least common multiple (LCM) of the lengths of arrays in the input dictionary.
@@ -498,6 +563,7 @@ def _find_lcm_of_array_lengths(arrays: Dict[str, List[str]]) -> int:
 
 def _realize_dicts_of_proportions(
     dict_of_dicts: Dict[str, Dict[str, float]],
+    max_length: int = 10000,
 ) -> Dict[str, List[str]]:
     """
     Generates proportional arrays of equal length for each input dictionary.
@@ -507,7 +573,14 @@ def _realize_dicts_of_proportions(
 
     Args:
         dict_of_dicts: A dictionary of dictionaries, where each key is a string and
-                   each value is a dictionary with keys as strings and values as their proportions (float).
+                   each value is a dictionary with keys as strings and values as their
+                   proportions as real-valued numeric types implementing ``numbers.Real``
+                   (e.g., Python floats, NumPy or pandas scalar types).
+        max_length: Maximum number of rows in the output arrays. When the least
+                   common multiple (LCM) of the
+                   individual array lengths exceeds this value the output is capped at
+                   ``max_length`` rows and each variable is re-allocated using the
+                   Hare-Niemeyer (largest remainder) method. Default is 10000.
 
     Returns:
         A dictionary with the same keys as the input and equal length arrays as values.
@@ -547,11 +620,76 @@ def _realize_dicts_of_proportions(
                 #  'v3': ['A', 'B', 'B', 'B', 'B', 'A', 'B', 'B', 'B', 'B'],
                 #  'v4': ['A', 'B', 'B', 'B', 'B', 'B', 'B', 'B', 'B', 'B']}
     """
-    # Generate proportional arrays for each dictionary
-    arrays = {k: _proportional_array_from_dict(v) for k, v in dict_of_dicts.items()}
+    if (
+        isinstance(max_length, bool)
+        or not isinstance(max_length, int)
+        or max_length < 1
+    ):
+        raise ValueError(f"max_length must be a positive integer, got {max_length!r}.")
+    if not dict_of_dicts:
+        raise ValueError("dict_of_dicts must be non-empty; got an empty dictionary.")
+    # Validate all inner proportion values before any float coercion so that
+    # invalid inputs (bool, NaN, inf, negative) are always caught and reported
+    # with the variable name, regardless of whether the LCM-capping path is taken.
+    for var_name, inner_dict in dict_of_dicts.items():
+        for cat_name, v in inner_dict.items():
+            if isinstance(v, bool) or not isinstance(v, numbers.Real):
+                raise ValueError(
+                    f"Variable '{var_name}', category '{cat_name}': proportion must be "
+                    f"a real number (not bool), got {type(v).__name__}."
+                )
+            try:
+                fv = float(v)
+            except (TypeError, OverflowError) as exc:
+                raise ValueError(
+                    f"Variable '{var_name}', category '{cat_name}': proportion must be "
+                    f"convertible to float, got {v!r}."
+                ) from exc
+            if math.isnan(fv) or math.isinf(fv):
+                raise ValueError(
+                    f"Variable '{var_name}', category '{cat_name}': proportion must be "
+                    f"finite, got {v}."
+                )
+            if fv < 0:
+                raise ValueError(
+                    f"Variable '{var_name}', category '{cat_name}': proportion must be "
+                    f"non-negative, got {v}."
+                )
+    # Generate proportional arrays for each dictionary.  We pass max_length so
+    # that the per-variable array length is roughly bounded, but individual arrays
+    # can still exceed max_length when there are many small-weight categories that
+    # each round up to 1.  The LCM check below catches the common case; the
+    # additional lcm_length == 0 guard handles the edge case where one array is
+    # empty (all counts round to zero).  When either condition holds, we discard
+    # these arrays and switch to Hare-Niemeyer.
+    arrays = {
+        k: _proportional_array_from_dict(
+            {category: float(weight) for category, weight in v.items()},
+            max_length=max_length,
+        )
+        for k, v in dict_of_dicts.items()
+    }
 
     # Find the LCM over the lengths of all the arrays
     lcm_length = _find_lcm_of_array_lengths(arrays)
+
+    if lcm_length > max_length or lcm_length == 0:
+        # The LCM of the individual array lengths exceeds the cap, or one or more
+        # arrays are empty (lcm_length == 0 when any length is 0).  Rather than
+        # producing a DataFrame with tens-of-millions of rows or crashing with a
+        # ZeroDivisionError, reallocate every variable independently with
+        # Hare-Niemeyer (largest remainder) rounding against the fixed target of
+        # max_length rows.
+        logger.warning(
+            f"The LCM of array lengths ({lcm_length:,}) exceeds max_length "
+            f"({max_length:,}) or an array is empty. Capping output at "
+            f"{max_length:,} rows and reallocating counts using the "
+            f"Hare-Niemeyer (largest remainder) method."
+        )
+        return {
+            k: _hare_niemeyer_allocation(d, max_length)
+            for k, d in dict_of_dicts.items()
+        }
 
     # Extend each array to have the same LCM length while maintaining proportions
     result = {}
@@ -565,6 +703,7 @@ def _realize_dicts_of_proportions(
 
 def prepare_marginal_dist_for_raking(
     dict_of_dicts: Dict[str, Dict[str, float]],
+    max_length: int = 10000,
 ) -> pd.DataFrame:
     """
     Realizes a nested dictionary of proportions into a DataFrame.
@@ -572,7 +711,12 @@ def prepare_marginal_dist_for_raking(
     Args:
         dict_of_dicts: A nested dictionary where the outer keys are column names
                    and the inner dictionaries have keys as category labels
-                   and values as their proportions (float).
+                   and values as their proportions (real numbers).
+        max_length: Maximum number of rows in the resulting DataFrame. Must be
+                   an integer. When the natural least common multiple (LCM) based
+                   row count would exceed
+                   this value the output is capped using Hare-Niemeyer (largest
+                   remainder) allocation. Default is 10000.
 
     Returns:
         A DataFrame with columns specified by the outer keys of the input dictionary
@@ -589,7 +733,9 @@ def prepare_marginal_dist_for_raking(
         df.columns.tolist()
         # ['A', 'B', 'id']
     """
-    target_dict_from_marginals = _realize_dicts_of_proportions(dict_of_dicts)
+    target_dict_from_marginals = _realize_dicts_of_proportions(
+        dict_of_dicts, max_length=max_length
+    )
     target_df_from_marginals = pd.DataFrame.from_dict(target_dict_from_marginals)
     # Add an id column:
     target_df_from_marginals["id"] = range(target_df_from_marginals.shape[0])

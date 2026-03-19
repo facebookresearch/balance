@@ -22,6 +22,7 @@ from balance import adjustment as balance_adjustment
 from balance.sample_class import Sample
 from balance.weighting_methods.rake import (
     _find_lcm_of_array_lengths,
+    _hare_niemeyer_allocation,
     _lcm,
     _proportional_array_from_dict,
     _realize_dicts_of_proportions,
@@ -775,6 +776,278 @@ class Testrake(
                 "v4": ["A", "B", "B", "B", "B", "B", "B", "B", "B", "B"],
             },
         )
+
+    def test__hare_niemeyer_allocation(self) -> None:
+        """
+        Test the _hare_niemeyer_allocation helper.
+
+        Verifies that the function correctly allocates n slots to categories
+        according to their proportions using the largest-remainder method, and
+        that the total length of the output always equals n.
+        """
+        # Simple 80/20 split with n=5
+        self.assertEqual(
+            _hare_niemeyer_allocation({"a": 0.2, "b": 0.8}, 5),
+            ["a", "b", "b", "b", "b"],
+        )
+
+        # Equal split – n not evenly divisible by 2 → largest remainder assigns extra to "a"
+        result = _hare_niemeyer_allocation({"a": 0.5, "b": 0.5}, 3)
+        self.assertEqual(len(result), 3)
+        # Both categories must be represented
+        self.assertIn("a", result)
+        self.assertIn("b", result)
+
+        # Proportions that don't sum to 1 are normalized internally
+        result2 = _hare_niemeyer_allocation({"x": 2.0, "y": 8.0}, 10)
+        self.assertEqual(result2.count("x"), 2)
+        self.assertEqual(result2.count("y"), 8)
+
+        # Output length always equals n
+        for n in [1, 7, 100, 9999]:
+            out = _hare_niemeyer_allocation({"p": 0.3, "q": 0.3, "r": 0.4}, n)
+            self.assertEqual(len(out), n)
+
+        # Zero-valued categories are excluded
+        result3 = _hare_niemeyer_allocation({"a": 0.5, "b": 0.0, "c": 0.5}, 4)
+        self.assertNotIn("b", result3)
+        self.assertEqual(len(result3), 4)
+
+    def test__realize_dicts_of_proportions_input_validation(self) -> None:
+        """
+        Tests that _realize_dicts_of_proportions raises actionable ValueError for
+        invalid inputs: empty dict_of_dicts, bool/float/zero max_length, and
+        bool proportions in inner dicts (which should propagate with variable name).
+        """
+        simple = {"v1": {"a": 0.5, "b": 0.5}}
+
+        # empty dict_of_dicts rejected
+        with self.assertRaises(ValueError):
+            _realize_dicts_of_proportions({})
+
+        # bool max_length rejected
+        with self.assertRaises(ValueError):
+            # pyre-ignore[6]: Deliberately testing invalid type
+            _realize_dicts_of_proportions(simple, True)
+
+        # float max_length rejected
+        with self.assertRaises(ValueError):
+            # pyre-ignore[6]: Deliberately testing invalid type
+            _realize_dicts_of_proportions(simple, 10000.0)
+
+        # max_length < 1 rejected
+        with self.assertRaises(ValueError):
+            _realize_dicts_of_proportions(simple, 0)
+
+        # bool proportion in inner dict rejected, error message includes variable name
+        with self.assertRaisesRegex(ValueError, "v1"):
+            _realize_dicts_of_proportions({"v1": {"a": True, "b": 0.5}}, 5)
+
+    def test__realize_dicts_of_proportions_lcm_cap(self) -> None:
+        """
+        Test that _realize_dicts_of_proportions caps output at max_length when
+        the natural LCM of individual array lengths would exceed it.
+
+        This is the core regression test for the memory-explosion bug where
+        high-precision proportions or many variables caused LCM to reach
+        tens of millions of rows.
+        """
+        # Two variables whose individual arrays fit within max_length but whose
+        # LCM would be huge (coprime array lengths near max_length).
+        # Array lengths for each variable produced by _proportional_array_from_dict
+        # are ~9999 and ~9998 → LCM ≈ 9999 * 9998 ≈ 99 million.
+        # Using the bug-report example inputs (high-precision floats).
+        pop_distribution = {
+            "age": {
+                "18-24": 0.3622334534532,
+                "25-34": 0.421434535,
+                "35-44": 0.216345345,
+            },
+            "gender": {
+                "Male": 0.4955666,
+                "Female": 0.505434345,
+            },
+        }
+
+        result = _realize_dicts_of_proportions(pop_distribution, max_length=10000)
+        # All arrays must have the same length and equal max_length exactly
+        # (the Hare-Niemeyer fallback always allocates exactly max_length slots)
+        lengths = {len(v) for v in result.values()}
+        self.assertEqual(len(lengths), 1)
+        self.assertEqual(list(lengths)[0], 10000)
+
+        # A warning must have been logged (via logger.warning, not warnings.warn)
+        with self.assertLogs("balance.weighting_methods", level="WARNING") as cm:
+            _realize_dicts_of_proportions(pop_distribution, 10000)
+        self.assertTrue(
+            any("LCM of array lengths" in msg for msg in cm.output),
+        )
+
+        # The custom max_length parameter is respected
+        result_small = _realize_dicts_of_proportions(pop_distribution, max_length=500)
+        lengths_small = {len(v) for v in result_small.values()}
+        self.assertEqual(list(lengths_small)[0], 500)
+
+    def test__realize_dicts_of_proportions_no_cap_for_small_lcm(self) -> None:
+        """
+        Test that _realize_dicts_of_proportions does NOT trigger the cap when
+        the LCM of array lengths is within max_length (i.e. existing behaviour
+        is preserved for well-behaved inputs).
+        """
+        dict_of_dicts = {
+            "v1": {"a": 0.2, "b": 0.6, "c": 0.2},
+            "v2": {"aa": 0.5, "bb": 0.5},
+        }
+        # LCM = 10, well below any reasonable max_length – result must be identical
+        # to the pre-fix behaviour.
+        self.assertEqual(
+            _realize_dicts_of_proportions(dict_of_dicts, max_length=10000),
+            {
+                "v1": ["a", "b", "b", "b", "c", "a", "b", "b", "b", "c"],
+                "v2": ["aa", "bb", "aa", "bb", "aa", "bb", "aa", "bb", "aa", "bb"],
+            },
+        )
+
+    def test_prepare_marginal_dist_for_raking_large_input(self) -> None:
+        """
+        Regression test: prepare_marginal_dist_for_raking must not produce a
+        DataFrame with more than max_length rows, even for high-precision
+        proportions that would previously cause LCM explosion.
+
+        These examples are taken directly from the bug report (GitHub issue #369).
+        """
+        # Bug report example 1: 4 variables – previously produced (33_366_600, 5).
+        pop_distribution_1 = {
+            "age": {"18-24": 0.362, "25-34": 0.421, "35-44": 0.216},
+            "gender": {"Male": 0.495, "Female": 0.505},
+            "education": {"College": 0.495, "No_College": 0.505},
+            "religion": {
+                "Christianity": 0.162,
+                "Sunni Islam": 0.312,
+                "Shia Islam": 0.322,
+                "Buddhism": 0.055,
+                "Hinduism": 0.077,
+                "Judaism": 0.038,
+                "No religion": 0.028,
+                "Sikhism": 0.008,
+            },
+        }
+        df1 = prepare_marginal_dist_for_raking(pop_distribution_1)
+        # Must be capped at the default max_length of 10 000
+        self.assertEqual(df1.shape[0], 10000)
+        # Must have 4 covariate columns + 1 id column
+        self.assertEqual(df1.shape[1], 5)
+        # id column must be sequential
+        self.assertEqual(list(df1["id"]), list(range(10000)))
+
+        # Bug report example 2: 2 variables with high-precision floats –
+        # previously produced (99_990_000, 3).
+        pop_distribution_2 = {
+            "age": {
+                "18-24": 0.3622334534532,
+                "25-34": 0.421434535,
+                "35-44": 0.216345345,
+            },
+            "gender": {
+                "Male": 0.4955666,
+                "Female": 0.505434345,
+            },
+        }
+        df2 = prepare_marginal_dist_for_raking(pop_distribution_2)
+        self.assertEqual(df2.shape[0], 10000)
+        self.assertEqual(df2.shape[1], 3)
+        self.assertEqual(list(df2["id"]), list(range(10000)))
+
+    def test__realize_dicts_of_proportions_bug_report_example(self) -> None:
+        """
+        Regression test for the third example in bug report #369, which calls
+        _realize_dicts_of_proportions directly with high-precision proportions
+        and verifies the output length is bounded.
+
+        Previously `len(target_dict["age"])` was ~99 million.
+        """
+        pop_distribution = {
+            "age": {
+                "18-24": 0.3622334534532,
+                "25-34": 0.421434535,
+                "35-44": 0.216345345,
+            },
+            "gender": {
+                "Male": 0.4955666,
+                "Female": 0.505434345,
+            },
+        }
+        target_dict = _realize_dicts_of_proportions(pop_distribution)
+        # Output must be capped at the default max_length of 10 000
+        self.assertEqual(len(target_dict["age"]), 10000)
+        self.assertEqual(len(target_dict["gender"]), 10000)
+
+    def test__hare_niemeyer_allocation_numpy_scalars(self) -> None:
+        """
+        Regression test: _hare_niemeyer_allocation must accept NumPy scalar
+        numeric types (e.g. np.float64, np.int64) that are produced when a
+        user builds the proportions dict via pandas Series.to_dict().
+        """
+        import numpy as np
+
+        # np.float64 proportions — the common case from Series.to_dict()
+        result = _hare_niemeyer_allocation(
+            # pyre-ignore[6]: Testing numpy scalar compatibility
+            {"a": np.float64(0.2), "b": np.float64(0.8)},
+            5,
+        )
+        self.assertEqual(result, ["a", "b", "b", "b", "b"])
+        self.assertEqual(len(result), 5)
+
+        # np.int64 proportions (unnormalized counts)
+        # pyre-ignore[6]: Testing numpy scalar compatibility
+        result2 = _hare_niemeyer_allocation({"x": np.int64(2), "y": np.int64(8)}, 10)
+        self.assertEqual(result2.count("x"), 2)
+        self.assertEqual(result2.count("y"), 8)
+
+        # Mixed Python float and np.float64
+        # pyre-ignore[6]: Testing numpy scalar compatibility
+        result3 = _hare_niemeyer_allocation({"p": 0.3, "q": np.float64(0.7)}, 10)
+        self.assertEqual(len(result3), 10)
+
+    def test__realize_dicts_of_proportions_more_categories_than_max_length(
+        self,
+    ) -> None:
+        """
+        Regression test: _realize_dicts_of_proportions must not crash with a
+        ZeroDivisionError when a variable has more categories than max_length.
+
+        Two scenarios are tested:
+        1. lcm_length > max_length: 15 equal-weight categories, max_length=10.
+           _proportional_array_from_dict returns an array of length 15; LCM([15, 2])
+           = 30 > 10 triggers the Hare-Niemeyer fallback.
+        2. lcm_length == 0: 1000 equal-weight categories, max_length=10.
+           _proportional_array_from_dict returns [] (all counts round to 0);
+           LCM([0, 2]) = 0 triggers the Hare-Niemeyer fallback instead of
+           a ZeroDivisionError in the LCM-extension step.
+        """
+        # Scenario 1: LCM > max_length path (15 categories, max_length=10)
+        many_cats = {f"cat_{i}": 1 / 15 for i in range(15)}
+        dict_of_dicts = {"v1": many_cats, "v2": {"a": 0.5, "b": 0.5}}
+
+        result = _realize_dicts_of_proportions(dict_of_dicts, max_length=10)
+        lengths = {len(v) for v in result.values()}
+        self.assertEqual(len(lengths), 1)
+        self.assertEqual(list(lengths)[0], 10)
+        self.assertLessEqual(len(set(result["v1"])), 15)
+
+        # Scenario 2: lcm_length == 0 path (1000 categories, max_length=10).
+        # With 1000 equal-weight categories, _proportional_array_from_dict returns []
+        # because scaling_factor = 10/1000 = 0.01 makes each rounded count 0.
+        # LCM of [0, 2] = 0, which previously bypassed the cap check and caused
+        # ZeroDivisionError at `lcm_length // len(arr)`.
+        very_many_cats = {f"cat_{i}": 1 / 1000 for i in range(1000)}
+        dict_of_dicts_2 = {"v1": very_many_cats, "v2": {"a": 0.5, "b": 0.5}}
+
+        result2 = _realize_dicts_of_proportions(dict_of_dicts_2, max_length=10)
+        lengths2 = {len(v) for v in result2.values()}
+        self.assertEqual(len(lengths2), 1)
+        self.assertEqual(list(lengths2)[0], 10)
 
     def test_prepare_marginal_dist_for_raking(self) -> None:
         """
