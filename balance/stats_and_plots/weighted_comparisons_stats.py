@@ -74,9 +74,9 @@ def r_indicator(
     .. code-block:: python
 
             >>> r_indicator([0.2, 0.4], [0.3, 0.5])
-            np.float64(0.7418011102528389)
+            0.7418011102528389
             >>> r_indicator(np.array([0.5, 0.5]), np.array([0.5]))
-            np.float64(1.0)
+            1.0
     """
     try:
         sample_propensities = np.asarray(sample_p, dtype=float).ravel()
