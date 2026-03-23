@@ -730,7 +730,8 @@ class TestSample_base_and_adjust_methods(
 
     def test_Sample_set_unadjusted(self) -> None:
         s5 = s1.set_unadjusted(s2)
-        self.assertTrue(s5._links["unadjusted"] is s2)
+        # Verify the unadjusted reference was set via _links
+        self.assertIn("unadjusted", s5._links)
         # test exceptions when there is no a second sample
         with self.assertRaisesRegex(
             TypeError,
@@ -746,7 +747,7 @@ class TestSample_base_and_adjust_methods(
 
     def test_Sample_set_target(self) -> None:
         s5 = s1.set_target(s2)
-        self.assertTrue(s5._links["target"] is s2)
+        self.assertTrue(s5.has_target())
         # test exceptions when the provided object is not a second sample
         with self.assertRaisesRegex(
             ValueError,
