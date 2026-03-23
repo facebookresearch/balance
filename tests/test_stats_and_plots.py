@@ -1871,6 +1871,15 @@ class TestBalance_weighted_comparisons_stats(
                 np.array([[0.3, 0.4], [0.5, 0.6]]),
             )
 
+        with self.assertRaisesRegex(
+            ValueError,
+            "target_p to be one-dimensional or single-column",
+        ):
+            weighted_comparisons_stats.r_indicator(
+                [0.1, 0.2],
+                np.array([[0.3, 0.4]]),
+            )
+
     def test_r_indicator_rejects_values_outside_unit_interval(self) -> None:
         """r_indicator should reject invalid propensity values outside [0, 1]."""
         with self.assertRaisesRegex(ValueError, r"within the \[0, 1\] range"):

@@ -56,8 +56,8 @@ def _coerce_r_indicator_propensities(
     if array.ndim == 1:
         return array
 
-    if array.ndim == 2 and 1 in array.shape:
-        return array.reshape(-1)
+    if array.ndim == 2 and array.shape[1] == 1:
+        return array[:, 0]
 
     raise ValueError(
         f"r_indicator requires {input_name} to be one-dimensional or single-column"
