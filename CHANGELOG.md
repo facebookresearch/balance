@@ -1,5 +1,14 @@
 # 0.18.0 (2026-03-18)
 
+## New Features
+
+- **Implemented `r_indicator()` with validated sample-variance formula**
+  - Added a public `r_indicator(sample_p, target_p)` implementation in
+    `weighted_comparisons_stats` using the documented Eq. 2.2.2 formulation
+    over concatenated propensity vectors and explicit input-size validation.
+  - Added validation for non-finite and out-of-range propensity values,
+    and expanded unit coverage for formula correctness and edge cases.
+
 ## Bug Fixes
 
 - **`prepare_marginal_dist_for_raking` / `_realize_dicts_of_proportions`: fixed memory explosion from LCM expansion**

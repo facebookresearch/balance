@@ -39,17 +39,60 @@ logger: logging.Logger = logging.getLogger(__package__)
 ##########################################
 
 
-# TODO: fix the r_indicator function. The current implementation is broken since it
-#       seems to wrongly estimate N.
-#       This seems to attempt to reproduce equation 2.2.2, in page 5 in
-#       "Indicators for the representativeness of survey response"
-#       by Jelke Bethlehem, Fannie Cobben, and Barry Schouten
-#       See pdf: https://www150.statcan.gc.ca/n1/en/pub/11-522-x/2008000/article/10976-eng.pdf?st=Zi4d4zld
-#       From: https://www150.statcan.gc.ca/n1/pub/11-522-x/2008000/article/10976-eng.pdf
-# def r_indicator(sample_p: np.float64, target_p: np.float64) -> np.float64:
-#     p = np.concatenate((sample_p, target_p))
-#     N = len(sample_p) + len(target_p)
-#     return 1 - 2 * np.sqrt(1 / (N - 1) * np.sum((p - np.mean(p)) ** 2))
+def r_indicator(
+    sample_p: npt.ArrayLike,
+    target_p: npt.ArrayLike,
+) -> np.float64:
+    """Compute the R-indicator from sample and target response propensities.
+
+    Implements Eq. 2.2.2 from *Indicators for the representativeness of survey
+    response* (Bethlehem, Cobben, Schouten):
+    https://www150.statcan.gc.ca/n1/pub/11-522-x/2008000/article/10976-eng.pdf
+
+    ``R = 1 - 2 * sqrt((1/(N-1)) * sum_i (p_i - mean(p))^2)``
+
+    where ``p`` is the concatenation of response propensities from the sample
+    and target populations.
+
+    Args:
+        sample_p: Array-like response propensities for sample units.
+        target_p: Array-like response propensities for target units.
+
+    Returns:
+        np.float64: The R-indicator value.
+
+    Raises:
+        ValueError: If fewer than two total propensity values are provided.
+
+    Examples:
+    .. code-block:: python
+
+            >>> r_indicator([0.2, 0.4], [0.3, 0.5])
+            np.float64(0.7418011102528389)
+            >>> r_indicator(np.array([0.5, 0.5]), np.array([0.5]))
+            np.float64(1.0)
+    """
+    sample_propensities = np.asarray(sample_p, dtype=float).ravel()
+    target_propensities = np.asarray(target_p, dtype=float).ravel()
+    propensities = np.concatenate((sample_propensities, target_propensities))
+
+    n_obs = propensities.size
+    if n_obs < 2:
+        raise ValueError(
+            "r_indicator requires at least two propensity values across sample and target"
+        )
+
+    if not np.isfinite(propensities).all():
+        raise ValueError("r_indicator requires all propensity values to be finite")
+
+    if ((propensities < 0) | (propensities > 1)).any():
+        raise ValueError(
+            "r_indicator requires propensity values to be within the [0, 1] range"
+        )
+
+    centered = propensities - np.mean(propensities)
+    sample_variance = np.sum(centered * centered) / (n_obs - 1)
+    return np.float64(1 - 2 * np.sqrt(sample_variance))
 
 
 def _weights_per_covars_names(covar_names: List[str]) -> pd.DataFrame:
