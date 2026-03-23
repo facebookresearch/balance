@@ -1848,8 +1848,15 @@ class TestBalance_weighted_comparisons_stats(
 
     def test_r_indicator_rejects_non_numeric_values(self) -> None:
         """r_indicator should reject values that cannot be converted to numeric."""
-        with self.assertRaisesRegex(ValueError, "all propensity values to be numeric"):
+        with self.assertRaisesRegex(
+            ValueError, "all sample_p propensity values to be numeric"
+        ):
             weighted_comparisons_stats.r_indicator(["bad", 0.2], [0.3])
+
+        with self.assertRaisesRegex(
+            ValueError, "all target_p propensity values to be numeric"
+        ):
+            weighted_comparisons_stats.r_indicator([0.1, 0.2], ["bad"])
 
     def test_r_indicator_rejects_multi_column_inputs(self) -> None:
         """r_indicator should reject genuinely multi-dimensional inputs."""

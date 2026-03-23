@@ -47,7 +47,7 @@ def _coerce_r_indicator_propensities(
         array = np.asarray(propensities, dtype=float)
     except (TypeError, ValueError) as exc:
         raise ValueError(
-            "r_indicator requires all propensity values to be numeric"
+            f"r_indicator requires all {input_name} propensity values to be numeric"
         ) from exc
 
     if array.ndim == 0:
