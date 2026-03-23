@@ -54,9 +54,15 @@ class TestBalance_weights_stats(
 
         result = weighted_comparisons_stats.r_indicator(sample_p, target_p)
         combined = np.concatenate((sample_p, target_p))
-        expected = np.float64(1 - 2 * np.sqrt(np.var(combined, ddof=1)))
+        expected = np.float64(np.clip(1 - 2 * np.sqrt(np.var(combined, ddof=1)), 0, 1))
 
         self.assertAlmostEqual(result, expected)
+
+    def test_r_indicator_clips_small_sample_boundary_case(self) -> None:
+        """r_indicator should stay within [0, 1] for the n=2 boundary case."""
+        result = weighted_comparisons_stats.r_indicator([0.0], [1.0])
+
+        self.assertEqual(result, np.float64(0.0))
 
     def test_r_indicator_rejects_too_few_values(self) -> None:
         """r_indicator requires at least two combined propensity values."""
@@ -73,6 +79,11 @@ class TestBalance_weights_stats(
 
         with self.assertRaisesRegex(ValueError, "all propensity values to be finite"):
             weighted_comparisons_stats.r_indicator([0.1], [np.inf, 0.2])
+
+    def test_r_indicator_rejects_non_numeric_values(self) -> None:
+        """r_indicator should reject values that cannot be converted to numeric."""
+        with self.assertRaisesRegex(ValueError, "all propensity values to be numeric"):
+            weighted_comparisons_stats.r_indicator(["bad", 0.2], [0.3])
 
     def test_r_indicator_rejects_values_outside_unit_interval(self) -> None:
         """r_indicator should reject invalid propensity values outside [0, 1]."""

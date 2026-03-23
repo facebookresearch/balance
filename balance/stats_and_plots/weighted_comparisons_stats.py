@@ -59,10 +59,14 @@ def r_indicator(
         target_p: Array-like response propensities for target units.
 
     Returns:
-        np.float64: The R-indicator value.
+        np.float64: The R-indicator value. The result is clipped to the
+            theoretical ``[0, 1]`` interval after computing Eq. 2.2.2 so
+            small-sample boundary cases remain within the representativeness
+            scale.
 
     Raises:
         ValueError: If fewer than two total propensity values are provided,
+            if any propensity value is non-numeric,
             if any propensity value is non-finite, or if any propensity value
             falls outside the valid ``[0, 1]`` interval.
 
@@ -74,8 +78,13 @@ def r_indicator(
             >>> r_indicator(np.array([0.5, 0.5]), np.array([0.5]))
             np.float64(1.0)
     """
-    sample_propensities = np.asarray(sample_p, dtype=float).ravel()
-    target_propensities = np.asarray(target_p, dtype=float).ravel()
+    try:
+        sample_propensities = np.asarray(sample_p, dtype=float).ravel()
+        target_propensities = np.asarray(target_p, dtype=float).ravel()
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            "r_indicator requires all propensity values to be numeric"
+        ) from exc
     propensities = np.concatenate((sample_propensities, target_propensities))
 
     n_obs = propensities.size
@@ -94,7 +103,8 @@ def r_indicator(
 
     centered = propensities - np.mean(propensities)
     sample_variance = np.sum(centered * centered) / (n_obs - 1)
-    return np.float64(1 - 2 * np.sqrt(sample_variance))
+    r_value = 1 - 2 * np.sqrt(sample_variance)
+    return np.float64(np.clip(r_value, 0.0, 1.0))
 
 
 def _weights_per_covars_names(covar_names: List[str]) -> pd.DataFrame:
