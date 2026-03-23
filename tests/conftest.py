@@ -11,3 +11,8 @@ import matplotlib
 
 # Force a non-interactive backend so tests do not require a Tk installation.
 matplotlib.use("Agg", force=True)
+
+import plotly.io as pio  # noqa: E402
+
+# Force plotly to use a non-interactive renderer so tests don't open a browser.
+pio.renderers.default = "json"
