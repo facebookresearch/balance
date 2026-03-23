@@ -62,7 +62,9 @@ def r_indicator(
         np.float64: The R-indicator value.
 
     Raises:
-        ValueError: If fewer than two total propensity values are provided.
+        ValueError: If fewer than two total propensity values are provided,
+            if any propensity value is non-finite, or if any propensity value
+            falls outside the valid ``[0, 1]`` interval.
 
     Examples:
     .. code-block:: python

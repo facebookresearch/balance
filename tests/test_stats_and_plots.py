@@ -47,6 +47,17 @@ class TestBalance_weights_stats(
         expected = np.float64(1 - 2 * np.sqrt(np.var([0.1, 0.2, 0.3, 0.4], ddof=1)))
         self.assertAlmostEqual(result, expected)
 
+    def test_r_indicator_handles_extreme_but_valid_propensities(self) -> None:
+        """r_indicator should remain stable for propensity values at 0 and 1."""
+        sample_p = np.array([0.0, 0.0, 1.0])
+        target_p = np.array([1.0, 1.0, 0.0])
+
+        result = weighted_comparisons_stats.r_indicator(sample_p, target_p)
+        combined = np.concatenate((sample_p, target_p))
+        expected = np.float64(1 - 2 * np.sqrt(np.var(combined, ddof=1)))
+
+        self.assertAlmostEqual(result, expected)
+
     def test_r_indicator_rejects_too_few_values(self) -> None:
         """r_indicator requires at least two combined propensity values."""
         with self.assertRaisesRegex(
