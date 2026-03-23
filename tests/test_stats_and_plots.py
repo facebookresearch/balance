@@ -1804,10 +1804,10 @@ class TestBalance_weighted_comparisons_stats(
         result = weighted_comparisons_stats.r_indicator([0.5, 0.5], [0.5, 0.5])
         self.assertEqual(result, np.float64(1.0))
 
-    def test_r_indicator_flattens_arraylike_inputs(self) -> None:
-        """r_indicator should accept any array-like inputs and flatten them."""
+    def test_r_indicator_accepts_single_column_inputs(self) -> None:
+        """r_indicator should accept single-column 2D inputs."""
         sample_p = np.array([[0.1], [0.2]])
-        target_p = pd.Series([0.3, 0.4])
+        target_p = pd.DataFrame({"p": [0.3, 0.4]})
 
         result = weighted_comparisons_stats.r_indicator(sample_p, target_p)
         expected = np.float64(1 - 2 * np.sqrt(np.var([0.1, 0.2, 0.3, 0.4], ddof=1)))
@@ -1850,6 +1850,26 @@ class TestBalance_weighted_comparisons_stats(
         """r_indicator should reject values that cannot be converted to numeric."""
         with self.assertRaisesRegex(ValueError, "all propensity values to be numeric"):
             weighted_comparisons_stats.r_indicator(["bad", 0.2], [0.3])
+
+    def test_r_indicator_rejects_multi_column_inputs(self) -> None:
+        """r_indicator should reject genuinely multi-dimensional inputs."""
+        with self.assertRaisesRegex(
+            ValueError,
+            "sample_p to be one-dimensional or single-column",
+        ):
+            weighted_comparisons_stats.r_indicator(
+                pd.DataFrame({"a": [0.1, 0.2], "b": [0.3, 0.4]}),
+                [0.5, 0.6],
+            )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "target_p to be one-dimensional or single-column",
+        ):
+            weighted_comparisons_stats.r_indicator(
+                [0.1, 0.2],
+                np.array([[0.3, 0.4], [0.5, 0.6]]),
+            )
 
     def test_r_indicator_rejects_values_outside_unit_interval(self) -> None:
         """r_indicator should reject invalid propensity values outside [0, 1]."""

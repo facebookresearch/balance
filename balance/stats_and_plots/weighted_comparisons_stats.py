@@ -39,6 +39,31 @@ logger: logging.Logger = logging.getLogger(__package__)
 ##########################################
 
 
+def _coerce_r_indicator_propensities(
+    propensities: npt.ArrayLike, input_name: str
+) -> np.ndarray:
+    """Normalize ``r_indicator`` propensity inputs to a 1D float array."""
+    try:
+        array = np.asarray(propensities, dtype=float)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            "r_indicator requires all propensity values to be numeric"
+        ) from exc
+
+    if array.ndim == 0:
+        return array.reshape(1)
+
+    if array.ndim == 1:
+        return array
+
+    if array.ndim == 2 and 1 in array.shape:
+        return array.reshape(-1)
+
+    raise ValueError(
+        f"r_indicator requires {input_name} to be one-dimensional or single-column"
+    )
+
+
 def r_indicator(
     sample_p: npt.ArrayLike,
     target_p: npt.ArrayLike,
@@ -60,12 +85,13 @@ def r_indicator(
 
     Returns:
         np.float64: The R-indicator value. The result is clipped to the
-            theoretical ``[0, 1]`` interval after computing Eq. 2.2.2 so
-            small-sample boundary cases remain within the representativeness
-            scale.
+            ``[0, 1]`` interval after computing Eq. 2.2.2 so small-sample
+            boundary cases remain within the representativeness scale.
 
     Raises:
         ValueError: If fewer than two total propensity values are provided,
+            if ``sample_p`` or ``target_p`` is not one-dimensional (except for
+            single-column 2D inputs),
             if any propensity value is non-numeric,
             if any propensity value is non-finite, or if any propensity value
             falls outside the valid ``[0, 1]`` interval.
@@ -78,13 +104,8 @@ def r_indicator(
             >>> r_indicator(np.array([0.5, 0.5]), np.array([0.5]))
             1.0
     """
-    try:
-        sample_propensities = np.asarray(sample_p, dtype=float).ravel()
-        target_propensities = np.asarray(target_p, dtype=float).ravel()
-    except (TypeError, ValueError) as exc:
-        raise ValueError(
-            "r_indicator requires all propensity values to be numeric"
-        ) from exc
+    sample_propensities = _coerce_r_indicator_propensities(sample_p, "sample_p")
+    target_propensities = _coerce_r_indicator_propensities(target_p, "target_p")
     propensities = np.concatenate((sample_propensities, target_propensities))
 
     n_obs = propensities.size
