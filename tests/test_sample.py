@@ -2146,10 +2146,10 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
         self.assertTrue(np.isfinite(deff_prop))
 
     def test_plot_weight_density_calls_weights_plot(self) -> None:
-        """Test plot_weight_density delegates to weights().plot().
+        """Test plot_weight_density delegates to weights().plot() and emits deprecation warning.
 
         This validates that the convenience method properly calls the
-        underlying weights plotting functionality.
+        underlying weights plotting functionality and emits a deprecation warning.
         """
         from unittest.mock import MagicMock, patch
 
@@ -2165,8 +2165,19 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
         mock_weights.plot = mock_plot
 
         with patch.object(sample, "weights", return_value=mock_weights):
-            # Call the method
-            result = sample.plot_weight_density()
+            # Call the method and verify deprecation warning
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always")
+                result = sample.plot_weight_density()
+                self.assertTrue(
+                    any(issubclass(x.category, DeprecationWarning) for x in w)
+                )
+                self.assertTrue(
+                    any(
+                        "Sample.plot_weight_density() is deprecated" in str(x.message)
+                        for x in w
+                    )
+                )
 
             # Verify weights() was called
             sample.weights.assert_called_once()

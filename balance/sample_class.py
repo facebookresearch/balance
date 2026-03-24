@@ -1452,6 +1452,16 @@ class Sample:
                 # The same as:
                 sample.plot_weight_density()
         """
+        import balance
+
+        if balance.SHOW_DEPRECATION_WARNINGS:
+            warnings.warn(
+                "Sample.plot_weight_density() is deprecated. "
+                "Use sample.weights().plot() instead. "
+                "Will be removed in balance 0.19.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         self.weights().plot()
 
     ##########################################

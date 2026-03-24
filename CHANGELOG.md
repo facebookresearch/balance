@@ -7,6 +7,8 @@
   `DeprecationWarning` and delegates. Will be removed in balance 0.19.0.
 - **`Sample.design_effect_prop()` is deprecated** — use `sample.weights().design_effect_prop()` instead.
   New method added to `BalanceDFWeights`. Will be removed in balance 0.19.0.
+- **`Sample.plot_weight_density()` is deprecated** — use `sample.weights().plot()` instead.
+  Will be removed in balance 0.19.0.
 
 ## Bug Fixes
 
