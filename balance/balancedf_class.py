@@ -25,6 +25,9 @@ from balance.stats_and_plots import (
     weighted_stats,
     weights_stats,
 )
+from balance.stats_and_plots.weighted_comparisons_stats import (
+    outcome_variance_ratio as _outcome_variance_ratio,
+)
 from balance.typing import FilePathOrBuffer
 from balance.util import find_items_index_in_list, get_items_from_list_via_indices
 from balance.utils.input_validation import _assert_type
@@ -2454,6 +2457,117 @@ class BalanceDFOutcomes(BalanceDF):
 
         return out
 
+    def outcome_sd_prop(self: "BalanceDFOutcomes") -> pd.Series:
+        """Relative change in outcome weighted SD after adjustment.
+
+        Computes (weighted SD of adjusted - weighted SD of unadjusted) / weighted SD of unadjusted.
+
+        Returns:
+            pd.Series: Relative difference in outcome weighted standard deviation.
+
+        Raises:
+            ValueError: If there are no unadjusted outcomes linked.
+
+        Examples:
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {
+                        "id": ["1", "2"],
+                        "x": [0, 1],
+                        "weight": [1.0, 2.0],
+                        "y": [0.1, 0.2],
+                    }
+                ),
+                id_column="id",
+                weight_column="weight",
+                outcome_columns="y",
+                standardize_types=False,
+            )
+            target = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["3", "4"], "x": [0, 1], "weight": [1.0, 1.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            adjusted = sample.set_target(target).adjust(method="null")
+            adjusted.outcomes().outcome_sd_prop()
+        """
+        outcome_std = self.std()
+        adjusted_outcome_sd = outcome_std.loc["self"]
+        unadjusted_row = outcome_std.reindex(["unadjusted"])
+        if unadjusted_row.isna().all(axis=None):
+            raise ValueError(
+                "No unadjusted outcomes available. This requires an adjusted sample."
+            )
+        unadjusted_outcome_sd = outcome_std.loc["unadjusted"]
+        return (adjusted_outcome_sd - unadjusted_outcome_sd) / unadjusted_outcome_sd
+
+    def outcome_variance_ratio(self: "BalanceDFOutcomes") -> pd.Series:
+        """Ratio of outcome variance (adjusted / unadjusted).
+
+        See :func:`outcome_variance_ratio` for details.
+
+        Returns:
+            pd.Series: A series of calculated ratio of variances for each outcome.
+
+        Raises:
+            ValueError: If there are no unadjusted outcomes linked.
+
+        Examples:
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {
+                        "id": ["1", "2"],
+                        "x": [0, 1],
+                        "weight": [1.0, 2.0],
+                        "y": [0.1, 0.2],
+                    }
+                ),
+                id_column="id",
+                weight_column="weight",
+                outcome_columns="y",
+                standardize_types=False,
+            )
+            target = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["3", "4"], "x": [0, 1], "weight": [1.0, 1.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            adjusted = sample.set_target(target).adjust(method="null")
+            adjusted.outcomes().outcome_variance_ratio()
+        """
+        linked = self._BalanceDF_child_from_linked_samples()
+        unadjusted_outcomes = linked.get("unadjusted")
+        if unadjusted_outcomes is None:
+            raise ValueError(
+                "No unadjusted outcomes available. This requires an adjusted sample."
+            )
+        adjusted_w = self._weights
+        adjusted_weights = adjusted_w.values if adjusted_w is not None else None
+        unadjusted_w = unadjusted_outcomes._weights
+        unadjusted_weights = unadjusted_w.values if unadjusted_w is not None else None
+        return _outcome_variance_ratio(
+            self.df,
+            unadjusted_outcomes.df,
+            adjusted_weights,
+            unadjusted_weights,
+        )
+
 
 class BalanceDFCovars(BalanceDF):
     def __init__(self: "BalanceDFCovars", sample: Sample) -> None:
@@ -2629,6 +2743,56 @@ class BalanceDFWeights(BalanceDF):
             # 1.111
         """
         return weights_stats.design_effect(self.df.iloc[:, 0])
+
+    def design_effect_prop(self: "BalanceDFWeights") -> np.float64:
+        """Relative change in design effect: (Deff_adjusted - Deff_unadjusted) / Deff_unadjusted.
+
+        Returns:
+            np.float64: Relative difference in design effect.
+
+        Raises:
+            ValueError: If there are no unadjusted weights linked.
+
+        Examples:
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {
+                        "id": ["1", "2"],
+                        "x": [0, 1],
+                        "weight": [1.0, 2.0],
+                    }
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            target = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["3", "4"], "x": [0, 1], "weight": [1.0, 1.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            adjusted = sample.set_target(target).adjust(method="null")
+            adjusted.weights().design_effect_prop()
+        """
+        linked = self._BalanceDF_child_from_linked_samples()
+        unadjusted_weights = linked.get("unadjusted")
+        if unadjusted_weights is None:
+            raise ValueError(
+                "No unadjusted weights available. This requires an adjusted sample."
+            )
+        if not isinstance(unadjusted_weights, BalanceDFWeights):
+            raise TypeError("Expected BalanceDFWeights for unadjusted weights.")
+        deff_adjusted = self.design_effect()
+        deff_unadjusted = unadjusted_weights.design_effect()
+        return (deff_adjusted - deff_unadjusted) / deff_unadjusted
 
     # TODO: in the future, consider if this type of overriding is the best solution.
     #       to reconsider as part of a larger code refactoring.

@@ -22,6 +22,7 @@ of Sample functionality.
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import logging
+import warnings
 from copy import deepcopy
 from textwrap import dedent
 from typing import Any, Callable
@@ -821,7 +822,16 @@ class TestSample_metrics_methods(
             sort=True,
         )
         e.columns = pd.Series(("unadjusted", "adjusted", "target"), name="source")
-        self.assertEqual(s3_null.covar_means(), e)
+
+        # Test deprecation warning is emitted
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = s3_null.covar_means()
+            self.assertTrue(any(issubclass(x.category, DeprecationWarning) for x in w))
+            self.assertTrue(
+                any("Sample.covar_means() is deprecated" in str(x.message) for x in w)
+            )
+        self.assertEqual(result, e)
 
         # test exceptions when there is no adjusted
         with self.assertRaisesRegex(
@@ -831,12 +841,41 @@ class TestSample_metrics_methods(
             s1.covar_means()
 
     def test_Sample_design_effect(self) -> None:
-        self.assertEqual(s1.design_effect().round(3), 1.235)
-        self.assertEqual(s4.design_effect(), 1.0)
+        # Test deprecation warning is emitted
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = s1.design_effect()
+            self.assertTrue(any(issubclass(x.category, DeprecationWarning) for x in w))
+            self.assertTrue(
+                any("Sample.design_effect() is deprecated" in str(x.message) for x in w)
+            )
+        self.assertEqual(result.round(3), 1.235)
+        # Test that the new API returns the same value
+        self.assertEqual(s1.weights().design_effect().round(3), 1.235)
+
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            self.assertEqual(s4.design_effect(), 1.0)
+        self.assertEqual(s4.weights().design_effect(), 1.0)
 
     def test_Sample_design_effect_prop(self) -> None:
         s3_null = s1.adjust(s2, method="null")
-        self.assertEqual(s3_null.design_effect_prop(), 0.0)
+
+        # Test deprecation warning is emitted
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = s3_null.design_effect_prop()
+            self.assertTrue(any(issubclass(x.category, DeprecationWarning) for x in w))
+            self.assertTrue(
+                any(
+                    "Sample.design_effect_prop() is deprecated" in str(x.message)
+                    for x in w
+                )
+            )
+        self.assertEqual(result, 0.0)
+
+        # Test that the new API returns the same value
+        self.assertEqual(s3_null.weights().design_effect_prop(), 0.0)
 
         # test exceptions when there is no adjusted
         with self.assertRaisesRegex(
@@ -847,7 +886,25 @@ class TestSample_metrics_methods(
 
     def test_Sample_outcome_sd_prop(self) -> None:
         s3_null = s1.adjust(s2, method="null")
-        self.assertEqual(s3_null.outcome_sd_prop(), pd.Series((0.0), index=["o"]))
+
+        # Test deprecation warning is emitted
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = s3_null.outcome_sd_prop()
+            self.assertTrue(any(issubclass(x.category, DeprecationWarning) for x in w))
+            self.assertTrue(
+                any(
+                    "Sample.outcome_sd_prop() is deprecated" in str(x.message)
+                    for x in w
+                )
+            )
+        self.assertEqual(result, pd.Series((0.0), index=["o"]))
+
+        # Test that the new API returns the same value
+        self.assertEqual(
+            s3_null.outcomes().outcome_sd_prop(), pd.Series((0.0), index=["o"])
+        )
+
         # test with two outcomes
         s1_two_outcomes = Sample.from_frame(
             pd.DataFrame(
@@ -864,9 +921,11 @@ class TestSample_metrics_methods(
             outcome_columns=["o1", "o2"],
         )
         s3_null = s1_two_outcomes.adjust(s2, method="null")
-        self.assertEqual(
-            s3_null.outcome_sd_prop(), pd.Series((0.0, 0.0), index=["o1", "o2"])
-        )
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            self.assertEqual(
+                s3_null.outcome_sd_prop(), pd.Series((0.0, 0.0), index=["o1", "o2"])
+            )
 
         # test exceptions when there is no adjusted
         with self.assertRaisesRegex(
@@ -1051,7 +1110,9 @@ class TestSample_metrics_methods(
 
     def test_Sample_summary_handles_nonfinite_design_effect(self) -> None:
         adjusted = deepcopy(s3_adjusted_null)
-        adjusted.design_effect = MagicMock(return_value=np.nan)
+        mock_weights = MagicMock()
+        mock_weights.design_effect = MagicMock(return_value=np.nan)
+        adjusted.weights = MagicMock(return_value=mock_weights)
 
         summary = adjusted.summary()
 
@@ -2043,10 +2104,9 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
         self.assertIn("method: null", str_repr)
 
     def test_design_effect_method_returns_valid_value(self) -> None:
-        """Test design_effect() public method returns valid value.
+        """Test design_effect() via the new weights().design_effect() API.
 
-        This ensures the public design_effect method works correctly
-        for samples with weights.
+        This ensures the new API works correctly for samples with weights.
         """
         sample = Sample.from_frame(
             pd.DataFrame(
@@ -2059,7 +2119,7 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
         )
         adjusted = sample.set_target(target).adjust(method="null")
 
-        deff = adjusted.design_effect()
+        deff = adjusted.weights().design_effect()
 
         # Should return a valid design effect value
         self.assertIsNotNone(deff)
@@ -2096,10 +2156,9 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
         self.assertIn("method: null", str_repr)
 
     def test_design_effect_prop_method_returns_valid_value(self) -> None:
-        """Test design_effect_prop() public method returns valid value.
+        """Test design_effect_prop() via the new weights().design_effect_prop() API.
 
-        This ensures the public design_effect_prop method works correctly
-        for samples with weights.
+        This ensures the new API works correctly for samples with weights.
         """
         sample = Sample.from_frame(
             pd.DataFrame({"a": [1, 2], "b": [3, 4], "id": [1, 2], "w": [1, 1]}),
@@ -2108,7 +2167,7 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
         target = Sample.from_frame(pd.DataFrame({"a": [1], "b": [3], "id": [1]}))
         adjusted = sample.set_target(target).adjust(method="null")
 
-        deff_prop = adjusted.design_effect_prop()
+        deff_prop = adjusted.weights().design_effect_prop()
 
         # Should return a valid design effect proportion
         self.assertIsNotNone(deff_prop)
@@ -2116,10 +2175,10 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
         self.assertTrue(np.isfinite(deff_prop))
 
     def test_plot_weight_density_calls_weights_plot(self) -> None:
-        """Test plot_weight_density delegates to weights().plot().
+        """Test plot_weight_density delegates to weights().plot() and emits deprecation warning.
 
         This validates that the convenience method properly calls the
-        underlying weights plotting functionality.
+        underlying weights plotting functionality and emits a deprecation warning.
         """
         from unittest.mock import MagicMock, patch
 
@@ -2135,8 +2194,19 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
         mock_weights.plot = mock_plot
 
         with patch.object(sample, "weights", return_value=mock_weights):
-            # Call the method
-            result = sample.plot_weight_density()
+            # Call the method and verify deprecation warning
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always")
+                result = sample.plot_weight_density()
+                self.assertTrue(
+                    any(issubclass(x.category, DeprecationWarning) for x in w)
+                )
+                self.assertTrue(
+                    any(
+                        "Sample.plot_weight_density() is deprecated" in str(x.message)
+                        for x in w
+                    )
+                )
 
             # Verify weights() was called
             sample.weights.assert_called_once()

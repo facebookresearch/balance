@@ -272,58 +272,67 @@ class TestSampleDesignEffectDiagnosticsExceptionTypes(balance.testutil.BalanceTe
     def test_design_effect_diagnostics_type_error(self) -> None:
         """Test _design_effect_diagnostics handles TypeError gracefully.
 
-        Verifies lines 349-351 in sample_class.py.
+        Verifies the try/except in _design_effect_diagnostics catches TypeError
+        from weights().design_effect().
         """
         sample = Sample.from_frame(
             pd.DataFrame({"a": [1, 2, 3], "id": [1, 2, 3], "w": [1.0, 2.0, 3.0]}),
             weight_column="w",
         )
 
-        # Mock design_effect to raise TypeError
-        original_design_effect = sample.design_effect
+        # Mock weights().design_effect() to raise TypeError
+        mock_weights = MagicMock()
+        mock_weights.design_effect = MagicMock(side_effect=TypeError("test error"))
+        original_weights = sample.weights
         try:
-            sample.design_effect = MagicMock(side_effect=TypeError("test error"))
+            sample.weights = MagicMock(return_value=mock_weights)
             result = sample._design_effect_diagnostics()
             self.assertEqual(result, (None, None, None))
         finally:
-            sample.design_effect = original_design_effect
+            sample.weights = original_weights
 
     def test_design_effect_diagnostics_value_error(self) -> None:
         """Test _design_effect_diagnostics handles ValueError gracefully.
 
-        Verifies lines 349-351 in sample_class.py.
+        Verifies the try/except in _design_effect_diagnostics catches ValueError
+        from weights().design_effect().
         """
         sample = Sample.from_frame(
             pd.DataFrame({"a": [1, 2, 3], "id": [1, 2, 3], "w": [1.0, 2.0, 3.0]}),
             weight_column="w",
         )
 
-        # Mock design_effect to raise ValueError
-        original_design_effect = sample.design_effect
+        # Mock weights().design_effect() to raise ValueError
+        mock_weights = MagicMock()
+        mock_weights.design_effect = MagicMock(side_effect=ValueError("test error"))
+        original_weights = sample.weights
         try:
-            sample.design_effect = MagicMock(side_effect=ValueError("test error"))
+            sample.weights = MagicMock(return_value=mock_weights)
             result = sample._design_effect_diagnostics()
             self.assertEqual(result, (None, None, None))
         finally:
-            sample.design_effect = original_design_effect
+            sample.weights = original_weights
 
     def test_design_effect_diagnostics_zero_division_error(self) -> None:
         """Test _design_effect_diagnostics handles ZeroDivisionError gracefully.
 
-        Verifies lines 349-351 in sample_class.py.
+        Verifies the try/except in _design_effect_diagnostics catches
+        ZeroDivisionError from weights().design_effect().
         """
         sample = Sample.from_frame(
             pd.DataFrame({"a": [1, 2, 3], "id": [1, 2, 3], "w": [1.0, 2.0, 3.0]}),
             weight_column="w",
         )
 
-        # Mock design_effect to raise ZeroDivisionError
-        original_design_effect = sample.design_effect
+        # Mock weights().design_effect() to raise ZeroDivisionError
+        mock_weights = MagicMock()
+        mock_weights.design_effect = MagicMock(
+            side_effect=ZeroDivisionError("test error")
+        )
+        original_weights = sample.weights
         try:
-            sample.design_effect = MagicMock(
-                side_effect=ZeroDivisionError("test error")
-            )
+            sample.weights = MagicMock(return_value=mock_weights)
             result = sample._design_effect_diagnostics()
             self.assertEqual(result, (None, None, None))
         finally:
-            sample.design_effect = original_design_effect
+            sample.weights = original_weights

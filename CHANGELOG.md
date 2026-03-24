@@ -9,6 +9,23 @@
   - Added validation for non-finite and out-of-range propensity values,
     and expanded unit coverage for formula correctness and edge cases.
 
+## Deprecations
+
+- **`Sample.design_effect()` is deprecated** — use `sample.weights().design_effect()` instead.
+  The method already exists on `BalanceDFWeights`; the `Sample` method now emits a
+  `DeprecationWarning` and delegates. Will be removed in balance 0.19.0.
+- **`Sample.design_effect_prop()` is deprecated** — use `sample.weights().design_effect_prop()` instead.
+  New method added to `BalanceDFWeights`. Will be removed in balance 0.19.0.
+- **`Sample.plot_weight_density()` is deprecated** — use `sample.weights().plot()` instead.
+  Will be removed in balance 0.19.0.
+- **`Sample.covar_means()` is deprecated** — use `sample.covars().mean()` instead
+  (with `.rename(index={'self': 'adjusted'}).reindex([...]).T` for the same format).
+  Will be removed in balance 0.19.0.
+- **`Sample.outcome_sd_prop()` is deprecated** — use `sample.outcomes().outcome_sd_prop()` instead.
+  New method added to `BalanceDFOutcomes`. Will be removed in balance 0.19.0.
+- **`Sample.outcome_variance_ratio()` is deprecated** — use `sample.outcomes().outcome_variance_ratio()` instead.
+  New method added to `BalanceDFOutcomes`. Will be removed in balance 0.19.0.
+
 ## Bug Fixes
 
 - **`prepare_marginal_dist_for_raking` / `_realize_dicts_of_proportions`: fixed memory explosion from LCM expansion**

@@ -10,6 +10,7 @@ from __future__ import annotations
 import collections
 import inspect
 import logging
+import warnings
 from copy import deepcopy
 from importlib.metadata import version as importlib_version
 from typing import Any, Callable, Dict, List, Literal
@@ -18,8 +19,6 @@ import numpy as np
 import pandas as pd
 from balance import adjustment as balance_adjustment, util as balance_util
 from balance.csv_utils import to_csv_with_defaults
-from balance.stats_and_plots import weights_stats
-from balance.stats_and_plots.weighted_comparisons_stats import outcome_variance_ratio
 from balance.typing import DiagnosticScalar, FilePathOrBuffer
 from balance.util import (
     _assert_type,
@@ -344,7 +343,7 @@ class Sample:
             return None, None, None
 
         try:
-            design_effect = self.design_effect()
+            design_effect = self.weights().design_effect()
         except (TypeError, ValueError, ZeroDivisionError) as exc:
             logger.debug("Unable to compute design effect: %s", exc)
             return None, None, None
@@ -1316,6 +1315,20 @@ class Sample:
                     # c[b]      0.333333  0.333333  0.333333
                     # c[c]      0.333333  0.333333  0.333333
         """
+        import balance
+
+        if balance.SHOW_DEPRECATION_WARNINGS:
+            warnings.warn(
+                "Sample.covar_means() is deprecated. "
+                "Use sample.covars().mean() instead "
+                "(note: .mean() returns a different format — use "
+                ".mean().rename(index={'self': 'adjusted'})"
+                ".reindex(['unadjusted', 'adjusted', 'target']).T "
+                "to get the same output). "
+                "Will be removed in balance 0.19.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         self._check_if_adjusted()
 
         means = self.covars().mean()
@@ -1324,7 +1337,6 @@ class Sample:
             .reindex(["unadjusted", "adjusted", "target"])
             .transpose()
         )
-
         return means
 
     def design_effect(self) -> np.float64:
@@ -1353,7 +1365,17 @@ class Sample:
             round(sample.design_effect(), 3)
             # 1.111
         """
-        return weights_stats.design_effect(self.weight_column)
+        import balance
+
+        if balance.SHOW_DEPRECATION_WARNINGS:
+            warnings.warn(
+                "Sample.design_effect() is deprecated. "
+                "Use sample.weights().design_effect() instead. "
+                "Will be removed in balance 0.19.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        return self.weights().design_effect()
 
     def design_effect_prop(self) -> np.float64:
         """
@@ -1398,11 +1420,18 @@ class Sample:
             adjusted = sample.set_target(target).adjust(method="null")
             _ = adjusted.design_effect_prop()
         """
-        self._check_if_adjusted()
-        deff_unadjusted = self._links["unadjusted"].design_effect()
-        deff_adjusted = self.design_effect()
+        import balance
 
-        return (deff_adjusted - deff_unadjusted) / deff_unadjusted
+        if balance.SHOW_DEPRECATION_WARNINGS:
+            warnings.warn(
+                "Sample.design_effect_prop() is deprecated. "
+                "Use sample.weights().design_effect_prop() instead. "
+                "Will be removed in balance 0.19.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        self._check_if_adjusted()
+        return self.weights().design_effect_prop()
 
     def plot_weight_density(self) -> None:
         """Plot the density of weights of Sample.
@@ -1435,6 +1464,16 @@ class Sample:
                 # The same as:
                 sample.plot_weight_density()
         """
+        import balance
+
+        if balance.SHOW_DEPRECATION_WARNINGS:
+            warnings.warn(
+                "Sample.plot_weight_density() is deprecated. "
+                "Use sample.weights().plot() instead. "
+                "Will be removed in balance 0.19.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         self.weights().plot()
 
     ##########################################
@@ -1484,14 +1523,19 @@ class Sample:
             adjusted = sample.set_target(target).adjust(method="null")
             _ = adjusted.outcome_sd_prop()
         """
+        import balance
+
+        if balance.SHOW_DEPRECATION_WARNINGS:
+            warnings.warn(
+                "Sample.outcome_sd_prop() is deprecated. "
+                "Use sample.outcomes().outcome_sd_prop() instead. "
+                "Will be removed in balance 0.19.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         self._check_if_adjusted()
         self._check_outcomes_exists()
-
-        outcome_std = self.outcomes().std()
-        adjusted_outcome_sd = outcome_std.loc["self"]
-        unadjusted_outcome_sd = outcome_std.loc["unadjusted"]
-
-        return (adjusted_outcome_sd - unadjusted_outcome_sd) / unadjusted_outcome_sd
+        return self.outcomes().outcome_sd_prop()
 
     def outcome_variance_ratio(self: "Sample") -> pd.Series:
         """The empirical ratio of variance of the outcomes before and after weighting.
@@ -1535,12 +1579,17 @@ class Sample:
             adjusted = sample.set_target(target).adjust(method="null")
             _ = adjusted.outcome_variance_ratio()
         """
-        return outcome_variance_ratio(
-            self.outcomes().df,
-            self._links["unadjusted"].outcomes().df,
-            self.weights().df["weight"],
-            self._links["unadjusted"].weights().df["weight"],
-        )
+        import balance
+
+        if balance.SHOW_DEPRECATION_WARNINGS:
+            warnings.warn(
+                "Sample.outcome_variance_ratio() is deprecated. "
+                "Use sample.outcomes().outcome_variance_ratio() instead. "
+                "Will be removed in balance 0.19.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        return self.outcomes().outcome_variance_ratio()
 
     # TODO: Add a method that plots the distribution of the outcome (adjusted v.s. unadjusted
     #       if adjusted, and only unadjusted otherwise)

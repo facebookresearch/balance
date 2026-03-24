@@ -2748,3 +2748,48 @@ class TestBalanceDFWeights_plot_defaults(BalanceTestCase):
             return_axes=True,
         )
         self.assertIsNotNone(result)
+
+
+class TestBalanceDFWeightsDesignEffectProp(BalanceTestCase):
+    """Test cases for BalanceDFWeights.design_effect_prop() method."""
+
+    def test_design_effect_prop_null_adjustment(self) -> None:
+        """Test design_effect_prop returns 0 for null adjustment."""
+        s3_adj = s3.adjust(method="null")
+        result = s3_adj.weights().design_effect_prop()
+        self.assertEqual(result, 0.0)
+
+    def test_design_effect_prop_no_unadjusted_raises(self) -> None:
+        """Test design_effect_prop raises when no unadjusted link."""
+        with self.assertRaises(ValueError):
+            s1.weights().design_effect_prop()
+
+
+class TestBalanceDFOutcomesOutcomeSdProp(BalanceTestCase):
+    """Test cases for BalanceDFOutcomes.outcome_sd_prop() method."""
+
+    def test_outcome_sd_prop_null_adjustment(self) -> None:
+        """Test outcome_sd_prop returns 0 for null adjustment."""
+        s3_adj = s3.adjust(method="null")
+        result = s3_adj.outcomes().outcome_sd_prop()
+        self.assertEqual(result, pd.Series((0.0), index=["o"]))
+
+    def test_outcome_sd_prop_no_unadjusted_raises(self) -> None:
+        """Test outcome_sd_prop raises when no unadjusted link."""
+        with self.assertRaises(ValueError):
+            s1.outcomes().outcome_sd_prop()
+
+
+class TestBalanceDFOutcomesOutcomeVarianceRatio(BalanceTestCase):
+    """Test cases for BalanceDFOutcomes.outcome_variance_ratio() method."""
+
+    def test_outcome_variance_ratio_null_adjustment(self) -> None:
+        """Test outcome_variance_ratio returns 1.0 for null adjustment."""
+        s3_adj = s3.adjust(method="null")
+        result = s3_adj.outcomes().outcome_variance_ratio()
+        self.assertEqual(result, pd.Series([1.0], index=["o"]))
+
+    def test_outcome_variance_ratio_no_unadjusted_raises(self) -> None:
+        """Test outcome_variance_ratio raises when no unadjusted link."""
+        with self.assertRaises(ValueError):
+            s1.outcomes().outcome_variance_ratio()
