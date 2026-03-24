@@ -2794,6 +2794,79 @@ class BalanceDFWeights(BalanceDF):
         deff_unadjusted = unadjusted_weights.design_effect()
         return (deff_adjusted - deff_unadjusted) / deff_unadjusted
 
+    def r_indicator(
+        self: "BalanceDFWeights",
+        target_propensity: float | npt.ArrayLike | None = None,
+    ) -> np.float64:
+        """Approximate the R-indicator using inverse weights as propensities.
+
+        This is a convenience wrapper around
+        :func:`weighted_comparisons_stats.r_indicator`. Sample response
+        propensities are approximated from the inverse of the current weights.
+        If these inverse weights exceed 1, they are rescaled by their maximum
+        so the derived propensities remain in the valid ``[0, 1]`` interval.
+
+        When ``target_propensity`` is omitted, the method requires the sample
+        to have a linked target and assumes every target unit has propensity 1.
+
+        Args:
+            self (BalanceDFWeights): Object.
+            target_propensity (float | npt.ArrayLike | None, optional):
+                Target response propensities to compare against. If ``None``,
+                uses a vector of ones with the linked target's row count.
+
+        Returns:
+            np.float64: Approximate R-indicator derived from inverse weights.
+
+        Raises:
+            ValueError: If the sample has no target and ``target_propensity`` is
+                omitted, or if the weights are non-finite / non-positive.
+
+        Examples:
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+
+            sample = Sample.from_frame(
+                pd.DataFrame({"id": [1, 2], "weight": [2.0, 4.0]}),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            target = Sample.from_frame(
+                pd.DataFrame({"id": [10, 11, 12], "weight": [1.0, 1.0, 1.0]}),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+
+            round(sample.set_target(target).weights().r_indicator(), 3)
+            # 0.576
+        """
+        sample_weights = self.df.iloc[:, 0]
+
+        if not np.isfinite(sample_weights).all():
+            raise ValueError("BalanceDFWeights.r_indicator requires finite weights")
+        if (sample_weights <= 0).any():
+            raise ValueError(
+                "BalanceDFWeights.r_indicator requires strictly positive weights"
+            )
+
+        sample_propensity = 1.0 / sample_weights.to_numpy(dtype=float)
+        max_propensity = sample_propensity.max()
+        if max_propensity > 1.0:
+            sample_propensity = sample_propensity / max_propensity
+
+        if target_propensity is None:
+            self._sample._no_target_error()
+            target = self._sample._links["target"]
+            target_propensity = np.ones(target.df.shape[0], dtype=float)
+
+        return weighted_comparisons_stats.r_indicator(
+            sample_propensity, target_propensity
+        )
+
     # TODO: in the future, consider if this type of overriding is the best solution.
     #       to reconsider as part of a larger code refactoring.
     @property

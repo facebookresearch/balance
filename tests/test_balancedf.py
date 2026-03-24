@@ -611,6 +611,53 @@ class TestBalanceDFWeights(BalanceTestCase):
         )
         self.assertTrue(s.weights().design_effect(), 7 / 3)
 
+    def test_BalanceDFWeights_r_indicator_uses_linked_target(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame({"id": [1, 2], "w": [2.0, 4.0]}),
+            id_column="id",
+            weight_column="w",
+            standardize_types=False,
+        )
+        target = Sample.from_frame(
+            pd.DataFrame({"id": [10, 11, 12], "w": [1.0, 1.0, 1.0]}),
+            id_column="id",
+            weight_column="w",
+            standardize_types=False,
+        )
+
+        result = sample.set_target(target).weights().r_indicator()
+        expected = weighted_comparisons_stats.r_indicator([0.5, 0.25], [1.0, 1.0, 1.0])
+
+        self.assertEqual(result, expected)
+
+    def test_BalanceDFWeights_r_indicator_rescales_inverse_weights_above_one(
+        self,
+    ) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame({"id": [1, 2], "w": [0.5, 1.0]}),
+            id_column="id",
+            weight_column="w",
+            standardize_types=False,
+        )
+
+        result = sample.weights().r_indicator(target_propensity=[1.0, 1.0])
+        expected = weighted_comparisons_stats.r_indicator([1.0, 0.5], [1.0, 1.0])
+
+        self.assertEqual(result, expected)
+
+    def test_BalanceDFWeights_r_indicator_requires_target_without_override(
+        self,
+    ) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame({"id": [1, 2], "w": [2.0, 4.0]}),
+            id_column="id",
+            weight_column="w",
+            standardize_types=False,
+        )
+
+        with self.assertRaisesRegex(ValueError, "does not have a target set"):
+            sample.weights().r_indicator()
+
     def test_BalanceDFWeights_trim(self) -> None:
         np.random.seed(112358)  # Fix seed for reproducibility
         s = Sample.from_frame(
