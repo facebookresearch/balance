@@ -2778,3 +2778,18 @@ class TestBalanceDFOutcomesOutcomeSdProp(BalanceTestCase):
         """Test outcome_sd_prop raises when no unadjusted link."""
         with self.assertRaises(ValueError):
             s1.outcomes().outcome_sd_prop()
+
+
+class TestBalanceDFOutcomesOutcomeVarianceRatio(BalanceTestCase):
+    """Test cases for BalanceDFOutcomes.outcome_variance_ratio() method."""
+
+    def test_outcome_variance_ratio_null_adjustment(self) -> None:
+        """Test outcome_variance_ratio returns 1.0 for null adjustment."""
+        s3_adj = s3.adjust(method="null")
+        result = s3_adj.outcomes().outcome_variance_ratio()
+        self.assertEqual(result, pd.Series([1.0], index=["o"]))
+
+    def test_outcome_variance_ratio_no_unadjusted_raises(self) -> None:
+        """Test outcome_variance_ratio raises when no unadjusted link."""
+        with self.assertRaises(ValueError):
+            s1.outcomes().outcome_variance_ratio()

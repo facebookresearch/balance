@@ -19,7 +19,6 @@ import numpy as np
 import pandas as pd
 from balance import adjustment as balance_adjustment, util as balance_util
 from balance.csv_utils import to_csv_with_defaults
-from balance.stats_and_plots.weighted_comparisons_stats import outcome_variance_ratio
 from balance.typing import DiagnosticScalar, FilePathOrBuffer
 from balance.util import (
     _assert_type,
@@ -1580,12 +1579,17 @@ class Sample:
             adjusted = sample.set_target(target).adjust(method="null")
             _ = adjusted.outcome_variance_ratio()
         """
-        return outcome_variance_ratio(
-            self.outcomes().df,
-            self._links["unadjusted"].outcomes().df,
-            self.weights().df["weight"],
-            self._links["unadjusted"].weights().df["weight"],
-        )
+        import balance
+
+        if balance.SHOW_DEPRECATION_WARNINGS:
+            warnings.warn(
+                "Sample.outcome_variance_ratio() is deprecated. "
+                "Use sample.outcomes().outcome_variance_ratio() instead. "
+                "Will be removed in balance 0.19.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        return self.outcomes().outcome_variance_ratio()
 
     # TODO: Add a method that plots the distribution of the outcome (adjusted v.s. unadjusted
     #       if adjusted, and only unadjusted otherwise)

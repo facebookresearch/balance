@@ -14,6 +14,8 @@
   Will be removed in balance 0.19.0.
 - **`Sample.outcome_sd_prop()` is deprecated** — use `sample.outcomes().outcome_sd_prop()` instead.
   New method added to `BalanceDFOutcomes`. Will be removed in balance 0.19.0.
+- **`Sample.outcome_variance_ratio()` is deprecated** — use `sample.outcomes().outcome_variance_ratio()` instead.
+  New method added to `BalanceDFOutcomes`. Will be removed in balance 0.19.0.
 
 ## Bug Fixes
 
