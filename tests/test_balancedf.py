@@ -2748,3 +2748,18 @@ class TestBalanceDFWeights_plot_defaults(BalanceTestCase):
             return_axes=True,
         )
         self.assertIsNotNone(result)
+
+
+class TestBalanceDFWeightsDesignEffectProp(BalanceTestCase):
+    """Test cases for BalanceDFWeights.design_effect_prop() method."""
+
+    def test_design_effect_prop_null_adjustment(self) -> None:
+        """Test design_effect_prop returns 0 for null adjustment."""
+        s3_adj = s3.adjust(method="null")
+        result = s3_adj.weights().design_effect_prop()
+        self.assertEqual(result, 0.0)
+
+    def test_design_effect_prop_no_unadjusted_raises(self) -> None:
+        """Test design_effect_prop raises when no unadjusted link."""
+        with self.assertRaises(ValueError):
+            s1.weights().design_effect_prop()

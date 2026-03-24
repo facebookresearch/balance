@@ -851,7 +851,22 @@ class TestSample_metrics_methods(
 
     def test_Sample_design_effect_prop(self) -> None:
         s3_null = s1.adjust(s2, method="null")
-        self.assertEqual(s3_null.design_effect_prop(), 0.0)
+
+        # Test deprecation warning is emitted
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = s3_null.design_effect_prop()
+            self.assertTrue(any(issubclass(x.category, DeprecationWarning) for x in w))
+            self.assertTrue(
+                any(
+                    "Sample.design_effect_prop() is deprecated" in str(x.message)
+                    for x in w
+                )
+            )
+        self.assertEqual(result, 0.0)
+
+        # Test that the new API returns the same value
+        self.assertEqual(s3_null.weights().design_effect_prop(), 0.0)
 
         # test exceptions when there is no adjusted
         with self.assertRaisesRegex(
@@ -2112,10 +2127,9 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
         self.assertIn("method: null", str_repr)
 
     def test_design_effect_prop_method_returns_valid_value(self) -> None:
-        """Test design_effect_prop() public method returns valid value.
+        """Test design_effect_prop() via the new weights().design_effect_prop() API.
 
-        This ensures the public design_effect_prop method works correctly
-        for samples with weights.
+        This ensures the new API works correctly for samples with weights.
         """
         sample = Sample.from_frame(
             pd.DataFrame({"a": [1, 2], "b": [3, 4], "id": [1, 2], "w": [1, 1]}),
@@ -2124,7 +2138,7 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
         target = Sample.from_frame(pd.DataFrame({"a": [1], "b": [3], "id": [1]}))
         adjusted = sample.set_target(target).adjust(method="null")
 
-        deff_prop = adjusted.design_effect_prop()
+        deff_prop = adjusted.weights().design_effect_prop()
 
         # Should return a valid design effect proportion
         self.assertIsNotNone(deff_prop)

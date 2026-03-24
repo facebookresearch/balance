@@ -1408,11 +1408,18 @@ class Sample:
             adjusted = sample.set_target(target).adjust(method="null")
             _ = adjusted.design_effect_prop()
         """
-        self._check_if_adjusted()
-        deff_unadjusted = self._links["unadjusted"].design_effect()
-        deff_adjusted = self.design_effect()
+        import balance
 
-        return (deff_adjusted - deff_unadjusted) / deff_unadjusted
+        if balance.SHOW_DEPRECATION_WARNINGS:
+            warnings.warn(
+                "Sample.design_effect_prop() is deprecated. "
+                "Use sample.weights().design_effect_prop() instead. "
+                "Will be removed in balance 0.19.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        self._check_if_adjusted()
+        return self.weights().design_effect_prop()
 
     def plot_weight_density(self) -> None:
         """Plot the density of weights of Sample.

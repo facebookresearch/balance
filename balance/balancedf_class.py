@@ -2630,6 +2630,56 @@ class BalanceDFWeights(BalanceDF):
         """
         return weights_stats.design_effect(self.df.iloc[:, 0])
 
+    def design_effect_prop(self: "BalanceDFWeights") -> np.float64:
+        """Relative change in design effect: (Deff_adjusted - Deff_unadjusted) / Deff_unadjusted.
+
+        Returns:
+            np.float64: Relative difference in design effect.
+
+        Raises:
+            ValueError: If there are no unadjusted weights linked.
+
+        Examples:
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {
+                        "id": ["1", "2"],
+                        "x": [0, 1],
+                        "weight": [1.0, 2.0],
+                    }
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            target = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["3", "4"], "x": [0, 1], "weight": [1.0, 1.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            adjusted = sample.set_target(target).adjust(method="null")
+            adjusted.weights().design_effect_prop()
+        """
+        linked = self._BalanceDF_child_from_linked_samples()
+        unadjusted_weights = linked.get("unadjusted")
+        if unadjusted_weights is None:
+            raise ValueError(
+                "No unadjusted weights available. This requires an adjusted sample."
+            )
+        if not isinstance(unadjusted_weights, BalanceDFWeights):
+            raise TypeError("Expected BalanceDFWeights for unadjusted weights.")
+        deff_adjusted = self.design_effect()
+        deff_unadjusted = unadjusted_weights.design_effect()
+        return (deff_adjusted - deff_unadjusted) / deff_unadjusted
+
     # TODO: in the future, consider if this type of overriding is the best solution.
     #       to reconsider as part of a larger code refactoring.
     @property

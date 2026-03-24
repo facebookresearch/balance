@@ -5,6 +5,8 @@
 - **`Sample.design_effect()` is deprecated** — use `sample.weights().design_effect()` instead.
   The method already exists on `BalanceDFWeights`; the `Sample` method now emits a
   `DeprecationWarning` and delegates. Will be removed in balance 0.19.0.
+- **`Sample.design_effect_prop()` is deprecated** — use `sample.weights().design_effect_prop()` instead.
+  New method added to `BalanceDFWeights`. Will be removed in balance 0.19.0.
 
 ## Bug Fixes
 
