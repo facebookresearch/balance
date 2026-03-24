@@ -63,6 +63,7 @@ def check_some_flags(
             out_file,
             "--covariate_columns",
             "x,y",
+            "--num_lambdas=1",
         ]
         if flag:
             args_to_parse.append(the_flag_str)
@@ -569,6 +570,7 @@ class TestCli(
                     diagnostics_out_file,
                     "--covariate_columns",
                     "x,y",
+                    "--num_lambdas=1",
                 ]
             )
             cli = BalanceCLI(args)
@@ -608,6 +610,7 @@ class TestCli(
                     diagnostics_out_file,
                     "--covariate_columns",
                     "x,y,z",
+                    "--num_lambdas=1",
                     "--rows_to_keep_for_diagnostics",
                     "z == 'g'",  # filtering condition
                     "--covariate_columns_for_diagnostics",
@@ -673,6 +676,7 @@ class TestCli(
                     diagnostics_out_file,
                     "--covariate_columns",
                     "x,y",
+                    "--num_lambdas=1",
                 ]
             )
             cli = BalanceCLI(args)
@@ -749,6 +753,7 @@ class TestCli(
                     diagnostics_out_file,
                     "--covariate_columns",
                     "x,y,z",
+                    "--num_lambdas=1",
                     "--sep_output_file",
                     ";",
                     "--sep_diagnostics_output_file",
@@ -815,6 +820,7 @@ class TestCli(
                     diagnostics_out_file,
                     "--covariate_columns",
                     "x,y,z",
+                    "--num_lambdas=1",
                     "--sep_input_file",
                     "\t",
                 ]
@@ -884,6 +890,7 @@ class TestCli(
                     diagnostics_out_file,
                     "--covariate_columns",
                     "x,y,z",
+                    "--num_lambdas=1",
                     "--sep_output",
                     ";",
                     "--sep_diagnostics",
@@ -966,6 +973,7 @@ class TestCli(
                     diagnostics_output_file,
                     "--covariate_columns",
                     features,
+                    "--num_lambdas=1",
                     "--method=cbps",
                 ]
             )
@@ -993,6 +1001,7 @@ class TestCli(
                     diagnostics_output_file,
                     "--covariate_columns",
                     features,
+                    "--num_lambdas=1",
                     "--method=ipw",
                     "--max_de=1.5",
                 ]
@@ -1157,6 +1166,7 @@ class TestCli(
                     diagnostics_output_file,
                     "--covariate_columns",
                     features,
+                    "--num_lambdas=1",
                     "--transformations=None",
                 ]
             )
@@ -1185,6 +1195,7 @@ class TestCli(
                     diagnostics_output_file,
                     "--covariate_columns",
                     features,
+                    "--num_lambdas=1",
                     "--transformations=default",
                 ]
             )
@@ -1230,6 +1241,7 @@ class TestCli(
                     diagnostics_output_file,
                     "--covariate_columns",
                     features,
+                    "--num_lambdas=1",
                 ]
             )
             # run cli
@@ -1288,6 +1300,7 @@ class TestCli(
                     diagnostics_output_file,
                     "--covariate_columns",
                     features,
+                    "--num_lambdas=1",
                     "--transformations=None",
                 ]
             )
@@ -1316,6 +1329,7 @@ class TestCli(
                     diagnostics_output_file,
                     "--covariate_columns",
                     features,
+                    "--num_lambdas=1",
                     "--transformations=None",
                     "--formula=age*gender",
                 ]
@@ -1598,6 +1612,7 @@ class TestBalanceCLI_csv_column_parsing(balance.testutil.BalanceTestCase):
                     out_file,
                     "--covariate_columns",
                     "x,y",
+                    "--num_lambdas=1",
                     "--keep_columns",
                     "id,weight,extra_col",
                 ]
@@ -1750,6 +1765,7 @@ class TestBalanceCLI_adapt_output(balance.testutil.BalanceTestCase):
                     diagnostics_out_file,
                     "--covariate_columns",
                     "x,y",
+                    "--num_lambdas=1",
                     "--succeed_on_weighting_failure",
                     "--return_df_with_original_dtypes",
                 ]
@@ -1792,6 +1808,7 @@ class TestBalanceCLI_adapt_output(balance.testutil.BalanceTestCase):
                     diagnostics_output_file,
                     "--covariate_columns",
                     features,
+                    "--num_lambdas=1",
                     "--method=ipw",
                     "--ipw_logistic_regression_kwargs",
                     '{"solver": "lbfgs", "max_iter": 200}',
@@ -1837,6 +1854,7 @@ class TestBalanceCLI_adapt_output(balance.testutil.BalanceTestCase):
                     diagnostics_out_file,
                     "--covariate_columns",
                     "x,y",
+                    "--num_lambdas=1",
                     "--batch_columns",
                     "batch",
                 ]
@@ -1893,6 +1911,7 @@ class TestCliMainFunction(balance.testutil.BalanceTestCase):
                 out_file,
                 "--covariate_columns",
                 "x,y",
+                "--num_lambdas=1",
             ]
 
             from balance.cli import main
