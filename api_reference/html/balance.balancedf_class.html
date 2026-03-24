@@ -2011,6 +2011,68 @@ s3_null.weights().plot()</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="balance.balancedf_class.BalanceDFWeights.r_indicator">
+<span class="sig-name descname"><span class="pre">r_indicator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_propensity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ArrayLike</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float64</span></span></span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDFWeights.r_indicator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDFWeights.r_indicator" title="Link to this definition">¶</a></dt>
+<dd><p>Approximate the R-indicator using inverse weights as propensities.</p>
+<p>This is a convenience wrapper around
+<code class="xref py py-func docutils literal notranslate"><span class="pre">weighted_comparisons_stats.r_indicator()</span></code>. Sample response
+propensities are approximated from the inverse of the current weights.
+If these inverse weights exceed 1, they are rescaled by their maximum
+so the derived propensities remain in the valid <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code> interval.</p>
+<p>When <code class="docutils literal notranslate"><span class="pre">target_propensity</span></code> is omitted, the method requires the sample
+to have a linked target and assumes every target unit has propensity 1.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> (<a class="reference internal" href="#balance.balancedf_class.BalanceDFWeights" title="balance.balancedf_class.BalanceDFWeights"><em>BalanceDFWeights</em></a>) – Object.</p></li>
+<li><p><strong>target_propensity</strong> (<em>float</em><em> | </em><em>npt.ArrayLike</em><em> | </em><em>None</em><em>, </em><em>optional</em>) – Target response propensities to compare against. If <code class="docutils literal notranslate"><span class="pre">None</span></code>,
+uses a vector of ones with the linked target’s row count. If
+a scalar is provided, it is broadcast to linked target length.
+If an array-like is provided and a linked target exists, its
+length must equal the linked target row count.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Approximate R-indicator derived from inverse weights.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.float64</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the sample has no target and <code class="docutils literal notranslate"><span class="pre">target_propensity</span></code> is
+    omitted, if a scalar <code class="docutils literal notranslate"><span class="pre">target_propensity</span></code> is provided without a
+    linked target, if array-like target propensities do not match a
+    linked target row count, or if the weights are non-finite /
+    non-positive.</p>
+</dd>
+</dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample</p>
+<dl class="simple">
+<dt>sample = Sample.from_frame(</dt><dd><p>pd.DataFrame({“id”: [1, 2], “weight”: [2.0, 4.0]}),
+id_column=”id”,
+weight_column=”weight”,
+standardize_types=False,</p>
+</dd>
+</dl>
+<p>)
+target = Sample.from_frame(</p>
+<blockquote>
+<div><p>pd.DataFrame({“id”: [10, 11, 12], “weight”: [1.0, 1.0, 1.0]}),
+id_column=”id”,
+weight_column=”weight”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)</p>
+<p>round(sample.set_target(target).weights().r_indicator(), 3)
+# 0.293</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="balance.balancedf_class.BalanceDFWeights.summary">
 <span class="sig-name descname"><span class="pre">summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">on_linked_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDFWeights.summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDFWeights.summary" title="Link to this definition">¶</a></dt>
 <dd><p>Generates a summary of a BalanceDFWeights object.</p>
@@ -2192,6 +2254,7 @@ sample.weights().df[“weight”].max() &lt;= 100.0
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFWeights.design_effect_prop"><code class="docutils literal notranslate"><span class="pre">BalanceDFWeights.design_effect_prop()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFWeights.df"><code class="docutils literal notranslate"><span class="pre">BalanceDFWeights.df</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFWeights.plot"><code class="docutils literal notranslate"><span class="pre">BalanceDFWeights.plot()</span></code></a></li>
+<li><a class="reference internal" href="#balance.balancedf_class.BalanceDFWeights.r_indicator"><code class="docutils literal notranslate"><span class="pre">BalanceDFWeights.r_indicator()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFWeights.summary"><code class="docutils literal notranslate"><span class="pre">BalanceDFWeights.summary()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFWeights.trim"><code class="docutils literal notranslate"><span class="pre">BalanceDFWeights.trim()</span></code></a></li>
 </ul>

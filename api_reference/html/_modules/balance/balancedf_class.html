@@ -2923,6 +2923,112 @@
         <span class="k">return</span> <span class="p">(</span><span class="n">deff_adjusted</span> <span class="o">-</span> <span class="n">deff_unadjusted</span><span class="p">)</span> <span class="o">/</span> <span class="n">deff_unadjusted</span></div>
 
 
+<div class="viewcode-block" id="BalanceDFWeights.r_indicator">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDFWeights.r_indicator">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">r_indicator</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFWeights&quot;</span><span class="p">,</span>
+        <span class="n">target_propensity</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">ArrayLike</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Approximate the R-indicator using inverse weights as propensities.</span>
+
+<span class="sd">        This is a convenience wrapper around</span>
+<span class="sd">        :func:`weighted_comparisons_stats.r_indicator`. Sample response</span>
+<span class="sd">        propensities are approximated from the inverse of the current weights.</span>
+<span class="sd">        If these inverse weights exceed 1, they are rescaled by their maximum</span>
+<span class="sd">        so the derived propensities remain in the valid ``[0, 1]`` interval.</span>
+
+<span class="sd">        When ``target_propensity`` is omitted, the method requires the sample</span>
+<span class="sd">        to have a linked target and assumes every target unit has propensity 1.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (BalanceDFWeights): Object.</span>
+<span class="sd">            target_propensity (float | npt.ArrayLike | None, optional):</span>
+<span class="sd">                Target response propensities to compare against. If ``None``,</span>
+<span class="sd">                uses a vector of ones with the linked target&#39;s row count. If</span>
+<span class="sd">                a scalar is provided, it is broadcast to linked target length.</span>
+<span class="sd">                If an array-like is provided and a linked target exists, its</span>
+<span class="sd">                length must equal the linked target row count.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            np.float64: Approximate R-indicator derived from inverse weights.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the sample has no target and ``target_propensity`` is</span>
+<span class="sd">                omitted, if a scalar ``target_propensity`` is provided without a</span>
+<span class="sd">                linked target, if array-like target propensities do not match a</span>
+<span class="sd">                linked target row count, or if the weights are non-finite /</span>
+<span class="sd">                non-positive.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from balance.sample_class import Sample</span>
+
+<span class="sd">            sample = Sample.from_frame(</span>
+<span class="sd">                pd.DataFrame({&quot;id&quot;: [1, 2], &quot;weight&quot;: [2.0, 4.0]}),</span>
+<span class="sd">                id_column=&quot;id&quot;,</span>
+<span class="sd">                weight_column=&quot;weight&quot;,</span>
+<span class="sd">                standardize_types=False,</span>
+<span class="sd">            )</span>
+<span class="sd">            target = Sample.from_frame(</span>
+<span class="sd">                pd.DataFrame({&quot;id&quot;: [10, 11, 12], &quot;weight&quot;: [1.0, 1.0, 1.0]}),</span>
+<span class="sd">                id_column=&quot;id&quot;,</span>
+<span class="sd">                weight_column=&quot;weight&quot;,</span>
+<span class="sd">                standardize_types=False,</span>
+<span class="sd">            )</span>
+
+<span class="sd">            round(sample.set_target(target).weights().r_indicator(), 3)</span>
+<span class="sd">            # 0.293</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sample_weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">sample_weights</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;BalanceDFWeights.r_indicator requires at least one sample weight&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">sample_weights</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;BalanceDFWeights.r_indicator requires finite weights&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">sample_weights</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;BalanceDFWeights.r_indicator requires strictly positive weights&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">sample_propensity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reciprocal</span><span class="p">(</span><span class="n">sample_weights</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">))</span>
+        <span class="n">max_propensity</span> <span class="o">=</span> <span class="n">sample_propensity</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">max_propensity</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="n">sample_propensity</span> <span class="o">=</span> <span class="n">sample_propensity</span> <span class="o">/</span> <span class="n">max_propensity</span>
+
+        <span class="n">target_sample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="o">.</span><span class="n">_links</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">target_propensity</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="o">.</span><span class="n">_no_target_error</span><span class="p">()</span>
+            <span class="n">target_sample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span>
+            <span class="n">target_propensity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">target_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">target_propensity</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">target_sample</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;BalanceDFWeights.r_indicator requires a linked target when &quot;</span>
+                    <span class="s2">&quot;target_propensity is scalar&quot;</span>
+                <span class="p">)</span>
+            <span class="n">target_propensity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
+                <span class="n">target_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">float</span><span class="p">(</span><span class="n">target_propensity</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">target_sample</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">target_propensity_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">target_propensity</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">target_propensity_array</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">target_propensity_array</span> <span class="o">=</span> <span class="n">target_propensity_array</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">target_propensity_array</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">target_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;BalanceDFWeights.r_indicator requires target_propensity length &quot;</span>
+                    <span class="s2">&quot;to match linked target row count&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">weighted_comparisons_stats</span><span class="o">.</span><span class="n">r_indicator</span><span class="p">(</span>
+            <span class="n">sample_propensity</span><span class="p">,</span> <span class="n">target_propensity</span>
+        <span class="p">)</span></div>
+
+
     <span class="c1"># TODO: in the future, consider if this type of overriding is the best solution.</span>
     <span class="c1">#       to reconsider as part of a larger code refactoring.</span>
     <span class="nd">@property</span>

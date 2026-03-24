@@ -76,17 +76,96 @@
 <span class="c1">##########################################</span>
 
 
-<span class="c1"># TODO: fix the r_indicator function. The current implementation is broken since it</span>
-<span class="c1">#       seems to wrongly estimate N.</span>
-<span class="c1">#       This seems to attempt to reproduce equation 2.2.2, in page 5 in</span>
-<span class="c1">#       &quot;Indicators for the representativeness of survey response&quot;</span>
-<span class="c1">#       by Jelke Bethlehem, Fannie Cobben, and Barry Schouten</span>
-<span class="c1">#       See pdf: https://www150.statcan.gc.ca/n1/en/pub/11-522-x/2008000/article/10976-eng.pdf?st=Zi4d4zld</span>
-<span class="c1">#       From: https://www150.statcan.gc.ca/n1/pub/11-522-x/2008000/article/10976-eng.pdf</span>
-<span class="c1"># def r_indicator(sample_p: np.float64, target_p: np.float64) -&gt; np.float64:</span>
-<span class="c1">#     p = np.concatenate((sample_p, target_p))</span>
-<span class="c1">#     N = len(sample_p) + len(target_p)</span>
-<span class="c1">#     return 1 - 2 * np.sqrt(1 / (N - 1) * np.sum((p - np.mean(p)) ** 2))</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_coerce_r_indicator_propensities</span><span class="p">(</span>
+    <span class="n">propensities</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">ArrayLike</span><span class="p">,</span> <span class="n">input_name</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalize ``r_indicator`` propensity inputs to a 1D float array.&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">propensities</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;r_indicator requires all </span><span class="si">{</span><span class="n">input_name</span><span class="si">}</span><span class="s2"> propensity values to be numeric&quot;</span>
+        <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+
+    <span class="k">if</span> <span class="n">array</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">array</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">array</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">array</span>
+
+    <span class="k">if</span> <span class="n">array</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">array</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">array</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;r_indicator requires </span><span class="si">{</span><span class="n">input_name</span><span class="si">}</span><span class="s2"> to be one-dimensional or single-column&quot;</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="r_indicator">
+<a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_comparisons_stats.html#balance.stats_and_plots.weighted_comparisons_stats.r_indicator">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">r_indicator</span><span class="p">(</span>
+    <span class="n">sample_p</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">ArrayLike</span><span class="p">,</span>
+    <span class="n">target_p</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">ArrayLike</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the R-indicator from sample and target response propensities.</span>
+
+<span class="sd">    Implements Eq. 2.2.2 from *Indicators for the representativeness of survey</span>
+<span class="sd">    response* (Bethlehem, Cobben, Schouten):</span>
+<span class="sd">    https://www150.statcan.gc.ca/n1/pub/11-522-x/2008000/article/10976-eng.pdf</span>
+
+<span class="sd">    ``R = 1 - 2 * sqrt((1/(N-1)) * sum_i (p_i - mean(p))^2)``</span>
+
+<span class="sd">    where ``p`` is the concatenation of response propensities from the sample</span>
+<span class="sd">    and target populations.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sample_p: Array-like response propensities for sample units.</span>
+<span class="sd">        target_p: Array-like response propensities for target units.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.float64: The R-indicator value. The result is clipped to the</span>
+<span class="sd">            ``[0, 1]`` interval after computing Eq. 2.2.2 so small-sample</span>
+<span class="sd">            boundary cases remain within the representativeness scale.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If fewer than two total propensity values are provided,</span>
+<span class="sd">            if ``sample_p`` or ``target_p`` is not one-dimensional (except for</span>
+<span class="sd">            single-column 2D inputs),</span>
+<span class="sd">            if any propensity value is non-numeric,</span>
+<span class="sd">            if any propensity value is non-finite, or if any propensity value</span>
+<span class="sd">            falls outside the valid ``[0, 1]`` interval.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">            &gt;&gt;&gt; r_indicator([0.2, 0.4], [0.3, 0.5])</span>
+<span class="sd">            0.7418011102528389</span>
+<span class="sd">            &gt;&gt;&gt; r_indicator(np.array([0.5, 0.5]), np.array([0.5]))</span>
+<span class="sd">            1.0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sample_propensities</span> <span class="o">=</span> <span class="n">_coerce_r_indicator_propensities</span><span class="p">(</span><span class="n">sample_p</span><span class="p">,</span> <span class="s2">&quot;sample_p&quot;</span><span class="p">)</span>
+    <span class="n">target_propensities</span> <span class="o">=</span> <span class="n">_coerce_r_indicator_propensities</span><span class="p">(</span><span class="n">target_p</span><span class="p">,</span> <span class="s2">&quot;target_p&quot;</span><span class="p">)</span>
+    <span class="n">propensities</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sample_propensities</span><span class="p">,</span> <span class="n">target_propensities</span><span class="p">))</span>
+
+    <span class="n">n_obs</span> <span class="o">=</span> <span class="n">propensities</span><span class="o">.</span><span class="n">size</span>
+    <span class="k">if</span> <span class="n">n_obs</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;r_indicator requires at least two propensity values across sample and target&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">propensities</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;r_indicator requires all propensity values to be finite&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">((</span><span class="n">propensities</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">propensities</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;r_indicator requires propensity values to be within the [0, 1] range&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">centered</span> <span class="o">=</span> <span class="n">propensities</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">propensities</span><span class="p">)</span>
+    <span class="n">sample_variance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">centered</span> <span class="o">*</span> <span class="n">centered</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_obs</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">r_value</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sample_variance</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">r_value</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span></div>
+
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_weights_per_covars_names</span><span class="p">(</span><span class="n">covar_names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
