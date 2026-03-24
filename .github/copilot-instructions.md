@@ -1,9 +1,8 @@
-# Copilot Code Review Instructions: `balance` (Python)
+# Code Review Instructions: `balance` (Python)
 
-When performing a Copilot code review for this repository, follow the instructions below and prioritize correctness, statistical validity, reproducibility, and backward compatibility.
+Review instructions for the **balance** Python package (weighting and balancing utilities for correcting bias in tabular datasets). Prioritize correctness, statistical validity, reproducibility, and backward compatibility.
 
-## Project context
-This repo contains the **balance** Python package: weighting and balancing utilities for correcting bias in tabular datasets (e.g., IPW, CBPS, raking, poststratification), built on pandas and NumPy.
+For project architecture, build/test commands, and file layout, see `CLAUDE.md` in the repository root (at Meta: `fbcode/core_stats/balance/CLAUDE.md`).
 
 ## Review checklist
 
@@ -51,9 +50,10 @@ This repo contains the **balance** Python package: weighting and balancing utili
 - Prefer using `from balance import load_data` in tests when appropriate.
 
 ### 4) Types and docs (Pyre strict)
-- The codebase is Pyre-typed (`# pyre-strict`): new/modified public APIs must have complete type hints.
+- The codebase is Pyre-typed (`# pyre-strict`) with `from __future__ import annotations` on every file.
+- New/modified public APIs must have complete type hints. Avoid returning `Any` or widening types unless justified.
 - New/modified public functions/classes must include a docstring with at least one concrete usage example.
-- Avoid returning `Any` or widening types unless justified.
+- MIT license header required on every source file.
 
 ### 5) Backward compatibility and deprecations
 - Do not silently change defaults, return shapes, column names, or CLI flags.
@@ -85,10 +85,17 @@ This repo contains the **balance** Python package: weighting and balancing utili
 ### 9) Style, logging, and UX consistency
 - Favor clear, pandas-friendly code.
 - Avoid mutating user-provided inputs in-place unless explicitly documented.
-- Preserve existing logging patterns and verbosity conventions.
+- Preserve existing logging patterns: one logger per module via `logger = logging.getLogger(__package__)`.
+- Use `DeprecationWarning` for deprecations with clear replacement guidance and removal timeline.
 - Keep tests fast; prefer small fixtures and shared factories/helpers in `tests/`.
+- Fix random seeds in tests for reproducibility; assert with tolerances.
+- `Sample` is constructed via `Sample.from_frame()` factory — not `__init__` directly.
 
 ## Review comment style
 - Keep feedback concise and actionable.
 - Point to exact lines/files and propose concrete fixes and/or specific missing tests.
 - If uncertain, ask for a small reproducible example or an additional test to clarify behavior.
+
+## Self-maintenance
+- When review guidelines change, update both this file and `CLAUDE.md` to keep them in sync.
+- This file owns the detailed review checklist. `CLAUDE.md` owns architecture, build/test, and project structure.

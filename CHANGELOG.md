@@ -1,4 +1,4 @@
-# 0.18.0 (2026-03-18)
+# 0.18.0 (2026-03-24)
 
 ## Deprecations
 
@@ -16,6 +16,14 @@
   New method added to `BalanceDFOutcomes`. Will be removed in balance 0.19.0.
 - **`Sample.outcome_variance_ratio()` is deprecated** — use `sample.outcomes().outcome_variance_ratio()` instead.
   New method added to `BalanceDFOutcomes`. Will be removed in balance 0.19.0.
+
+## LLM/GenAI
+
+- **Added `CLAUDE.md` project context files** for Claude Code users, covering architecture,
+  build/test instructions (Meta and open-source), code conventions, and pre-submit checklist.
+- **Updated `.github/copilot-instructions.md`** review checklist to reduce duplication with
+  `CLAUDE.md` and add missing conventions (MIT license header, `from __future__ import annotations`,
+  factory pattern, seed fixing, deprecation style).
 
 ## Bug Fixes
 
