@@ -62,6 +62,9 @@
     <span class="n">weighted_stats</span><span class="p">,</span>
     <span class="n">weights_stats</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots.weighted_comparisons_stats</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">outcome_variance_ratio</span> <span class="k">as</span> <span class="n">_outcome_variance_ratio</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">FilePathOrBuffer</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_items_index_in_list</span><span class="p">,</span> <span class="n">get_items_from_list_via_indices</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.input_validation</span><span class="w"> </span><span class="kn">import</span> <span class="n">_assert_type</span>
@@ -2557,6 +2560,123 @@
         <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">out</span></div>
+
+
+<div class="viewcode-block" id="BalanceDFOutcomes.outcome_sd_prop">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDFOutcomes.outcome_sd_prop">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">outcome_sd_prop</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFOutcomes&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Relative change in outcome weighted SD after adjustment.</span>
+
+<span class="sd">        Computes (weighted SD of adjusted - weighted SD of unadjusted) / weighted SD of unadjusted.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.Series: Relative difference in outcome weighted standard deviation.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If there are no unadjusted outcomes linked.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from balance.sample_class import Sample</span>
+
+<span class="sd">            sample = Sample.from_frame(</span>
+<span class="sd">                pd.DataFrame(</span>
+<span class="sd">                    {</span>
+<span class="sd">                        &quot;id&quot;: [&quot;1&quot;, &quot;2&quot;],</span>
+<span class="sd">                        &quot;x&quot;: [0, 1],</span>
+<span class="sd">                        &quot;weight&quot;: [1.0, 2.0],</span>
+<span class="sd">                        &quot;y&quot;: [0.1, 0.2],</span>
+<span class="sd">                    }</span>
+<span class="sd">                ),</span>
+<span class="sd">                id_column=&quot;id&quot;,</span>
+<span class="sd">                weight_column=&quot;weight&quot;,</span>
+<span class="sd">                outcome_columns=&quot;y&quot;,</span>
+<span class="sd">                standardize_types=False,</span>
+<span class="sd">            )</span>
+<span class="sd">            target = Sample.from_frame(</span>
+<span class="sd">                pd.DataFrame(</span>
+<span class="sd">                    {&quot;id&quot;: [&quot;3&quot;, &quot;4&quot;], &quot;x&quot;: [0, 1], &quot;weight&quot;: [1.0, 1.0]}</span>
+<span class="sd">                ),</span>
+<span class="sd">                id_column=&quot;id&quot;,</span>
+<span class="sd">                weight_column=&quot;weight&quot;,</span>
+<span class="sd">                standardize_types=False,</span>
+<span class="sd">            )</span>
+<span class="sd">            adjusted = sample.set_target(target).adjust(method=&quot;null&quot;)</span>
+<span class="sd">            adjusted.outcomes().outcome_sd_prop()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">outcome_std</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
+        <span class="n">adjusted_outcome_sd</span> <span class="o">=</span> <span class="n">outcome_std</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">]</span>
+        <span class="n">unadjusted_row</span> <span class="o">=</span> <span class="n">outcome_std</span><span class="o">.</span><span class="n">reindex</span><span class="p">([</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">unadjusted_row</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;No unadjusted outcomes available. This requires an adjusted sample.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">unadjusted_outcome_sd</span> <span class="o">=</span> <span class="n">outcome_std</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">adjusted_outcome_sd</span> <span class="o">-</span> <span class="n">unadjusted_outcome_sd</span><span class="p">)</span> <span class="o">/</span> <span class="n">unadjusted_outcome_sd</span></div>
+
+
+<div class="viewcode-block" id="BalanceDFOutcomes.outcome_variance_ratio">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDFOutcomes.outcome_variance_ratio">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">outcome_variance_ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFOutcomes&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Ratio of outcome variance (adjusted / unadjusted).</span>
+
+<span class="sd">        See :func:`outcome_variance_ratio` for details.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.Series: A series of calculated ratio of variances for each outcome.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If there are no unadjusted outcomes linked.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from balance.sample_class import Sample</span>
+
+<span class="sd">            sample = Sample.from_frame(</span>
+<span class="sd">                pd.DataFrame(</span>
+<span class="sd">                    {</span>
+<span class="sd">                        &quot;id&quot;: [&quot;1&quot;, &quot;2&quot;],</span>
+<span class="sd">                        &quot;x&quot;: [0, 1],</span>
+<span class="sd">                        &quot;weight&quot;: [1.0, 2.0],</span>
+<span class="sd">                        &quot;y&quot;: [0.1, 0.2],</span>
+<span class="sd">                    }</span>
+<span class="sd">                ),</span>
+<span class="sd">                id_column=&quot;id&quot;,</span>
+<span class="sd">                weight_column=&quot;weight&quot;,</span>
+<span class="sd">                outcome_columns=&quot;y&quot;,</span>
+<span class="sd">                standardize_types=False,</span>
+<span class="sd">            )</span>
+<span class="sd">            target = Sample.from_frame(</span>
+<span class="sd">                pd.DataFrame(</span>
+<span class="sd">                    {&quot;id&quot;: [&quot;3&quot;, &quot;4&quot;], &quot;x&quot;: [0, 1], &quot;weight&quot;: [1.0, 1.0]}</span>
+<span class="sd">                ),</span>
+<span class="sd">                id_column=&quot;id&quot;,</span>
+<span class="sd">                weight_column=&quot;weight&quot;,</span>
+<span class="sd">                standardize_types=False,</span>
+<span class="sd">            )</span>
+<span class="sd">            adjusted = sample.set_target(target).adjust(method=&quot;null&quot;)</span>
+<span class="sd">            adjusted.outcomes().outcome_variance_ratio()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">linked</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_BalanceDF_child_from_linked_samples</span><span class="p">()</span>
+        <span class="n">unadjusted_outcomes</span> <span class="o">=</span> <span class="n">linked</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">unadjusted_outcomes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;No unadjusted outcomes available. This requires an adjusted sample.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">adjusted_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span>
+        <span class="n">adjusted_weights</span> <span class="o">=</span> <span class="n">adjusted_w</span><span class="o">.</span><span class="n">values</span> <span class="k">if</span> <span class="n">adjusted_w</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">unadjusted_w</span> <span class="o">=</span> <span class="n">unadjusted_outcomes</span><span class="o">.</span><span class="n">_weights</span>
+        <span class="n">unadjusted_weights</span> <span class="o">=</span> <span class="n">unadjusted_w</span><span class="o">.</span><span class="n">values</span> <span class="k">if</span> <span class="n">unadjusted_w</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">_outcome_variance_ratio</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">,</span>
+            <span class="n">unadjusted_outcomes</span><span class="o">.</span><span class="n">df</span><span class="p">,</span>
+            <span class="n">adjusted_weights</span><span class="p">,</span>
+            <span class="n">unadjusted_weights</span><span class="p">,</span>
+        <span class="p">)</span></div>
 </div>
 
 
@@ -2748,6 +2868,59 @@
 <span class="sd">            # 1.111</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">weights_stats</span><span class="o">.</span><span class="n">design_effect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="BalanceDFWeights.design_effect_prop">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDFWeights.design_effect_prop">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">design_effect_prop</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFWeights&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Relative change in design effect: (Deff_adjusted - Deff_unadjusted) / Deff_unadjusted.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            np.float64: Relative difference in design effect.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If there are no unadjusted weights linked.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from balance.sample_class import Sample</span>
+
+<span class="sd">            sample = Sample.from_frame(</span>
+<span class="sd">                pd.DataFrame(</span>
+<span class="sd">                    {</span>
+<span class="sd">                        &quot;id&quot;: [&quot;1&quot;, &quot;2&quot;],</span>
+<span class="sd">                        &quot;x&quot;: [0, 1],</span>
+<span class="sd">                        &quot;weight&quot;: [1.0, 2.0],</span>
+<span class="sd">                    }</span>
+<span class="sd">                ),</span>
+<span class="sd">                id_column=&quot;id&quot;,</span>
+<span class="sd">                weight_column=&quot;weight&quot;,</span>
+<span class="sd">                standardize_types=False,</span>
+<span class="sd">            )</span>
+<span class="sd">            target = Sample.from_frame(</span>
+<span class="sd">                pd.DataFrame(</span>
+<span class="sd">                    {&quot;id&quot;: [&quot;3&quot;, &quot;4&quot;], &quot;x&quot;: [0, 1], &quot;weight&quot;: [1.0, 1.0]}</span>
+<span class="sd">                ),</span>
+<span class="sd">                id_column=&quot;id&quot;,</span>
+<span class="sd">                weight_column=&quot;weight&quot;,</span>
+<span class="sd">                standardize_types=False,</span>
+<span class="sd">            )</span>
+<span class="sd">            adjusted = sample.set_target(target).adjust(method=&quot;null&quot;)</span>
+<span class="sd">            adjusted.weights().design_effect_prop()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">linked</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_BalanceDF_child_from_linked_samples</span><span class="p">()</span>
+        <span class="n">unadjusted_weights</span> <span class="o">=</span> <span class="n">linked</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">unadjusted_weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;No unadjusted weights available. This requires an adjusted sample.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">unadjusted_weights</span><span class="p">,</span> <span class="n">BalanceDFWeights</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Expected BalanceDFWeights for unadjusted weights.&quot;</span><span class="p">)</span>
+        <span class="n">deff_adjusted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">design_effect</span><span class="p">()</span>
+        <span class="n">deff_unadjusted</span> <span class="o">=</span> <span class="n">unadjusted_weights</span><span class="o">.</span><span class="n">design_effect</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">deff_adjusted</span> <span class="o">-</span> <span class="n">deff_unadjusted</span><span class="p">)</span> <span class="o">/</span> <span class="n">deff_unadjusted</span></div>
 
 
     <span class="c1"># TODO: in the future, consider if this type of overriding is the best solution.</span>

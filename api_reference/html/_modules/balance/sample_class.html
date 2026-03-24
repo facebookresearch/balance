@@ -47,6 +47,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">collections</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">importlib.metadata</span><span class="w"> </span><span class="kn">import</span> <span class="n">version</span> <span class="k">as</span> <span class="n">importlib_version</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span>
@@ -55,8 +56,6 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">adjustment</span> <span class="k">as</span> <span class="n">balance_adjustment</span><span class="p">,</span> <span class="n">util</span> <span class="k">as</span> <span class="n">balance_util</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.csv_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_csv_with_defaults</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">weights_stats</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots.weighted_comparisons_stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">outcome_variance_ratio</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiagnosticScalar</span><span class="p">,</span> <span class="n">FilePathOrBuffer</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">_assert_type</span><span class="p">,</span>
@@ -383,7 +382,7 @@
             <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">design_effect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">design_effect</span><span class="p">()</span>
+            <span class="n">design_effect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">()</span><span class="o">.</span><span class="n">design_effect</span><span class="p">()</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="ne">ZeroDivisionError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Unable to compute design effect: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
@@ -1396,6 +1395,20 @@
 <span class="sd">                    # c[b]      0.333333  0.333333  0.333333</span>
 <span class="sd">                    # c[c]      0.333333  0.333333  0.333333</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">balance</span>
+
+        <span class="k">if</span> <span class="n">balance</span><span class="o">.</span><span class="n">SHOW_DEPRECATION_WARNINGS</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;Sample.covar_means() is deprecated. &quot;</span>
+                <span class="s2">&quot;Use sample.covars().mean() instead &quot;</span>
+                <span class="s2">&quot;(note: .mean() returns a different format — use &quot;</span>
+                <span class="s2">&quot;.mean().rename(index={&#39;self&#39;: &#39;adjusted&#39;})&quot;</span>
+                <span class="s2">&quot;.reindex([&#39;unadjusted&#39;, &#39;adjusted&#39;, &#39;target&#39;]).T &quot;</span>
+                <span class="s2">&quot;to get the same output). &quot;</span>
+                <span class="s2">&quot;Will be removed in balance 0.19.0.&quot;</span><span class="p">,</span>
+                <span class="ne">DeprecationWarning</span><span class="p">,</span>
+                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_if_adjusted</span><span class="p">()</span>
 
         <span class="n">means</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
@@ -1404,7 +1417,6 @@
             <span class="o">.</span><span class="n">reindex</span><span class="p">([</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">,</span> <span class="s2">&quot;adjusted&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">])</span>
             <span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
         <span class="p">)</span>
-
         <span class="k">return</span> <span class="n">means</span></div>
 
 
@@ -1436,7 +1448,17 @@
 <span class="sd">            round(sample.design_effect(), 3)</span>
 <span class="sd">            # 1.111</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">weights_stats</span><span class="o">.</span><span class="n">design_effect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="p">)</span></div>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">balance</span>
+
+        <span class="k">if</span> <span class="n">balance</span><span class="o">.</span><span class="n">SHOW_DEPRECATION_WARNINGS</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;Sample.design_effect() is deprecated. &quot;</span>
+                <span class="s2">&quot;Use sample.weights().design_effect() instead. &quot;</span>
+                <span class="s2">&quot;Will be removed in balance 0.19.0.&quot;</span><span class="p">,</span>
+                <span class="ne">DeprecationWarning</span><span class="p">,</span>
+                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">()</span><span class="o">.</span><span class="n">design_effect</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="Sample.design_effect_prop">
@@ -1484,11 +1506,18 @@
 <span class="sd">            adjusted = sample.set_target(target).adjust(method=&quot;null&quot;)</span>
 <span class="sd">            _ = adjusted.design_effect_prop()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_check_if_adjusted</span><span class="p">()</span>
-        <span class="n">deff_unadjusted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">design_effect</span><span class="p">()</span>
-        <span class="n">deff_adjusted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">design_effect</span><span class="p">()</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">balance</span>
 
-        <span class="k">return</span> <span class="p">(</span><span class="n">deff_adjusted</span> <span class="o">-</span> <span class="n">deff_unadjusted</span><span class="p">)</span> <span class="o">/</span> <span class="n">deff_unadjusted</span></div>
+        <span class="k">if</span> <span class="n">balance</span><span class="o">.</span><span class="n">SHOW_DEPRECATION_WARNINGS</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;Sample.design_effect_prop() is deprecated. &quot;</span>
+                <span class="s2">&quot;Use sample.weights().design_effect_prop() instead. &quot;</span>
+                <span class="s2">&quot;Will be removed in balance 0.19.0.&quot;</span><span class="p">,</span>
+                <span class="ne">DeprecationWarning</span><span class="p">,</span>
+                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_if_adjusted</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">()</span><span class="o">.</span><span class="n">design_effect_prop</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="Sample.plot_weight_density">
@@ -1524,6 +1553,16 @@
 <span class="sd">                # The same as:</span>
 <span class="sd">                sample.plot_weight_density()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">balance</span>
+
+        <span class="k">if</span> <span class="n">balance</span><span class="o">.</span><span class="n">SHOW_DEPRECATION_WARNINGS</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;Sample.plot_weight_density() is deprecated. &quot;</span>
+                <span class="s2">&quot;Use sample.weights().plot() instead. &quot;</span>
+                <span class="s2">&quot;Will be removed in balance 0.19.0.&quot;</span><span class="p">,</span>
+                <span class="ne">DeprecationWarning</span><span class="p">,</span>
+                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span></div>
 
 
@@ -1576,14 +1615,19 @@
 <span class="sd">            adjusted = sample.set_target(target).adjust(method=&quot;null&quot;)</span>
 <span class="sd">            _ = adjusted.outcome_sd_prop()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">balance</span>
+
+        <span class="k">if</span> <span class="n">balance</span><span class="o">.</span><span class="n">SHOW_DEPRECATION_WARNINGS</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;Sample.outcome_sd_prop() is deprecated. &quot;</span>
+                <span class="s2">&quot;Use sample.outcomes().outcome_sd_prop() instead. &quot;</span>
+                <span class="s2">&quot;Will be removed in balance 0.19.0.&quot;</span><span class="p">,</span>
+                <span class="ne">DeprecationWarning</span><span class="p">,</span>
+                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_if_adjusted</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_outcomes_exists</span><span class="p">()</span>
-
-        <span class="n">outcome_std</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
-        <span class="n">adjusted_outcome_sd</span> <span class="o">=</span> <span class="n">outcome_std</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">]</span>
-        <span class="n">unadjusted_outcome_sd</span> <span class="o">=</span> <span class="n">outcome_std</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">]</span>
-
-        <span class="k">return</span> <span class="p">(</span><span class="n">adjusted_outcome_sd</span> <span class="o">-</span> <span class="n">unadjusted_outcome_sd</span><span class="p">)</span> <span class="o">/</span> <span class="n">unadjusted_outcome_sd</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">outcome_sd_prop</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="Sample.outcome_variance_ratio">
@@ -1630,12 +1674,17 @@
 <span class="sd">            adjusted = sample.set_target(target).adjust(method=&quot;null&quot;)</span>
 <span class="sd">            _ = adjusted.outcome_variance_ratio()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">outcome_variance_ratio</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">],</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">weights</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">],</span>
-        <span class="p">)</span></div>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">balance</span>
+
+        <span class="k">if</span> <span class="n">balance</span><span class="o">.</span><span class="n">SHOW_DEPRECATION_WARNINGS</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;Sample.outcome_variance_ratio() is deprecated. &quot;</span>
+                <span class="s2">&quot;Use sample.outcomes().outcome_variance_ratio() instead. &quot;</span>
+                <span class="s2">&quot;Will be removed in balance 0.19.0.&quot;</span><span class="p">,</span>
+                <span class="ne">DeprecationWarning</span><span class="p">,</span>
+                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">outcome_variance_ratio</span><span class="p">()</span></div>
 
 
     <span class="c1"># TODO: Add a method that plots the distribution of the outcome (adjusted v.s. unadjusted</span>

@@ -1390,6 +1390,122 @@ covars.df.columns.tolist()
 <dt class="sig sig-object py" id="balance.balancedf_class.BalanceDFOutcomes">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">balance.balancedf_class.</span></span><span class="sig-name descname"><span class="pre">BalanceDFOutcomes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="balance.sample_class.html#balance.sample_class.Sample" title="balance.sample_class.Sample"><span class="pre">Sample</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDFOutcomes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDFOutcomes" title="Link to this definition">¶</a></dt>
 <dd><dl class="py method">
+<dt class="sig sig-object py" id="balance.balancedf_class.BalanceDFOutcomes.outcome_sd_prop">
+<span class="sig-name descname"><span class="pre">outcome_sd_prop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDFOutcomes.outcome_sd_prop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDFOutcomes.outcome_sd_prop" title="Link to this definition">¶</a></dt>
+<dd><p>Relative change in outcome weighted SD after adjustment.</p>
+<p>Computes (weighted SD of adjusted - weighted SD of unadjusted) / weighted SD of unadjusted.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Relative difference in outcome weighted standard deviation.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.Series</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If there are no unadjusted outcomes linked.</p>
+</dd>
+</dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample</p>
+<dl>
+<dt>sample = Sample.from_frame(</dt><dd><dl>
+<dt>pd.DataFrame(</dt><dd><dl class="simple">
+<dt>{</dt><dd><p>“id”: [“1”, “2”],
+“x”: [0, 1],
+“weight”: [1.0, 2.0],
+“y”: [0.1, 0.2],</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+outcome_columns=”y”,
+standardize_types=False,</p>
+</dd>
+</dl>
+<p>)
+target = Sample.from_frame(</p>
+<blockquote>
+<div><dl class="simple">
+<dt>pd.DataFrame(</dt><dd><p>{“id”: [“3”, “4”], “x”: [0, 1], “weight”: [1.0, 1.0]}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+adjusted = sample.set_target(target).adjust(method=”null”)
+adjusted.outcomes().outcome_sd_prop()</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.balancedf_class.BalanceDFOutcomes.outcome_variance_ratio">
+<span class="sig-name descname"><span class="pre">outcome_variance_ratio</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDFOutcomes.outcome_variance_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDFOutcomes.outcome_variance_ratio" title="Link to this definition">¶</a></dt>
+<dd><p>Ratio of outcome variance (adjusted / unadjusted).</p>
+<p>See <a class="reference internal" href="#balance.balancedf_class.BalanceDFOutcomes.outcome_variance_ratio" title="balance.balancedf_class.BalanceDFOutcomes.outcome_variance_ratio"><code class="xref py py-func docutils literal notranslate"><span class="pre">outcome_variance_ratio()</span></code></a> for details.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A series of calculated ratio of variances for each outcome.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.Series</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If there are no unadjusted outcomes linked.</p>
+</dd>
+</dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample</p>
+<dl>
+<dt>sample = Sample.from_frame(</dt><dd><dl>
+<dt>pd.DataFrame(</dt><dd><dl class="simple">
+<dt>{</dt><dd><p>“id”: [“1”, “2”],
+“x”: [0, 1],
+“weight”: [1.0, 2.0],
+“y”: [0.1, 0.2],</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+outcome_columns=”y”,
+standardize_types=False,</p>
+</dd>
+</dl>
+<p>)
+target = Sample.from_frame(</p>
+<blockquote>
+<div><dl class="simple">
+<dt>pd.DataFrame(</dt><dd><p>{“id”: [“3”, “4”], “x”: [0, 1], “weight”: [1.0, 1.0]}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+adjusted = sample.set_target(target).adjust(method=”null”)
+adjusted.outcomes().outcome_variance_ratio()</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="balance.balancedf_class.BalanceDFOutcomes.relative_response_rates">
 <span class="sig-name descname"><span class="pre">relative_response_rates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">per_column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDFOutcomes.relative_response_rates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDFOutcomes.relative_response_rates" title="Link to this definition">¶</a></dt>
 <dd><p>Produces a summary table of number of responses and proportion of completed responses.</p>
@@ -1760,6 +1876,61 @@ round(sample.weights().design_effect(), 3)
 </div></blockquote>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.balancedf_class.BalanceDFWeights.design_effect_prop">
+<span class="sig-name descname"><span class="pre">design_effect_prop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float64</span></span></span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDFWeights.design_effect_prop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDFWeights.design_effect_prop" title="Link to this definition">¶</a></dt>
+<dd><p>Relative change in design effect: (Deff_adjusted - Deff_unadjusted) / Deff_unadjusted.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Relative difference in design effect.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.float64</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If there are no unadjusted weights linked.</p>
+</dd>
+</dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.sample_class import Sample</p>
+<dl>
+<dt>sample = Sample.from_frame(</dt><dd><dl>
+<dt>pd.DataFrame(</dt><dd><dl class="simple">
+<dt>{</dt><dd><p>“id”: [“1”, “2”],
+“x”: [0, 1],
+“weight”: [1.0, 2.0],</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+standardize_types=False,</p>
+</dd>
+</dl>
+<p>)
+target = Sample.from_frame(</p>
+<blockquote>
+<div><dl class="simple">
+<dt>pd.DataFrame(</dt><dd><p>{“id”: [“3”, “4”], “x”: [0, 1], “weight”: [1.0, 1.0]}</p>
+</dd>
+</dl>
+<p>),
+id_column=”id”,
+weight_column=”weight”,
+standardize_types=False,</p>
+</div></blockquote>
+<p>)
+adjusted = sample.set_target(target).adjust(method=”null”)
+adjusted.weights().design_effect_prop()</p>
+</div></blockquote>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="balance.balancedf_class.BalanceDFWeights.df">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">df</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span></span><a class="headerlink" href="#balance.balancedf_class.BalanceDFWeights.df" title="Link to this definition">¶</a></dt>
@@ -2008,6 +2179,8 @@ sample.weights().df[“weight”].max() &lt;= 100.0
 </ul>
 </li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFOutcomes"><code class="docutils literal notranslate"><span class="pre">BalanceDFOutcomes</span></code></a><ul>
+<li><a class="reference internal" href="#balance.balancedf_class.BalanceDFOutcomes.outcome_sd_prop"><code class="docutils literal notranslate"><span class="pre">BalanceDFOutcomes.outcome_sd_prop()</span></code></a></li>
+<li><a class="reference internal" href="#balance.balancedf_class.BalanceDFOutcomes.outcome_variance_ratio"><code class="docutils literal notranslate"><span class="pre">BalanceDFOutcomes.outcome_variance_ratio()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFOutcomes.relative_response_rates"><code class="docutils literal notranslate"><span class="pre">BalanceDFOutcomes.relative_response_rates()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFOutcomes.summary"><code class="docutils literal notranslate"><span class="pre">BalanceDFOutcomes.summary()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFOutcomes.target_response_rates"><code class="docutils literal notranslate"><span class="pre">BalanceDFOutcomes.target_response_rates()</span></code></a></li>
@@ -2016,6 +2189,7 @@ sample.weights().df[“weight”].max() &lt;= 100.0
 </li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFWeights"><code class="docutils literal notranslate"><span class="pre">BalanceDFWeights</span></code></a><ul>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFWeights.design_effect"><code class="docutils literal notranslate"><span class="pre">BalanceDFWeights.design_effect()</span></code></a></li>
+<li><a class="reference internal" href="#balance.balancedf_class.BalanceDFWeights.design_effect_prop"><code class="docutils literal notranslate"><span class="pre">BalanceDFWeights.design_effect_prop()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFWeights.df"><code class="docutils literal notranslate"><span class="pre">BalanceDFWeights.df</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFWeights.plot"><code class="docutils literal notranslate"><span class="pre">BalanceDFWeights.plot()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFWeights.summary"><code class="docutils literal notranslate"><span class="pre">BalanceDFWeights.summary()</span></code></a></li>
