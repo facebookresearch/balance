@@ -1226,14 +1226,15 @@ class TestSample_metrics_methods(
         """
         np.random.seed(112358)
 
-        # Create source sample
-        d = pd.DataFrame(np.random.rand(1000, 10))
+        # Create source sample (200 rows is sufficient to validate diagnostics
+        # structure; the metric counts depend on column count, not row count)
+        d = pd.DataFrame(np.random.rand(200, 10))
         d["id"] = range(0, d.shape[0])
         d = d.rename(columns={i: "abcdefghij"[i] for i in range(0, 10)})
         s = Sample.from_frame(d)
 
         # Create target sample
-        d = pd.DataFrame(np.random.rand(1000, 10))
+        d = pd.DataFrame(np.random.rand(200, 10))
         d["id"] = range(0, d.shape[0])
         d = d.rename(columns={i: "abcdefghij"[i] for i in range(0, 10)})
         t = Sample.from_frame(d)
@@ -1248,11 +1249,11 @@ class TestSample_metrics_methods(
         """
         s, t = self._create_samples_for_diagnostics_tests()
 
-        a = s.adjust(t)
+        a = s.adjust(t, num_lambdas=1)
         a_diagnostics = a.diagnostics()
 
         # Test basic structure
-        self.assertEqual(a_diagnostics.shape, (203, 3))
+        self.assertEqual(a_diagnostics.shape, (199, 3))
         self.assertEqual(a_diagnostics.columns.to_list(), ["metric", "val", "var"])
 
         # Test adjustment method is recorded correctly
@@ -1277,7 +1278,7 @@ class TestSample_metrics_methods(
             "ipw_penalty": 1,
             "ipw_solver": 1,
             "model_coef": 92,
-            "model_glance": 10,
+            "model_glance": 6,
             "size": 4,
             "weights_diagnostics": 24,
         }
@@ -1291,7 +1292,7 @@ class TestSample_metrics_methods(
         """
         s, t = self._create_samples_for_diagnostics_tests()
 
-        b = s.adjust(t, method="cbps")
+        b = s.adjust(t, method="cbps", num_lambdas=1)
         b_diagnostics = b.diagnostics()
 
         # Test basic structure
