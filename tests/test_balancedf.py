@@ -645,6 +645,65 @@ class TestBalanceDFWeights(BalanceTestCase):
 
         self.assertEqual(result, expected)
 
+    def test_BalanceDFWeights_r_indicator_scalar_target_propensity_broadcasts(
+        self,
+    ) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame({"id": [1, 2], "w": [2.0, 4.0]}),
+            id_column="id",
+            weight_column="w",
+            standardize_types=False,
+        )
+        target = Sample.from_frame(
+            pd.DataFrame({"id": [10, 11, 12], "w": [1.0, 1.0, 1.0]}),
+            id_column="id",
+            weight_column="w",
+            standardize_types=False,
+        )
+
+        result = sample.set_target(target).weights().r_indicator(target_propensity=0.9)
+        expected = weighted_comparisons_stats.r_indicator([0.5, 0.25], [0.9, 0.9, 0.9])
+        self.assertEqual(result, expected)
+
+    def test_BalanceDFWeights_r_indicator_scalar_target_requires_linked_target(
+        self,
+    ) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame({"id": [1, 2], "w": [2.0, 4.0]}),
+            id_column="id",
+            weight_column="w",
+            standardize_types=False,
+        )
+
+        with self.assertRaisesRegex(
+            ValueError, "requires a linked target when target_propensity is scalar"
+        ):
+            sample.weights().r_indicator(target_propensity=0.9)
+
+    def test_BalanceDFWeights_r_indicator_target_length_must_match_linked_target(
+        self,
+    ) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame({"id": [1, 2], "w": [2.0, 4.0]}),
+            id_column="id",
+            weight_column="w",
+            standardize_types=False,
+        )
+        target = Sample.from_frame(
+            pd.DataFrame({"id": [10, 11, 12], "w": [1.0, 1.0, 1.0]}),
+            id_column="id",
+            weight_column="w",
+            standardize_types=False,
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "requires target_propensity length to match linked target row count",
+        ):
+            sample.set_target(target).weights().r_indicator(
+                target_propensity=[0.9, 0.9]
+            )
+
     def test_BalanceDFWeights_r_indicator_requires_target_without_override(
         self,
     ) -> None:

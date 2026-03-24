@@ -2813,14 +2813,20 @@ class BalanceDFWeights(BalanceDF):
             self (BalanceDFWeights): Object.
             target_propensity (float | npt.ArrayLike | None, optional):
                 Target response propensities to compare against. If ``None``,
-                uses a vector of ones with the linked target's row count.
+                uses a vector of ones with the linked target's row count. If
+                a scalar is provided, it is broadcast to linked target length.
+                If an array-like is provided and a linked target exists, its
+                length must equal the linked target row count.
 
         Returns:
             np.float64: Approximate R-indicator derived from inverse weights.
 
         Raises:
             ValueError: If the sample has no target and ``target_propensity`` is
-                omitted, or if the weights are non-finite / non-positive.
+                omitted, if a scalar ``target_propensity`` is provided without a
+                linked target, if array-like target propensities do not match a
+                linked target row count, or if the weights are non-finite /
+                non-positive.
 
         Examples:
         .. code-block:: python
@@ -2863,10 +2869,29 @@ class BalanceDFWeights(BalanceDF):
         if max_propensity > 1.0:
             sample_propensity = sample_propensity / max_propensity
 
+        target_sample = self._sample._links.get("target")
         if target_propensity is None:
             self._sample._no_target_error()
-            target = self._sample._links["target"]
-            target_propensity = np.ones(target.df.shape[0], dtype=float)
+            target_sample = self._sample._links["target"]
+            target_propensity = np.ones(target_sample.df.shape[0], dtype=float)
+        elif np.isscalar(target_propensity):
+            if target_sample is None:
+                raise ValueError(
+                    "BalanceDFWeights.r_indicator requires a linked target when "
+                    "target_propensity is scalar"
+                )
+            target_propensity = np.full(
+                target_sample.df.shape[0], float(target_propensity), dtype=float
+            )
+        elif target_sample is not None:
+            target_propensity_array = np.asarray(target_propensity)
+            if target_propensity_array.ndim == 0:
+                target_propensity_array = target_propensity_array.reshape(1)
+            if target_propensity_array.shape[0] != target_sample.df.shape[0]:
+                raise ValueError(
+                    "BalanceDFWeights.r_indicator requires target_propensity length "
+                    "to match linked target row count"
+                )
 
         return weighted_comparisons_stats.r_indicator(
             sample_propensity, target_propensity
