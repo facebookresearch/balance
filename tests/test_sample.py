@@ -822,7 +822,16 @@ class TestSample_metrics_methods(
             sort=True,
         )
         e.columns = pd.Series(("unadjusted", "adjusted", "target"), name="source")
-        self.assertEqual(s3_null.covar_means(), e)
+
+        # Test deprecation warning is emitted
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = s3_null.covar_means()
+            self.assertTrue(any(issubclass(x.category, DeprecationWarning) for x in w))
+            self.assertTrue(
+                any("Sample.covar_means() is deprecated" in str(x.message) for x in w)
+            )
+        self.assertEqual(result, e)
 
         # test exceptions when there is no adjusted
         with self.assertRaisesRegex(

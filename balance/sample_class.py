@@ -1316,6 +1316,20 @@ class Sample:
                     # c[b]      0.333333  0.333333  0.333333
                     # c[c]      0.333333  0.333333  0.333333
         """
+        import balance
+
+        if balance.SHOW_DEPRECATION_WARNINGS:
+            warnings.warn(
+                "Sample.covar_means() is deprecated. "
+                "Use sample.covars().mean() instead "
+                "(note: .mean() returns a different format — use "
+                ".mean().rename(index={'self': 'adjusted'})"
+                ".reindex(['unadjusted', 'adjusted', 'target']).T "
+                "to get the same output). "
+                "Will be removed in balance 0.19.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         self._check_if_adjusted()
 
         means = self.covars().mean()
@@ -1324,7 +1338,6 @@ class Sample:
             .reindex(["unadjusted", "adjusted", "target"])
             .transpose()
         )
-
         return means
 
     def design_effect(self) -> np.float64:

@@ -9,6 +9,9 @@
   New method added to `BalanceDFWeights`. Will be removed in balance 0.19.0.
 - **`Sample.plot_weight_density()` is deprecated** — use `sample.weights().plot()` instead.
   Will be removed in balance 0.19.0.
+- **`Sample.covar_means()` is deprecated** — use `sample.covars().mean()` instead
+  (with `.rename(index={'self': 'adjusted'}).reindex([...]).T` for the same format).
+  Will be removed in balance 0.19.0.
 
 ## Bug Fixes
 
