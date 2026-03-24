@@ -1787,6 +1787,114 @@ class TestBalance_weighted_stats(
 class TestBalance_weighted_comparisons_stats(
     balance.testutil.BalanceTestCase,
 ):
+    def test_r_indicator_matches_expected_formula(self) -> None:
+        """r_indicator should follow Eq. 2.2.2 on concatenated propensities."""
+        sample_p = np.array([0.1, 0.2, 0.3])
+        target_p = np.array([0.2, 0.4])
+
+        result = weighted_comparisons_stats.r_indicator(sample_p, target_p)
+        combined = np.concatenate((sample_p, target_p))
+        expected = np.float64(1 - 2 * np.sqrt(np.var(combined, ddof=1)))
+
+        self.assertAlmostEqual(result, expected)
+        self.assertIsInstance(result, np.float64)
+
+    def test_r_indicator_constant_propensities(self) -> None:
+        """r_indicator should be 1.0 when all propensities are identical."""
+        result = weighted_comparisons_stats.r_indicator([0.5, 0.5], [0.5, 0.5])
+        self.assertEqual(result, np.float64(1.0))
+
+    def test_r_indicator_accepts_single_column_inputs(self) -> None:
+        """r_indicator should accept single-column 2D inputs."""
+        sample_p = np.array([[0.1], [0.2]])
+        target_p = pd.DataFrame({"p": [0.3, 0.4]})
+
+        result = weighted_comparisons_stats.r_indicator(sample_p, target_p)
+        expected = np.float64(1 - 2 * np.sqrt(np.var([0.1, 0.2, 0.3, 0.4], ddof=1)))
+        self.assertAlmostEqual(result, expected)
+
+    def test_r_indicator_handles_extreme_but_valid_propensities(self) -> None:
+        """r_indicator should remain stable for propensity values at 0 and 1."""
+        sample_p = np.array([0.0, 0.0, 1.0])
+        target_p = np.array([1.0, 1.0, 0.0])
+
+        result = weighted_comparisons_stats.r_indicator(sample_p, target_p)
+        combined = np.concatenate((sample_p, target_p))
+        expected = np.float64(np.clip(1 - 2 * np.sqrt(np.var(combined, ddof=1)), 0, 1))
+
+        self.assertAlmostEqual(result, expected)
+
+    def test_r_indicator_clips_small_sample_boundary_case(self) -> None:
+        """r_indicator should stay within [0, 1] for the n=2 boundary case."""
+        result = weighted_comparisons_stats.r_indicator([0.0], [1.0])
+
+        self.assertEqual(result, np.float64(0.0))
+
+    def test_r_indicator_rejects_too_few_values(self) -> None:
+        """r_indicator requires at least two combined propensity values."""
+        with self.assertRaisesRegex(
+            ValueError,
+            "requires at least two propensity values",
+        ):
+            weighted_comparisons_stats.r_indicator([], [0.25])
+
+    def test_r_indicator_rejects_non_finite_values(self) -> None:
+        """r_indicator should reject NaN/Inf propensity values."""
+        with self.assertRaisesRegex(ValueError, "all propensity values to be finite"):
+            weighted_comparisons_stats.r_indicator([0.1, np.nan], [0.2])
+
+        with self.assertRaisesRegex(ValueError, "all propensity values to be finite"):
+            weighted_comparisons_stats.r_indicator([0.1], [np.inf, 0.2])
+
+    def test_r_indicator_rejects_non_numeric_values(self) -> None:
+        """r_indicator should reject values that cannot be converted to numeric."""
+        with self.assertRaisesRegex(
+            ValueError, "all sample_p propensity values to be numeric"
+        ):
+            weighted_comparisons_stats.r_indicator(["bad", 0.2], [0.3])
+
+        with self.assertRaisesRegex(
+            ValueError, "all target_p propensity values to be numeric"
+        ):
+            weighted_comparisons_stats.r_indicator([0.1, 0.2], ["bad"])
+
+    def test_r_indicator_rejects_multi_column_inputs(self) -> None:
+        """r_indicator should reject genuinely multi-dimensional inputs."""
+        with self.assertRaisesRegex(
+            ValueError,
+            "sample_p to be one-dimensional or single-column",
+        ):
+            weighted_comparisons_stats.r_indicator(
+                pd.DataFrame({"a": [0.1, 0.2], "b": [0.3, 0.4]}),
+                [0.5, 0.6],
+            )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "target_p to be one-dimensional or single-column",
+        ):
+            weighted_comparisons_stats.r_indicator(
+                [0.1, 0.2],
+                np.array([[0.3, 0.4], [0.5, 0.6]]),
+            )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "target_p to be one-dimensional or single-column",
+        ):
+            weighted_comparisons_stats.r_indicator(
+                [0.1, 0.2],
+                np.array([[0.3, 0.4]]),
+            )
+
+    def test_r_indicator_rejects_values_outside_unit_interval(self) -> None:
+        """r_indicator should reject invalid propensity values outside [0, 1]."""
+        with self.assertRaisesRegex(ValueError, r"within the \[0, 1\] range"):
+            weighted_comparisons_stats.r_indicator([-0.1, 0.2], [0.3])
+
+        with self.assertRaisesRegex(ValueError, r"within the \[0, 1\] range"):
+            weighted_comparisons_stats.r_indicator([0.1], [1.2, 0.8])
+
     def test_outcome_variance_ratio(self) -> None:
         """Test calculation of outcome variance ratios between datasets.
 

@@ -39,17 +39,93 @@ logger: logging.Logger = logging.getLogger(__package__)
 ##########################################
 
 
-# TODO: fix the r_indicator function. The current implementation is broken since it
-#       seems to wrongly estimate N.
-#       This seems to attempt to reproduce equation 2.2.2, in page 5 in
-#       "Indicators for the representativeness of survey response"
-#       by Jelke Bethlehem, Fannie Cobben, and Barry Schouten
-#       See pdf: https://www150.statcan.gc.ca/n1/en/pub/11-522-x/2008000/article/10976-eng.pdf?st=Zi4d4zld
-#       From: https://www150.statcan.gc.ca/n1/pub/11-522-x/2008000/article/10976-eng.pdf
-# def r_indicator(sample_p: np.float64, target_p: np.float64) -> np.float64:
-#     p = np.concatenate((sample_p, target_p))
-#     N = len(sample_p) + len(target_p)
-#     return 1 - 2 * np.sqrt(1 / (N - 1) * np.sum((p - np.mean(p)) ** 2))
+def _coerce_r_indicator_propensities(
+    propensities: npt.ArrayLike, input_name: str
+) -> np.ndarray:
+    """Normalize ``r_indicator`` propensity inputs to a 1D float array."""
+    try:
+        array = np.asarray(propensities, dtype=float)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"r_indicator requires all {input_name} propensity values to be numeric"
+        ) from exc
+
+    if array.ndim == 0:
+        return array.reshape(1)
+
+    if array.ndim == 1:
+        return array
+
+    if array.ndim == 2 and array.shape[1] == 1:
+        return array[:, 0]
+
+    raise ValueError(
+        f"r_indicator requires {input_name} to be one-dimensional or single-column"
+    )
+
+
+def r_indicator(
+    sample_p: npt.ArrayLike,
+    target_p: npt.ArrayLike,
+) -> np.float64:
+    """Compute the R-indicator from sample and target response propensities.
+
+    Implements Eq. 2.2.2 from *Indicators for the representativeness of survey
+    response* (Bethlehem, Cobben, Schouten):
+    https://www150.statcan.gc.ca/n1/pub/11-522-x/2008000/article/10976-eng.pdf
+
+    ``R = 1 - 2 * sqrt((1/(N-1)) * sum_i (p_i - mean(p))^2)``
+
+    where ``p`` is the concatenation of response propensities from the sample
+    and target populations.
+
+    Args:
+        sample_p: Array-like response propensities for sample units.
+        target_p: Array-like response propensities for target units.
+
+    Returns:
+        np.float64: The R-indicator value. The result is clipped to the
+            ``[0, 1]`` interval after computing Eq. 2.2.2 so small-sample
+            boundary cases remain within the representativeness scale.
+
+    Raises:
+        ValueError: If fewer than two total propensity values are provided,
+            if ``sample_p`` or ``target_p`` is not one-dimensional (except for
+            single-column 2D inputs),
+            if any propensity value is non-numeric,
+            if any propensity value is non-finite, or if any propensity value
+            falls outside the valid ``[0, 1]`` interval.
+
+    Examples:
+    .. code-block:: python
+
+            >>> r_indicator([0.2, 0.4], [0.3, 0.5])
+            0.7418011102528389
+            >>> r_indicator(np.array([0.5, 0.5]), np.array([0.5]))
+            1.0
+    """
+    sample_propensities = _coerce_r_indicator_propensities(sample_p, "sample_p")
+    target_propensities = _coerce_r_indicator_propensities(target_p, "target_p")
+    propensities = np.concatenate((sample_propensities, target_propensities))
+
+    n_obs = propensities.size
+    if n_obs < 2:
+        raise ValueError(
+            "r_indicator requires at least two propensity values across sample and target"
+        )
+
+    if not np.isfinite(propensities).all():
+        raise ValueError("r_indicator requires all propensity values to be finite")
+
+    if ((propensities < 0) | (propensities > 1)).any():
+        raise ValueError(
+            "r_indicator requires propensity values to be within the [0, 1] range"
+        )
+
+    centered = propensities - np.mean(propensities)
+    sample_variance = np.sum(centered * centered) / (n_obs - 1)
+    r_value = 1 - 2 * np.sqrt(sample_variance)
+    return np.float64(np.clip(r_value, 0.0, 1.0))
 
 
 def _weights_per_covars_names(covar_names: List[str]) -> pd.DataFrame:
