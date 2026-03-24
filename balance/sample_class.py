@@ -10,6 +10,7 @@ from __future__ import annotations
 import collections
 import inspect
 import logging
+import warnings
 from copy import deepcopy
 from importlib.metadata import version as importlib_version
 from typing import Any, Callable, Dict, List, Literal
@@ -18,7 +19,6 @@ import numpy as np
 import pandas as pd
 from balance import adjustment as balance_adjustment, util as balance_util
 from balance.csv_utils import to_csv_with_defaults
-from balance.stats_and_plots import weights_stats
 from balance.stats_and_plots.weighted_comparisons_stats import outcome_variance_ratio
 from balance.typing import DiagnosticScalar, FilePathOrBuffer
 from balance.util import (
@@ -344,7 +344,7 @@ class Sample:
             return None, None, None
 
         try:
-            design_effect = self.design_effect()
+            design_effect = self.weights().design_effect()
         except (TypeError, ValueError, ZeroDivisionError) as exc:
             logger.debug("Unable to compute design effect: %s", exc)
             return None, None, None
@@ -1353,7 +1353,17 @@ class Sample:
             round(sample.design_effect(), 3)
             # 1.111
         """
-        return weights_stats.design_effect(self.weight_column)
+        import balance
+
+        if balance.SHOW_DEPRECATION_WARNINGS:
+            warnings.warn(
+                "Sample.design_effect() is deprecated. "
+                "Use sample.weights().design_effect() instead. "
+                "Will be removed in balance 0.19.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        return self.weights().design_effect()
 
     def design_effect_prop(self) -> np.float64:
         """

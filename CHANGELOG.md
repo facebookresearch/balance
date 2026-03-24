@@ -1,5 +1,11 @@
 # 0.18.0 (2026-03-18)
 
+## Deprecations
+
+- **`Sample.design_effect()` is deprecated** — use `sample.weights().design_effect()` instead.
+  The method already exists on `BalanceDFWeights`; the `Sample` method now emits a
+  `DeprecationWarning` and delegates. Will be removed in balance 0.19.0.
+
 ## Bug Fixes
 
 - **`prepare_marginal_dist_for_raking` / `_realize_dicts_of_proportions`: fixed memory explosion from LCM expansion**

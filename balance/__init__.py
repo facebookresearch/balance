@@ -75,5 +75,8 @@ logger.info(f"Using {__package__} version {__version__}")
 print(WELCOME_MESSAGE)
 
 
+SHOW_DEPRECATION_WARNINGS: bool = True
+
+
 def set_warnings(level: str = "WARNING") -> None:
     logger.setLevel(getattr(logging, level))
