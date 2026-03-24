@@ -703,6 +703,17 @@ class TestBalanceDFWeights(BalanceTestCase):
         with self.assertRaisesRegex(ValueError, "requires strictly positive weights"):
             sample_negative.weights().r_indicator(target_propensity=[1.0, 1.0])
 
+    def test_BalanceDFWeights_r_indicator_rejects_empty_weights(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame({"id": pd.Series(dtype=int), "w": pd.Series(dtype=float)}),
+            id_column="id",
+            weight_column="w",
+            standardize_types=False,
+        )
+
+        with self.assertRaisesRegex(ValueError, "requires at least one sample weight"):
+            sample.weights().r_indicator(target_propensity=[1.0])
+
     def test_BalanceDFWeights_trim(self) -> None:
         np.random.seed(112358)  # Fix seed for reproducibility
         s = Sample.from_frame(

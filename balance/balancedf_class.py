@@ -2846,6 +2846,11 @@ class BalanceDFWeights(BalanceDF):
         """
         sample_weights = self.df.iloc[:, 0]
 
+        if sample_weights.empty:
+            raise ValueError(
+                "BalanceDFWeights.r_indicator requires at least one sample weight"
+            )
+
         if not np.isfinite(sample_weights).all():
             raise ValueError("BalanceDFWeights.r_indicator requires finite weights")
         if (sample_weights <= 0).any():
