@@ -871,7 +871,7 @@ class TestAsciiPlotsAdjustmentEndToEnd(balance.testutil.BalanceTestCase):
         target = Sample.from_frame(target_df, id_column="id")
 
         # Adjust to correct the bias
-        adjusted = sample.set_target(target).adjust(method="ipw")
+        adjusted = sample.set_target(target).adjust(method="ipw", num_lambdas=1)
 
         # Generate ASCII plot comparing unadjusted, adjusted, and target
         with patch("sys.stdout", new_callable=io.StringIO):
