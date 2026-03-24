@@ -1323,6 +1323,7 @@ class TestIPWPenaltyFactor(balance.testutil.BalanceTestCase):
             transformations=None,
             formula=["a", "b", "c"],
             penalty_factor=penalty_factor,
+            num_lambdas=1,
         )
 
         # Verify result structure
@@ -1365,6 +1366,7 @@ class TestIPWPenaltyFactor(balance.testutil.BalanceTestCase):
             transformations=None,
             formula=["x1", "x2"],
             penalty_factor=penalty_factor,
+            num_lambdas=1,
         )
 
         # Verify result structure
@@ -1412,6 +1414,7 @@ class TestIPWPenaltyFactor(balance.testutil.BalanceTestCase):
             transformations=None,
             formula=["x1", "x2", "x3", "x4"],
             penalty_factor=penalty_factor,
+            num_lambdas=1,
         )
 
         # Verify result structure
