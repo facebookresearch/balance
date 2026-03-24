@@ -886,7 +886,25 @@ class TestSample_metrics_methods(
 
     def test_Sample_outcome_sd_prop(self) -> None:
         s3_null = s1.adjust(s2, method="null")
-        self.assertEqual(s3_null.outcome_sd_prop(), pd.Series((0.0), index=["o"]))
+
+        # Test deprecation warning is emitted
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = s3_null.outcome_sd_prop()
+            self.assertTrue(any(issubclass(x.category, DeprecationWarning) for x in w))
+            self.assertTrue(
+                any(
+                    "Sample.outcome_sd_prop() is deprecated" in str(x.message)
+                    for x in w
+                )
+            )
+        self.assertEqual(result, pd.Series((0.0), index=["o"]))
+
+        # Test that the new API returns the same value
+        self.assertEqual(
+            s3_null.outcomes().outcome_sd_prop(), pd.Series((0.0), index=["o"])
+        )
+
         # test with two outcomes
         s1_two_outcomes = Sample.from_frame(
             pd.DataFrame(
@@ -903,9 +921,11 @@ class TestSample_metrics_methods(
             outcome_columns=["o1", "o2"],
         )
         s3_null = s1_two_outcomes.adjust(s2, method="null")
-        self.assertEqual(
-            s3_null.outcome_sd_prop(), pd.Series((0.0, 0.0), index=["o1", "o2"])
-        )
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            self.assertEqual(
+                s3_null.outcome_sd_prop(), pd.Series((0.0, 0.0), index=["o1", "o2"])
+            )
 
         # test exceptions when there is no adjusted
         with self.assertRaisesRegex(

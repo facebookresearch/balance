@@ -1524,14 +1524,19 @@ class Sample:
             adjusted = sample.set_target(target).adjust(method="null")
             _ = adjusted.outcome_sd_prop()
         """
+        import balance
+
+        if balance.SHOW_DEPRECATION_WARNINGS:
+            warnings.warn(
+                "Sample.outcome_sd_prop() is deprecated. "
+                "Use sample.outcomes().outcome_sd_prop() instead. "
+                "Will be removed in balance 0.19.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         self._check_if_adjusted()
         self._check_outcomes_exists()
-
-        outcome_std = self.outcomes().std()
-        adjusted_outcome_sd = outcome_std.loc["self"]
-        unadjusted_outcome_sd = outcome_std.loc["unadjusted"]
-
-        return (adjusted_outcome_sd - unadjusted_outcome_sd) / unadjusted_outcome_sd
+        return self.outcomes().outcome_sd_prop()
 
     def outcome_variance_ratio(self: "Sample") -> pd.Series:
         """The empirical ratio of variance of the outcomes before and after weighting.

@@ -2763,3 +2763,18 @@ class TestBalanceDFWeightsDesignEffectProp(BalanceTestCase):
         """Test design_effect_prop raises when no unadjusted link."""
         with self.assertRaises(ValueError):
             s1.weights().design_effect_prop()
+
+
+class TestBalanceDFOutcomesOutcomeSdProp(BalanceTestCase):
+    """Test cases for BalanceDFOutcomes.outcome_sd_prop() method."""
+
+    def test_outcome_sd_prop_null_adjustment(self) -> None:
+        """Test outcome_sd_prop returns 0 for null adjustment."""
+        s3_adj = s3.adjust(method="null")
+        result = s3_adj.outcomes().outcome_sd_prop()
+        self.assertEqual(result, pd.Series((0.0), index=["o"]))
+
+    def test_outcome_sd_prop_no_unadjusted_raises(self) -> None:
+        """Test outcome_sd_prop raises when no unadjusted link."""
+        with self.assertRaises(ValueError):
+            s1.outcomes().outcome_sd_prop()

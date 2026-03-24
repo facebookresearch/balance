@@ -2454,6 +2454,58 @@ class BalanceDFOutcomes(BalanceDF):
 
         return out
 
+    def outcome_sd_prop(self: "BalanceDFOutcomes") -> pd.Series:
+        """Relative change in outcome weighted SD after adjustment.
+
+        Computes (weighted SD of adjusted - weighted SD of unadjusted) / weighted SD of unadjusted.
+
+        Returns:
+            pd.Series: Relative difference in outcome weighted standard deviation.
+
+        Raises:
+            ValueError: If there are no unadjusted outcomes linked.
+
+        Examples:
+        .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_class import Sample
+
+            sample = Sample.from_frame(
+                pd.DataFrame(
+                    {
+                        "id": ["1", "2"],
+                        "x": [0, 1],
+                        "weight": [1.0, 2.0],
+                        "y": [0.1, 0.2],
+                    }
+                ),
+                id_column="id",
+                weight_column="weight",
+                outcome_columns="y",
+                standardize_types=False,
+            )
+            target = Sample.from_frame(
+                pd.DataFrame(
+                    {"id": ["3", "4"], "x": [0, 1], "weight": [1.0, 1.0]}
+                ),
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
+            adjusted = sample.set_target(target).adjust(method="null")
+            adjusted.outcomes().outcome_sd_prop()
+        """
+        outcome_std = self.std()
+        adjusted_outcome_sd = outcome_std.loc["self"]
+        unadjusted_row = outcome_std.reindex(["unadjusted"])
+        if unadjusted_row.isna().all(axis=None):
+            raise ValueError(
+                "No unadjusted outcomes available. This requires an adjusted sample."
+            )
+        unadjusted_outcome_sd = outcome_std.loc["unadjusted"]
+        return (adjusted_outcome_sd - unadjusted_outcome_sd) / unadjusted_outcome_sd
+
 
 class BalanceDFCovars(BalanceDF):
     def __init__(self: "BalanceDFCovars", sample: Sample) -> None:
