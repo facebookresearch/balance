@@ -521,10 +521,10 @@ class TestUtil(
 
         # Generate weights for both categorical and string versions
         output_cat_var = wine_survey.adjust(
-            transformations=transformations, method="ipw", max_de=2.5
+            transformations=transformations, method="ipw", max_de=2.5, num_lambdas=1
         )
         output_string_var = wine_survey_copy.adjust(
-            transformations=transformations, method="ipw", max_de=2.5
+            transformations=transformations, method="ipw", max_de=2.5, num_lambdas=1
         )
 
         # Check that model coefficients are identical
