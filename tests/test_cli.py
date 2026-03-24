@@ -21,9 +21,10 @@ from balance.util import _assert_type, _float_or_none
 from numpy import dtype
 from sklearn.linear_model import LogisticRegression
 
-# Test constants
-SAMPLE_SIZE_SMALL = 1000
-SAMPLE_SIZE_LARGE = 2000
+# Test constants — small sizes for fast tests (CLI tests validate argument
+# parsing, file I/O, and column handling, not numerical accuracy of adjustment)
+SAMPLE_SIZE_SMALL = 100
+SAMPLE_SIZE_LARGE = 200
 TEST_SEED = 2021
 
 
@@ -62,6 +63,7 @@ def check_some_flags(
             out_file,
             "--covariate_columns",
             "x,y",
+            "--num_lambdas=1",
         ]
         if flag:
             args_to_parse.append(the_flag_str)
@@ -568,6 +570,7 @@ class TestCli(
                     diagnostics_out_file,
                     "--covariate_columns",
                     "x,y",
+                    "--num_lambdas=1",
                 ]
             )
             cli = BalanceCLI(args)
@@ -607,6 +610,7 @@ class TestCli(
                     diagnostics_out_file,
                     "--covariate_columns",
                     "x,y,z",
+                    "--num_lambdas=1",
                     "--rows_to_keep_for_diagnostics",
                     "z == 'g'",  # filtering condition
                     "--covariate_columns_for_diagnostics",
@@ -629,17 +633,19 @@ class TestCli(
             self.assertTrue(os.path.isfile(out_file))
             self.assertTrue(os.path.isfile(diagnostics_out_file))
 
-            # the original file had 4000 rows (1k target and 3k sample)
-            self.assertEqual(pd_in_file.shape, (4000, 6))
+            # the original file had 4*SAMPLE_SIZE_SMALL rows (1x target and 3x sample)
+            self.assertEqual(pd_in_file.shape, (4 * SAMPLE_SIZE_SMALL, 6))
             # the cli output includes only the panel (NOT the target)
             #   it also includes all the original columns
-            self.assertEqual(pd_out_file.shape, (3000, 6))
+            self.assertEqual(pd_out_file.shape, (3 * SAMPLE_SIZE_SMALL, 6))
             self.assertEqual(pd_out_file.is_respondent.mean(), 1)
-            # the diagnostics file shows it was calculated on only 2k panelists (as required from the condition)
+            # the diagnostics file shows it was calculated on only 2x panelists (as required from the condition)
             ss = pd_diagnostics_out_file.eval(
                 "(metric == 'size') & (var == 'sample_obs')"
             )
-            self.assertEqual(int(pd_diagnostics_out_file[ss]["val"].iloc[0]), 2000)
+            self.assertEqual(
+                int(pd_diagnostics_out_file[ss]["val"].iloc[0]), 2 * SAMPLE_SIZE_SMALL
+            )
 
             # verify we get diagnostics only for x and y, and not z
             ss = pd_diagnostics_out_file.eval("metric == 'covar_main_asmd_adjusted'")
@@ -670,6 +676,7 @@ class TestCli(
                     diagnostics_out_file,
                     "--covariate_columns",
                     "x,y",
+                    "--num_lambdas=1",
                 ]
             )
             cli = BalanceCLI(args)
@@ -746,6 +753,7 @@ class TestCli(
                     diagnostics_out_file,
                     "--covariate_columns",
                     "x,y,z",
+                    "--num_lambdas=1",
                     "--sep_output_file",
                     ";",
                     "--sep_diagnostics_output_file",
@@ -768,17 +776,19 @@ class TestCli(
             self.assertTrue(os.path.isfile(out_file))
             self.assertTrue(os.path.isfile(diagnostics_out_file))
 
-            # the original file had 4000 rows (1k target and 3k sample)
-            self.assertEqual(pd_in_file.shape, (4000, 6))
+            # the original file had 4*SAMPLE_SIZE_SMALL rows (1x target and 3x sample)
+            self.assertEqual(pd_in_file.shape, (4 * SAMPLE_SIZE_SMALL, 6))
             # the cli output includes only the panel (NOT the target)
             #   it also includes all the original columns
-            self.assertEqual(pd_out_file.shape, (3000, 6))
+            self.assertEqual(pd_out_file.shape, (3 * SAMPLE_SIZE_SMALL, 6))
             self.assertEqual(pd_out_file.is_respondent.mean(), 1)
-            # the diagnostics file shows it was calculated on all 3k panelists
+            # the diagnostics file shows it was calculated on all 3*SAMPLE_SIZE_SMALL panelists
             ss = pd_diagnostics_out_file.eval(
                 "(metric == 'size') & (var == 'sample_obs')"
             )
-            self.assertEqual(int(pd_diagnostics_out_file[ss]["val"].iloc[0]), 3000)
+            self.assertEqual(
+                int(pd_diagnostics_out_file[ss]["val"].iloc[0]), 3 * SAMPLE_SIZE_SMALL
+            )
 
     def test_cli_sep_input_works(self) -> None:
         """Test CLI functionality with custom input file separators (TSV)."""
@@ -810,6 +820,7 @@ class TestCli(
                     diagnostics_out_file,
                     "--covariate_columns",
                     "x,y,z",
+                    "--num_lambdas=1",
                     "--sep_input_file",
                     "\t",
                 ]
@@ -830,17 +841,19 @@ class TestCli(
             self.assertTrue(os.path.isfile(out_file))
             self.assertTrue(os.path.isfile(diagnostics_out_file))
 
-            # the original file had 4000 rows (1k target and 3k sample)
-            self.assertEqual(pd_in_file.shape, (4000, 6))
+            # the original file had 4*SAMPLE_SIZE_SMALL rows (1x target and 3x sample)
+            self.assertEqual(pd_in_file.shape, (4 * SAMPLE_SIZE_SMALL, 6))
             # the cli output includes only the panel (NOT the target)
             #   it also includes all the original columns
-            self.assertEqual(pd_out_file.shape, (3000, 6))
+            self.assertEqual(pd_out_file.shape, (3 * SAMPLE_SIZE_SMALL, 6))
             self.assertEqual(pd_out_file.is_respondent.mean(), 1)
-            # the diagnostics file shows it was calculated on all 3k panelists
+            # the diagnostics file shows it was calculated on all 3*SAMPLE_SIZE_SMALL panelists
             ss = pd_diagnostics_out_file.eval(
                 "(metric == 'size') & (var == 'sample_obs')"
             )
-            self.assertEqual(int(pd_diagnostics_out_file[ss]["val"].iloc[0]), 3000)
+            self.assertEqual(
+                int(pd_diagnostics_out_file[ss]["val"].iloc[0]), 3 * SAMPLE_SIZE_SMALL
+            )
 
     def test_cli_short_arg_names_works(self) -> None:
         """
@@ -877,6 +890,7 @@ class TestCli(
                     diagnostics_out_file,
                     "--covariate_columns",
                     "x,y,z",
+                    "--num_lambdas=1",
                     "--sep_output",
                     ";",
                     "--sep_diagnostics",
@@ -899,17 +913,19 @@ class TestCli(
             self.assertTrue(os.path.isfile(out_file))
             self.assertTrue(os.path.isfile(diagnostics_out_file))
 
-            # the original file had 4000 rows (1k target and 3k sample)
-            self.assertEqual(pd_in_file.shape, (4000, 6))
+            # the original file had 4*SAMPLE_SIZE_SMALL rows (1x target and 3x sample)
+            self.assertEqual(pd_in_file.shape, (4 * SAMPLE_SIZE_SMALL, 6))
             # the cli output includes only the panel (NOT the target)
             #   it also includes all the original columns
-            self.assertEqual(pd_out_file.shape, (3000, 6))
+            self.assertEqual(pd_out_file.shape, (3 * SAMPLE_SIZE_SMALL, 6))
             self.assertEqual(pd_out_file.is_respondent.mean(), 1)
-            # the diagnostics file shows it was calculated on all 3k panelists
+            # the diagnostics file shows it was calculated on all 3*SAMPLE_SIZE_SMALL panelists
             ss = pd_diagnostics_out_file.eval(
                 "(metric == 'size') & (var == 'sample_obs')"
             )
-            self.assertEqual(int(pd_diagnostics_out_file[ss]["val"].iloc[0]), 3000)
+            self.assertEqual(
+                int(pd_diagnostics_out_file[ss]["val"].iloc[0]), 3 * SAMPLE_SIZE_SMALL
+            )
 
     def test_method_works(self) -> None:
         """Test CLI functionality with different weighting methods (CBPS and IPW)."""
@@ -957,6 +973,7 @@ class TestCli(
                     diagnostics_output_file,
                     "--covariate_columns",
                     features,
+                    "--num_lambdas=1",
                     "--method=cbps",
                 ]
             )
@@ -984,6 +1001,7 @@ class TestCli(
                     diagnostics_output_file,
                     "--covariate_columns",
                     features,
+                    "--num_lambdas=1",
                     "--method=ipw",
                     "--max_de=1.5",
                 ]
@@ -1148,6 +1166,7 @@ class TestCli(
                     diagnostics_output_file,
                     "--covariate_columns",
                     features,
+                    "--num_lambdas=1",
                     "--transformations=None",
                 ]
             )
@@ -1176,6 +1195,7 @@ class TestCli(
                     diagnostics_output_file,
                     "--covariate_columns",
                     features,
+                    "--num_lambdas=1",
                     "--transformations=default",
                 ]
             )
@@ -1192,16 +1212,16 @@ class TestCli(
                 np.array(
                     [
                         "intercept",
-                        "C(age, one_hot_encoding_greater_2)[(0.00264, 10.925]]",
-                        "C(age, one_hot_encoding_greater_2)[(10.925, 20.624]]",
-                        "C(age, one_hot_encoding_greater_2)[(20.624, 30.985]]",
-                        "C(age, one_hot_encoding_greater_2)[(30.985, 41.204]]",
-                        "C(age, one_hot_encoding_greater_2)[(41.204, 51.335]]",
-                        "C(age, one_hot_encoding_greater_2)[(51.335, 61.535]]",
-                        "C(age, one_hot_encoding_greater_2)[(61.535, 71.696]]",
-                        "C(age, one_hot_encoding_greater_2)[(71.696, 80.08]]",
-                        "C(age, one_hot_encoding_greater_2)[(80.08, 89.446]]",
-                        "C(age, one_hot_encoding_greater_2)[(89.446, 99.992]]",
+                        "C(age, one_hot_encoding_greater_2)[(0.503, 12.698]]",
+                        "C(age, one_hot_encoding_greater_2)[(12.698, 24.046]]",
+                        "C(age, one_hot_encoding_greater_2)[(24.046, 34.075]]",
+                        "C(age, one_hot_encoding_greater_2)[(34.075, 42.568]]",
+                        "C(age, one_hot_encoding_greater_2)[(42.568, 52.977]]",
+                        "C(age, one_hot_encoding_greater_2)[(52.977, 61.757]]",
+                        "C(age, one_hot_encoding_greater_2)[(61.757, 69.386]]",
+                        "C(age, one_hot_encoding_greater_2)[(69.386, 79.639]]",
+                        "C(age, one_hot_encoding_greater_2)[(79.639, 88.948]]",
+                        "C(age, one_hot_encoding_greater_2)[(88.948, 99.992]]",
                         "C(gender, one_hot_encoding_greater_2)[(0.999, 2.0]]",
                         "C(gender, one_hot_encoding_greater_2)[(2.0, 3.0]]",
                         "C(gender, one_hot_encoding_greater_2)[(3.0, 4.0]]",
@@ -1221,6 +1241,7 @@ class TestCli(
                     diagnostics_output_file,
                     "--covariate_columns",
                     features,
+                    "--num_lambdas=1",
                 ]
             )
             # run cli
@@ -1236,16 +1257,16 @@ class TestCli(
                 np.array(
                     [
                         "intercept",
-                        "C(age, one_hot_encoding_greater_2)[(0.00264, 10.925]]",
-                        "C(age, one_hot_encoding_greater_2)[(10.925, 20.624]]",
-                        "C(age, one_hot_encoding_greater_2)[(20.624, 30.985]]",
-                        "C(age, one_hot_encoding_greater_2)[(30.985, 41.204]]",
-                        "C(age, one_hot_encoding_greater_2)[(41.204, 51.335]]",
-                        "C(age, one_hot_encoding_greater_2)[(51.335, 61.535]]",
-                        "C(age, one_hot_encoding_greater_2)[(61.535, 71.696]]",
-                        "C(age, one_hot_encoding_greater_2)[(71.696, 80.08]]",
-                        "C(age, one_hot_encoding_greater_2)[(80.08, 89.446]]",
-                        "C(age, one_hot_encoding_greater_2)[(89.446, 99.992]]",
+                        "C(age, one_hot_encoding_greater_2)[(0.503, 12.698]]",
+                        "C(age, one_hot_encoding_greater_2)[(12.698, 24.046]]",
+                        "C(age, one_hot_encoding_greater_2)[(24.046, 34.075]]",
+                        "C(age, one_hot_encoding_greater_2)[(34.075, 42.568]]",
+                        "C(age, one_hot_encoding_greater_2)[(42.568, 52.977]]",
+                        "C(age, one_hot_encoding_greater_2)[(52.977, 61.757]]",
+                        "C(age, one_hot_encoding_greater_2)[(61.757, 69.386]]",
+                        "C(age, one_hot_encoding_greater_2)[(69.386, 79.639]]",
+                        "C(age, one_hot_encoding_greater_2)[(79.639, 88.948]]",
+                        "C(age, one_hot_encoding_greater_2)[(88.948, 99.992]]",
                         "C(gender, one_hot_encoding_greater_2)[(0.999, 2.0]]",
                         "C(gender, one_hot_encoding_greater_2)[(2.0, 3.0]]",
                         "C(gender, one_hot_encoding_greater_2)[(3.0, 4.0]]",
@@ -1279,6 +1300,7 @@ class TestCli(
                     diagnostics_output_file,
                     "--covariate_columns",
                     features,
+                    "--num_lambdas=1",
                     "--transformations=None",
                 ]
             )
@@ -1307,6 +1329,7 @@ class TestCli(
                     diagnostics_output_file,
                     "--covariate_columns",
                     features,
+                    "--num_lambdas=1",
                     "--transformations=None",
                     "--formula=age*gender",
                 ]
@@ -1589,6 +1612,7 @@ class TestBalanceCLI_csv_column_parsing(balance.testutil.BalanceTestCase):
                     out_file,
                     "--covariate_columns",
                     "x,y",
+                    "--num_lambdas=1",
                     "--keep_columns",
                     "id,weight,extra_col",
                 ]
@@ -1741,6 +1765,7 @@ class TestBalanceCLI_adapt_output(balance.testutil.BalanceTestCase):
                     diagnostics_out_file,
                     "--covariate_columns",
                     "x,y",
+                    "--num_lambdas=1",
                     "--succeed_on_weighting_failure",
                     "--return_df_with_original_dtypes",
                 ]
@@ -1783,6 +1808,7 @@ class TestBalanceCLI_adapt_output(balance.testutil.BalanceTestCase):
                     diagnostics_output_file,
                     "--covariate_columns",
                     features,
+                    "--num_lambdas=1",
                     "--method=ipw",
                     "--ipw_logistic_regression_kwargs",
                     '{"solver": "lbfgs", "max_iter": 200}',
@@ -1828,6 +1854,7 @@ class TestBalanceCLI_adapt_output(balance.testutil.BalanceTestCase):
                     diagnostics_out_file,
                     "--covariate_columns",
                     "x,y",
+                    "--num_lambdas=1",
                     "--batch_columns",
                     "batch",
                 ]
@@ -1884,6 +1911,7 @@ class TestCliMainFunction(balance.testutil.BalanceTestCase):
                 out_file,
                 "--covariate_columns",
                 "x,y",
+                "--num_lambdas=1",
             ]
 
             from balance.cli import main

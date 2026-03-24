@@ -137,7 +137,7 @@ class TestSample(
         target = Sample.from_frame(pd.DataFrame({"a": target_data, "id": range(0, 10)}))
         sample_with_target = sample.set_target(target)
 
-        ipw_adjusted = sample_with_target.adjust(method="ipw")
+        ipw_adjusted = sample_with_target.adjust(method="ipw", num_lambdas=1)
         ipw_output = ipw_adjusted.__str__()
         self.assertIn("adjustment details", ipw_output)
         self.assertIn("method: ipw", ipw_output)
@@ -606,7 +606,7 @@ class TestSample_base_and_adjust_methods(
         self.assertEqual(s1.covars().df, e)
 
     def _create_test_sample_with_target(
-        self, source_size: int = 1000, target_size: int = 10000
+        self, source_size: int = 100, target_size: int = 200
     ) -> tuple[Sample, Sample]:
         """Helper method to create test samples for model testing.
 
@@ -653,7 +653,7 @@ class TestSample_base_and_adjust_methods(
         np.random.seed(112358)
         s, t = self._create_test_sample_with_target()
 
-        a = s.adjust(t, max_de=None)
+        a = s.adjust(t, max_de=None, num_lambdas=1)
         m = a.model()
 
         self.assertEqual(_assert_type(m)["method"], "ipw")
@@ -765,6 +765,48 @@ class TestSample_base_and_adjust_methods(
 class TestSample_metrics_methods(
     balance.testutil.BalanceTestCase,
 ):
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+
+        # --- Filtering tests: pre-compute adjusted sample (used by 5 tests) ---
+        np.random.seed(112358)
+        d = pd.DataFrame(np.random.rand(1000, 10))
+        d["id"] = range(0, d.shape[0])
+        d = d.rename(columns={i: "abcdefghij"[i] for i in range(0, 10)})
+        d["b"] = np.sqrt(d["b"])
+        s = Sample.from_frame(d)
+        d = pd.DataFrame(np.random.rand(1000, 10))
+        d["id"] = range(0, d.shape[0])
+        d = d.rename(columns={i: "abcdefghij"[i] for i in range(0, 10)})
+        cls._filtering_target = Sample.from_frame(d)
+        cls._filtering_adjusted = s.adjust(cls._filtering_target, max_de=1.5)
+
+        # --- With-outcomes filtering test: pre-compute adjusted sample ---
+        np.random.seed(112358)
+        d = pd.DataFrame(np.random.rand(1000, 11))
+        d["id"] = range(0, d.shape[0])
+        d = d.rename(columns={i: "abcdefghijk"[i] for i in range(0, 11)})
+        d["b"] = np.sqrt(d["b"])
+        a_with_outcome = Sample.from_frame(d, outcome_columns=["k"])
+        cls._with_outcomes_adjusted = a_with_outcome.adjust(
+            cls._filtering_target, max_de=1.5
+        )
+
+        # --- Outcome variance tests: pre-compute adjusted sample (used by 2 tests) ---
+        np.random.seed(112358)
+        d = pd.DataFrame(np.random.rand(1000, 10))
+        d["id"] = range(0, d.shape[0])
+        d = d.rename(columns={i: "abcdefghij"[i] for i in range(0, 10)})
+        cls._outcome_target = Sample.from_frame(d)
+        d = pd.DataFrame(np.random.rand(1000, 11))
+        d["id"] = range(0, d.shape[0])
+        d = d.rename(columns={i: "abcdefghijk"[i] for i in range(0, 11)})
+        d["b"] = np.sqrt(d["b"])
+        cls._outcome_source_data = d
+        a_with_outcome = Sample.from_frame(d, outcome_columns=["k"])
+        cls._outcome_adjusted = a_with_outcome.adjust(cls._outcome_target, max_de=1.5)
+
     def _assert_dict_almost_equal(
         self, actual: dict[str, Any], expected: dict[str, Any], places: int = 2
     ) -> None:
@@ -965,10 +1007,7 @@ class TestSample_metrics_methods(
         """
         from balance.stats_and_plots.weighted_stats import weighted_var
 
-        t, d = self._create_samples_for_outcome_variance_tests()
-
-        a_with_outcome = Sample.from_frame(d, outcome_columns=["k"])
-        a_with_outcome_adjusted = a_with_outcome.adjust(t, max_de=1.5)
+        a_with_outcome_adjusted = self._outcome_adjusted
 
         # Test calculation matches manual weighted variance ratio calculation
         expected_ratio = (
@@ -991,10 +1030,7 @@ class TestSample_metrics_methods(
         Verifies that the outcome variance ratio produces expected
         numerical results for the test dataset.
         """
-        t, d = self._create_samples_for_outcome_variance_tests()
-
-        a_with_outcome = Sample.from_frame(d, outcome_columns=["k"])
-        a_with_outcome_adjusted = a_with_outcome.adjust(t, max_de=1.5)
+        a_with_outcome_adjusted = self._outcome_adjusted
 
         # Test expected variance ratio value
         self.assertEqual(
@@ -1007,11 +1043,13 @@ class TestSample_metrics_methods(
         Verifies that null adjustment produces variance ratio of 1.0
         for all outcomes, since no actual adjustment is applied.
         """
-        t, d = self._create_samples_for_outcome_variance_tests()
-
         # Test with multiple outcomes and null adjustment
-        a_with_outcome = Sample.from_frame(d, outcome_columns=["j", "k"])
-        a_with_outcome_adjusted = a_with_outcome.adjust(t, method="null")
+        a_with_outcome = Sample.from_frame(
+            self._outcome_source_data, outcome_columns=["j", "k"]
+        )
+        a_with_outcome_adjusted = a_with_outcome.adjust(
+            self._outcome_target, method="null"
+        )
 
         # Null adjustment should produce variance ratio of 1.0
         self.assertEqual(
@@ -1188,14 +1226,15 @@ class TestSample_metrics_methods(
         """
         np.random.seed(112358)
 
-        # Create source sample
-        d = pd.DataFrame(np.random.rand(1000, 10))
+        # Create source sample (200 rows is sufficient to validate diagnostics
+        # structure; the metric counts depend on column count, not row count)
+        d = pd.DataFrame(np.random.rand(200, 10))
         d["id"] = range(0, d.shape[0])
         d = d.rename(columns={i: "abcdefghij"[i] for i in range(0, 10)})
         s = Sample.from_frame(d)
 
         # Create target sample
-        d = pd.DataFrame(np.random.rand(1000, 10))
+        d = pd.DataFrame(np.random.rand(200, 10))
         d["id"] = range(0, d.shape[0])
         d = d.rename(columns={i: "abcdefghij"[i] for i in range(0, 10)})
         t = Sample.from_frame(d)
@@ -1210,11 +1249,11 @@ class TestSample_metrics_methods(
         """
         s, t = self._create_samples_for_diagnostics_tests()
 
-        a = s.adjust(t)
+        a = s.adjust(t, num_lambdas=1)
         a_diagnostics = a.diagnostics()
 
         # Test basic structure
-        self.assertEqual(a_diagnostics.shape, (203, 3))
+        self.assertEqual(a_diagnostics.shape, (199, 3))
         self.assertEqual(a_diagnostics.columns.to_list(), ["metric", "val", "var"])
 
         # Test adjustment method is recorded correctly
@@ -1239,7 +1278,7 @@ class TestSample_metrics_methods(
             "ipw_penalty": 1,
             "ipw_solver": 1,
             "model_coef": 92,
-            "model_glance": 10,
+            "model_glance": 6,
             "size": 4,
             "weights_diagnostics": 24,
         }
@@ -1253,7 +1292,7 @@ class TestSample_metrics_methods(
         """
         s, t = self._create_samples_for_diagnostics_tests()
 
-        b = s.adjust(t, method="cbps")
+        b = s.adjust(t, method="cbps", num_lambdas=1)
         b_diagnostics = b.diagnostics()
 
         # Test basic structure
@@ -1337,7 +1376,7 @@ class TestSample_metrics_methods(
         Verifies that when both rows_to_keep and columns_to_keep are None,
         the method returns the same object reference.
         """
-        a, _ = self._create_adjusted_sample_for_filtering_tests()
+        a = self._filtering_adjusted
 
         # Should return the same object when no filtering is applied
         self.assertTrue(
@@ -1352,7 +1391,7 @@ class TestSample_metrics_methods(
         - Updates ASMD calculations appropriately
         - Maintains proper diagnostics structure
         """
-        a, _ = self._create_adjusted_sample_for_filtering_tests()
+        a = self._filtering_adjusted
 
         # Filter to keep only columns 'b' and 'c'
         a2 = a.keep_only_some_rows_columns(
@@ -1394,7 +1433,7 @@ class TestSample_metrics_methods(
         - Covariate counts
         - Weight diagnostics
         """
-        a, _ = self._create_adjusted_sample_for_filtering_tests()
+        a = self._filtering_adjusted
         a2 = a.keep_only_some_rows_columns(
             rows_to_keep=None, columns_to_keep=["b", "c"]
         )
@@ -1440,7 +1479,7 @@ class TestSample_metrics_methods(
         - Maintains weight-data consistency
         - Updates sample size statistics appropriately
         """
-        a, _ = self._create_adjusted_sample_for_filtering_tests()
+        a = self._filtering_adjusted
 
         # Filter rows and columns
         a3 = a.keep_only_some_rows_columns(
@@ -1467,7 +1506,7 @@ class TestSample_metrics_methods(
         - Target observation counts
         - Weight statistics
         """
-        a, _ = self._create_adjusted_sample_for_filtering_tests()
+        a = self._filtering_adjusted
         a2 = a.keep_only_some_rows_columns(
             rows_to_keep=None, columns_to_keep=["b", "c"]
         )
@@ -1525,16 +1564,7 @@ class TestSample_metrics_methods(
         Verifies that filtering works correctly with samples that have
         outcome columns and maintains proper filtering behavior.
         """
-        _, t = self._create_adjusted_sample_for_filtering_tests()
-
-        # Create sample with outcome columns
-        np.random.seed(112358)
-        d = pd.DataFrame(np.random.rand(1000, 11))
-        d["id"] = range(0, d.shape[0])
-        d = d.rename(columns={i: "abcdefghijk"[i] for i in range(0, 11)})
-        d["b"] = np.sqrt(d["b"])
-        a_with_outcome = Sample.from_frame(d, outcome_columns=["k"])
-        a_with_outcome_adjusted = a_with_outcome.adjust(t, max_de=1.5)
+        a_with_outcome_adjusted = self._with_outcomes_adjusted
 
         # Test filtering using outcome variable - should affect sample but not target
         filtered_by_outcome = a_with_outcome_adjusted.keep_only_some_rows_columns(
@@ -1617,27 +1647,27 @@ class TestSample_NA_behavior(balance.testutil.BalanceTestCase):
 
         # This works fine
         smpl_to_adj = get_sample_to_adjust(df)
-        self.assertIsInstance(smpl_to_adj.adjust(method="ipw"), Sample)
+        self.assertIsInstance(smpl_to_adj.adjust(method="ipw", num_lambdas=1), Sample)
 
         smpl_to_adj = get_sample_to_adjust(df)
         smpl_to_adj._df.iloc[0, 1] = pd.NA
-        self.assertIsInstance(smpl_to_adj.adjust(method="ipw"), Sample)
+        self.assertIsInstance(smpl_to_adj.adjust(method="ipw", num_lambdas=1), Sample)
 
         # This works fine
         df.iloc[0, 0] = np.nan
         df.iloc[0, 1] = np.nan
         smpl_to_adj = get_sample_to_adjust(df)
-        self.assertIsInstance(smpl_to_adj.adjust(method="ipw"), Sample)
+        self.assertIsInstance(smpl_to_adj.adjust(method="ipw", num_lambdas=1), Sample)
 
         # This also works fine (thanks to standardize_types=True)
         df.iloc[0, 0] = pd.NA
         df.iloc[0, 1] = pd.NA
         smpl_to_adj = get_sample_to_adjust(df)
-        self.assertIsInstance(smpl_to_adj.adjust(method="ipw"), Sample)
+        self.assertIsInstance(smpl_to_adj.adjust(method="ipw", num_lambdas=1), Sample)
 
         df.iloc[0, 1] = pd.NA
         smpl_to_adj = get_sample_to_adjust(df, standardize_types=False)
-        self.assertIsInstance(smpl_to_adj.adjust(method="ipw"), Sample)
+        self.assertIsInstance(smpl_to_adj.adjust(method="ipw", num_lambdas=1), Sample)
 
 
 class TestSample_high_cardinality_warnings(balance.testutil.BalanceTestCase):
@@ -1962,7 +1992,7 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
                 }
             )
         )
-        adjusted = sample.set_target(target).adjust(method="ipw")
+        adjusted = sample.set_target(target).adjust(method="ipw", num_lambdas=1)
 
         str_repr = str(adjusted)
 
@@ -2018,7 +2048,7 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
             )
         )
         adjusted = sample.set_target(target).adjust(
-            method="ipw", weight_trimming_mean_ratio=5
+            method="ipw", weight_trimming_mean_ratio=5, num_lambdas=1
         )
 
         str_repr = str(adjusted)
@@ -2359,7 +2389,9 @@ class TestSampleSummaryIPWModel(balance.testutil.BalanceTestCase):
             ),
             weight_column="w",
         )
-        adjusted = sample.set_target(target).adjust(method="ipw", max_de=1.5)
+        adjusted = sample.set_target(target).adjust(
+            method="ipw", max_de=1.5, num_lambdas=1
+        )
         summary = adjusted.summary()
         self.assertIn("Model performance", summary)
 
@@ -2399,6 +2431,7 @@ class TestSampleStrWeightTrimmingPercentile(balance.testutil.BalanceTestCase):
             method="ipw",
             weight_trimming_percentile=0.98,
             weight_trimming_mean_ratio=None,
+            num_lambdas=1,
         )
         # Manually inject weight_trimming_percentile into the model to test display logic
         # This is needed because the IPW implementation does not store this value in the model
@@ -2411,8 +2444,10 @@ class TestSampleStrWeightTrimmingPercentile(balance.testutil.BalanceTestCase):
 class TestSampleDiagnosticsIPWModelParams(balance.testutil.BalanceTestCase):
     """Test cases for IPW model parameters in diagnostics (lines 1838, 1878-1879)."""
 
-    def _make_adjusted_ipw_sample(self) -> Sample:
-        """Create a deterministic IPW-adjusted sample used by diagnostics tests."""
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        # Pre-compute the IPW-adjusted sample once (used by all tests in this class)
         np.random.seed(42)
         sample = Sample.from_frame(
             pd.DataFrame(
@@ -2434,7 +2469,13 @@ class TestSampleDiagnosticsIPWModelParams(balance.testutil.BalanceTestCase):
             ),
             weight_column="w",
         )
-        return sample.set_target(target).adjust(method="ipw", max_de=1.5)
+        cls._adjusted_ipw = sample.set_target(target).adjust(
+            method="ipw", max_de=1.5, num_lambdas=1
+        )
+
+    def _make_adjusted_ipw_sample(self) -> Sample:
+        """Return the pre-computed IPW-adjusted sample."""
+        return self._adjusted_ipw
 
     def _get_ipw_fit(self, adjusted: Sample) -> Any:
         """Return the fitted sklearn estimator for an IPW-adjusted sample."""
