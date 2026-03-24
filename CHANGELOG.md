@@ -8,6 +8,8 @@
     over concatenated propensity vectors and explicit input-size validation.
   - Added validation for non-finite and out-of-range propensity values,
     and expanded unit coverage for formula correctness and edge cases.
+  - Added `BalanceDFWeights.r_indicator()` as a convenience wrapper, so
+    `sample.weights().r_indicator()` computes the r-indicator directly.
 
 ## Deprecations
 

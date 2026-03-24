@@ -2842,7 +2842,7 @@ class BalanceDFWeights(BalanceDF):
             )
 
             round(sample.set_target(target).weights().r_indicator(), 3)
-            # 0.576
+            # 0.293
         """
         sample_weights = self.df.iloc[:, 0]
 
