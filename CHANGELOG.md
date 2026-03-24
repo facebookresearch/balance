@@ -1,4 +1,4 @@
-# 0.18.0 (Unreleased - TBD)
+# 0.18.0 (2026-03-24)
 
 ## New Features
 
