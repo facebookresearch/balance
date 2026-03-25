@@ -22,7 +22,6 @@ of Sample functionality.
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import logging
-import warnings
 from copy import deepcopy
 from textwrap import dedent
 from typing import Any, Callable
@@ -865,84 +864,50 @@ class TestSample_metrics_methods(
         )
         e.columns = pd.Series(("unadjusted", "adjusted", "target"), name="source")
 
-        # Test deprecation warning is emitted
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            result = s3_null.covar_means()
-            self.assertTrue(any(issubclass(x.category, DeprecationWarning) for x in w))
-            self.assertTrue(
-                any("Sample.covar_means() is deprecated" in str(x.message) for x in w)
-            )
+        # Test that Sample.covar_means() no longer exists
+        self.assertFalse(hasattr(s3_null, "covar_means"))
+
+        # Test the new API: covars().mean() with rename/reindex/T
+        result = (
+            s3_null.covars()
+            .mean()
+            .rename(index={"self": "adjusted"})
+            .reindex(["unadjusted", "adjusted", "target"])
+            .T
+        )
         self.assertEqual(result, e)
 
-        # test exceptions when there is no adjusted
-        with self.assertRaisesRegex(
-            ValueError,
-            "This is not an adjusted Sample. Use sample.adjust to adjust the sample to target",
-        ):
-            s1.covar_means()
-
     def test_Sample_design_effect(self) -> None:
-        # Test deprecation warning is emitted
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            result = s1.design_effect()
-            self.assertTrue(any(issubclass(x.category, DeprecationWarning) for x in w))
-            self.assertTrue(
-                any("Sample.design_effect() is deprecated" in str(x.message) for x in w)
-            )
-        self.assertEqual(result.round(3), 1.235)
-        # Test that the new API returns the same value
-        self.assertEqual(s1.weights().design_effect().round(3), 1.235)
+        # Test that Sample.design_effect() no longer exists
+        self.assertFalse(hasattr(s1, "design_effect"))
 
-        with warnings.catch_warnings(record=True):
-            warnings.simplefilter("always")
-            self.assertEqual(s4.design_effect(), 1.0)
+        # Test the new API
+        self.assertEqual(s1.weights().design_effect().round(3), 1.235)
         self.assertEqual(s4.weights().design_effect(), 1.0)
 
     def test_Sample_design_effect_prop(self) -> None:
         s3_null = s1.adjust(s2, method="null")
 
-        # Test deprecation warning is emitted
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            result = s3_null.design_effect_prop()
-            self.assertTrue(any(issubclass(x.category, DeprecationWarning) for x in w))
-            self.assertTrue(
-                any(
-                    "Sample.design_effect_prop() is deprecated" in str(x.message)
-                    for x in w
-                )
-            )
-        self.assertEqual(result, 0.0)
+        # Test that Sample.design_effect_prop() no longer exists
+        self.assertFalse(hasattr(s3_null, "design_effect_prop"))
 
-        # Test that the new API returns the same value
+        # Test the new API
         self.assertEqual(s3_null.weights().design_effect_prop(), 0.0)
 
-        # test exceptions when there is no adjusted
+        # test exceptions when there is no adjusted (via new API)
         with self.assertRaisesRegex(
             ValueError,
-            "This is not an adjusted Sample. Use sample.adjust to adjust the sample to target",
+            "No unadjusted weights available. This requires an adjusted sample.",
         ):
-            s1.design_effect_prop()
+            s1.weights().design_effect_prop()
 
     def test_Sample_outcome_sd_prop(self) -> None:
         s3_null = s1.adjust(s2, method="null")
 
-        # Test deprecation warning is emitted
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            result = s3_null.outcome_sd_prop()
-            self.assertTrue(any(issubclass(x.category, DeprecationWarning) for x in w))
-            self.assertTrue(
-                any(
-                    "Sample.outcome_sd_prop() is deprecated" in str(x.message)
-                    for x in w
-                )
-            )
-        self.assertEqual(result, pd.Series((0.0), index=["o"]))
+        # Test that Sample.outcome_sd_prop() no longer exists
+        self.assertFalse(hasattr(s3_null, "outcome_sd_prop"))
 
-        # Test that the new API returns the same value
+        # Test the new API
         self.assertEqual(
             s3_null.outcomes().outcome_sd_prop(), pd.Series((0.0), index=["o"])
         )
@@ -963,18 +928,14 @@ class TestSample_metrics_methods(
             outcome_columns=["o1", "o2"],
         )
         s3_null = s1_two_outcomes.adjust(s2, method="null")
-        with warnings.catch_warnings(record=True):
-            warnings.simplefilter("always")
-            self.assertEqual(
-                s3_null.outcome_sd_prop(), pd.Series((0.0, 0.0), index=["o1", "o2"])
-            )
+        self.assertEqual(
+            s3_null.outcomes().outcome_sd_prop(),
+            pd.Series((0.0, 0.0), index=["o1", "o2"]),
+        )
 
-        # test exceptions when there is no adjusted
-        with self.assertRaisesRegex(
-            ValueError,
-            "This Sample does not have outcome columns specified",
-        ):
-            s2.adjust(s2, method="null").outcome_sd_prop()
+        # test exceptions when there is no outcome (via new API - outcomes() returns None)
+        adjusted_no_outcomes = s2.adjust(s2, method="null")
+        self.assertIsNone(adjusted_no_outcomes.outcomes())
 
     def _create_samples_for_outcome_variance_tests(self) -> tuple[Sample, pd.DataFrame]:
         """Helper method to create samples for outcome variance ratio testing.
@@ -1021,7 +982,7 @@ class TestSample_metrics_methods(
             )
         ).iloc[0]
 
-        actual_ratio = a_with_outcome_adjusted.outcome_variance_ratio().iloc[0]
+        actual_ratio = a_with_outcome_adjusted.outcomes().outcome_variance_ratio().iloc[0]
         self.assertEqual(round(actual_ratio, 5), round(expected_ratio, 5))
 
     def test_outcome_variance_ratio_value(self) -> None:
@@ -1034,7 +995,8 @@ class TestSample_metrics_methods(
 
         # Test expected variance ratio value
         self.assertEqual(
-            round(a_with_outcome_adjusted.outcome_variance_ratio().iloc[0], 2), 0.98
+            round(a_with_outcome_adjusted.outcomes().outcome_variance_ratio().iloc[0], 2),
+            0.98,
         )
 
     def test_outcome_variance_ratio_null_adjustment(self) -> None:
@@ -1053,7 +1015,7 @@ class TestSample_metrics_methods(
 
         # Null adjustment should produce variance ratio of 1.0
         self.assertEqual(
-            a_with_outcome_adjusted.outcome_variance_ratio(),
+            a_with_outcome_adjusted.outcomes().outcome_variance_ratio(),
             pd.Series([1.0, 1.0], index=["j", "k"]),
         )
 
@@ -2205,47 +2167,15 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
         self.assertTrue(np.isfinite(deff_prop))
 
     def test_plot_weight_density_calls_weights_plot(self) -> None:
-        """Test plot_weight_density delegates to weights().plot() and emits deprecation warning.
-
-        This validates that the convenience method properly calls the
-        underlying weights plotting functionality and emits a deprecation warning.
-        """
-        from unittest.mock import MagicMock, patch
-
+        """Test that Sample.plot_weight_density no longer exists and weights().plot() is the API."""
         sample = Sample.from_frame(
             pd.DataFrame(
                 {"a": [1, 2, 3], "b": [4, 5, 6], "id": [1, 2, 3], "w": [0.5, 1.0, 1.5]}
             )
         )
 
-        # Mock the weights().plot() chain to verify it's called
-        mock_weights = MagicMock()
-        mock_plot = MagicMock()
-        mock_weights.plot = mock_plot
-
-        with patch.object(sample, "weights", return_value=mock_weights):
-            # Call the method and verify deprecation warning
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
-                result = sample.plot_weight_density()
-                self.assertTrue(
-                    any(issubclass(x.category, DeprecationWarning) for x in w)
-                )
-                self.assertTrue(
-                    any(
-                        "Sample.plot_weight_density() is deprecated" in str(x.message)
-                        for x in w
-                    )
-                )
-
-            # Verify weights() was called
-            sample.weights.assert_called_once()
-
-            # Verify plot() was called on the weights object
-            mock_plot.assert_called_once()
-
-            # plot_weight_density returns None
-            self.assertIsNone(result)
+        # Verify the removed method no longer exists on Sample
+        self.assertFalse(hasattr(sample, "plot_weight_density"))
 
 
 class TestSampleConstructorInspectException(balance.testutil.BalanceTestCase):
