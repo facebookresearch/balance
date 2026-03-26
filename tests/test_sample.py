@@ -933,7 +933,7 @@ class TestSample_metrics_methods(
             pd.Series((0.0, 0.0), index=["o1", "o2"]),
         )
 
-        # test exceptions when there is no outcome (via new API - outcomes() returns None)
+        # test behavior when there is no outcome (via new API - outcomes() returns None)
         adjusted_no_outcomes = s2.adjust(s2, method="null")
         self.assertIsNone(adjusted_no_outcomes.outcomes())
 
@@ -2166,7 +2166,7 @@ class TestSample_large_target_warning(balance.testutil.BalanceTestCase):
         self.assertIsInstance(deff_prop, (float, np.floating))
         self.assertTrue(np.isfinite(deff_prop))
 
-    def test_plot_weight_density_calls_weights_plot(self) -> None:
+    def test_plot_weight_density_method_removed(self) -> None:
         """Test that Sample.plot_weight_density no longer exists and weights().plot() is the API."""
         sample = Sample.from_frame(
             pd.DataFrame(
