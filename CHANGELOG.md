@@ -1,3 +1,21 @@
+# 0.19.0 (2026-03-25)
+
+## Breaking Changes
+
+- **Removed `Sample.design_effect()`** — use `sample.weights().design_effect()` instead.
+  Deprecated since 0.18.0.
+- **Removed `Sample.design_effect_prop()`** — use `sample.weights().design_effect_prop()` instead.
+  Deprecated since 0.18.0.
+- **Removed `Sample.plot_weight_density()`** — use `sample.weights().plot()` instead.
+  Deprecated since 0.18.0.
+- **Removed `Sample.covar_means()`** — use `sample.covars().mean()` instead
+  (with `.rename(index={'self': 'adjusted'}).reindex(['unadjusted', 'adjusted', 'target']).T` for the same format).
+  Deprecated since 0.18.0.
+- **Removed `Sample.outcome_sd_prop()`** — use `sample.outcomes().outcome_sd_prop()` instead.
+  Deprecated since 0.18.0.
+- **Removed `Sample.outcome_variance_ratio()`** — use `sample.outcomes().outcome_variance_ratio()` instead.
+  Deprecated since 0.18.0.
+
 # 0.18.0 (2026-03-24)
 
 ## New Features
