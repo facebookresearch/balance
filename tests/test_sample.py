@@ -982,7 +982,9 @@ class TestSample_metrics_methods(
             )
         ).iloc[0]
 
-        actual_ratio = a_with_outcome_adjusted.outcomes().outcome_variance_ratio().iloc[0]
+        actual_ratio = (
+            a_with_outcome_adjusted.outcomes().outcome_variance_ratio().iloc[0]
+        )
         self.assertEqual(round(actual_ratio, 5), round(expected_ratio, 5))
 
     def test_outcome_variance_ratio_value(self) -> None:
@@ -995,7 +997,9 @@ class TestSample_metrics_methods(
 
         # Test expected variance ratio value
         self.assertEqual(
-            round(a_with_outcome_adjusted.outcomes().outcome_variance_ratio().iloc[0], 2),
+            round(
+                a_with_outcome_adjusted.outcomes().outcome_variance_ratio().iloc[0], 2
+            ),
             0.98,
         )
 
@@ -1141,9 +1145,7 @@ class TestSample_metrics_methods(
 
         adjusted = survey.set_target(target).adjust(method="null")
 
-        expected_lines = (
-            dedent(
-                """
+        expected_lines = dedent("""
             Adjustment details:
                 method: null_adjustment
             Covariate diagnostics:
@@ -1160,11 +1162,7 @@ class TestSample_metrics_methods(
             source
             self       0.480
             unadjusted 0.480
-            """
-            )
-            .strip()
-            .splitlines()
-        )
+            """).strip().splitlines()
 
         summary_lines = [line.rstrip() for line in adjusted.summary().splitlines()]
 
