@@ -1444,6 +1444,424 @@ class TestBalanceDF_asmd(BalanceTestCase):
 
         self.assertEqual(output.round(6), expected)
 
+    def test_BalanceDF_kld_with_covars_formula(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "age_group": ("young", "young", "old", "old"),
+                    "gender": ("m", "f", "m", "f"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (5, 6, 7, 8),
+                    "age_group": ("young", "old", "old", "old"),
+                    "gender": ("m", "f", "f", "f"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+
+        sample_with_target = sample.set_target(target)
+        output = sample_with_target.covars(formula="age_group * gender").kld(
+            on_linked_samples=False
+        )
+
+        mm = model_matrix(
+            sample.covars().df,
+            target.covars().df,
+            add_na=True,
+            return_type="two",
+            formula="age_group * gender",
+        )
+        sample_mm = mm["sample"]
+        target_mm = mm["target"]
+        assert isinstance(sample_mm, pd.DataFrame)
+        assert isinstance(target_mm, pd.DataFrame)
+        expected = weighted_comparisons_stats.kld(
+            sample_mm,
+            target_mm,
+        )
+        expected = pd.DataFrame([expected], index=("covars",))
+        expected.index.name = output.index.name
+
+        self.assertEqual(output.round(6), expected.round(6))
+
+    def test_BalanceDF_kld_with_covars_formula_on_linked_samples(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "age_group": ("young", "young", "old", "old"),
+                    "gender": ("m", "f", "m", "f"),
+                    "w": (1.0, 2.0, 1.0, 1.0),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (5, 6, 7, 8),
+                    "age_group": ("young", "old", "old", "old"),
+                    "gender": ("m", "f", "f", "f"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+        adjusted = sample.set_target(target).adjust(method="null")
+        adjusted.set_weights(pd.Series([1.0, 1.0, 1.0, 1.0], index=adjusted.df.index))
+
+        covars = adjusted.covars(formula="age_group * gender")
+        output = covars.kld(on_linked_samples=True)
+
+        links = covars._BalanceDF_child_from_linked_samples()
+        self_df = links["self"].df
+        target_df = links["target"].df
+        unadj_df = links["unadjusted"].df
+
+        self_w = (
+            links["self"]._weights.values
+            if links["self"]._weights is not None
+            else None
+        )
+        target_w = (
+            links["target"]._weights.values
+            if links["target"]._weights is not None
+            else None
+        )
+        unadj_w = (
+            links["unadjusted"]._weights.values
+            if links["unadjusted"]._weights is not None
+            else None
+        )
+
+        self_target_mm = model_matrix(
+            self_df,
+            target_df,
+            add_na=True,
+            return_type="two",
+            formula="age_group * gender",
+        )
+        self_mm = self_target_mm["sample"]
+        target_mm_for_self = self_target_mm["target"]
+        assert isinstance(self_mm, pd.DataFrame)
+        assert isinstance(target_mm_for_self, pd.DataFrame)
+
+        unadj_target_mm = model_matrix(
+            unadj_df,
+            target_df,
+            add_na=True,
+            return_type="two",
+            formula="age_group * gender",
+        )
+        unadj_mm = unadj_target_mm["sample"]
+        target_mm_for_unadj = unadj_target_mm["target"]
+        assert isinstance(unadj_mm, pd.DataFrame)
+        assert isinstance(target_mm_for_unadj, pd.DataFrame)
+
+        expected_self = weighted_comparisons_stats.kld(
+            self_mm,
+            target_mm_for_self,
+            self_w,
+            target_w,
+        )
+        expected_unadj = weighted_comparisons_stats.kld(
+            unadj_mm,
+            target_mm_for_unadj,
+            unadj_w,
+            target_w,
+        )
+        expected = pd.DataFrame(
+            [expected_self, expected_unadj, expected_unadj - expected_self],
+            index=pd.Index(["self", "unadjusted", "unadjusted - self"]),
+        )
+        expected.index.name = output.index.name
+
+        self.assertEqual(output.round(6), expected.round(6))
+
+    def test_BalanceDF_kld_with_formula_on_one_side_uses_shared_formula(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "age_group": ("young", "young", "old", "old"),
+                    "gender": ("m", "f", "m", "f"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (5, 6, 7, 8),
+                    "age_group": ("young", "old", "old", "old"),
+                    "gender": ("m", "f", "f", "f"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+
+        with_formula = sample.covars(formula="age_group * gender")
+        without_formula = target.covars()
+
+        output = BalanceDF._kld_BalanceDF(
+            with_formula, without_formula, aggregate_by_main_covar=False
+        )
+
+        mm = model_matrix(
+            sample.covars().df,
+            target.covars().df,
+            add_na=True,
+            return_type="two",
+            formula="age_group * gender",
+        )
+        sample_mm = mm["sample"]
+        target_mm = mm["target"]
+        assert isinstance(sample_mm, pd.DataFrame)
+        assert isinstance(target_mm, pd.DataFrame)
+        expected = weighted_comparisons_stats.kld(
+            sample_mm,
+            target_mm,
+        )
+
+        self.assertEqual(output.round(6), expected.round(6))
+
+    def test_BalanceDF_kld_with_mismatched_formulas_raises(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "age_group": ("young", "young", "old", "old"),
+                    "gender": ("m", "f", "m", "f"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (5, 6, 7, 8),
+                    "age_group": ("young", "old", "old", "old"),
+                    "gender": ("m", "f", "f", "f"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+
+        with self.assertRaisesRegex(ValueError, "KLD formula mismatch"):
+            BalanceDF._kld_BalanceDF(
+                sample.covars(formula="age_group + gender"),
+                target.covars(formula="age_group * gender"),
+            )
+
+    def test_BalanceDF_kld_with_whitespace_equivalent_formulas(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "age_group": ("young", "young", "old", "old"),
+                    "gender": ("m", "f", "m", "f"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (5, 6, 7, 8),
+                    "age_group": ("young", "old", "old", "old"),
+                    "gender": ("m", "f", "f", "f"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+
+        output = BalanceDF._kld_BalanceDF(
+            sample.covars(formula="age_group*gender"),
+            target.covars(formula="age_group * gender"),
+        )
+
+        mm = model_matrix(
+            sample.covars().df,
+            target.covars().df,
+            add_na=True,
+            return_type="two",
+            formula="age_group * gender",
+        )
+        sample_mm = mm["sample"]
+        target_mm = mm["target"]
+        assert isinstance(sample_mm, pd.DataFrame)
+        assert isinstance(target_mm, pd.DataFrame)
+        expected = weighted_comparisons_stats.kld(sample_mm, target_mm)
+
+        self.assertEqual(output.round(6), expected.round(6))
+
+    def test_BalanceDF_kld_linked_formula_with_missing_levels_uses_shared_matrix(
+        self,
+    ) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "age_group": ("young", "young", "young", "young"),
+                    "gender": ("m", "m", "f", "f"),
+                    "w": (1.0, 1.0, 1.0, 1.0),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (5, 6, 7, 8),
+                    "age_group": ("young", "old", "old", "old"),
+                    "gender": ("m", "f", "f", "f"),
+                    "w": (1.0, 1.0, 1.0, 1.0),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+        adjusted = sample.set_target(target).adjust(method="null")
+        covars = adjusted.covars(formula="age_group * gender")
+        output = covars.kld(on_linked_samples=True)
+
+        links = covars._BalanceDF_child_from_linked_samples()
+        self_df = links["self"].df
+        target_df = links["target"].df
+        unadj_df = links["unadjusted"].df
+
+        self_w = (
+            links["self"]._weights.values
+            if links["self"]._weights is not None
+            else None
+        )
+        target_w = (
+            links["target"]._weights.values
+            if links["target"]._weights is not None
+            else None
+        )
+        unadj_w = (
+            links["unadjusted"]._weights.values
+            if links["unadjusted"]._weights is not None
+            else None
+        )
+
+        self_target_mm = model_matrix(
+            self_df,
+            target_df,
+            add_na=True,
+            return_type="two",
+            formula="age_group * gender",
+        )
+        self_mm = self_target_mm["sample"]
+        target_mm_for_self = self_target_mm["target"]
+        assert isinstance(self_mm, pd.DataFrame)
+        assert isinstance(target_mm_for_self, pd.DataFrame)
+
+        unadj_target_mm = model_matrix(
+            unadj_df,
+            target_df,
+            add_na=True,
+            return_type="two",
+            formula="age_group * gender",
+        )
+        unadj_mm = unadj_target_mm["sample"]
+        target_mm_for_unadj = unadj_target_mm["target"]
+        assert isinstance(unadj_mm, pd.DataFrame)
+        assert isinstance(target_mm_for_unadj, pd.DataFrame)
+
+        expected_self = weighted_comparisons_stats.kld(
+            self_mm,
+            target_mm_for_self,
+            self_w,
+            target_w,
+        )
+        expected_unadj = weighted_comparisons_stats.kld(
+            unadj_mm,
+            target_mm_for_unadj,
+            unadj_w,
+            target_w,
+        )
+        expected = pd.DataFrame(
+            [expected_self, expected_unadj, expected_unadj - expected_self],
+            index=pd.Index(["self", "unadjusted", "unadjusted - self"]),
+        )
+        expected.index.name = output.index.name
+
+        self.assertEqual(output.round(6), expected.round(6))
+
+    def test_BalanceDF_kld_with_string_and_single_formula_list(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "age_group": ("young", "young", "old", "old"),
+                    "gender": ("m", "f", "m", "f"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (5, 6, 7, 8),
+                    "age_group": ("young", "old", "old", "old"),
+                    "gender": ("m", "f", "f", "f"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+
+        output = BalanceDF._kld_BalanceDF(
+            sample.covars(formula=["age_group * gender"]),
+            target.covars(formula="age_group*gender"),
+        )
+
+        mm = model_matrix(
+            sample.covars().df,
+            target.covars().df,
+            add_na=True,
+            return_type="two",
+            formula="age_group * gender",
+        )
+        sample_mm = mm["sample"]
+        target_mm = mm["target"]
+        assert isinstance(sample_mm, pd.DataFrame)
+        assert isinstance(target_mm, pd.DataFrame)
+        expected = weighted_comparisons_stats.kld(sample_mm, target_mm)
+
+        self.assertEqual(output.round(6), expected.round(6))
+
     def _assert_categorical_stat(
         self,
         stat_method_name: str,

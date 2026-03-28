@@ -1,4 +1,4 @@
-# 0.19.0 (2026-03-25)
+# 0.19.0 (Unreleased - TBD)
 
 ## Breaking Changes
 
@@ -15,6 +15,17 @@
   Deprecated since 0.18.0.
 - **Removed `Sample.outcome_variance_ratio()`** — use `sample.outcomes().outcome_variance_ratio()` instead.
   Deprecated since 0.18.0.
+
+## New Features
+
+- **Added formula support to `Sample.covars()` for downstream diagnostics**
+  - `Sample.covars()` now accepts a `formula` argument and stores it on the
+    returned `BalanceDFCovars` object.
+  - `BalanceDFCovars.kld()` now honors formula-driven model matrices (including
+    interactions such as `"age_group * gender"`) when a formula is provided via
+    `covars(formula=...)`.
+  - Formula settings are now propagated to linked covariate views (`target`,
+    `unadjusted`) so comparative diagnostics run on consistent design matrices.
 
 # 0.18.0 (2026-03-24)
 

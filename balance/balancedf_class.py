@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any, Callable, Dict, Literal, Tuple
 
 import numpy as np
@@ -285,13 +286,22 @@ class BalanceDF:
             | "BalanceDFOutcomes"
             | None,
         ] = {"self": self}
+        linked_child_kwargs = self._linked_child_kwargs()
         d.update(
             {
-                k: getattr(v, BalanceDF_child_method)()
+                k: getattr(v, BalanceDF_child_method)(**linked_child_kwargs)
                 for k, v in self._sample._links.items()
             }
         )
         return d
+
+    def _linked_child_kwargs(self: "BalanceDF") -> dict[str, Any]:
+        """Keyword arguments used when creating linked BalanceDF children.
+
+        Subclasses can override this to preserve construction options across linked
+        samples (for example, formula settings for covariates).
+        """
+        return {}
 
     def _call_on_linked(
         self: "BalanceDF",
@@ -1276,8 +1286,18 @@ class BalanceDF:
     ) -> pd.Series:
         """Run KLD on two BalanceDF objects.
 
-        Prepares the BalanceDF objects by using their raw df (with NA indicators), and
-        then passes the df and weights from the two objects into :func:`weighted_comparisons_stats.kld`.
+        By default, this prepares the BalanceDF objects by using their raw df
+        (with NA indicators), and then passes the df and weights from the two
+        objects into :func:`weighted_comparisons_stats.kld`.
+
+        If either BalanceDF provides a formula for KLD comparisons (currently
+        :class:`BalanceDFCovars` with a stored formula), this method builds a
+        *shared* model matrix from the combined sample+target data using that
+        single effective formula and compares those aligned matrices instead of
+        raw covariates.
+
+        If both objects provide formulas and they differ, a ``ValueError`` is
+        raised to prevent comparing mismatched design matrices.
 
         Args:
             sample_BalanceDF (BalanceDF): Object
@@ -1287,6 +1307,57 @@ class BalanceDF:
         Returns:
             pd.Series: See :func:`weighted_comparisons_stats.kld`.
         """
+        BalanceDF._check_if_not_BalanceDF(sample_BalanceDF, "sample_BalanceDF")
+        BalanceDF._check_if_not_BalanceDF(target_BalanceDF, "target_BalanceDF")
+
+        sample_formula = sample_BalanceDF._kld_formula()
+        target_formula = target_BalanceDF._kld_formula()
+
+        if sample_formula is not None and target_formula is not None:
+            normalized_sample_formula = BalanceDF._normalize_formula_for_comparison(
+                sample_formula
+            )
+            normalized_target_formula = BalanceDF._normalize_formula_for_comparison(
+                target_formula
+            )
+            if normalized_sample_formula != normalized_target_formula:
+                raise ValueError(
+                    "KLD formula mismatch between sample and target. "
+                    f"Got sample formula {sample_formula!r} and target formula {target_formula!r}. "
+                    "Use a single shared formula for both."
+                )
+
+        effective_formula = (
+            sample_formula if sample_formula is not None else target_formula
+        )
+        use_model_matrix = effective_formula is not None
+
+        if use_model_matrix:
+            mm = balance_util.model_matrix(
+                sample_BalanceDF.df,
+                target_BalanceDF.df,
+                add_na=True,
+                return_type="two",
+                formula=effective_formula,
+            )
+            sample_weights = (
+                sample_BalanceDF._weights.values
+                if sample_BalanceDF._weights is not None
+                else None
+            )
+            target_weights = (
+                target_BalanceDF._weights.values
+                if target_BalanceDF._weights is not None
+                else None
+            )
+            return weighted_comparisons_stats.kld(
+                _assert_type(mm["sample"], pd.DataFrame),
+                _assert_type(mm["target"], pd.DataFrame),
+                sample_weights,
+                target_weights,
+                aggregate_by_main_covar=aggregate_by_main_covar,
+            )
+
         return BalanceDF._apply_comparison_stat_to_BalanceDF(
             weighted_comparisons_stats.kld,
             sample_BalanceDF,
@@ -1294,6 +1365,23 @@ class BalanceDF:
             aggregate_by_main_covar,
             use_model_matrix=False,
         )
+
+    def _kld_formula(self: "BalanceDF") -> str | list[str] | None:
+        """Formula to use for KLD comparison matrices, if applicable."""
+        return None
+
+    @staticmethod
+    def _normalize_formula_for_comparison(
+        formula: str | list[str],
+    ) -> tuple[str, ...]:
+        """Normalize formulas for robust equality checks.
+
+        Insignificant whitespace is removed so equivalent formulas such as
+        ``\"a*b\"`` and ``\"a * b\"`` compare equal.
+        """
+        if isinstance(formula, str):
+            formula = [formula]
+        return tuple(re.sub(r"\s+", "", f) for f in formula)
 
     @staticmethod
     def _emd_BalanceDF(
@@ -2570,7 +2658,11 @@ class BalanceDFOutcomes(BalanceDF):
 
 
 class BalanceDFCovars(BalanceDF):
-    def __init__(self: "BalanceDFCovars", sample: Sample) -> None:
+    def __init__(
+        self: "BalanceDFCovars",
+        sample: Sample,
+        formula: str | list[str] | None = None,
+    ) -> None:
         """A factory function to create BalanceDFCovars
 
         This is used through :func:`Sample.covars`.
@@ -2580,13 +2672,35 @@ class BalanceDFCovars(BalanceDF):
         Args:
             self (BalanceDFCovars): Object that is initiated.
             sample (Sample): Object
+            formula (str | list[str] | None, optional): Optional formula to use
+                as the default when constructing model matrices for this object.
         """
         super().__init__(sample._covar_columns(), sample, name="covars")
+        self._formula: str | list[str] | None = formula
 
+    def model_matrix(
+        self: "BalanceDFCovars", formula: str | list[str] | None = None
+    ) -> pd.DataFrame:
+        """Return a model matrix, defaulting to the formula provided at construction."""
+        effective_formula = self._formula if formula is None else formula
+        return super().model_matrix(formula=effective_formula)
+
+    def _linked_child_kwargs(self: "BalanceDFCovars") -> dict[str, Any]:
+        """Propagate formula choice to linked covariate views."""
+        if self._formula is None:
+            return {}
+        return {"formula": self._formula}
+
+    def _kld_formula(self: "BalanceDFCovars") -> str | list[str] | None:
+        """Formula to use for KLD when comparing covariates."""
+        return self._formula
+
+    @classmethod
     def from_frame(
-        self: "BalanceDFCovars",
+        cls: type["BalanceDFCovars"],
         df: pd.DataFrame,
         weights: pd.Series | None = None,
+        formula: str | list[str] | None = None,
     ) -> "BalanceDFCovars":
         """A factory function to create a BalanceDFCovars from a df.
 
@@ -2594,9 +2708,11 @@ class BalanceDFCovars(BalanceDF):
         This method is useful when you need to create a BalanceDFCovars object directly from a DataFrame.
 
         Args:
-            self (BalanceDFCovars): Object
+            cls (type[BalanceDFCovars]): Class object.
             df (pd.DataFrame): A df.
             weights (Optional[pd.Series], optional): _description_. Defaults to None.
+            formula (str | list[str] | None, optional): Optional formula to set on
+                the returned ``BalanceDFCovars`` object.
 
         Returns:
             BalanceDFCovars: Object.
@@ -2618,7 +2734,7 @@ class BalanceDFCovars(BalanceDF):
         if weights is not None:
             concat_list.append(weights)
         df = pd.concat(concat_list, axis=1)
-        return Sample.from_frame(df, id_column="id").covars()
+        return Sample.from_frame(df, id_column="id").covars(formula=formula)
 
 
 class BalanceDFWeights(BalanceDF):
