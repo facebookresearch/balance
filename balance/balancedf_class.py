@@ -1289,10 +1289,14 @@ class BalanceDF:
         (with NA indicators), and then passes the df and weights from the two
         objects into :func:`weighted_comparisons_stats.kld`.
 
-        If either BalanceDF indicates that formula-based model-matrix behavior
-        should be used (currently :class:`BalanceDFCovars` with a stored
-        formula), this method compares the corresponding model matrices instead
-        of raw covariates.
+        If either BalanceDF provides a formula for KLD comparisons (currently
+        :class:`BalanceDFCovars` with a stored formula), this method builds a
+        *shared* model matrix from the combined sample+target data using that
+        single effective formula and compares those aligned matrices instead of
+        raw covariates.
+
+        If both objects provide formulas and they differ, a ``ValueError`` is
+        raised to prevent comparing mismatched design matrices.
 
         Args:
             sample_BalanceDF (BalanceDF): Object
@@ -1305,10 +1309,48 @@ class BalanceDF:
         BalanceDF._check_if_not_BalanceDF(sample_BalanceDF, "sample_BalanceDF")
         BalanceDF._check_if_not_BalanceDF(target_BalanceDF, "target_BalanceDF")
 
-        use_model_matrix = (
-            sample_BalanceDF._uses_formula_model_matrix()
-            or target_BalanceDF._uses_formula_model_matrix()
+        sample_formula = sample_BalanceDF._kld_formula()
+        target_formula = target_BalanceDF._kld_formula()
+
+        if sample_formula is not None and target_formula is not None:
+            if sample_formula != target_formula:
+                raise ValueError(
+                    "KLD formula mismatch between sample and target. "
+                    f"Got sample formula {sample_formula!r} and target formula {target_formula!r}. "
+                    "Use a single shared formula for both."
+                )
+
+        effective_formula = (
+            sample_formula if sample_formula is not None else target_formula
         )
+        use_model_matrix = effective_formula is not None
+
+        if use_model_matrix:
+            mm = balance_util.model_matrix(
+                sample_BalanceDF.df,
+                target_BalanceDF.df,
+                add_na=True,
+                return_type="two",
+                formula=effective_formula,
+            )
+            sample_weights = (
+                sample_BalanceDF._weights.values
+                if sample_BalanceDF._weights is not None
+                else None
+            )
+            target_weights = (
+                target_BalanceDF._weights.values
+                if target_BalanceDF._weights is not None
+                else None
+            )
+            return weighted_comparisons_stats.kld(
+                _assert_type(mm["sample"], pd.DataFrame),
+                _assert_type(mm["target"], pd.DataFrame),
+                sample_weights,
+                target_weights,
+                aggregate_by_main_covar=aggregate_by_main_covar,
+            )
+
         return BalanceDF._apply_comparison_stat_to_BalanceDF(
             weighted_comparisons_stats.kld,
             sample_BalanceDF,
@@ -1320,6 +1362,10 @@ class BalanceDF:
     def _uses_formula_model_matrix(self: "BalanceDF") -> bool:
         """Whether this BalanceDF should force model-matrix comparisons for KLD."""
         return False
+
+    def _kld_formula(self: "BalanceDF") -> str | list[str] | None:
+        """Formula to use for KLD comparison matrices, if applicable."""
+        return None
 
     @staticmethod
     def _emd_BalanceDF(
@@ -2632,6 +2678,10 @@ class BalanceDFCovars(BalanceDF):
     def _uses_formula_model_matrix(self: "BalanceDFCovars") -> bool:
         """KLD should use model_matrix when a covariate formula is set."""
         return self._formula is not None
+
+    def _kld_formula(self: "BalanceDFCovars") -> str | list[str] | None:
+        """Formula to use for KLD when comparing covariates."""
+        return self._formula
 
     def from_frame(
         self: "BalanceDFCovars",
