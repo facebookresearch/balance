@@ -1627,6 +1627,52 @@ class TestBalanceDF_asmd(BalanceTestCase):
                 target.covars(formula="age_group * gender"),
             )
 
+    def test_BalanceDF_kld_with_whitespace_equivalent_formulas(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "age_group": ("young", "young", "old", "old"),
+                    "gender": ("m", "f", "m", "f"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (5, 6, 7, 8),
+                    "age_group": ("young", "old", "old", "old"),
+                    "gender": ("m", "f", "f", "f"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+
+        output = BalanceDF._kld_BalanceDF(
+            sample.covars(formula="age_group*gender"),
+            target.covars(formula="age_group * gender"),
+        )
+
+        mm = model_matrix(
+            sample.covars().df,
+            target.covars().df,
+            add_na=True,
+            return_type="two",
+            formula="age_group * gender",
+        )
+        sample_mm = mm["sample"]
+        target_mm = mm["target"]
+        assert isinstance(sample_mm, pd.DataFrame)
+        assert isinstance(target_mm, pd.DataFrame)
+        expected = weighted_comparisons_stats.kld(sample_mm, target_mm)
+
+        self.assertEqual(output.round(6), expected.round(6))
+
     def _assert_categorical_stat(
         self,
         stat_method_name: str,

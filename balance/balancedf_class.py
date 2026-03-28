@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any, Callable, Dict, Literal, Tuple
 
 import numpy as np
@@ -1313,7 +1314,13 @@ class BalanceDF:
         target_formula = target_BalanceDF._kld_formula()
 
         if sample_formula is not None and target_formula is not None:
-            if sample_formula != target_formula:
+            normalized_sample_formula = BalanceDF._normalize_formula_for_comparison(
+                sample_formula
+            )
+            normalized_target_formula = BalanceDF._normalize_formula_for_comparison(
+                target_formula
+            )
+            if normalized_sample_formula != normalized_target_formula:
                 raise ValueError(
                     "KLD formula mismatch between sample and target. "
                     f"Got sample formula {sample_formula!r} and target formula {target_formula!r}. "
@@ -1356,7 +1363,7 @@ class BalanceDF:
             sample_BalanceDF,
             target_BalanceDF,
             aggregate_by_main_covar,
-            use_model_matrix=use_model_matrix,
+            use_model_matrix=False,
         )
 
     def _uses_formula_model_matrix(self: "BalanceDF") -> bool:
@@ -1366,6 +1373,19 @@ class BalanceDF:
     def _kld_formula(self: "BalanceDF") -> str | list[str] | None:
         """Formula to use for KLD comparison matrices, if applicable."""
         return None
+
+    @staticmethod
+    def _normalize_formula_for_comparison(
+        formula: str | list[str],
+    ) -> str | tuple[str, ...]:
+        """Normalize formulas for robust equality checks.
+
+        Insignificant whitespace is removed so equivalent formulas such as
+        ``\"a*b\"`` and ``\"a * b\"`` compare equal.
+        """
+        if isinstance(formula, str):
+            return re.sub(r"\s+", "", formula)
+        return tuple(re.sub(r"\s+", "", f) for f in formula)
 
     @staticmethod
     def _emd_BalanceDF(
