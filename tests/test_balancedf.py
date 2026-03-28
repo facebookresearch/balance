@@ -1444,6 +1444,106 @@ class TestBalanceDF_asmd(BalanceTestCase):
 
         self.assertEqual(output.round(6), expected)
 
+    def test_BalanceDF_kld_with_covars_formula(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "age_group": ("young", "young", "old", "old"),
+                    "gender": ("m", "f", "m", "f"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (5, 6, 7, 8),
+                    "age_group": ("young", "old", "old", "old"),
+                    "gender": ("m", "f", "f", "f"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+
+        sample_with_target = sample.set_target(target)
+        output = sample_with_target.covars(formula="age_group * gender").kld(
+            on_linked_samples=False
+        )
+
+        expected = weighted_comparisons_stats.kld(
+            sample_with_target.covars(formula="age_group * gender").model_matrix(),
+            target.covars(formula="age_group * gender").model_matrix(),
+        )
+        expected = pd.DataFrame([expected], index=("covars",))
+        expected.index.name = output.index.name
+
+        self.assertEqual(output.round(6), expected.round(6))
+
+    def test_BalanceDF_kld_with_covars_formula_on_linked_samples(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "age_group": ("young", "young", "old", "old"),
+                    "gender": ("m", "f", "m", "f"),
+                    "w": (1.0, 2.0, 1.0, 1.0),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (5, 6, 7, 8),
+                    "age_group": ("young", "old", "old", "old"),
+                    "gender": ("m", "f", "f", "f"),
+                    "w": (1, 1, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+        adjusted = sample.set_target(target).adjust(method="null")
+        adjusted.set_weights(pd.Series([1.0, 1.0, 1.0, 1.0], index=adjusted.df.index))
+
+        covars = adjusted.covars(formula="age_group * gender")
+        output = covars.kld(on_linked_samples=True)
+
+        links = covars._BalanceDF_child_from_linked_samples()
+        self.assertTrue(all(v._uses_formula_model_matrix() for v in links.values()))
+
+        self_mm, self_w = links["self"]._get_df_and_weights(use_model_matrix=True)
+        target_mm, target_w = links["target"]._get_df_and_weights(use_model_matrix=True)
+        unadj_mm, unadj_w = links["unadjusted"]._get_df_and_weights(
+            use_model_matrix=True
+        )
+
+        expected_self = weighted_comparisons_stats.kld(
+            self_mm,
+            target_mm,
+            self_w,
+            target_w,
+        )
+        expected_unadj = weighted_comparisons_stats.kld(
+            unadj_mm,
+            target_mm,
+            unadj_w,
+            target_w,
+        )
+        expected = pd.DataFrame(
+            [expected_self, expected_unadj, expected_unadj - expected_self],
+            index=pd.Index(["self", "unadjusted", "unadjusted - self"]),
+        )
+        expected.index.name = output.index.name
+
+        self.assertEqual(output.round(6), expected.round(6))
+
     def _assert_categorical_stat(
         self,
         stat_method_name: str,

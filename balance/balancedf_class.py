@@ -285,13 +285,22 @@ class BalanceDF:
             | "BalanceDFOutcomes"
             | None,
         ] = {"self": self}
+        linked_child_kwargs = self._linked_child_kwargs()
         d.update(
             {
-                k: getattr(v, BalanceDF_child_method)()
+                k: getattr(v, BalanceDF_child_method)(**linked_child_kwargs)
                 for k, v in self._sample._links.items()
             }
         )
         return d
+
+    def _linked_child_kwargs(self: "BalanceDF") -> dict[str, Any]:
+        """Keyword arguments used when creating linked BalanceDF children.
+
+        Subclasses can override this to preserve construction options across linked
+        samples (for example, formula settings for covariates).
+        """
+        return {}
 
     def _call_on_linked(
         self: "BalanceDF",
@@ -1287,13 +1296,21 @@ class BalanceDF:
         Returns:
             pd.Series: See :func:`weighted_comparisons_stats.kld`.
         """
+        use_model_matrix = (
+            sample_BalanceDF._uses_formula_model_matrix()
+            or target_BalanceDF._uses_formula_model_matrix()
+        )
         return BalanceDF._apply_comparison_stat_to_BalanceDF(
             weighted_comparisons_stats.kld,
             sample_BalanceDF,
             target_BalanceDF,
             aggregate_by_main_covar,
-            use_model_matrix=False,
+            use_model_matrix=use_model_matrix,
         )
+
+    def _uses_formula_model_matrix(self: "BalanceDF") -> bool:
+        """Whether this BalanceDF should force model-matrix comparisons for KLD."""
+        return False
 
     @staticmethod
     def _emd_BalanceDF(
@@ -2570,7 +2587,11 @@ class BalanceDFOutcomes(BalanceDF):
 
 
 class BalanceDFCovars(BalanceDF):
-    def __init__(self: "BalanceDFCovars", sample: Sample) -> None:
+    def __init__(
+        self: "BalanceDFCovars",
+        sample: Sample,
+        formula: str | list[str] | None = None,
+    ) -> None:
         """A factory function to create BalanceDFCovars
 
         This is used through :func:`Sample.covars`.
@@ -2580,8 +2601,28 @@ class BalanceDFCovars(BalanceDF):
         Args:
             self (BalanceDFCovars): Object that is initiated.
             sample (Sample): Object
+            formula (str | list[str] | None, optional): Optional formula to use
+                as the default when constructing model matrices for this object.
         """
         super().__init__(sample._covar_columns(), sample, name="covars")
+        self._formula = formula
+
+    def model_matrix(
+        self: "BalanceDFCovars", formula: str | list[str] | None = None
+    ) -> pd.DataFrame:
+        """Return a model matrix, defaulting to the formula provided at construction."""
+        effective_formula = self._formula if formula is None else formula
+        return super().model_matrix(formula=effective_formula)
+
+    def _linked_child_kwargs(self: "BalanceDFCovars") -> dict[str, Any]:
+        """Propagate formula choice to linked covariate views."""
+        if self._formula is None:
+            return {}
+        return {"formula": self._formula}
+
+    def _uses_formula_model_matrix(self: "BalanceDFCovars") -> bool:
+        """KLD should use model_matrix when a covariate formula is set."""
+        return self._formula is not None
 
     def from_frame(
         self: "BalanceDFCovars",
@@ -2618,7 +2659,7 @@ class BalanceDFCovars(BalanceDF):
         if weights is not None:
             concat_list.append(weights)
         df = pd.concat(concat_list, axis=1)
-        return Sample.from_frame(df, id_column="id").covars()
+        return Sample.from_frame(df, id_column="id").covars(formula=self._formula)
 
 
 class BalanceDFWeights(BalanceDF):

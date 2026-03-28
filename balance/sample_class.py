@@ -766,7 +766,7 @@ class Sample:
         return BalanceDFWeights(self)
 
     def covars(
-        self: "Sample",
+        self: "Sample", formula: str | list[str] | None = None
     ) -> (
         Any
     ):  # -> "Optional[Type[BalanceDFCovars]]" (not imported due to circular dependency)
@@ -776,6 +776,12 @@ class Sample:
 
         Args:
             self (Sample): Sample object.
+            formula (str | list[str] | None, optional): Optional formula string
+                (or list of formulas) used when creating model matrices from the
+                returned ``BalanceDFCovars`` object. If provided, methods that
+                rely on model matrices (or distribution-comparison methods that
+                opt into model-matrix behavior for formula-based covariates) will
+                use this formula. Defaults to None.
 
         Returns:
             BalanceDFCovars
@@ -805,7 +811,7 @@ class Sample:
         # NOTE: must import here so to avoid circular dependency
         from balance.balancedf_class import BalanceDFCovars
 
-        return BalanceDFCovars(self)
+        return BalanceDFCovars(self, formula=formula)
 
     def ignored_columns(self: "Sample") -> pd.DataFrame | None:
         """Return columns marked as ignored on the sample.
