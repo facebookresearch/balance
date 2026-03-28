@@ -816,7 +816,7 @@
 <div class="viewcode-block" id="Sample.covars">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.covars">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">covars</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Sample&quot;</span><span class="p">,</span> <span class="n">formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span>
         <span class="n">Any</span>
     <span class="p">):</span>  <span class="c1"># -&gt; &quot;Optional[Type[BalanceDFCovars]]&quot; (not imported due to circular dependency)</span>
@@ -826,6 +826,12 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (Sample): Sample object.</span>
+<span class="sd">            formula (str | list[str] | None, optional): Optional formula string</span>
+<span class="sd">                (or list of formulas) used when creating model matrices from the</span>
+<span class="sd">                returned ``BalanceDFCovars`` object. If provided, methods that</span>
+<span class="sd">                rely on model matrices (or distribution-comparison methods that</span>
+<span class="sd">                opt into model-matrix behavior for formula-based covariates) will</span>
+<span class="sd">                use this formula. Defaults to None.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            BalanceDFCovars</span>
@@ -855,7 +861,7 @@
         <span class="c1"># NOTE: must import here so to avoid circular dependency</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">balance.balancedf_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceDFCovars</span>
 
-        <span class="k">return</span> <span class="n">BalanceDFCovars</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">BalanceDFCovars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">formula</span><span class="o">=</span><span class="n">formula</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Sample.ignored_columns">

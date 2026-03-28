@@ -45,6 +45,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -324,13 +325,22 @@
             <span class="o">|</span> <span class="s2">&quot;BalanceDFOutcomes&quot;</span>
             <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
         <span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;self&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="p">}</span>
+        <span class="n">linked_child_kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_linked_child_kwargs</span><span class="p">()</span>
         <span class="n">d</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
             <span class="p">{</span>
-                <span class="n">k</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">BalanceDF_child_method</span><span class="p">)()</span>
+                <span class="n">k</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">BalanceDF_child_method</span><span class="p">)(</span><span class="o">**</span><span class="n">linked_child_kwargs</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="o">.</span><span class="n">_links</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
             <span class="p">}</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">d</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_linked_child_kwargs</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Keyword arguments used when creating linked BalanceDF children.</span>
+
+<span class="sd">        Subclasses can override this to preserve construction options across linked</span>
+<span class="sd">        samples (for example, formula settings for covariates).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_call_on_linked</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
@@ -1345,8 +1355,18 @@
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Run KLD on two BalanceDF objects.</span>
 
-<span class="sd">        Prepares the BalanceDF objects by using their raw df (with NA indicators), and</span>
-<span class="sd">        then passes the df and weights from the two objects into :func:`weighted_comparisons_stats.kld`.</span>
+<span class="sd">        By default, this prepares the BalanceDF objects by using their raw df</span>
+<span class="sd">        (with NA indicators), and then passes the df and weights from the two</span>
+<span class="sd">        objects into :func:`weighted_comparisons_stats.kld`.</span>
+
+<span class="sd">        If either BalanceDF provides a formula for KLD comparisons (currently</span>
+<span class="sd">        :class:`BalanceDFCovars` with a stored formula), this method builds a</span>
+<span class="sd">        *shared* model matrix from the combined sample+target data using that</span>
+<span class="sd">        single effective formula and compares those aligned matrices instead of</span>
+<span class="sd">        raw covariates.</span>
+
+<span class="sd">        If both objects provide formulas and they differ, a ``ValueError`` is</span>
+<span class="sd">        raised to prevent comparing mismatched design matrices.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            sample_BalanceDF (BalanceDF): Object</span>
@@ -1356,6 +1376,57 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            pd.Series: See :func:`weighted_comparisons_stats.kld`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_check_if_not_BalanceDF</span><span class="p">(</span><span class="n">sample_BalanceDF</span><span class="p">,</span> <span class="s2">&quot;sample_BalanceDF&quot;</span><span class="p">)</span>
+        <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_check_if_not_BalanceDF</span><span class="p">(</span><span class="n">target_BalanceDF</span><span class="p">,</span> <span class="s2">&quot;target_BalanceDF&quot;</span><span class="p">)</span>
+
+        <span class="n">sample_formula</span> <span class="o">=</span> <span class="n">sample_BalanceDF</span><span class="o">.</span><span class="n">_kld_formula</span><span class="p">()</span>
+        <span class="n">target_formula</span> <span class="o">=</span> <span class="n">target_BalanceDF</span><span class="o">.</span><span class="n">_kld_formula</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">sample_formula</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">target_formula</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">normalized_sample_formula</span> <span class="o">=</span> <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_normalize_formula_for_comparison</span><span class="p">(</span>
+                <span class="n">sample_formula</span>
+            <span class="p">)</span>
+            <span class="n">normalized_target_formula</span> <span class="o">=</span> <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_normalize_formula_for_comparison</span><span class="p">(</span>
+                <span class="n">target_formula</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">normalized_sample_formula</span> <span class="o">!=</span> <span class="n">normalized_target_formula</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;KLD formula mismatch between sample and target. &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Got sample formula </span><span class="si">{</span><span class="n">sample_formula</span><span class="si">!r}</span><span class="s2"> and target formula </span><span class="si">{</span><span class="n">target_formula</span><span class="si">!r}</span><span class="s2">. &quot;</span>
+                    <span class="s2">&quot;Use a single shared formula for both.&quot;</span>
+                <span class="p">)</span>
+
+        <span class="n">effective_formula</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">sample_formula</span> <span class="k">if</span> <span class="n">sample_formula</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">target_formula</span>
+        <span class="p">)</span>
+        <span class="n">use_model_matrix</span> <span class="o">=</span> <span class="n">effective_formula</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">use_model_matrix</span><span class="p">:</span>
+            <span class="n">mm</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">model_matrix</span><span class="p">(</span>
+                <span class="n">sample_BalanceDF</span><span class="o">.</span><span class="n">df</span><span class="p">,</span>
+                <span class="n">target_BalanceDF</span><span class="o">.</span><span class="n">df</span><span class="p">,</span>
+                <span class="n">add_na</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;two&quot;</span><span class="p">,</span>
+                <span class="n">formula</span><span class="o">=</span><span class="n">effective_formula</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">sample_weights</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">sample_BalanceDF</span><span class="o">.</span><span class="n">_weights</span><span class="o">.</span><span class="n">values</span>
+                <span class="k">if</span> <span class="n">sample_BalanceDF</span><span class="o">.</span><span class="n">_weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="k">else</span> <span class="kc">None</span>
+            <span class="p">)</span>
+            <span class="n">target_weights</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">target_BalanceDF</span><span class="o">.</span><span class="n">_weights</span><span class="o">.</span><span class="n">values</span>
+                <span class="k">if</span> <span class="n">target_BalanceDF</span><span class="o">.</span><span class="n">_weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="k">else</span> <span class="kc">None</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">weighted_comparisons_stats</span><span class="o">.</span><span class="n">kld</span><span class="p">(</span>
+                <span class="n">_assert_type</span><span class="p">(</span><span class="n">mm</span><span class="p">[</span><span class="s2">&quot;sample&quot;</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">),</span>
+                <span class="n">_assert_type</span><span class="p">(</span><span class="n">mm</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">),</span>
+                <span class="n">sample_weights</span><span class="p">,</span>
+                <span class="n">target_weights</span><span class="p">,</span>
+                <span class="n">aggregate_by_main_covar</span><span class="o">=</span><span class="n">aggregate_by_main_covar</span><span class="p">,</span>
+            <span class="p">)</span>
+
         <span class="k">return</span> <span class="n">BalanceDF</span><span class="o">.</span><span class="n">_apply_comparison_stat_to_BalanceDF</span><span class="p">(</span>
             <span class="n">weighted_comparisons_stats</span><span class="o">.</span><span class="n">kld</span><span class="p">,</span>
             <span class="n">sample_BalanceDF</span><span class="p">,</span>
@@ -1363,6 +1434,23 @@
             <span class="n">aggregate_by_main_covar</span><span class="p">,</span>
             <span class="n">use_model_matrix</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_kld_formula</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Formula to use for KLD comparison matrices, if applicable.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_normalize_formula_for_comparison</span><span class="p">(</span>
+        <span class="n">formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Normalize formulas for robust equality checks.</span>
+
+<span class="sd">        Insignificant whitespace is removed so equivalent formulas such as</span>
+<span class="sd">        ``\&quot;a*b\&quot;`` and ``\&quot;a * b\&quot;`` compare equal.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">formula</span> <span class="o">=</span> <span class="p">[</span><span class="n">formula</span><span class="p">]</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\s+&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">formula</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_emd_BalanceDF</span><span class="p">(</span>
@@ -2684,7 +2772,11 @@
 <div class="viewcode-block" id="BalanceDFCovars">
 <a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDFCovars">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BalanceDFCovars</span><span class="p">(</span><span class="n">BalanceDF</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFCovars&quot;</span><span class="p">,</span> <span class="n">sample</span><span class="p">:</span> <span class="n">Sample</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFCovars&quot;</span><span class="p">,</span>
+        <span class="n">sample</span><span class="p">:</span> <span class="n">Sample</span><span class="p">,</span>
+        <span class="n">formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A factory function to create BalanceDFCovars</span>
 
 <span class="sd">        This is used through :func:`Sample.covars`.</span>
@@ -2694,15 +2786,40 @@
 <span class="sd">        Args:</span>
 <span class="sd">            self (BalanceDFCovars): Object that is initiated.</span>
 <span class="sd">            sample (Sample): Object</span>
+<span class="sd">            formula (str | list[str] | None, optional): Optional formula to use</span>
+<span class="sd">                as the default when constructing model matrices for this object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">_covar_columns</span><span class="p">(),</span> <span class="n">sample</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;covars&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">formula</span>
+
+<div class="viewcode-block" id="BalanceDFCovars.model_matrix">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDFCovars.model_matrix">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">model_matrix</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFCovars&quot;</span><span class="p">,</span> <span class="n">formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a model matrix, defaulting to the formula provided at construction.&quot;&quot;&quot;</span>
+        <span class="n">effective_formula</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_formula</span> <span class="k">if</span> <span class="n">formula</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">formula</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">model_matrix</span><span class="p">(</span><span class="n">formula</span><span class="o">=</span><span class="n">effective_formula</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_linked_child_kwargs</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFCovars&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Propagate formula choice to linked covariate views.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_formula</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;formula&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_formula</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_kld_formula</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFCovars&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Formula to use for KLD when comparing covariates.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_formula</span>
 
 <div class="viewcode-block" id="BalanceDFCovars.from_frame">
 <a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDFCovars.from_frame">[docs]</a>
+    <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_frame</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFCovars&quot;</span><span class="p">,</span>
+        <span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="s2">&quot;BalanceDFCovars&quot;</span><span class="p">],</span>
         <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
         <span class="n">weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;BalanceDFCovars&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A factory function to create a BalanceDFCovars from a df.</span>
 
@@ -2710,9 +2827,11 @@
 <span class="sd">        This method is useful when you need to create a BalanceDFCovars object directly from a DataFrame.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            self (BalanceDFCovars): Object</span>
+<span class="sd">            cls (type[BalanceDFCovars]): Class object.</span>
 <span class="sd">            df (pd.DataFrame): A df.</span>
 <span class="sd">            weights (Optional[pd.Series], optional): _description_. Defaults to None.</span>
+<span class="sd">            formula (str | list[str] | None, optional): Optional formula to set on</span>
+<span class="sd">                the returned ``BalanceDFCovars`` object.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            BalanceDFCovars: Object.</span>
@@ -2734,7 +2853,7 @@
         <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">concat_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">concat_list</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span></div>
+        <span class="k">return</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">covars</span><span class="p">(</span><span class="n">formula</span><span class="o">=</span><span class="n">formula</span><span class="p">)</span></div>
 </div>
 
 
