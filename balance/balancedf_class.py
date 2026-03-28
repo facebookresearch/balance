@@ -1377,14 +1377,14 @@ class BalanceDF:
     @staticmethod
     def _normalize_formula_for_comparison(
         formula: str | list[str],
-    ) -> str | tuple[str, ...]:
+    ) -> tuple[str, ...]:
         """Normalize formulas for robust equality checks.
 
         Insignificant whitespace is removed so equivalent formulas such as
         ``\"a*b\"`` and ``\"a * b\"`` compare equal.
         """
         if isinstance(formula, str):
-            return re.sub(r"\s+", "", formula)
+            formula = [formula]
         return tuple(re.sub(r"\s+", "", f) for f in formula)
 
     @staticmethod
