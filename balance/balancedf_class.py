@@ -1285,8 +1285,14 @@ class BalanceDF:
     ) -> pd.Series:
         """Run KLD on two BalanceDF objects.
 
-        Prepares the BalanceDF objects by using their raw df (with NA indicators), and
-        then passes the df and weights from the two objects into :func:`weighted_comparisons_stats.kld`.
+        By default, this prepares the BalanceDF objects by using their raw df
+        (with NA indicators), and then passes the df and weights from the two
+        objects into :func:`weighted_comparisons_stats.kld`.
+
+        If either BalanceDF indicates that formula-based model-matrix behavior
+        should be used (currently :class:`BalanceDFCovars` with a stored
+        formula), this method compares the corresponding model matrices instead
+        of raw covariates.
 
         Args:
             sample_BalanceDF (BalanceDF): Object
@@ -2608,7 +2614,7 @@ class BalanceDFCovars(BalanceDF):
                 as the default when constructing model matrices for this object.
         """
         super().__init__(sample._covar_columns(), sample, name="covars")
-        self._formula = formula
+        self._formula: str | list[str] | None = formula
 
     def model_matrix(
         self: "BalanceDFCovars", formula: str | list[str] | None = None
