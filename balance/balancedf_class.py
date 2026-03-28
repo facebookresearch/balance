@@ -1366,10 +1366,6 @@ class BalanceDF:
             use_model_matrix=False,
         )
 
-    def _uses_formula_model_matrix(self: "BalanceDF") -> bool:
-        """Whether this BalanceDF should force model-matrix comparisons for KLD."""
-        return False
-
     def _kld_formula(self: "BalanceDF") -> str | list[str] | None:
         """Formula to use for KLD comparison matrices, if applicable."""
         return None
@@ -2695,18 +2691,16 @@ class BalanceDFCovars(BalanceDF):
             return {}
         return {"formula": self._formula}
 
-    def _uses_formula_model_matrix(self: "BalanceDFCovars") -> bool:
-        """KLD should use model_matrix when a covariate formula is set."""
-        return self._formula is not None
-
     def _kld_formula(self: "BalanceDFCovars") -> str | list[str] | None:
         """Formula to use for KLD when comparing covariates."""
         return self._formula
 
+    @classmethod
     def from_frame(
-        self: "BalanceDFCovars",
+        cls: type["BalanceDFCovars"],
         df: pd.DataFrame,
         weights: pd.Series | None = None,
+        formula: str | list[str] | None = None,
     ) -> "BalanceDFCovars":
         """A factory function to create a BalanceDFCovars from a df.
 
@@ -2714,9 +2708,11 @@ class BalanceDFCovars(BalanceDF):
         This method is useful when you need to create a BalanceDFCovars object directly from a DataFrame.
 
         Args:
-            self (BalanceDFCovars): Object
+            cls (type[BalanceDFCovars]): Class object.
             df (pd.DataFrame): A df.
             weights (Optional[pd.Series], optional): _description_. Defaults to None.
+            formula (str | list[str] | None, optional): Optional formula to set on
+                the returned ``BalanceDFCovars`` object.
 
         Returns:
             BalanceDFCovars: Object.
@@ -2738,7 +2734,7 @@ class BalanceDFCovars(BalanceDF):
         if weights is not None:
             concat_list.append(weights)
         df = pd.concat(concat_list, axis=1)
-        return Sample.from_frame(df, id_column="id").covars(formula=self._formula)
+        return Sample.from_frame(df, id_column="id").covars(formula=formula)
 
 
 class BalanceDFWeights(BalanceDF):
