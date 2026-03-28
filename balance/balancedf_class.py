@@ -1296,6 +1296,9 @@ class BalanceDF:
         Returns:
             pd.Series: See :func:`weighted_comparisons_stats.kld`.
         """
+        BalanceDF._check_if_not_BalanceDF(sample_BalanceDF, "sample_BalanceDF")
+        BalanceDF._check_if_not_BalanceDF(target_BalanceDF, "target_BalanceDF")
+
         use_model_matrix = (
             sample_BalanceDF._uses_formula_model_matrix()
             or target_BalanceDF._uses_formula_model_matrix()
