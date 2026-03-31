@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 
+from balance.balance_frame import BalanceFrame  # noqa
 from balance.balancedf_class import (  # noqa
     BalanceDFCovars,  # noqa
     BalanceDFOutcomes,  # noqa

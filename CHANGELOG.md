@@ -115,6 +115,20 @@
   - `SampleFrame` can now be passed directly to `BalanceDF`, `BalanceDFCovars`,
     `BalanceDFWeights`, and `BalanceDFOutcomes` constructors without any adapter.
 
+- **Added `BalanceFrame` — immutable adjustment orchestrator for survey weighting**
+  - New class in `balance_frame.py` that pairs a responder `SampleFrame` with a
+    target `SampleFrame` for survey/observational data reweighting.
+  - `__new__`-based constructor: `BalanceFrame(responders=..., target=...)` with
+    covariate overlap validation.
+  - `adjust(method="ipw")`: returns a NEW BalanceFrame (immutable pattern) with
+    adjusted weights. Supports string methods (`"ipw"`, `"cbps"`, `"rake"`,
+    `"poststratify"`, `"null"`) and custom callables.
+  - Properties: `responders`, `target`, `unadjusted`, `is_adjusted`.
+  - `model()`: returns the adjustment model dictionary.
+  - Records weight provenance metadata on the adjusted weight column.
+  - Default transformations applied when neither SampleFrame has custom transforms.
+  - Calls weighting functions directly with DataFrames (no Sample dependency).
+
 ## Code Quality & Refactoring
 
 - **Defined `BalanceDFSource` protocol and decoupled `BalanceDF` from `Sample`**
@@ -167,6 +181,16 @@
   - `test_balancedf_covars_with_sample_frame`,
     `test_balancedf_weights_with_sample_frame`,
     `test_balancedf_outcomes_with_sample_frame` — end-to-end BalanceDF construction
+
+- Added comprehensive tests in `test_balance_frame.py` (7 test classes, ~25 tests):
+  - `TestBalanceFrameConstruction` — basic construction, type errors, bare instance
+  - `TestBalanceFrameCovarOverlap` — zero overlap, partial overlap, full overlap
+  - `TestBalanceFrameDeepCopy` — deepcopy of unadjusted BalanceFrame
+  - `TestBalanceFrameRepr` — repr/str output
+  - `TestBalanceFrameCreateDirect` — _create() factory, property accessibility
+  - `TestBalanceFrameAdjust` — IPW adjustment, immutability, custom callable,
+    weight metadata, already-adjusted guard, method name storage, custom transforms,
+    invalid method, deepcopy of adjusted state
 
 - Added `TestBalanceDFSourceProtocol` class in `test_balancedf.py` (8 tests):
   - `test_sample_satisfies_protocol` — verifies `Sample` passes `isinstance` check
