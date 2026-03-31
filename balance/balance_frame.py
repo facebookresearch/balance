@@ -15,11 +15,14 @@ from __future__ import annotations
 
 import copy
 import logging
-from typing import Any, Callable, cast, Literal
+from typing import Any, Callable, cast, Literal, TYPE_CHECKING
 
 import pandas as pd
 from balance.adjustment import _find_adjustment_method
 from balance.sample_frame import SampleFrame
+
+if TYPE_CHECKING:
+    from balance.balancedf_class import BalanceDFSource
 
 # The set of string method names accepted by _find_adjustment_method.
 _AdjustmentMethodStr = Literal["cbps", "ipw", "null", "poststratify", "rake"]
@@ -467,6 +470,106 @@ class BalanceFrame:
             True
         """
         return self._adjustment_model
+
+    # --- BalanceDF integration ---
+
+    def _build_links_dict(self) -> dict[str, BalanceDFSource]:
+        """Build a ``_links`` dict matching Sample._links structure.
+
+        Creates a dict mapping link names to SampleFrame instances for the
+        target and (if adjusted) the unadjusted responders so that
+        ``BalanceDF._BalanceDF_child_from_linked_samples`` can walk the
+        links just as it does for the old ``Sample`` class.
+
+        Returns:
+            dict: Mapping of link names to BalanceDFSource instances.
+        """
+        links: dict[str, BalanceDFSource] = {}
+        if self._target is not None:
+            links["target"] = self._target
+        if self._unadjusted is not None:
+            links["unadjusted"] = self._unadjusted
+        return links
+
+    def covars(self) -> Any:
+        """Return a :class:`~balance.balancedf_class.BalanceDFCovars` for the responders.
+
+        The returned object carries linked target (and unadjusted, if
+        adjusted) views so that methods like ``.mean()`` and ``.asmd()``
+        automatically include comparisons across sources.
+
+        Returns:
+            BalanceDFCovars: Covariate view with linked sources.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
+            >>> bf = BalanceFrame(responders=resp, target=tgt)
+            >>> bf.covars().df.columns.tolist()
+            ['x']
+        """
+        from balance.balancedf_class import BalanceDFCovars
+
+        return BalanceDFCovars(self._responders, links=self._build_links_dict())
+
+    def weights(self) -> Any:
+        """Return a :class:`~balance.balancedf_class.BalanceDFWeights` for the responders.
+
+        The returned object carries linked target (and unadjusted, if
+        adjusted) views for comparative weight analysis.
+
+        Returns:
+            BalanceDFWeights: Weight view with linked sources.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 2.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
+            >>> bf = BalanceFrame(responders=resp, target=tgt)
+            >>> bf.weights().df.columns.tolist()
+            ['weight']
+        """
+        from balance.balancedf_class import BalanceDFWeights
+
+        return BalanceDFWeights(self._responders, links=self._build_links_dict())
+
+    def outcomes(self) -> Any | None:
+        """Return a :class:`~balance.balancedf_class.BalanceDFOutcomes`, or None.
+
+        Returns ``None`` if the responder SampleFrame has no outcome columns.
+
+        Returns:
+            BalanceDFOutcomes or None: Outcome view with linked sources,
+                or ``None`` if no outcomes are defined.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0],
+            ...                   "y": [1.0, 0.0], "weight": [1.0, 1.0]}),
+            ...     outcome_columns=["y"])
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
+            >>> bf = BalanceFrame(responders=resp, target=tgt)
+            >>> bf.outcomes().df.columns.tolist()
+            ['y']
+        """
+        if not self._responders.outcome_columns:
+            return None
+        from balance.balancedf_class import BalanceDFOutcomes
+
+        return BalanceDFOutcomes(self._responders, links=self._build_links_dict())
 
     def __repr__(self) -> str:
         status = "adjusted" if self.is_adjusted else "unadjusted"

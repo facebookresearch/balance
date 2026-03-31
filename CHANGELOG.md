@@ -128,6 +128,15 @@
   - Records weight provenance metadata on the adjusted weight column.
   - Default transformations applied when neither SampleFrame has custom transforms.
   - Calls weighting functions directly with DataFrames (no Sample dependency).
+  - `covars()` → `BalanceDFCovars`, `weights()` → `BalanceDFWeights`,
+    `outcomes()` → `BalanceDFOutcomes`: wire responder SampleFrame directly to
+    BalanceDF constructors via the BalanceDFSource protocol (no adapter needed).
+  - `_build_links_dict()`: creates linked sources dict for target and unadjusted
+    so that `.mean()`, `.asmd()`, `.summary()` etc. include comparisons across
+    sources.
+  - Added `covars()`, `weights()`, `outcomes()` methods to `SampleFrame` so that
+    linked SampleFrames can produce BalanceDF views (required by the links
+    machinery in `_BalanceDF_child_from_linked_samples`).
 
 ## Code Quality & Refactoring
 
@@ -191,6 +200,13 @@
   - `TestBalanceFrameAdjust` — IPW adjustment, immutability, custom callable,
     weight metadata, already-adjusted guard, method name storage, custom transforms,
     invalid method, deepcopy of adjusted state
+  - `TestBalanceFrameCovarsWeightsOutcomes` — covars/weights/outcomes integration
+    (34 tests): type checks, linked sources, `.df`, `.names()`, `.mean()`,
+    `.std()`, `.var_of_mean()`, `.ci_of_mean()`, `.mean_with_ci()`, `.summary()`,
+    `.model_matrix()`, `.asmd()`, `.asmd_improvement()`, `.to_csv()`,
+    `.design_effect()`, `.trim()`, `.relative_response_rates()`,
+    `.target_response_rates()`, numerical equivalence with Sample API for both
+    covars and weights
 
 - Added `TestBalanceDFSourceProtocol` class in `test_balancedf.py` (8 tests):
   - `test_sample_satisfies_protocol` — verifies `Sample` passes `isinstance` check

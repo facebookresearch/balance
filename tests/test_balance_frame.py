@@ -506,3 +506,249 @@ class TestBalanceFrameSetTarget(BalanceTestCase):
         r = repr(bf)
         self.assertIn("no target", r)
         self.assertIn("3 responders", r)
+
+
+class TestBalanceFrameCovarsWeightsOutcomes(BalanceTestCase):
+    """Tests for BalanceFrame.covars(), .weights(), .outcomes() integration."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        target_df, sample_df = load_data()
+        assert target_df is not None and sample_df is not None
+        self.resp_sf = SampleFrame.from_frame(sample_df, outcome_columns=["happiness"])
+        self.tgt_sf = SampleFrame.from_frame(target_df, outcome_columns=["happiness"])
+        self.bf = BalanceFrame(responders=self.resp_sf, target=self.tgt_sf)
+
+    def test_covars_returns_balancedf_covars(self) -> None:
+        from balance.balancedf_class import BalanceDFCovars
+
+        result = self.bf.covars()
+        self.assertIsInstance(result, BalanceDFCovars)
+
+    def test_covars_df(self) -> None:
+        covars_df = self.bf.covars().df
+        self.assertIsInstance(covars_df, pd.DataFrame)
+        self.assertTrue(len(covars_df) > 0)
+
+    def test_covars_names(self) -> None:
+        names = self.bf.covars().names()
+        self.assertIsInstance(names, list)
+        self.assertTrue(len(names) > 0)
+
+    def test_covars_mean(self) -> None:
+        adjusted = self.bf.adjust(method="ipw")
+        mean_df = adjusted.covars().mean()
+        self.assertIsInstance(mean_df, pd.DataFrame)
+        self.assertEqual(mean_df.index.name, "source")
+        self.assertIn("self", mean_df.index)
+        self.assertIn("target", mean_df.index)
+        self.assertIn("unadjusted", mean_df.index)
+
+    def test_covars_std(self) -> None:
+        adjusted = self.bf.adjust(method="ipw")
+        std_df = adjusted.covars().std()
+        self.assertIsInstance(std_df, pd.DataFrame)
+        self.assertIn("self", std_df.index)
+
+    def test_covars_var_of_mean(self) -> None:
+        adjusted = self.bf.adjust(method="ipw")
+        vom = adjusted.covars().var_of_mean()
+        self.assertIsInstance(vom, pd.DataFrame)
+
+    def test_covars_ci_of_mean(self) -> None:
+        adjusted = self.bf.adjust(method="ipw")
+        ci = adjusted.covars().ci_of_mean()
+        self.assertIsInstance(ci, pd.DataFrame)
+
+    def test_covars_mean_with_ci(self) -> None:
+        adjusted = self.bf.adjust(method="ipw")
+        mwci = adjusted.covars().mean_with_ci()
+        self.assertIsInstance(mwci, pd.DataFrame)
+
+    def test_covars_summary(self) -> None:
+        adjusted = self.bf.adjust(method="ipw")
+        summary = adjusted.covars().summary()
+        self.assertIsInstance(summary, pd.DataFrame)
+
+    def test_covars_model_matrix(self) -> None:
+        mm = self.bf.covars().model_matrix()
+        self.assertIsInstance(mm, pd.DataFrame)
+        self.assertTrue(len(mm) > 0)
+
+    def test_covars_asmd(self) -> None:
+        adjusted = self.bf.adjust(method="ipw")
+        asmd_df = adjusted.covars().asmd()
+        self.assertIsInstance(asmd_df, pd.DataFrame)
+
+    def test_covars_asmd_improvement(self) -> None:
+        adjusted = self.bf.adjust(method="ipw")
+        improvement = adjusted.covars().asmd_improvement()
+        self.assertIsInstance(improvement, (float, np.floating))
+
+    def test_covars_links_unadjusted(self) -> None:
+        adjusted = self.bf.adjust(method="ipw")
+        linked = adjusted.covars()._BalanceDF_child_from_linked_samples()
+        self.assertIn("self", linked)
+        self.assertIn("target", linked)
+        self.assertIn("unadjusted", linked)
+        self.assertEqual(len(linked), 3)
+
+    def test_covars_links_no_unadjusted(self) -> None:
+        linked = self.bf.covars()._BalanceDF_child_from_linked_samples()
+        self.assertIn("self", linked)
+        self.assertIn("target", linked)
+        self.assertNotIn("unadjusted", linked)
+        self.assertEqual(len(linked), 2)
+
+    def test_covars_to_csv(self) -> None:
+        csv_str = self.bf.covars().to_csv()
+        self.assertIsInstance(csv_str, str)
+        self.assertTrue(len(csv_str) > 0)
+
+    def test_weights_returns_balancedf_weights(self) -> None:
+        from balance.balancedf_class import BalanceDFWeights
+
+        result = self.bf.weights()
+        self.assertIsInstance(result, BalanceDFWeights)
+
+    def test_weights_df(self) -> None:
+        w_df = self.bf.weights().df
+        self.assertIsInstance(w_df, pd.DataFrame)
+        self.assertTrue(len(w_df) > 0)
+
+    def test_weights_summary(self) -> None:
+        adjusted = self.bf.adjust(method="ipw")
+        summary = adjusted.weights().summary()
+        self.assertIsInstance(summary, pd.DataFrame)
+
+    def test_weights_design_effect(self) -> None:
+        adjusted = self.bf.adjust(method="ipw")
+        deff = adjusted.weights().design_effect()
+        self.assertIsInstance(deff, float)
+        self.assertTrue(deff >= 1.0)
+
+    def test_weights_trim(self) -> None:
+        adjusted = self.bf.adjust(method="ipw")
+        weights_obj = adjusted.weights()
+        # trim() mutates in place and returns None
+        result = weights_obj.trim()
+        self.assertIsNone(result)
+
+    def test_outcomes_returns_balancedf_outcomes(self) -> None:
+        from balance.balancedf_class import BalanceDFOutcomes
+
+        result = self.bf.outcomes()
+        self.assertIsInstance(result, BalanceDFOutcomes)
+
+    def test_outcomes_none_when_no_outcomes(self) -> None:
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame(
+                {"id": [1, 2, 3], "x": [10.0, 20.0, 30.0], "weight": [1.0, 1.0, 1.0]}
+            )
+        )
+        tgt_sf = SampleFrame.from_frame(
+            pd.DataFrame(
+                {"id": [4, 5, 6], "x": [15.0, 25.0, 35.0], "weight": [1.0, 1.0, 1.0]}
+            )
+        )
+        bf = BalanceFrame(responders=resp_sf, target=tgt_sf)
+        self.assertIsNone(bf.outcomes())
+
+    def test_outcomes_df(self) -> None:
+        result = self.bf.outcomes()
+        self.assertIsNotNone(result)
+        assert result is not None
+        o_df = result.df
+        self.assertIsInstance(o_df, pd.DataFrame)
+        self.assertIn("happiness", o_df.columns)
+
+    def test_outcomes_summary(self) -> None:
+        adjusted = self.bf.adjust(method="ipw")
+        result = adjusted.outcomes()
+        self.assertIsNotNone(result)
+        assert result is not None
+        summary = result.summary()
+        self.assertIsInstance(summary, str)
+
+    def test_outcomes_relative_response_rates(self) -> None:
+        result = self.bf.outcomes()
+        self.assertIsNotNone(result)
+        assert result is not None
+        rrr = result.relative_response_rates()
+        self.assertIsInstance(rrr, pd.DataFrame)
+
+    def test_outcomes_target_response_rates(self) -> None:
+        adjusted = self.bf.adjust(method="ipw")
+        result = adjusted.outcomes()
+        self.assertIsNotNone(result)
+        assert result is not None
+        trr = result.target_response_rates()
+        self.assertIsInstance(trr, pd.DataFrame)
+
+    def test_numerical_equivalence_with_sample(self) -> None:
+        """CRITICAL: Verify BalanceFrame produces same results as Sample API."""
+        from balance.sample_class import Sample
+
+        target_df, sample_df = load_data()
+        assert target_df is not None and sample_df is not None
+
+        # --- Old Sample API ---
+        old_sample = Sample.from_frame(sample_df, outcome_columns=["happiness"])
+        old_target = Sample.from_frame(target_df, outcome_columns=["happiness"])
+        old_sample_with_target = old_sample.set_target(old_target)
+        old_adjusted = old_sample_with_target.adjust(method="ipw")
+        old_covars_mean = old_adjusted.covars().mean()
+        old_covars_asmd = old_adjusted.covars().asmd()
+
+        # --- New BalanceFrame API ---
+        new_resp = SampleFrame.from_frame(sample_df, outcome_columns=["happiness"])
+        new_tgt = SampleFrame.from_frame(target_df, outcome_columns=["happiness"])
+        new_bf = BalanceFrame(responders=new_resp, target=new_tgt)
+        new_adjusted = new_bf.adjust(method="ipw")
+        new_covars_mean = new_adjusted.covars().mean()
+        new_covars_asmd = new_adjusted.covars().asmd()
+
+        # Compare covars().mean()
+        self.assertIsInstance(old_covars_mean, pd.DataFrame)
+        self.assertIsInstance(new_covars_mean, pd.DataFrame)
+        old_mean_numeric = old_covars_mean.select_dtypes(include=[np.number])
+        new_mean_numeric = new_covars_mean.select_dtypes(include=[np.number])
+        self.assertEqual(
+            sorted(old_mean_numeric.columns.tolist()),
+            sorted(new_mean_numeric.columns.tolist()),
+        )
+
+        # Compare ASMD values
+        self.assertIsInstance(old_covars_asmd, pd.DataFrame)
+        self.assertIsInstance(new_covars_asmd, pd.DataFrame)
+        old_asmd_numeric = old_covars_asmd.select_dtypes(include=[np.number])
+        new_asmd_numeric = new_covars_asmd.select_dtypes(include=[np.number])
+        for col in old_asmd_numeric.columns:
+            if col in new_asmd_numeric.columns:
+                for old_val, new_val in zip(
+                    old_asmd_numeric[col].dropna(), new_asmd_numeric[col].dropna()
+                ):
+                    self.assertAlmostEqual(old_val, new_val, places=5)
+
+    def test_weights_equivalence_with_sample(self) -> None:
+        """Verify BalanceFrame weights analysis matches Sample API."""
+        from balance.sample_class import Sample
+
+        target_df, sample_df = load_data()
+        assert target_df is not None and sample_df is not None
+
+        # Old API
+        old_sample = Sample.from_frame(sample_df, outcome_columns=["happiness"])
+        old_target = Sample.from_frame(target_df, outcome_columns=["happiness"])
+        old_adjusted = old_sample.set_target(old_target).adjust(method="ipw")
+        old_deff = old_adjusted.weights().design_effect()
+
+        # New API
+        new_resp = SampleFrame.from_frame(sample_df, outcome_columns=["happiness"])
+        new_tgt = SampleFrame.from_frame(target_df, outcome_columns=["happiness"])
+        new_adjusted = BalanceFrame(responders=new_resp, target=new_tgt).adjust(
+            method="ipw"
+        )
+        new_deff = new_adjusted.weights().design_effect()
+
+        self.assertAlmostEqual(old_deff, new_deff, places=5)

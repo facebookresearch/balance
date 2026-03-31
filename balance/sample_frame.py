@@ -16,10 +16,14 @@ from __future__ import annotations
 
 import logging
 from copy import deepcopy
-from typing import Any, cast
+from typing import Any, cast, TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
+
+if TYPE_CHECKING:
+    from balance.balancedf_class import BalanceDFSource
+
 
 logger: logging.Logger = logging.getLogger(__package__)
 
@@ -75,7 +79,7 @@ class SampleFrame:
         )
 
     @property
-    def _links(self) -> dict[str, "SampleFrame"]:
+    def _links(self) -> dict[str, BalanceDFSource]:
         """Return an empty links dict (satisfies BalanceDFSource protocol).
 
         SampleFrame is a single-DataFrame container and does not manage
@@ -814,6 +818,78 @@ class SampleFrame:
                     f"DataFrame length ({len(self._df)})"
                 )
             self._df[self._active_weight_column] = weights.to_numpy()
+
+    # --- BalanceDF integration ---
+
+    def covars(self) -> Any:
+        """Return a :class:`~balance.balancedf_class.BalanceDFCovars` for this SampleFrame.
+
+        Creates a covariate analysis view backed by this SampleFrame,
+        inheriting any linked sources set via ``_links``.
+
+        Returns:
+            BalanceDFCovars: Covariate view backed by this SampleFrame.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> sf = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0],
+            ...                   "weight": [1.0, 1.0]}))
+            >>> sf.covars().df.columns.tolist()
+            ['x']
+        """
+        from balance.balancedf_class import BalanceDFCovars
+
+        return BalanceDFCovars(self)
+
+    def weights(self) -> Any:
+        """Return a :class:`~balance.balancedf_class.BalanceDFWeights` for this SampleFrame.
+
+        Creates a weight analysis view backed by this SampleFrame,
+        inheriting any linked sources set via ``_links``.
+
+        Returns:
+            BalanceDFWeights: Weight view backed by this SampleFrame.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> sf = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0],
+            ...                   "weight": [1.0, 2.0]}))
+            >>> sf.weights().df.columns.tolist()
+            ['weight']
+        """
+        from balance.balancedf_class import BalanceDFWeights
+
+        return BalanceDFWeights(self)
+
+    def outcomes(self) -> Any | None:
+        """Return a :class:`~balance.balancedf_class.BalanceDFOutcomes`, or None.
+
+        Returns ``None`` if this SampleFrame has no outcome columns.
+
+        Returns:
+            BalanceDFOutcomes or None: Outcome view backed by this SampleFrame,
+                or ``None`` if no outcomes are defined.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> sf = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0],
+            ...                   "y": [1.0, 0.0], "weight": [1.0, 1.0]}),
+            ...     outcome_columns=["y"])
+            >>> sf.outcomes().df.columns.tolist()
+            ['y']
+        """
+        if not self._column_roles["outcomes"]:
+            return None
+        # Deferred import to avoid circular dependency with balancedf_class
+        from balance.balancedf_class import BalanceDFOutcomes
+
+        return BalanceDFOutcomes(self)
 
     @property
     def df(self) -> pd.DataFrame:

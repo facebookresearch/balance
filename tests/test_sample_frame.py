@@ -973,14 +973,12 @@ class TestSampleFrameBalanceDFSourceProtocol(BalanceTestCase):
     def test_balancedf_covars_with_sample_frame(self) -> None:
         """BalanceDFCovars should work when constructed with a SampleFrame."""
         sf = self._make_sf()
-        # pyre-fixme[6]: SampleFrame satisfies BalanceDFSource structurally
         covars = BalanceDFCovars(sf)
         self.assertListEqual(list(covars.df.columns), ["x"])
 
     def test_balancedf_weights_with_sample_frame(self) -> None:
         """BalanceDFWeights should work when constructed with a SampleFrame."""
         sf = self._make_sf()
-        # pyre-fixme[6]: SampleFrame satisfies BalanceDFSource structurally
         weights = BalanceDFWeights(sf)
         deff = weights.design_effect()
         self.assertIsInstance(deff, float)
@@ -988,6 +986,5 @@ class TestSampleFrameBalanceDFSourceProtocol(BalanceTestCase):
     def test_balancedf_outcomes_with_sample_frame(self) -> None:
         """BalanceDFOutcomes should work when constructed with a SampleFrame."""
         sf = self._make_sf()
-        # pyre-fixme[6]: SampleFrame satisfies BalanceDFSource structurally
         outcomes = BalanceDFOutcomes(sf)
         self.assertIsNotNone(outcomes.df)
