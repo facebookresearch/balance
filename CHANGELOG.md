@@ -57,6 +57,36 @@
 - **`Sample.outcome_variance_ratio()` is deprecated** — use `sample.outcomes().outcome_variance_ratio()` instead.
   New method added to `BalanceDFOutcomes`. Will be removed in balance 0.19.0.
 
+## New Features
+
+- **Added `SampleFrame` — a DataFrame container with explicit column-role metadata**
+  - New class in `sample_frame.py` that holds a single DataFrame and tracks which
+    columns are covariates, weights, outcomes, predicted outcomes, and misc.
+  - Factory methods: `SampleFrame.from_frame()` (with auto-detection of id/weight
+    columns) and `SampleFrame.from_csv()`.
+  - DataFrame-access properties use `df_*` prefix convention: `df_covars`,
+    `df_weights`, `df_outcomes`, `df_misc`. All return copies for mutation safety.
+  - Column-role list properties: `covars_columns`, `weight_columns`,
+    `outcome_columns`, `predicted_outcome_columns`, `misc_columns` (all return
+    copies).
+  - Internal `_create()` factory with `_skip_copy` optimization for callers that
+    have already deep-copied.
+  - Comprehensive validation: null/negative/non-numeric weights, null IDs,
+    duplicate IDs, overlapping column roles.
+
+## Tests
+
+- Added comprehensive tests in `test_sample_frame.py` (7 test classes, ~45 tests):
+  - `TestSampleFrame` — basic creation, DataFrame properties, repr
+  - `TestSampleFrameMutableViewSafety` — mutation isolation for all properties
+  - `TestSampleFrameColumnRoleProperties` — column-role list properties with
+    copy-safety
+  - `TestSampleFrameFromFrame` — auto-detection, validation, equivalence with
+    `Sample.from_frame()`
+  - `TestSampleFrameFromCsv` — CSV roundtrip and kwargs forwarding
+  - `TestSampleFrameDunderMethods` — `__len__`, `__deepcopy__`
+  - `TestSampleFrameEdgeCases` — zero rows, empty weights, skip_copy isolation
+
 ## Code Quality & Refactoring
 
 - **Extracted `_build_summary()` and `_build_diagnostics()` into `summary_utils.py`**
