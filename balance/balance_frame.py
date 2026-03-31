@@ -17,9 +17,12 @@ import copy
 import logging
 from typing import Any, Callable, cast, Literal, TYPE_CHECKING
 
+import numpy as np
 import pandas as pd
 from balance.adjustment import _find_adjustment_method
 from balance.sample_frame import SampleFrame
+from balance.stats_and_plots import weights_stats
+from balance.summary_utils import _build_diagnostics, _build_summary
 
 if TYPE_CHECKING:
     from balance.balancedf_class import BalanceDFSource
@@ -570,6 +573,235 @@ class BalanceFrame:
         from balance.balancedf_class import BalanceDFOutcomes
 
         return BalanceDFOutcomes(self._responders, links=self._build_links_dict())
+
+    # --- Summary & diagnostics ---
+
+    def _design_effect_diagnostics(
+        self,
+    ) -> tuple[float | None, float | None, float | None]:
+        """Compute design effect, ESS, and ESSP from the responder weights.
+
+        Returns:
+            tuple: ``(design_effect, effective_sample_size,
+                effective_sample_proportion)``.  All ``None`` if the design
+                effect cannot be computed.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [0, 1], "weight": [1.0, 1.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [0, 1], "weight": [1.0, 1.0]}))
+            >>> bf = BalanceFrame(responders=resp, target=tgt)
+            >>> bf._design_effect_diagnostics()
+            (1.0, 2.0, 1.0)
+        """
+        n_rows = len(self._responders)
+        try:
+            de = weights_stats.design_effect(self._responders.df_weights.iloc[:, 0])
+        except (TypeError, ValueError, ZeroDivisionError) as exc:
+            logger.debug("Unable to compute design effect: %s", exc)
+            return None, None, None
+
+        if de is None or not np.isfinite(de):
+            return None, None, None
+
+        effective_sample_size = None
+        effective_sample_proportion = None
+        if n_rows and de != 0:
+            effective_sample_size = n_rows / de
+            effective_sample_proportion = effective_sample_size / n_rows
+
+        return float(de), effective_sample_size, effective_sample_proportion
+
+    def _quick_adjustment_details(
+        self,
+        de: float | None = None,
+        ess: float | None = None,
+        essp: float | None = None,
+    ) -> list[str]:
+        """Collect quick-to-compute adjustment diagnostics for display.
+
+        Args:
+            de: Pre-computed design effect, or ``None`` to compute lazily.
+            ess: Pre-computed effective sample size, or ``None`` to compute
+                lazily.
+            essp: Pre-computed effective sample proportion, or ``None`` to
+                compute lazily.
+
+        Returns:
+            list[str]: Human-readable lines describing adjustment method,
+                trimming configuration, and weight diagnostics.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [0, 1], "weight": [1.0, 1.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [0, 1], "weight": [1.0, 1.0]}))
+            >>> bf = BalanceFrame(responders=resp, target=tgt)
+            >>> adjusted = bf.adjust(method="null")
+            >>> "method: null" in adjusted._quick_adjustment_details()
+            True
+        """
+        details: list[str] = []
+        model = self.model()
+        if isinstance(model, dict):
+            method = model.get("method")
+            if isinstance(method, str):
+                details.append(f"method: {method}")
+            trimming_mean_ratio = model.get("weight_trimming_mean_ratio")
+            if trimming_mean_ratio is not None:
+                details.append(f"weight trimming mean ratio: {trimming_mean_ratio}")
+            trimming_percentile = model.get("weight_trimming_percentile")
+            if trimming_percentile is not None:
+                details.append(f"weight trimming percentile: {trimming_percentile}")
+
+        if de is None:
+            de, ess, essp = self._design_effect_diagnostics()
+        if de is not None:
+            details.append(f"design effect (Deff): {de:.3f}")
+            if essp is not None:
+                details.append(f"effective sample size proportion (ESSP): {essp:.3f}")
+            if ess is not None:
+                details.append(f"effective sample size (ESS): {ess:.1f}")
+
+        return details
+
+    def summary(self) -> str:
+        """Consolidated summary of covariate balance, weight health, and outcomes.
+
+        Produces a multi-line summary combining covariate ASMD / KLD
+        diagnostics, weight design effect, and outcome means.  Delegates to
+        :func:`~balance.summary_utils._build_summary` after computing the
+        necessary intermediate values.
+
+        Returns:
+            str: A human-readable multi-line summary string.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2, 3, 4], "x": [0, 1, 1, 0],
+            ...                   "weight": [1.0, 2.0, 1.0, 1.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [5, 6, 7, 8], "x": [0, 0, 1, 1],
+            ...                   "weight": [1.0, 1.0, 1.0, 1.0]}))
+            >>> bf = BalanceFrame(responders=resp, target=tgt)
+            >>> adjusted = bf.adjust(method="null")
+            >>> "Covariate diagnostics:" in adjusted.summary()
+            True
+        """
+        covars_asmd = self.covars().asmd()
+        covars_kld = self.covars().kld(aggregate_by_main_covar=True)
+
+        asmd_improvement_pct = None
+        if self.is_adjusted:
+            asmd_improvement_pct = 100 * self.covars().asmd_improvement()
+
+        de, ess, essp = self._design_effect_diagnostics()
+
+        quick_adjustment_details: list[str] = []
+        if self.is_adjusted:
+            quick_adjustment_details = self._quick_adjustment_details(
+                de=de, ess=ess, essp=essp
+            )
+
+        outcome_means = None
+        outcomes = self.outcomes()
+        if outcomes is not None:
+            outcome_means = outcomes.mean()
+
+        return _build_summary(
+            is_adjusted=self.is_adjusted,
+            has_target=True,
+            covars_asmd=covars_asmd,
+            covars_kld=covars_kld,
+            asmd_improvement_pct=asmd_improvement_pct,
+            quick_adjustment_details=quick_adjustment_details,
+            design_effect=de,
+            effective_sample_size=ess,
+            effective_sample_proportion=essp,
+            model_dict=self.model(),
+            outcome_means=outcome_means,
+        )
+
+    def diagnostics(
+        self,
+        weights_impact_on_outcome_method: str | None = "t_test",
+        weights_impact_on_outcome_conf_level: float = 0.95,
+    ) -> pd.DataFrame:
+        """Table of diagnostics about the adjusted BalanceFrame.
+
+        Produces a DataFrame with columns ``["metric", "val", "var"]``
+        containing size information, weight diagnostics, model details,
+        covariate ASMD, and optionally outcome-weight impact statistics.
+        Delegates to :func:`~balance.summary_utils._build_diagnostics`.
+
+        Args:
+            weights_impact_on_outcome_method: Method for
+                computing outcome-weight impact.  Pass ``None`` to skip.
+                Defaults to ``"t_test"``.
+            weights_impact_on_outcome_conf_level: Confidence level
+                for outcome impact intervals.  Defaults to ``0.95``.
+
+        Returns:
+            pd.DataFrame: Diagnostics table with columns
+                ``["metric", "val", "var"]``.
+
+        Raises:
+            ValueError: If this BalanceFrame has not been adjusted.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": ["1", "2"], "x": [0, 1],
+            ...                   "weight": [1.0, 2.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": ["3", "4"], "x": [0, 1],
+            ...                   "weight": [1.0, 1.0]}))
+            >>> bf = BalanceFrame(responders=resp, target=tgt)
+            >>> adjusted = bf.adjust(method="null")
+            >>> adjusted.diagnostics().columns.tolist()
+            ['metric', 'val', 'var']
+        """
+        if not self.is_adjusted:
+            raise ValueError(
+                "diagnostics() requires an adjusted BalanceFrame. "
+                "Call bf.adjust() first."
+            )
+
+        outcome_columns = self._responders.df_outcomes
+        outcome_impact = None
+        if weights_impact_on_outcome_method is not None and outcome_columns is not None:
+            outcome_impact = self.outcomes().weights_impact_on_outcome_ss(
+                method=weights_impact_on_outcome_method,
+                conf_level=weights_impact_on_outcome_conf_level,
+                round_ndigits=None,
+            )
+
+        target = self._target
+        assert target is not None, "diagnostics() requires a target"
+        return _build_diagnostics(
+            covars_df=self.covars().df,
+            target_covars_df=target.df_covars,
+            weights_summary=self.weights().summary(),
+            model_dict=self.model(),
+            covars_asmd=self.covars().asmd(),
+            covars_asmd_main=self.covars().asmd(aggregate_by_main_covar=True),
+            outcome_columns=outcome_columns,
+            weights_impact_on_outcome_method=weights_impact_on_outcome_method,
+            weights_impact_on_outcome_conf_level=weights_impact_on_outcome_conf_level,
+            outcome_impact=outcome_impact,
+        )
 
     def __repr__(self) -> str:
         status = "adjusted" if self.is_adjusted else "unadjusted"

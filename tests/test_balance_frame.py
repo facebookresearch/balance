@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 from balance.balance_frame import BalanceFrame
 from balance.datasets import load_data
+from balance.sample_class import Sample
 from balance.sample_frame import SampleFrame
 from balance.testutil import BalanceTestCase
 
@@ -752,3 +753,214 @@ class TestBalanceFrameCovarsWeightsOutcomes(BalanceTestCase):
         new_deff = new_adjusted.weights().design_effect()
 
         self.assertAlmostEqual(old_deff, new_deff, places=5)
+
+
+class TestBalanceFrameSummaryDiagnostics(BalanceTestCase):
+    """Tests for BalanceFrame.summary(), diagnostics(), design_effect_prop(),
+    _design_effect_diagnostics(), and _quick_adjustment_details().
+    """
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.resp_df = pd.DataFrame(
+            {
+                "id": [str(i) for i in range(1, 5)],
+                "x": [0, 1, 1, 0],
+                "y": [0.1, 0.5, 0.4, 0.9],
+                "weight": [1.0, 2.0, 1.0, 1.0],
+            }
+        )
+        self.tgt_df = pd.DataFrame(
+            {
+                "id": [str(i) for i in range(5, 9)],
+                "x": [0, 0, 1, 1],
+                "weight": [1.0, 1.0, 1.0, 1.0],
+            }
+        )
+        resp_sf = SampleFrame.from_frame(
+            self.resp_df,
+            outcome_columns=["y"],
+        )
+        tgt_sf = SampleFrame.from_frame(self.tgt_df)
+        self.bf = BalanceFrame(responders=resp_sf, target=tgt_sf)
+        self.bf_adjusted = self.bf.adjust(method="null")
+
+    # --- summary() tests ---
+
+    def test_summary_adjusted_contains_sections(self) -> None:
+        result = self.bf_adjusted.summary()
+        self.assertIn("Adjustment details:", result)
+        self.assertIn("Covariate diagnostics:", result)
+        self.assertIn("Weight diagnostics:", result)
+
+    def test_summary_unadjusted_has_covar_diagnostics(self) -> None:
+        result = self.bf.summary()
+        self.assertIn("Covariate diagnostics:", result)
+        self.assertNotIn("Weight diagnostics:", result)
+        self.assertNotIn("Adjustment details:", result)
+
+    def test_summary_adjusted_with_outcomes(self) -> None:
+        result = self.bf_adjusted.summary()
+        self.assertIn("Outcome weighted means:", result)
+        self.assertIn("y", result)
+
+    def test_summary_matches_sample(self) -> None:
+        """Cross-validate summary() output with the old Sample API."""
+        old_sample = Sample.from_frame(
+            self.resp_df,
+            id_column="id",
+            weight_column="weight",
+            outcome_columns="y",
+        )
+        old_target = Sample.from_frame(
+            self.tgt_df,
+            id_column="id",
+            weight_column="weight",
+        )
+        old_adjusted = old_sample.set_target(old_target).adjust(method="null")
+
+        old_summary = old_adjusted.summary()
+        new_summary = self.bf_adjusted.summary()
+        # The new API uses the user-provided method name ("null") while the
+        # old API uses the internal function name ("null_adjustment").
+        # Normalise before comparison so the rest of the output is verified.
+        self.assertEqual(
+            old_summary.replace("null_adjustment", "null"),
+            new_summary,
+        )
+
+    # --- diagnostics() tests ---
+
+    def test_diagnostics_adjusted_columns(self) -> None:
+        result = self.bf_adjusted.diagnostics()
+        self.assertEqual(result.columns.tolist(), ["metric", "val", "var"])
+
+    def test_diagnostics_unadjusted_raises(self) -> None:
+        with self.assertRaises(ValueError):
+            self.bf.diagnostics()
+
+    def test_diagnostics_has_expected_metrics(self) -> None:
+        result = self.bf_adjusted.diagnostics()
+        metrics = result["metric"].unique().tolist()
+        self.assertIn("size", metrics)
+        self.assertIn("weights_diagnostics", metrics)
+        self.assertIn("adjustment_method", metrics)
+
+    def test_diagnostics_matches_sample(self) -> None:
+        """Cross-validate diagnostics() output with the old Sample API."""
+        old_sample = Sample.from_frame(
+            self.resp_df,
+            id_column="id",
+            weight_column="weight",
+            outcome_columns="y",
+        )
+        old_target = Sample.from_frame(
+            self.tgt_df,
+            id_column="id",
+            weight_column="weight",
+        )
+        old_adjusted = old_sample.set_target(old_target).adjust(method="null")
+
+        old_diag = old_adjusted.diagnostics()
+        new_diag = self.bf_adjusted.diagnostics()
+
+        self.assertEqual(old_diag.shape, new_diag.shape)
+        self.assertEqual(old_diag["metric"].tolist(), new_diag["metric"].tolist())
+        # The new API uses "null" while the old API uses "null_adjustment"
+        # for the method name in the var column.  Normalise before comparing.
+        old_vars = [
+            v.replace("null_adjustment", "null") if isinstance(v, str) else v
+            for v in old_diag["var"].tolist()
+        ]
+        self.assertEqual(old_vars, new_diag["var"].tolist())
+
+        # Compare numeric vals with tolerance
+        for i in range(len(old_diag)):
+            old_val = old_diag.iloc[i]["val"]
+            new_val = new_diag.iloc[i]["val"]
+            if isinstance(old_val, (int, float, np.floating)):
+                self.assertAlmostEqual(float(old_val), float(new_val), places=5)
+            else:
+                old_str = str(old_val).replace("null_adjustment", "null")
+                self.assertEqual(old_str, str(new_val))
+
+    def test_diagnostics_load_data_equivalence(self) -> None:
+        """Numerical equivalence using load_data()."""
+        target_df, sample_df = load_data()
+        assert sample_df is not None
+        assert target_df is not None
+
+        target_head = target_df.head(200).drop(columns=["happiness"], errors="ignore")
+
+        old_sample = Sample.from_frame(
+            sample_df,
+            id_column="id",
+            outcome_columns=["happiness"],
+        )
+        old_target = Sample.from_frame(
+            target_head,
+            id_column="id",
+        )
+        old_adjusted = old_sample.set_target(old_target).adjust(method="ipw")
+
+        resp_sf = SampleFrame.from_frame(sample_df, outcome_columns=["happiness"])
+        tgt_sf = SampleFrame.from_frame(target_head)
+        bf = BalanceFrame(responders=resp_sf, target=tgt_sf)
+        bf_adjusted = bf.adjust(method="ipw")
+
+        old_diag = old_adjusted.diagnostics()
+        new_diag = bf_adjusted.diagnostics()
+
+        self.assertEqual(old_diag.shape, new_diag.shape)
+        self.assertEqual(old_diag["metric"].tolist(), new_diag["metric"].tolist())
+
+    def test_summary_load_data_equivalence(self) -> None:
+        """Numerical equivalence of summary() using load_data()."""
+        target_df, sample_df = load_data()
+        assert sample_df is not None
+        assert target_df is not None
+
+        target_head = target_df.head(200).drop(columns=["happiness"], errors="ignore")
+
+        old_sample = Sample.from_frame(
+            sample_df,
+            id_column="id",
+            outcome_columns=["happiness"],
+        )
+        old_target = Sample.from_frame(
+            target_head,
+            id_column="id",
+        )
+        old_adjusted = old_sample.set_target(old_target).adjust(method="ipw")
+
+        resp_sf = SampleFrame.from_frame(sample_df, outcome_columns=["happiness"])
+        tgt_sf = SampleFrame.from_frame(target_head)
+        bf = BalanceFrame(responders=resp_sf, target=tgt_sf)
+        bf_adjusted = bf.adjust(method="ipw")
+
+        self.assertEqual(old_adjusted.summary(), bf_adjusted.summary())
+
+    # --- _design_effect_diagnostics() tests ---
+
+    def test_design_effect_diagnostics_returns_tuple(self) -> None:
+        de, ess, essp = self.bf._design_effect_diagnostics()
+        self.assertIsNotNone(de)
+        self.assertIsNotNone(ess)
+        self.assertIsNotNone(essp)
+        self.assertIsInstance(de, float)
+
+    # --- _quick_adjustment_details() tests ---
+
+    def test_quick_adjustment_details_adjusted(self) -> None:
+        details = self.bf_adjusted._quick_adjustment_details()
+        self.assertIsInstance(details, list)
+        method_lines = [d for d in details if d.startswith("method:")]
+        self.assertEqual(len(method_lines), 1)
+        self.assertIn("null", method_lines[0])
+
+    def test_quick_adjustment_details_with_precomputed(self) -> None:
+        """Pre-computed de/ess/essp are used instead of recomputing."""
+        details = self.bf_adjusted._quick_adjustment_details(de=2.0, ess=5.0, essp=0.5)
+        de_lines = [d for d in details if "design effect" in d]
+        self.assertEqual(len(de_lines), 1)
+        self.assertIn("2.000", de_lines[0])

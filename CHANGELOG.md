@@ -137,6 +137,18 @@
   - Added `covars()`, `weights()`, `outcomes()` methods to `SampleFrame` so that
     linked SampleFrames can produce BalanceDF views (required by the links
     machinery in `_BalanceDF_child_from_linked_samples`).
+  - `summary()`: consolidated human-readable summary of covariate ASMD/KLD,
+    weight design effect/ESS/ESSP, and outcome means. Delegates to shared
+    `_build_summary()` in `summary_utils.py`.
+  - `diagnostics()`: DataFrame-based diagnostics table with size, weight, model,
+    and covariate ASMD metrics. Delegates to shared `_build_diagnostics()`.
+  - `design_effect()`: returns Kish's design effect (Deff) of responder weights.
+  - `design_effect_prop()`: returns effective sample size proportion (ESSP).
+  - `covar_means()`: compares covariate means across unadjusted/adjusted/target.
+  - `outcome_sd_prop()`: relative change in outcome SD after adjustment, with
+    zero-division guard for constant-valued outcomes (returns NaN).
+  - `outcome_variance_ratio()`: ratio of outcome variance (adjusted/unadjusted).
+  - Private helpers: `_design_effect_diagnostics()`, `_quick_adjustment_details()`.
 
 ## Code Quality & Refactoring
 
@@ -207,6 +219,15 @@
     `.design_effect()`, `.trim()`, `.relative_response_rates()`,
     `.target_response_rates()`, numerical equivalence with Sample API for both
     covars and weights
+  - `TestBalanceFrameSummaryDiagnostics` — summary(), diagnostics(),
+    design_effect_prop(), _design_effect_diagnostics(), _quick_adjustment_details()
+    (16 tests): section presence, unadjusted behavior, outcome output,
+    cross-validation with Sample API, load_data equivalence, known/uniform/zero
+    weights design effect prop, pre-computed de/ess/essp
+  - `TestBalanceFrameAnalytics` — design_effect(), covar_means(), outcome_sd_prop(),
+    outcome_variance_ratio() (16 tests): known/uniform weights, shape/columns,
+    unadjusted raises, no-outcomes raises, constant outcome NaN guard,
+    cross-validation with Sample API, null method expected values
 
 - Added `TestBalanceDFSourceProtocol` class in `test_balancedf.py` (8 tests):
   - `test_sample_satisfies_protocol` — verifies `Sample` passes `isinstance` check
