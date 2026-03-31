@@ -101,6 +101,20 @@
     auto-detection, pd.NA handling, multiple weight columns with add/switch
     workflow, and numerical equivalence with `Sample.from_frame()` (1 test)
 
+- **`SampleFrame` now implements the `BalanceDFSource` protocol**
+  - Added `weight_column` property: returns the active weight as a `pd.Series`.
+  - Added `_covar_columns()` method: returns covariate DataFrame (delegates to
+    `df_covars`).
+  - Added `_outcome_columns` property: returns outcome DataFrame or None (delegates
+    to `df_outcomes`).
+  - Added `set_weights()` method: replaces active weight values (accepts Series,
+    float, or None).
+  - Added `_links` attribute: default empty dict, used by `BalanceDF` for linked
+    samples (e.g. target/unadjusted).
+  - `id_column` property already existed — no changes needed.
+  - `SampleFrame` can now be passed directly to `BalanceDF`, `BalanceDFCovars`,
+    `BalanceDFWeights`, and `BalanceDFOutcomes` constructors without any adapter.
+
 ## Code Quality & Refactoring
 
 - **Defined `BalanceDFSource` protocol and decoupled `BalanceDF` from `Sample`**
@@ -135,6 +149,24 @@
   factory pattern, seed fixing, deprecation style).
 
 ## Tests
+
+- Added `TestSampleFrameBalanceDFSourceProtocol` class in `test_sample_frame.py`
+  (21 tests):
+  - `test_isinstance_balancedf_source` — verifies `isinstance(sf, BalanceDFSource)`
+  - `test_weight_column_returns_series`, `test_weight_column_returns_copy`,
+    `test_weight_column_no_active_raises` — weight_column property
+  - `test_id_column_returns_series` — id_column property
+  - `test_links_default_empty`, `test_links_preserved_in_deepcopy` — _links attribute
+  - `test_covar_columns_method`, `test_covar_columns_method_returns_copy` —
+    _covar_columns() method
+  - `test_outcome_columns_property`, `test_outcome_columns_none_when_no_outcomes` —
+    _outcome_columns property
+  - `test_set_weights_series`, `test_set_weights_float`,
+    `test_set_weights_none_resets_to_one`, `test_set_weights_length_mismatch_raises`,
+    `test_set_weights_no_active_raises` — set_weights() method
+  - `test_balancedf_covars_with_sample_frame`,
+    `test_balancedf_weights_with_sample_frame`,
+    `test_balancedf_outcomes_with_sample_frame` — end-to-end BalanceDF construction
 
 - Added `TestBalanceDFSourceProtocol` class in `test_balancedf.py` (8 tests):
   - `test_sample_satisfies_protocol` — verifies `Sample` passes `isinstance` check

@@ -9,6 +9,12 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+from balance.balancedf_class import (
+    BalanceDFCovars,
+    BalanceDFOutcomes,
+    BalanceDFSource,
+    BalanceDFWeights,
+)
 from balance.sample_class import Sample
 from balance.sample_frame import SampleFrame
 from balance.testutil import BalanceTestCase
@@ -851,3 +857,137 @@ class TestSampleFrameIntegration(BalanceTestCase):
         sample = Sample.from_frame(df, outcome_columns=["converted"])
         sf2 = SampleFrame.from_frame(df, outcome_columns=["converted"])
         pd.testing.assert_frame_equal(sample.covars().df, sf2.df_covars)
+
+
+class TestSampleFrameBalanceDFSourceProtocol(BalanceTestCase):
+    """Tests verifying SampleFrame satisfies the BalanceDFSource protocol."""
+
+    def _make_sf(self) -> SampleFrame:
+        df = pd.DataFrame(
+            {
+                "id": [1, 2, 3],
+                "x": [10.0, 20.0, 30.0],
+                "y": [5.0, 6.0, 7.0],
+                "weight": [1.0, 2.0, 1.5],
+            }
+        )
+        return SampleFrame.from_frame(df, outcome_columns=["y"])
+
+    def test_isinstance_balancedf_source(self) -> None:
+        """SampleFrame should satisfy BalanceDFSource isinstance check."""
+        sf = self._make_sf()
+        self.assertIsInstance(sf, BalanceDFSource)
+
+    def test_weight_column_returns_series(self) -> None:
+        sf = self._make_sf()
+        wc = sf.weight_column
+        self.assertIsInstance(wc, pd.Series)
+        self.assertEqual(wc.tolist(), [1.0, 2.0, 1.5])
+
+    def test_weight_column_returns_copy(self) -> None:
+        sf = self._make_sf()
+        wc = sf.weight_column
+        wc.iloc[0] = 999.0
+        self.assertAlmostEqual(sf.weight_column.iloc[0], 1.0, places=5)
+
+    def test_weight_column_no_active_raises(self) -> None:
+        df = pd.DataFrame({"id": [1], "x": [10.0]})
+        sf = SampleFrame._create(
+            df=df, id_column="id", covars_columns=["x"], weight_columns=[]
+        )
+        with self.assertRaises(ValueError):
+            _ = sf.weight_column
+
+    def test_id_column_returns_series(self) -> None:
+        sf = self._make_sf()
+        ic = sf.id_column
+        self.assertIsInstance(ic, pd.Series)
+        # from_frame casts id column to str
+        self.assertEqual(ic.tolist(), ["1", "2", "3"])
+
+    def test_links_default_empty(self) -> None:
+        sf = self._make_sf()
+        self.assertEqual(sf._links, {})
+        self.assertIsInstance(sf._links, dict)
+
+    def test_covar_columns_method(self) -> None:
+        sf = self._make_sf()
+        covars = sf._covar_columns()
+        self.assertIsInstance(covars, pd.DataFrame)
+        self.assertListEqual(list(covars.columns), ["x"])
+
+    def test_covar_columns_method_returns_copy(self) -> None:
+        sf = self._make_sf()
+        covars = sf._covar_columns()
+        covars["x"] = [999.0, 999.0, 999.0]
+        self.assertAlmostEqual(sf._covar_columns()["x"].iloc[0], 10.0, places=5)
+
+    def test_outcome_columns_property(self) -> None:
+        sf = self._make_sf()
+        oc = sf._outcome_columns
+        self.assertIsNotNone(oc)
+        self.assertListEqual(list(oc.columns), ["y"])
+
+    def test_outcome_columns_none_when_no_outcomes(self) -> None:
+        df = pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]})
+        sf = SampleFrame.from_frame(df)
+        self.assertIsNone(sf._outcome_columns)
+
+    def test_set_weights_series(self) -> None:
+        sf = self._make_sf()
+        sf.set_weights(pd.Series([3.0, 4.0, 5.0]))
+        self.assertEqual(sf.weight_column.tolist(), [3.0, 4.0, 5.0])
+
+    def test_set_weights_float(self) -> None:
+        sf = self._make_sf()
+        sf.set_weights(2.5)
+        self.assertEqual(sf.weight_column.tolist(), [2.5, 2.5, 2.5])
+
+    def test_set_weights_none_resets_to_one(self) -> None:
+        sf = self._make_sf()
+        sf.set_weights(None)
+        self.assertEqual(sf.weight_column.tolist(), [1.0, 1.0, 1.0])
+
+    def test_set_weights_length_mismatch_raises(self) -> None:
+        sf = self._make_sf()
+        with self.assertRaises(ValueError):
+            sf.set_weights(pd.Series([1.0, 2.0]))
+
+    def test_set_weights_no_active_raises(self) -> None:
+        df = pd.DataFrame({"id": [1], "x": [10.0]})
+        sf = SampleFrame._create(
+            df=df, id_column="id", covars_columns=["x"], weight_columns=[]
+        )
+        with self.assertRaises(ValueError):
+            sf.set_weights(pd.Series([1.0]))
+
+    def test_links_returns_empty_dict(self) -> None:
+        """SampleFrame._links is a read-only property that returns {}."""
+        import copy
+
+        sf1 = self._make_sf()
+        self.assertEqual(sf1._links, {})
+        sf_copy = copy.deepcopy(sf1)
+        self.assertEqual(sf_copy._links, {})
+
+    def test_balancedf_covars_with_sample_frame(self) -> None:
+        """BalanceDFCovars should work when constructed with a SampleFrame."""
+        sf = self._make_sf()
+        # pyre-fixme[6]: SampleFrame satisfies BalanceDFSource structurally
+        covars = BalanceDFCovars(sf)
+        self.assertListEqual(list(covars.df.columns), ["x"])
+
+    def test_balancedf_weights_with_sample_frame(self) -> None:
+        """BalanceDFWeights should work when constructed with a SampleFrame."""
+        sf = self._make_sf()
+        # pyre-fixme[6]: SampleFrame satisfies BalanceDFSource structurally
+        weights = BalanceDFWeights(sf)
+        deff = weights.design_effect()
+        self.assertIsInstance(deff, float)
+
+    def test_balancedf_outcomes_with_sample_frame(self) -> None:
+        """BalanceDFOutcomes should work when constructed with a SampleFrame."""
+        sf = self._make_sf()
+        # pyre-fixme[6]: SampleFrame satisfies BalanceDFSource structurally
+        outcomes = BalanceDFOutcomes(sf)
+        self.assertIsNotNone(outcomes.df)

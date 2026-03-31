@@ -62,12 +62,27 @@ class SampleFrame:
     _active_weight_column: str | None
     # pyre-fixme[13]: Initialized in _create() which bypasses __init__
     _weight_metadata: dict[str, Any]
+    # SampleFrame is a single-DataFrame container and does NOT manage
+    # multi-sample relationships.  _links is exposed as a read-only property
+    # returning an empty dict to satisfy the BalanceDFSource protocol.
+    # Link management belongs in BalanceDF/BalanceFrame, which can pass
+    # explicit links via the BalanceDF(links=...) parameter.
 
     def __init__(self) -> None:
         raise NotImplementedError(
             "SampleFrame must be constructed via from_frame() or from_sample(). "
             "Direct construction is not supported."
         )
+
+    @property
+    def _links(self) -> dict[str, "SampleFrame"]:
+        """Return an empty links dict (satisfies BalanceDFSource protocol).
+
+        SampleFrame is a single-DataFrame container and does not manage
+        multi-sample relationships.  Link management belongs in
+        BalanceDF/BalanceFrame.
+        """
+        return {}
 
     def __len__(self) -> int:
         """Return the number of rows in the SampleFrame.
@@ -686,6 +701,119 @@ class SampleFrame:
             '1'
         """
         return self._df[self._id_column_name].copy()
+
+    @property
+    def weight_column(self) -> pd.Series:
+        """Active weight column as a Series (BalanceDFSource protocol).
+
+        Returns the active weight column values as a ``pd.Series``.  This is
+        the thin protocol-level accessor used by ``BalanceDF`` and its
+        subclasses.  Unlike :attr:`df_weights` which returns a single-column
+        DataFrame, this returns a plain Series.
+
+        Returns:
+            pd.Series: The active weight column values.
+
+        Raises:
+            ValueError: If no active weight column is set.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> df = pd.DataFrame({"id": [1, 2], "x": [10, 20],
+            ...                    "weight": [1.0, 2.0]})
+            >>> sf = SampleFrame.from_frame(df)
+            >>> sf.weight_column.tolist()
+            [1.0, 2.0]
+        """
+        if not self._active_weight_column:
+            raise ValueError("No active weight column is set.")
+        return self._df[self._active_weight_column].copy()
+
+    def _covar_columns(self) -> pd.DataFrame:
+        """Return the covariate DataFrame (BalanceDFSource protocol).
+
+        This method satisfies the ``BalanceDFSource`` protocol and is used
+        by ``BalanceDFCovars`` to obtain the covariate columns.  It returns
+        the same data as :attr:`df_covars`.
+
+        Returns:
+            pd.DataFrame: A copy of the covariate columns.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> df = pd.DataFrame({"id": [1, 2], "x": [10, 20],
+            ...                    "weight": [1.0, 2.0]})
+            >>> sf = SampleFrame.from_frame(df)
+            >>> list(sf._covar_columns().columns)
+            ['x']
+        """
+        return self.df_covars
+
+    @property
+    def _outcome_columns(self) -> pd.DataFrame | None:
+        """Outcome columns as a DataFrame, or None (BalanceDFSource protocol).
+
+        This property satisfies the ``BalanceDFSource`` protocol and is used
+        by ``BalanceDFOutcomes`` to obtain the outcome columns.  It returns
+        the same data as :attr:`df_outcomes`.
+
+        Returns:
+            pd.DataFrame | None: A copy of outcome columns, or None if no
+                outcome columns are registered.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> df = pd.DataFrame({"id": [1, 2], "x": [10, 20],
+            ...                    "weight": [1.0, 1.0], "y": [5, 6]})
+            >>> sf = SampleFrame.from_frame(df, outcome_columns=["y"])
+            >>> sf._outcome_columns.columns.tolist()
+            ['y']
+        """
+        return self.df_outcomes
+
+    def set_weights(self, weights: pd.Series | float | None) -> None:
+        """Replace the active weight column values (BalanceDFSource protocol).
+
+        This method satisfies the ``BalanceDFSource`` protocol and is used
+        by ``BalanceDFWeights.trim()`` to update weight values after trimming.
+
+        If *weights* is a float, all rows are set to that value.  If None,
+        all rows are set to 1.0.  If a Series, its values are used directly
+        (must match the DataFrame length).
+
+        Args:
+            weights (pd.Series | float | None): New weight values.
+
+        Raises:
+            ValueError: If no active weight column is set, or if *weights*
+                is a Series with a different length than the DataFrame.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> df = pd.DataFrame({"id": [1, 2], "x": [10, 20],
+            ...                    "weight": [1.0, 2.0]})
+            >>> sf = SampleFrame.from_frame(df)
+            >>> sf.set_weights(pd.Series([3.0, 4.0]))
+            >>> sf.weight_column.tolist()
+            [3.0, 4.0]
+        """
+        if not self._active_weight_column:
+            raise ValueError("No active weight column is set.")
+        if weights is None:
+            self._df[self._active_weight_column] = 1.0
+        elif isinstance(weights, (int, float)):
+            self._df[self._active_weight_column] = float(weights)
+        else:
+            if len(weights) != len(self._df):
+                raise ValueError(
+                    f"'weights' length ({len(weights)}) doesn't match "
+                    f"DataFrame length ({len(self._df)})"
+                )
+            self._df[self._active_weight_column] = weights.to_numpy()
 
     @property
     def df(self) -> pd.DataFrame:
