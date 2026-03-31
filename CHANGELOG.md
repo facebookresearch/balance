@@ -74,9 +74,16 @@
   - Comprehensive validation: null/negative/non-numeric weights, null IDs,
     duplicate IDs, overlapping column roles.
 
+- **Added weight provenance tracking to `SampleFrame`**
+  - `set_weight_metadata()` / `weight_metadata()`: store/retrieve arbitrary
+    provenance dicts (method, hyperparameters, timestamps) for weight columns.
+  - `set_active_weight()`: switch the active weight column returned by `df_weights`.
+  - `add_weight_column()`: append a new weight column with length validation,
+    duplicate-name guard (including non-weight columns), and optional metadata.
+
 ## Tests
 
-- Added comprehensive tests in `test_sample_frame.py` (7 test classes, ~45 tests):
+- Added comprehensive tests in `test_sample_frame.py` (8 test classes, ~60 tests):
   - `TestSampleFrame` — basic creation, DataFrame properties, repr
   - `TestSampleFrameMutableViewSafety` — mutation isolation for all properties
   - `TestSampleFrameColumnRoleProperties` — column-role list properties with
@@ -86,6 +93,10 @@
   - `TestSampleFrameFromCsv` — CSV roundtrip and kwargs forwarding
   - `TestSampleFrameDunderMethods` — `__len__`, `__deepcopy__`
   - `TestSampleFrameEdgeCases` — zero rows, empty weights, skip_copy isolation
+  - `TestSampleFrameWeightMetadata` — weight metadata roundtrip, active weight
+    default, empty dict storage, invalid column, set_active_weight,
+    add_weight_column (with metadata, duplicate guard, non-weight column guard,
+    length mismatch), multi-weight workflow (14 tests)
 
 ## Code Quality & Refactoring
 

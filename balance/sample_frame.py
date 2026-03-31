@@ -62,8 +62,6 @@ class SampleFrame:
     _active_weight_column: str | None
     # pyre-fixme[13]: Initialized in _create() which bypasses __init__
     _weight_metadata: dict[str, Any]
-    # pyre-fixme[13]: Initialized in _create() which bypasses __init__
-    _prediction_metadata: dict[str, Any]
 
     def __init__(self) -> None:
         raise NotImplementedError(
@@ -111,7 +109,6 @@ class SampleFrame:
         new_instance._column_roles = deepcopy(self._column_roles, memo)
         new_instance._active_weight_column = self._active_weight_column
         new_instance._weight_metadata = deepcopy(self._weight_metadata, memo)
-        new_instance._prediction_metadata = deepcopy(self._prediction_metadata, memo)
         return new_instance
 
     @classmethod
@@ -140,7 +137,6 @@ class SampleFrame:
         instance._active_weight_column = weight_columns[0] if weight_columns else None
         # Defaults; set via set_weight_metadata() etc.
         instance._weight_metadata = {}
-        instance._prediction_metadata = {}
         return instance
 
     # --- Construction ---
@@ -695,6 +691,147 @@ class SampleFrame:
     def df(self) -> pd.DataFrame:
         """Full DataFrame reconstruction."""
         return self._df.copy()
+
+    # --- Weight & prediction provenance ---
+
+    def set_weight_metadata(self, column: str, metadata: dict[str, Any]) -> None:
+        """Store provenance metadata for a weight column.
+
+        Metadata is an arbitrary dict that can track adjustment method,
+        hyperparameters, timestamps, or any other provenance information
+        relevant to how the weight column was computed.
+
+        Args:
+            column (str): Name of the weight column.
+            metadata (dict): Arbitrary metadata dict (e.g. method name,
+                hyperparameters, timestamp).
+
+        Raises:
+            ValueError: If *column* is not a registered weight column.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20],
+            ...                    "weight": [1.0, 2.0]})
+            >>> sf = SampleFrame.from_frame(df)
+            >>> sf.set_weight_metadata("weight", {"method": "ipw"})
+            >>> sf.weight_metadata()
+            {'method': 'ipw'}
+        """
+        if column not in self._column_roles["weights"]:
+            raise ValueError(
+                f"'{column}' is not a weight column. "
+                f"Weight columns: {self._column_roles['weights']}"
+            )
+        self._weight_metadata[column] = metadata
+
+    def weight_metadata(self, column: str | None = None) -> dict[str, Any]:
+        """Retrieve metadata for a weight column.
+
+        Args:
+            column (str, optional): Weight column name. Defaults to the
+                active weight column.
+
+        Returns:
+            dict: The metadata dict, or an empty dict if none was set.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20],
+            ...                    "weight": [1.0, 2.0]})
+            >>> sf = SampleFrame.from_frame(df)
+            >>> sf.weight_metadata()
+            {}
+        """
+        if column is None:
+            column = self._active_weight_column
+        return self._weight_metadata.get(column, {}) if column is not None else {}
+
+    def set_active_weight(self, column_name: str) -> None:
+        """Set which weight column is the active one.
+
+        The active weight column is the one returned by :attr:`df_weights`.
+
+        Args:
+            column_name (str): Must be a registered weight column.
+
+        Raises:
+            ValueError: If *column_name* is not a weight column.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> sf = SampleFrame._create(
+            ...     df=pd.DataFrame({"id": [1], "x": [10], "w1": [1.0], "w2": [2.0]}),
+            ...     id_column="id", covars_columns=["x"],
+            ...     weight_columns=["w1", "w2"])
+            >>> sf.set_active_weight("w2")
+            >>> list(sf.df_weights.columns)
+            ['w2']
+        """
+        if column_name not in self._column_roles["weights"]:
+            raise ValueError(
+                f"'{column_name}' is not a weight column. "
+                f"Weight columns: {self._column_roles['weights']}"
+            )
+        self._active_weight_column = column_name
+
+    def add_weight_column(
+        self,
+        name: str,
+        values: pd.Series,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        """Add a new weight column to the SampleFrame.
+
+        The column is appended to the internal DataFrame and registered
+        as a weight column.  Optionally associates provenance metadata.
+
+        Args:
+            name (str): Name for the new weight column.
+            values (pd.Series): Weight values, must be the same length as
+                the DataFrame.
+            metadata (dict, optional): Provenance metadata for the new
+                column.
+
+        Raises:
+            ValueError: If *name* is already a registered weight column,
+                if *name* already exists in the DataFrame as a non-weight
+                column, or if *values* has a different length than the
+                DataFrame.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20],
+            ...                    "weight": [1.0, 2.0]})
+            >>> sf = SampleFrame.from_frame(df)
+            >>> sf.add_weight_column("w_adj", pd.Series([1.5, 1.5]),
+            ...                      metadata={"method": "rake"})
+            >>> sf._column_roles["weights"]
+            ['weight', 'w_adj']
+        """
+        if name in self._column_roles["weights"]:
+            raise ValueError(
+                f"'{name}' is already a weight column. "
+                f"Use set_weight_metadata() to update metadata."
+            )
+        if name in self._df.columns:
+            raise ValueError(
+                f"'{name}' already exists in the DataFrame as a non-weight column. "
+                f"Choose a different name."
+            )
+        if len(values) != len(self._df):
+            raise ValueError(
+                f"'values' length ({len(values)}) doesn't match "
+                f"DataFrame length ({len(self._df)})"
+            )
+        self._df[name] = values.to_numpy()
+        self._column_roles["weights"].append(name)
+        if metadata is not None:
+            self._weight_metadata[name] = metadata
 
     def __repr__(self) -> str:
         n_obs = len(self._df)

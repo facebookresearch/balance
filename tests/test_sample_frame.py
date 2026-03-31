@@ -698,3 +698,108 @@ class TestSampleFrameEdgeCases(BalanceTestCase):
         # Mutate original df — sf must not be affected
         df.loc[0, "x"] = 999.0
         self.assertAlmostEqual(sf._df.loc[0, "x"], 10.0)
+
+
+class TestSampleFrameWeightMetadata(BalanceTestCase):
+    def _make_sf(self) -> SampleFrame:
+        df = pd.DataFrame(
+            {"id": ["1", "2", "3"], "x": [10, 20, 30], "weight": [1.0, 2.0, 1.5]}
+        )
+        return SampleFrame.from_frame(df)
+
+    def test_weight_metadata_roundtrip(self) -> None:
+        sf = self._make_sf()
+        sf.set_weight_metadata("weight", {"method": "ipw", "max_iter": 100})
+        meta = sf.weight_metadata("weight")
+        self.assertEqual(meta, {"method": "ipw", "max_iter": 100})
+
+    def test_weight_metadata_default_active(self) -> None:
+        sf = self._make_sf()
+        sf.set_weight_metadata("weight", {"method": "ipw"})
+        # Calling without column should use active weight
+        meta = sf.weight_metadata()
+        self.assertEqual(meta, {"method": "ipw"})
+
+    def test_weight_metadata_empty_when_unset(self) -> None:
+        sf = self._make_sf()
+        self.assertEqual(sf.weight_metadata(), {})
+
+    def test_weight_metadata_invalid_column_raises(self) -> None:
+        sf = self._make_sf()
+        with self.assertRaises(ValueError) as ctx:
+            sf.set_weight_metadata("nonexistent", {"key": "val"})
+        self.assertIn("nonexistent", str(ctx.exception))
+
+    def test_weight_metadata_empty_dict_stored(self) -> None:
+        """Empty dict metadata should be stored (not treated as None)."""
+        sf = self._make_sf()
+        sf.set_weight_metadata("weight", {})
+        meta = sf.weight_metadata("weight")
+        self.assertEqual(meta, {})
+
+    def test_set_active_weight(self) -> None:
+        df = pd.DataFrame(
+            {"id": [1, 2], "x": [10, 20], "w1": [1.0, 2.0], "w2": [3.0, 4.0]}
+        )
+        sf = SampleFrame._create(
+            df=df, id_column="id", covars_columns=["x"], weight_columns=["w1", "w2"]
+        )
+        self.assertEqual(list(sf.df_weights.columns), ["w1"])
+        sf.set_active_weight("w2")
+        self.assertEqual(list(sf.df_weights.columns), ["w2"])
+
+    def test_set_active_weight_invalid_raises(self) -> None:
+        sf = self._make_sf()
+        with self.assertRaises(ValueError) as ctx:
+            sf.set_active_weight("nonexistent")
+        self.assertIn("nonexistent", str(ctx.exception))
+
+    def test_add_weight_column(self) -> None:
+        sf = self._make_sf()
+        sf.add_weight_column("w_adj", pd.Series([1.5, 1.5, 1.5]))
+        self.assertListEqual(sf._column_roles["weights"], ["weight", "w_adj"])
+        self.assertAlmostEqual(sf._df["w_adj"].iloc[0], 1.5, places=5)
+
+    def test_add_weight_column_with_metadata(self) -> None:
+        sf = self._make_sf()
+        sf.add_weight_column(
+            "w_adj", pd.Series([1.5, 1.5, 1.5]), metadata={"method": "rake"}
+        )
+        self.assertEqual(sf.weight_metadata("w_adj"), {"method": "rake"})
+
+    def test_add_weight_column_with_empty_metadata(self) -> None:
+        """Empty dict metadata should be stored, not silently skipped."""
+        sf = self._make_sf()
+        sf.add_weight_column("w_adj", pd.Series([1.5, 1.5, 1.5]), metadata={})
+        self.assertEqual(sf.weight_metadata("w_adj"), {})
+
+    def test_add_weight_column_duplicate_raises(self) -> None:
+        sf = self._make_sf()
+        with self.assertRaises(ValueError) as ctx:
+            sf.add_weight_column("weight", pd.Series([1.0, 1.0, 1.0]))
+        self.assertIn("already a weight column", str(ctx.exception))
+
+    def test_add_weight_column_existing_non_weight_column_raises(self) -> None:
+        """Adding a weight column whose name collides with an existing non-weight column."""
+        sf = self._make_sf()
+        with self.assertRaises(ValueError) as ctx:
+            sf.add_weight_column("x", pd.Series([1.0, 1.0, 1.0]))
+        self.assertIn("already exists in the DataFrame", str(ctx.exception))
+
+    def test_add_weight_column_length_mismatch_raises(self) -> None:
+        sf = self._make_sf()
+        with self.assertRaises(ValueError) as ctx:
+            sf.add_weight_column("w_bad", pd.Series([1.0, 1.0]))
+        self.assertIn("length", str(ctx.exception))
+
+    def test_multiple_weight_columns_workflow(self) -> None:
+        sf = self._make_sf()
+        sf.set_weight_metadata("weight", {"method": "original"})
+        sf.add_weight_column(
+            "w_ipw", pd.Series([2.0, 0.5, 1.0]), metadata={"method": "ipw"}
+        )
+        sf.set_active_weight("w_ipw")
+        self.assertEqual(list(sf.df_weights.columns), ["w_ipw"])
+        self.assertEqual(len(sf._column_roles["weights"]), 2)
+        self.assertEqual(sf.weight_metadata(), {"method": "ipw"})
+        self.assertEqual(sf.weight_metadata("weight"), {"method": "original"})
