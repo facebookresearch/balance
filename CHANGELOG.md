@@ -57,6 +57,17 @@
 - **`Sample.outcome_variance_ratio()` is deprecated** — use `sample.outcomes().outcome_variance_ratio()` instead.
   New method added to `BalanceDFOutcomes`. Will be removed in balance 0.19.0.
 
+## Code Quality & Refactoring
+
+- **Extracted `_build_summary()` and `_build_diagnostics()` into `summary_utils.py`**
+  - Moved the summary and diagnostics logic from `Sample.summary()` and
+    `Sample.diagnostics()` into standalone functions that accept plain
+    DataFrames/Series. `Sample` methods now delegate to these shared functions.
+  - This is a pure refactor — no behavior changes. Enables code reuse by the
+    upcoming `BalanceFrame` class without duplicating summary/diagnostics logic.
+  - Also moves `_concat_metric_val_var` to `summary_utils.py` (re-exported from
+    `sample_class.py` for backward compatibility).
+
 ## LLM/GenAI
 
 - **Added `CLAUDE.md` project context files** for Claude Code users, covering architecture,
@@ -65,6 +76,15 @@
   `CLAUDE.md` and add missing conventions (MIT license header, `from __future__ import annotations`,
   factory pattern, seed fixing, deprecation style).
 
+## Tests
+
+- Added 3 new tests in `test_sample_diagnostics_helper.py`:
+  - `test_build_summary_matches_sample_summary` — verifies `_build_summary()`
+    produces identical output to `Sample.summary()` for an IPW-adjusted sample.
+  - `test_build_diagnostics_matches_sample_diagnostics` — verifies
+    `_build_diagnostics()` matches `Sample.diagnostics()` for null adjustment.
+  - `test_build_diagnostics_with_ipw_matches_sample_diagnostics` — same check
+    for IPW adjustment.
 ## Bug Fixes
 
 - **`prepare_marginal_dist_for_raking` / `_realize_dicts_of_proportions`: fixed memory explosion from LCM expansion**

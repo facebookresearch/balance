@@ -7,7 +7,12 @@
 
 import numpy as np
 import pandas as pd
-from balance.sample_class import _concat_metric_val_var
+from balance.sample_class import Sample
+from balance.summary_utils import (
+    _build_diagnostics,
+    _build_summary,
+    _concat_metric_val_var,
+)
 
 
 def test_concat_sequence_lengths_match() -> None:
@@ -118,7 +123,7 @@ def test_concat_string_values() -> None:
 
 def test_concat_empty_list_returns_copy() -> None:
     diagnostics = pd.DataFrame(
-        {"metric": ["existing"], "val": [1], "var": ["foo"]}, index=[5]
+        {"metric": ["existing"], "val": [1], "var": ["foo"]}, index=pd.Index([5])
     )
 
     result = _concat_metric_val_var(diagnostics, "size", [], [])
@@ -272,3 +277,132 @@ def test_concat_mismatched_lengths_raises_error() -> None:
         raise AssertionError("Expected ValueError")
     except ValueError as e:
         assert "vals and vars must have the same length" in str(e)
+
+
+def test_build_summary_matches_sample_summary() -> None:
+    """Verify _build_summary produces the same output as Sample.summary()."""
+    np.random.seed(42)
+    sample = Sample.from_frame(
+        pd.DataFrame(
+            {
+                "a": np.random.randn(100),
+                "id": range(100),
+                "w": [1.0] * 100,
+            }
+        ),
+        weight_column="w",
+    )
+    target = Sample.from_frame(
+        pd.DataFrame(
+            {
+                "a": np.random.randn(100) + 1,
+                "id": range(100, 200),
+                "w": [1.0] * 100,
+            }
+        ),
+        weight_column="w",
+    )
+    adjusted = sample.set_target(target).adjust(method="ipw", max_de=1.5)
+
+    # Call Sample.summary() to get the reference output
+    expected = adjusted.summary()
+
+    # Reproduce the same inputs and call _build_summary directly
+    covars_asmd = adjusted.covars().asmd()
+    covars_kld = adjusted.covars().kld(aggregate_by_main_covar=True)
+    asmd_improvement_pct = 100 * adjusted.covars().asmd_improvement()
+    quick_adj = adjusted._quick_adjustment_details(adjusted._df.shape[0])
+    de, ess, essp = adjusted._design_effect_diagnostics(adjusted._df.shape[0])
+
+    result = _build_summary(
+        is_adjusted=adjusted.is_adjusted(),
+        has_target=adjusted.has_target(),
+        covars_asmd=covars_asmd,
+        covars_kld=covars_kld,
+        asmd_improvement_pct=asmd_improvement_pct,
+        quick_adjustment_details=quick_adj,
+        design_effect=de,
+        effective_sample_size=ess,
+        effective_sample_proportion=essp,
+        model_dict=adjusted.model(),
+        outcome_means=None,
+    )
+
+    assert result == expected, f"Expected:\n{expected}\n\nGot:\n{result}"
+
+
+def test_build_diagnostics_matches_sample_diagnostics() -> None:
+    """Verify _build_diagnostics produces the same output as Sample.diagnostics()."""
+    sample = Sample.from_frame(
+        pd.DataFrame({"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}),
+        id_column="id",
+        weight_column="weight",
+        standardize_types=False,
+    )
+    target = Sample.from_frame(
+        pd.DataFrame({"id": ["3", "4"], "x": [0, 1], "weight": [1.0, 1.0]}),
+        id_column="id",
+        weight_column="weight",
+        standardize_types=False,
+    )
+    adjusted = sample.set_target(target).adjust(method="null")
+
+    expected = adjusted.diagnostics()
+
+    result = _build_diagnostics(
+        covars_df=adjusted.covars().df,
+        target_covars_df=adjusted._links["target"].covars().df,
+        weights_summary=adjusted.weights().summary(),
+        model_dict=adjusted.model(),
+        covars_asmd=adjusted.covars().asmd(),
+        covars_asmd_main=adjusted.covars().asmd(aggregate_by_main_covar=True),
+        outcome_columns=adjusted._outcome_columns,
+        weights_impact_on_outcome_method="t_test",
+        weights_impact_on_outcome_conf_level=0.95,
+        outcome_impact=None,
+    )
+
+    pd.testing.assert_frame_equal(result, expected)
+
+
+def test_build_diagnostics_with_ipw_matches_sample_diagnostics() -> None:
+    """Verify _build_diagnostics matches Sample.diagnostics() for IPW adjustment."""
+    np.random.seed(42)
+    sample = Sample.from_frame(
+        pd.DataFrame(
+            {
+                "a": np.random.randn(100),
+                "id": range(100),
+                "w": [1.0] * 100,
+            }
+        ),
+        weight_column="w",
+    )
+    target = Sample.from_frame(
+        pd.DataFrame(
+            {
+                "a": np.random.randn(100) + 1,
+                "id": range(100, 200),
+                "w": [1.0] * 100,
+            }
+        ),
+        weight_column="w",
+    )
+    adjusted = sample.set_target(target).adjust(method="ipw", max_de=1.5)
+
+    expected = adjusted.diagnostics()
+
+    result = _build_diagnostics(
+        covars_df=adjusted.covars().df,
+        target_covars_df=adjusted._links["target"].covars().df,
+        weights_summary=adjusted.weights().summary(),
+        model_dict=adjusted.model(),
+        covars_asmd=adjusted.covars().asmd(),
+        covars_asmd_main=adjusted.covars().asmd(aggregate_by_main_covar=True),
+        outcome_columns=adjusted._outcome_columns,
+        weights_impact_on_outcome_method="t_test",
+        weights_impact_on_outcome_conf_level=0.95,
+        outcome_impact=None,
+    )
+
+    pd.testing.assert_frame_equal(result, expected)

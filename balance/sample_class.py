@@ -18,10 +18,14 @@ import numpy as np
 import pandas as pd
 from balance import adjustment as balance_adjustment, util as balance_util
 from balance.csv_utils import to_csv_with_defaults
-from balance.typing import DiagnosticScalar, FilePathOrBuffer
+from balance.summary_utils import (
+    _build_diagnostics,
+    _build_summary,
+    _concat_metric_val_var,
+)
+from balance.typing import FilePathOrBuffer
 from balance.util import (
     _assert_type,
-    _coerce_scalar,
     _detect_high_cardinality_features,
     HighCardinalityFeature,
 )
@@ -29,74 +33,8 @@ from IPython.lib.display import FileLink
 
 logger: logging.Logger = logging.getLogger(__package__)
 
-
-def _concat_metric_val_var(
-    diagnostics: pd.DataFrame,
-    metric: str,
-    vals: list[DiagnosticScalar],
-    vars: list[DiagnosticScalar],
-) -> pd.DataFrame:
-    """Append metric/val/var rows to a diagnostics table.
-
-    This helper centralizes concatenating new diagnostics rows from separate
-    val and var lists. The function internally zips these lists together,
-    so callers only need to provide aligned sequences.
-
-    Args:
-        diagnostics: Existing diagnostics table.
-        metric: Name for the ``metric`` column to repeat for each appended row.
-        vals: List of values for the ``val`` column. Must have the same length
-            as ``vars``.
-        vars: List of variable names for the ``var`` column. Must have the same
-            length as ``vals``.
-
-    Returns:
-        A new DataFrame with the appended rows (input is not modified).
-
-    Raises:
-        ValueError: If ``vals`` and ``vars`` have different lengths.
-
-    Examples
-    --------
-    A typical usage pattern when both ``val`` and ``var`` are sequences::
-
-        diagnostics = _concat_metric_val_var(
-            diagnostics,
-            "weights_diagnostics",
-            the_weights_summary["val"].tolist(),
-            the_weights_summary["var"].tolist(),
-        )
-
-    With a single row::
-
-        diagnostics = _concat_metric_val_var(
-            diagnostics,
-            "adjustment_method",
-            [0],
-            [model["method"]],
-        )
-    """
-    if len(vals) != len(vars):
-        raise ValueError(
-            f"vals and vars must have the same length, got {len(vals)} and {len(vars)}"
-        )
-
-    if len(vals) == 0:
-        return diagnostics.copy()
-
-    rows = pd.DataFrame(
-        {"metric": [metric] * len(vals), "val": list(vals), "var": list(vars)}
-    )
-
-    # Append rows to diagnostics with column alignment
-    if diagnostics.empty:
-        if diagnostics.columns.empty:
-            return rows.reset_index(drop=True)
-        rows = rows.reindex(columns=diagnostics.columns, fill_value=pd.NA)
-        return rows.reset_index(drop=True)
-
-    rows = rows.reindex(columns=diagnostics.columns, fill_value=pd.NA)
-    return pd.concat((diagnostics, rows), ignore_index=True)
+# Re-export _concat_metric_val_var so existing imports from this module still work
+__all__ = ["Sample", "_concat_metric_val_var"]
 
 
 class Sample:
@@ -1339,131 +1277,44 @@ class Sample:
             self       0.480
             unadjusted 0.480
         """
-        # Initialize variables
-        n_asmd_covars: int = 0
-        asmd_before: float = 0.0
-        asmd_improvement: float = 0.0
-        asmd_now: float = 0.0
-        n_kld_covars: int = 0
-        kld_before: float = 0.0
-        kld_now: float = 0.0
-        kld_reduction: float = 0.0
+        # Compute intermediate values from self, then delegate to the
+        # standalone _build_summary() function.
+        covars_asmd = None
+        covars_kld = None
+        asmd_improvement_pct = None
 
-        # asmd
         if self.is_adjusted() or self.has_target():
-            asmd = self.covars().asmd()
-            n_asmd_covars = len(
-                asmd.columns.values[asmd.columns.values != "mean(asmd)"]
-            )
+            covars_asmd = self.covars().asmd()
+            covars_kld = self.covars().kld(aggregate_by_main_covar=True)
 
-            kld = self.covars().kld(aggregate_by_main_covar=True)
-            n_kld_covars = len(kld.columns.values[kld.columns.values != "mean(kld)"])
-
-        # asmd improvement
         if self.is_adjusted():
-            asmd_before = asmd.loc["unadjusted", "mean(asmd)"]
-            asmd_improvement = 100 * self.covars().asmd_improvement()
-            kld_before = kld.loc["unadjusted", "mean(kld)"]
+            asmd_improvement_pct = 100 * self.covars().asmd_improvement()
 
-        if self.has_target():
-            asmd_now = asmd.loc["self", "mean(asmd)"]
-            kld_now = kld.loc["self", "mean(kld)"]
-            if self.is_adjusted() and kld_before > 0:
-                kld_reduction = 100 * (kld_before - kld_now) / kld_before
-
-        # quick, lightweight adjustment details reused with __str__
         quick_adjustment_details: List[str] = []
         if self.is_adjusted():
             quick_adjustment_details = self._quick_adjustment_details(self._df.shape[0])
 
-        # design effect and effective sample diagnostics
         design_effect, effective_sample_size, effective_sample_proportion = (
             self._design_effect_diagnostics(self._df.shape[0])
         )
 
-        # model performance
-
-        if self.model() is not None:
-            self_model = _assert_type(self.model())
-            if self_model["method"] == "ipw":
-                model_summary = (
-                    "Model proportion deviance explained: {dev_exp:.3f}".format(
-                        dev_exp=self_model["perf"]["prop_dev_explained"]
-                    )
-                )
-            else:
-                # TODO: add model performance for other types of models
-                model_summary = None
-        else:
-            model_summary = None
-
-        sections: List[str] = []
-
-        adjustment_lines = [
-            d
-            for d in quick_adjustment_details
-            if not d.startswith(
-                (
-                    "design effect",
-                    "effective sample size proportion",
-                    "effective sample size (ESS)",
-                )
-            )
-        ]
-        if adjustment_lines:
-            sections.append(
-                "Adjustment details:\n    " + "\n    ".join(adjustment_lines)
-            )
-
-        covar_lines: List[str] = []
-        if self.has_target():
-            if self.is_adjusted():
-                covar_lines.append(f"Covar ASMD reduction: {asmd_improvement:.1f}%")
-            covar_lines.append(
-                f"Covar ASMD ({n_asmd_covars} variables): "
-                + (f"{asmd_before:.3f} -> " if self.is_adjusted() else "")
-                + f"{asmd_now:.3f}"
-            )
-
-            if self.is_adjusted() and kld_before > 0:
-                covar_lines.append(f"Covar mean KLD reduction: {kld_reduction:.1f}%")
-            covar_lines.append(
-                f"Covar mean KLD ({n_kld_covars} variables): "
-                + (f"{kld_before:.3f} -> " if self.is_adjusted() else "")
-                + f"{kld_now:.3f}"
-            )
-
-        if covar_lines:
-            sections.append("Covariate diagnostics:\n    " + "\n    ".join(covar_lines))
-
-        if self.is_adjusted():
-            weights_lines: List[str] = []
-            if design_effect is not None:
-                weights_lines.append(f"design effect (Deff): {design_effect:.3f}")
-                if effective_sample_proportion is not None:
-                    weights_lines.append(
-                        f"effective sample size proportion (ESSP): {effective_sample_proportion:.3f}"
-                    )
-                if effective_sample_size is not None:
-                    weights_lines.append(
-                        f"effective sample size (ESS): {effective_sample_size:.1f}"
-                    )
-            else:
-                weights_lines.append("design effect (Deff): unavailable")
-
-            sections.append("Weight diagnostics:\n    " + "\n    ".join(weights_lines))
-
+        outcome_means = None
         if self._outcome_columns is not None:
             outcome_means = self.outcomes().mean()
-            sections.append(
-                "Outcome weighted means:\n"
-                + outcome_means.to_string(float_format="{:.3f}".format)
-            )
 
-        if model_summary is not None:
-            sections.append(f"Model performance: {model_summary}")
-
-        return "\n".join(filter(None, sections))
+        return _build_summary(
+            is_adjusted=self.is_adjusted(),
+            has_target=self.has_target(),
+            covars_asmd=covars_asmd,
+            covars_kld=covars_kld,
+            asmd_improvement_pct=asmd_improvement_pct,
+            quick_adjustment_details=quick_adjustment_details,
+            design_effect=design_effect,
+            effective_sample_size=effective_sample_size,
+            effective_sample_proportion=effective_sample_proportion,
+            model_dict=self.model(),
+            outcome_means=outcome_means,
+        )
 
     def diagnostics(
         self: "Sample",
@@ -1565,37 +1416,9 @@ class Sample:
         """
         logger.info("Starting computation of diagnostics of the fitting")
         self._check_if_adjusted()
-        diagnostics = pd.DataFrame(columns=["metric", "val", "var"])
 
-        # ----------------------------------------------------
-        # Properties of the Sample object (dimensions of the data)
-        # ----------------------------------------------------
-        n_sample_obs, n_sample_covars = self.covars().df.shape
-        n_target_obs, n_target_covars = self._links["target"].covars().df.shape
-
-        diagnostics = _concat_metric_val_var(
-            diagnostics,
-            "size",
-            [n_sample_obs, n_sample_covars, n_target_obs, n_target_covars],
-            ["sample_obs", "sample_covars", "target_obs", "target_covars"],
-        )
-
-        # ----------------------------------------------------
-        # Diagnostics on the weights
-        # ----------------------------------------------------
-        the_weights_summary = self.weights().summary()
-
-        # Add all the weights_diagnostics to diagnostics
-        diagnostics = _concat_metric_val_var(
-            diagnostics,
-            "weights_diagnostics",
-            list(the_weights_summary["val"]),  # passing a list instead of a pd.Series
-            list(the_weights_summary["var"]),
-        )
-
-        # ----------------------------------------------------
-        # Diagnostics on the impact of weights on outcomes
-        # ----------------------------------------------------
+        # Compute outcome impact if applicable
+        outcome_impact = None
         if (
             weights_impact_on_outcome_method is not None
             and self._outcome_columns is not None
@@ -1605,209 +1428,22 @@ class Sample:
                 conf_level=weights_impact_on_outcome_conf_level,
                 round_ndigits=None,
             )
-            if outcome_impact is not None:
-                impact_rows = outcome_impact.reset_index().melt(
-                    id_vars="outcome", var_name="stat", value_name="val"
-                )
-                for stat_name in impact_rows["stat"].unique():
-                    stat_rows = impact_rows[impact_rows["stat"] == stat_name]
-                    diagnostics = _concat_metric_val_var(
-                        diagnostics,
-                        f"weights_impact_on_outcome_{stat_name}",
-                        stat_rows["val"].tolist(),
-                        stat_rows["outcome"].tolist(),
-                    )
 
-        # ----------------------------------------------------
-        # Diagnostics on the model
-        # ----------------------------------------------------
-        model = _assert_type(self.model())
-        diagnostics = _concat_metric_val_var(
-            diagnostics,
-            "adjustment_method",
-            [0],
-            [model["method"]],
+        result = _build_diagnostics(
+            covars_df=self.covars().df,
+            target_covars_df=self._links["target"].covars().df,
+            weights_summary=self.weights().summary(),
+            model_dict=self.model(),
+            covars_asmd=self.covars().asmd(),
+            covars_asmd_main=self.covars().asmd(aggregate_by_main_covar=True),
+            outcome_columns=self._outcome_columns,
+            weights_impact_on_outcome_method=weights_impact_on_outcome_method,
+            weights_impact_on_outcome_conf_level=weights_impact_on_outcome_conf_level,
+            outcome_impact=outcome_impact,
         )
-        if model["method"] == "ipw":
-            fit = model["fit"]
-            params = fit.get_params(deep=False)
-
-            fit_list: List[pd.DataFrame] = []
-
-            for array_key in ("n_iter_", "intercept_"):
-                array_val = getattr(fit, array_key, None)
-                if array_val is None:
-                    continue
-
-                array_as_np = np.asarray(array_val)
-                if array_as_np.size == 1:
-                    fit_list.append(
-                        _concat_metric_val_var(
-                            pd.DataFrame(),
-                            "ipw_model_glance",
-                            [array_as_np.item()],
-                            [array_key],
-                        )
-                    )
-
-            for param_key, metric_name in (
-                ("penalty", "ipw_penalty"),
-                ("solver", "ipw_solver"),
-            ):
-                param_val = params.get(param_key, getattr(fit, param_key, None))
-                if isinstance(param_val, str):
-                    fit_list.append(
-                        _concat_metric_val_var(
-                            pd.DataFrame(), metric_name, [0], [param_val]
-                        )
-                    )
-
-            for scalar_key in ("tol", "l1_ratio"):
-                scalar_value = _coerce_scalar(
-                    params.get(scalar_key, getattr(fit, scalar_key, None))
-                )
-                fit_list.append(
-                    _concat_metric_val_var(
-                        pd.DataFrame(), "model_glance", [scalar_value], [scalar_key]
-                    )
-                )
-
-            multi_class = params.get("multi_class", getattr(fit, "multi_class", None))
-            if multi_class is None:
-                multi_class = "auto"
-            elif not isinstance(multi_class, str):
-                multi_class = str(multi_class)
-
-            fit_list.append(
-                _concat_metric_val_var(
-                    pd.DataFrame(), "ipw_multi_class", [0], [multi_class]
-                )
-            )
-
-            if len(fit_list) > 0:
-                fit_single_values = pd.concat(fit_list, ignore_index=True)
-                fit_single_values = fit_single_values.drop_duplicates(
-                    subset=["metric", "var"], keep="first"
-                )
-                diagnostics = pd.concat((diagnostics, fit_single_values))
-
-            #  Extract info about the regularisation parameter
-            lambda_value = _coerce_scalar(model["lambda"])
-            diagnostics = _concat_metric_val_var(
-                diagnostics, "model_glance", [lambda_value], ["lambda"]
-            )
-
-            #  Scalar values from 'perf' key of dictionary
-            perf_entries: List[pd.DataFrame] = []
-            for k, v in model["perf"].items():
-                if np.isscalar(v) and k != "coefs":
-                    perf_entries.append(
-                        _concat_metric_val_var(
-                            pd.DataFrame(), "model_glance", [_coerce_scalar(v)], [k]
-                        )
-                    )
-
-            if perf_entries:
-                diagnostics = pd.concat([diagnostics] + perf_entries, ignore_index=True)
-
-            # Model coefficients
-            coefs = (
-                model["perf"]["coefs"]
-                .reset_index()
-                .rename({0: "val", "index": "var"}, axis=1)
-                .assign(metric="model_coef")
-            )
-            diagnostics = pd.concat((diagnostics, coefs))
-
-        elif model["method"] == "cbps":
-            beta_opt = pd.DataFrame(
-                {"val": model["beta_optimal"], "var": model["X_matrix_columns"]}
-            ).assign(metric="beta_optimal")
-            diagnostics = pd.concat((diagnostics, beta_opt))
-
-            metric = [
-                "rescale_initial_result",
-                "balance_optimize_result",
-                "gmm_optimize_result_glm_init",
-                "gmm_optimize_result_bal_init",
-            ]
-            metric = [x for x in metric for _ in range(2)]
-            var = ["success", "message"] * 4
-            val = [model[x][y] for (x, y) in zip(metric, var)]
-
-            optimizations = pd.DataFrame({"metric": metric, "var": var, "val": val})
-            diagnostics = pd.concat((diagnostics, optimizations))
-
-        # TODO: add model diagnostics for other models
-
-        # ----------------------------------------------------
-        # Diagnostics on the covariates correction
-        # ----------------------------------------------------
-        asmds = self.covars().asmd()
-
-        #  Per-covariate ASMDs
-        covar_asmds = (
-            asmds.transpose()
-            .rename(
-                {
-                    "self": "covar_asmd_adjusted",
-                    "unadjusted": "covar_asmd_unadjusted",
-                    "unadjusted - self": "covar_asmd_improvement",
-                },
-                axis=1,
-            )
-            .reset_index()
-            .melt(id_vars="index")
-            .rename({"source": "metric", "value": "val", "index": "var"}, axis=1)
-        )
-        diagnostics = pd.concat((diagnostics, covar_asmds))
-
-        #  Per-main-covariate ASMDs
-        asmds_main = self.covars().asmd(aggregate_by_main_covar=True)
-        covar_asmds_main = (
-            asmds_main.transpose()
-            .rename(
-                {
-                    "self": "covar_main_asmd_adjusted",
-                    "unadjusted": "covar_main_asmd_unadjusted",
-                    "unadjusted - self": "covar_main_asmd_improvement",
-                },
-                axis=1,
-            )
-            .reset_index()
-            # TODO:
-            # column index name is different here.
-            # think again if that's the best default or not for
-            # asmd(aggregate_by_main_covar = True)
-            .rename({"main_covar_names": "index"}, axis=1)
-            .melt(id_vars="index")
-            .rename({"source": "metric", "value": "val", "index": "var"}, axis=1)
-        )
-        # sort covar_asmds_main to have mean(asmd) at the end of it (for when doing quick checks)
-        covar_asmds_main = (
-            covar_asmds_main.assign(
-                has_mean_asmd=(covar_asmds_main["var"] == "mean(asmd)")
-            )
-            .sort_values(by=["has_mean_asmd", "var"])
-            .drop(columns="has_mean_asmd")
-        )
-        diagnostics = pd.concat((diagnostics, covar_asmds_main))
-
-        # ----------------------------------------------------
-        # Diagnostics if there was an adjustment_failure
-        # ----------------------------------------------------
-        # This field is used in the cli and filled with an alternative value if needed.
-        diagnostics = pd.concat(
-            (
-                diagnostics,
-                pd.DataFrame({"metric": ("adjustment_failure",), "val": (0,)}),
-            )
-        )
-
-        diagnostics = diagnostics.reset_index(drop=True)
 
         logger.info("Done computing diagnostics")
-        return diagnostics
+        return result
 
     ############################################
     # Column and rows modifiers - use carefully!
