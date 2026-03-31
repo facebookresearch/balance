@@ -53,6 +53,7 @@ class BalanceDF:
         df: pd.DataFrame,
         sample: Sample,
         name: Literal["outcomes", "weights", "covars"],
+        links: dict[str, "Sample"] | None = None,
     ) -> None:
         """A basic init method used by BalanceDFOutcomes,BalanceDFCovars, and BalanceDFWeights
 
@@ -61,6 +62,11 @@ class BalanceDF:
             df (pd.DataFrame): a df from a sample object.
             sample (Sample): A sample object to be stored as reference.
             name (Literal["outcomes", "weights", "covars"]): The type of object that will be created. In practice, used for "outcomes", "weights" and "covars".
+            links (dict[str, Sample] | None): Optional explicit links dict
+                (e.g. {"target": ..., "unadjusted": ...}).  When provided,
+                _BalanceDF_child_from_linked_samples uses this instead of
+                sample._links.  This allows BalanceDF to work with sources
+                that do not carry mutable _links (e.g. SampleFrame).
         """
         # NOTE: double underscore helps to add friction so that users do not change these objects.
         #       see details here: https://stackoverflow.com/a/1301369/256662
@@ -68,6 +74,7 @@ class BalanceDF:
         self.__sample = sample
         self.__df = df
         self.__name = name
+        self.__links_override = links
 
     def __str__(self: "BalanceDF") -> str:
         name = self.__name
@@ -286,11 +293,17 @@ class BalanceDF:
             | "BalanceDFOutcomes"
             | None,
         ] = {"self": self}
+        # Use explicit links if provided, otherwise fall back to sample._links
+        links = (
+            self.__links_override
+            if self.__links_override is not None
+            else self._sample._links
+        )
         linked_child_kwargs = self._linked_child_kwargs()
         d.update(
             {
                 k: getattr(v, BalanceDF_child_method)(**linked_child_kwargs)
-                for k, v in self._sample._links.items()
+                for k, v in links.items()
             }
         )
         return d
