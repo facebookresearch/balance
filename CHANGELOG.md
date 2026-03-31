@@ -103,6 +103,20 @@
 
 ## Code Quality & Refactoring
 
+- **Defined `BalanceDFSource` protocol and decoupled `BalanceDF` from `Sample`**
+  - Added `BalanceDFSource` — a `typing.Protocol` (runtime-checkable) that captures
+    the 6 attributes/methods `BalanceDF` accesses on its backing object:
+    `weight_column`, `id_column`, `_links`, `_covar_columns()`,
+    `_outcome_columns`, and `set_weights()`.
+  - Updated `BalanceDF.__init__`, `BalanceDFCovars.__init__`,
+    `BalanceDFWeights.__init__`, and `BalanceDFOutcomes.__init__` to accept
+    `BalanceDFSource` instead of `Sample`.
+  - Removed the hard top-level `from balance.sample_class import Sample` import
+    from `balancedf_class.py`. The only remaining `Sample` usage
+    (`BalanceDFCovars.from_frame()`) uses a lazy import.
+  - Both `Sample` and the upcoming `SampleFrame` satisfy this protocol, enabling
+    BalanceDF to work with either without an adapter class.
+
 - **Extracted `_build_summary()` and `_build_diagnostics()` into `summary_utils.py`**
   - Moved the summary and diagnostics logic from `Sample.summary()` and
     `Sample.diagnostics()` into standalone functions that accept plain
@@ -121,6 +135,19 @@
   factory pattern, seed fixing, deprecation style).
 
 ## Tests
+
+- Added `TestBalanceDFSourceProtocol` class in `test_balancedf.py` (8 tests):
+  - `test_sample_satisfies_protocol` — verifies `Sample` passes `isinstance` check
+  - `test_protocol_is_runtime_checkable` — verifies protocol is runtime-checkable
+  - `test_non_conforming_object_fails_isinstance` — verifies non-conforming objects
+    fail the isinstance check
+  - `test_balancedf_with_mock_source` — constructs BalanceDF with a minimal mock
+  - `test_balancedf_covars_with_mock_source` — BalanceDFCovars with mock,
+    verifies mean() and _df_with_ids() work
+  - `test_balancedf_weights_with_mock_source` — BalanceDFWeights with mock,
+    verifies design_effect()
+  - `test_balancedf_outcomes_with_mock_source` — BalanceDFOutcomes with mock
+  - `test_existing_sample_api_unchanged` — regression test for existing Sample API
 
 - Added 3 new tests in `test_sample_diagnostics_helper.py`:
   - `test_build_summary_matches_sample_summary` — verifies `_build_summary()`

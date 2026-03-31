@@ -19,6 +19,7 @@ from balance.balancedf_class import (  # noqa
     BalanceDF,
     BalanceDFCovars,  # noqa
     BalanceDFOutcomes,  # noqa
+    BalanceDFSource,  # noqa
     BalanceDFWeights,  # noqa
 )
 from balance.sample_class import Sample
@@ -3373,3 +3374,243 @@ class TestBalanceDFOutcomesOutcomeVarianceRatio(BalanceTestCase):
         """Test outcome_variance_ratio raises when no unadjusted link."""
         with self.assertRaises(ValueError):
             s1.outcomes().outcome_variance_ratio()
+
+
+class TestBalanceDFSourceProtocol(BalanceTestCase):
+    """Tests for the BalanceDFSource protocol."""
+
+    def test_sample_satisfies_protocol(self) -> None:
+        """Verify that Sample structurally satisfies BalanceDFSource."""
+        s = Sample.from_frame(
+            pd.DataFrame({"id": [1, 2, 3], "x": [10, 20, 30], "w": [1.0, 1.0, 1.0]}),
+            id_column="id",
+            weight_column="w",
+        )
+        self.assertIsInstance(s, BalanceDFSource)
+
+    def test_protocol_is_runtime_checkable(self) -> None:
+        """Verify that BalanceDFSource is runtime_checkable."""
+        self.assertTrue(hasattr(BalanceDFSource, "__protocol_attrs__"))
+
+    def test_non_conforming_object_fails_isinstance(self) -> None:
+        """Verify that an arbitrary object does NOT satisfy the protocol."""
+        self.assertNotIsInstance("not a source", BalanceDFSource)
+        self.assertNotIsInstance(42, BalanceDFSource)
+        self.assertNotIsInstance(pd.DataFrame(), BalanceDFSource)
+
+    def test_balancedf_with_mock_source(self) -> None:
+        """Create a BalanceDF directly with a minimal mock BalanceDFSource.
+
+        This verifies that BalanceDF can be constructed without a real Sample,
+        using any object that satisfies the protocol.
+        """
+
+        class _MockSource:
+            """Minimal mock satisfying BalanceDFSource protocol."""
+
+            def __init__(self) -> None:
+                self._data = pd.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
+
+            @property
+            def weight_column(self) -> pd.Series:
+                return pd.Series([1.0, 1.0, 1.0], name="w")
+
+            @property
+            def id_column(self) -> pd.Series:
+                return pd.Series([1, 2, 3], name="id")
+
+            @property
+            def _links(self) -> dict:
+                return {}
+
+            def _covar_columns(self) -> pd.DataFrame:
+                return self._data.copy()
+
+            @property
+            def _outcome_columns(self) -> pd.DataFrame | None:
+                return None
+
+            def set_weights(self, weights: pd.Series | float | None) -> None:
+                pass
+
+        mock = _MockSource()
+        self.assertIsInstance(mock, BalanceDFSource)
+
+        # Construct a BalanceDF directly with the mock source
+        bdf = BalanceDF(df=mock._covar_columns(), sample=mock, name="covars")
+        self.assertEqual(list(bdf.df.columns), ["x", "y"])
+        self.assertEqual(len(bdf.df), 3)
+
+    def test_balancedf_covars_with_mock_source(self) -> None:
+        """Create a BalanceDFCovars directly with a mock BalanceDFSource.
+
+        This verifies that the covars subclass works with a mock source and
+        that key methods like mean() and _df_with_ids() work.
+        """
+
+        class _MockCovarsSource:
+            """Mock source with covariates for BalanceDFCovars testing."""
+
+            def __init__(self) -> None:
+                self._data = pd.DataFrame({"a": [1.0, 2.0, 3.0], "b": [4.0, 5.0, 6.0]})
+
+            @property
+            def weight_column(self) -> pd.Series:
+                return pd.Series([1.0, 1.0, 1.0], name="w")
+
+            @property
+            def id_column(self) -> pd.Series:
+                return pd.Series([10, 20, 30], name="id")
+
+            @property
+            def _links(self) -> dict:
+                return {}
+
+            def _covar_columns(self) -> pd.DataFrame:
+                return self._data.copy()
+
+            @property
+            def _outcome_columns(self) -> pd.DataFrame | None:
+                return None
+
+            def set_weights(self, weights: pd.Series | float | None) -> None:
+                pass
+
+        mock = _MockCovarsSource()
+        covars = BalanceDFCovars(sample=mock)
+        self.assertEqual(list(covars.df.columns), ["a", "b"])
+        self.assertEqual(len(covars.df), 3)
+
+        # Verify _df_with_ids works (accesses _sample.id_column)
+        df_with_ids = covars._df_with_ids()
+        self.assertIn("id", df_with_ids.columns)
+        self.assertEqual(list(df_with_ids["id"]), [10, 20, 30])
+
+        # Verify _weights works (accesses _sample.weight_column)
+        weights = covars._weights
+        self.assertIsNotNone(weights)
+        self.assertEqual(len(weights), 3)
+
+    def test_balancedf_weights_with_mock_source(self) -> None:
+        """Create a BalanceDFWeights with a mock BalanceDFSource."""
+
+        class _MockWeightsSource:
+            """Mock source for BalanceDFWeights testing."""
+
+            @property
+            def weight_column(self) -> pd.Series:
+                return pd.Series([1.0, 2.0, 3.0], name="w")
+
+            @property
+            def id_column(self) -> pd.Series:
+                return pd.Series([1, 2, 3], name="id")
+
+            @property
+            def _links(self) -> dict:
+                return {}
+
+            def _covar_columns(self) -> pd.DataFrame:
+                return pd.DataFrame()
+
+            @property
+            def _outcome_columns(self) -> pd.DataFrame | None:
+                return None
+
+            def set_weights(self, weights: pd.Series | float | None) -> None:
+                pass
+
+        mock = _MockWeightsSource()
+        w = BalanceDFWeights(sample=mock)
+        self.assertEqual(list(w.df.columns), ["w"])
+        self.assertEqual(len(w.df), 3)
+        self.assertAlmostEqual(w.design_effect(), 1.167, places=3)
+
+    def test_balancedf_outcomes_with_mock_source(self) -> None:
+        """Create a BalanceDFOutcomes with a mock BalanceDFSource."""
+
+        class _MockOutcomesSource:
+            """Mock source with outcomes for BalanceDFOutcomes testing."""
+
+            @property
+            def weight_column(self) -> pd.Series:
+                return pd.Series([1.0, 1.0, 1.0], name="w")
+
+            @property
+            def id_column(self) -> pd.Series:
+                return pd.Series([1, 2, 3], name="id")
+
+            @property
+            def _links(self) -> dict:
+                return {}
+
+            def _covar_columns(self) -> pd.DataFrame:
+                return pd.DataFrame()
+
+            @property
+            def _outcome_columns(self) -> pd.DataFrame | None:
+                return pd.DataFrame({"o1": [7.0, 8.0, 9.0]})
+
+            def set_weights(self, weights: pd.Series | float | None) -> None:
+                pass
+
+        mock = _MockOutcomesSource()
+        outcomes = BalanceDFOutcomes(sample=mock)
+        self.assertEqual(list(outcomes.df.columns), ["o1"])
+        self.assertEqual(len(outcomes.df), 3)
+
+    def test_existing_sample_api_unchanged(self) -> None:
+        """Verify that the existing Sample API through BalanceDF still works.
+
+        This is a regression test ensuring the protocol change didn't break
+        any existing functionality.
+        """
+        s1 = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": (1, 2, 3, 1),
+                    "b": (-42, 8, 2, -42),
+                    "o": (7, 8, 9, 10),
+                    "c": ("x", "y", "z", "v"),
+                    "id": (1, 2, 3, 4),
+                    "w": (0.5, 2, 1, 1),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+            outcome_columns="o",
+        )
+
+        s2 = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": (1, 2, 3),
+                    "b": (4, 6, 8),
+                    "id": (1, 2, 3),
+                    "w": (0.5, 1, 2),
+                    "c": ("x", "y", "z"),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+
+        s3 = s1.set_target(s2)
+        s3_null = s3.adjust(method="null")
+
+        # covars
+        covars = s3_null.covars()
+        self.assertIsNotNone(covars.df)
+        self.assertIsNotNone(covars.mean())
+        linked = covars._BalanceDF_child_from_linked_samples()
+        self.assertIn("self", linked)
+        self.assertIn("target", linked)
+        self.assertIn("unadjusted", linked)
+
+        # weights
+        weights = s3_null.weights()
+        self.assertIsNotNone(weights.df)
+        self.assertIsNotNone(weights.design_effect())
+
+        # outcomes
+        outcomes = s3_null.outcomes()
+        self.assertIsNotNone(outcomes.df)

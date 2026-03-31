@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Callable, Dict, Literal, Tuple
+from typing import Any, Callable, Dict, Literal, Protocol, runtime_checkable, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -17,7 +17,6 @@ import pandas as pd
 from balance import util as balance_util
 from balance.adjustment import trim_weights
 from balance.csv_utils import to_csv_with_defaults
-from balance.sample_class import Sample
 from balance.stats_and_plots import (
     general_stats,
     impact_of_weights_on_outcome,
@@ -38,12 +37,62 @@ from plotly.graph_objs import Figure
 logger: "logging.Logger" = logging.getLogger(__package__)
 
 
+@runtime_checkable
+class BalanceDFSource(Protocol):
+    """Protocol for objects that can back a BalanceDF.
+
+    Any object satisfying this protocol can be passed to BalanceDF, BalanceDFCovars,
+    BalanceDFWeights, and BalanceDFOutcomes constructors. Both ``Sample`` and
+    ``SampleFrame`` implement this protocol, allowing BalanceDF to work with
+    either backing class without modification.
+
+    The six members below are the complete set of attributes and methods that
+    BalanceDF and its subclasses access on the backing object (``self._sample``).
+    They were identified by auditing every ``self._sample.*`` access in
+    ``balancedf_class.py``.
+
+    Attributes:
+        weight_column: Active weight column as a ``pd.Series``.
+        id_column: Row identifier column as a ``pd.Series``.
+        _links: Dict mapping relationship names (e.g. ``"target"``,
+            ``"unadjusted"``) to other ``BalanceDFSource`` instances.
+        _outcome_columns: Outcome DataFrame, or ``None`` if no outcomes.
+
+    Methods:
+        _covar_columns: Return the covariate DataFrame.
+        set_weights: Replace the active weight column.
+    """
+
+    @property
+    def weight_column(self) -> pd.Series:  # noqa: E704
+        ...
+
+    @property
+    def id_column(self) -> pd.Series:  # noqa: E704
+        ...
+
+    @property
+    def _links(self) -> dict[str, BalanceDFSource]:  # noqa: E704
+        ...
+
+    def _covar_columns(self) -> pd.DataFrame:  # noqa: E704
+        ...
+
+    @property
+    def _outcome_columns(self) -> pd.DataFrame | None:  # noqa: E704
+        ...
+
+    def set_weights(self, weights: pd.Series | float | None) -> None:  # noqa: E704
+        ...
+
+
 class BalanceDF:
     """
-    Wrapper class around a Sample which provides additional balance-specific functionality
+    Wrapper class around a BalanceDFSource which provides additional balance-specific functionality.
 
-    This class encapsulates a pandas DataFrame along with a Sample object reference,
-    providing methods for statistical analysis, plotting, and data transformation.
+    This class encapsulates a pandas DataFrame along with a BalanceDFSource-compatible
+    object (e.g. Sample, SampleFrame), providing methods for statistical analysis,
+    plotting, and data transformation.
     """
 
     _model_matrix: Any = None
@@ -51,18 +100,18 @@ class BalanceDF:
     def __init__(
         self: "BalanceDF",
         df: pd.DataFrame,
-        sample: Sample,
+        sample: BalanceDFSource,
         name: Literal["outcomes", "weights", "covars"],
-        links: dict[str, "Sample"] | None = None,
+        links: dict[str, "BalanceDFSource"] | None = None,
     ) -> None:
         """A basic init method used by BalanceDFOutcomes,BalanceDFCovars, and BalanceDFWeights
 
         Args:
             self (BalanceDF): The object that is initiated.
             df (pd.DataFrame): a df from a sample object.
-            sample (Sample): A sample object to be stored as reference.
+            sample (BalanceDFSource): A BalanceDFSource-compatible object (e.g. Sample, SampleFrame) to be stored as reference.
             name (Literal["outcomes", "weights", "covars"]): The type of object that will be created. In practice, used for "outcomes", "weights" and "covars".
-            links (dict[str, Sample] | None): Optional explicit links dict
+            links (dict[str, BalanceDFSource] | None): Optional explicit links dict
                 (e.g. {"target": ..., "unadjusted": ...}).  When provided,
                 _BalanceDF_child_from_linked_samples uses this instead of
                 sample._links.  This allows BalanceDF to work with sources
@@ -110,28 +159,28 @@ class BalanceDF:
             )
 
     @property
-    def _sample(self: "BalanceDF") -> "Sample":
+    def _sample(self: "BalanceDF") -> BalanceDFSource:
         """Access __sample internal object.
 
         Args:
             self (BalanceDF): Object
 
         Returns:
-            Sample: __sample
+            BalanceDFSource: __sample
         """
         return self.__sample
 
     @property
     def _weights(
         self: "BalanceDF",
-    ) -> pd.DataFrame | None:
+    ) -> pd.Series | None:
         """Access the weight_column in __sample.
 
         Args:
             self (BalanceDF): Object
 
         Returns:
-            pd.DataFrame | None: The weights (with no column name)
+            pd.Series | None: The weights (with no column name)
         """
         w = self._sample.weight_column
         return w.rename(None)
@@ -2150,7 +2199,11 @@ class BalanceDF:
 
 
 class BalanceDFOutcomes(BalanceDF):
-    def __init__(self: "BalanceDFOutcomes", sample: Sample) -> None:
+    def __init__(
+        self: "BalanceDFOutcomes",
+        sample: BalanceDFSource,
+        links: Dict[str, BalanceDFSource] | None = None,
+    ) -> None:
         """A factory function to create BalanceDFOutcomes
 
         This is used through :func:`Sample.outcomes`.
@@ -2159,9 +2212,12 @@ class BalanceDFOutcomes(BalanceDF):
 
         Args:
             self (BalanceDFOutcomes): Object that is initiated.
-            sample (Sample): Object
+            sample (BalanceDFSource): A BalanceDFSource-compatible object (e.g. Sample, SampleFrame).
+            links (Dict | None): Optional explicit links for BalanceDF.
         """
-        super().__init__(sample._outcome_columns, sample, name="outcomes")
+        # pyre-fixme[6]: _outcome_columns is Optional[DataFrame]; callers must
+        # ensure it is not None before constructing BalanceDFOutcomes.
+        super().__init__(sample._outcome_columns, sample, name="outcomes", links=links)
 
     # TODO: add the `relative_to` argument (with options 'self' and 'target')
     #       this will also require to update _relative_response_rates a bit.
@@ -2673,7 +2729,8 @@ class BalanceDFOutcomes(BalanceDF):
 class BalanceDFCovars(BalanceDF):
     def __init__(
         self: "BalanceDFCovars",
-        sample: Sample,
+        sample: BalanceDFSource,
+        links: Dict[str, BalanceDFSource] | None = None,
         formula: str | list[str] | None = None,
     ) -> None:
         """A factory function to create BalanceDFCovars
@@ -2684,11 +2741,12 @@ class BalanceDFCovars(BalanceDF):
 
         Args:
             self (BalanceDFCovars): Object that is initiated.
-            sample (Sample): Object
+            sample (BalanceDFSource): A BalanceDFSource-compatible object (e.g. Sample, SampleFrame).
+            links (Dict | None): Optional explicit links for BalanceDF.
             formula (str | list[str] | None, optional): Optional formula to use
                 as the default when constructing model matrices for this object.
         """
-        super().__init__(sample._covar_columns(), sample, name="covars")
+        super().__init__(sample._covar_columns(), sample, name="covars", links=links)
         self._formula: str | list[str] | None = formula
 
     def model_matrix(
@@ -2739,6 +2797,10 @@ class BalanceDFCovars(BalanceDF):
             covars.df.columns.tolist()
             # ['index', 'a', 'b']
         """
+        from balance.sample_class import (  # lazy import to avoid circular dependency
+            Sample,
+        )
+
         df = df.reset_index()
         concat_list: list[pd.DataFrame | pd.Series] = [
             df,
@@ -2751,7 +2813,11 @@ class BalanceDFCovars(BalanceDF):
 
 
 class BalanceDFWeights(BalanceDF):
-    def __init__(self: "BalanceDFWeights", sample: Sample) -> None:
+    def __init__(
+        self: "BalanceDFWeights",
+        sample: BalanceDFSource,
+        links: Dict[str, BalanceDFSource] | None = None,
+    ) -> None:
         """A factory function to create BalanceDFWeights
 
         This is used through :func:`Sample.weights`.
@@ -2760,9 +2826,12 @@ class BalanceDFWeights(BalanceDF):
 
         Args:
             self (BalanceDFWeights): Object that is initiated.
-            sample (Sample): Object
+            sample (BalanceDFSource): A BalanceDFSource-compatible object (e.g. Sample, SampleFrame).
+            links (Dict | None): Optional explicit links for BalanceDF.
         """
-        super().__init__(sample.weight_column.to_frame(), sample, name="weights")
+        super().__init__(
+            sample.weight_column.to_frame(), sample, name="weights", links=links
+        )
 
     @property
     def df(self: "BalanceDFWeights") -> pd.DataFrame:
@@ -3000,9 +3069,12 @@ class BalanceDFWeights(BalanceDF):
 
         target_sample = self._sample._links.get("target")
         if target_propensity is None:
-            self._sample._no_target_error()
-            target_sample = self._sample._links["target"]
-            target_propensity = np.ones(target_sample.df.shape[0], dtype=float)
+            if target_sample is None:
+                raise ValueError(
+                    "This Sample does not have a target set. "
+                    "Use sample.set_target to add target"
+                )
+            target_propensity = np.ones(len(target_sample.weight_column), dtype=float)
         elif np.isscalar(target_propensity):
             if target_sample is None:
                 raise ValueError(
@@ -3010,13 +3082,15 @@ class BalanceDFWeights(BalanceDF):
                     "target_propensity is scalar"
                 )
             target_propensity = np.full(
-                target_sample.df.shape[0], float(target_propensity), dtype=float
+                len(target_sample.weight_column),
+                float(target_propensity),
+                dtype=float,
             )
         elif target_sample is not None:
             target_propensity_array = np.asarray(target_propensity)
             if target_propensity_array.ndim == 0:
                 target_propensity_array = target_propensity_array.reshape(1)
-            if target_propensity_array.shape[0] != target_sample.df.shape[0]:
+            if target_propensity_array.shape[0] != len(target_sample.weight_column):
                 raise ValueError(
                     "BalanceDFWeights.r_indicator requires target_propensity length "
                     "to match linked target row count"

@@ -657,6 +657,7 @@ class Sample:
             # NOTE: must import here so to avoid circular dependency
             from balance.balancedf_class import BalanceDFOutcomes
 
+            # pyre-fixme[6]: Sample satisfies BalanceDFSource structurally
             return BalanceDFOutcomes(self)
         else:
             return None
@@ -701,6 +702,7 @@ class Sample:
         # NOTE: must import here so to avoid circular dependency
         from balance.balancedf_class import BalanceDFWeights
 
+        # pyre-fixme[6]: Sample satisfies BalanceDFSource structurally
         return BalanceDFWeights(self)
 
     def covars(
@@ -749,6 +751,7 @@ class Sample:
         # NOTE: must import here so to avoid circular dependency
         from balance.balancedf_class import BalanceDFCovars
 
+        # pyre-fixme[6]: Sample satisfies BalanceDFSource structurally
         return BalanceDFCovars(self, formula=formula)
 
     def ignored_columns(self: "Sample") -> pd.DataFrame | None:

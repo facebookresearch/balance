@@ -12,6 +12,7 @@ import logging
 from balance.balancedf_class import (  # noqa
     BalanceDFCovars,  # noqa
     BalanceDFOutcomes,  # noqa
+    BalanceDFSource,  # noqa
     BalanceDFWeights,  # noqa
 )
 from balance.datasets import load_data  # noqa
