@@ -964,6 +964,41 @@ unadjusted 0.480</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.to_balance_frame">
+<span class="sig-name descname"><span class="pre">to_balance_frame</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.to_balance_frame"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.to_balance_frame" title="Link to this definition">¶</a></dt>
+<dd><p>Convert this Sample (with target) to a <code class="xref py py-class docutils literal notranslate"><span class="pre">BalanceFrame</span></code>.</p>
+<p>The Sample must have a target set.  If the Sample is adjusted, the
+adjustment state is preserved in the BalanceFrame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>A new BalanceFrame mirroring this Sample’s data,</dt><dd><p>target, and adjustment state.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>BalanceFrame</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If this Sample does not have a target set.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sample</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">],</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">15.0</span><span class="p">,</span> <span class="mf">25.0</span><span class="p">],</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bf</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">set_target</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">to_balance_frame</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bf</span><span class="o">.</span><span class="n">is_adjusted</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="balance.sample_class.Sample.to_csv">
 <span class="sig-name descname"><span class="pre">to_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_or_buf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">IO</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.to_csv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.to_csv" title="Link to this definition">¶</a></dt>
 <dd><p>Write df with ids from BalanceDF to a comma-separated values (csv) file.</p>
@@ -1050,6 +1085,33 @@ isinstance(sample.to_download(tempdir=tempfile.gettempdir()), FileLink)
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_class.Sample.to_sample_frame">
+<span class="sig-name descname"><span class="pre">to_sample_frame</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.to_sample_frame"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.to_sample_frame" title="Link to this definition">¶</a></dt>
+<dd><p>Convert this Sample to a <code class="xref py py-class docutils literal notranslate"><span class="pre">SampleFrame</span></code>.</p>
+<p>Preserves all data and column roles (id, weight, outcomes, ignored
+columns mapped to misc).  The returned SampleFrame is independent
+of the original Sample.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A new SampleFrame mirroring this Sample.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>SampleFrame</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sample</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">],</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sf</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">to_sample_frame</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">sf</span><span class="o">.</span><span class="n">df_covars</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+<span class="go">[&#39;x&#39;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="balance.sample_class.Sample.weights">
 <span class="sig-name descname"><span class="pre">weights</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="reference internal" href="_modules/balance/sample_class.html#Sample.weights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_class.Sample.weights" title="Link to this definition">¶</a></dt>
 <dd><p>Produce a BalanceDFWeights from a Sample object.
@@ -1126,8 +1188,10 @@ sample.weights().df.columns.tolist()
 <li><a class="reference internal" href="#balance.sample_class.Sample.set_unadjusted"><code class="docutils literal notranslate"><span class="pre">Sample.set_unadjusted()</span></code></a></li>
 <li><a class="reference internal" href="#balance.sample_class.Sample.set_weights"><code class="docutils literal notranslate"><span class="pre">Sample.set_weights()</span></code></a></li>
 <li><a class="reference internal" href="#balance.sample_class.Sample.summary"><code class="docutils literal notranslate"><span class="pre">Sample.summary()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.to_balance_frame"><code class="docutils literal notranslate"><span class="pre">Sample.to_balance_frame()</span></code></a></li>
 <li><a class="reference internal" href="#balance.sample_class.Sample.to_csv"><code class="docutils literal notranslate"><span class="pre">Sample.to_csv()</span></code></a></li>
 <li><a class="reference internal" href="#balance.sample_class.Sample.to_download"><code class="docutils literal notranslate"><span class="pre">Sample.to_download()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_class.Sample.to_sample_frame"><code class="docutils literal notranslate"><span class="pre">Sample.to_sample_frame()</span></code></a></li>
 <li><a class="reference internal" href="#balance.sample_class.Sample.weights"><code class="docutils literal notranslate"><span class="pre">Sample.weights()</span></code></a></li>
 </ul>
 </li>

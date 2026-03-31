@@ -46,7 +46,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Protocol</span><span class="p">,</span> <span class="n">runtime_checkable</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">npt</span>
@@ -54,7 +54,6 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">util</span> <span class="k">as</span> <span class="n">balance_util</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.adjustment</span><span class="w"> </span><span class="kn">import</span> <span class="n">trim_weights</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.csv_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_csv_with_defaults</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sample</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">general_stats</span><span class="p">,</span>
     <span class="n">impact_of_weights_on_outcome</span><span class="p">,</span>
@@ -75,14 +74,73 @@
 <span class="n">logger</span><span class="p">:</span> <span class="s2">&quot;logging.Logger&quot;</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
 
 
+<div class="viewcode-block" id="BalanceDFSource">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDFSource">[docs]</a>
+<span class="nd">@runtime_checkable</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BalanceDFSource</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Protocol for objects that can back a BalanceDF.</span>
+
+<span class="sd">    Any object satisfying this protocol can be passed to BalanceDF, BalanceDFCovars,</span>
+<span class="sd">    BalanceDFWeights, and BalanceDFOutcomes constructors. Both ``Sample`` and</span>
+<span class="sd">    ``SampleFrame`` implement this protocol, allowing BalanceDF to work with</span>
+<span class="sd">    either backing class without modification.</span>
+
+<span class="sd">    The six members below are the complete set of attributes and methods that</span>
+<span class="sd">    BalanceDF and its subclasses access on the backing object (``self._sample``).</span>
+<span class="sd">    They were identified by auditing every ``self._sample.*`` access in</span>
+<span class="sd">    ``balancedf_class.py``.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        weight_column: Active weight column as a ``pd.Series``.</span>
+<span class="sd">        id_column: Row identifier column as a ``pd.Series``.</span>
+<span class="sd">        _links: Dict mapping relationship names (e.g. ``&quot;target&quot;``,</span>
+<span class="sd">            ``&quot;unadjusted&quot;``) to other ``BalanceDFSource`` instances.</span>
+<span class="sd">        _outcome_columns: Outcome DataFrame, or ``None`` if no outcomes.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        _covar_columns: Return the covariate DataFrame.</span>
+<span class="sd">        set_weights: Replace the active weight column.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">weight_column</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>  <span class="c1"># noqa: E704</span>
+        <span class="o">...</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">id_column</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>  <span class="c1"># noqa: E704</span>
+        <span class="o">...</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_links</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">BalanceDFSource</span><span class="p">]:</span>  <span class="c1"># noqa: E704</span>
+        <span class="o">...</span>
+
+<div class="viewcode-block" id="BalanceDFSource._covar_columns">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDFSource._covar_columns">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_covar_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>  <span class="c1"># noqa: E704</span>
+        <span class="o">...</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_outcome_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># noqa: E704</span>
+        <span class="o">...</span>
+
+<div class="viewcode-block" id="BalanceDFSource.set_weights">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDFSource.set_weights">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># noqa: E704</span>
+        <span class="o">...</span></div>
+</div>
+
+
+
 <div class="viewcode-block" id="BalanceDF">
 <a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BalanceDF</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Wrapper class around a Sample which provides additional balance-specific functionality</span>
+<span class="sd">    Wrapper class around a BalanceDFSource which provides additional balance-specific functionality.</span>
 
-<span class="sd">    This class encapsulates a pandas DataFrame along with a Sample object reference,</span>
-<span class="sd">    providing methods for statistical analysis, plotting, and data transformation.</span>
+<span class="sd">    This class encapsulates a pandas DataFrame along with a BalanceDFSource-compatible</span>
+<span class="sd">    object (e.g. Sample, SampleFrame), providing methods for statistical analysis,</span>
+<span class="sd">    plotting, and data transformation.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">_model_matrix</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
@@ -90,16 +148,22 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
         <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
-        <span class="n">sample</span><span class="p">:</span> <span class="n">Sample</span><span class="p">,</span>
+        <span class="n">sample</span><span class="p">:</span> <span class="n">BalanceDFSource</span><span class="p">,</span>
         <span class="n">name</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;outcomes&quot;</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">,</span> <span class="s2">&quot;covars&quot;</span><span class="p">],</span>
+        <span class="n">links</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;BalanceDFSource&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A basic init method used by BalanceDFOutcomes,BalanceDFCovars, and BalanceDFWeights</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (BalanceDF): The object that is initiated.</span>
 <span class="sd">            df (pd.DataFrame): a df from a sample object.</span>
-<span class="sd">            sample (Sample): A sample object to be stored as reference.</span>
+<span class="sd">            sample (BalanceDFSource): A BalanceDFSource-compatible object (e.g. Sample, SampleFrame) to be stored as reference.</span>
 <span class="sd">            name (Literal[&quot;outcomes&quot;, &quot;weights&quot;, &quot;covars&quot;]): The type of object that will be created. In practice, used for &quot;outcomes&quot;, &quot;weights&quot; and &quot;covars&quot;.</span>
+<span class="sd">            links (dict[str, BalanceDFSource] | None): Optional explicit links dict</span>
+<span class="sd">                (e.g. {&quot;target&quot;: ..., &quot;unadjusted&quot;: ...}).  When provided,</span>
+<span class="sd">                _BalanceDF_child_from_linked_samples uses this instead of</span>
+<span class="sd">                sample._links.  This allows BalanceDF to work with sources</span>
+<span class="sd">                that do not carry mutable _links (e.g. SampleFrame).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># NOTE: double underscore helps to add friction so that users do not change these objects.</span>
         <span class="c1">#       see details here: https://stackoverflow.com/a/1301369/256662</span>
@@ -107,6 +171,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">__sample</span> <span class="o">=</span> <span class="n">sample</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__df</span> <span class="o">=</span> <span class="n">df</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__links_override</span> <span class="o">=</span> <span class="n">links</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__name</span>
@@ -142,28 +207,28 @@
             <span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Sample&quot;</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BalanceDFSource</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Access __sample internal object.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (BalanceDF): Object</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Sample: __sample</span>
+<span class="sd">            BalanceDFSource: __sample</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__sample</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_weights</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Access the weight_column in __sample.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (BalanceDF): Object</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            pd.DataFrame | None: The weights (with no column name)</span>
+<span class="sd">            pd.Series | None: The weights (with no column name)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="o">.</span><span class="n">weight_column</span>
         <span class="k">return</span> <span class="n">w</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
@@ -325,11 +390,17 @@
             <span class="o">|</span> <span class="s2">&quot;BalanceDFOutcomes&quot;</span>
             <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
         <span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;self&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="p">}</span>
+        <span class="c1"># Use explicit links if provided, otherwise fall back to sample._links</span>
+        <span class="n">links</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__links_override</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__links_override</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="o">.</span><span class="n">_links</span>
+        <span class="p">)</span>
         <span class="n">linked_child_kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_linked_child_kwargs</span><span class="p">()</span>
         <span class="n">d</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
             <span class="p">{</span>
                 <span class="n">k</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">BalanceDF_child_method</span><span class="p">)(</span><span class="o">**</span><span class="n">linked_child_kwargs</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="o">.</span><span class="n">_links</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">links</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
             <span class="p">}</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">d</span>
@@ -2230,7 +2301,11 @@
 <div class="viewcode-block" id="BalanceDFOutcomes">
 <a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDFOutcomes">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BalanceDFOutcomes</span><span class="p">(</span><span class="n">BalanceDF</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFOutcomes&quot;</span><span class="p">,</span> <span class="n">sample</span><span class="p">:</span> <span class="n">Sample</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFOutcomes&quot;</span><span class="p">,</span>
+        <span class="n">sample</span><span class="p">:</span> <span class="n">BalanceDFSource</span><span class="p">,</span>
+        <span class="n">links</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">BalanceDFSource</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A factory function to create BalanceDFOutcomes</span>
 
 <span class="sd">        This is used through :func:`Sample.outcomes`.</span>
@@ -2239,9 +2314,12 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (BalanceDFOutcomes): Object that is initiated.</span>
-<span class="sd">            sample (Sample): Object</span>
+<span class="sd">            sample (BalanceDFSource): A BalanceDFSource-compatible object (e.g. Sample, SampleFrame).</span>
+<span class="sd">            links (Dict | None): Optional explicit links for BalanceDF.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">_outcome_columns</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;outcomes&quot;</span><span class="p">)</span>
+        <span class="c1"># pyre-fixme[6]: _outcome_columns is Optional[DataFrame]; callers must</span>
+        <span class="c1"># ensure it is not None before constructing BalanceDFOutcomes.</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">_outcome_columns</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;outcomes&quot;</span><span class="p">,</span> <span class="n">links</span><span class="o">=</span><span class="n">links</span><span class="p">)</span>
 
     <span class="c1"># TODO: add the `relative_to` argument (with options &#39;self&#39; and &#39;target&#39;)</span>
     <span class="c1">#       this will also require to update _relative_response_rates a bit.</span>
@@ -2774,7 +2852,8 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">BalanceDFCovars</span><span class="p">(</span><span class="n">BalanceDF</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFCovars&quot;</span><span class="p">,</span>
-        <span class="n">sample</span><span class="p">:</span> <span class="n">Sample</span><span class="p">,</span>
+        <span class="n">sample</span><span class="p">:</span> <span class="n">BalanceDFSource</span><span class="p">,</span>
+        <span class="n">links</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">BalanceDFSource</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A factory function to create BalanceDFCovars</span>
@@ -2785,11 +2864,12 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (BalanceDFCovars): Object that is initiated.</span>
-<span class="sd">            sample (Sample): Object</span>
+<span class="sd">            sample (BalanceDFSource): A BalanceDFSource-compatible object (e.g. Sample, SampleFrame).</span>
+<span class="sd">            links (Dict | None): Optional explicit links for BalanceDF.</span>
 <span class="sd">            formula (str | list[str] | None, optional): Optional formula to use</span>
 <span class="sd">                as the default when constructing model matrices for this object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">_covar_columns</span><span class="p">(),</span> <span class="n">sample</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;covars&quot;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">_covar_columns</span><span class="p">(),</span> <span class="n">sample</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;covars&quot;</span><span class="p">,</span> <span class="n">links</span><span class="o">=</span><span class="n">links</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">formula</span>
 
 <div class="viewcode-block" id="BalanceDFCovars.model_matrix">
@@ -2845,6 +2925,10 @@
 <span class="sd">            covars.df.columns.tolist()</span>
 <span class="sd">            # [&#39;index&#39;, &#39;a&#39;, &#39;b&#39;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_class</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>  <span class="c1"># lazy import to avoid circular dependency</span>
+            <span class="n">Sample</span><span class="p">,</span>
+        <span class="p">)</span>
+
         <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
         <span class="n">concat_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">df</span><span class="p">,</span>
@@ -2861,7 +2945,11 @@
 <div class="viewcode-block" id="BalanceDFWeights">
 <a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDFWeights">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BalanceDFWeights</span><span class="p">(</span><span class="n">BalanceDF</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFWeights&quot;</span><span class="p">,</span> <span class="n">sample</span><span class="p">:</span> <span class="n">Sample</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFWeights&quot;</span><span class="p">,</span>
+        <span class="n">sample</span><span class="p">:</span> <span class="n">BalanceDFSource</span><span class="p">,</span>
+        <span class="n">links</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">BalanceDFSource</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A factory function to create BalanceDFWeights</span>
 
 <span class="sd">        This is used through :func:`Sample.weights`.</span>
@@ -2870,9 +2958,12 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (BalanceDFWeights): Object that is initiated.</span>
-<span class="sd">            sample (Sample): Object</span>
+<span class="sd">            sample (BalanceDFSource): A BalanceDFSource-compatible object (e.g. Sample, SampleFrame).</span>
+<span class="sd">            links (Dict | None): Optional explicit links for BalanceDF.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">to_frame</span><span class="p">(),</span> <span class="n">sample</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;weights&quot;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">sample</span><span class="o">.</span><span class="n">weight_column</span><span class="o">.</span><span class="n">to_frame</span><span class="p">(),</span> <span class="n">sample</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;weights&quot;</span><span class="p">,</span> <span class="n">links</span><span class="o">=</span><span class="n">links</span>
+        <span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">df</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFWeights&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
@@ -3121,9 +3212,12 @@
 
         <span class="n">target_sample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="o">.</span><span class="n">_links</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">target_propensity</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="o">.</span><span class="n">_no_target_error</span><span class="p">()</span>
-            <span class="n">target_sample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span>
-            <span class="n">target_propensity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">target_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">target_sample</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;This Sample does not have a target set. &quot;</span>
+                    <span class="s2">&quot;Use sample.set_target to add target&quot;</span>
+                <span class="p">)</span>
+            <span class="n">target_propensity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">target_sample</span><span class="o">.</span><span class="n">weight_column</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">target_propensity</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">target_sample</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -3131,13 +3225,15 @@
                     <span class="s2">&quot;target_propensity is scalar&quot;</span>
                 <span class="p">)</span>
             <span class="n">target_propensity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
-                <span class="n">target_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">float</span><span class="p">(</span><span class="n">target_propensity</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">target_sample</span><span class="o">.</span><span class="n">weight_column</span><span class="p">),</span>
+                <span class="nb">float</span><span class="p">(</span><span class="n">target_propensity</span><span class="p">),</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">elif</span> <span class="n">target_sample</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">target_propensity_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">target_propensity</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">target_propensity_array</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">target_propensity_array</span> <span class="o">=</span> <span class="n">target_propensity_array</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">target_propensity_array</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">target_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">target_propensity_array</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">target_sample</span><span class="o">.</span><span class="n">weight_column</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                     <span class="s2">&quot;BalanceDFWeights.r_indicator requires target_propensity length &quot;</span>
                     <span class="s2">&quot;to match linked target row count&quot;</span>

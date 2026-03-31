@@ -67,6 +67,154 @@ hide_title: true
 - **`Sample.outcome_variance_ratio()` is deprecated** — use `sample.outcomes().outcome_variance_ratio()` instead.
   New method added to `BalanceDFOutcomes`. Will be removed in balance 0.19.0.
 
+## New Features
+
+- **Added `SampleFrame` — a DataFrame container with explicit column-role metadata**
+  - New class in `sample_frame.py` that holds a single DataFrame and tracks which
+    columns are covariates, weights, outcomes, predicted outcomes, and misc.
+  - Factory methods: `SampleFrame.from_frame()` (with auto-detection of id/weight
+    columns) and `SampleFrame.from_csv()`.
+  - DataFrame-access properties use `df_*` prefix convention: `df_covars`,
+    `df_weights`, `df_outcomes`, `df_misc`. All return copies for mutation safety.
+  - Column-role list properties: `covars_columns`, `weight_columns`,
+    `outcome_columns`, `predicted_outcome_columns`, `misc_columns` (all return
+    copies).
+  - Internal `_create()` factory with `_skip_copy` optimization for callers that
+    have already deep-copied.
+  - Comprehensive validation: null/negative/non-numeric weights, null IDs,
+    duplicate IDs, overlapping column roles.
+
+- **Added weight provenance tracking to `SampleFrame`**
+  - `set_weight_metadata()` / `weight_metadata()`: store/retrieve arbitrary
+    provenance dicts (method, hyperparameters, timestamps) for weight columns.
+  - `set_active_weight()`: switch the active weight column returned by `df_weights`.
+  - `add_weight_column()`: append a new weight column with length validation,
+    duplicate-name guard (including non-weight columns), and optional metadata.
+
+## Tests
+
+- Added comprehensive tests in `test_sample_frame.py` (8 test classes, ~60 tests):
+  - `TestSampleFrame` — basic creation, DataFrame properties, repr
+  - `TestSampleFrameMutableViewSafety` — mutation isolation for all properties
+  - `TestSampleFrameColumnRoleProperties` — column-role list properties with
+    copy-safety
+  - `TestSampleFrameFromFrame` — auto-detection, validation, equivalence with
+    `Sample.from_frame()`
+  - `TestSampleFrameFromCsv` — CSV roundtrip and kwargs forwarding
+  - `TestSampleFrameDunderMethods` — `__len__`, `__deepcopy__`
+  - `TestSampleFrameEdgeCases` — zero rows, empty weights, skip_copy isolation
+  - `TestSampleFrameWeightMetadata` — weight metadata roundtrip, active weight
+    default, empty dict storage, invalid column, set_active_weight,
+    add_weight_column (with metadata, duplicate guard, non-weight column guard,
+    length mismatch), multi-weight workflow (14 tests)
+  - `TestSampleFrameIntegration` — full lifecycle integration test exercising
+    auto-detection, pd.NA handling, multiple weight columns with add/switch
+    workflow, and numerical equivalence with `Sample.from_frame()` (1 test)
+
+- **`SampleFrame` now implements the `BalanceDFSource` protocol**
+  - Added `weight_column` property: returns the active weight as a `pd.Series`.
+  - Added `_covar_columns()` method: returns covariate DataFrame (delegates to
+    `df_covars`).
+  - Added `_outcome_columns` property: returns outcome DataFrame or None (delegates
+    to `df_outcomes`).
+  - Added `set_weights()` method: replaces active weight values (accepts Series,
+    float, or None).
+  - Added `_links` attribute: default empty dict, used by `BalanceDF` for linked
+    samples (e.g. target/unadjusted).
+  - `id_column` property already existed — no changes needed.
+  - `SampleFrame` can now be passed directly to `BalanceDF`, `BalanceDFCovars`,
+    `BalanceDFWeights`, and `BalanceDFOutcomes` constructors without any adapter.
+
+- **Added `BalanceFrame` — immutable adjustment orchestrator for survey weighting**
+  - New class in `balance_frame.py` that pairs a responder `SampleFrame` with a
+    target `SampleFrame` for survey/observational data reweighting.
+  - `__new__`-based constructor: `BalanceFrame(responders=..., target=...)` with
+    covariate overlap validation.
+  - `adjust(method="ipw")`: returns a NEW BalanceFrame (immutable pattern) with
+    adjusted weights. Supports string methods (`"ipw"`, `"cbps"`, `"rake"`,
+    `"poststratify"`, `"null"`) and custom callables.
+  - Properties: `responders`, `target`, `unadjusted`, `is_adjusted`.
+  - `model()`: returns the adjustment model dictionary.
+  - Records weight provenance metadata on the adjusted weight column.
+  - Default transformations applied when neither SampleFrame has custom transforms.
+  - Calls weighting functions directly with DataFrames (no Sample dependency).
+  - `covars()` → `BalanceDFCovars`, `weights()` → `BalanceDFWeights`,
+    `outcomes()` → `BalanceDFOutcomes`: wire responder SampleFrame directly to
+    BalanceDF constructors via the BalanceDFSource protocol (no adapter needed).
+  - `_build_links_dict()`: creates linked sources dict for target and unadjusted
+    so that `.mean()`, `.asmd()`, `.summary()` etc. include comparisons across
+    sources.
+  - Added `covars()`, `weights()`, `outcomes()` methods to `SampleFrame` so that
+    linked SampleFrames can produce BalanceDF views (required by the links
+    machinery in `_BalanceDF_child_from_linked_samples`).
+  - `summary()`: consolidated human-readable summary of covariate ASMD/KLD,
+    weight design effect/ESS/ESSP, and outcome means. Delegates to shared
+    `_build_summary()` in `summary_utils.py`.
+  - `diagnostics()`: DataFrame-based diagnostics table with size, weight, model,
+    and covariate ASMD metrics. Delegates to shared `_build_diagnostics()`.
+  - `design_effect()`: returns Kish's design effect (Deff) of responder weights.
+  - `design_effect_prop()`: returns effective sample size proportion (ESSP).
+  - `covar_means()`: compares covariate means across unadjusted/adjusted/target.
+  - `outcome_sd_prop()`: relative change in outcome SD after adjustment, with
+    zero-division guard for constant-valued outcomes (returns NaN).
+  - `outcome_variance_ratio()`: ratio of outcome variance (adjusted/unadjusted).
+  - Private helpers: `_design_effect_diagnostics()`, `_quick_adjustment_details()`.
+  - `df` property: combined DataFrame (responder + target + unadjusted) with a
+    ``"source"`` column. Mirrors `Sample.df`.
+  - `keep_only_some_rows_columns()`: immutable row/column filtering via
+    `pd.DataFrame.eval` expressions and column name lists. Uses `_filter_sf()`
+    static method with None-weight guard.
+  - `to_csv()`: write combined DataFrame to CSV via `to_csv_with_defaults()`.
+  - `to_download()`: create IPython `FileLink` for interactive download.
+
+- **Added bidirectional conversion between Sample, SampleFrame, and BalanceFrame**
+  - `SampleFrame.from_sample(sample)`: converts a Sample to a SampleFrame with
+    proper column-role mapping (id, weight, outcomes, ignored → misc).
+  - `Sample.to_sample_frame()`: convenience method delegating to
+    `SampleFrame.from_sample()`.
+  - `BalanceFrame.from_sample(sample)`: converts a Sample (with target) to a
+    BalanceFrame, preserving adjustment state (unadjusted responders, model).
+  - `Sample.to_balance_frame()`: convenience method delegating to
+    `BalanceFrame.from_sample()`.
+  - `BalanceFrame.to_sample()`: converts a BalanceFrame back to a Sample
+    (reconstructs responder, target, and optionally unadjusted links).
+  - All conversion methods use lazy imports to avoid circular dependencies.
+
+## Code Quality & Refactoring
+
+- **Defined `BalanceDFSource` protocol and decoupled `BalanceDF` from `Sample`**
+  - Added `BalanceDFSource` — a `typing.Protocol` (runtime-checkable) that captures
+    the 6 attributes/methods `BalanceDF` accesses on its backing object:
+    `weight_column`, `id_column`, `_links`, `_covar_columns()`,
+    `_outcome_columns`, and `set_weights()`.
+  - Updated `BalanceDF.__init__`, `BalanceDFCovars.__init__`,
+    `BalanceDFWeights.__init__`, and `BalanceDFOutcomes.__init__` to accept
+    `BalanceDFSource` instead of `Sample`.
+  - Removed the hard top-level `from balance.sample_class import Sample` import
+    from `balancedf_class.py`. The only remaining `Sample` usage
+    (`BalanceDFCovars.from_frame()`) uses a lazy import.
+  - Both `Sample` and the upcoming `SampleFrame` satisfy this protocol, enabling
+    BalanceDF to work with either without an adapter class.
+
+- **Extracted `_build_summary()` and `_build_diagnostics()` into `summary_utils.py`**
+  - Moved the summary and diagnostics logic from `Sample.summary()` and
+    `Sample.diagnostics()` into standalone functions that accept plain
+    DataFrames/Series. `Sample` methods now delegate to these shared functions.
+  - This is a pure refactor — no behavior changes. Enables code reuse by the
+    upcoming `BalanceFrame` class without duplicating summary/diagnostics logic.
+  - Also moves `_concat_metric_val_var` to `summary_utils.py` (re-exported from
+    `sample_class.py` for backward compatibility).
+
+## Tutorials
+
+- Added `balance_quickstart_new_api.ipynb` — end-to-end tutorial demonstrating the
+  new SampleFrame/BalanceFrame API. Mirrors the original `balance_quickstart.ipynb`
+  step-by-step but uses only the new classes (no `Sample`). Covers: loading data,
+  creating SampleFrames, building a BalanceFrame, adjusting (IPW + CBPS), inspecting
+  diagnostics (summary, ASMD, covariate means, design effect), visualization
+  (plotly, seaborn KDE, ASCII plots), outcome analysis, transformations, filtering
+  rows/columns, and exporting to CSV.
+
 ## LLM/GenAI
 
 - **Added `CLAUDE.md` project context files** for Claude Code users, covering architecture,
@@ -75,6 +223,113 @@ hide_title: true
   `CLAUDE.md` and add missing conventions (MIT license header, `from __future__ import annotations`,
   factory pattern, seed fixing, deprecation style).
 
+## Tests
+
+- Added `TestBalanceFrameEndToEnd` class in `test_balance_frame.py` (12 tests):
+  - `test_ipw_end_to_end_equivalence` — full workflow equivalence for IPW
+  - `test_cbps_end_to_end_equivalence` — full workflow equivalence for CBPS
+  - `test_rake_end_to_end_equivalence` — full workflow equivalence for raking
+  - `test_poststratify_end_to_end_equivalence` — full workflow equivalence for
+    post-stratification
+  - `test_unadjusted_covars_mean_sources` — verifies unadjusted has self+target only
+  - `test_adjusted_covars_mean_sources` — verifies adjusted has self+target+unadjusted
+  - `test_immutability_across_methods` — verifies adjust() does not mutate original
+  - `test_diagnostics_equivalence` — diagnostics() shape/metrics match between APIs
+  - `test_covar_means_equivalence` — covar_means() matches between old and new APIs
+  - `test_full_lifecycle_with_transformations` — adjust with custom transformations
+  Each per-method test exercises: `covars().mean()`, `covars().asmd()`,
+  `weights().summary()`, `design_effect()`, `outcomes().mean()`, `summary()`,
+  `to_csv()` — verifying numerical equivalence with the old Sample API.
+
+- Added `TestSampleFrameBalanceDFSourceProtocol` class in `test_sample_frame.py`
+  (21 tests):
+  - `test_isinstance_balancedf_source` — verifies `isinstance(sf, BalanceDFSource)`
+  - `test_weight_column_returns_series`, `test_weight_column_returns_copy`,
+    `test_weight_column_no_active_raises` — weight_column property
+  - `test_id_column_returns_series` — id_column property
+  - `test_links_default_empty`, `test_links_preserved_in_deepcopy` — _links attribute
+  - `test_covar_columns_method`, `test_covar_columns_method_returns_copy` —
+    _covar_columns() method
+  - `test_outcome_columns_property`, `test_outcome_columns_none_when_no_outcomes` —
+    _outcome_columns property
+  - `test_set_weights_series`, `test_set_weights_float`,
+    `test_set_weights_none_resets_to_one`, `test_set_weights_length_mismatch_raises`,
+    `test_set_weights_no_active_raises` — set_weights() method
+  - `test_balancedf_covars_with_sample_frame`,
+    `test_balancedf_weights_with_sample_frame`,
+    `test_balancedf_outcomes_with_sample_frame` — end-to-end BalanceDF construction
+
+- Added comprehensive tests in `test_balance_frame.py` (7 test classes, ~25 tests):
+  - `TestBalanceFrameConstruction` — basic construction, type errors, bare instance
+  - `TestBalanceFrameCovarOverlap` — zero overlap, partial overlap, full overlap
+  - `TestBalanceFrameDeepCopy` — deepcopy of unadjusted BalanceFrame
+  - `TestBalanceFrameRepr` — repr/str output
+  - `TestBalanceFrameCreateDirect` — _create() factory, property accessibility
+  - `TestBalanceFrameAdjust` — IPW adjustment, immutability, custom callable,
+    weight metadata, already-adjusted guard, method name storage, custom transforms,
+    invalid method, deepcopy of adjusted state
+  - `TestBalanceFrameCovarsWeightsOutcomes` — covars/weights/outcomes integration
+    (34 tests): type checks, linked sources, `.df`, `.names()`, `.mean()`,
+    `.std()`, `.var_of_mean()`, `.ci_of_mean()`, `.mean_with_ci()`, `.summary()`,
+    `.model_matrix()`, `.asmd()`, `.asmd_improvement()`, `.to_csv()`,
+    `.design_effect()`, `.trim()`, `.relative_response_rates()`,
+    `.target_response_rates()`, numerical equivalence with Sample API for both
+    covars and weights
+  - `TestBalanceFrameSummaryDiagnostics` — summary(), diagnostics(),
+    design_effect_prop(), _design_effect_diagnostics(), _quick_adjustment_details()
+    (16 tests): section presence, unadjusted behavior, outcome output,
+    cross-validation with Sample API, load_data equivalence, known/uniform/zero
+    weights design effect prop, pre-computed de/ess/essp
+  - `TestBalanceFrameAnalytics` — design_effect(), covar_means(), outcome_sd_prop(),
+    outcome_variance_ratio() (16 tests): known/uniform weights, shape/columns,
+    unadjusted raises, no-outcomes raises, constant outcome NaN guard,
+    cross-validation with Sample API, null method expected values
+  - `TestBalanceFrameDfExportFilter` — df property, keep_only_some_rows_columns,
+    to_csv, to_download (16 tests): source column presence, row counts, adjusted
+    vs unadjusted, immutability, column filtering, undefined variable handling,
+    no-active-weight guard, CSV roundtrip, file export, FileLink type check
+  - `TestBalanceFrameMissingIntegration` — full pipeline (adjust → summary →
+    diagnostics → to_csv), null method weights, unadjusted CSV sources,
+    no-match filter (4 tests)
+
+- Added `TestSampleFrameFromSample` class in `test_sample_frame.py` (8 tests):
+  - basic, with_outcomes, with_ignored_columns, preserves_data, independence,
+    type_error, roundtrip_covars_match, no_outcomes
+
+- Added `TestBalanceFrameFromSample` class in `test_balance_frame.py` (7 tests):
+  - unadjusted, adjusted, covars_preserved, no_target_raises, type_error,
+    with_outcomes, roundtrip_equivalence (with load_data + IPW)
+
+- Added `TestBalanceFrameToSample` class in `test_balance_frame.py` (12 tests):
+  - has_target, not_adjusted, covars_preserved, weight_values, id_values,
+    target_data, adjusted, adjusted_weight_column, with_outcomes,
+    roundtrip_sample_bf_sample, roundtrip_adjusted, roundtrip_load_data
+
+- Added `TestSampleConversion` class in `test_sample.py` (6 tests):
+  - to_sample_frame_basic, to_sample_frame_with_outcomes,
+    to_sample_frame_with_ignored, to_balance_frame_unadjusted,
+    to_balance_frame_adjusted, to_balance_frame_no_target_raises
+
+- Added `TestBalanceDFSourceProtocol` class in `test_balancedf.py` (8 tests):
+  - `test_sample_satisfies_protocol` — verifies `Sample` passes `isinstance` check
+  - `test_protocol_is_runtime_checkable` — verifies protocol is runtime-checkable
+  - `test_non_conforming_object_fails_isinstance` — verifies non-conforming objects
+    fail the isinstance check
+  - `test_balancedf_with_mock_source` — constructs BalanceDF with a minimal mock
+  - `test_balancedf_covars_with_mock_source` — BalanceDFCovars with mock,
+    verifies mean() and _df_with_ids() work
+  - `test_balancedf_weights_with_mock_source` — BalanceDFWeights with mock,
+    verifies design_effect()
+  - `test_balancedf_outcomes_with_mock_source` — BalanceDFOutcomes with mock
+  - `test_existing_sample_api_unchanged` — regression test for existing Sample API
+
+- Added 3 new tests in `test_sample_diagnostics_helper.py`:
+  - `test_build_summary_matches_sample_summary` — verifies `_build_summary()`
+    produces identical output to `Sample.summary()` for an IPW-adjusted sample.
+  - `test_build_diagnostics_matches_sample_diagnostics` — verifies
+    `_build_diagnostics()` matches `Sample.diagnostics()` for null adjustment.
+  - `test_build_diagnostics_with_ipw_matches_sample_diagnostics` — same check
+    for IPW adjustment.
 ## Bug Fixes
 
 - **`prepare_marginal_dist_for_raking` / `_realize_dicts_of_proportions`: fixed memory explosion from LCM expansion**
