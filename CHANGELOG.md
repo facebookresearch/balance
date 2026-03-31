@@ -97,6 +97,9 @@
     default, empty dict storage, invalid column, set_active_weight,
     add_weight_column (with metadata, duplicate guard, non-weight column guard,
     length mismatch), multi-weight workflow (14 tests)
+  - `TestSampleFrameIntegration` — full lifecycle integration test exercising
+    auto-detection, pd.NA handling, multiple weight columns with add/switch
+    workflow, and numerical equivalence with `Sample.from_frame()` (1 test)
 
 ## Code Quality & Refactoring
 

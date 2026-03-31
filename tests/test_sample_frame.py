@@ -803,3 +803,51 @@ class TestSampleFrameWeightMetadata(BalanceTestCase):
         self.assertEqual(len(sf._column_roles["weights"]), 2)
         self.assertEqual(sf.weight_metadata(), {"method": "ipw"})
         self.assertEqual(sf.weight_metadata("weight"), {"method": "original"})
+
+
+class TestSampleFrameIntegration(BalanceTestCase):
+    def test_full_lifecycle(self) -> None:
+        """Exercise SampleFrame from construction through core features.
+
+        This is the Phase 1 gate test verifying all SampleFrame features
+        work together before proceeding to Phase 2 (BalanceFrame).
+
+        Steps:
+            1. Construction with auto-detection (id, weight, covars, outcomes)
+            2. pd.NA → np.nan standardization
+            3. Multiple weight columns with add/switch workflow
+            4. Numerical equivalence with Sample.from_frame()
+        """
+        np.random.seed(2021)
+        df = pd.DataFrame(
+            {
+                "id": range(100),
+                "age": np.random.normal(40, 10, 100),
+                "gender": np.random.choice(["M", "F"], 100),
+                "income": np.random.uniform(20000, 100000, 100),
+                "weight": np.random.uniform(0.5, 2.0, 100),
+                "converted": np.random.binomial(1, 0.3, 100),
+            }
+        )
+
+        # 1. Create with auto-detection
+        sf = SampleFrame.from_frame(df, outcome_columns=["converted"])
+        self.assertEqual(len(sf.df_covars.columns), 3)  # age, gender, income
+        self.assertIsNotNone(sf.df_outcomes)
+
+        # 2. Verify pd.NA handling
+        df_with_na = df.copy()
+        df_with_na.iloc[0, 1] = pd.NA
+        sf_na = SampleFrame.from_frame(df_with_na, outcome_columns=["converted"])
+        self.assertTrue(np.isnan(sf_na.df_covars.iloc[0, 0]))  # pd.NA became np.nan
+
+        # 3. Multiple weight columns
+        sf.add_weight_column("weight_adj", pd.Series(np.ones(100)), {"method": "test"})
+        sf.set_active_weight("weight_adj")
+        self.assertEqual(sf.df_weights.columns[0], "weight_adj")
+        self.assertEqual(len(sf._column_roles["weights"]), 2)
+
+        # 4. Numerical equivalence with Sample
+        sample = Sample.from_frame(df, outcome_columns=["converted"])
+        sf2 = SampleFrame.from_frame(df, outcome_columns=["converted"])
+        pd.testing.assert_frame_equal(sample.covars().df, sf2.df_covars)
