@@ -1467,3 +1467,241 @@ class TestBalanceFrameEndToEnd(BalanceTestCase):
         old_means = old_adjusted.covars().mean()
         new_means = new_adjusted.covars().mean()
         self._assert_numeric_df_equal(old_means, new_means, msg="covars().mean()")
+
+
+class TestBalanceFrameFromSample(BalanceTestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.resp_df = pd.DataFrame(
+            {
+                "id": ["1", "2", "3"],
+                "x1": [10.0, 20.0, 30.0],
+                "x2": [1.0, 2.0, 3.0],
+                "weight": [1.0, 1.0, 1.0],
+            }
+        )
+        self.tgt_df = pd.DataFrame(
+            {
+                "id": ["4", "5", "6"],
+                "x1": [15.0, 25.0, 35.0],
+                "x2": [1.5, 2.5, 3.5],
+                "weight": [1.0, 1.0, 1.0],
+            }
+        )
+        self.sample = Sample.from_frame(self.resp_df)
+        self.target = Sample.from_frame(self.tgt_df)
+
+    def test_from_sample_unadjusted(self) -> None:
+        sample_with_target = self.sample.set_target(self.target)
+        bf = BalanceFrame.from_sample(sample_with_target)
+        self.assertFalse(bf.is_adjusted)
+        self.assertIsNone(bf.unadjusted)
+        self.assertEqual(len(bf.responders._df), 3)
+        self.assertIsNotNone(bf.target)
+        assert bf.target is not None
+        self.assertEqual(len(bf.target._df), 3)
+
+    def test_from_sample_adjusted(self) -> None:
+        adjusted = self.sample.set_target(self.target).adjust(method="null")
+        bf = BalanceFrame.from_sample(adjusted)
+        self.assertTrue(bf.is_adjusted)
+        self.assertIsNotNone(bf.unadjusted)
+        self.assertIsNotNone(bf.model())
+
+    def test_from_sample_covars_preserved(self) -> None:
+        sample_with_target = self.sample.set_target(self.target)
+        bf = BalanceFrame.from_sample(sample_with_target)
+        self.assertEqual(
+            sorted(bf.responders._column_roles["covars"]),
+            sorted(self.sample._covar_columns_names()),
+        )
+
+    def test_from_sample_no_target_raises(self) -> None:
+        with self.assertRaises(ValueError):
+            BalanceFrame.from_sample(self.sample)
+
+    def test_from_sample_type_error(self) -> None:
+        with self.assertRaises(TypeError):
+            BalanceFrame.from_sample("not a sample")  # pyre-ignore[6]
+
+    def test_from_sample_with_outcomes(self) -> None:
+        resp_df = pd.DataFrame(
+            {
+                "id": ["1", "2", "3"],
+                "x1": [10.0, 20.0, 30.0],
+                "y": [0.5, 0.8, 0.3],
+                "weight": [1.0, 1.0, 1.0],
+            }
+        )
+        tgt_df = pd.DataFrame(
+            {
+                "id": ["4", "5", "6"],
+                "x1": [15.0, 25.0, 35.0],
+                "weight": [1.0, 1.0, 1.0],
+            }
+        )
+        sample = Sample.from_frame(resp_df, outcome_columns=["y"])
+        target = Sample.from_frame(tgt_df)
+        bf = BalanceFrame.from_sample(sample.set_target(target))
+        self.assertEqual(bf.responders._column_roles["outcomes"], ["y"])
+
+    def test_from_sample_roundtrip_equivalence(self) -> None:
+        """Verify that converting Sample->BalanceFrame produces equivalent results."""
+        target_df, sample_df = load_data()
+        assert target_df is not None and sample_df is not None
+
+        old_sample = Sample.from_frame(sample_df, outcome_columns=["happiness"])
+        old_target = Sample.from_frame(target_df, outcome_columns=["happiness"])
+        old_adjusted = old_sample.set_target(old_target).adjust(method="ipw")
+
+        bf = BalanceFrame.from_sample(old_adjusted)
+        self.assertTrue(bf.is_adjusted)
+
+        # Compare covars mean numerically
+        old_mean = old_adjusted.covars().mean()
+        new_mean = bf.covars().mean()
+        old_num_cols = old_mean.select_dtypes(include=[np.number])
+        new_num_cols = new_mean.select_dtypes(include=[np.number])
+        for col in old_num_cols.columns:
+            if col in new_num_cols.columns:
+                for o_val, n_val in zip(
+                    old_num_cols[col].dropna(), new_num_cols[col].dropna()
+                ):
+                    self.assertAlmostEqual(o_val, n_val, places=5)
+
+
+class TestBalanceFrameToSample(BalanceTestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.resp_df = pd.DataFrame(
+            {
+                "id": ["1", "2", "3"],
+                "x1": [10.0, 20.0, 30.0],
+                "x2": [1.0, 2.0, 3.0],
+                "weight": [1.0, 1.0, 1.0],
+            }
+        )
+        self.tgt_df = pd.DataFrame(
+            {
+                "id": ["4", "5", "6"],
+                "x1": [15.0, 25.0, 35.0],
+                "x2": [1.5, 2.5, 3.5],
+                "weight": [1.0, 1.0, 1.0],
+            }
+        )
+        self.resp_sf = SampleFrame.from_frame(self.resp_df)
+        self.tgt_sf = SampleFrame.from_frame(self.tgt_df)
+        self.bf = BalanceFrame(responders=self.resp_sf, target=self.tgt_sf)
+
+    def test_to_sample_has_target(self) -> None:
+        s = self.bf.to_sample()
+        self.assertTrue(s.has_target())
+
+    def test_to_sample_not_adjusted(self) -> None:
+        s = self.bf.to_sample()
+        self.assertFalse(s.is_adjusted())
+
+    def test_to_sample_covars_preserved(self) -> None:
+        s = self.bf.to_sample()
+        self.assertEqual(sorted(s._covar_columns_names()), ["x1", "x2"])
+
+    def test_to_sample_weight_values(self) -> None:
+        s = self.bf.to_sample()
+        self.assertEqual(s.weight_column.tolist(), [1.0, 1.0, 1.0])
+
+    def test_to_sample_id_values(self) -> None:
+        s = self.bf.to_sample()
+        self.assertEqual(s.id_column.tolist(), ["1", "2", "3"])
+
+    def test_to_sample_target_data(self) -> None:
+        s = self.bf.to_sample()
+        target = s._links["target"]
+        self.assertEqual(target.id_column.tolist(), ["4", "5", "6"])
+        self.assertEqual(sorted(target._covar_columns_names()), ["x1", "x2"])
+
+    def test_to_sample_adjusted(self) -> None:
+        adjusted_bf = self.bf.adjust(method="null")
+        s = adjusted_bf.to_sample()
+        self.assertTrue(s.is_adjusted())
+        self.assertTrue(s.has_target())
+        self.assertIsNotNone(s.model())
+
+    def test_to_sample_adjusted_weight_column(self) -> None:
+        adjusted_bf = self.bf.adjust(method="null")
+        s = adjusted_bf.to_sample()
+        self.assertEqual(s.weight_column.name, "weight_adjusted")
+
+    def test_to_sample_with_outcomes(self) -> None:
+        resp_df = pd.DataFrame(
+            {
+                "id": ["1", "2", "3"],
+                "x1": [10.0, 20.0, 30.0],
+                "y": [0.5, 0.8, 0.3],
+                "weight": [1.0, 1.0, 1.0],
+            }
+        )
+        resp_sf = SampleFrame.from_frame(resp_df, outcome_columns=["y"])
+        bf = BalanceFrame(responders=resp_sf, target=self.tgt_sf)
+        s = bf.to_sample()
+        self.assertIsNotNone(s._outcome_columns)
+        assert s._outcome_columns is not None
+        self.assertEqual(s._outcome_columns.columns.tolist(), ["y"])
+
+    def test_to_sample_roundtrip_sample_bf_sample(self) -> None:
+        """Sample -> BalanceFrame -> Sample round-trip preserves data."""
+        original = Sample.from_frame(self.resp_df)
+        target = Sample.from_frame(self.tgt_df)
+        original_with_target = original.set_target(target)
+
+        bf = BalanceFrame.from_sample(original_with_target)
+        roundtrip = bf.to_sample()
+
+        self.assertTrue(roundtrip.has_target())
+        self.assertFalse(roundtrip.is_adjusted())
+        self.assertEqual(
+            sorted(roundtrip._covar_columns_names()),
+            sorted(original._covar_columns_names()),
+        )
+        for o_val, r_val in zip(
+            original.weight_column.tolist(), roundtrip.weight_column.tolist()
+        ):
+            self.assertAlmostEqual(o_val, r_val, places=10)
+
+    def test_to_sample_roundtrip_adjusted(self) -> None:
+        """Sample -> adjust -> BalanceFrame -> Sample round-trip for adjusted."""
+        original = Sample.from_frame(self.resp_df)
+        target = Sample.from_frame(self.tgt_df)
+        adjusted = original.set_target(target).adjust(method="null")
+
+        bf = BalanceFrame.from_sample(adjusted)
+        roundtrip = bf.to_sample()
+
+        self.assertTrue(roundtrip.is_adjusted())
+        self.assertTrue(roundtrip.has_target())
+        for o_val, r_val in zip(
+            adjusted.weight_column.tolist(), roundtrip.weight_column.tolist()
+        ):
+            self.assertAlmostEqual(o_val, r_val, places=10)
+
+    def test_to_sample_roundtrip_load_data(self) -> None:
+        """Round-trip with load_data ensures real-world equivalence."""
+        target_df, sample_df = load_data()
+        assert target_df is not None and sample_df is not None
+
+        old_sample = Sample.from_frame(sample_df, outcome_columns=["happiness"])
+        old_target = Sample.from_frame(target_df, outcome_columns=["happiness"])
+        old_adjusted = old_sample.set_target(old_target).adjust(method="ipw")
+
+        bf = BalanceFrame.from_sample(old_adjusted)
+        roundtrip = bf.to_sample()
+
+        self.assertTrue(roundtrip.is_adjusted())
+        self.assertTrue(roundtrip.has_target())
+        for o_val, r_val in zip(
+            old_adjusted.weight_column.tolist(), roundtrip.weight_column.tolist()
+        ):
+            self.assertAlmostEqual(o_val, r_val, places=5)
+        self.assertEqual(
+            sorted(old_adjusted._covar_columns_names()),
+            sorted(roundtrip._covar_columns_names()),
+        )

@@ -1037,6 +1037,85 @@ class SampleFrame:
         if metadata is not None:
             self._weight_metadata[name] = metadata
 
+    @classmethod
+    def from_sample(cls, sample: Any) -> SampleFrame:
+        """Convert a :class:`~balance.sample_class.Sample` to a SampleFrame.
+
+        Preserves the Sample's tabular data and column role assignments:
+        id column, weight column, outcome columns, and ignored columns
+        (mapped to ``misc``).  Covariate columns are inferred by exclusion,
+        matching the Sample's own logic.
+
+        The internal DataFrame is deep-copied so that the resulting
+        SampleFrame is fully independent of the original Sample.
+
+        .. warning:: **Data not preserved in the conversion**
+
+           The following Sample attributes are **not** carried over:
+
+           * ``_adjustment_model`` — the fitted model dictionary stored by
+             :meth:`~balance.sample_class.Sample.adjust`.
+           * ``_links`` — references to ``target``, ``unadjusted``, and other
+             linked Samples (used by :class:`~balance.balancedf_class.BalanceDF`
+             for comparative display).
+           * ``predicted_outcome_columns`` — Sample has no native concept of
+             predicted-outcome columns, so the resulting SampleFrame will
+             always have an empty ``predicted`` role.
+           * **Column ordering** may differ after a round-trip
+             (``Sample → SampleFrame → Sample``), since SampleFrame stores
+             columns grouped by role rather than preserving the original
+             DataFrame column order.
+
+        Args:
+            sample: A :class:`~balance.sample_class.Sample` instance.
+
+        Returns:
+            SampleFrame: A new SampleFrame mirroring the Sample's data and
+                column roles.
+
+        Raises:
+            TypeError: If *sample* is not a Sample instance.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_class import Sample
+            >>> from balance.sample_frame import SampleFrame
+            >>> s = Sample.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 2.0]}))
+            >>> sf = SampleFrame.from_sample(s)
+            >>> list(sf.df_covars.columns)
+            ['x']
+        """
+        # Lazy import: sample_class ↔ sample_frame have a circular dependency.
+        from balance.sample_class import Sample
+
+        if not isinstance(sample, Sample):
+            raise TypeError(
+                f"'sample' must be a Sample instance, got {type(sample).__name__}"
+            )
+
+        id_col_name: str = sample.id_column.name
+        weight_col_name: str = sample.weight_column.name
+
+        outcome_cols: list[str] | None = None
+        if sample._outcome_columns is not None:
+            outcome_cols = sample._outcome_columns.columns.tolist()
+
+        ignored_cols: list[str] = getattr(sample, "_ignored_column_names", []) or []
+
+        df = sample._df
+        if df is None:
+            raise ValueError("Sample has no DataFrame set.")
+
+        return cls._create(
+            df=df,
+            id_column=id_col_name,
+            covars_columns=sample._covar_columns_names(),
+            weight_columns=[weight_col_name],
+            outcome_columns=outcome_cols,
+            misc_columns=ignored_cols if ignored_cols else None,
+        )
+
     def __repr__(self) -> str:
         n_obs = len(self._df)
         n_covars = len(self._column_roles["covars"])

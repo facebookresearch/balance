@@ -477,6 +477,133 @@ class BalanceFrame:
         """
         return self._adjustment_model
 
+    # --- Conversion ---
+
+    @classmethod
+    def from_sample(cls, sample: Any) -> BalanceFrame:
+        """Convert a :class:`~balance.sample_class.Sample` to a BalanceFrame.
+
+        The Sample must have a target set (via ``Sample.set_target``).  If
+        the Sample is adjusted, the adjustment state (unadjusted responders,
+        model) is preserved.
+
+        Args:
+            sample: A :class:`~balance.sample_class.Sample` instance with
+                a target.
+
+        Returns:
+            BalanceFrame: A new BalanceFrame mirroring the Sample's data,
+                target, and adjustment state.
+
+        Raises:
+            TypeError: If *sample* is not a Sample instance.
+            ValueError: If *sample* does not have a target set.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_class import Sample
+            >>> from balance.balance_frame import BalanceFrame
+            >>> s = Sample.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))
+            >>> t = Sample.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
+            >>> bf = BalanceFrame.from_sample(s.set_target(t))
+            >>> bf.is_adjusted
+            False
+        """
+        # Lazy import: sample_class ↔ balance_frame have a circular dependency.
+        from balance.sample_class import Sample
+
+        if not isinstance(sample, Sample):
+            raise TypeError(
+                f"'sample' must be a Sample instance, got {type(sample).__name__}"
+            )
+        if not sample.has_target():
+            raise ValueError(
+                "Sample must have a target set. "
+                "Use sample.set_target(target) before calling BalanceFrame.from_sample()."
+            )
+
+        responders_sf = SampleFrame.from_sample(sample)
+        target_sf = SampleFrame.from_sample(sample._links["target"])
+
+        bf = cls._create(responders=responders_sf, target=target_sf)
+
+        if sample.is_adjusted():
+            bf._unadjusted = SampleFrame.from_sample(sample._links["unadjusted"])
+            bf._adjustment_model = sample.model()
+
+        return bf
+
+    def to_sample(self) -> Any:
+        """Convert this BalanceFrame back to a :class:`~balance.sample_class.Sample`.
+
+        Reconstructs a Sample with the responder data and target set.  If
+        this BalanceFrame is adjusted, the returned Sample will also be
+        adjusted — ``is_adjusted()`` returns True, ``has_target()`` returns
+        True, and the original (unadjusted) weights are preserved via the
+        ``"unadjusted"`` link.
+
+        Returns:
+            Sample: A Sample mirroring this BalanceFrame's data, target,
+                and adjustment state.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2, 3], "x": [10.0, 20.0, 30.0],
+            ...                   "weight": [1.0, 1.0, 1.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [4, 5, 6], "x": [15.0, 25.0, 35.0],
+            ...                   "weight": [1.0, 1.0, 1.0]}))
+            >>> bf = BalanceFrame(responders=resp, target=tgt)
+            >>> s = bf.to_sample()
+            >>> s.has_target()
+            True
+        """
+        # Lazy import: sample_class ↔ balance_frame have a circular dependency.
+        from balance.sample_class import Sample
+
+        target = self._target
+        if target is None:
+            raise ValueError(
+                "Cannot convert to Sample: BalanceFrame has no target set."
+            )
+
+        resp_sample = Sample.from_frame(
+            self._responders._df,
+            id_column=self._responders.id_column_name,
+            weight_column=self._responders.active_weight_column,
+            outcome_columns=self._responders.outcome_columns or None,
+            ignore_columns=self._responders.misc_columns or None,
+            standardize_types=False,
+        )
+        target_sample = Sample.from_frame(
+            target._df,
+            id_column=target.id_column_name,
+            weight_column=target.active_weight_column,
+            outcome_columns=target.outcome_columns or None,
+            ignore_columns=target.misc_columns or None,
+            standardize_types=False,
+        )
+        result = resp_sample.set_target(target_sample)
+
+        if self.is_adjusted and self._unadjusted is not None:
+            unadj_sample = Sample.from_frame(
+                self._unadjusted._df,
+                id_column=self._unadjusted.id_column_name,
+                weight_column=self._unadjusted.active_weight_column,
+                outcome_columns=self._unadjusted.outcome_columns or None,
+                ignore_columns=self._unadjusted.misc_columns or None,
+                standardize_types=False,
+            )
+            result._links["unadjusted"] = unadj_sample
+            result._adjustment_model = self._adjustment_model
+
+        return result
+
     # --- BalanceDF integration ---
 
     def _build_links_dict(self) -> dict[str, BalanceDFSource]:

@@ -31,7 +31,9 @@ import balance.testutil
 import IPython.display
 import numpy as np
 import pandas as pd
+from balance.balance_frame import BalanceFrame
 from balance.sample_class import Sample
+from balance.sample_frame import SampleFrame
 from balance.testutil import tempfile_path
 from balance.util import _assert_type
 
@@ -2668,3 +2670,60 @@ class TestSampleOutcomeImpactDiagnostics(balance.testutil.BalanceTestCase):
         ]
         self.assertFalse(impact_rows.empty)
         self.assertIn("outcome", impact_rows["var"].unique())
+
+
+class TestSampleConversion(balance.testutil.BalanceTestCase):
+    """Tests for Sample.to_sample_frame() and Sample.to_balance_frame() conversion methods."""
+
+    def test_to_sample_frame_basic(self) -> None:
+        """to_sample_frame returns a SampleFrame with correct column roles."""
+        sf = s1.to_sample_frame()
+        self.assertIsInstance(sf, SampleFrame)
+        self.assertEqual(sf.id_column_name, "id")
+        self.assertEqual(sf.active_weight_column, "w")
+        self.assertIn("a", sf.covars_columns)
+        self.assertIn("b", sf.covars_columns)
+        self.assertIn("c", sf.covars_columns)
+
+    def test_to_sample_frame_with_outcomes(self) -> None:
+        """to_sample_frame preserves outcome columns."""
+        sf = s1.to_sample_frame()
+        self.assertIsNotNone(sf.outcome_columns)
+        self.assertIn("o", sf.outcome_columns)
+
+    def test_to_sample_frame_with_ignored(self) -> None:
+        """to_sample_frame preserves ignored/misc columns."""
+        sample_with_ignored = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": (1, 2, 3),
+                    "b": (4, 5, 6),
+                    "id": (1, 2, 3),
+                    "w": (1.0, 1.0, 1.0),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+            ignore_columns=["b"],
+        )
+        sf = sample_with_ignored.to_sample_frame()
+        self.assertIsInstance(sf, SampleFrame)
+        self.assertIsNotNone(sf.misc_columns)
+        self.assertIn("b", sf.misc_columns)
+
+    def test_to_balance_frame_unadjusted(self) -> None:
+        """to_balance_frame converts a Sample with target to a BalanceFrame."""
+        bf = s3.to_balance_frame()
+        self.assertIsInstance(bf, BalanceFrame)
+        self.assertFalse(bf.is_adjusted)
+
+    def test_to_balance_frame_adjusted(self) -> None:
+        """to_balance_frame converts an adjusted Sample to a BalanceFrame."""
+        bf = s3_adjusted_null.to_balance_frame()
+        self.assertIsInstance(bf, BalanceFrame)
+        self.assertTrue(bf.is_adjusted)
+
+    def test_to_balance_frame_no_target_raises(self) -> None:
+        """to_balance_frame raises ValueError when Sample has no target."""
+        with self.assertRaises(ValueError):
+            s1.to_balance_frame()

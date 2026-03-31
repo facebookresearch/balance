@@ -1223,6 +1223,61 @@ class Sample:
         """
         return "target" in self._links
 
+    # --- Conversion to new API ---
+
+    def to_sample_frame(self) -> Any:
+        """Convert this Sample to a :class:`~balance.sample_frame.SampleFrame`.
+
+        Preserves all data and column roles (id, weight, outcomes, ignored
+        columns mapped to misc).  The returned SampleFrame is independent
+        of the original Sample.
+
+        Returns:
+            SampleFrame: A new SampleFrame mirroring this Sample.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_class import Sample
+            >>> s = Sample.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 2.0]}))
+            >>> sf = s.to_sample_frame()
+            >>> list(sf.df_covars.columns)
+            ['x']
+        """
+        # Lazy import: sample_class ↔ sample_frame have a circular dependency.
+        from balance.sample_frame import SampleFrame
+
+        return SampleFrame.from_sample(self)
+
+    def to_balance_frame(self) -> Any:
+        """Convert this Sample (with target) to a :class:`~balance.balance_frame.BalanceFrame`.
+
+        The Sample must have a target set.  If the Sample is adjusted, the
+        adjustment state is preserved in the BalanceFrame.
+
+        Returns:
+            BalanceFrame: A new BalanceFrame mirroring this Sample's data,
+                target, and adjustment state.
+
+        Raises:
+            ValueError: If this Sample does not have a target set.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_class import Sample
+            >>> s = Sample.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))
+            >>> t = Sample.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
+            >>> bf = s.set_target(t).to_balance_frame()
+            >>> bf.is_adjusted
+            False
+        """
+        # Lazy import: sample_class ↔ balance_frame have a circular dependency.
+        from balance.balance_frame import BalanceFrame
+
+        return BalanceFrame.from_sample(self)
+
     # TODO: Add a method that plots the distribution of the outcome (adjusted v.s. unadjusted
     #       if adjusted, and only unadjusted otherwise)
 

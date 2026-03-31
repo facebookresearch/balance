@@ -157,6 +157,19 @@
   - `to_csv()`: write combined DataFrame to CSV via `to_csv_with_defaults()`.
   - `to_download()`: create IPython `FileLink` for interactive download.
 
+- **Added bidirectional conversion between Sample, SampleFrame, and BalanceFrame**
+  - `SampleFrame.from_sample(sample)`: converts a Sample to a SampleFrame with
+    proper column-role mapping (id, weight, outcomes, ignored → misc).
+  - `Sample.to_sample_frame()`: convenience method delegating to
+    `SampleFrame.from_sample()`.
+  - `BalanceFrame.from_sample(sample)`: converts a Sample (with target) to a
+    BalanceFrame, preserving adjustment state (unadjusted responders, model).
+  - `Sample.to_balance_frame()`: convenience method delegating to
+    `BalanceFrame.from_sample()`.
+  - `BalanceFrame.to_sample()`: converts a BalanceFrame back to a Sample
+    (reconstructs responder, target, and optionally unadjusted links).
+  - All conversion methods use lazy imports to avoid circular dependencies.
+
 ## Code Quality & Refactoring
 
 - **Defined `BalanceDFSource` protocol and decoupled `BalanceDF` from `Sample`**
@@ -268,6 +281,24 @@
   - `TestBalanceFrameMissingIntegration` — full pipeline (adjust → summary →
     diagnostics → to_csv), null method weights, unadjusted CSV sources,
     no-match filter (4 tests)
+
+- Added `TestSampleFrameFromSample` class in `test_sample_frame.py` (8 tests):
+  - basic, with_outcomes, with_ignored_columns, preserves_data, independence,
+    type_error, roundtrip_covars_match, no_outcomes
+
+- Added `TestBalanceFrameFromSample` class in `test_balance_frame.py` (7 tests):
+  - unadjusted, adjusted, covars_preserved, no_target_raises, type_error,
+    with_outcomes, roundtrip_equivalence (with load_data + IPW)
+
+- Added `TestBalanceFrameToSample` class in `test_balance_frame.py` (12 tests):
+  - has_target, not_adjusted, covars_preserved, weight_values, id_values,
+    target_data, adjusted, adjusted_weight_column, with_outcomes,
+    roundtrip_sample_bf_sample, roundtrip_adjusted, roundtrip_load_data
+
+- Added `TestSampleConversion` class in `test_sample.py` (6 tests):
+  - to_sample_frame_basic, to_sample_frame_with_outcomes,
+    to_sample_frame_with_ignored, to_balance_frame_unadjusted,
+    to_balance_frame_adjusted, to_balance_frame_no_target_raises
 
 - Added `TestBalanceDFSourceProtocol` class in `test_balancedf.py` (8 tests):
   - `test_sample_satisfies_protocol` — verifies `Sample` passes `isinstance` check

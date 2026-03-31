@@ -988,3 +988,92 @@ class TestSampleFrameBalanceDFSourceProtocol(BalanceTestCase):
         sf = self._make_sf()
         outcomes = BalanceDFOutcomes(sf)
         self.assertIsNotNone(outcomes.df)
+
+
+class TestSampleFrameFromSample(BalanceTestCase):
+    def test_from_sample_basic(self) -> None:
+        df = pd.DataFrame(
+            {"id": [1, 2, 3], "x": [10.0, 20.0, 30.0], "weight": [1.0, 2.0, 1.5]}
+        )
+        sample = Sample.from_frame(df)
+        sf = SampleFrame.from_sample(sample)
+        self.assertEqual(sf._id_column_name, "id")
+        self.assertEqual(sf._column_roles["covars"], ["x"])
+        self.assertEqual(sf._column_roles["weights"], ["weight"])
+        self.assertEqual(sf._active_weight_column, "weight")
+        self.assertEqual(len(sf._df), 3)
+
+    def test_from_sample_with_outcomes(self) -> None:
+        df = pd.DataFrame(
+            {
+                "id": ["a", "b"],
+                "x": [1.0, 2.0],
+                "y": [0.5, 0.8],
+                "weight": [1.0, 1.0],
+            }
+        )
+        sample = Sample.from_frame(df, outcome_columns=["y"])
+        sf = SampleFrame.from_sample(sample)
+        self.assertEqual(sf._column_roles["outcomes"], ["y"])
+        self.assertEqual(sf._column_roles["covars"], ["x"])
+        self.assertIsNotNone(sf.df_outcomes)
+        assert sf.df_outcomes is not None
+        self.assertEqual(list(sf.df_outcomes.columns), ["y"])
+
+    def test_from_sample_with_ignored_columns(self) -> None:
+        df = pd.DataFrame(
+            {
+                "id": ["a", "b"],
+                "x": [1.0, 2.0],
+                "extra": ["foo", "bar"],
+                "weight": [1.0, 1.0],
+            }
+        )
+        sample = Sample.from_frame(df, ignore_columns=["extra"])
+        sf = SampleFrame.from_sample(sample)
+        self.assertEqual(sf._column_roles["misc"], ["extra"])
+        self.assertEqual(sf._column_roles["covars"], ["x"])
+
+    def test_from_sample_preserves_data(self) -> None:
+        df = pd.DataFrame(
+            {"id": [1, 2, 3], "x": [10.0, 20.0, 30.0], "weight": [1.0, 2.0, 3.0]}
+        )
+        sample = Sample.from_frame(df)
+        sf = SampleFrame.from_sample(sample)
+        self.assertEqual(list(sf.df_covars["x"]), [10.0, 20.0, 30.0])
+        self.assertEqual(list(sf.df_weights["weight"]), [1.0, 2.0, 3.0])
+
+    def test_from_sample_independence(self) -> None:
+        df = pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 2.0]})
+        sample = Sample.from_frame(df)
+        sf = SampleFrame.from_sample(sample)
+        # Modify SampleFrame data, Sample should be unaffected
+        sf._df.iloc[0, sf._df.columns.get_loc("x")] = 999.0
+        self.assertAlmostEqual(sample._df["x"].iloc[0], 10.0, places=5)
+
+    def test_from_sample_type_error(self) -> None:
+        with self.assertRaises(TypeError):
+            SampleFrame.from_sample("not a sample")  # pyre-ignore[6]
+
+    def test_from_sample_roundtrip_covars_match(self) -> None:
+        df = pd.DataFrame(
+            {
+                "id": [1, 2, 3],
+                "age": [25.0, 30.0, 35.0],
+                "income": [50000.0, 60000.0, 70000.0],
+                "weight": [1.0, 1.5, 2.0],
+                "y": [0.1, 0.2, 0.3],
+            }
+        )
+        sample = Sample.from_frame(df, outcome_columns=["y"])
+        sf = SampleFrame.from_sample(sample)
+        self.assertEqual(
+            sorted(sf._column_roles["covars"]), sorted(sample._covar_columns_names())
+        )
+
+    def test_from_sample_no_outcomes(self) -> None:
+        df = pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]})
+        sample = Sample.from_frame(df)
+        sf = SampleFrame.from_sample(sample)
+        self.assertIsNone(sf.df_outcomes)
+        self.assertEqual(sf._column_roles["outcomes"], [])
