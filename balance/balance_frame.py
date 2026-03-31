@@ -20,9 +20,12 @@ from typing import Any, Callable, cast, Literal, TYPE_CHECKING
 import numpy as np
 import pandas as pd
 from balance.adjustment import _find_adjustment_method
+from balance.csv_utils import to_csv_with_defaults
 from balance.sample_frame import SampleFrame
 from balance.stats_and_plots import weights_stats
 from balance.summary_utils import _build_diagnostics, _build_summary
+from balance.typing import FilePathOrBuffer
+from balance.utils.file_utils import _to_download
 
 if TYPE_CHECKING:
     from balance.balancedf_class import BalanceDFSource
@@ -802,6 +805,290 @@ class BalanceFrame:
             weights_impact_on_outcome_conf_level=weights_impact_on_outcome_conf_level,
             outcome_impact=outcome_impact,
         )
+
+    # --- Parity helpers ---
+
+    def ignored_columns(self) -> pd.DataFrame | None:
+        """Return ignored (misc) columns from the responder SampleFrame, or None.
+
+        Delegates to :meth:`SampleFrame.ignored_columns` on the responders.
+        Provided for API parity with :class:`~balance.sample_class.Sample`.
+
+        Returns:
+            pd.DataFrame | None: A copy of the responder's miscellaneous
+                columns, or None if no misc columns are registered.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0],
+            ...                   "weight": [1.0, 1.0], "region": ["US", "UK"]}),
+            ...     misc_columns=["region"])
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
+            >>> bf = BalanceFrame(responders=resp, target=tgt)
+            >>> bf.ignored_columns()
+               region
+            0     US
+            1     UK
+        """
+        return self._responders.ignored_columns()
+
+    @property
+    def id_column(self) -> pd.Series:
+        """The ID column of the responder SampleFrame as a Series.
+
+        Delegates to :attr:`SampleFrame.id_column` on the responders.
+        Provided for API parity with :class:`~balance.sample_class.Sample`.
+
+        Returns:
+            pd.Series: A copy of the responder's ID column.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
+            >>> bf = BalanceFrame(responders=resp, target=tgt)
+            >>> bf.id_column.tolist()
+            ['1', '2']
+        """
+        return self._responders.id_column
+
+    # --- DataFrame / export ---
+
+    @property
+    def df(self) -> pd.DataFrame:
+        """Combined DataFrame with all samples, distinguished by a ``"source"`` column.
+
+        Concatenates the responder, target, and (if adjusted) unadjusted
+        DataFrames vertically, adding a ``"source"`` column with values
+        ``"self"``, ``"target"``, and ``"unadjusted"`` respectively.
+        Mirrors the ``Sample.df`` property behaviour.
+
+        Returns:
+            pd.DataFrame: A DataFrame with all rows from responder, target,
+                and optionally unadjusted SampleFrames, plus a ``"source"``
+                column.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
+            >>> bf = BalanceFrame(responders=resp, target=tgt)
+            >>> bf.df["source"].unique().tolist()
+            ['self', 'target']
+        """
+        parts: list[pd.DataFrame] = []
+
+        resp_df = self._responders._df.copy()
+        resp_df["source"] = "self"
+        parts.append(resp_df)
+
+        if self._target is not None:
+            tgt_df = self._target._df.copy()
+            tgt_df["source"] = "target"
+            parts.append(tgt_df)
+
+        if self._unadjusted is not None:
+            unadj_df = self._unadjusted._df.copy()
+            unadj_df["source"] = "unadjusted"
+            parts.append(unadj_df)
+
+        return pd.concat(parts, ignore_index=True)
+
+    def keep_only_some_rows_columns(
+        self,
+        rows_to_keep: str | None = None,
+        columns_to_keep: list[str] | None = None,
+    ) -> BalanceFrame:
+        """Return a new BalanceFrame with filtered rows and/or columns.
+
+        Returns a deep copy with the requested subset applied to the
+        responder, target, and (if adjusted) unadjusted SampleFrames.
+        The original BalanceFrame is unchanged (immutable pattern).
+
+        Args:
+            rows_to_keep: A boolean expression string evaluated via
+                ``pd.DataFrame.eval`` to select rows. Applied to each
+                SampleFrame's underlying DataFrame. For example:
+                ``'x > 10'`` or ``'gender == "Female"'``.
+                Defaults to None (all rows kept).
+            columns_to_keep: Covariate column names to retain. Special
+                columns (id, weight) are always kept. Defaults to None
+                (all columns kept).
+
+        Returns:
+            BalanceFrame: A new BalanceFrame with the filters applied.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2, 3], "x": [10.0, 20.0, 30.0],
+            ...                   "weight": [1.0, 1.0, 1.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [4, 5, 6], "x": [15.0, 25.0, 35.0],
+            ...                   "weight": [1.0, 1.0, 1.0]}))
+            >>> bf = BalanceFrame(responders=resp, target=tgt)
+            >>> filtered = bf.keep_only_some_rows_columns(rows_to_keep="x > 15")
+            >>> len(filtered.responders._df)
+            2
+        """
+        if rows_to_keep is None and columns_to_keep is None:
+            return self
+
+        new_bf = copy.deepcopy(self)
+
+        new_bf._responders = BalanceFrame._filter_sf(
+            new_bf._responders, rows_to_keep, columns_to_keep
+        )
+        if new_bf._target is not None:
+            new_bf._target = BalanceFrame._filter_sf(
+                new_bf._target, rows_to_keep, columns_to_keep
+            )
+        if new_bf._unadjusted is not None:
+            new_bf._unadjusted = BalanceFrame._filter_sf(
+                new_bf._unadjusted, rows_to_keep, columns_to_keep
+            )
+
+        return new_bf
+
+    @staticmethod
+    def _filter_sf(
+        sf: SampleFrame,
+        rows_to_keep: str | None,
+        columns_to_keep: list[str] | None,
+    ) -> SampleFrame:
+        """Apply row and column filtering to a SampleFrame in place.
+
+        Used internally by :meth:`keep_only_some_rows_columns` to filter
+        each SampleFrame (responders, target, unadjusted) consistently.
+
+        Args:
+            sf: The SampleFrame to filter (mutated in place).
+            rows_to_keep: A pandas ``eval()`` expression for row filtering,
+                or ``None`` to skip row filtering.
+            columns_to_keep: Column names to retain, or ``None`` to skip
+                column filtering. ID and weight columns are always retained.
+
+        Returns:
+            SampleFrame: The same *sf* instance, mutated.
+
+        Note:
+            If ``rows_to_keep`` references a column that does not exist in
+            *sf*, the ``UndefinedVariableError`` is caught, a warning is
+            logged, and row filtering is skipped for that SampleFrame.  This
+            is intentional: linked frames (target, unadjusted) may not have
+            the same columns as the responder, so a filter expression valid
+            for the responder may fail on linked frames.  This matches the
+            ``Sample.keep_only_some_rows_columns`` behaviour.
+        """
+        df = sf._df
+
+        if rows_to_keep is not None:
+            try:
+                mask = df.eval(rows_to_keep)
+                logger.info(f"(rows_filtered/total_rows) = ({mask.sum()}/{len(mask)})")
+                df = df[mask].reset_index(drop=True)
+            except pd.errors.UndefinedVariableError:
+                logger.warning(f"couldn't filter SampleFrame using {rows_to_keep}")
+
+        if columns_to_keep is not None:
+            keep_set = set(columns_to_keep)
+            keep_set.add(sf._id_column_name)
+            if sf._active_weight_column is not None:
+                keep_set.add(sf._active_weight_column)
+            for wc in sf.weight_columns:
+                keep_set.add(wc)
+            df = df.loc[:, df.columns.isin(keep_set)]
+
+            new_covars = [c for c in sf._column_roles["covars"] if c in keep_set]
+            sf._column_roles = dict(sf._column_roles)
+            sf._column_roles["covars"] = new_covars
+            if sf._column_roles["outcomes"]:
+                sf._column_roles["outcomes"] = [
+                    c for c in sf._column_roles["outcomes"] if c in keep_set
+                ]
+            if sf._column_roles["predicted"]:
+                sf._column_roles["predicted"] = [
+                    c for c in sf._column_roles["predicted"] if c in keep_set
+                ]
+            if sf._column_roles["misc"]:
+                sf._column_roles["misc"] = [
+                    c for c in sf._column_roles["misc"] if c in keep_set
+                ]
+
+        sf._df = df
+        return sf
+
+    def to_csv(
+        self, path_or_buf: FilePathOrBuffer | None = None, **kwargs: Any
+    ) -> str | None:
+        """Write the combined DataFrame to CSV.
+
+        Writes the output of :attr:`df` (responder + target + unadjusted
+        rows with a ``"source"`` column) to a CSV file or string.
+        Delegates to :func:`~balance.csv_utils.to_csv_with_defaults`.
+
+        Args:
+            path_or_buf: Destination. If ``None``, returns the CSV as a string.
+            **kwargs: Additional keyword arguments passed to
+                :func:`pd.DataFrame.to_csv`.
+
+        Returns:
+            str or None: CSV string if ``path_or_buf`` is None, else None.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
+            >>> bf = BalanceFrame(responders=resp, target=tgt)
+            >>> "source" in bf.to_csv()
+            True
+        """
+        return to_csv_with_defaults(self.df, path_or_buf, **kwargs)
+
+    def to_download(self, tempdir: str | None = None) -> Any:
+        """Create a downloadable file link of the combined DataFrame.
+
+        Writes :attr:`df` to a temporary CSV file and returns an IPython
+        :class:`~IPython.lib.display.FileLink` for interactive download.
+
+        Args:
+            tempdir: Directory for the temp file. If None, uses
+                :func:`tempfile.gettempdir`.
+
+        Returns:
+            FileLink: An IPython file link for downloading the CSV.
+
+        Examples:
+            >>> import tempfile
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
+            >>> bf = BalanceFrame(responders=resp, target=tgt)
+            >>> link = bf.to_download(tempdir=tempfile.gettempdir())
+        """
+        return _to_download(self.df, tempdir)
 
     def __repr__(self) -> str:
         status = "adjusted" if self.is_adjusted else "unadjusted"

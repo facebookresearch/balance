@@ -149,6 +149,13 @@
     zero-division guard for constant-valued outcomes (returns NaN).
   - `outcome_variance_ratio()`: ratio of outcome variance (adjusted/unadjusted).
   - Private helpers: `_design_effect_diagnostics()`, `_quick_adjustment_details()`.
+  - `df` property: combined DataFrame (responder + target + unadjusted) with a
+    ``"source"`` column. Mirrors `Sample.df`.
+  - `keep_only_some_rows_columns()`: immutable row/column filtering via
+    `pd.DataFrame.eval` expressions and column name lists. Uses `_filter_sf()`
+    static method with None-weight guard.
+  - `to_csv()`: write combined DataFrame to CSV via `to_csv_with_defaults()`.
+  - `to_download()`: create IPython `FileLink` for interactive download.
 
 ## Code Quality & Refactoring
 
@@ -228,6 +235,13 @@
     outcome_variance_ratio() (16 tests): known/uniform weights, shape/columns,
     unadjusted raises, no-outcomes raises, constant outcome NaN guard,
     cross-validation with Sample API, null method expected values
+  - `TestBalanceFrameDfExportFilter` — df property, keep_only_some_rows_columns,
+    to_csv, to_download (16 tests): source column presence, row counts, adjusted
+    vs unadjusted, immutability, column filtering, undefined variable handling,
+    no-active-weight guard, CSV roundtrip, file export, FileLink type check
+  - `TestBalanceFrameMissingIntegration` — full pipeline (adjust → summary →
+    diagnostics → to_csv), null method weights, unadjusted CSV sources,
+    no-match filter (4 tests)
 
 - Added `TestBalanceDFSourceProtocol` class in `test_balancedf.py` (8 tests):
   - `test_sample_satisfies_protocol` — verifies `Sample` passes `isinstance` check

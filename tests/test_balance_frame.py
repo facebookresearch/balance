@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import copy
+import io
 import logging
 from typing import Any
 
@@ -964,3 +965,281 @@ class TestBalanceFrameSummaryDiagnostics(BalanceTestCase):
         de_lines = [d for d in details if "design effect" in d]
         self.assertEqual(len(de_lines), 1)
         self.assertIn("2.000", de_lines[0])
+
+
+class TestBalanceFrameParityHelpers(BalanceTestCase):
+    """Tests for ignored_columns() and id_column parity methods."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.resp_df = pd.DataFrame(
+            {
+                "id": ["1", "2", "3"],
+                "x1": [10.0, 20.0, 30.0],
+                "weight": [1.0, 1.0, 1.0],
+                "region": ["US", "UK", "CA"],
+            }
+        )
+        self.tgt_df = pd.DataFrame(
+            {
+                "id": ["4", "5", "6"],
+                "x1": [15.0, 25.0, 35.0],
+                "weight": [1.0, 1.0, 1.0],
+            }
+        )
+        self.resp_sf = SampleFrame.from_frame(self.resp_df, misc_columns=["region"])
+        self.tgt_sf = SampleFrame.from_frame(self.tgt_df)
+        self.bf = BalanceFrame(responders=self.resp_sf, target=self.tgt_sf)
+
+    def test_ignored_columns_present(self) -> None:
+        result = self.bf.ignored_columns()
+        self.assertIsNotNone(result)
+        self.assertListEqual(list(result.columns), ["region"])
+        self.assertListEqual(list(result["region"]), ["US", "UK", "CA"])
+
+    def test_ignored_columns_none(self) -> None:
+        resp = SampleFrame.from_frame(
+            pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]})
+        )
+        tgt = SampleFrame.from_frame(
+            pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]})
+        )
+        bf = BalanceFrame(responders=resp, target=tgt)
+        self.assertIsNone(bf.ignored_columns())
+
+    def test_ignored_columns_delegates_to_responders(self) -> None:
+        pd.testing.assert_frame_equal(
+            self.bf.ignored_columns(), self.bf.responders.ignored_columns()
+        )
+
+    def test_id_column_returns_series(self) -> None:
+        result = self.bf.id_column
+        self.assertIsInstance(result, pd.Series)
+        self.assertEqual(result.tolist(), ["1", "2", "3"])
+
+    def test_id_column_delegates_to_responders(self) -> None:
+        pd.testing.assert_series_equal(self.bf.id_column, self.bf.responders.id_column)
+
+
+class TestBalanceFrameDfExportFilter(BalanceTestCase):
+    """Tests for df property, keep_only_some_rows_columns, to_csv, to_download."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.resp_df = pd.DataFrame(
+            {
+                "id": ["1", "2", "3"],
+                "x1": [10.0, 20.0, 30.0],
+                "x2": [1.0, 2.0, 3.0],
+                "weight": [1.0, 1.0, 1.0],
+                "y": [100.0, 200.0, 300.0],
+            }
+        )
+        self.tgt_df = pd.DataFrame(
+            {
+                "id": ["4", "5", "6"],
+                "x1": [15.0, 25.0, 35.0],
+                "x2": [1.5, 2.5, 3.5],
+                "weight": [1.0, 1.0, 1.0],
+            }
+        )
+        self.resp_sf = SampleFrame.from_frame(self.resp_df, outcome_columns=["y"])
+        self.tgt_sf = SampleFrame.from_frame(self.tgt_df)
+        self.bf = BalanceFrame(responders=self.resp_sf, target=self.tgt_sf)
+        self.bf_adjusted = self.bf.adjust(method="null")
+
+    # --- df property ---
+
+    def test_df_unadjusted_has_source_column(self) -> None:
+        result = self.bf.df
+        self.assertIn("source", result.columns)
+        self.assertCountEqual(result["source"].unique().tolist(), ["self", "target"])
+
+    def test_df_unadjusted_row_count(self) -> None:
+        result = self.bf.df
+        self.assertEqual(len(result), 6)  # 3 resp + 3 target
+
+    def test_df_adjusted_has_unadjusted_source(self) -> None:
+        result = self.bf_adjusted.df
+        self.assertCountEqual(
+            result["source"].unique().tolist(),
+            ["self", "target", "unadjusted"],
+        )
+
+    def test_df_adjusted_row_count(self) -> None:
+        result = self.bf_adjusted.df
+        self.assertEqual(len(result), 9)  # 3 resp + 3 target + 3 unadjusted
+
+    def test_df_contains_all_columns(self) -> None:
+        result = self.bf.df
+        for col in ["id", "x1", "x2", "weight", "source"]:
+            self.assertIn(col, result.columns)
+
+    # --- keep_only_some_rows_columns ---
+
+    def test_keep_rows_filter(self) -> None:
+        filtered = self.bf.keep_only_some_rows_columns(rows_to_keep="x1 > 15")
+        self.assertEqual(len(filtered.responders._df), 2)  # 20, 30
+
+    def test_keep_rows_immutable(self) -> None:
+        self.bf.keep_only_some_rows_columns(rows_to_keep="x1 > 15")
+        self.assertEqual(len(self.bf.responders._df), 3)  # original unchanged
+
+    def test_keep_columns_filter(self) -> None:
+        filtered = self.bf.keep_only_some_rows_columns(columns_to_keep=["x1"])
+        self.assertEqual(sorted(filtered.responders._column_roles["covars"]), ["x1"])
+
+    def test_keep_columns_preserves_special(self) -> None:
+        filtered = self.bf.keep_only_some_rows_columns(columns_to_keep=["x1"])
+        self.assertIn("id", filtered.responders._df.columns)
+        self.assertIn("weight", filtered.responders._df.columns)
+
+    def test_keep_none_returns_self(self) -> None:
+        result = self.bf.keep_only_some_rows_columns()
+        self.assertIs(result, self.bf)
+
+    def test_keep_rows_on_adjusted(self) -> None:
+        filtered = self.bf_adjusted.keep_only_some_rows_columns(rows_to_keep="x1 > 15")
+        self.assertEqual(len(filtered.responders._df), 2)
+        self.assertTrue(filtered.is_adjusted)
+        self.assertEqual(len(filtered.unadjusted._df), 2)
+
+    def test_keep_rows_target_undefined_variable(self) -> None:
+        """Filter by outcome column that target doesn't have — should warn, not fail."""
+        filtered = self.bf.keep_only_some_rows_columns(rows_to_keep="y > 150")
+        self.assertEqual(len(filtered.responders._df), 2)
+        assert filtered.target is not None
+        self.assertEqual(len(filtered.target._df), 3)
+
+    def test_keep_columns_with_no_active_weight(self) -> None:
+        """Column filtering works when SampleFrame has no active weight column."""
+        resp_sf = SampleFrame._create(
+            df=pd.DataFrame({"id": ["1", "2"], "x1": [10.0, 20.0]}),
+            id_column="id",
+            covars_columns=["x1"],
+            weight_columns=[],
+        )
+        tgt_sf = SampleFrame._create(
+            df=pd.DataFrame({"id": ["3", "4"], "x1": [15.0, 25.0]}),
+            id_column="id",
+            covars_columns=["x1"],
+            weight_columns=[],
+        )
+        bf = BalanceFrame(responders=resp_sf, target=tgt_sf)
+        filtered = bf.keep_only_some_rows_columns(columns_to_keep=["x1"])
+        self.assertIn("x1", filtered.responders._df.columns)
+        self.assertIn("id", filtered.responders._df.columns)
+        self.assertIsNone(filtered.responders._active_weight_column)
+
+    # --- to_csv ---
+
+    def test_to_csv_returns_string(self) -> None:
+        result = self.bf.to_csv()
+        self.assertIsInstance(result, str)
+        assert result is not None
+        self.assertIn("source", result)
+        self.assertIn("self", result)
+        self.assertIn("target", result)
+
+    def test_to_csv_roundtrip(self) -> None:
+        csv_text = self.bf.to_csv()
+        roundtrip_df = pd.read_csv(io.StringIO(csv_text))
+        self.assertEqual(len(roundtrip_df), 6)
+        self.assertIn("source", roundtrip_df.columns)
+
+    def test_to_csv_to_file(self) -> None:
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as f:
+            self.bf.to_csv(f.name)
+            roundtrip = pd.read_csv(f.name)
+            self.assertEqual(len(roundtrip), 6)
+
+    # --- to_download ---
+
+    def test_to_download_returns_filelink(self) -> None:
+        import tempfile
+
+        from IPython.lib.display import FileLink
+
+        result = self.bf.to_download(tempdir=tempfile.gettempdir())
+        self.assertIsInstance(result, FileLink)
+
+
+class TestBalanceFrameMissingIntegration(BalanceTestCase):
+    """Integration tests covering scenarios not addressed by the focused unit tests."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.resp_df = pd.DataFrame(
+            {
+                "id": [str(i) for i in range(1, 5)],
+                "x": [0.0, 1.0, 1.0, 0.0],
+                "y": [0.1, 0.5, 0.4, 0.9],
+                "weight": [1.0, 2.0, 1.0, 1.0],
+            }
+        )
+        self.tgt_df = pd.DataFrame(
+            {
+                "id": [str(i) for i in range(5, 9)],
+                "x": [0.0, 0.0, 1.0, 1.0],
+                "weight": [1.0, 1.0, 1.0, 1.0],
+            }
+        )
+        self.resp_sf = SampleFrame.from_frame(self.resp_df, outcome_columns=["y"])
+        self.tgt_sf = SampleFrame.from_frame(self.tgt_df)
+        self.bf = BalanceFrame(responders=self.resp_sf, target=self.tgt_sf)
+
+    def test_full_pipeline_adjust_summary_diagnostics_to_csv(self) -> None:
+        """Full pipeline: adjust -> summary -> diagnostics -> to_csv all succeed."""
+        adjusted = self.bf.adjust(method="null")
+
+        summary_str = adjusted.summary()
+        self.assertIsInstance(summary_str, str)
+        self.assertIn("Covariate diagnostics:", summary_str)
+        self.assertIn("Adjustment details:", summary_str)
+
+        diag_df = adjusted.diagnostics()
+        self.assertIsInstance(diag_df, pd.DataFrame)
+        self.assertEqual(diag_df.columns.tolist(), ["metric", "val", "var"])
+        self.assertGreater(len(diag_df), 0)
+
+        csv_str = adjusted.to_csv()
+        self.assertIsInstance(csv_str, str)
+        assert csv_str is not None
+        roundtrip = pd.read_csv(io.StringIO(csv_str))
+        sources = set(roundtrip["source"].unique())
+        self.assertEqual(sources, {"self", "target", "unadjusted"})
+
+    def test_null_method_adjustment(self) -> None:
+        """Null method adjustment leaves weights unchanged."""
+        adjusted = self.bf.adjust(method="null")
+
+        self.assertTrue(adjusted.is_adjusted)
+        model = adjusted.model()
+        self.assertIsNotNone(model)
+        assert model is not None
+        self.assertEqual(model["method"], "null")
+
+        orig_weights = self.resp_sf.df_weights.iloc[:, 0].tolist()
+        adj_weights = adjusted.responders.df_weights.iloc[:, 0].tolist()
+        for orig, adj in zip(orig_weights, adj_weights):
+            self.assertAlmostEqual(orig, adj, places=8)
+
+    def test_to_csv_unadjusted_has_no_unadjusted_source(self) -> None:
+        """to_csv() on an unadjusted BalanceFrame has only self/target sources."""
+        csv_str = self.bf.to_csv()
+        self.assertIsInstance(csv_str, str)
+        assert csv_str is not None
+        roundtrip = pd.read_csv(io.StringIO(csv_str))
+        sources = set(roundtrip["source"].unique())
+        self.assertEqual(sources, {"self", "target"})
+        self.assertNotIn("unadjusted", sources)
+
+    def test_keep_only_some_rows_columns_expression_matches_no_rows(self) -> None:
+        """Filter expression that matches no rows produces a 0-row BalanceFrame."""
+        filtered = self.bf.keep_only_some_rows_columns(rows_to_keep="x > 9999")
+        self.assertEqual(len(filtered.responders._df), 0)
+        assert filtered.target is not None
+        self.assertEqual(len(filtered.target._df), 0)
+        self.assertEqual(len(self.bf.responders._df), 4)
