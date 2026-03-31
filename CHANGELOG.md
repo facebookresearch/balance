@@ -182,6 +182,16 @@
   - Also moves `_concat_metric_val_var` to `summary_utils.py` (re-exported from
     `sample_class.py` for backward compatibility).
 
+## Tutorials
+
+- Added `balance_quickstart_new_api.ipynb` — end-to-end tutorial demonstrating the
+  new SampleFrame/BalanceFrame API. Mirrors the original `balance_quickstart.ipynb`
+  step-by-step but uses only the new classes (no `Sample`). Covers: loading data,
+  creating SampleFrames, building a BalanceFrame, adjusting (IPW + CBPS), inspecting
+  diagnostics (summary, ASMD, covariate means, design effect), visualization
+  (plotly, seaborn KDE, ASCII plots), outcome analysis, transformations, filtering
+  rows/columns, and exporting to CSV.
+
 ## LLM/GenAI
 
 - **Added `CLAUDE.md` project context files** for Claude Code users, covering architecture,
@@ -191,6 +201,22 @@
   factory pattern, seed fixing, deprecation style).
 
 ## Tests
+
+- Added `TestBalanceFrameEndToEnd` class in `test_balance_frame.py` (12 tests):
+  - `test_ipw_end_to_end_equivalence` — full workflow equivalence for IPW
+  - `test_cbps_end_to_end_equivalence` — full workflow equivalence for CBPS
+  - `test_rake_end_to_end_equivalence` — full workflow equivalence for raking
+  - `test_poststratify_end_to_end_equivalence` — full workflow equivalence for
+    post-stratification
+  - `test_unadjusted_covars_mean_sources` — verifies unadjusted has self+target only
+  - `test_adjusted_covars_mean_sources` — verifies adjusted has self+target+unadjusted
+  - `test_immutability_across_methods` — verifies adjust() does not mutate original
+  - `test_diagnostics_equivalence` — diagnostics() shape/metrics match between APIs
+  - `test_covar_means_equivalence` — covar_means() matches between old and new APIs
+  - `test_full_lifecycle_with_transformations` — adjust with custom transformations
+  Each per-method test exercises: `covars().mean()`, `covars().asmd()`,
+  `weights().summary()`, `design_effect()`, `outcomes().mean()`, `summary()`,
+  `to_csv()` — verifying numerical equivalence with the old Sample API.
 
 - Added `TestSampleFrameBalanceDFSourceProtocol` class in `test_sample_frame.py`
   (21 tests):

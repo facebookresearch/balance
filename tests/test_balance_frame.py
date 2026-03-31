@@ -10,7 +10,7 @@ from __future__ import annotations
 import copy
 import io
 import logging
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
@@ -1243,3 +1243,227 @@ class TestBalanceFrameMissingIntegration(BalanceTestCase):
         assert filtered.target is not None
         self.assertEqual(len(filtered.target._df), 0)
         self.assertEqual(len(self.bf.responders._df), 4)
+
+
+class TestBalanceFrameEndToEnd(BalanceTestCase):
+    """End-to-end integration test verifying full BalanceFrame workflow produces
+    numerically equivalent results to the old Sample API for all 4 weighting
+    methods: ipw, cbps, rake, poststratify.
+
+    Exercises: load_data -> SampleFrame.from_frame -> BalanceFrame -> adjust ->
+    covars().mean(), covars().asmd(), weights().summary(), outcomes().mean(),
+    summary(), diagnostics(), weights().design_effect(), to_csv().
+    """
+
+    def _assert_numeric_df_equal(
+        self,
+        old_df: pd.DataFrame,
+        new_df: pd.DataFrame,
+        places: int = 5,
+        msg: str = "",
+    ) -> None:
+        """Assert numeric columns of two DataFrames are almost equal."""
+        old_numeric = old_df.select_dtypes(include=[np.number])
+        new_numeric = new_df.select_dtypes(include=[np.number])
+        for col in old_numeric.columns:
+            if col in new_numeric.columns:
+                old_vals = old_numeric[col].dropna()
+                new_vals = new_numeric[col].dropna()
+                self.assertEqual(
+                    len(old_vals),
+                    len(new_vals),
+                    f"{msg} column '{col}' length mismatch",
+                )
+                for old_val, new_val in zip(old_vals, new_vals):
+                    self.assertAlmostEqual(
+                        old_val,
+                        new_val,
+                        places=places,
+                        msg=f"{msg} column '{col}'",
+                    )
+
+    def _run_equivalence_for_method(
+        self,
+        method: Literal["cbps", "ipw", "null", "poststratify", "rake"],
+    ) -> None:
+        """Run full workflow through both APIs and verify numerical equivalence
+        for a given adjustment method."""
+        target_df, sample_df = load_data()
+        assert target_df is not None and sample_df is not None
+
+        # --- Old Sample API ---
+        old_sample = Sample.from_frame(sample_df, outcome_columns=["happiness"])
+        old_target = Sample.from_frame(target_df, outcome_columns=["happiness"])
+        old_adjusted = old_sample.set_target(old_target).adjust(method=method)
+
+        # --- New BalanceFrame API ---
+        new_resp = SampleFrame.from_frame(sample_df, outcome_columns=["happiness"])
+        new_tgt = SampleFrame.from_frame(target_df, outcome_columns=["happiness"])
+        new_bf = BalanceFrame(responders=new_resp, target=new_tgt)
+        new_adjusted = new_bf.adjust(method=method)
+
+        # --- covars().mean() ---
+        old_covars_mean = old_adjusted.covars().mean()
+        new_covars_mean = new_adjusted.covars().mean()
+        self._assert_numeric_df_equal(
+            old_covars_mean, new_covars_mean, msg=f"{method}: covars().mean()"
+        )
+
+        # --- covars().asmd() ---
+        old_covars_asmd = old_adjusted.covars().asmd()
+        new_covars_asmd = new_adjusted.covars().asmd()
+        self._assert_numeric_df_equal(
+            old_covars_asmd, new_covars_asmd, msg=f"{method}: covars().asmd()"
+        )
+
+        # --- weights().summary() ---
+        old_weights_summary = old_adjusted.weights().summary()
+        new_weights_summary = new_adjusted.weights().summary()
+        self._assert_numeric_df_equal(
+            old_weights_summary,
+            new_weights_summary,
+            msg=f"{method}: weights().summary()",
+        )
+
+        # --- weights().design_effect() ---
+        old_de = float(old_adjusted.weights().design_effect())
+        new_de = float(new_adjusted.weights().design_effect())
+        self.assertAlmostEqual(
+            old_de, new_de, places=5, msg=f"{method}: weights().design_effect()"
+        )
+
+        # --- outcomes().mean() ---
+        old_outcomes = old_adjusted.outcomes()
+        new_outcomes = new_adjusted.outcomes()
+        assert old_outcomes is not None
+        assert new_outcomes is not None
+        self._assert_numeric_df_equal(
+            old_outcomes.mean(),
+            new_outcomes.mean(),
+            msg=f"{method}: outcomes().mean()",
+        )
+
+        # --- summary() ---
+        old_summary = old_adjusted.summary()
+        new_summary = new_adjusted.summary()
+        self.assertIsInstance(old_summary, str)
+        self.assertIsInstance(new_summary, str)
+        # Both should contain the same key sections
+        for section in ["Covariate diagnostics:", "Adjustment details:"]:
+            self.assertIn(section, new_summary, f"{method}: missing '{section}'")
+
+        # --- to_csv() ---
+        csv_output = new_adjusted.to_csv()
+        self.assertIsInstance(csv_output, str)
+        assert csv_output is not None
+        roundtrip = pd.read_csv(io.StringIO(csv_output))
+        self.assertCountEqual(
+            roundtrip["source"].unique().tolist(),
+            ["self", "target", "unadjusted"],
+        )
+
+    def test_ipw_end_to_end_equivalence(self) -> None:
+        """Full workflow equivalence for IPW (inverse propensity weighting)."""
+        self._run_equivalence_for_method("ipw")
+
+    def test_cbps_end_to_end_equivalence(self) -> None:
+        """Full workflow equivalence for CBPS (covariate balancing propensity score)."""
+        self._run_equivalence_for_method("cbps")
+
+    def test_rake_end_to_end_equivalence(self) -> None:
+        """Full workflow equivalence for raking."""
+        self._run_equivalence_for_method("rake")
+
+    def test_poststratify_end_to_end_equivalence(self) -> None:
+        """Full workflow equivalence for post-stratification."""
+        self._run_equivalence_for_method("poststratify")
+
+    def test_unadjusted_covars_mean_sources(self) -> None:
+        """Verify unadjusted BalanceFrame covars().mean() has self+target only."""
+        target_df, sample_df = load_data()
+        assert target_df is not None and sample_df is not None
+
+        resp = SampleFrame.from_frame(sample_df, outcome_columns=["happiness"])
+        tgt = SampleFrame.from_frame(target_df, outcome_columns=["happiness"])
+        bf = BalanceFrame(responders=resp, target=tgt)
+
+        mean_df = bf.covars().mean()
+        self.assertEqual(mean_df.index.name, "source")
+        self.assertIn("self", mean_df.index)
+        self.assertIn("target", mean_df.index)
+        self.assertNotIn("unadjusted", mean_df.index)
+
+    def test_adjusted_covars_mean_sources(self) -> None:
+        """Verify adjusted BalanceFrame covars().mean() has self+target+unadjusted."""
+        target_df, sample_df = load_data()
+        assert target_df is not None and sample_df is not None
+
+        resp = SampleFrame.from_frame(sample_df, outcome_columns=["happiness"])
+        tgt = SampleFrame.from_frame(target_df, outcome_columns=["happiness"])
+        bf = BalanceFrame(responders=resp, target=tgt)
+        adjusted = bf.adjust(method="ipw")
+
+        mean_df = adjusted.covars().mean()
+        self.assertEqual(mean_df.index.name, "source")
+        self.assertIn("self", mean_df.index)
+        self.assertIn("target", mean_df.index)
+        self.assertIn("unadjusted", mean_df.index)
+
+    def test_immutability_across_methods(self) -> None:
+        """Verify adjust() does not mutate the original BalanceFrame."""
+        target_df, sample_df = load_data()
+        assert target_df is not None and sample_df is not None
+
+        resp = SampleFrame.from_frame(sample_df, outcome_columns=["happiness"])
+        tgt = SampleFrame.from_frame(target_df, outcome_columns=["happiness"])
+        bf = BalanceFrame(responders=resp, target=tgt)
+
+        original_weights = bf.responders.df_weights.copy()
+
+        adjusted_ipw = bf.adjust(method="ipw")
+        adjusted_cbps = bf.adjust(method="cbps")
+
+        # Original is unchanged
+        self.assertFalse(bf.is_adjusted)
+        pd.testing.assert_frame_equal(bf.responders.df_weights, original_weights)
+
+        # Each adjusted BF is independent
+        self.assertTrue(adjusted_ipw.is_adjusted)
+        self.assertTrue(adjusted_cbps.is_adjusted)
+        self.assertIsNot(adjusted_ipw, adjusted_cbps)
+
+    def test_diagnostics_equivalence(self) -> None:
+        """Verify diagnostics() produces consistent output between APIs."""
+        target_df, sample_df = load_data()
+        assert target_df is not None and sample_df is not None
+
+        old_sample = Sample.from_frame(sample_df, outcome_columns=["happiness"])
+        old_target = Sample.from_frame(target_df, outcome_columns=["happiness"])
+        old_adjusted = old_sample.set_target(old_target).adjust(method="ipw")
+
+        resp = SampleFrame.from_frame(sample_df, outcome_columns=["happiness"])
+        tgt = SampleFrame.from_frame(target_df, outcome_columns=["happiness"])
+        new_adjusted = BalanceFrame(responders=resp, target=tgt).adjust(method="ipw")
+
+        old_diag = old_adjusted.diagnostics()
+        new_diag = new_adjusted.diagnostics()
+
+        self.assertEqual(old_diag.shape, new_diag.shape)
+        self.assertEqual(old_diag["metric"].tolist(), new_diag["metric"].tolist())
+
+    def test_covars_mean_equivalence(self) -> None:
+        """Verify covars().mean() matches between old and new APIs."""
+        target_df, sample_df = load_data()
+        assert target_df is not None and sample_df is not None
+
+        old_sample = Sample.from_frame(sample_df, outcome_columns=["happiness"])
+        old_target = Sample.from_frame(target_df, outcome_columns=["happiness"])
+        old_adjusted = old_sample.set_target(old_target).adjust(method="ipw")
+
+        resp = SampleFrame.from_frame(sample_df, outcome_columns=["happiness"])
+        tgt = SampleFrame.from_frame(target_df, outcome_columns=["happiness"])
+        new_adjusted = BalanceFrame(responders=resp, target=tgt).adjust(method="ipw")
+
+        old_means = old_adjusted.covars().mean()
+        new_means = new_adjusted.covars().mean()
+        self._assert_numeric_df_equal(old_means, new_means, msg="covars().mean()")
