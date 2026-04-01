@@ -86,20 +86,6 @@ class BalanceDFSource(Protocol):
         ...
 
 
-if not hasattr(BalanceDFSource, "__protocol_attrs__"):
-    # Compatibility shim for runtime-checkability assertions across Python versions.
-    BalanceDFSource.__protocol_attrs__ = frozenset(
-        (
-            "weight_column",
-            "id_column",
-            "_links",
-            "_covar_columns",
-            "_outcome_columns",
-            "set_weights",
-        )
-    )
-
-
 class BalanceDF:
     """
     Wrapper class around a BalanceDFSource which provides additional balance-specific functionality.

@@ -3390,7 +3390,13 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
 
     def test_protocol_is_runtime_checkable(self) -> None:
         """Verify that BalanceDFSource is runtime_checkable."""
-        self.assertTrue(hasattr(BalanceDFSource, "__protocol_attrs__"))
+        self.assertTrue(getattr(BalanceDFSource, "_is_runtime_protocol", False))
+        try:
+            isinstance(object(), BalanceDFSource)
+        except TypeError as error:
+            self.fail(
+                f"BalanceDFSource should support runtime isinstance checks: {error}"
+            )
 
     def test_non_conforming_object_fails_isinstance(self) -> None:
         """Verify that an arbitrary object does NOT satisfy the protocol."""
