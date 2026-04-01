@@ -27,6 +27,13 @@
   - Formula settings are now propagated to linked covariate views (`target`,
     `unadjusted`) so comparative diagnostics run on consistent design matrices.
 
+## Bug Fixes
+
+- **Aligned weight dtype validation between `Sample.from_frame()` and `SampleFrame.from_frame()`**
+  - Both APIs now deterministically reject pandas extension `StringDtype` and
+    boolean weight columns with `ValueError("Weights must be numeric")`,
+    including when `standardize_types=False`.
+
 # 0.18.0 (2026-03-24)
 
 ## New Features
