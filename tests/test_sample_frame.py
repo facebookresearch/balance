@@ -714,7 +714,12 @@ class TestSampleFrameEdgeCases(BalanceTestCase):
             }
         )
         with self.assertRaisesRegex(ValueError, "Weights must be numeric"):
-            SampleFrame.from_frame(df, id_column="id", weight_column="weight")
+            SampleFrame.from_frame(
+                df,
+                id_column="id",
+                weight_column="weight",
+                standardize_types=False,
+            )
 
     def test_from_frame_boolean_weight_raises_value_error(self) -> None:
         df = pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [True, False]})

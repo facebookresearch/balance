@@ -30,6 +30,7 @@ from balance.util import (
     HighCardinalityFeature,
 )
 from IPython.lib.display import FileLink
+from pandas.api.types import is_bool_dtype, is_numeric_dtype
 
 logger: logging.Logger = logging.getLogger(__package__)
 
@@ -508,7 +509,9 @@ class Sample:
             )
 
         # verify that the weights are numeric
-        if not np.issubdtype(sample._df[weight_column].dtype, np.number):
+        if (not is_numeric_dtype(sample._df[weight_column])) or is_bool_dtype(
+            sample._df[weight_column]
+        ):
             raise ValueError("Weights must be numeric")
 
         # verify that the weights are not negative

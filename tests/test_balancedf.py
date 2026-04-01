@@ -9,7 +9,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import tempfile
 from copy import deepcopy
-from typing import Callable
+from typing import Callable, Optional, Union
 from unittest.mock import patch, PropertyMock
 
 import IPython.display
@@ -3390,7 +3390,6 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
 
     def test_protocol_is_runtime_checkable(self) -> None:
         """Verify that BalanceDFSource is runtime_checkable."""
-        self.assertTrue(getattr(BalanceDFSource, "_is_runtime_protocol", False))
         try:
             isinstance(object(), BalanceDFSource)
         except TypeError as error:
@@ -3433,10 +3432,10 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
                 return self._data.copy()
 
             @property
-            def _outcome_columns(self) -> pd.DataFrame | None:
+            def _outcome_columns(self) -> Optional[pd.DataFrame]:
                 return None
 
-            def set_weights(self, weights: pd.Series | float | None) -> None:
+            def set_weights(self, weights: Union[pd.Series, float, None]) -> None:
                 pass
 
         mock = _MockSource()
@@ -3476,10 +3475,10 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
                 return self._data.copy()
 
             @property
-            def _outcome_columns(self) -> pd.DataFrame | None:
+            def _outcome_columns(self) -> Optional[pd.DataFrame]:
                 return None
 
-            def set_weights(self, weights: pd.Series | float | None) -> None:
+            def set_weights(self, weights: Union[pd.Series, float, None]) -> None:
                 pass
 
         mock = _MockCovarsSource()
@@ -3519,10 +3518,10 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
                 return pd.DataFrame()
 
             @property
-            def _outcome_columns(self) -> pd.DataFrame | None:
+            def _outcome_columns(self) -> Optional[pd.DataFrame]:
                 return None
 
-            def set_weights(self, weights: pd.Series | float | None) -> None:
+            def set_weights(self, weights: Union[pd.Series, float, None]) -> None:
                 pass
 
         mock = _MockWeightsSource()
@@ -3553,10 +3552,10 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
                 return pd.DataFrame()
 
             @property
-            def _outcome_columns(self) -> pd.DataFrame | None:
+            def _outcome_columns(self) -> Optional[pd.DataFrame]:
                 return pd.DataFrame({"o1": [7.0, 8.0, 9.0]})
 
-            def set_weights(self, weights: pd.Series | float | None) -> None:
+            def set_weights(self, weights: Union[pd.Series, float, None]) -> None:
                 pass
 
         mock = _MockOutcomesSource()

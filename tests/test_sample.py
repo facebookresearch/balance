@@ -311,6 +311,19 @@ class TestSample(
         with self.assertRaisesRegex(ValueError, "must be numeric"):
             Sample.from_frame(df)
 
+        df = pd.DataFrame(
+            {
+                "id": (1, 2),
+                "weight": pd.Series(("1.0", "2.0"), dtype="string"),
+            }
+        )
+        with self.assertRaisesRegex(ValueError, "must be numeric"):
+            Sample.from_frame(df, standardize_types=False)
+
+        df = pd.DataFrame({"id": (1, 2), "weight": (True, False)})
+        with self.assertRaisesRegex(ValueError, "must be numeric"):
+            Sample.from_frame(df)
+
         # Test error for negative weight values
         df = pd.DataFrame({"id": (1, 2, 3), "weight": (1, -2, 2.1)})
         with self.assertRaisesRegex(ValueError, "must be non-negative"):
