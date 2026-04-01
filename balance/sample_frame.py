@@ -20,7 +20,7 @@ from typing import Any, cast, TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
-from pandas.api.types import is_numeric_dtype
+from pandas.api.types import is_bool_dtype, is_numeric_dtype
 
 if TYPE_CHECKING:
     from balance.balancedf_class import BalanceDFSource
@@ -333,7 +333,9 @@ class SampleFrame:
                 + null_weight_rows.to_string(index=False)
             )
 
-        if not is_numeric_dtype(_df[weight_column]):
+        if (not is_numeric_dtype(_df[weight_column])) or is_bool_dtype(
+            _df[weight_column]
+        ):
             raise ValueError("Weights must be numeric")
 
         if any(_df[weight_column] < 0):

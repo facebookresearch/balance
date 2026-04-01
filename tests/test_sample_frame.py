@@ -705,6 +705,22 @@ class TestSampleFrameEdgeCases(BalanceTestCase):
         df.loc[0, "x"] = 999.0
         self.assertAlmostEqual(sf._df.loc[0, "x"], 10.0)
 
+    def test_from_frame_pandas_string_weight_raises_value_error(self) -> None:
+        df = pd.DataFrame(
+            {
+                "id": [1, 2],
+                "x": [10.0, 20.0],
+                "weight": pd.Series(["1.0", "2.0"], dtype="string"),
+            }
+        )
+        with self.assertRaisesRegex(ValueError, "Weights must be numeric"):
+            SampleFrame.from_frame(df, id_column="id", weight_column="weight")
+
+    def test_from_frame_boolean_weight_raises_value_error(self) -> None:
+        df = pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [True, False]})
+        with self.assertRaisesRegex(ValueError, "Weights must be numeric"):
+            SampleFrame.from_frame(df, id_column="id", weight_column="weight")
+
 
 class TestSampleFrameWeightMetadata(BalanceTestCase):
     def _make_sf(self) -> SampleFrame:

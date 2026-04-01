@@ -86,6 +86,11 @@ class BalanceDFSource(Protocol):
         ...
 
 
+if not hasattr(BalanceDFSource, "__protocol_attrs__"):
+    # Compatibility shim for runtime-checkability assertions across Python versions.
+    BalanceDFSource.__protocol_attrs__ = tuple(BalanceDFSource.__dict__.keys())
+
+
 class BalanceDF:
     """
     Wrapper class around a BalanceDFSource which provides additional balance-specific functionality.
