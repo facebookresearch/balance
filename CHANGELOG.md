@@ -37,36 +37,6 @@
     `Sample.adjust()` to `BalanceFrame.adjust()` so both APIs share the same logic.
   - No public API changes — all existing `Sample` methods continue to work identically.
 
-# 0.18.0 (2026-03-24)
-
-## New Features
-
-- **Implemented `r_indicator()` with validated sample-variance formula**
-  - Added a public `r_indicator(sample_p, target_p)` implementation in
-    `weighted_comparisons_stats` using the documented Eq. 2.2.2 formulation
-    over concatenated propensity vectors and explicit input-size validation.
-  - Added validation for non-finite and out-of-range propensity values,
-    and expanded unit coverage for formula correctness and edge cases.
-  - Added `BalanceDFWeights.r_indicator()` as a convenience wrapper, so
-    `sample.weights().r_indicator()` computes the r-indicator directly.
-
-## Deprecations
-
-- **`Sample.design_effect()` is deprecated** — use `sample.weights().design_effect()` instead.
-  The method already exists on `BalanceDFWeights`; the `Sample` method now emits a
-  `DeprecationWarning` and delegates. Will be removed in balance 0.19.0.
-- **`Sample.design_effect_prop()` is deprecated** — use `sample.weights().design_effect_prop()` instead.
-  New method added to `BalanceDFWeights`. Will be removed in balance 0.19.0.
-- **`Sample.plot_weight_density()` is deprecated** — use `sample.weights().plot()` instead.
-  Will be removed in balance 0.19.0.
-- **`Sample.covar_means()` is deprecated** — use `sample.covars().mean()` instead
-  (with `.rename(index={'self': 'adjusted'}).reindex([...]).T` for the same format).
-  Will be removed in balance 0.19.0.
-- **`Sample.outcome_sd_prop()` is deprecated** — use `sample.outcomes().outcome_sd_prop()` instead.
-  New method added to `BalanceDFOutcomes`. Will be removed in balance 0.19.0.
-- **`Sample.outcome_variance_ratio()` is deprecated** — use `sample.outcomes().outcome_variance_ratio()` instead.
-  New method added to `BalanceDFOutcomes`. Will be removed in balance 0.19.0.
-
 ## New Features
 
 - **Added `SampleFrame` — a DataFrame container with explicit column-role metadata**
@@ -92,40 +62,6 @@
   - `set_active_weight()`: switch the active weight column returned by `df_weights`.
   - `add_weight_column()`: append a new weight column with length validation,
     duplicate-name guard (including non-weight columns), and optional metadata.
-
-## Tests
-
-- Added comprehensive tests in `test_sample_frame.py` (8 test classes, ~60 tests):
-  - `TestSampleFrame` — basic creation, DataFrame properties, repr
-  - `TestSampleFrameMutableViewSafety` — mutation isolation for all properties
-  - `TestSampleFrameColumnRoleProperties` — column-role list properties with
-    copy-safety
-  - `TestSampleFrameFromFrame` — auto-detection, validation, equivalence with
-    `Sample.from_frame()`
-  - `TestSampleFrameFromCsv` — CSV roundtrip and kwargs forwarding
-  - `TestSampleFrameDunderMethods` — `__len__`, `__deepcopy__`
-  - `TestSampleFrameEdgeCases` — zero rows, empty weights, skip_copy isolation
-  - `TestSampleFrameWeightMetadata` — weight metadata roundtrip, active weight
-    default, empty dict storage, invalid column, set_active_weight,
-    add_weight_column (with metadata, duplicate guard, non-weight column guard,
-    length mismatch), multi-weight workflow (14 tests)
-  - `TestSampleFrameIntegration` — full lifecycle integration test exercising
-    auto-detection, pd.NA handling, multiple weight columns with add/switch
-    workflow, and numerical equivalence with `Sample.from_frame()` (1 test)
-
-- **`SampleFrame` now implements the `BalanceDFSource` protocol**
-  - Added `weight_column` property: returns the active weight as a `pd.Series`.
-  - Added `_covar_columns()` method: returns covariate DataFrame (delegates to
-    `df_covars`).
-  - Added `_outcome_columns` property: returns outcome DataFrame or None (delegates
-    to `df_outcomes`).
-  - Added `set_weights()` method: replaces active weight values (accepts Series,
-    float, or None).
-  - Added `_links` attribute: default empty dict, used by `BalanceDF` for linked
-    samples (e.g. target/unadjusted).
-  - `id_column` property already existed — no changes needed.
-  - `SampleFrame` can now be passed directly to `BalanceDF`, `BalanceDFCovars`,
-    `BalanceDFWeights`, and `BalanceDFOutcomes` constructors without any adapter.
 
 - **Added `BalanceFrame` — immutable adjustment orchestrator for survey weighting**
   - New class in `balance_frame.py` that pairs a responder `SampleFrame` with a
@@ -252,7 +188,7 @@
 
 ## LLM/GenAI
 
-- **Added `CLAUDE.md` project context files** for Claude Code users, covering architecture,
+- **Updated `CLAUDE.md` project context files** for Claude Code users, covering architecture,
   build/test instructions (Meta and open-source), code conventions, and pre-submit checklist.
 - **Updated `.github/copilot-instructions.md`** review checklist to reduce duplication with
   `CLAUDE.md` and add missing conventions (MIT license header, `from __future__ import annotations`,
@@ -340,11 +276,6 @@
     target_data, adjusted, adjusted_weight_column, with_outcomes,
     roundtrip_sample_bf_sample, roundtrip_adjusted, roundtrip_load_data
 
-- Added `TestSampleConversion` class in `test_sample.py` (6 tests):
-  - to_sample_frame_basic, to_sample_frame_with_outcomes,
-    to_sample_frame_with_ignored, to_balance_frame_unadjusted,
-    to_balance_frame_adjusted, to_balance_frame_no_target_raises
-
 - Added `TestSampleInternalSampleFrame` class in `test_sample.py` (19 tests):
   - `test_sample_has_sample_frame` — Sample has a SampleFrame backing
   - `test_df_property_returns_sample_frame_df` — `_df` delegates to SampleFrame
@@ -371,6 +302,11 @@
 - Added `test_Sample_is_adjusted_property_and_callable` in `test_sample.py`:
   verifies `is_adjusted` works both as property and method call
 
+- Added `TestSampleConversion` class in `test_sample.py` (6 tests):
+  - to_sample_frame_basic, to_sample_frame_with_outcomes,
+    to_sample_frame_with_ignored, to_balance_frame_unadjusted,
+    to_balance_frame_adjusted, to_balance_frame_no_target_raises
+
 - Added `TestBalanceDFSourceProtocol` class in `test_balancedf.py` (8 tests):
   - `test_sample_satisfies_protocol` — verifies `Sample` passes `isinstance` check
   - `test_protocol_is_runtime_checkable` — verifies protocol is runtime-checkable
@@ -391,6 +327,43 @@
     `_build_diagnostics()` matches `Sample.diagnostics()` for null adjustment.
   - `test_build_diagnostics_with_ipw_matches_sample_diagnostics` — same check
     for IPW adjustment.
+
+# 0.18.0 (2026-03-24)
+
+## New Features
+
+- **Implemented `r_indicator()` with validated sample-variance formula**
+  - Added a public `r_indicator(sample_p, target_p)` implementation in
+    `weighted_comparisons_stats` using the documented Eq. 2.2.2 formulation
+    over concatenated propensity vectors and explicit input-size validation.
+  - Added validation for non-finite and out-of-range propensity values,
+    and expanded unit coverage for formula correctness and edge cases.
+  - Added `BalanceDFWeights.r_indicator()` as a convenience wrapper, so
+    `sample.weights().r_indicator()` computes the r-indicator directly.
+
+## Deprecations
+
+- **`Sample.design_effect()` is deprecated** — use `sample.weights().design_effect()` instead.
+  The method already exists on `BalanceDFWeights`; the `Sample` method now emits a
+  `DeprecationWarning` and delegates. Will be removed in balance 0.19.0.
+- **`Sample.design_effect_prop()` is deprecated** — use `sample.weights().design_effect_prop()` instead.
+  New method added to `BalanceDFWeights`. Will be removed in balance 0.19.0.
+- **`Sample.plot_weight_density()` is deprecated** — use `sample.weights().plot()` instead.
+  Will be removed in balance 0.19.0.
+- **`Sample.covar_means()` is deprecated** — use `sample.covars().mean()` instead
+  (with `.rename(index={'self': 'adjusted'}).reindex([...]).T` for the same format).
+  Will be removed in balance 0.19.0.
+- **`Sample.outcome_sd_prop()` is deprecated** — use `sample.outcomes().outcome_sd_prop()` instead.
+  New method added to `BalanceDFOutcomes`. Will be removed in balance 0.19.0.
+- **`Sample.outcome_variance_ratio()` is deprecated** — use `sample.outcomes().outcome_variance_ratio()` instead.
+  New method added to `BalanceDFOutcomes`. Will be removed in balance 0.19.0.
+
+## LLM/GenAI
+
+- **Added `CLAUDE.md` project context files** for Claude Code users, covering architecture,
+  build/test instructions (Meta and open-source), code conventions, and pre-submit checklist.
+- **Added `.github/copilot-instructions.md`** review checklist.
+
 ## Bug Fixes
 
 - **`prepare_marginal_dist_for_raking` / `_realize_dicts_of_proportions`: fixed memory explosion from LCM expansion**
