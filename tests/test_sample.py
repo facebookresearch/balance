@@ -25,7 +25,6 @@ import logging
 from copy import deepcopy
 from textwrap import dedent
 from typing import Any, Callable
-from unittest.mock import MagicMock
 
 import balance.testutil
 import IPython.display
@@ -367,7 +366,7 @@ class TestSample(
         with self.assertRaisesRegex(ValueError, "cannot include id/weight"):
             Sample.from_frame(df, ignore_columns=["weight"])
 
-        with self.assertRaisesRegex(ValueError, "both ignored and outcomes"):
+        with self.assertRaisesRegex(ValueError, "'outcomes' and 'ignored'"):
             Sample.from_frame(
                 df,
                 outcome_columns=["out"],
@@ -375,7 +374,7 @@ class TestSample(
                 weight_column=None,
             )
 
-        with self.assertRaisesRegex(ValueError, "must be strings"):
+        with self.assertRaisesRegex(ValueError, "not in df columns"):
             # pyre-ignore[6]: Intentionally passing int to test validation
             Sample.from_frame(df, ignore_columns=["a", 3])
 
@@ -443,7 +442,7 @@ class TestSample(
 
         # Mock importlib.metadata.version to return pandas 2.x
         with patch(
-            "balance.sample_class.importlib_version",
+            "importlib.metadata.version",
             return_value="2.2.0",
         ):
             sample = Sample.from_frame(df)
@@ -501,7 +500,7 @@ class TestSample(
         # Test exception for invalid method
         with self.assertRaisesRegex(
             ValueError,
-            "Method should be one of existing weighting methods",
+            "'method' must be a string naming a weighting method or a callable",
         ):
             # pyre-ignore[6]: Intentionally passing None to test exception handling
             s1.set_target(s2).adjust(method=None)
@@ -737,7 +736,7 @@ class TestSample_base_and_adjust_methods(
         # test exceptions when there is no a second sample
         with self.assertRaisesRegex(
             TypeError,
-            "set_unadjusted must be called with second_sample argument of type Sample",
+            "set_unadjusted must be called with a BalanceFrame argument",
         ):
             # pyre-ignore[6]: Intentionally passing str to test exception handling
             s1.set_unadjusted("Not a Sample object")
@@ -747,12 +746,38 @@ class TestSample_base_and_adjust_methods(
         self.assertFalse(s3.is_adjusted())
         self.assertTrue(s3_adjusted_null.is_adjusted())
 
+    def test_Sample_is_adjusted_property_and_callable(self) -> None:
+        """Verify is_adjusted works both as a property and as a method call."""
+        # Property access (new style, consistent with BalanceFrame.is_adjusted)
+        self.assertFalse(s1.is_adjusted)
+        self.assertFalse(s3.is_adjusted)
+        self.assertTrue(s3_adjusted_null.is_adjusted)
+
+        # Method call (legacy style, backward compatible)
+        self.assertFalse(s1.is_adjusted())
+        self.assertFalse(s3.is_adjusted())
+        self.assertTrue(s3_adjusted_null.is_adjusted())
+
+        # Both styles agree
+        self.assertEqual(bool(s1.is_adjusted), s1.is_adjusted())
+        self.assertEqual(
+            bool(s3_adjusted_null.is_adjusted), s3_adjusted_null.is_adjusted()
+        )
+
+        # Works in boolean expressions
+        self.assertFalse(s1.is_adjusted and True)
+        self.assertTrue(s3_adjusted_null.is_adjusted and True)
+
+        # Equality with bool
+        self.assertEqual(s1.is_adjusted, False)
+        self.assertEqual(s3_adjusted_null.is_adjusted, True)
+
     def test_Sample_set_target(self) -> None:
         s5 = s1.set_target(s2)
         self.assertTrue(s5.has_target())
         # test exceptions when the provided object is not a second sample
         with self.assertRaisesRegex(
-            ValueError,
+            TypeError,
             "A target, a Sample object, must be specified",
         ):
             # pyre-ignore[6]: Intentionally passing str to test exception handling
@@ -976,11 +1001,11 @@ class TestSample_metrics_methods(
         expected_ratio = (
             weighted_var(
                 a_with_outcome_adjusted.outcomes().df,
-                a_with_outcome_adjusted.weights().df["weight"],
+                a_with_outcome_adjusted.weights().df.iloc[:, 0],
             )
             / weighted_var(
                 a_with_outcome_adjusted._links["unadjusted"].outcomes().df,
-                a_with_outcome_adjusted._links["unadjusted"].weights().df["weight"],
+                a_with_outcome_adjusted._links["unadjusted"].weights().df.iloc[:, 0],
             )
         ).iloc[0]
 
@@ -1115,12 +1140,17 @@ class TestSample_metrics_methods(
         self.assertTrue("design effect" in s3_summ)
 
     def test_Sample_summary_handles_nonfinite_design_effect(self) -> None:
-        adjusted = deepcopy(s3_adjusted_null)
-        mock_weights = MagicMock()
-        mock_weights.design_effect = MagicMock(return_value=np.nan)
-        adjusted.weights = MagicMock(return_value=mock_weights)
+        from unittest.mock import patch
 
-        summary = adjusted.summary()
+        adjusted = deepcopy(s3_adjusted_null)
+        # Mock _design_effect_diagnostics on the BalanceFrame to return None values
+        bf = adjusted._balance_frame
+        with patch.object(
+            type(bf),
+            "_design_effect_diagnostics",
+            return_value=(None, None, None),
+        ):
+            summary = adjusted.summary()
 
         self.assertIn("Weight diagnostics:", summary)
         self.assertIn("design effect (Deff): unavailable", summary)
@@ -1564,9 +1594,11 @@ class TestSample_metrics_methods(
             columns_to_keep=["g", "a"],
         )
 
-        # Test that existing columns are still kept
+        # Test that existing columns are still kept (outcome column "o" is always preserved)
         filtered_sample = s1.keep_only_some_rows_columns(columns_to_keep=["g", "a"])
-        self.assertEqual(filtered_sample._df.columns.tolist(), ["a"])
+        # Check via public API: covars should only have "a", outcomes "o" should be preserved
+        self.assertIn("a", filtered_sample.covars().df.columns.tolist())
+        self.assertIn("o", filtered_sample.outcomes().df.columns.tolist())
 
 
 class TestSample_to_download(balance.testutil.BalanceTestCase):
@@ -1692,7 +1724,8 @@ class TestSample_high_cardinality_warnings(balance.testutil.BalanceTestCase):
             )
 
         # Filter out NaN weights before comparing (dropped rows may have NaN weights)
-        valid_weights = result.weight_column[~pd.isna(result.weight_column)]
+        _wc = _assert_type(result.weight_column)
+        valid_weights = _wc[~pd.isna(_wc)]
         self.assertTrue(np.allclose(valid_weights, np.ones(len(sample_df) - 1)))
         self.assertTrue(
             any(
@@ -2214,7 +2247,7 @@ class TestSampleFromFrameGuessWeightColumn(balance.testutil.BalanceTestCase):
                     {"a": [1, 2, 3], "id": [1, 2, 3], "weights": [1.0, 2.0, 3.0]}
                 )
             )
-            self.assertEqual(sample.weight_column.name, "weights")
+            self.assertEqual(_assert_type(sample.weight_column).name, "weights")
             self.assertTrue(
                 any("Guessing weight column is 'weights'" in msg for msg in log.output)
             )
@@ -2241,7 +2274,7 @@ class TestSampleFromFrameGuessIdColumnCandidates(balance.testutil.BalanceTestCas
             pd.DataFrame({"user_id": [1, 2, 3], "a": [1, 2, 3]}),
             id_column_candidates=["user_id", "id"],
         )
-        self.assertEqual(sample.id_column.name, "user_id")
+        self.assertEqual(_assert_type(sample.id_column).name, "user_id")
 
     def test_from_frame_id_column_candidates_ambiguous(self) -> None:
         """Test from_frame raises when multiple candidate ids are present."""
@@ -2293,7 +2326,7 @@ class TestSampleSetWeightsNonFloat(balance.testutil.BalanceTestCase):
             standardize_types=False,
         )
         sample.set_weights(2.0)
-        self.assertEqual(sample._df[sample.weight_column.name].dtype.kind, "f")
+        self.assertEqual(_assert_type(sample.weight_column).dtype.kind, "f")
 
 
 class TestSampleSummaryIPWModel(balance.testutil.BalanceTestCase):
@@ -2708,8 +2741,8 @@ class TestSampleConversion(balance.testutil.BalanceTestCase):
         )
         sf = sample_with_ignored.to_sample_frame()
         self.assertIsInstance(sf, SampleFrame)
-        self.assertIsNotNone(sf.misc_columns)
-        self.assertIn("b", sf.misc_columns)
+        self.assertIsNotNone(sf.ignore_columns)
+        self.assertIn("b", sf.ignore_columns)
 
     def test_to_balance_frame_unadjusted(self) -> None:
         """to_balance_frame converts a Sample with target to a BalanceFrame."""
@@ -2727,3 +2760,77 @@ class TestSampleConversion(balance.testutil.BalanceTestCase):
         """to_balance_frame raises ValueError when Sample has no target."""
         with self.assertRaises(ValueError):
             s1.to_balance_frame()
+
+
+class TestCallableBool(balance.testutil.BalanceTestCase):
+    """Tests for the _CallableBool helper class."""
+
+    def test_bool_true(self) -> None:
+        from balance.sample_class import _CallableBool
+
+        cb = _CallableBool(True)
+        self.assertTrue(bool(cb))
+
+    def test_bool_false(self) -> None:
+        from balance.sample_class import _CallableBool
+
+        cb = _CallableBool(False)
+        self.assertFalse(bool(cb))
+
+    def test_call_true(self) -> None:
+        from balance.sample_class import _CallableBool
+
+        cb = _CallableBool(True)
+        self.assertTrue(cb())
+
+    def test_call_false(self) -> None:
+        from balance.sample_class import _CallableBool
+
+        cb = _CallableBool(False)
+        self.assertFalse(cb())
+
+    def test_repr(self) -> None:
+        from balance.sample_class import _CallableBool
+
+        self.assertEqual(repr(_CallableBool(True)), "True")
+        self.assertEqual(repr(_CallableBool(False)), "False")
+
+    def test_eq_with_bool(self) -> None:
+        from balance.sample_class import _CallableBool
+
+        self.assertEqual(_CallableBool(True), True)
+        self.assertEqual(_CallableBool(False), False)
+        self.assertNotEqual(_CallableBool(True), False)
+        self.assertNotEqual(_CallableBool(False), True)
+
+    def test_eq_with_callable_bool(self) -> None:
+        from balance.sample_class import _CallableBool
+
+        self.assertEqual(_CallableBool(True), _CallableBool(True))
+        self.assertEqual(_CallableBool(False), _CallableBool(False))
+        self.assertNotEqual(_CallableBool(True), _CallableBool(False))
+
+    def test_eq_not_implemented_for_other_types(self) -> None:
+        from balance.sample_class import _CallableBool
+
+        cb = _CallableBool(True)
+        result = cb.__eq__("not a bool")
+        self.assertIs(result, NotImplemented)
+
+    def test_hash(self) -> None:
+        from balance.sample_class import _CallableBool
+
+        self.assertEqual(hash(_CallableBool(True)), hash(True))
+        self.assertEqual(hash(_CallableBool(False)), hash(False))
+
+    def test_mul(self) -> None:
+        from balance.sample_class import _CallableBool
+
+        self.assertEqual(_CallableBool(True) * 5, 5)
+        self.assertEqual(_CallableBool(False) * 5, 0)
+
+    def test_rmul(self) -> None:
+        from balance.sample_class import _CallableBool
+
+        self.assertEqual(5 * _CallableBool(True), 5)
+        self.assertEqual(5 * _CallableBool(False), 0)
