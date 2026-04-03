@@ -12,6 +12,7 @@ from typing import Iterable, TYPE_CHECKING
 import numpy as np
 import pandas as pd
 from balance.stats_and_plots.weights_stats import _check_weights_are_valid
+from balance.util import _assert_type
 from balance.utils.input_validation import _coerce_to_numeric_and_validate
 from scipy import stats
 
@@ -236,13 +237,15 @@ def _align_samples_by_id(
         ValueError: If IDs have duplicates, no common IDs exist, outcome values
             differ, or no valid weights exist.
     """
-    ids0 = adjusted0.id_column.to_numpy()
-    ids1 = adjusted1.id_column.to_numpy()
+    id_col0 = _assert_type(adjusted0.id_column)
+    id_col1 = _assert_type(adjusted1.id_column)
+    ids0 = id_col0.to_numpy()
+    ids1 = id_col1.to_numpy()
     if pd.Index(ids0).has_duplicates or pd.Index(ids1).has_duplicates:
         raise ValueError("Samples must have unique ids to compare outcomes.")
 
-    y0_indexed = y0.set_index(adjusted0.id_column)
-    y1_indexed = y1.set_index(adjusted1.id_column)
+    y0_indexed = y0.set_index(id_col0)
+    y1_indexed = y1.set_index(id_col1)
 
     common_ids = y0_indexed.index.intersection(y1_indexed.index)
     if common_ids.empty:
@@ -255,12 +258,12 @@ def _align_samples_by_id(
             "Outcome values differ between adjusted Samples for common ids."
         )
 
-    weights0 = adjusted0.weight_column.to_numpy()
+    weights0 = _assert_type(adjusted0.weight_column).to_numpy()
     weights0_series = pd.Series(weights0, index=ids0)
     weights0_aligned = weights0_series.reindex(common_ids).to_numpy()
 
     weights1_series = pd.Series(
-        adjusted1.weight_column.to_numpy(),
+        _assert_type(adjusted1.weight_column).to_numpy(),
         index=ids1,
     ).reindex(common_ids)
 
