@@ -69,6 +69,8 @@
   - Column-role list properties: `covars_columns`, `weight_columns`,
     `outcome_columns`, `predicted_outcome_columns`, `misc_columns` (all return
     copies).
+  - `ignored_columns()`: alias for `df_misc`, provided for API parity with
+    `Sample.ignored_columns()`.
   - Internal `_create()` factory with `_skip_copy` optimization for callers that
     have already deep-copied.
   - Comprehensive validation: null/negative/non-numeric weights, null IDs,
