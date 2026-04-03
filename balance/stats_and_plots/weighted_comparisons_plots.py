@@ -671,6 +671,10 @@ def seaborn_plot_dist(
     variables = choose_variables(*(d["df"] for d in dfs), variables=variables)
     logger.debug(f"plotting variables {variables}")
 
+    if len(variables) == 0:
+        logger.warning("No variables to plot — returning empty axes list.")
+        return [] if return_axes else None
+
     #  Set up subplots
     f, axes = plt.subplots(len(variables), 1, figsize=(7, 7 * len(variables)))
     axes_list: List[plt.Axes]
