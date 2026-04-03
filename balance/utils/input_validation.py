@@ -245,7 +245,7 @@ def _check_weighting_methods_input(
 # This is so to avoid various cyclic imports (since various files call sample_class, and then sample_class also calls these files)
 # TODO: (p2) move away from this method once we restructure Sample and BalanceDF objects...
 def _isinstance_sample(obj: Any) -> bool:
-    """Check if an object is an instance of Sample.
+    """Check if an object is an instance of Sample, BalanceFrame, or SampleFrame.
 
     The import is done inside the function to avoid circular import issues at
     module load time. Since this module is part of the balance package, the
@@ -255,11 +255,10 @@ def _isinstance_sample(obj: Any) -> bool:
         obj: The object to check.
 
     Returns:
-        bool: True if obj is a Sample instance, False otherwise.
+        bool: True if obj has a ``covars()`` method (Sample, BalanceFrame,
+            or SampleFrame), False otherwise.
     """
-    from balance import sample_class
-
-    return isinstance(obj, sample_class.Sample)
+    return hasattr(obj, "covars") and callable(getattr(obj, "covars", None))
 
 
 def guess_id_column(

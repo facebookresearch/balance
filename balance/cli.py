@@ -801,7 +801,10 @@ class BalanceCLI:
             )
 
             # Update dtypes
-            if self.args.return_df_with_original_dtypes:
+            if (
+                self.args.return_df_with_original_dtypes
+                and adjusted._df_dtypes is not None
+            ):
                 df_to_return = balance.util._astype_in_df_from_dtypes(
                     adjusted.df, adjusted._df_dtypes
                 )
@@ -826,7 +829,10 @@ class BalanceCLI:
                 error_message = f"{module_name}: {e}"
                 logger.exception("The error message is: " + error_message)
                 # Update dtypes
-                if self.args.return_df_with_original_dtypes:
+                if (
+                    self.args.return_df_with_original_dtypes
+                    and sample._df_dtypes is not None
+                ):
                     df_to_return = balance.util._astype_in_df_from_dtypes(
                         sample.df, sample._df_dtypes
                     )
