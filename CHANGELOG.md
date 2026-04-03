@@ -61,15 +61,15 @@
 
 - **Added `SampleFrame` — a DataFrame container with explicit column-role metadata**
   - New class in `sample_frame.py` that holds a single DataFrame and tracks which
-    columns are covariates, weights, outcomes, predicted outcomes, and misc.
+    columns are covariates, weights, outcomes, predicted outcomes, and ignored.
   - Factory methods: `SampleFrame.from_frame()` (with auto-detection of id/weight
     columns) and `SampleFrame.from_csv()`.
   - DataFrame-access properties use `df_*` prefix convention: `df_covars`,
-    `df_weights`, `df_outcomes`, `df_misc`. All return copies for mutation safety.
+    `df_weights`, `df_outcomes`, `df_ignored`. All return copies for mutation safety.
   - Column-role list properties: `covars_columns`, `weight_columns`,
-    `outcome_columns`, `predicted_outcome_columns`, `misc_columns` (all return
-    copies).
-  - `ignored_columns()`: alias for `df_misc`, provided for API parity with
+    `outcome_columns`, `predicted_outcome_columns`, `ignore_columns` (all return
+    copies). `misc_columns` is accepted as a deprecated alias.
+  - `ignored_columns()`: alias for `df_ignored`, provided for API parity with
     `Sample.ignored_columns()`.
   - Internal `_create()` factory with `_skip_copy` optimization for callers that
     have already deep-copied.
@@ -120,13 +120,23 @@
 - **Added `BalanceFrame` — immutable adjustment orchestrator for survey weighting**
   - New class in `balance_frame.py` that pairs a responder `SampleFrame` with a
     target `SampleFrame` for survey/observational data reweighting.
-  - `__new__`-based constructor: `BalanceFrame(responders=..., target=...)` with
+  - `__new__`-based constructor: `BalanceFrame(sf_with_outcomes=..., sf_target=...)` with
     covariate overlap validation.
+  - `__new__`-based constructor now supports target-less construction:
+    `BalanceFrame(sf_with_outcomes=sf)` creates a BalanceFrame without a target.
+  - `set_target(target, in_place=True)`: set or replace the target population.
+    When `in_place=True` (default), modifies and returns self; when `False`,
+    returns a new BalanceFrame. Resets adjustment state when target changes.
+  - `has_target()`: check if a target population is set.
   - `adjust(method="ipw")`: returns a NEW BalanceFrame (immutable pattern) with
     adjusted weights. Supports string methods (`"ipw"`, `"cbps"`, `"rake"`,
-    `"poststratify"`, `"null"`) and custom callables.
+    `"poststratify"`, `"null"`) and custom callables. Raises `ValueError` if
+    no target is set.
   - Properties: `responders`, `target`, `unadjusted`, `is_adjusted`.
   - `model()`: returns the adjustment model dictionary.
+  - `ignored_columns()`: returns ignored (misc) columns from the responder
+    SampleFrame (alias for `responders.ignored_columns()`).
+  - `id_column` property: returns the ID column of the responder SampleFrame.
   - Records weight provenance metadata on the adjusted weight column.
   - Default transformations applied when neither SampleFrame has custom transforms.
   - Calls weighting functions directly with DataFrames (no Sample dependency).
@@ -171,6 +181,14 @@
   - `BalanceFrame.to_sample()`: converts a BalanceFrame back to a Sample
     (reconstructs responder, target, and optionally unadjusted links).
   - All conversion methods use lazy imports to avoid circular dependencies.
+
+## Infrastructure
+
+- **`BalanceDF.__init__()`: added optional `links` parameter for explicit link injection**
+  - Allows BalanceDF to work with sources that do not carry mutable `_links`
+    (e.g. the upcoming SampleFrame class).
+  - When `links` is provided, `_BalanceDF_child_from_linked_samples()` uses the
+    explicit dict; otherwise falls back to `sample._links` (backward compatible).
 
 ## Code Quality & Refactoring
 
