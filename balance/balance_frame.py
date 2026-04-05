@@ -49,8 +49,18 @@ logger: logging.Logger = logging.getLogger(__package__)
 class _CallableBool:
     """A bool-like value that is also callable, for backward-compatible property migration.
 
-    This allows ``is_adjusted`` to work both as a property (``sample.is_adjusted``)
-    and as a method call (``sample.is_adjusted()``) for backward compatibility.
+    This allows properties like ``has_target`` and ``is_adjusted`` to work
+    both as a property and as a method call::
+
+        # Both forms are equivalent:
+        if bf.has_target:     # property-style (preferred)
+            ...
+        if bf.has_target():   # method-call-style (backward compat)
+            ...
+
+    This dual-use pattern was introduced so that code written against the
+    old ``Sample.has_target()`` method continues to work after the migration
+    to a property on ``BalanceFrame``.
 
     Args:
         value: The boolean value to wrap.

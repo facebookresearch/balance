@@ -10,11 +10,14 @@ from __future__ import annotations
 import inspect
 import logging
 from copy import deepcopy
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from balance.balance_frame import _CallableBool, BalanceFrame  # noqa: F401
 from balance.sample_frame import SampleFrame
 from balance.summary_utils import _concat_metric_val_var
+
+if TYPE_CHECKING:
+    from typing import Self
 
 logger: logging.Logger = logging.getLogger(__package__)
 
@@ -101,7 +104,7 @@ class Sample(BalanceFrame, SampleFrame):
         standardize_types: bool = True,
         use_deepcopy: bool = True,
         id_column_candidates: list[str] | tuple[str, ...] | str | None = None,
-    ) -> Sample:
+    ) -> Self:
         """Create a Sample from a pandas DataFrame.
 
         Thin wrapper around :meth:`SampleFrame.from_frame` that builds a
