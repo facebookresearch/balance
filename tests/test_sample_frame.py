@@ -1075,3 +1075,9 @@ class TestSampleFrameFromSample(BalanceTestCase):
         sf = SampleFrame.from_sample(sample)
         self.assertIsNone(sf.df_outcomes)
         self.assertEqual(sf._column_roles["outcomes"], [])
+
+    def test_from_frame_duplicate_columns_raises(self) -> None:
+        df = pd.DataFrame([[1, 2, 3]], columns=["id", "x", "x"])
+        with self.assertRaises(ValueError) as ctx:
+            SampleFrame.from_frame(df, id_column="id")
+        self.assertIn("duplicate column names", str(ctx.exception))
