@@ -1960,3 +1960,87 @@ class TestBalanceFrameSetTargetValidation(BalanceTestCase):
         tgt_bf = BalanceFrame(sample=tgt_sf)
         with self.assertRaises(ValueError):
             bf.set_target(tgt_bf)
+
+
+class TestBalanceFrameEdgeCases(BalanceTestCase):
+    """Edge case tests for BalanceFrame: pickle, null adjust, max_de, 0-row."""
+
+    def _make_bf(self) -> BalanceFrame:
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]}),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        tgt_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["3", "4"], "x": [1.5, 2.5], "weight": [1.0, 1.0]}),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        return BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+
+    def test_pickle_round_trip_unadjusted(self) -> None:
+        """Pickle round-trip for unadjusted BalanceFrame."""
+        import pickle
+
+        bf = self._make_bf()
+        data = pickle.dumps(bf)
+        bf2 = pickle.loads(data)
+        self.assertFalse(bf2.is_adjusted)
+        self.assertTrue(bf2.has_target)
+        pd.testing.assert_frame_equal(bf.df, bf2.df)
+
+    def test_pickle_round_trip_adjusted(self) -> None:
+        """Pickle round-trip for adjusted BalanceFrame."""
+        import pickle
+
+        bf = self._make_bf()
+        adjusted = bf.adjust(method="null")
+        data = pickle.dumps(adjusted)
+        adj2 = pickle.loads(data)
+        self.assertTrue(adj2.is_adjusted)
+        pd.testing.assert_frame_equal(adjusted.df, adj2.df)
+
+    def test_deepcopy_preserves_adjustment_state(self) -> None:
+        bf = self._make_bf()
+        adjusted = bf.adjust(method="null")
+        bf_copy = copy.deepcopy(adjusted)
+        self.assertTrue(bf_copy.is_adjusted)
+        self.assertTrue(bf_copy.has_target)
+
+    def test_adjust_null_then_diagnostics(self) -> None:
+        """adjust(method='null') followed by diagnostics() should work."""
+        bf = self._make_bf()
+        adjusted = bf.adjust(method="null")
+        diag = adjusted.diagnostics()
+        self.assertIsInstance(diag, pd.DataFrame)
+
+    def test_zero_row_balanceframe(self) -> None:
+        """BalanceFrame with 0-row data should not crash on construction."""
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": pd.Series([], dtype="str"),
+                    "x": pd.Series([], dtype="float64"),
+                    "weight": pd.Series([], dtype="float64"),
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        tgt_sf = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": pd.Series([], dtype="str"),
+                    "x": pd.Series([], dtype="float64"),
+                    "weight": pd.Series([], dtype="float64"),
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        bf = BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+        self.assertEqual(bf.df.shape[0], 0)
