@@ -128,7 +128,7 @@ class SampleFrame:
         cls,
         df: pd.DataFrame,
         id_column: str,
-        covars_columns: list[str],
+        covar_columns: list[str],
         weight_columns: list[str],
         outcome_columns: list[str] | None = None,
         predicted_outcome_columns: list[str] | None = None,
@@ -141,7 +141,7 @@ class SampleFrame:
         instance._df = df if _skip_copy else df.copy()
         instance._id_column_name = id_column
         instance._column_roles = {
-            "covars": list(covars_columns),
+            "covars": list(covar_columns),
             "weights": list(weight_columns),
             "outcomes": list(outcome_columns or []),
             "predicted": list(predicted_outcome_columns or []),
@@ -161,7 +161,7 @@ class SampleFrame:
         cls,
         df: pd.DataFrame,
         id_column: str | None = None,
-        covars_columns: list[str] | None = None,
+        covar_columns: list[str] | None = None,
         weight_column: str | None = None,
         outcome_columns: list[str] | tuple[str, ...] | str | None = None,
         predicted_outcome_columns: list[str] | tuple[str, ...] | str | None = None,
@@ -184,7 +184,7 @@ class SampleFrame:
             id_column (str, optional): Name of the column to use as row
                 identifier. If None, guessed from common names
                 (``"id"``, ``"ID"``, etc.).
-            covars_columns (list of str, optional): Explicit list of covariate
+            covar_columns (list of str, optional): Explicit list of covariate
                 column names. If None, inferred by exclusion (all columns
                 minus id, weight, outcome, predicted, and ignored columns).
             weight_column (str, optional): Name of the column containing
@@ -377,8 +377,8 @@ class SampleFrame:
                 )
 
         # --- Covariate columns ---
-        if covars_columns is not None:
-            covar_list = list(covars_columns)
+        if covar_columns is not None:
+            covar_list = list(covar_columns)
             missing_covars = set(covar_list).difference(_df.columns)
             if missing_covars:
                 raise ValueError(
@@ -413,7 +413,7 @@ class SampleFrame:
         return cls._create(
             df=_df,
             id_column=id_col_name,
-            covars_columns=covar_list,
+            covar_columns=covar_list,
             weight_columns=[weight_column],
             outcome_columns=outcome_list,
             predicted_outcome_columns=predicted_list,
@@ -425,7 +425,7 @@ class SampleFrame:
     # --- Column role accessors ---
 
     @property
-    def covars_columns(self) -> list[str]:
+    def covar_columns(self) -> list[str]:
         """Names of the covariate columns.
 
         Returns a copy so that callers cannot accidentally mutate the
@@ -440,7 +440,7 @@ class SampleFrame:
             >>> df = pd.DataFrame({"id": ["1", "2"], "age": [25, 30],
             ...                    "income": [50000, 60000], "weight": [1.0, 1.0]})
             >>> sf = SampleFrame.from_frame(df)
-            >>> sf.covars_columns
+            >>> sf.covar_columns
             ['age', 'income']
         """
         return list(self._column_roles["covars"])
@@ -460,7 +460,7 @@ class SampleFrame:
             >>> from balance.sample_frame import SampleFrame
             >>> sf = SampleFrame._create(
             ...     df=pd.DataFrame({"id": [1], "x": [10], "w1": [1.0], "w2": [2.0]}),
-            ...     id_column="id", covars_columns=["x"],
+            ...     id_column="id", covar_columns=["x"],
             ...     weight_columns=["w1", "w2"])
             >>> sf.weight_columns
             ['w1', 'w2']
@@ -981,7 +981,7 @@ class SampleFrame:
             >>> from balance.sample_frame import SampleFrame
             >>> sf = SampleFrame._create(
             ...     df=pd.DataFrame({"id": [1], "x": [10], "w1": [1.0], "w2": [2.0]}),
-            ...     id_column="id", covars_columns=["x"],
+            ...     id_column="id", covar_columns=["x"],
             ...     weight_columns=["w1", "w2"])
             >>> sf.set_active_weight("w2")
             >>> list(sf.df_weights.columns)
@@ -1174,7 +1174,7 @@ class SampleFrame:
         return cls._create(
             df=df,
             id_column=id_col_name,
-            covars_columns=sample._covar_columns_names(),
+            covar_columns=sample._covar_columns_names(),
             weight_columns=[weight_col_name],
             outcome_columns=outcome_cols,
             ignore_columns=ignored_cols if ignored_cols else None,
