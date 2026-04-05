@@ -1081,3 +1081,43 @@ class TestSampleFrameFromSample(BalanceTestCase):
         with self.assertRaises(ValueError) as ctx:
             SampleFrame.from_frame(df, id_column="id")
         self.assertIn("duplicate column names", str(ctx.exception))
+
+
+class TestSampleFrameFromFrameEdgeCases(BalanceTestCase):
+    """Edge case tests for SampleFrame.from_frame() boundary conditions."""
+
+    def test_zero_row_dataframe(self) -> None:
+        """SampleFrame from an empty DataFrame should work."""
+        df = pd.DataFrame(
+            {
+                "id": pd.Series([], dtype="str"),
+                "x": pd.Series([], dtype="float64"),
+                "weight": pd.Series([], dtype="float64"),
+            }
+        )
+        sf = SampleFrame.from_frame(df, id_column="id", weight_column="weight")
+        self.assertEqual(sf.df.shape[0], 0)
+        self.assertEqual(sf.covar_columns, ["x"])
+
+    def test_single_row_dataframe(self) -> None:
+        """SampleFrame from a single-row DataFrame should work."""
+        df = pd.DataFrame({"id": ["a"], "x": [1.0], "weight": [1.0]})
+        sf = SampleFrame.from_frame(df, id_column="id", weight_column="weight")
+        self.assertEqual(sf.df.shape[0], 1)
+
+    def test_unicode_column_names(self) -> None:
+        """SampleFrame should handle unicode column names."""
+        df = pd.DataFrame({"id": ["1", "2"], "äge": [25.0, 30.0], "wëight": [1.0, 1.0]})
+        sf = SampleFrame.from_frame(df, id_column="id", weight_column="wëight")
+        self.assertEqual(sf.covar_columns, ["äge"])
+
+    def test_weight_as_outcome_raises(self) -> None:
+        """Weight column used as outcome should raise ValueError."""
+        df = pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]})
+        with self.assertRaises(ValueError):
+            SampleFrame.from_frame(
+                df,
+                id_column="id",
+                weight_column="weight",
+                outcome_columns=["weight"],
+            )
