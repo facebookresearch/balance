@@ -65,7 +65,7 @@ class TestAdjustNull(
 
         result = sample.adjust(target, method="null")
         # Weight values should be identical; column name may differ
-        # (BF uses "weight_adjusted" internally).
+        # (active weight column keeps its original name after adjustment).
         pd.testing.assert_series_equal(
             sample.weights().df.iloc[:, 0],
             result.weights().df.iloc[:, 0],
