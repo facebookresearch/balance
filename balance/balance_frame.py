@@ -669,7 +669,7 @@ class BalanceFrame:
             self_with_target = self.set_target(target)
             return self_with_target.adjust(*args, method=method, **kwargs)
 
-        self._no_target_error()
+        self._require_target()
 
         if self.is_adjusted:
             raise ValueError(
@@ -678,7 +678,7 @@ class BalanceFrame:
             )
 
         sf_target = self._sf_target
-        assert sf_target is not None  # guaranteed by _no_target_error() above
+        assert sf_target is not None  # guaranteed by _require_target() above
 
         adjustment_function = self._resolve_adjustment_function(method)
         resp_covars, target_covars = self._get_covars()
@@ -1239,7 +1239,7 @@ class BalanceFrame:
             ['metric', 'val', 'var']
         """
         logger.info("Starting computation of diagnostics of the fitting")
-        self._check_if_adjusted()
+        self._require_adjusted()
 
         outcome_columns = self._sf_sample.df_outcomes
         outcome_impact = None
@@ -1672,24 +1672,28 @@ class BalanceFrame:
 
     # --- Error checks (moved from Sample) ---
 
-    def _check_if_adjusted(self) -> None:
+    def _require_adjusted(self) -> None:
         """Raise ValueError if not adjusted."""
         if not self.is_adjusted:
             raise ValueError(
-                "This is not an adjusted Sample. Use sample.adjust to adjust the sample to target"
+                f"This {type(self).__name__} is not adjusted. "
+                "Use .adjust() to adjust to target."
             )
 
-    def _no_target_error(self) -> None:
+    def _require_target(self) -> None:
         """Raise ValueError if no target is set."""
         if not self.has_target():
             raise ValueError(
-                "This Sample does not have a target set. Use sample.set_target to add target"
+                f"This {type(self).__name__} does not have a target set. "
+                "Use .set_target() to add a target."
             )
 
-    def _check_outcomes_exists(self) -> None:
+    def _require_outcomes(self) -> None:
         """Raise ValueError if no outcome columns are specified."""
         if self.outcomes() is None:
-            raise ValueError("This Sample does not have outcome columns specified")
+            raise ValueError(
+                f"This {type(self).__name__} does not have outcome columns specified."
+            )
 
     def __repr__(self) -> str:
         return (
