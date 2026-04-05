@@ -40,7 +40,7 @@ class Sample(BalanceFrame, SampleFrame):
     ----------
     id_column : pd.Series
         a column representing the ids of the units in sample
-    weight_column : pd.Series
+    weight_series : pd.Series
         a column representing the weights of the units in sample
     """
 

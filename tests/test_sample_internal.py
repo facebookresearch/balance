@@ -522,7 +522,7 @@ class TestSampleInternalSampleFrame(
         # Both the plain weight_column attr and the SampleFrame's _df
         # should reflect the new weights.
         pd.testing.assert_series_equal(
-            s.weight_column,
+            s.weight_series,
             s._sample_frame._df["weight"],
         )
         self.assertEqual(s._sample_frame._df["weight"].tolist(), [2.0, 3.0, 4.0])
