@@ -13,15 +13,12 @@ from __future__ import (
     unicode_literals,
 )
 
-import unittest
-
 import balance.testutil
 import numpy as np
 import pandas as pd
-import sklearn
+import pytest
 from balance.sample_class import Sample
 from balance.weighting_methods import ipw as balance_ipw
-from packaging.version import Version
 from scipy.sparse import csr_matrix
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -29,8 +26,6 @@ from sklearn.metrics import log_loss
 from sklearn.naive_bayes import GaussianNB
 from sklearn.svm import LinearSVC
 from sklearn.tree import DecisionTreeClassifier
-
-_SKLEARN_LT_1_4: bool = Version(sklearn.__version__) < Version("1.4")
 
 
 class TestIPW(
@@ -339,10 +334,7 @@ class TestIPW(
                 use_model_matrix=False,
             )
 
-    @unittest.skipIf(
-        _SKLEARN_LT_1_4,
-        "categorical_features='from_dtype' requires scikit-learn >= 1.4",
-    )
+    @pytest.mark.requires_sklearn_1_4  # pyre-ignore[56]
     def test_ipw_use_model_matrix_false_preserves_categoricals(self) -> None:
         """Raw-covariate IPW preserves categorical dtype for native sklearn categorical support."""
 
@@ -404,10 +396,8 @@ class TestIPW(
         )
         self.assertEqual(len(result_no_indicator["weight"]), len(sample))
 
-    @unittest.skipIf(
-        _SKLEARN_LT_1_4,
-        "categorical_features='from_dtype' requires scikit-learn >= 1.4",
-    )
+    # pyre-ignore[56]: Pyre cannot infer type of custom pytest mark
+    @pytest.mark.requires_sklearn_1_4
     def test_ipw_use_model_matrix_false_raises_on_old_sklearn(self) -> None:
         """ValueError is raised when sklearn < 1.4 and categorical columns are present."""
         from unittest.mock import patch
@@ -445,10 +435,8 @@ class TestIPW(
             self.assertIn("scikit-learn >= 1.4", str(ctx.exception))
             self.assertIn("1.3.2", str(ctx.exception))
 
-    @unittest.skipIf(
-        _SKLEARN_LT_1_4,
-        "categorical_features='from_dtype' requires scikit-learn >= 1.4",
-    )
+    # pyre-ignore[56]: Pyre cannot infer type of custom pytest mark
+    @pytest.mark.requires_sklearn_1_4
     def test_ipw_use_model_matrix_false_no_error_on_new_sklearn(self) -> None:
         """No version error when sklearn >= 1.4 and categorical columns are present."""
         from unittest.mock import patch

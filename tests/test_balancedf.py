@@ -5,7 +5,13 @@
 
 # pyre-strict
 
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import (
+    absolute_import,
+    annotations,
+    division,
+    print_function,
+    unicode_literals,
+)
 
 import tempfile
 from copy import deepcopy
@@ -3390,7 +3396,9 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
 
     def test_protocol_is_runtime_checkable(self) -> None:
         """Verify that BalanceDFSource is runtime_checkable."""
-        self.assertTrue(hasattr(BalanceDFSource, "__protocol_attrs__"))
+        # _is_runtime_protocol is set by @runtime_checkable on all Python
+        # versions (3.8+).  __protocol_attrs__ only exists from 3.12+.
+        self.assertTrue(getattr(BalanceDFSource, "_is_runtime_protocol", False))
 
     def test_non_conforming_object_fails_isinstance(self) -> None:
         """Verify that an arbitrary object does NOT satisfy the protocol."""
