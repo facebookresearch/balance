@@ -74,8 +74,10 @@ def setup_logging(
 logger: logging.Logger = setup_logging()
 logger.info(f"Using {__package__} version {__version__}")
 
-# Print the welcome/help/citation message on import
-print(WELCOME_MESSAGE)
+# Log the welcome/help/citation message on import (use logger.info instead
+# of print to avoid unwanted output when balance is imported in production
+# pipelines).
+logger.info(WELCOME_MESSAGE)
 
 
 def set_warnings(level: str = "WARNING") -> None:
