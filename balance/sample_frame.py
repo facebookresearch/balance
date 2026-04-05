@@ -419,6 +419,25 @@ class SampleFrame:
                         f"'{role_b}' roles. Each column must have exactly one role."
                     )
 
+        # M4: weight column must not overlap with outcome columns
+        if outcome_list and weight_column in outcome_list:
+            raise ValueError(
+                f"Weight column '{weight_column}' is also listed as an "
+                "outcome column. The weight column must be separate from outcomes."
+            )
+
+        # M5: warn if explicitly-provided covariates include id or weight
+        if covar_columns is not None:
+            special_in_covars = [
+                c for c in covar_list if c == id_col_name or c == weight_column
+            ]
+            if special_in_covars:
+                logger.warning(
+                    "covar_columns contains column(s) %r that are also used as "
+                    "id or weight columns. This is likely unintentional.",
+                    special_in_covars,
+                )
+
         return cls._create(
             df=_df,
             id_column=id_col_name,
