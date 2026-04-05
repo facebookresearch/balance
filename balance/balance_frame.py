@@ -202,7 +202,7 @@ class BalanceFrame:
 
     @property
     def _ignored_column_names(self) -> list[str]:  # pyre-ignore[3]
-        """Ignored column names, delegated to ``_sf_with_outcomes.ignore_columns``."""
+        """Ignored column names, delegated to ``_sf_with_outcomes.ignored_columns``."""
         return self._sf_with_outcomes._column_roles.get("ignored", [])
 
     @_ignored_column_names.setter
@@ -210,6 +210,11 @@ class BalanceFrame:
         self, value: list[str] | None
     ) -> None:  # pyre-ignore[2,3]
         self._sf_with_outcomes._column_roles["ignored"] = list(value) if value else []
+
+    @property
+    def df_ignored(self) -> pd.DataFrame | None:
+        """Ignored columns from the responder SampleFrame, or None."""
+        return self._sf_with_outcomes.df_ignored
 
     # -----------------------------------------------------------------------
     # Design note: Why __new__ + no-op __init__?
@@ -864,7 +869,7 @@ class BalanceFrame:
             id_column=self._sf_with_outcomes.id_column_name,
             weight_column=self._sf_with_outcomes.active_weight_column,
             outcome_columns=self._sf_with_outcomes.outcome_columns or None,
-            ignore_columns=self._sf_with_outcomes.ignore_columns or None,
+            ignored_columns=self._sf_with_outcomes.ignored_columns or None,
             standardize_types=False,
         )
         target_sample = Sample.from_frame(
@@ -872,7 +877,7 @@ class BalanceFrame:
             id_column=target.id_column_name,
             weight_column=target.active_weight_column,
             outcome_columns=target.outcome_columns or None,
-            ignore_columns=target.ignore_columns or None,
+            ignored_columns=target.ignored_columns or None,
             standardize_types=False,
         )
         result = resp_sample.set_target(target_sample)
@@ -884,7 +889,8 @@ class BalanceFrame:
                 weight_column=self._sf_with_outcomes_pre_adjust.active_weight_column,
                 outcome_columns=self._sf_with_outcomes_pre_adjust.outcome_columns
                 or None,
-                ignore_columns=self._sf_with_outcomes_pre_adjust.ignore_columns or None,
+                ignored_columns=self._sf_with_outcomes_pre_adjust.ignored_columns
+                or None,
                 standardize_types=False,
             )
             # pyre-ignore[16]: Sample gains this attr via BalanceFrame inheritance (diff 14.3)
@@ -1272,34 +1278,6 @@ class BalanceFrame:
 
     # --- Parity helpers ---
 
-    def ignored_columns(self) -> pd.DataFrame | None:
-        """Return ignored (misc) columns from the responder SampleFrame, or None.
-
-        Delegates to :meth:`SampleFrame.ignored_columns` on the responders.
-        Provided for API parity with :class:`~balance.sample_class.Sample`.
-
-        Returns:
-            pd.DataFrame | None: A copy of the responder's miscellaneous
-                columns, or None if no misc columns are registered.
-
-        Examples:
-            >>> import pandas as pd
-            >>> from balance.sample_frame import SampleFrame
-            >>> from balance.balance_frame import BalanceFrame
-            >>> resp = SampleFrame.from_frame(
-            ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0],
-            ...                   "weight": [1.0, 1.0], "region": ["US", "UK"]}),
-            ...     ignore_columns=["region"])
-            >>> tgt = SampleFrame.from_frame(
-            ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
-            >>> bf = BalanceFrame(sf_with_outcomes=resp, sf_target=tgt)
-            >>> bf.ignored_columns()
-               region
-            0     US
-            1     UK
-        """
-        return self._sf_with_outcomes.ignored_columns()
-
     # --- DataFrame / export ---
 
     @property
@@ -1357,7 +1335,7 @@ class BalanceFrame:
         """
         covars = self.covars()
         outcomes = self.outcomes()
-        ignored = self.ignored_columns()
+        ignored = self._sf_with_outcomes.df_ignored
         return pd.concat(
             (
                 self.id_column,

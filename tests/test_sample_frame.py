@@ -97,7 +97,7 @@ class TestSampleFrame(BalanceTestCase):
             id_column="id",
             covar_columns=["x"],
             weight_columns=["w"],
-            ignore_columns=["region"],
+            ignored_columns=["region"],
         )
         self.assertIsNotNone(sf.df_ignored)
         self.assertListEqual(list(sf.df_ignored.columns), ["region"])
@@ -107,7 +107,7 @@ class TestSampleFrame(BalanceTestCase):
         sf = SampleFrame._create(
             df=df, id_column="id", covar_columns=["x"], weight_columns=["w"]
         )
-        self.assertIsNone(sf.ignored_columns())
+        self.assertIsNone(sf.df_ignored)
 
     def test_ignored_columns_present(self) -> None:
         df = pd.DataFrame(
@@ -118,25 +118,12 @@ class TestSampleFrame(BalanceTestCase):
             id_column="id",
             covar_columns=["x"],
             weight_columns=["w"],
-            ignore_columns=["region"],
+            ignored_columns=["region"],
         )
-        result = sf.ignored_columns()
+        result = sf.df_ignored
         self.assertIsNotNone(result)
         self.assertListEqual(list(result.columns), ["region"])
         self.assertListEqual(list(result["region"]), ["US", "UK"])
-
-    def test_ignored_columns_matches_df_ignored(self) -> None:
-        df = pd.DataFrame(
-            {"id": [1, 2], "x": [10, 20], "w": [1.0, 1.0], "region": ["US", "UK"]}
-        )
-        sf = SampleFrame._create(
-            df=df,
-            id_column="id",
-            covar_columns=["x"],
-            weight_columns=["w"],
-            ignore_columns=["region"],
-        )
-        pd.testing.assert_frame_equal(sf.ignored_columns(), sf.df_ignored)
 
     def test_id_column(self) -> None:
         df = pd.DataFrame({"id": [1, 2, 3], "x": [10, 20, 30], "w": [1.0, 1.0, 1.0]})
@@ -204,7 +191,7 @@ class TestSampleFrameMutableViewSafety(BalanceTestCase):
             df,
             outcome_columns=["y"],
             predicted_outcome_columns=["p_y"],
-            ignore_columns=["region"],
+            ignored_columns=["region"],
         )
 
     def test_df_covars_returns_copy(self) -> None:
@@ -335,36 +322,36 @@ class TestSampleFrameColumnRoleProperties(BalanceTestCase):
         result.append("injected")
         self.assertEqual(sf.predicted_outcome_columns, ["p_y"])
 
-    def test_ignore_columns(self) -> None:
+    def test_ignored_columns(self) -> None:
         df = pd.DataFrame({"id": [1], "x": [10], "w": [1.0], "region": ["US"]})
         sf = SampleFrame._create(
             df=df,
             id_column="id",
             covar_columns=["x"],
             weight_columns=["w"],
-            ignore_columns=["region"],
+            ignored_columns=["region"],
         )
-        self.assertEqual(sf.ignore_columns, ["region"])
+        self.assertEqual(sf.ignored_columns, ["region"])
 
-    def test_ignore_columns_empty(self) -> None:
+    def test_ignored_columns_empty(self) -> None:
         df = pd.DataFrame({"id": [1], "x": [10], "w": [1.0]})
         sf = SampleFrame._create(
             df=df, id_column="id", covar_columns=["x"], weight_columns=["w"]
         )
-        self.assertEqual(sf.ignore_columns, [])
+        self.assertEqual(sf.ignored_columns, [])
 
-    def test_ignore_columns_returns_copy(self) -> None:
+    def test_ignored_columns_returns_copy(self) -> None:
         df = pd.DataFrame({"id": [1], "x": [10], "w": [1.0], "region": ["US"]})
         sf = SampleFrame._create(
             df=df,
             id_column="id",
             covar_columns=["x"],
             weight_columns=["w"],
-            ignore_columns=["region"],
+            ignored_columns=["region"],
         )
-        result = sf.ignore_columns
+        result = sf.ignored_columns
         result.append("injected")
-        self.assertEqual(sf.ignore_columns, ["region"])
+        self.assertEqual(sf.ignored_columns, ["region"])
 
     def test_active_weight_column(self) -> None:
         df = pd.DataFrame({"id": [1], "x": [10], "w": [1.0]})
@@ -511,7 +498,7 @@ class TestSampleFrameFromFrame(BalanceTestCase):
         sf = SampleFrame.from_frame(df, covar_columns=["a", "b"])
         self.assertListEqual(list(sf.df_covars.columns), ["a", "b"])
 
-    def test_from_frame_ignore_columns(self) -> None:
+    def test_from_frame_ignored_columns(self) -> None:
         df = pd.DataFrame(
             {
                 "id": ["1", "2"],
@@ -520,7 +507,7 @@ class TestSampleFrameFromFrame(BalanceTestCase):
                 "weight": [1.0, 2.0],
             }
         )
-        sf = SampleFrame.from_frame(df, ignore_columns=["region"])
+        sf = SampleFrame.from_frame(df, ignored_columns=["region"])
         self.assertIsNotNone(sf.df_ignored)
         self.assertListEqual(list(sf.df_ignored.columns), ["region"])
         # region should NOT be in covars
@@ -539,7 +526,7 @@ class TestSampleFrameFromFrame(BalanceTestCase):
     def test_from_frame_missing_ignore_column_raises(self) -> None:
         df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20], "weight": [1.0, 1.0]})
         with self.assertRaises(ValueError):
-            SampleFrame.from_frame(df, ignore_columns=["nonexistent"])
+            SampleFrame.from_frame(df, ignored_columns=["nonexistent"])
 
     def test_from_frame_no_id_column_raises(self) -> None:
         df = pd.DataFrame({"x": [10, 20], "weight": [1.0, 1.0]})
@@ -606,14 +593,14 @@ class TestSampleFrameFromFrame(BalanceTestCase):
         self.assertAlmostEqual(sf.df_weights.iloc[0, 0], 0.0, places=5)
 
     def test_from_frame_overlapping_outcome_and_ignored_raises(self) -> None:
-        """A column in both outcome_columns and ignore_columns raises ValueError."""
+        """A column in both outcome_columns and ignored_columns raises ValueError."""
         df = pd.DataFrame(
             {"id": ["1", "2"], "x": [10, 20], "weight": [1.0, 1.0], "y": [5, 6]}
         )
         with self.assertRaisesRegex(
             ValueError, "appear in both 'outcomes' and 'ignored'"
         ):
-            SampleFrame.from_frame(df, outcome_columns=["y"], ignore_columns=["y"])
+            SampleFrame.from_frame(df, outcome_columns=["y"], ignored_columns=["y"])
 
     def test_from_frame_overlapping_covar_and_outcome_raises(self) -> None:
         """A column in both explicit covar_columns and outcome_columns raises ValueError."""
@@ -1040,7 +1027,7 @@ class TestSampleFrameFromSample(BalanceTestCase):
                 "weight": [1.0, 1.0],
             }
         )
-        sample = Sample.from_frame(df, ignore_columns=["extra"])
+        sample = Sample.from_frame(df, ignored_columns=["extra"])
         sf = SampleFrame.from_sample(sample)
         self.assertEqual(sf._column_roles["ignored"], ["extra"])
         self.assertEqual(sf._column_roles["covars"], ["x"])
