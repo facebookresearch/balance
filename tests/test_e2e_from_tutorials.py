@@ -26,6 +26,8 @@ import numpy as np
 import pandas as pd
 import pytest
 from balance import load_data, Sample
+from balance.balance_frame import BalanceFrame
+from balance.sample_frame import SampleFrame
 
 
 def _has_sklearn_1_4() -> bool:
@@ -899,6 +901,160 @@ Male   18-24                905.0                905
                 places=0,
                 msg=f"Cell {cell} mismatch",
             )
+
+
+class TestBalanceFrameE2E(unittest.TestCase):
+    """End-to-end tests exercising the BalanceFrame API directly (not via Sample)."""
+
+    resp_sf: SampleFrame
+    tgt_sf: SampleFrame
+    bf: BalanceFrame
+    adjusted: BalanceFrame
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        target_df, sample_df = load_data()
+        assert target_df is not None and sample_df is not None
+
+        cls.resp_sf = SampleFrame.from_frame(sample_df, outcome_columns=["happiness"])
+        cls.tgt_sf = SampleFrame.from_frame(target_df, outcome_columns=["happiness"])
+        bf = BalanceFrame(sample=cls.resp_sf)
+        bf.set_target(cls.tgt_sf)
+        cls.bf = bf
+        cls.adjusted = cls.bf.adjust(**_IPW_FAST_KWARGS)
+
+    # ------------------------------------------------------------------
+    # 1. Construction & repr
+    # ------------------------------------------------------------------
+    def test_sampleframe_creation(self) -> None:
+        self.assertEqual(self.resp_sf.df.shape[0], 1000)
+        self.assertEqual(self.tgt_sf.df.shape[0], 10000)
+
+    def test_balanceframe_has_target(self) -> None:
+        self.assertTrue(self.bf.has_target)
+
+    def test_balanceframe_not_adjusted(self) -> None:
+        self.assertFalse(self.bf.is_adjusted)
+
+    def test_balanceframe_repr(self) -> None:
+        r = repr(self.bf)
+        self.assertIn("BalanceFrame", r)
+
+    # ------------------------------------------------------------------
+    # 2. Adjustment
+    # ------------------------------------------------------------------
+    def test_adjusted_is_adjusted(self) -> None:
+        self.assertTrue(self.adjusted.is_adjusted)
+
+    def test_adjusted_has_target(self) -> None:
+        self.assertTrue(self.adjusted.has_target)
+
+    def test_original_not_mutated(self) -> None:
+        """adjust() returns a new object — the original stays unadjusted."""
+        self.assertFalse(self.bf.is_adjusted)
+
+    def test_adjusted_weight_column(self) -> None:
+        """Adjusted BalanceFrame should have an adjusted weight column."""
+        ws = self.adjusted.weight_series
+        self.assertIsNotNone(ws)
+        # Weight should not be uniform 1.0 after IPW
+        assert ws is not None
+        self.assertGreater(ws.std(), 0)
+
+    def test_unadjusted_property(self) -> None:
+        """Adjusted BalanceFrame should expose the unadjusted SampleFrame."""
+        self.assertIsNotNone(self.adjusted.unadjusted)
+
+    # ------------------------------------------------------------------
+    # 3. Summary
+    # ------------------------------------------------------------------
+    def test_summary_returns_string(self) -> None:
+        s = self.adjusted.summary()
+        self.assertIsInstance(s, str)
+        self.assertIn("Adjustment details", s)
+        self.assertIn("Covariate diagnostics", s)
+        self.assertIn("Weight diagnostics", s)
+
+    # ------------------------------------------------------------------
+    # 4. Diagnostics
+    # ------------------------------------------------------------------
+    def test_diagnostics_returns_dataframe(self) -> None:
+        d = self.adjusted.diagnostics()
+        self.assertIsInstance(d, pd.DataFrame)
+        self.assertGreater(d.shape[0], 0)
+
+    # ------------------------------------------------------------------
+    # 5. Covars / Weights / Outcomes
+    # ------------------------------------------------------------------
+    def test_covars(self) -> None:
+        covars = self.adjusted.covars()
+        self.assertIsNotNone(covars)
+        mean_df = covars.mean()
+        self.assertIsInstance(mean_df, pd.DataFrame)
+
+    def test_covars_asmd_improves_after_adjustment(self) -> None:
+        """ASMD should be lower after adjustment than before."""
+        asmd_before = self.bf.covars().asmd().T
+        asmd_after = self.adjusted.covars().asmd().T
+        self.assertLess(
+            asmd_after.loc["mean(asmd)", "self"],
+            asmd_before.loc["mean(asmd)", "self"],
+        )
+
+    def test_weights(self) -> None:
+        w = self.adjusted.weights()
+        self.assertIsNotNone(w)
+        de = w.design_effect()
+        self.assertIsInstance(de, (int, float, np.floating))
+        self.assertGreater(de, 1.0)  # IPW always inflates variance
+
+    def test_outcomes(self) -> None:
+        out = self.adjusted.outcomes()
+        self.assertIsNotNone(out)
+        mean_df = out.mean()
+        self.assertIsInstance(mean_df, pd.DataFrame)
+        # mean() returns columns=["happiness"], index=["self","target","unadjusted"]
+        self.assertIn("happiness", mean_df.columns)
+
+        _expected_str = """  # noqa: F841
+            happiness
+source
+self           53.295
+target         56.278
+unadjusted     48.559
+"""
+        # Verify all three sources are present
+        self.assertIn("self", mean_df.index)
+        self.assertIn("target", mean_df.index)
+        self.assertIn("unadjusted", mean_df.index)
+
+        # Verify key outcome values
+        adjusted_mean = mean_df.loc["self", "happiness"]
+        target_mean = mean_df.loc["target", "happiness"]
+        unadjusted_mean = mean_df.loc["unadjusted", "happiness"]
+
+        self.assertAlmostEqual(adjusted_mean, 53.295, places=0)
+        self.assertAlmostEqual(target_mean, 56.278, places=0)
+        self.assertAlmostEqual(unadjusted_mean, 48.559, places=0)
+
+        # Adjusted should be closer to target than unadjusted
+        self.assertLess(
+            abs(adjusted_mean - target_mean),
+            abs(unadjusted_mean - target_mean),
+        )
+
+    # TODO: make sure to add more tests here to properly reflect the tutorial's output
+
+    # ------------------------------------------------------------------
+    # 6. Without target (target-less workflow)
+    # ------------------------------------------------------------------
+    def test_targetless_balanceframe(self) -> None:
+        bf_no_target = BalanceFrame(sample=self.resp_sf)
+        self.assertFalse(bf_no_target.has_target)
+        self.assertFalse(bf_no_target.is_adjusted)
+        # Should still be able to access covars
+        covars = bf_no_target.covars()
+        self.assertIsNotNone(covars)
 
 
 if __name__ == "__main__":
