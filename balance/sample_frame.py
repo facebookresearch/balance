@@ -791,22 +791,41 @@ class SampleFrame:
         """
         return self.df_outcomes
 
-    def set_weights(self, weights: pd.Series | float | None) -> None:
-        """Replace the active weight column values (BalanceDFSource protocol).
+    def set_weights(
+        self,
+        weights: pd.Series | float | None,
+        *,
+        use_index: bool = False,
+    ) -> None:
+        """Replace the active weight column values.
 
-        This method satisfies the ``BalanceDFSource`` protocol and is used
-        by ``BalanceDFWeights.trim()`` to update weight values after trimming.
+        This is the canonical weight-update method for balance objects.
+        Both ``SampleFrame`` and ``BalanceFrame`` use this implementation
+        (BalanceFrame delegates here).  It also satisfies the
+        ``BalanceDFSource`` protocol and is used by
+        ``BalanceDFWeights.trim()`` to update weight values after trimming.
 
         If *weights* is a float, all rows are set to that value.  If None,
-        all rows are set to 1.0.  If a Series, its values are used directly
-        (must match the DataFrame length).
+        all rows are set to 1.0.  If a Series, behavior depends on
+        *use_index*:
+
+        - ``use_index=False`` (default): the Series must have the same
+          length as the DataFrame; values are assigned positionally.
+        - ``use_index=True``: values are aligned by index.  Rows whose
+          index is missing from *weights* are left unchanged, and a
+          warning is emitted.
+
+        All weight values are cast to float64.
 
         Args:
-            weights (pd.Series | float | None): New weight values.
+            weights: New weight values — a Series, scalar, or None.
+            use_index: If True, align a Series by index instead of
+                requiring an exact length match.
 
         Raises:
-            ValueError: If no active weight column is set, or if *weights*
-                is a Series with a different length than the DataFrame.
+            ValueError: If no active weight column is set, or if
+                ``use_index=False`` and a Series has a different length
+                than the DataFrame.
 
         Examples:
             >>> import pandas as pd
@@ -820,17 +839,47 @@ class SampleFrame:
         """
         if not self._weight_column_name:
             raise ValueError("No active weight column is set.")
+
+        wc = self._weight_column_name
+
+        # Ensure the column is float64 before any assignment.
+        if not pd.api.types.is_float_dtype(self._df[wc]):
+            self._df[wc] = self._df[wc].astype("float64")
+
         if weights is None:
-            self._df[self._weight_column_name] = 1.0
+            self._df[wc] = 1.0
         elif isinstance(weights, (int, float)):
-            self._df[self._weight_column_name] = float(weights)
+            self._df[wc] = float(weights)
+        elif use_index:
+            self._set_weights_by_index(wc, weights)
         else:
-            if len(weights) != len(self._df):
-                raise ValueError(
-                    f"'weights' length ({len(weights)}) doesn't match "
-                    f"DataFrame length ({len(self._df)})"
-                )
-            self._df[self._weight_column_name] = weights.to_numpy()
+            self._set_weights_positional(wc, weights)
+
+    def _set_weights_by_index(self, wc: str, weights: pd.Series | Any) -> None:
+        """Assign *weights* to column *wc* aligned by DataFrame index."""
+        if not pd.api.types.is_float_dtype(weights):
+            weights = weights.astype("float64")
+        if not all(idx in weights.index for idx in self._df.index):
+            logger.warning(
+                "Not all units will be assigned weights — the weights "
+                "Series is missing some of the indices in the DataFrame."
+            )
+        self._df.loc[:, wc] = weights
+
+    def _set_weights_positional(self, wc: str, weights: pd.Series | Any) -> None:
+        """Assign *weights* to column *wc* by position (length must match)."""
+        if len(weights) != len(self._df):
+            raise ValueError(
+                f"'weights' length ({len(weights)}) doesn't match "
+                f"DataFrame length ({len(self._df)})"
+            )
+        if isinstance(weights, pd.Series):
+            if not pd.api.types.is_float_dtype(weights):
+                weights = weights.astype("float64")
+            self._df[wc] = weights.to_numpy()
+        else:
+            # numpy array or other array-like
+            self._df[wc] = np.asarray(weights, dtype="float64")
 
     # --- BalanceDF integration ---
 

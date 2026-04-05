@@ -82,7 +82,7 @@ class BalanceDFSource(Protocol):
     def _outcome_columns(self) -> pd.DataFrame | None:  # noqa: E704
         ...
 
-    def set_weights(self, weights: pd.Series | float | None) -> None:  # noqa: E704
+    def set_weights(self, weights: pd.Series | float | None, *, use_index: bool = False) -> None:  # noqa: E704
         ...
 
 

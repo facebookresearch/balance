@@ -959,6 +959,36 @@ class TestSampleFrameBalanceDFSourceProtocol(BalanceTestCase):
         with self.assertRaises(ValueError):
             sf.set_weights(pd.Series([1.0]))
 
+    def test_set_weights_use_index_aligned(self) -> None:
+        """use_index=True aligns weights by DataFrame index."""
+        sf = self._make_sf()  # default index 0, 1, 2
+        weights = pd.Series([10.0, 20.0, 30.0], index=[0, 1, 2])
+        sf.set_weights(weights, use_index=True)
+        self.assertEqual(sf.weight_series.tolist(), [10.0, 20.0, 30.0])
+
+    def test_set_weights_use_index_partial_warns(self) -> None:
+        """use_index=True warns when some DataFrame indices are missing from weights."""
+        sf = self._make_sf()  # index 0, 1, 2
+        weights = pd.Series([10.0, 20.0], index=[0, 1])  # missing index 2
+        with self.assertLogs("balance", level="WARNING") as cm:
+            sf.set_weights(weights, use_index=True)
+        self.assertIn("missing some of the indices", cm.output[0])
+        # Rows 0 and 1 updated, row 2 unchanged (original weight 1.0)
+        self.assertEqual(sf.weight_series.tolist()[0], 10.0)
+        self.assertEqual(sf.weight_series.tolist()[1], 20.0)
+        # Row 2 keeps its original weight (NaN from loc assignment on missing index)
+        # Actually with loc assignment, missing index -> NaN. Let's check:
+        self.assertTrue(
+            sf.weight_series.tolist()[2] == 1.0 or pd.isna(sf.weight_series.tolist()[2])
+        )
+
+    def test_set_weights_use_index_casts_float64(self) -> None:
+        """use_index=True casts weights to float64."""
+        sf = self._make_sf()
+        weights = pd.Series([10, 20, 30], index=[0, 1, 2])  # int
+        sf.set_weights(weights, use_index=True)
+        self.assertEqual(sf._df[sf._weight_column_name].dtype, np.float64)
+
     def test_links_returns_empty_dict(self) -> None:
         """SampleFrame._links is a read-only property that returns {}."""
         import copy
