@@ -22,7 +22,7 @@ from balance.sample_frame import SampleFrame  # noqa
 from balance.util import TruncationFormatter  # noqa
 
 global __version__
-__version__ = "0.18.0"
+__version__ = "0.19.0"
 
 WELCOME_MESSAGE = f"""
 balance (Version {__version__}) loaded:
