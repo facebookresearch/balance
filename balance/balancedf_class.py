@@ -185,6 +185,20 @@ class BalanceDF:
         w = self._sample.weight_series
         return w.rename(None)
 
+    @property
+    def _resolved_links(self: "BalanceDF") -> dict[str, "BalanceDFSource"]:
+        """Return the effective links dict, preferring explicit override.
+
+        Uses ``links`` passed at construction time (via ``__links_override``)
+        when available, otherwise falls back to ``self._sample._links``.
+        Subclasses and sibling methods (e.g. ``r_indicator``) should use this
+        property instead of accessing ``_sample._links`` directly so that
+        BalanceFrame-provided overrides are respected.
+        """
+        if self.__links_override is not None:
+            return self.__links_override
+        return self._sample._links
+
     # NOTE: only in the case of BalanceDFOutcomes can it result in a None value.
     def _balancedf_child_from_linked_samples(
         self: "BalanceDF",
@@ -343,11 +357,7 @@ class BalanceDF:
             | None,
         ] = {"self": self}
         # Use explicit links if provided, otherwise fall back to sample._links
-        links = (
-            self.__links_override
-            if self.__links_override is not None
-            else self._sample._links
-        )
+        links = self._resolved_links
         linked_child_kwargs = self._linked_child_kwargs()
         d.update(
             {
@@ -3067,7 +3077,10 @@ class BalanceDFWeights(BalanceDF):
         if max_propensity > 1.0:
             sample_propensity = sample_propensity / max_propensity
 
-        target_sample = self._sample._links.get("target")
+        # Resolve the target through _resolved_links (same mechanism as
+        # _balancedf_child_from_linked_samples) so that BalanceFrame's custom
+        # links are respected.
+        target_sample = self._resolved_links.get("target")
         if target_propensity is None:
             if target_sample is None:
                 raise ValueError(
