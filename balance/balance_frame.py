@@ -133,6 +133,11 @@ class BalanceFrame:
         False
     """
 
+    # When True, _build_adjusted_frame renames weight_adjusted → original
+    # weight column name.  Sample sets this to True so the public API always
+    # sees the original weight column name; direct BalanceFrame keeps both.
+    _RENAME_WEIGHT_ON_ADJUST: bool = False
+
     # pyre-fixme[13]: Attributes are initialized in _create() / from_frame()
     _sf_sample_pre_adjust: SampleFrame
     # pyre-fixme[13]: Attributes are initialized in _create() / from_frame()
@@ -578,7 +583,7 @@ class BalanceFrame:
         # column name so the public API always sees the original name.
         # For direct BalanceFrame: keep both columns (weight + weight_adjusted).
         original_weight_name = _assert_type(self.weight_series).name
-        if type(self) is not BalanceFrame:
+        if self._RENAME_WEIGHT_ON_ADJUST:
             # Sample (or other subclass) path: rename weight_adjusted → original
             if (
                 original_weight_name in new_responders._df.columns
