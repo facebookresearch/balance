@@ -93,6 +93,7 @@ class BalanceCLI:
         self._lambda_max: float | None = None
         self._num_lambdas: int | None = None
         self._weight_trimming_mean_ratio: float | None = 20.0
+        # TODO(talgalili): Support BalanceFrame as an alternative entry point to Sample
         self._sample_cls: Type[balance_sample_cls] = balance_sample_cls
         self._sample_package_name: str = __package__
         self._sample_package_version: str = __version__
@@ -148,7 +149,7 @@ class BalanceCLI:
                 needed_columns.extend(outcome_columns)
 
         for nc in needed_columns:
-            assert nc in columns, f"{nc} not in input colums"
+            assert nc in columns, f"{nc} not in input columns"
 
     # TODO: decide if to explicitly mention/check here the option of methods or not
     def method(self) -> str:
@@ -858,7 +859,7 @@ class BalanceCLI:
                     ),
                 }
             else:
-                raise e
+                raise
         return rval
 
     def adapt_output(self, output_df: pd.DataFrame) -> pd.DataFrame:
