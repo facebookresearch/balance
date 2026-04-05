@@ -528,8 +528,8 @@ class TestUtil(
         )
 
         # Check that model coefficients are identical
-        output_cat_var_model = output_cat_var.model()
-        output_string_var_model = output_string_var.model()
+        output_cat_var_model = output_cat_var.model
+        output_string_var_model = output_string_var.model
         output_cat_var_model = _assert_type(output_cat_var_model)
         output_string_var_model = _assert_type(output_string_var_model)
         self.assertEqual(
