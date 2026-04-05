@@ -231,10 +231,24 @@
   (plotly, seaborn KDE, ASCII plots), outcome analysis, transformations, filtering
   rows/columns, and exporting to CSV.
 
+## Documentation
+
+- **Added `ARCHITECTURE.md`** — new top-level architecture document covering the class hierarchy,
+  5-step workflow, key classes, weighting methods, supporting modules, and file layout.
+  `CLAUDE.md` now links to this file instead of duplicating architecture content.
+- **Added `docs/architecture/architecture_0_19_0.md`** — detailed historical record of the 0.19.0
+  refactor with ASCII diagrams covering: class hierarchy before/after, SampleFrame internals,
+  BalanceFrame internal structure, object lifecycle state transitions, BalanceDF linked-samples
+  expansion, BalanceDFSource protocol, BalanceDF class hierarchy, data flow, _links graph, and
+  Sample.__new__ guard.
+- **Updated `README.md`** — added "Developer and AI assistant resources" section linking to
+  `ARCHITECTURE.md` and `CLAUDE.md`.
 ## LLM/GenAI
 
 - **Updated `CLAUDE.md` project context files** for Claude Code users, covering architecture,
   build/test instructions (Meta and open-source), code conventions, and pre-submit checklist.
+  Architecture content moved to `ARCHITECTURE.md`; `CLAUDE.md` now contains a brief summary
+  with a link.
 - **Updated `.github/copilot-instructions.md`** review checklist to reduce duplication with
   `CLAUDE.md` and add missing conventions (MIT license header, `from __future__ import annotations`,
   factory pattern, seed fixing, deprecation style).
