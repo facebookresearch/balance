@@ -15,6 +15,7 @@ in the legacy Sample class.
 from __future__ import annotations
 
 import logging
+import re
 from copy import deepcopy
 from typing import Any, cast, TYPE_CHECKING
 
@@ -22,6 +23,8 @@ import numpy as np
 import pandas as pd
 
 if TYPE_CHECKING:
+    from typing import Self
+
     from balance.balancedf_class import BalanceDFSource  # noqa: F401
 
 
@@ -880,6 +883,109 @@ class SampleFrame:
         else:
             # numpy array or other array-like
             self._df[wc] = np.asarray(weights, dtype="float64")
+
+    def _next_weight_action_number(self) -> int:
+        """Return the next global action number for weight history columns.
+
+        Scans existing columns for ``weight_adjusted_N`` and
+        ``weight_trimmed_N`` patterns and returns ``max(N) + 1``, or ``1``
+        if no history columns exist yet.
+        """
+        pattern = re.compile(r"^weight_(?:adjusted|trimmed)_(\d+)$")
+        max_n = 0
+        for col in self._df.columns:
+            m = pattern.match(str(col))
+            if m:
+                max_n = max(max_n, int(m.group(1)))
+        return max_n + 1
+
+    def trim(
+        self,
+        ratio: float | int | None = None,
+        percentile: float | tuple[float, float] | None = None,
+        keep_sum_of_weights: bool = True,
+        target_sum_weights: float | int | np.floating | None = None,
+        *,
+        in_place: bool = False,
+    ) -> Self:
+        """Trim extreme weights using mean-ratio clipping or percentile winsorization.
+
+        Delegates to :func:`~balance.adjustment.trim_weights` for the
+        computation, then writes the result back via :meth:`set_weights`.
+        A weight history column (``weight_trimmed_N``) is added so the
+        pre-trim values are preserved.
+
+        Args:
+            ratio: Mean-ratio upper bound.  Mutually exclusive with
+                *percentile*.
+            percentile: Percentile(s) for winsorization.  Mutually exclusive
+                with *ratio*.
+            keep_sum_of_weights: Whether to rescale after trimming to
+                preserve the original sum of weights.
+            target_sum_weights: If provided, rescale trimmed weights so
+                their sum equals this target.
+            in_place: If True, mutate this SampleFrame and return it.
+                If False (default), return a new SampleFrame with trimmed
+                weights and the original left untouched.
+
+        Returns:
+            The SampleFrame with trimmed weights (self if *in_place*,
+            else a new copy).
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> sf = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2, 3], "weight": [1.0, 2.0, 100.0]}))
+            >>> sf2 = sf.trim(ratio=2)
+            >>> sf2.weight_series.max() < 100.0
+            True
+            >>> "weight_trimmed_1" in sf2._df.columns
+            True
+        """
+        from balance.adjustment import trim_weights
+
+        target = self if in_place else deepcopy(self)
+
+        original_weight_name = str(
+            target._weight_column_name if target._weight_column_name else "weight"
+        )
+
+        # Freeze original weights on first action (adjust or trim).
+        if "weight_pre_adjust" not in target._df.columns:
+            target.add_weight_column(
+                "weight_pre_adjust",
+                target._df[original_weight_name].copy(),
+            )
+
+        # Compute trimmed weights.
+        trimmed = trim_weights(
+            target._df[original_weight_name],
+            weight_trimming_mean_ratio=ratio,
+            weight_trimming_percentile=percentile,
+            keep_sum_of_weights=keep_sum_of_weights,
+            target_sum_weights=target_sum_weights,
+        )
+
+        # Record in weight history.
+        n = target._next_weight_action_number()
+        col_name = f"weight_trimmed_{n}"
+        target.add_weight_column(
+            col_name,
+            trimmed,
+            metadata={
+                "method": "trim",
+                "trimmed": True,
+                "ratio": ratio,
+                "percentile": percentile,
+                "keep_sum_of_weights": keep_sum_of_weights,
+            },
+        )
+
+        # Overwrite active weight column.
+        target.set_weights(trimmed, use_index=True)
+
+        return target
 
     # --- BalanceDF integration ---
 
