@@ -131,7 +131,7 @@ class Sample(BalanceFrame, SampleFrame):
             use_deepcopy=use_deepcopy,
             id_column_candidates=id_column_candidates,
         )
-        return cls._create(sf_with_outcomes=sf, sf_target=None)
+        return cls._create(sample=sf, sf_target=None)
 
     def __deepcopy__(self, memo: dict[int, Any]) -> Sample:
         """Return an independent deep copy of this Sample.
@@ -145,19 +145,19 @@ class Sample(BalanceFrame, SampleFrame):
             setattr(new, k, deepcopy(v, memo))
         return new
 
-    # _sample_frame is kept as an alias for _sf_with_outcomes for backward compat.
+    # _sample_frame is kept as an alias for _sf_sample for backward compat.
     # _balance_frame is no longer needed since Sample IS a BalanceFrame.
 
     @property
     def _sample_frame(self) -> SampleFrame:
-        """Alias for ``_sf_with_outcomes`` (backward compat for internal code)."""
-        return self._sf_with_outcomes
+        """Alias for ``_sf_sample`` (backward compat for internal code)."""
+        return self._sf_sample
 
     @_sample_frame.setter
     def _sample_frame(self, value: SampleFrame | None) -> None:
         if value is not None:
-            self._sf_with_outcomes = value
-            self._sf_with_outcomes_pre_adjust = value
+            self._sf_sample = value
+            self._sf_sample_pre_adjust = value
 
     @property
     def _balance_frame(self) -> BalanceFrame | None:
