@@ -1893,3 +1893,31 @@ class TestBalanceFrameRIndicator(BalanceTestCase):
         self.assertIsInstance(result, np.floating)
         self.assertGreater(result, 0.0)
         self.assertLessEqual(result, 1.0)
+
+
+class TestBalanceFrameDiagnosticsNullMethod(BalanceTestCase):
+    """Verify diagnostics() works with methods that produce no model_dict."""
+
+    def test_diagnostics_with_null_method(self) -> None:
+        """adjust(method='null') followed by diagnostics() should not crash."""
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]}),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        tgt_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["3", "4"], "x": [1.5, 2.5], "weight": [1.0, 1.0]}),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        bf = BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+        adjusted = bf.adjust(method="null")
+        # This previously crashed with _assert_type on None model_dict
+        diag = adjusted.diagnostics()
+        self.assertIsInstance(diag, pd.DataFrame)
+        # Should have an adjustment_method row
+        method_rows = diag[diag["metric"] == "adjustment_method"]
+        self.assertGreater(len(method_rows), 0)
+        self.assertEqual(method_rows["var"].iloc[0], "null_adjustment")
