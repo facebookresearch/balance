@@ -324,7 +324,7 @@ def test_build_summary_matches_sample_summary() -> None:
         design_effect=de,
         effective_sample_size=ess,
         effective_sample_proportion=essp,
-        model_dict=adjusted.model(),
+        model_dict=adjusted.model,
         outcome_means=None,
     )
 
@@ -353,7 +353,7 @@ def test_build_diagnostics_matches_sample_diagnostics() -> None:
         covars_df=adjusted.covars().df,
         target_covars_df=adjusted._links["target"].covars().df,
         weights_summary=adjusted.weights().summary(),
-        model_dict=adjusted.model(),
+        model_dict=adjusted.model,
         covars_asmd=adjusted.covars().asmd(),
         covars_asmd_main=adjusted.covars().asmd(aggregate_by_main_covar=True),
         outcome_columns=adjusted._outcome_columns,
@@ -396,7 +396,7 @@ def test_build_diagnostics_with_ipw_matches_sample_diagnostics() -> None:
         covars_df=adjusted.covars().df,
         target_covars_df=adjusted._links["target"].covars().df,
         weights_summary=adjusted.weights().summary(),
-        model_dict=adjusted.model(),
+        model_dict=adjusted.model,
         covars_asmd=adjusted.covars().asmd(),
         covars_asmd_main=adjusted.covars().asmd(aggregate_by_main_covar=True),
         outcome_columns=adjusted._outcome_columns,
