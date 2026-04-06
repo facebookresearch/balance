@@ -1998,6 +1998,69 @@ class TestBalanceFrameSetWeights(BalanceTestCase):
         self.assertEqual(_assert_type(bf.weight_series).tolist(), [5.0, 6.0])
 
 
+class TestBalanceFrameTrim(BalanceTestCase):
+    """Verify BalanceFrame.trim() delegates to SampleFrame and returns new BF."""
+
+    def _make_bf(self) -> BalanceFrame:
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["1", "2", "3"],
+                    "x": [1.0, 2.0, 3.0],
+                    "weight": [1.0, 1.0, 100.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        tgt_sf = SampleFrame.from_frame(
+            pd.DataFrame(
+                {"id": ["4", "5", "6"], "x": [1.5, 2.5, 3.5], "weight": [1.0, 1.0, 1.0]}
+            ),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        return BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+
+    def test_trim_returns_new_bf(self) -> None:
+        bf = self._make_bf()
+        trimmed = bf.trim(ratio=2)
+        self.assertIsNot(trimmed, bf)
+        self.assertTrue(_assert_type(trimmed.weight_series).max() < 100.0)
+        # Original unchanged
+        self.assertEqual(_assert_type(bf.weight_series).tolist(), [1.0, 1.0, 100.0])
+        # Weight history present
+        self.assertIn("weight_trimmed_1", trimmed._sf_sample._df.columns)
+
+    def test_trim_preserves_target(self) -> None:
+        bf = self._make_bf()
+        trimmed = bf.trim(ratio=2)
+        self.assertTrue(trimmed.has_target())
+        self.assertIs(trimmed._sf_target, bf._sf_target)
+
+    def test_trim_preserves_pre_adjust(self) -> None:
+        bf = self._make_bf()
+        trimmed = bf.trim(ratio=2)
+        self.assertIs(trimmed._sf_sample_pre_adjust, bf._sf_sample_pre_adjust)
+
+    def test_trim_in_place(self) -> None:
+        bf = self._make_bf()
+        result = bf.trim(ratio=2, in_place=True)
+        self.assertIs(result, bf)
+        self.assertTrue(_assert_type(bf.weight_series).max() < 100.0)
+
+    def test_trim_after_adjust_global_counter(self) -> None:
+        """trim after adjust uses global action counter."""
+        bf = self._make_bf()
+        adjusted = bf.adjust(method="null")
+        trimmed = adjusted.trim(ratio=2)
+        # adjust created weight_adjusted_1, so trim should be weight_trimmed_2
+        self.assertIn("weight_adjusted_1", trimmed._sf_sample._df.columns)
+        self.assertIn("weight_trimmed_2", trimmed._sf_sample._df.columns)
+
+
 class TestBalanceFrameDfSetterRejectsNone(BalanceTestCase):
     """Verify _df setter raises on None instead of silently ignoring."""
 

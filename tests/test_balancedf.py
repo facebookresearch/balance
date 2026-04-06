@@ -3443,6 +3443,17 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
             ) -> None:
                 pass
 
+            def trim(
+                self,
+                ratio: float | int | None = None,
+                percentile: float | tuple[float, float] | None = None,
+                keep_sum_of_weights: bool = True,
+                target_sum_weights: float | int | np.floating | None = None,
+                *,
+                in_place: bool = False,
+            ) -> "_MockSource":
+                return self
+
         mock = _MockSource()
         self.assertIsInstance(mock, BalanceDFSource)
 
@@ -3487,6 +3498,17 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
                 self, weights: pd.Series | float | None, *, use_index: bool = False
             ) -> None:
                 pass
+
+            def trim(
+                self,
+                ratio: float | int | None = None,
+                percentile: float | tuple[float, float] | None = None,
+                keep_sum_of_weights: bool = True,
+                target_sum_weights: float | int | np.floating | None = None,
+                *,
+                in_place: bool = False,
+            ) -> "_MockCovarsSource":
+                return self
 
         mock = _MockCovarsSource()
         covars = BalanceDFCovars(sample=mock)
@@ -3533,6 +3555,17 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
             ) -> None:
                 pass
 
+            def trim(
+                self,
+                ratio: float | int | None = None,
+                percentile: float | tuple[float, float] | None = None,
+                keep_sum_of_weights: bool = True,
+                target_sum_weights: float | int | np.floating | None = None,
+                *,
+                in_place: bool = False,
+            ) -> "_MockWeightsSource":
+                return self
+
         mock = _MockWeightsSource()
         w = BalanceDFWeights(sample=mock)
         self.assertEqual(list(w.df.columns), ["w"])
@@ -3568,6 +3601,17 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
                 self, weights: pd.Series | float | None, *, use_index: bool = False
             ) -> None:
                 pass
+
+            def trim(
+                self,
+                ratio: float | int | None = None,
+                percentile: float | tuple[float, float] | None = None,
+                keep_sum_of_weights: bool = True,
+                target_sum_weights: float | int | np.floating | None = None,
+                *,
+                in_place: bool = False,
+            ) -> "_MockOutcomesSource":
+                return self
 
         mock = _MockOutcomesSource()
         outcomes = BalanceDFOutcomes(sample=mock)
