@@ -107,7 +107,7 @@ class BalanceFrame:
     it safe to keep a reference to the pre-adjustment state.
 
     Must be constructed via the public constructor
-    ``BalanceFrame(sf_with_outcomes=..., sf_target=...)`` which delegates to the
+    ``BalanceFrame(sample=..., sf_target=...)`` which delegates to the
     internal :meth:`_create` factory.
 
     Attributes:
@@ -123,7 +123,7 @@ class BalanceFrame:
         ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))
         >>> tgt = SampleFrame.from_frame(
         ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
-        >>> bf = BalanceFrame(sf_with_outcomes=resp, sf_target=tgt)
+        >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
         >>> bf.is_adjusted
         False
         >>> adjusted = bf.adjust(method="ipw")
@@ -134,87 +134,80 @@ class BalanceFrame:
     """
 
     # pyre-fixme[13]: Attributes are initialized in _create() / from_frame()
-    _sf_with_outcomes_pre_adjust: SampleFrame
+    _sf_sample_pre_adjust: SampleFrame
     # pyre-fixme[13]: Attributes are initialized in _create() / from_frame()
-    _sf_with_outcomes: SampleFrame
+    _sf_sample: SampleFrame
     # pyre-fixme[13]: Attributes are initialized in _create() / from_frame()
     _sf_target: SampleFrame | None
     # pyre-fixme[13]: Attributes are initialized in _create() / from_frame()
     _adjustment_model: dict[str, Any] | None
     # pyre-fixme[4]: Attributes are initialized in from_frame() / _create()
     _links = None
-    _id_column: pd.Series | None = None
-    _weight_column: pd.Series | None = None
 
     @property
     def _df_dtypes(self) -> pd.Series | None:
-        """Original dtypes, delegated to ``_sf_with_outcomes._df_dtypes``."""
-        return self._sf_with_outcomes._df_dtypes
+        """Original dtypes, delegated to ``_sf_sample._df_dtypes``."""
+        return self._sf_sample._df_dtypes
 
     @_df_dtypes.setter
     def _df_dtypes(self, value: pd.Series | None) -> None:
-        self._sf_with_outcomes._df_dtypes = value
+        self._sf_sample._df_dtypes = value
 
     @property
     def id_column(self) -> pd.Series | None:  # pyre-ignore[3]
-        """The id column Series."""
-        return self._id_column
-
-    @id_column.setter
-    def id_column(self, value: pd.Series | None) -> None:  # pyre-ignore[2,3]
-        self._id_column = value
+        """The id column as a Series, delegated to ``_sf_sample``."""
+        return self._sf_sample.id_column
 
     @property
     def weight_series(self) -> pd.Series | None:  # pyre-ignore[3]
-        """The weight column Series."""
-        return self._weight_column
+        """The active weight as a Series, delegated to ``_sf_sample``."""
+        try:
+            return self._sf_sample.weight_series
+        except ValueError:
+            return None
 
-    @weight_series.setter
-    def weight_series(self, value: pd.Series | None) -> None:  # pyre-ignore[2,3]
-        self._weight_column = value
-
-    # --- Property descriptors backed by _sf_with_outcomes ---
+    # --- Property descriptors backed by _sf_sample ---
 
     @property
     def _df(self) -> pd.DataFrame:  # pyre-ignore[3]
-        """The internal DataFrame, delegated to ``_sf_with_outcomes._df``."""
-        return self._sf_with_outcomes._df
+        """The internal DataFrame, delegated to ``_sf_sample._df``."""
+        return self._sf_sample._df
 
     @_df.setter
     def _df(self, value: pd.DataFrame | None) -> None:  # pyre-ignore[2,3]
         if value is not None:
-            self._sf_with_outcomes._df = value
+            self._sf_sample._df = value
 
     @property
     def _outcome_columns(self) -> pd.DataFrame | None:
-        """Outcome columns as a DataFrame, delegated to ``_sf_with_outcomes``."""
-        outcome_cols = self._sf_with_outcomes._column_roles.get("outcomes", [])
+        """Outcome columns as a DataFrame, delegated to ``_sf_sample``."""
+        outcome_cols = self._sf_sample._column_roles.get("outcomes", [])
         if not outcome_cols:
             return None
-        return self._sf_with_outcomes._df[outcome_cols]
+        return self._sf_sample._df[outcome_cols]
 
     @_outcome_columns.setter
     def _outcome_columns(self, value: pd.DataFrame | None) -> None:
         if value is None:
-            self._sf_with_outcomes._column_roles["outcomes"] = []
+            self._sf_sample._column_roles["outcomes"] = []
         else:
-            self._sf_with_outcomes._column_roles["outcomes"] = value.columns.tolist()
+            self._sf_sample._column_roles["outcomes"] = value.columns.tolist()
 
     @property
     def _ignored_column_names(self) -> list[str]:  # pyre-ignore[3]
-        """Ignored column names, delegated to ``_sf_with_outcomes.ignored_columns``."""
-        return self._sf_with_outcomes._column_roles.get("ignored", [])
+        """Ignored column names, delegated to ``_sf_sample.ignored_columns``."""
+        return self._sf_sample._column_roles.get("ignored", [])
 
     @_ignored_column_names.setter
     def _ignored_column_names(
         self, value: list[str] | None
     ) -> None:  # pyre-ignore[2,3]
-        self._sf_with_outcomes._column_roles["ignored"] = list(value) if value else []
+        self._sf_sample._column_roles["ignored"] = list(value) if value else []
 
     @property
     def df_ignored(self) -> pd.DataFrame | None:
         """Ignored columns from the responder SampleFrame, or None."""
-        return self._sf_with_outcomes.df_ignored
+        return self._sf_sample.df_ignored
 
     # -----------------------------------------------------------------------
     # Design note: Why __new__ + no-op __init__?
@@ -226,7 +219,7 @@ class BalanceFrame:
     #
     # The solution used here:
     #   - __new__ handles BOTH construction paths:
-    #       1. Public constructor: BalanceFrame(sf_with_outcomes=sf1, sf_target=sf2)
+    #       1. Public constructor: BalanceFrame(sample=sf1, sf_target=sf2)
     #          → validates args and delegates to _create().
     #       2. deepcopy path: BalanceFrame() (no args)
     #          → returns a bare object via object.__new__(cls); deepcopy
@@ -235,41 +228,41 @@ class BalanceFrame:
     # -----------------------------------------------------------------------
     def __new__(
         cls,
-        sf_with_outcomes: SampleFrame | None = None,
+        sample: SampleFrame | None = None,
         sf_target: SampleFrame | None = None,
     ) -> BalanceFrame:
         """Create a BalanceFrame from responder and target SampleFrames.
 
         This uses ``__new__`` so that the natural constructor syntax
-        ``BalanceFrame(sf_with_outcomes=..., sf_target=...)`` works while still
+        ``BalanceFrame(sample=..., sf_target=...)`` works while still
         routing through the validated :meth:`_create` factory.
 
         Args:
-            sf_with_outcomes: The responder / sample data.
+            sample: The responder / sample data.
             sf_target: The target / population data.
 
         Returns:
             A new BalanceFrame pairing the two samples.
 
         Raises:
-            TypeError: If *sf_with_outcomes* or *sf_target* is not a SampleFrame.
-            ValueError: If *sf_with_outcomes* and *sf_target* share no covariate
+            TypeError: If *sample* or *sf_target* is not a SampleFrame.
+            ValueError: If *sample* and *sf_target* share no covariate
                 columns.
         """
-        if sf_with_outcomes is None:
+        if sample is None:
             # Allow object.__new__(cls) for copy.deepcopy() support.
             if sf_target is None:
                 return object.__new__(cls)
             raise TypeError(
-                "BalanceFrame requires at least a 'sf_with_outcomes' argument. "
-                "Usage: BalanceFrame(sf_with_outcomes=sf1) or "
-                "BalanceFrame(sf_with_outcomes=sf1, sf_target=sf2)"
+                "BalanceFrame requires at least a 'sample' argument. "
+                "Usage: BalanceFrame(sample=sf1) or "
+                "BalanceFrame(sample=sf1, sf_target=sf2)"
             )
-        return cls._create(sf_with_outcomes=sf_with_outcomes, sf_target=sf_target)
+        return cls._create(sample=sample, sf_target=sf_target)
 
     def __init__(
         self,
-        sf_with_outcomes: SampleFrame | None = None,
+        sample: SampleFrame | None = None,
         sf_target: SampleFrame | None = None,
     ) -> None:
         # All initialisation happens in _create(); __init__ is intentionally
@@ -279,16 +272,16 @@ class BalanceFrame:
     @classmethod
     def _create(
         cls,
-        sf_with_outcomes: SampleFrame,
+        sample: SampleFrame,
         sf_target: SampleFrame | None = None,
     ) -> Self:
         """Internal factory method.
 
         Validates covariate overlap and builds the BalanceFrame instance.
-        Prefer the public constructor ``BalanceFrame(sf_with_outcomes=..., sf_target=...)``.
+        Prefer the public constructor ``BalanceFrame(sample=..., sf_target=...)``.
 
         Args:
-            sf_with_outcomes: The responder sample.
+            sample: The responder sample.
             sf_target: The target population. If None, creates a target-less
                 BalanceFrame that can be completed later via :meth:`set_target`.
 
@@ -296,12 +289,12 @@ class BalanceFrame:
             A validated BalanceFrame.
 
         Raises:
-            TypeError: If *sf_with_outcomes* or *sf_target* is not a SampleFrame.
+            TypeError: If *sample* or *sf_target* is not a SampleFrame.
             ValueError: If they share no covariate columns.
         """
-        if not isinstance(sf_with_outcomes, SampleFrame):
+        if not isinstance(sample, SampleFrame):
             raise TypeError(
-                f"'sf_with_outcomes' must be a SampleFrame, got {type(sf_with_outcomes).__name__}"
+                f"'sample' must be a SampleFrame, got {type(sample).__name__}"
             )
         if sf_target is not None and not isinstance(sf_target, SampleFrame):
             raise TypeError(
@@ -309,22 +302,28 @@ class BalanceFrame:
             )
 
         instance = object.__new__(cls)
-        instance._sf_with_outcomes_pre_adjust = sf_with_outcomes
-        instance._sf_with_outcomes = sf_with_outcomes  # same object initially
+        instance._sf_sample_pre_adjust = sample
+        instance._sf_sample = sample  # same object initially
         instance._sf_target = sf_target
         instance._adjustment_model = None
-        instance.id_column = sf_with_outcomes.id_column
-        try:
-            instance.weight_series = sf_with_outcomes.weight_series
-        except ValueError:
-            instance.weight_series = None
         instance._links = collections.defaultdict(list)
         if sf_target is not None:
             instance._links["target"] = sf_target
 
+        # When the instance is also a SampleFrame (e.g., Sample inherits
+        # from both BalanceFrame and SampleFrame), copy SampleFrame state
+        # so that inherited SampleFrame properties work on the instance.
+        if isinstance(instance, SampleFrame):
+            instance._df = sample._df
+            instance._id_column_name = sample._id_column_name
+            instance._column_roles = sample._column_roles
+            instance._weight_column_name = sample._weight_column_name
+            instance._weight_metadata = sample._weight_metadata
+            instance._df_dtypes = sample._df_dtypes
+
         # Validate covariate overlap using public properties
         if sf_target is not None:
-            cls._validate_covariate_overlap(sf_with_outcomes, sf_target)
+            cls._validate_covariate_overlap(sample, sf_target)
 
         return instance
 
@@ -359,7 +358,7 @@ class BalanceFrame:
     @property
     def df_responders(self) -> pd.DataFrame:
         """The responder data as a DataFrame."""
-        return self._sf_with_outcomes.df
+        return self._sf_sample.df
 
     @property
     def df_target(self) -> pd.DataFrame | None:
@@ -371,14 +370,14 @@ class BalanceFrame:
     @property
     def df_responders_unadjusted(self) -> pd.DataFrame:
         """The original (pre-adjustment) responder data as a DataFrame."""
-        return self._sf_with_outcomes_pre_adjust.df
+        return self._sf_sample_pre_adjust.df
 
     # --- Backward-compat aliases (to be removed in a future diff) ---
 
     @property
     def responders(self) -> SampleFrame:
-        """Alias for ``_sf_with_outcomes`` (backward compat, will be removed)."""
-        return self._sf_with_outcomes
+        """Alias for ``_sf_sample`` (backward compat, will be removed)."""
+        return self._sf_sample
 
     @property
     def target(self) -> SampleFrame | None:
@@ -387,9 +386,9 @@ class BalanceFrame:
 
     @property
     def unadjusted(self) -> SampleFrame | None:
-        """Alias for ``_sf_with_outcomes_pre_adjust`` if adjusted, else None (backward compat)."""
+        """Alias for ``_sf_sample_pre_adjust`` if adjusted, else None (backward compat)."""
         if self.is_adjusted:
-            return self._sf_with_outcomes_pre_adjust
+            return self._sf_sample_pre_adjust
         return None
 
     def has_target(self) -> bool:
@@ -404,7 +403,7 @@ class BalanceFrame:
             >>> from balance.balance_frame import BalanceFrame
             >>> resp = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))
-            >>> bf = BalanceFrame(sf_with_outcomes=resp)
+            >>> bf = BalanceFrame(sample=resp)
             >>> bf.has_target()
             False
             >>> tgt = SampleFrame.from_frame(
@@ -450,7 +449,7 @@ class BalanceFrame:
             ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
-            >>> bf = BalanceFrame(sf_with_outcomes=resp)
+            >>> bf = BalanceFrame(sample=resp)
             >>> bf.set_target(tgt)
             >>> bf.has_target()
             True
@@ -464,29 +463,29 @@ class BalanceFrame:
             # adjust() will report the error when called.
             try:
                 BalanceFrame._validate_covariate_overlap(
-                    new_copy._sf_with_outcomes, target._sf_with_outcomes
+                    new_copy._sf_sample, target._sf_sample
                 )
             except (ValueError, TypeError):
                 pass
-            new_copy._sf_target = target._sf_with_outcomes
+            new_copy._sf_target = target._sf_sample
             return new_copy
 
         if isinstance(target, SampleFrame):
             # SampleFrame path: default in_place=True for backward compat
             if in_place is None:
                 in_place = True
-            BalanceFrame._validate_covariate_overlap(self._sf_with_outcomes, target)
+            BalanceFrame._validate_covariate_overlap(self._sf_sample, target)
 
             if in_place:
                 self._sf_target = target
                 self._links["target"] = target
                 # Reset adjustment state — old adjustment is no longer valid.
-                self._sf_with_outcomes = self._sf_with_outcomes_pre_adjust
+                self._sf_sample = self._sf_sample_pre_adjust
                 self._adjustment_model = None
                 return self
             else:
                 return type(self)._create(
-                    sf_with_outcomes=copy.deepcopy(self._sf_with_outcomes_pre_adjust),
+                    sample=copy.deepcopy(self._sf_sample_pre_adjust),
                     sf_target=target,
                 )
 
@@ -499,9 +498,7 @@ class BalanceFrame:
         Returns a ``_CallableBool`` so both ``bf.is_adjusted`` (property)
         and ``bf.is_adjusted()`` (legacy call) work.
         """
-        return _CallableBool(
-            self._sf_with_outcomes is not self._sf_with_outcomes_pre_adjust
-        )
+        return _CallableBool(self._sf_sample is not self._sf_sample_pre_adjust)
 
     # --- Adjustment ---
 
@@ -540,7 +537,7 @@ class BalanceFrame:
         """
         if self._sf_target is None:
             raise ValueError("Cannot get covars without a target population.")
-        return self._sf_with_outcomes.df_covars, self._sf_target.df_covars
+        return self._sf_sample.df_covars, self._sf_target.df_covars
 
     def _build_adjusted_frame(
         self,
@@ -558,7 +555,7 @@ class BalanceFrame:
             A new, adjusted BalanceFrame (or subclass instance if called on
             a subclass).
         """
-        new_responders = copy.deepcopy(self._sf_with_outcomes)
+        new_responders = copy.deepcopy(self._sf_sample)
         method_name = (
             method
             if isinstance(method, str)
@@ -594,13 +591,11 @@ class BalanceFrame:
 
         # Use type(self) so subclasses (e.g. Sample) get their own type back.
         new_bf = type(self)._create(
-            sf_with_outcomes=new_responders,
+            sample=new_responders,
             sf_target=self._sf_target,
         )
-        # Point _sf_with_outcomes_pre_adjust to the original (pre-adjustment) data
-        new_bf._sf_with_outcomes_pre_adjust = self._sf_with_outcomes_pre_adjust
-        new_bf.id_column = new_responders.id_column
-        new_bf.weight_series = new_responders.weight_series
+        # Point _sf_sample_pre_adjust to the original (pre-adjustment) data
+        new_bf._sf_sample_pre_adjust = self._sf_sample_pre_adjust
         # Set _links for __str__() and BalanceDF integration
         new_bf._links["unadjusted"] = self
         if "target" in self._links:
@@ -662,7 +657,7 @@ class BalanceFrame:
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [4, 5, 6], "x": [15.0, 25.0, 35.0],
             ...                   "weight": [1.0, 1.0, 1.0]}))
-            >>> bf = BalanceFrame(sf_with_outcomes=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
             >>> adjusted = bf.adjust(method="ipw")
             >>> adjusted.is_adjusted
             True
@@ -738,7 +733,7 @@ class BalanceFrame:
 
         result = adjustment_function(
             sample_df=resp_covars,
-            sample_weights=self._sf_with_outcomes.df_weights.iloc[:, 0],
+            sample_weights=self._sf_sample.df_weights.iloc[:, 0],
             target_df=target_covars,
             target_weights=sf_target.df_weights.iloc[:, 0],
             **kwargs,
@@ -760,7 +755,7 @@ class BalanceFrame:
             ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
-            >>> bf = BalanceFrame(sf_with_outcomes=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
             >>> bf.model() is None
             True
         """
@@ -816,11 +811,11 @@ class BalanceFrame:
         responders_sf = SampleFrame.from_sample(sample)
         target_sf = SampleFrame.from_sample(sample._links["target"])
 
-        bf = cls._create(sf_with_outcomes=responders_sf, sf_target=target_sf)
+        bf = cls._create(sample=responders_sf, sf_target=target_sf)
 
         if sample.is_adjusted():
             # Set unadjusted to a DIFFERENT SampleFrame so is_adjusted returns True
-            bf._sf_with_outcomes_pre_adjust = SampleFrame.from_sample(
+            bf._sf_sample_pre_adjust = SampleFrame.from_sample(
                 sample._links["unadjusted"]
             )
             bf._adjustment_model = sample.model()
@@ -850,7 +845,7 @@ class BalanceFrame:
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [4, 5, 6], "x": [15.0, 25.0, 35.0],
             ...                   "weight": [1.0, 1.0, 1.0]}))
-            >>> bf = BalanceFrame(sf_with_outcomes=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
             >>> s = bf.to_sample()
             >>> s.has_target()
             True
@@ -865,11 +860,11 @@ class BalanceFrame:
             )
 
         resp_sample = Sample.from_frame(
-            self._sf_with_outcomes._df,
-            id_column=self._sf_with_outcomes.id_column_name,
-            weight_column=self._sf_with_outcomes.weight_column,
-            outcome_columns=self._sf_with_outcomes.outcome_columns or None,
-            ignored_columns=self._sf_with_outcomes.ignored_columns or None,
+            self._sf_sample._df,
+            id_column=self._sf_sample.id_column_name,
+            weight_column=self._sf_sample.weight_column,
+            outcome_columns=self._sf_sample.outcome_columns or None,
+            ignored_columns=self._sf_sample.ignored_columns or None,
             standardize_types=False,
         )
         target_sample = Sample.from_frame(
@@ -882,19 +877,17 @@ class BalanceFrame:
         )
         result = resp_sample.set_target(target_sample)
 
-        if self.is_adjusted and self._sf_with_outcomes_pre_adjust is not None:
+        if self.is_adjusted and self._sf_sample_pre_adjust is not None:
             unadj_sf = SampleFrame.from_frame(
-                self._sf_with_outcomes_pre_adjust._df,
-                id_column=self._sf_with_outcomes_pre_adjust.id_column_name,
-                weight_column=self._sf_with_outcomes_pre_adjust.weight_column,
-                outcome_columns=self._sf_with_outcomes_pre_adjust.outcome_columns
-                or None,
-                ignored_columns=self._sf_with_outcomes_pre_adjust.ignored_columns
-                or None,
+                self._sf_sample_pre_adjust._df,
+                id_column=self._sf_sample_pre_adjust.id_column_name,
+                weight_column=self._sf_sample_pre_adjust.weight_column,
+                outcome_columns=self._sf_sample_pre_adjust.outcome_columns or None,
+                ignored_columns=self._sf_sample_pre_adjust.ignored_columns or None,
                 standardize_types=False,
             )
             # pyre-ignore[16]: Sample gains this attr via BalanceFrame inheritance (diff 14.3)
-            result._sf_with_outcomes_pre_adjust = unadj_sf
+            result._sf_sample_pre_adjust = unadj_sf
             # pyre-ignore[16]: Sample gains _links via BalanceFrame inheritance (diff 14.3)
             result._links["unadjusted"] = unadj_sf
             # pyre-ignore[16]: Sample gains this attr via BalanceFrame inheritance (diff 14.3)
@@ -919,7 +912,7 @@ class BalanceFrame:
         if self._sf_target is not None:
             links["target"] = self._sf_target
         if self.is_adjusted:
-            links["unadjusted"] = self._sf_with_outcomes_pre_adjust
+            links["unadjusted"] = self._sf_sample_pre_adjust
         return links
 
     def covars(self, formula: str | list[str] | None = None) -> Any:
@@ -944,7 +937,7 @@ class BalanceFrame:
             ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
-            >>> bf = BalanceFrame(sf_with_outcomes=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
             >>> bf.covars().df.columns.tolist()
             ['x']
         """
@@ -973,13 +966,13 @@ class BalanceFrame:
             ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 2.0]}))
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
-            >>> bf = BalanceFrame(sf_with_outcomes=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
             >>> bf.weights().df.columns.tolist()
             ['weight']
         """
         from balance.balancedf_class import BalanceDFSource, BalanceDFWeights
 
-        # Pass self (not _sf_with_outcomes) so that r_indicator and other methods
+        # Pass self (not _sf_sample) so that r_indicator and other methods
         # that access self._sample._links find the BalanceFrame's _links.
         return BalanceDFWeights(
             cast(BalanceDFSource, self), links=self._build_links_dict()
@@ -1004,11 +997,11 @@ class BalanceFrame:
             ...     outcome_columns=["y"])
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
-            >>> bf = BalanceFrame(sf_with_outcomes=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
             >>> bf.outcomes().df.columns.tolist()
             ['y']
         """
-        if not self._sf_with_outcomes.outcome_columns:
+        if not self._sf_sample.outcome_columns:
             return None
         from balance.balancedf_class import BalanceDFOutcomes, BalanceDFSource
 
@@ -1041,16 +1034,14 @@ class BalanceFrame:
             ...     pd.DataFrame({"id": [1, 2], "x": [0, 1], "weight": [1.0, 1.0]}))
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [3, 4], "x": [0, 1], "weight": [1.0, 1.0]}))
-            >>> bf = BalanceFrame(sf_with_outcomes=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
             >>> bf._design_effect_diagnostics()
             (1.0, 2.0, 1.0)
         """
         if n_rows is None:
-            n_rows = len(self._sf_with_outcomes)
+            n_rows = len(self._sf_sample)
         try:
-            de = weights_stats.design_effect(
-                self._sf_with_outcomes.df_weights.iloc[:, 0]
-            )
+            de = weights_stats.design_effect(self._sf_sample.df_weights.iloc[:, 0])
         except (TypeError, ValueError, ZeroDivisionError) as exc:
             logger.debug("Unable to compute design effect: %s", exc)
             return None, None, None
@@ -1094,7 +1085,7 @@ class BalanceFrame:
             ...     pd.DataFrame({"id": [1, 2], "x": [0, 1], "weight": [1.0, 1.0]}))
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [3, 4], "x": [0, 1], "weight": [1.0, 1.0]}))
-            >>> bf = BalanceFrame(sf_with_outcomes=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
             >>> adjusted = bf.adjust(method="null")
             >>> "method: null" in adjusted._quick_adjustment_details()
             True
@@ -1147,7 +1138,7 @@ class BalanceFrame:
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [5, 6, 7, 8], "x": [0, 0, 1, 1],
             ...                   "weight": [1.0, 1.0, 1.0, 1.0]}))
-            >>> bf = BalanceFrame(sf_with_outcomes=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
             >>> adjusted = bf.adjust(method="null")
             >>> "Covariate diagnostics:" in adjusted.summary()
             True
@@ -1242,7 +1233,7 @@ class BalanceFrame:
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": ["3", "4"], "x": [0, 1],
             ...                   "weight": [1.0, 1.0]}))
-            >>> bf = BalanceFrame(sf_with_outcomes=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
             >>> adjusted = bf.adjust(method="null")
             >>> adjusted.diagnostics().columns.tolist()
             ['metric', 'val', 'var']
@@ -1250,7 +1241,7 @@ class BalanceFrame:
         logger.info("Starting computation of diagnostics of the fitting")
         self._check_if_adjusted()
 
-        outcome_columns = self._sf_with_outcomes.df_outcomes
+        outcome_columns = self._sf_sample.df_outcomes
         outcome_impact = None
         if weights_impact_on_outcome_method is not None and outcome_columns is not None:
             outcome_impact = self.outcomes().weights_impact_on_outcome_ss(
@@ -1301,13 +1292,13 @@ class BalanceFrame:
             ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
-            >>> bf = BalanceFrame(sf_with_outcomes=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
             >>> bf.df_all["source"].unique().tolist()
             ['self', 'target']
         """
         parts: list[pd.DataFrame] = []
 
-        resp_df = self._sf_with_outcomes._df.copy()
+        resp_df = self._sf_sample._df.copy()
         resp_df["source"] = "self"
         parts.append(resp_df)
 
@@ -1317,7 +1308,7 @@ class BalanceFrame:
             parts.append(tgt_df)
 
         if self.is_adjusted:
-            unadj_df = self._sf_with_outcomes_pre_adjust._df.copy()
+            unadj_df = self._sf_sample_pre_adjust._df.copy()
             unadj_df["source"] = "unadjusted"
             parts.append(unadj_df)
 
@@ -1335,7 +1326,7 @@ class BalanceFrame:
         """
         covars = self.covars()
         outcomes = self.outcomes()
-        ignored = self._sf_with_outcomes.df_ignored
+        ignored = self._sf_sample.df_ignored
         return pd.concat(
             (
                 self.id_column,
@@ -1385,9 +1376,9 @@ class BalanceFrame:
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [4, 5, 6], "x": [15.0, 25.0, 35.0],
             ...                   "weight": [1.0, 1.0, 1.0]}))
-            >>> bf = BalanceFrame(sf_with_outcomes=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
             >>> filtered = bf.keep_only_some_rows_columns(rows_to_keep="x > 15")
-            >>> len(filtered._sf_with_outcomes._df)
+            >>> len(filtered._sf_sample._df)
             2
         """
         if rows_to_keep is None and columns_to_keep is None:
@@ -1397,16 +1388,16 @@ class BalanceFrame:
 
         if new_bf.has_target():
             # With target: filter all SampleFrames
-            new_bf._sf_with_outcomes = BalanceFrame._filter_sf(
-                new_bf._sf_with_outcomes, rows_to_keep, columns_to_keep
+            new_bf._sf_sample = BalanceFrame._filter_sf(
+                new_bf._sf_sample, rows_to_keep, columns_to_keep
             )
             if new_bf._sf_target is not None:
                 new_bf._sf_target = BalanceFrame._filter_sf(
                     new_bf._sf_target, rows_to_keep, columns_to_keep
                 )
-            if new_bf._sf_with_outcomes_pre_adjust is not None:
-                new_bf._sf_with_outcomes_pre_adjust = BalanceFrame._filter_sf(
-                    new_bf._sf_with_outcomes_pre_adjust, rows_to_keep, columns_to_keep
+            if new_bf._sf_sample_pre_adjust is not None:
+                new_bf._sf_sample_pre_adjust = BalanceFrame._filter_sf(
+                    new_bf._sf_sample_pre_adjust, rows_to_keep, columns_to_keep
                 )
         else:
             # No target: filter the responder SampleFrame
@@ -1416,24 +1407,16 @@ class BalanceFrame:
                         "Note that not all columns_to_keep are in Sample. "
                         "Only those that exist are removed"
                     )
-            new_bf._sf_with_outcomes = BalanceFrame._filter_sf(
-                new_bf._sf_with_outcomes, rows_to_keep, columns_to_keep
+            new_bf._sf_sample = BalanceFrame._filter_sf(
+                new_bf._sf_sample, rows_to_keep, columns_to_keep
             )
             if (
-                new_bf._sf_with_outcomes_pre_adjust is not None
-                and new_bf._sf_with_outcomes_pre_adjust is not new_bf._sf_with_outcomes
+                new_bf._sf_sample_pre_adjust is not None
+                and new_bf._sf_sample_pre_adjust is not new_bf._sf_sample
             ):
-                new_bf._sf_with_outcomes_pre_adjust = BalanceFrame._filter_sf(
-                    new_bf._sf_with_outcomes_pre_adjust, rows_to_keep, columns_to_keep
+                new_bf._sf_sample_pre_adjust = BalanceFrame._filter_sf(
+                    new_bf._sf_sample_pre_adjust, rows_to_keep, columns_to_keep
                 )
-
-        # Sync id_column / weight_series from filtered responders
-        new_bf.id_column = new_bf._sf_with_outcomes.id_column
-        try:
-            new_bf.weight_series = new_bf._sf_with_outcomes.weight_series
-        except ValueError:
-            # Weight column was filtered out — leave it unchanged
-            pass
 
         # Also filter linked BF/Sample objects in _links
         if new_bf._links:
@@ -1549,7 +1532,7 @@ class BalanceFrame:
             ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
-            >>> bf = BalanceFrame(sf_with_outcomes=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
             >>> "id" in bf.to_csv()
             True
         """
@@ -1577,7 +1560,7 @@ class BalanceFrame:
             ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
-            >>> bf = BalanceFrame(sf_with_outcomes=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
             >>> link = bf.to_download(tempdir=tempfile.gettempdir())
         """
         return _to_download(self.df, tempdir)
@@ -1610,8 +1593,8 @@ class BalanceFrame:
         """
         # Break the shared reference so we don't corrupt the pre-adjustment
         # baseline (both point to the same SampleFrame initially).
-        if self._sf_with_outcomes is self._sf_with_outcomes_pre_adjust:
-            self._sf_with_outcomes_pre_adjust = copy.deepcopy(self._sf_with_outcomes)
+        if self._sf_sample is self._sf_sample_pre_adjust:
+            self._sf_sample_pre_adjust = copy.deepcopy(self._sf_sample)
 
         if isinstance(weights, pd.Series):
             if not all(idx in weights.index for idx in self.df.index):
@@ -1633,12 +1616,10 @@ class BalanceFrame:
             weights_value = np.nan if weights is None else weights
             self._df.loc[:, wc_name] = weights_value
 
-        self.weight_series = self._df[wc_name]
-
     def set_unadjusted(self, second: BalanceFrame) -> Self:
         """Set the unadjusted link for comparative analysis.
 
-        Returns a deep copy with ``_sf_with_outcomes_pre_adjust`` pointing at
+        Returns a deep copy with ``_sf_sample_pre_adjust`` pointing at
         *second*'s responder SampleFrame, and ``_links["unadjusted"]``
         pointing at *second*.
 
@@ -1658,7 +1639,7 @@ class BalanceFrame:
             )
         new_bf = deepcopy(self)
         new_bf._links["unadjusted"] = second
-        new_bf._sf_with_outcomes_pre_adjust = second._sf_with_outcomes
+        new_bf._sf_sample_pre_adjust = second._sf_sample
         return new_bf
 
     # --- Column accessors (moved from Sample) ---
@@ -1687,7 +1668,7 @@ class BalanceFrame:
 
     def _covar_columns(self) -> pd.DataFrame:
         """Return a DataFrame of all covariate columns."""
-        return self._sf_with_outcomes._covar_columns()
+        return self._sf_sample._covar_columns()
 
     # --- Error checks (moved from Sample) ---
 
