@@ -622,10 +622,8 @@ class BalanceFrame:
                 new_responders._df[original_weight_name].copy(),
             )
 
-        # Find next adjustment number (weight_adjusted_1, weight_adjusted_2, ...)
-        n = 1
-        while f"weight_adjusted_{n}" in new_responders._df.columns:
-            n += 1
+        # Find next global action number (shared counter across adjusted/trimmed).
+        n = new_responders._next_weight_action_number()
         adj_col_name = f"weight_adjusted_{n}"
 
         # Add the new adjusted weights as weight_adjusted_N
@@ -1714,6 +1712,64 @@ class BalanceFrame:
                 matching length.  See :meth:`SampleFrame.set_weights`.
         """
         self._sf_sample.set_weights(weights, use_index=use_index)
+
+    def trim(
+        self,
+        ratio: float | int | None = None,
+        percentile: float | tuple[float, float] | None = None,
+        keep_sum_of_weights: bool = True,
+        target_sum_weights: float | int | np.floating | None = None,
+        *,
+        in_place: bool = False,
+    ) -> Self:
+        """Trim extreme weights using mean-ratio clipping or percentile winsorization.
+
+        Delegates to :meth:`SampleFrame.trim` for computation and weight
+        history tracking, then wraps the result in a new BalanceFrame
+        (preserving target, pre-adjust baseline, and links).
+
+        Args:
+            ratio: Mean-ratio upper bound.  Mutually exclusive with
+                *percentile*.
+            percentile: Percentile(s) for winsorization.  Mutually exclusive
+                with *ratio*.
+            keep_sum_of_weights: Whether to rescale after trimming to
+                preserve the original sum of weights.
+            target_sum_weights: If provided, rescale trimmed weights so
+                their sum equals this target.
+            in_place: If True, mutate this BalanceFrame's weights and
+                return it.  If False (default), return a new BalanceFrame.
+
+        Returns:
+            The BalanceFrame with trimmed weights (self if *in_place*,
+            else a new instance).
+        """
+        if in_place:
+            self._sf_sample.trim(
+                ratio=ratio,
+                percentile=percentile,
+                keep_sum_of_weights=keep_sum_of_weights,
+                target_sum_weights=target_sum_weights,
+                in_place=True,
+            )
+            return self
+
+        new_sf = self._sf_sample.trim(
+            ratio=ratio,
+            percentile=percentile,
+            keep_sum_of_weights=keep_sum_of_weights,
+            target_sum_weights=target_sum_weights,
+            in_place=False,
+        )
+        new_bf = type(self)._create(
+            sample=new_sf,
+            sf_target=self._sf_target,
+        )
+        new_bf._sf_sample_pre_adjust = self._sf_sample_pre_adjust
+        # Preserve existing links (target, unadjusted).
+        for key, val in self._links.items():
+            new_bf._links[key] = val
+        return new_bf
 
     def set_unadjusted(self, second: BalanceFrame) -> Self:
         """Set the unadjusted link for comparative analysis.
