@@ -1587,15 +1587,16 @@ class BalanceFrame:
         Overwrites the weight column on the underlying DataFrame.
         When *weights* is a ``pd.Series``, values are aligned by index.
 
+        When called on an unadjusted BalanceFrame (``is_adjusted`` is False),
+        the change is applied to both the current and baseline SampleFrames so
+        that ``is_adjusted`` remains False — changing base weights is not an
+        adjustment.  When called on an already-adjusted BalanceFrame, only the
+        current weights are modified (the pre-adjustment baseline is preserved).
+
         Args:
             weights: New weights. A Series (aligned by index), a scalar
                 (broadcast to all rows), or ``None`` (sets all to NaN).
         """
-        # Break the shared reference so we don't corrupt the pre-adjustment
-        # baseline (both point to the same SampleFrame initially).
-        if self._sf_sample is self._sf_sample_pre_adjust:
-            self._sf_sample_pre_adjust = copy.deepcopy(self._sf_sample)
-
         if isinstance(weights, pd.Series):
             if not all(idx in weights.index for idx in self.df.index):
                 logger.warning(
@@ -1615,6 +1616,12 @@ class BalanceFrame:
                 self._df[wc_name] = self._df[wc_name].astype("float64")
             weights_value = np.nan if weights is None else weights
             self._df.loc[:, wc_name] = weights_value
+
+        # When unadjusted, _sf_sample and _sf_sample_pre_adjust share the
+        # same SampleFrame.  Since the weight change was applied to the shared
+        # DataFrame via _df, both references already see the new weights and
+        # the identity (is_adjusted == False) is preserved.  No deep copy is
+        # needed — changing base weights is not an adjustment.
 
     def set_unadjusted(self, second: BalanceFrame) -> Self:
         """Set the unadjusted link for comparative analysis.
