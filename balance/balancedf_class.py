@@ -52,7 +52,7 @@ class BalanceDFSource(Protocol):
     ``balancedf_class.py``.
 
     Attributes:
-        weight_column: Active weight column as a ``pd.Series``.
+        weight_series: Active weight column as a ``pd.Series``.
         id_column: Row identifier column as a ``pd.Series``.
         _links: Dict mapping relationship names (e.g. ``"target"``,
             ``"unadjusted"``) to other ``BalanceDFSource`` instances.
@@ -64,7 +64,7 @@ class BalanceDFSource(Protocol):
     """
 
     @property
-    def weight_column(self) -> pd.Series:  # noqa: E704
+    def weight_series(self) -> pd.Series:  # noqa: E704
         ...
 
     @property
@@ -174,7 +174,7 @@ class BalanceDF:
     def _weights(
         self: "BalanceDF",
     ) -> pd.Series | None:
-        """Access the weight_column in __sample.
+        """Access the weight_series in __sample.
 
         Args:
             self (BalanceDF): Object
@@ -182,7 +182,7 @@ class BalanceDF:
         Returns:
             pd.Series | None: The weights (with no column name)
         """
-        w = self._sample.weight_column
+        w = self._sample.weight_series
         return w.rename(None)
 
     # NOTE: only in the case of BalanceDFOutcomes can it result in a None value.
@@ -2830,7 +2830,7 @@ class BalanceDFWeights(BalanceDF):
             links (Dict | None): Optional explicit links for BalanceDF.
         """
         super().__init__(
-            sample.weight_column.to_frame(), sample, name="weights", links=links
+            sample.weight_series.to_frame(), sample, name="weights", links=links
         )
 
     @property
@@ -2843,7 +2843,7 @@ class BalanceDFWeights(BalanceDF):
         Returns:
             pd.DataFrame: DataFrame containing the current weight column.
         """
-        return self._sample.weight_column.to_frame()
+        return self._sample.weight_series.to_frame()
 
     # TODO: maybe add better control if there are no weights for unadjusted or target (the current default shows them in the legend, but not in the figure)
     def plot(
@@ -3074,7 +3074,7 @@ class BalanceDFWeights(BalanceDF):
                     "This Sample does not have a target set. "
                     "Use sample.set_target to add target"
                 )
-            target_propensity = np.ones(len(target_sample.weight_column), dtype=float)
+            target_propensity = np.ones(len(target_sample.weight_series), dtype=float)
         elif np.isscalar(target_propensity):
             if target_sample is None:
                 raise ValueError(
@@ -3082,7 +3082,7 @@ class BalanceDFWeights(BalanceDF):
                     "target_propensity is scalar"
                 )
             target_propensity = np.full(
-                len(target_sample.weight_column),
+                len(target_sample.weight_series),
                 float(target_propensity),
                 dtype=float,
             )
@@ -3090,7 +3090,7 @@ class BalanceDFWeights(BalanceDF):
             target_propensity_array = np.asarray(target_propensity)
             if target_propensity_array.ndim == 0:
                 target_propensity_array = target_propensity_array.reshape(1)
-            if target_propensity_array.shape[0] != len(target_sample.weight_column):
+            if target_propensity_array.shape[0] != len(target_sample.weight_series):
                 raise ValueError(
                     "BalanceDFWeights.r_indicator requires target_propensity length "
                     "to match linked target row count"
