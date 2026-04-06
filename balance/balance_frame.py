@@ -28,8 +28,6 @@ from balance.sample_frame import SampleFrame
 from balance.stats_and_plots import weights_stats
 from balance.summary_utils import _build_diagnostics, _build_summary
 from balance.typing import FilePathOrBuffer
-
-logger = logging.getLogger(__package__)
 from balance.util import (
     _assert_type,
     _detect_high_cardinality_features,
@@ -41,6 +39,8 @@ if TYPE_CHECKING:
     from typing import Self
 
     from balance.balancedf_class import BalanceDFSource  # noqa: F401
+
+logger = logging.getLogger(__package__)
 
 # The set of string method names accepted by _find_adjustment_method.
 _AdjustmentMethodStr = Literal["cbps", "ipw", "null", "poststratify", "rake"]
