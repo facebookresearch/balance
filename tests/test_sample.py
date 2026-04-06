@@ -250,14 +250,14 @@ class TestSample(
         df = pd.DataFrame({"id": (1, 2), "weight": (1, 2)})
         self.assertWarnsRegexp("Guessing weight", Sample.from_frame, df)
         self.assertEqual(
-            Sample.from_frame(df).weight_column, pd.Series((1.0, 2.0), name="weight")
+            Sample.from_frame(df).weight_series, pd.Series((1.0, 2.0), name="weight")
         )
 
         # Test default weights when none provided
         df = pd.DataFrame({"id": (1, 2)})
         self.assertWarnsRegexp("No weights passed", Sample.from_frame, df)
         self.assertEqual(
-            Sample.from_frame(df).weight_column, pd.Series((1.0, 1.0), name="weight")
+            Sample.from_frame(df).weight_series, pd.Series((1.0, 1.0), name="weight")
         )
 
         # Test error for null weight values
@@ -318,7 +318,7 @@ class TestSample(
         # Test that zero weights are acceptable
         df = pd.DataFrame({"id": (1, 2), "weight": (0, 2), "weight_column": "weight"})
         self.assertEqual(
-            Sample.from_frame(df).weight_column, pd.Series((0.0, 2.0), name="weight")
+            Sample.from_frame(df).weight_series, pd.Series((0.0, 2.0), name="weight")
         )
 
     def test_Sample_from_frame_ignored_columns(self) -> None:
@@ -710,10 +710,10 @@ class TestSample_base_and_adjust_methods(
             weight_column="w",
         )
         s.set_weights(pd.Series([1, 2, 3, 4]))
-        self.assertEqual(s.weight_column, pd.Series([1.0, 2.0, 3.0, 4.0], name="w"))
+        self.assertEqual(s.weight_series, pd.Series([1.0, 2.0, 3.0, 4.0], name="w"))
         s.set_weights(pd.Series([1, 2, 3, 4], index=(1, 2, 5, 6)))
         self.assertEqual(
-            s.weight_column, pd.Series([np.nan, 1.0, 2.0, np.nan], name="w")
+            s.weight_series, pd.Series([np.nan, 1.0, 2.0, np.nan], name="w")
         )
         # test warning
         self.assertWarnsRegexp(
@@ -1695,7 +1695,7 @@ class TestSample_high_cardinality_warnings(balance.testutil.BalanceTestCase):
         with self.assertLogs("balance", level="WARNING") as logs:
             result = sample.adjust(target, variables=["identifier"], num_lambdas=1)
 
-        self.assertTrue(np.allclose(result.weight_column, np.ones(len(sample_df))))
+        self.assertTrue(np.allclose(result.weight_series, np.ones(len(sample_df))))
         self.assertTrue(
             any(
                 "High-cardinality features detected" in log and "unique=10" in log
@@ -1724,7 +1724,7 @@ class TestSample_high_cardinality_warnings(balance.testutil.BalanceTestCase):
             )
 
         # Filter out NaN weights before comparing (dropped rows may have NaN weights)
-        _wc = _assert_type(result.weight_column)
+        _wc = _assert_type(result.weight_series)
         valid_weights = _wc[~pd.isna(_wc)]
         self.assertTrue(np.allclose(valid_weights, np.ones(len(sample_df) - 1)))
         self.assertTrue(
@@ -1752,7 +1752,7 @@ class TestSample_high_cardinality_warnings(balance.testutil.BalanceTestCase):
         with self.assertLogs("balance", level="WARNING") as logs:
             result = sample.adjust(target, variables=["identifier"], num_lambdas=1)
 
-        self.assertTrue(np.allclose(result.weight_column, np.ones(len(sample_df))))
+        self.assertTrue(np.allclose(result.weight_series, np.ones(len(sample_df))))
         self.assertTrue(
             any(
                 "High-cardinality features detected" in log and "unique=9" in log
@@ -1776,7 +1776,7 @@ class TestSample_high_cardinality_warnings(balance.testutil.BalanceTestCase):
         with self.assertLogs("balance", level="WARNING") as logs:
             result = sample.adjust(target, variables=["identifier"], num_lambdas=1)
 
-        self.assertTrue(np.allclose(result.weight_column, np.ones(len(sample_df))))
+        self.assertTrue(np.allclose(result.weight_series, np.ones(len(sample_df))))
         self.assertFalse(
             any("High-cardinality features detected" in log for log in logs.output)
         )
@@ -2247,7 +2247,7 @@ class TestSampleFromFrameGuessWeightColumn(balance.testutil.BalanceTestCase):
                     {"a": [1, 2, 3], "id": [1, 2, 3], "weights": [1.0, 2.0, 3.0]}
                 )
             )
-            self.assertEqual(_assert_type(sample.weight_column).name, "weights")
+            self.assertEqual(_assert_type(sample.weight_series).name, "weights")
             self.assertTrue(
                 any("Guessing weight column is 'weights'" in msg for msg in log.output)
             )
@@ -2262,7 +2262,7 @@ class TestSampleFromFrameGuessWeightColumn(balance.testutil.BalanceTestCase):
             standardize_types=False,
         )
         # Weight column should exist and be int type when no weight is given and standardize_types=False
-        self.assertIsNotNone(sample.weight_column)
+        self.assertIsNotNone(sample.weight_series)
 
 
 class TestSampleFromFrameGuessIdColumnCandidates(balance.testutil.BalanceTestCase):
@@ -2326,7 +2326,7 @@ class TestSampleSetWeightsNonFloat(balance.testutil.BalanceTestCase):
             standardize_types=False,
         )
         sample.set_weights(2.0)
-        self.assertEqual(_assert_type(sample.weight_column).dtype.kind, "f")
+        self.assertEqual(_assert_type(sample.weight_series).dtype.kind, "f")
 
 
 class TestSampleSummaryIPWModel(balance.testutil.BalanceTestCase):
@@ -2713,7 +2713,7 @@ class TestSampleConversion(balance.testutil.BalanceTestCase):
         sf = s1.to_sample_frame()
         self.assertIsInstance(sf, SampleFrame)
         self.assertEqual(sf.id_column_name, "id")
-        self.assertEqual(sf.active_weight_column, "w")
+        self.assertEqual(sf.weight_column, "w")
         self.assertIn("a", sf.covar_columns)
         self.assertIn("b", sf.covar_columns)
         self.assertIn("c", sf.covar_columns)

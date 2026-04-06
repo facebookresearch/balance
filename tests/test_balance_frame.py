@@ -299,7 +299,7 @@ class TestBalanceFrameAdjust(BalanceTestCase):
     def test_adjust_preserves_original_weights(self) -> None:
         adjusted = self.bf.adjust(method="null")
         # Original weight column still present alongside adjusted
-        all_w_cols = adjusted.responders.weight_columns
+        all_w_cols = adjusted.responders.weight_columns_all
         self.assertIn("weight", all_w_cols)
         self.assertIn("weight_adjusted", all_w_cols)
         # Active weight is the adjusted one
@@ -1176,7 +1176,7 @@ class TestBalanceFrameDfExportFilter(BalanceTestCase):
         filtered = bf.keep_only_some_rows_columns(columns_to_keep=["x1"])
         self.assertIn("x1", filtered.responders._df.columns)
         self.assertIn("id", filtered.responders._df.columns)
-        self.assertIsNone(filtered.responders._active_weight_column)
+        self.assertIsNone(filtered.responders._weight_column_name)
 
     # --- to_csv ---
 
@@ -1709,7 +1709,7 @@ class TestBalanceFrameToSample(BalanceTestCase):
 
     def test_to_sample_weight_values(self) -> None:
         s = self.bf.to_sample()
-        self.assertEqual(s.weight_column.tolist(), [1.0, 1.0, 1.0])
+        self.assertEqual(s.weight_series.tolist(), [1.0, 1.0, 1.0])
 
     def test_to_sample_id_values(self) -> None:
         s = self.bf.to_sample()
@@ -1731,7 +1731,7 @@ class TestBalanceFrameToSample(BalanceTestCase):
     def test_to_sample_adjusted_weight_column(self) -> None:
         adjusted_bf = self.bf.adjust(method="null")
         s = adjusted_bf.to_sample()
-        self.assertEqual(s.weight_column.name, "weight_adjusted")
+        self.assertEqual(s.weight_series.name, "weight_adjusted")
 
     def test_to_sample_with_outcomes(self) -> None:
         resp_df = pd.DataFrame(
@@ -1765,8 +1765,8 @@ class TestBalanceFrameToSample(BalanceTestCase):
             sorted(original._covar_columns_names()),
         )
         for o_val, r_val in zip(
-            _assert_type(original.weight_column).tolist(),
-            _assert_type(roundtrip.weight_column).tolist(),
+            _assert_type(original.weight_series).tolist(),
+            _assert_type(roundtrip.weight_series).tolist(),
         ):
             self.assertAlmostEqual(o_val, r_val, places=10)
 
@@ -1782,8 +1782,8 @@ class TestBalanceFrameToSample(BalanceTestCase):
         self.assertTrue(roundtrip.is_adjusted())
         self.assertTrue(roundtrip.has_target())
         for o_val, r_val in zip(
-            _assert_type(adjusted.weight_column).tolist(),
-            _assert_type(roundtrip.weight_column).tolist(),
+            _assert_type(adjusted.weight_series).tolist(),
+            _assert_type(roundtrip.weight_series).tolist(),
         ):
             self.assertAlmostEqual(o_val, r_val, places=10)
 
@@ -1804,8 +1804,8 @@ class TestBalanceFrameToSample(BalanceTestCase):
         self.assertTrue(roundtrip.is_adjusted())
         self.assertTrue(roundtrip.has_target())
         for o_val, r_val in zip(
-            _assert_type(old_adjusted.weight_column).tolist(),
-            _assert_type(roundtrip.weight_column).tolist(),
+            _assert_type(old_adjusted.weight_series).tolist(),
+            _assert_type(roundtrip.weight_series).tolist(),
         ):
             self.assertAlmostEqual(o_val, r_val, places=5)
         self.assertEqual(

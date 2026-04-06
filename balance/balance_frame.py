@@ -165,12 +165,12 @@ class BalanceFrame:
         self._id_column = value
 
     @property
-    def weight_column(self) -> pd.Series | None:  # pyre-ignore[3]
+    def weight_series(self) -> pd.Series | None:  # pyre-ignore[3]
         """The weight column Series."""
         return self._weight_column
 
-    @weight_column.setter
-    def weight_column(self, value: pd.Series | None) -> None:  # pyre-ignore[2,3]
+    @weight_series.setter
+    def weight_series(self, value: pd.Series | None) -> None:  # pyre-ignore[2,3]
         self._weight_column = value
 
     # --- Property descriptors backed by _sf_with_outcomes ---
@@ -315,9 +315,9 @@ class BalanceFrame:
         instance._adjustment_model = None
         instance.id_column = sf_with_outcomes.id_column
         try:
-            instance.weight_column = sf_with_outcomes.weight_column
+            instance.weight_series = sf_with_outcomes.weight_series
         except ValueError:
-            instance.weight_column = None
+            instance.weight_series = None
         instance._links = collections.defaultdict(list)
         if sf_target is not None:
             instance._links["target"] = sf_target
@@ -578,7 +578,7 @@ class BalanceFrame:
         # For Sample subclasses: rename "weight_adjusted" → original weight
         # column name so the public API always sees the original name.
         # For direct BalanceFrame: keep both columns (weight + weight_adjusted).
-        original_weight_name = _assert_type(self.weight_column).name
+        original_weight_name = _assert_type(self.weight_series).name
         if type(self) is not BalanceFrame:
             # Sample (or other subclass) path: rename weight_adjusted → original
             if (
@@ -600,7 +600,7 @@ class BalanceFrame:
         # Point _sf_with_outcomes_pre_adjust to the original (pre-adjustment) data
         new_bf._sf_with_outcomes_pre_adjust = self._sf_with_outcomes_pre_adjust
         new_bf.id_column = new_responders.id_column
-        new_bf.weight_column = new_responders.weight_column
+        new_bf.weight_series = new_responders.weight_series
         # Set _links for __str__() and BalanceDF integration
         new_bf._links["unadjusted"] = self
         if "target" in self._links:
@@ -867,7 +867,7 @@ class BalanceFrame:
         resp_sample = Sample.from_frame(
             self._sf_with_outcomes._df,
             id_column=self._sf_with_outcomes.id_column_name,
-            weight_column=self._sf_with_outcomes.active_weight_column,
+            weight_column=self._sf_with_outcomes.weight_column,
             outcome_columns=self._sf_with_outcomes.outcome_columns or None,
             ignored_columns=self._sf_with_outcomes.ignored_columns or None,
             standardize_types=False,
@@ -875,7 +875,7 @@ class BalanceFrame:
         target_sample = Sample.from_frame(
             target._df,
             id_column=target.id_column_name,
-            weight_column=target.active_weight_column,
+            weight_column=target.weight_column,
             outcome_columns=target.outcome_columns or None,
             ignored_columns=target.ignored_columns or None,
             standardize_types=False,
@@ -886,7 +886,7 @@ class BalanceFrame:
             unadj_sf = SampleFrame.from_frame(
                 self._sf_with_outcomes_pre_adjust._df,
                 id_column=self._sf_with_outcomes_pre_adjust.id_column_name,
-                weight_column=self._sf_with_outcomes_pre_adjust.active_weight_column,
+                weight_column=self._sf_with_outcomes_pre_adjust.weight_column,
                 outcome_columns=self._sf_with_outcomes_pre_adjust.outcome_columns
                 or None,
                 ignored_columns=self._sf_with_outcomes_pre_adjust.ignored_columns
@@ -1342,8 +1342,8 @@ class BalanceFrame:
                 covars.df if covars is not None else None,
                 outcomes.df if outcomes is not None else None,
                 (
-                    pd.DataFrame(self.weight_column)
-                    if self.weight_column is not None
+                    pd.DataFrame(self.weight_series)
+                    if self.weight_series is not None
                     else None
                 ),
                 ignored if ignored is not None else None,
@@ -1427,10 +1427,10 @@ class BalanceFrame:
                     new_bf._sf_with_outcomes_pre_adjust, rows_to_keep, columns_to_keep
                 )
 
-        # Sync id_column / weight_column from filtered responders
+        # Sync id_column / weight_series from filtered responders
         new_bf.id_column = new_bf._sf_with_outcomes.id_column
         try:
-            new_bf.weight_column = new_bf._sf_with_outcomes.weight_column
+            new_bf.weight_series = new_bf._sf_with_outcomes.weight_series
         except ValueError:
             # Weight column was filtered out — leave it unchanged
             pass
@@ -1496,9 +1496,9 @@ class BalanceFrame:
         if columns_to_keep is not None:
             keep_set = set(columns_to_keep)
             keep_set.add(sf._id_column_name)
-            if sf._active_weight_column is not None:
-                keep_set.add(sf._active_weight_column)
-            for wc in sf.weight_columns:
+            if sf._weight_column_name is not None:
+                keep_set.add(sf._weight_column_name)
+            for wc in sf.weight_columns_all:
                 keep_set.add(wc)
             # Always preserve outcome columns (matching Sample behavior)
             for oc in sf._column_roles.get("outcomes", []):
@@ -1620,7 +1620,7 @@ class BalanceFrame:
                     "since weights are missing some of the indices in Sample.df"
                 )
 
-        wc_name = _assert_type(self.weight_column).name
+        wc_name = _assert_type(self.weight_series).name
         if isinstance(weights, pd.Series):
             if not pd.api.types.is_float_dtype(self._df[wc_name]):
                 self._df[wc_name] = self._df[wc_name].astype("float64")
@@ -1633,7 +1633,7 @@ class BalanceFrame:
             weights_value = np.nan if weights is None else weights
             self._df.loc[:, wc_name] = weights_value
 
-        self.weight_column = self._df[wc_name]
+        self.weight_series = self._df[wc_name]
 
     def set_unadjusted(self, second: BalanceFrame) -> Self:
         """Set the unadjusted link for comparative analysis.
@@ -1666,7 +1666,7 @@ class BalanceFrame:
     def _special_columns_names(self) -> list[str]:
         """Return names of all special columns (id, weight, outcome, ignored)."""
         return (
-            [str(i.name) for i in [self.id_column, self.weight_column] if i is not None]
+            [str(i.name) for i in [self.id_column, self.weight_series] if i is not None]
             + (
                 self._outcome_columns.columns.tolist()
                 if self._outcome_columns is not None
@@ -1742,7 +1742,7 @@ class BalanceFrame:
         variables = ",".join(self._covar_columns_names())
         id_column_name = self.id_column.name if self.id_column is not None else "None"
         weight_column_name = (
-            self.weight_column.name if self.weight_column is not None else "None"
+            self.weight_series.name if self.weight_series is not None else "None"
         )
         outcome_column_names = (
             ",".join(self._outcome_columns.columns.tolist())

@@ -41,7 +41,7 @@ class TestSampleFrame(BalanceTestCase):
         self.assertListEqual(sf._column_roles["covars"], ["x1", "x2"])
         self.assertListEqual(sf._column_roles["weights"], ["w"])
         self.assertListEqual(sf._column_roles["outcomes"], [])
-        self.assertEqual(sf._active_weight_column, "w")
+        self.assertEqual(sf._weight_column_name, "w")
 
     def test_df_covars(self) -> None:
         df = pd.DataFrame({"id": [1, 2], "a": [10, 20], "b": [30, 40], "w": [1.0, 2.0]})
@@ -244,21 +244,21 @@ class TestSampleFrameColumnRoleProperties(BalanceTestCase):
         result.append("injected")
         self.assertEqual(sf.covar_columns, ["x"])
 
-    def test_weight_columns(self) -> None:
+    def test_weight_columns_all(self) -> None:
         df = pd.DataFrame({"id": [1], "x": [10], "w1": [1.0], "w2": [2.0]})
         sf = SampleFrame._create(
             df=df, id_column="id", covar_columns=["x"], weight_columns=["w1", "w2"]
         )
-        self.assertEqual(sf.weight_columns, ["w1", "w2"])
+        self.assertEqual(sf.weight_columns_all, ["w1", "w2"])
 
-    def test_weight_columns_returns_copy(self) -> None:
+    def test_weight_columns_all_returns_copy(self) -> None:
         df = pd.DataFrame({"id": [1], "x": [10], "w": [1.0]})
         sf = SampleFrame._create(
             df=df, id_column="id", covar_columns=["x"], weight_columns=["w"]
         )
-        result = sf.weight_columns
+        result = sf.weight_columns_all
         result.append("injected")
-        self.assertEqual(sf.weight_columns, ["w"])
+        self.assertEqual(sf.weight_columns_all, ["w"])
 
     def test_outcome_columns(self) -> None:
         df = pd.DataFrame({"id": [1], "x": [10], "w": [1.0], "y": [5]})
@@ -353,19 +353,19 @@ class TestSampleFrameColumnRoleProperties(BalanceTestCase):
         result.append("injected")
         self.assertEqual(sf.ignored_columns, ["region"])
 
-    def test_active_weight_column(self) -> None:
+    def test_weight_column(self) -> None:
         df = pd.DataFrame({"id": [1], "x": [10], "w": [1.0]})
         sf = SampleFrame._create(
             df=df, id_column="id", covar_columns=["x"], weight_columns=["w"]
         )
-        self.assertEqual(sf.active_weight_column, "w")
+        self.assertEqual(sf.weight_column, "w")
 
-    def test_active_weight_column_none(self) -> None:
+    def test_weight_column_none(self) -> None:
         df = pd.DataFrame({"id": [1], "x": [10]})
         sf = SampleFrame._create(
             df=df, id_column="id", covar_columns=["x"], weight_columns=[]
         )
-        self.assertIsNone(sf.active_weight_column)
+        self.assertIsNone(sf.weight_column)
 
     def test_id_column_name(self) -> None:
         df = pd.DataFrame({"my_id": ["a", "b"], "x": [10, 20], "w": [1.0, 1.0]})
@@ -576,7 +576,7 @@ class TestSampleFrameFromFrame(BalanceTestCase):
 
         # Weights should match
         pd.testing.assert_series_equal(
-            sample.weight_column, sf.df_weights.iloc[:, 0], check_names=False
+            sample.weight_series, sf.df_weights.iloc[:, 0], check_names=False
         )
 
         # IDs should match (both should be strings)
@@ -876,25 +876,25 @@ class TestSampleFrameBalanceDFSourceProtocol(BalanceTestCase):
         sf = self._make_sf()
         self.assertIsInstance(sf, BalanceDFSource)
 
-    def test_weight_column_returns_series(self) -> None:
+    def test_weight_series_returns_series(self) -> None:
         sf = self._make_sf()
-        wc = sf.weight_column
+        wc = sf.weight_series
         self.assertIsInstance(wc, pd.Series)
         self.assertEqual(wc.tolist(), [1.0, 2.0, 1.5])
 
-    def test_weight_column_returns_copy(self) -> None:
+    def test_weight_series_returns_copy(self) -> None:
         sf = self._make_sf()
-        wc = sf.weight_column
+        wc = sf.weight_series
         wc.iloc[0] = 999.0
-        self.assertAlmostEqual(sf.weight_column.iloc[0], 1.0, places=5)
+        self.assertAlmostEqual(sf.weight_series.iloc[0], 1.0, places=5)
 
-    def test_weight_column_no_active_raises(self) -> None:
+    def test_weight_series_no_active_raises(self) -> None:
         df = pd.DataFrame({"id": [1], "x": [10.0]})
         sf = SampleFrame._create(
             df=df, id_column="id", covar_columns=["x"], weight_columns=[]
         )
         with self.assertRaises(ValueError):
-            _ = sf.weight_column
+            _ = sf.weight_series
 
     def test_id_column_returns_series(self) -> None:
         sf = self._make_sf()
@@ -934,17 +934,17 @@ class TestSampleFrameBalanceDFSourceProtocol(BalanceTestCase):
     def test_set_weights_series(self) -> None:
         sf = self._make_sf()
         sf.set_weights(pd.Series([3.0, 4.0, 5.0]))
-        self.assertEqual(sf.weight_column.tolist(), [3.0, 4.0, 5.0])
+        self.assertEqual(sf.weight_series.tolist(), [3.0, 4.0, 5.0])
 
     def test_set_weights_float(self) -> None:
         sf = self._make_sf()
         sf.set_weights(2.5)
-        self.assertEqual(sf.weight_column.tolist(), [2.5, 2.5, 2.5])
+        self.assertEqual(sf.weight_series.tolist(), [2.5, 2.5, 2.5])
 
     def test_set_weights_none_resets_to_one(self) -> None:
         sf = self._make_sf()
         sf.set_weights(None)
-        self.assertEqual(sf.weight_column.tolist(), [1.0, 1.0, 1.0])
+        self.assertEqual(sf.weight_series.tolist(), [1.0, 1.0, 1.0])
 
     def test_set_weights_length_mismatch_raises(self) -> None:
         sf = self._make_sf()
@@ -998,7 +998,7 @@ class TestSampleFrameFromSample(BalanceTestCase):
         self.assertEqual(sf._id_column_name, "id")
         self.assertEqual(sf._column_roles["covars"], ["x"])
         self.assertEqual(sf._column_roles["weights"], ["weight"])
-        self.assertEqual(sf._active_weight_column, "weight")
+        self.assertEqual(sf._weight_column_name, "weight")
         self.assertEqual(len(sf._df), 3)
 
     def test_from_sample_with_outcomes(self) -> None:

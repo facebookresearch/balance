@@ -3420,7 +3420,7 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
                 self._data = pd.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
 
             @property
-            def weight_column(self) -> pd.Series:
+            def weight_series(self) -> pd.Series:
                 return pd.Series([1.0, 1.0, 1.0], name="w")
 
             @property
@@ -3463,7 +3463,7 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
                 self._data = pd.DataFrame({"a": [1.0, 2.0, 3.0], "b": [4.0, 5.0, 6.0]})
 
             @property
-            def weight_column(self) -> pd.Series:
+            def weight_series(self) -> pd.Series:
                 return pd.Series([1.0, 1.0, 1.0], name="w")
 
             @property
@@ -3494,7 +3494,7 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
         self.assertIn("id", df_with_ids.columns)
         self.assertEqual(list(df_with_ids["id"]), [10, 20, 30])
 
-        # Verify _weights works (accesses _sample.weight_column)
+        # Verify _weights works (accesses _sample.weight_series)
         weights = covars._weights
         self.assertIsNotNone(weights)
         self.assertEqual(len(weights), 3)
@@ -3506,7 +3506,7 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
             """Mock source for BalanceDFWeights testing."""
 
             @property
-            def weight_column(self) -> pd.Series:
+            def weight_series(self) -> pd.Series:
                 return pd.Series([1.0, 2.0, 3.0], name="w")
 
             @property
@@ -3540,7 +3540,7 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
             """Mock source with outcomes for BalanceDFOutcomes testing."""
 
             @property
-            def weight_column(self) -> pd.Series:
+            def weight_series(self) -> pd.Series:
                 return pd.Series([1.0, 1.0, 1.0], name="w")
 
             @property
