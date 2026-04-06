@@ -1810,6 +1810,52 @@ class TestBalanceFrameToSample(BalanceTestCase):
         )
 
 
+class TestBalanceFrameSetWeights(BalanceTestCase):
+    """Verify set_weights preserves is_adjusted when unadjusted."""
+
+    def test_set_weights_unadjusted_preserves_is_adjusted(self) -> None:
+        """set_weights on an unadjusted BalanceFrame should keep is_adjusted False."""
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]}),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        tgt_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["3", "4"], "x": [1.5, 2.5], "weight": [1.0, 1.0]}),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        bf = BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+        self.assertFalse(bf.is_adjusted)
+        bf.set_weights(2.0)
+        self.assertFalse(bf.is_adjusted)
+        # Verify the weights actually changed
+        self.assertEqual(_assert_type(bf.weight_series).tolist(), [2.0, 2.0])
+
+    def test_set_weights_adjusted_stays_adjusted(self) -> None:
+        """set_weights on an adjusted BalanceFrame should keep is_adjusted True."""
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]}),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        tgt_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["3", "4"], "x": [1.5, 2.5], "weight": [1.0, 1.0]}),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        bf = BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+        adjusted = bf.adjust(method="null")
+        self.assertTrue(adjusted.is_adjusted)
+        adjusted.set_weights(3.0)
+        self.assertTrue(adjusted.is_adjusted)
+        self.assertEqual(_assert_type(adjusted.weight_series).tolist(), [3.0, 3.0])
+
+
 class TestBalanceFrameRIndicator(BalanceTestCase):
     """Verify r_indicator() uses BalanceFrame's links, not SampleFrame._links."""
 
