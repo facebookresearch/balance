@@ -19,13 +19,13 @@ This release refactors the entire balance object model from a monolithic `Sample
 │                              │         │         │ __new__, from_frame, deepcopy,         │
 │                              │         │         │ backward-compat aliases only.          │
 ├──────────────────────────────┼─────────┼─────────┼───────────────────────────────────────┤
-│ balance_frame.py             │    0    │ 1922    │ NEW file. Adjustment orchestrator:     │
+│ balance_frame.py             │    0    │ 1921    │ NEW file. Adjustment orchestrator:     │
 │                              │ (new)   │         │ adjust, set_target, set_unadjusted,    │
 │                              │         │         │ covars/weights/outcomes factories,      │
 │                              │         │         │ summary, diagnostics, has_target,       │
 │                              │         │         │ is_adjusted, model, guard methods.      │
 ├──────────────────────────────┼─────────┼─────────┼───────────────────────────────────────┤
-│ sample_frame.py              │    0    │ 1376    │ NEW file. DataFrame container with     │
+│ sample_frame.py              │    0    │ 1379    │ NEW file. DataFrame container with     │
 │                              │ (new)   │         │ _column_roles dict, explicit           │
 │                              │         │         │ covar_columns param, column-role        │
 │                              │         │         │ metadata and BalanceDFSource protocol.  │
@@ -35,7 +35,7 @@ This release refactors the entire balance object model from a monolithic `Sample
 │                              │         │         │ BalanceDFSource protocol added,         │
 │                              │         │         │ links_override support, snake_case.     │
 ├──────────────────────────────┼─────────┼─────────┼───────────────────────────────────────┤
-│ summary_utils.py             │    0    │  553    │ NEW file. Extracted summary &          │
+│ summary_utils.py             │    0    │  554    │ NEW file. Extracted summary &          │
 │                              │ (new)   │         │ diagnostics builders (_build_summary,   │
 │                              │         │         │ _build_diagnostics) from sample_class.  │
 └──────────────────────────────┴─────────┴─────────┴───────────────────────────────────────┘
@@ -162,7 +162,7 @@ This release refactors the entire balance object model from a monolithic `Sample
                                       /        \
                     ┌─────────────────┐          ┌─────────────────┐
                     │   SampleFrame   │          │  BalanceFrame   │
-                    │  (1376 lines)   │          │  (1922 lines)   │
+                    │  (1379 lines)   │          │  (1921 lines)   │
                     │                 │          │                 │
                     │  DataFrame +    │◄─ ─ ─ ─ ┤  Adjustment     │
                     │  column-role    │ composes │  orchestrator   │
@@ -926,8 +926,8 @@ Purpose: Forces users to use Sample.from_frame() factory method.
 
 ### Additional Implementation Details
 
-**BalanceFrame.__new__ constructor** (lines 250-282 of balance_frame.py):
-(Note: BalanceFrame also has a no-op __init__ at lines 284-291.)
+**BalanceFrame.__new__ constructor** (lines 248-280 of balance_frame.py):
+(Note: BalanceFrame also has a no-op __init__ at lines 282-289.)
 
 BalanceFrame also has a `__new__` that supports both:
 - Public construction: `BalanceFrame(sample=sf)` → calls `_create(sample=sf)`
@@ -970,7 +970,7 @@ go through Sample, not directly to/from SampleFrame. For SampleFrame
 extraction, use `SampleFrame.from_sample(sample)` or `Sample.to_sample_frame()`.
 
 
-**summary_utils.py** (NEW, 553 lines):
+**summary_utils.py** (NEW, 554 lines):
 
 Extracted from sample_class.py. Contains `_build_summary()` and
 `_build_diagnostics()` — the two main functions that assemble human-readable
@@ -994,7 +994,7 @@ that previously accessed `._sample_frame` and `._balance_frame`:
 - `_balance_frame` (property): returns `self` if `has_target()`, else None.
   The setter is a no-op since Sample IS a BalanceFrame.
 
-**BalanceFrame backward-compat aliases** (balance_frame.py, lines 406-423):
+**BalanceFrame backward-compat aliases** (balance_frame.py, lines 404-421):
 
 Three read-only properties for old code that accessed `.responders`,
 `.target`, `.unadjusted`:
@@ -1004,7 +1004,7 @@ Three read-only properties for old code that accessed `.responders`,
 
 These are marked for removal in a future diff.
 
-**Large-target diagnostic warning** (balance_frame.py, lines 789-806):
+**Large-target diagnostic warning** (balance_frame.py, lines 788-805):
 
 `adjust()` detects when the target population is much larger than the sample
 (>10x and >100k rows) and emits a `logger.warning()` noting that in this regime
@@ -1012,7 +1012,7 @@ the target's contribution to variance becomes negligible, and standard errors
 will be driven almost entirely by the sample (similar to one-sample inference).
 This is a pre-adjustment diagnostic — it does NOT block the adjustment.
 
-**High-cardinality feature detection** (balance_frame.py, lines 808-848):
+**High-cardinality feature detection** (balance_frame.py, lines 807-847):
 
 `adjust()` detects high-cardinality features in both sample and target
 covariates before calling the weighting method. Uses
@@ -1028,18 +1028,18 @@ it does NOT block the adjustment.
 SampleFrame exposes a suite of weight-management methods that
 `_build_adjusted_frame()` relies on internally:
 - `add_weight_column(name, values, metadata)` — adds a new weight column
-  to `_df` and registers it in `_column_roles["weights"]` (lines 1204+)
+  to `_df` and registers it in `_column_roles["weights"]` (lines 1207+)
 - `set_active_weight(column_name)` — switches which weight column is
-  considered "active" (returned by `df_weights`) (lines 1139-1166)
+  considered "active" (returned by `df_weights`) (lines 1142-1169)
 - `rename_weight_column(old_name, new_name)` — renames a weight column in
   `_df`, `_column_roles`, `_weight_column_name`, and `_weight_metadata`
-  (lines 1168-1202)
+  (lines 1171-1205)
 - `set_weight_metadata(column, metadata)` — stores arbitrary provenance
-  metadata for a weight column (lines 1084-1114)
+  metadata for a weight column (lines 1087-1117)
 - `weight_metadata(column)` — retrieves metadata for a weight column
-  (lines 1116-1137)
+  (lines 1119-1140)
 
-**Unified weight history tracking** (`_build_adjusted_frame`, balance_frame.py lines 578-683):
+**Unified weight history tracking** (`_build_adjusted_frame`, balance_frame.py lines 577-682):
 
 `_build_adjusted_frame()` uses a unified weight history tracking approach.
 After each adjustment the SampleFrame accumulates weight columns:
@@ -1064,7 +1064,7 @@ For compound adjustments, `_sf_sample_pre_adjust` always points to the
 very first baseline (not the last step), and `_links["unadjusted"]`
 chains back through the full adjustment history.
 
-**_CallableBool.__mul__ / __rmul__** (balance_frame.py, lines 102-106):
+**_CallableBool.__mul__ / __rmul__** (balance_frame.py, lines 100-104):
 
 `_CallableBool` supports multiplication via `__mul__` and `__rmul__`,
 delegating to `self._value * other` and `other * self._value`. This
