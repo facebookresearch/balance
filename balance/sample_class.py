@@ -54,11 +54,6 @@ class Sample(BalanceFrame, SampleFrame):
 
     MRO: Sample → BalanceFrame → SampleFrame → object
 
-    Class attributes:
-        _RENAME_WEIGHT_ON_ADJUST: True — after adjust(), rename
-            "weight_adjusted" back to the original weight column name
-            so the public API always sees the original column.
-
     Attributes
     ----------
     id_column : pd.Series
@@ -66,8 +61,6 @@ class Sample(BalanceFrame, SampleFrame):
     weight_series : pd.Series
         a column representing the weights of the units in sample
     """
-
-    _RENAME_WEIGHT_ON_ADJUST: bool = True
 
     def __new__(
         cls,
