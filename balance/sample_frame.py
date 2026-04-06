@@ -332,7 +332,13 @@ class SampleFrame:
                 + null_weight_rows.to_string(index=False)
             )
 
-        if not np.issubdtype(_df[weight_column].dtype, np.number):
+        try:
+            is_numeric = np.issubdtype(_df[weight_column].dtype, np.number)
+        except TypeError:
+            # Extension dtypes (e.g. pandas StringDtype) can't be interpreted
+            # by np.issubdtype — treat them as non-numeric.
+            is_numeric = False
+        if not is_numeric:
             raise ValueError("Weights must be numeric")
 
         if any(_df[weight_column] < 0):
