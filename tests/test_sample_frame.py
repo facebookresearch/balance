@@ -985,6 +985,49 @@ class TestSampleFrameBalanceDFSourceProtocol(BalanceTestCase):
         sf.set_weights(weights, use_index=True)
         self.assertEqual(sf._df[sf._weight_column_name].dtype, np.float64)
 
+    def test_trim_returns_new_by_default(self) -> None:
+        """trim() returns a new SampleFrame, leaving original unchanged."""
+        sf = self._make_sf()
+        # Give extreme weights to make trimming visible
+        sf.set_weights(pd.Series([1.0, 1.0, 100.0]))
+        sf2 = sf.trim(ratio=2)
+        # Original unchanged
+        self.assertEqual(sf.weight_series.tolist(), [1.0, 1.0, 100.0])
+        # Trimmed copy has different weights
+        self.assertTrue(sf2.weight_series.max() < 100.0)
+        # History column present
+        self.assertIn("weight_trimmed_1", sf2._df.columns)
+        self.assertIn("weight_pre_adjust", sf2._df.columns)
+
+    def test_trim_in_place(self) -> None:
+        """trim(in_place=True) mutates self and returns self."""
+        sf = self._make_sf()
+        sf.set_weights(pd.Series([1.0, 1.0, 100.0]))
+        result = sf.trim(ratio=2, in_place=True)
+        self.assertIs(result, sf)
+        self.assertTrue(sf.weight_series.max() < 100.0)
+        self.assertIn("weight_trimmed_1", sf._df.columns)
+
+    def test_trim_global_action_number(self) -> None:
+        """trim after adjust uses global action counter."""
+        sf = self._make_sf()
+        sf.set_weights(pd.Series([1.0, 1.0, 100.0]))
+        # Simulate an adjust by adding weight_adjusted_1
+        sf.add_weight_column("weight_adjusted_1", sf.weight_series.copy())
+        sf2 = sf.trim(ratio=2)
+        # Should be weight_trimmed_2 (not _1, since adjusted_1 exists)
+        self.assertIn("weight_trimmed_2", sf2._df.columns)
+        self.assertNotIn("weight_trimmed_1", sf2._df.columns)
+
+    def test_trim_percentile(self) -> None:
+        """trim with percentile works."""
+        sf = self._make_sf()
+        sf.set_weights(pd.Series([1.0, 50.0, 100.0]))
+        sf2 = sf.trim(percentile=0.3, keep_sum_of_weights=False)
+        # Weights should be winsorized
+        self.assertTrue(sf2.weight_series.max() <= 100.0)
+        self.assertIn("weight_trimmed_1", sf2._df.columns)
+
     def test_links_returns_empty_dict(self) -> None:
         """SampleFrame._links is a read-only property that returns {}."""
         import copy

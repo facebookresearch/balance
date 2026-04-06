@@ -15,7 +15,6 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from balance import util as balance_util
-from balance.adjustment import trim_weights
 from balance.csv_utils import to_csv_with_defaults
 from balance.stats_and_plots import (
     general_stats,
@@ -46,7 +45,7 @@ class BalanceDFSource(Protocol):
     ``SampleFrame`` implement this protocol, allowing BalanceDF to work with
     either backing class without modification.
 
-    The six members below are the complete set of attributes and methods that
+    The seven members below are the complete set of attributes and methods that
     BalanceDF and its subclasses access on the backing object (``self._sample``).
     They were identified by auditing every ``self._sample.*`` access in
     ``balancedf_class.py``.
@@ -61,6 +60,7 @@ class BalanceDFSource(Protocol):
     Methods:
         _covar_columns: Return the covariate DataFrame.
         set_weights: Replace the active weight column.
+        trim: Trim extreme weights.
     """
 
     @property
@@ -82,8 +82,19 @@ class BalanceDFSource(Protocol):
     def _outcome_columns(self) -> pd.DataFrame | None:  # noqa: E704
         ...
 
-    def set_weights(self, weights: pd.Series | float | None, *, use_index: bool = False) -> None:  # noqa: E704
-        ...
+    def set_weights(  # noqa: E704
+        self, weights: pd.Series | float | None, *, use_index: bool = False
+    ) -> None: ...
+
+    def trim(  # noqa: E704
+        self,
+        ratio: float | int | None = None,
+        percentile: float | tuple[float, float] | None = None,
+        keep_sum_of_weights: bool = True,
+        target_sum_weights: float | int | np.floating | None = None,
+        *,
+        in_place: bool = False,
+    ) -> "BalanceDFSource": ...
 
 
 class BalanceDF:
@@ -3139,18 +3150,22 @@ class BalanceDFWeights(BalanceDF):
         percentile: float | None = None,
         keep_sum_of_weights: bool = True,
     ) -> None:
-        """Trim weights in the sample object.
+        """Trim weights in the backing sample object in-place.
 
-        Uses :func:`adjustments.trim_weights` for the weights trimming.
+        Delegates to :meth:`SampleFrame.trim` (or :meth:`BalanceFrame.trim`)
+        with ``in_place=True``, which adds a weight history column and
+        overwrites the active weight column.
 
         Args:
-            self (BalanceDFWeights): Object.
-            ratio (Optional[Union[float, int]], optional): Maps to weight_trimming_mean_ratio. Defaults to None.
-            percentile (Optional[float], optional): Maps to weight_trimming_percentile. Defaults to None.
-            keep_sum_of_weights (bool, optional): Maps to weight_trimming_percentile. Defaults to True.
+            ratio: Mean-ratio upper bound.  Mutually exclusive with
+                *percentile*.
+            percentile: Percentile(s) for winsorization.  Mutually exclusive
+                with *ratio*.
+            keep_sum_of_weights: Whether to rescale after trimming to
+                preserve the original sum of weights.
 
         Returns:
-            None. This function updates the :func:`_sample` using :func:`set_weights`
+            None. Mutates the backing sample's weights in-place.
 
         Examples:
         .. code-block:: python
@@ -3169,14 +3184,11 @@ class BalanceDFWeights(BalanceDF):
             sample.weights().df["weight"].max() <= 100.0
             # True
         """
-        # TODO: verify which object exactly gets updated - and explain it here.
-        self._sample.set_weights(
-            trim_weights(
-                self.df.iloc[:, 0],
-                weight_trimming_mean_ratio=ratio,
-                weight_trimming_percentile=percentile,
-                keep_sum_of_weights=keep_sum_of_weights,
-            )
+        self._sample.trim(
+            ratio=ratio,
+            percentile=percentile,
+            keep_sum_of_weights=keep_sum_of_weights,
+            in_place=True,
         )
 
     def summary(

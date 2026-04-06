@@ -14,15 +14,13 @@ from typing import Any, TYPE_CHECKING
 
 from balance.balance_frame import _CallableBool, BalanceFrame  # noqa: F401
 from balance.sample_frame import SampleFrame
-from balance.summary_utils import _concat_metric_val_var
 
 if TYPE_CHECKING:
     from typing import Self
 
 logger: logging.Logger = logging.getLogger(__package__)
 
-# Re-export _concat_metric_val_var so existing imports from this module still work
-__all__ = ["Sample", "_concat_metric_val_var", "_CallableBool"]
+__all__ = ["Sample", "_CallableBool"]
 
 # Allowed callers for Sample.__new__ stack inspection guard.
 _ALLOWED_CALLERS: frozenset[str] = frozenset(
