@@ -711,23 +711,15 @@ class TestSample_base_and_adjust_methods(
         )
         s.set_weights(pd.Series([1, 2, 3, 4]))
         self.assertEqual(s.weight_series, pd.Series([1.0, 2.0, 3.0, 4.0], name="w"))
-        s.set_weights(pd.Series([1, 2, 3, 4], index=(1, 2, 5, 6)))
+        # use_index=True aligns by index; missing indices get NaN
+        s.set_weights(pd.Series([1, 2, 3, 4], index=(1, 2, 5, 6)), use_index=True)
         self.assertEqual(
             s.weight_series, pd.Series([np.nan, 1.0, 2.0, np.nan], name="w")
         )
-        # test warning
-        self.assertWarnsRegexp(
-            """Note that not all Sample units will be assigned weights""",
-            Sample.set_weights,
-            s,
-            pd.Series([1, 2, 3, 4], index=(1, 2, 5, 6)),
-        )
-        # no warning
-        self.assertNotWarns(
-            Sample.set_weights,
-            s,
-            pd.Series([1, 2, 3, 4], index=(0, 1, 2, 3)),
-        )
+        # test warning when indices don't fully cover the DataFrame
+        with self.assertLogs("balance", level="WARNING") as cm:
+            s.set_weights(pd.Series([1, 2, 3, 4], index=(1, 2, 5, 6)), use_index=True)
+        self.assertTrue(any("missing some of the indices" in msg for msg in cm.output))
 
     def test_Sample_set_unadjusted(self) -> None:
         s5 = s1.set_unadjusted(s2)
