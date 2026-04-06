@@ -1007,7 +1007,7 @@ class TestBalanceFrameSummaryDiagnostics(BalanceTestCase):
 
 
 class TestBalanceFrameParityHelpers(BalanceTestCase):
-    """Tests for ignored_columns() and id_column parity methods."""
+    """Tests for df_ignored access and id_column parity methods."""
 
     def setUp(self) -> None:
         super().setUp()
@@ -1026,17 +1026,17 @@ class TestBalanceFrameParityHelpers(BalanceTestCase):
                 "weight": [1.0, 1.0, 1.0],
             }
         )
-        self.resp_sf = SampleFrame.from_frame(self.resp_df, ignore_columns=["region"])
+        self.resp_sf = SampleFrame.from_frame(self.resp_df, ignored_columns=["region"])
         self.tgt_sf = SampleFrame.from_frame(self.tgt_df)
         self.bf = BalanceFrame(sf_with_outcomes=self.resp_sf, sf_target=self.tgt_sf)
 
-    def test_ignored_columns_present(self) -> None:
-        result = self.bf.ignored_columns()
+    def test_df_ignored_present(self) -> None:
+        result = self.bf.responders.df_ignored
         self.assertIsNotNone(result)
         self.assertListEqual(list(result.columns), ["region"])
         self.assertListEqual(list(result["region"]), ["US", "UK", "CA"])
 
-    def test_ignored_columns_none(self) -> None:
+    def test_df_ignored_none(self) -> None:
         resp = SampleFrame.from_frame(
             pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]})
         )
@@ -1044,12 +1044,7 @@ class TestBalanceFrameParityHelpers(BalanceTestCase):
             pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]})
         )
         bf = BalanceFrame(sf_with_outcomes=resp, sf_target=tgt)
-        self.assertIsNone(bf.ignored_columns())
-
-    def test_ignored_columns_delegates_to_responders(self) -> None:
-        pd.testing.assert_frame_equal(
-            self.bf.ignored_columns(), self.bf.responders.ignored_columns()
-        )
+        self.assertIsNone(bf.responders.df_ignored)
 
     def test_id_column_returns_series(self) -> None:
         result = self.bf.id_column
