@@ -45,26 +45,26 @@ class TestBalanceFrameConstruction(BalanceTestCase):
         self.tgt_sf = SampleFrame.from_frame(self.tgt_df)
 
     def test_basic_construction(self) -> None:
-        bf = BalanceFrame(sample=self.resp_sf, sf_target=self.tgt_sf)
+        bf = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf)
         self.assertIsInstance(bf, BalanceFrame)
         self.assertIs(bf.responders, self.resp_sf)
         self.assertIs(bf.target, self.tgt_sf)
 
     def test_is_adjusted_false_on_creation(self) -> None:
-        bf = BalanceFrame(sample=self.resp_sf, sf_target=self.tgt_sf)
+        bf = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf)
         self.assertFalse(bf.is_adjusted)
 
     def test_unadjusted_none_on_creation(self) -> None:
-        bf = BalanceFrame(sample=self.resp_sf, sf_target=self.tgt_sf)
+        bf = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf)
         self.assertIsNone(bf.unadjusted)
 
     def test_model_none_on_creation(self) -> None:
-        bf = BalanceFrame(sample=self.resp_sf, sf_target=self.tgt_sf)
+        bf = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf)
         self.assertIsNone(bf.model)
 
     def test_missing_responders_raises(self) -> None:
         with self.assertRaises(TypeError):
-            BalanceFrame(sf_target=self.tgt_sf)
+            BalanceFrame(target=self.tgt_sf)
 
     def test_no_target_construction(self) -> None:
         bf = BalanceFrame(sample=self.resp_sf)
@@ -83,14 +83,14 @@ class TestBalanceFrameConstruction(BalanceTestCase):
         with self.assertRaises(TypeError):
             BalanceFrame._create(
                 sample="not a SampleFrame",  # pyre-ignore[6]
-                sf_target=self.tgt_sf,
+                target=self.tgt_sf,
             )
 
     def test_non_sampleframe_target_raises(self) -> None:
         with self.assertRaises(TypeError):
             BalanceFrame._create(
                 sample=self.resp_sf,
-                sf_target=pd.DataFrame(),  # pyre-ignore[6]
+                target=pd.DataFrame(),  # pyre-ignore[6]
             )
 
 
@@ -109,7 +109,7 @@ class TestBalanceFrameCovarOverlap(BalanceTestCase):
             weight_columns=["w"],
         )
         with self.assertRaises(ValueError) as ctx:
-            BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+            BalanceFrame(sample=resp_sf, target=tgt_sf)
         self.assertIn("no covariate columns", str(ctx.exception))
 
     def test_partial_overlap_warns(self) -> None:
@@ -126,7 +126,7 @@ class TestBalanceFrameCovarOverlap(BalanceTestCase):
             weight_columns=["w"],
         )
         with self.assertLogs("balance", level="WARNING") as cm:
-            bf = BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+            bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
         self.assertTrue(any("different covariate columns" in msg for msg in cm.output))
         self.assertIsInstance(bf, BalanceFrame)
 
@@ -146,7 +146,7 @@ class TestBalanceFrameCovarOverlap(BalanceTestCase):
         # Capture any balance logger warnings — there should be none
         with self.assertLogs("balance", level="INFO") as cm:
             logging.getLogger("balance").info("sentinel")
-            bf = BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+            bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
         warning_msgs = [m for m in cm.output if "WARNING" in m]
         self.assertEqual(len(warning_msgs), 0)
         self.assertIsInstance(bf, BalanceFrame)
@@ -166,7 +166,7 @@ class TestBalanceFrameDeepCopy(BalanceTestCase):
             covar_columns=["x"],
             weight_columns=["w"],
         )
-        bf = BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+        bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
         bf_copy = copy.deepcopy(bf)
         self.assertIsInstance(bf_copy, BalanceFrame)
         self.assertFalse(bf_copy.is_adjusted)
@@ -190,7 +190,7 @@ class TestBalanceFrameRepr(BalanceTestCase):
             covar_columns=["x"],
             weight_columns=["w"],
         )
-        bf = BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+        bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
         r = repr(bf)
         # New format uses Sample-style display
         self.assertIn("with target set", r)
@@ -211,7 +211,7 @@ class TestBalanceFrameRepr(BalanceTestCase):
             covar_columns=["x"],
             weight_columns=["w"],
         )
-        bf = BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+        bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
         # __repr__ includes __str__ output
         self.assertIn(str(bf), repr(bf))
 
@@ -231,7 +231,7 @@ class TestBalanceFrameCreateDirect(BalanceTestCase):
             covar_columns=["x"],
             weight_columns=["w"],
         )
-        bf = BalanceFrame._create(sample=resp_sf, sf_target=tgt_sf)
+        bf = BalanceFrame._create(sample=resp_sf, target=tgt_sf)
         self.assertIsInstance(bf, BalanceFrame)
         self.assertFalse(bf.is_adjusted)
 
@@ -252,7 +252,7 @@ class TestBalanceFrameCreateDirect(BalanceTestCase):
             covar_columns=["x"],
             weight_columns=["w"],
         )
-        bf = BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+        bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
         # Access all properties
         self.assertIsNotNone(bf.responders)
         self.assertIsNotNone(bf.target)
@@ -285,7 +285,7 @@ class TestBalanceFrameAdjust(BalanceTestCase):
         )
         self.resp_sf = SampleFrame.from_frame(resp_df, outcome_columns=["happiness"])
         self.tgt_sf = SampleFrame.from_frame(tgt_df, outcome_columns=["happiness"])
-        self.bf = BalanceFrame(sample=self.resp_sf, sf_target=self.tgt_sf)
+        self.bf = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf)
 
     def test_adjust_ipw(self) -> None:
         adjusted = self.bf.adjust(method="ipw")
@@ -552,7 +552,7 @@ class TestBalanceFrameSetTarget(BalanceTestCase):
         self.assertFalse(bf.has_target())
 
     def test_has_target_true_with_target(self) -> None:
-        bf = BalanceFrame(sample=self.resp_sf, sf_target=self.tgt_sf)
+        bf = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf)
         self.assertTrue(bf.has_target())
 
     def test_set_target_in_place(self) -> None:
@@ -570,7 +570,7 @@ class TestBalanceFrameSetTarget(BalanceTestCase):
         self.assertFalse(bf.has_target())
 
     def test_set_target_replaces_existing(self) -> None:
-        bf = BalanceFrame(sample=self.resp_sf, sf_target=self.tgt_sf)
+        bf = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf)
         tgt2_df = pd.DataFrame(
             {
                 "id": ["7", "8"],
@@ -584,7 +584,7 @@ class TestBalanceFrameSetTarget(BalanceTestCase):
         self.assertIs(bf.target, tgt2_sf)
 
     def test_set_target_resets_adjustment(self) -> None:
-        bf = BalanceFrame(sample=self.resp_sf, sf_target=self.tgt_sf)
+        bf = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf)
         adjusted = bf.adjust(method="null")
         self.assertTrue(adjusted.is_adjusted)
         # Replace target on the adjusted frame — should reset adjustment state
@@ -656,7 +656,7 @@ class TestBalanceFrameCovarsWeightsOutcomes(BalanceTestCase):
         )
         self.resp_sf = SampleFrame.from_frame(resp_df, outcome_columns=["happiness"])
         self.tgt_sf = SampleFrame.from_frame(tgt_df, outcome_columns=["happiness"])
-        self.bf = BalanceFrame(sample=self.resp_sf, sf_target=self.tgt_sf)
+        self.bf = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf)
 
     def test_covars_returns_balancedf_covars(self) -> None:
         from balance.balancedf_class import BalanceDFCovars
@@ -790,7 +790,7 @@ class TestBalanceFrameCovarsWeightsOutcomes(BalanceTestCase):
                 {"id": [4, 5, 6], "x": [15.0, 25.0, 35.0], "weight": [1.0, 1.0, 1.0]}
             )
         )
-        bf = BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+        bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
         self.assertIsNone(bf.outcomes())
 
     def test_outcomes_df(self) -> None:
@@ -844,7 +844,7 @@ class TestBalanceFrameCovarsWeightsOutcomes(BalanceTestCase):
         # --- New BalanceFrame API ---
         new_resp = SampleFrame.from_frame(sample_df, outcome_columns=["happiness"])
         new_tgt = SampleFrame.from_frame(target_df, outcome_columns=["happiness"])
-        new_bf = BalanceFrame(sample=new_resp, sf_target=new_tgt)
+        new_bf = BalanceFrame(sample=new_resp, target=new_tgt)
         new_adjusted = new_bf.adjust(method="ipw")
         new_covars_mean = new_adjusted.covars().mean()
         new_covars_asmd = new_adjusted.covars().asmd()
@@ -889,7 +889,7 @@ class TestBalanceFrameCovarsWeightsOutcomes(BalanceTestCase):
         # New API
         new_resp = SampleFrame.from_frame(sample_df, outcome_columns=["happiness"])
         new_tgt = SampleFrame.from_frame(target_df, outcome_columns=["happiness"])
-        new_adjusted = BalanceFrame(sample=new_resp, sf_target=new_tgt).adjust(
+        new_adjusted = BalanceFrame(sample=new_resp, target=new_tgt).adjust(
             method="ipw"
         )
         new_deff = new_adjusted.weights().design_effect()
@@ -924,7 +924,7 @@ class TestBalanceFrameSummaryDiagnostics(BalanceTestCase):
             outcome_columns=["y"],
         )
         tgt_sf = SampleFrame.from_frame(self.tgt_df)
-        self.bf = BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+        self.bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
         self.bf_adjusted = self.bf.adjust(method="null")
 
     # --- summary() tests ---
@@ -1049,7 +1049,7 @@ class TestBalanceFrameSummaryDiagnostics(BalanceTestCase):
 
         resp_sf = SampleFrame.from_frame(sample_df, outcome_columns=["happiness"])
         tgt_sf = SampleFrame.from_frame(target_head)
-        bf = BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+        bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
         bf_adjusted = bf.adjust(method="ipw")
 
         old_diag = old_adjusted.diagnostics()
@@ -1080,7 +1080,7 @@ class TestBalanceFrameSummaryDiagnostics(BalanceTestCase):
 
         resp_sf = SampleFrame.from_frame(sample_df, outcome_columns=["happiness"])
         tgt_sf = SampleFrame.from_frame(target_head)
-        bf = BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+        bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
         bf_adjusted = bf.adjust(method="ipw")
 
         self.assertEqual(old_adjusted.summary(), bf_adjusted.summary())
@@ -1133,7 +1133,7 @@ class TestBalanceFrameParityHelpers(BalanceTestCase):
         )
         self.resp_sf = SampleFrame.from_frame(self.resp_df, ignored_columns=["region"])
         self.tgt_sf = SampleFrame.from_frame(self.tgt_df)
-        self.bf = BalanceFrame(sample=self.resp_sf, sf_target=self.tgt_sf)
+        self.bf = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf)
 
     def test_df_ignored_present(self) -> None:
         result = self.bf.responders.df_ignored
@@ -1148,7 +1148,7 @@ class TestBalanceFrameParityHelpers(BalanceTestCase):
         tgt = SampleFrame.from_frame(
             pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]})
         )
-        bf = BalanceFrame(sample=resp, sf_target=tgt)
+        bf = BalanceFrame(sample=resp, target=tgt)
         self.assertIsNone(bf.responders.df_ignored)
 
     def test_id_column_returns_series(self) -> None:
@@ -1185,7 +1185,7 @@ class TestBalanceFrameDfExportFilter(BalanceTestCase):
         )
         self.resp_sf = SampleFrame.from_frame(self.resp_df, outcome_columns=["y"])
         self.tgt_sf = SampleFrame.from_frame(self.tgt_df)
-        self.bf = BalanceFrame(sample=self.resp_sf, sf_target=self.tgt_sf)
+        self.bf = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf)
         self.bf_adjusted = self.bf.adjust(method="null")
 
     # --- df_all property (combined view) ---
@@ -1277,7 +1277,7 @@ class TestBalanceFrameDfExportFilter(BalanceTestCase):
             covar_columns=["x1"],
             weight_columns=[],
         )
-        bf = BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+        bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
         filtered = bf.keep_only_some_rows_columns(columns_to_keep=["x1"])
         self.assertIn("x1", filtered.responders._df.columns)
         self.assertIn("id", filtered.responders._df.columns)
@@ -1340,7 +1340,7 @@ class TestBalanceFrameMissingIntegration(BalanceTestCase):
         )
         self.resp_sf = SampleFrame.from_frame(self.resp_df, outcome_columns=["y"])
         self.tgt_sf = SampleFrame.from_frame(self.tgt_df)
-        self.bf = BalanceFrame(sample=self.resp_sf, sf_target=self.tgt_sf)
+        self.bf = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf)
 
     def test_full_pipeline_adjust_summary_diagnostics_to_csv(self) -> None:
         """Full pipeline: adjust -> summary -> diagnostics -> to_csv all succeed."""
@@ -1459,7 +1459,7 @@ class TestBalanceFrameEndToEnd(BalanceTestCase):
         # --- New BalanceFrame API ---
         new_resp = SampleFrame.from_frame(sample_df, outcome_columns=["happiness"])
         new_tgt = SampleFrame.from_frame(target_df, outcome_columns=["happiness"])
-        new_bf = BalanceFrame(sample=new_resp, sf_target=new_tgt)
+        new_bf = BalanceFrame(sample=new_resp, target=new_tgt)
         new_adjusted = new_bf.adjust(method=method)
 
         # --- covars().mean() ---
@@ -1556,7 +1556,7 @@ class TestBalanceFrameEndToEnd(BalanceTestCase):
                 }
             ),
         )
-        bf = BalanceFrame(sample=resp, sf_target=tgt)
+        bf = BalanceFrame(sample=resp, target=tgt)
 
         mean_df = bf.covars().mean()
         self.assertEqual(mean_df.index.name, "source")
@@ -1584,7 +1584,7 @@ class TestBalanceFrameEndToEnd(BalanceTestCase):
                 }
             ),
         )
-        bf = BalanceFrame(sample=resp, sf_target=tgt)
+        bf = BalanceFrame(sample=resp, target=tgt)
         adjusted = bf.adjust(method="null")
 
         mean_df = adjusted.covars().mean()
@@ -1613,7 +1613,7 @@ class TestBalanceFrameEndToEnd(BalanceTestCase):
                 }
             ),
         )
-        bf = BalanceFrame(sample=resp, sf_target=tgt)
+        bf = BalanceFrame(sample=resp, target=tgt)
 
         original_weights = bf.responders.df_weights.copy()
 
@@ -1642,7 +1642,7 @@ class TestBalanceFrameEndToEnd(BalanceTestCase):
 
         resp = SampleFrame.from_frame(sample_df, outcome_columns=["happiness"])
         tgt = SampleFrame.from_frame(target_df, outcome_columns=["happiness"])
-        new_adjusted = BalanceFrame(sample=resp, sf_target=tgt).adjust(method="ipw")
+        new_adjusted = BalanceFrame(sample=resp, target=tgt).adjust(method="ipw")
 
         old_diag = old_adjusted.diagnostics()
         new_diag = new_adjusted.diagnostics()
@@ -1663,7 +1663,7 @@ class TestBalanceFrameEndToEnd(BalanceTestCase):
 
         resp = SampleFrame.from_frame(sample_df, outcome_columns=["happiness"])
         tgt = SampleFrame.from_frame(target_df, outcome_columns=["happiness"])
-        new_adjusted = BalanceFrame(sample=resp, sf_target=tgt).adjust(method="ipw")
+        new_adjusted = BalanceFrame(sample=resp, target=tgt).adjust(method="ipw")
 
         old_means = old_adjusted.covars().mean()
         new_means = new_adjusted.covars().mean()
@@ -1794,7 +1794,7 @@ class TestBalanceFrameToSample(BalanceTestCase):
         )
         self.resp_sf = SampleFrame.from_frame(self.resp_df)
         self.tgt_sf = SampleFrame.from_frame(self.tgt_df)
-        self.bf = BalanceFrame(sample=self.resp_sf, sf_target=self.tgt_sf)
+        self.bf = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf)
 
     def test_to_sample_has_target(self) -> None:
         s = self.bf.to_sample()
@@ -1844,7 +1844,7 @@ class TestBalanceFrameToSample(BalanceTestCase):
             }
         )
         resp_sf = SampleFrame.from_frame(resp_df, outcome_columns=["y"])
-        bf = BalanceFrame(sample=resp_sf, sf_target=self.tgt_sf)
+        bf = BalanceFrame(sample=resp_sf, target=self.tgt_sf)
         s = bf.to_sample()
         self.assertIsNotNone(s._outcome_columns)
         assert s._outcome_columns is not None
@@ -1932,7 +1932,7 @@ class TestBalanceFrameSetWeights(BalanceTestCase):
             weight_column="weight",
             standardize_types=False,
         )
-        bf = BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+        bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
         self.assertFalse(bf.is_adjusted)
         bf.set_weights(2.0)
         self.assertFalse(bf.is_adjusted)
@@ -1953,7 +1953,7 @@ class TestBalanceFrameSetWeights(BalanceTestCase):
             weight_column="weight",
             standardize_types=False,
         )
-        bf = BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+        bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
         adjusted = bf.adjust(method="null")
         self.assertTrue(adjusted.is_adjusted)
         adjusted.set_weights(3.0)
@@ -1974,7 +1974,7 @@ class TestBalanceFrameSetWeights(BalanceTestCase):
             weight_column="weight",
             standardize_types=False,
         )
-        bf = BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+        bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
         bf.set_weights(None)
         self.assertEqual(_assert_type(bf.weight_series).tolist(), [1.0, 1.0])
 
@@ -1992,7 +1992,7 @@ class TestBalanceFrameSetWeights(BalanceTestCase):
             weight_column="weight",
             standardize_types=False,
         )
-        bf = BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+        bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
         weights = pd.Series([5.0, 6.0], index=bf.df.index)
         bf.set_weights(weights, use_index=True)
         self.assertEqual(_assert_type(bf.weight_series).tolist(), [5.0, 6.0])
@@ -2022,7 +2022,7 @@ class TestBalanceFrameTrim(BalanceTestCase):
             weight_column="weight",
             standardize_types=False,
         )
-        return BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+        return BalanceFrame(sample=resp_sf, target=tgt_sf)
 
     def test_trim_returns_new_bf(self) -> None:
         bf = self._make_bf()
@@ -2105,7 +2105,7 @@ class TestBalanceFrameRIndicator(BalanceTestCase):
             weight_column="weight",
             standardize_types=False,
         )
-        bf = BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+        bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
         # This should work — the target is set via BalanceFrame's links.
         # Before the fix, this would raise ValueError because r_indicator
         # was accessing resp_sf._links directly (which has no target).
@@ -2132,7 +2132,7 @@ class TestBalanceFrameDiagnosticsNullMethod(BalanceTestCase):
             weight_column="weight",
             standardize_types=False,
         )
-        bf = BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+        bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
         adjusted = bf.adjust(method="null")
         # This previously crashed with _assert_type on None model_dict
         diag = adjusted.diagnostics()
@@ -2184,7 +2184,7 @@ class TestBalanceFrameEdgeCases(BalanceTestCase):
             weight_column="weight",
             standardize_types=False,
         )
-        return BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+        return BalanceFrame(sample=resp_sf, target=tgt_sf)
 
     def test_pickle_round_trip_unadjusted(self) -> None:
         """Pickle round-trip for unadjusted BalanceFrame."""
@@ -2248,5 +2248,5 @@ class TestBalanceFrameEdgeCases(BalanceTestCase):
             weight_column="weight",
             standardize_types=False,
         )
-        bf = BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+        bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
         self.assertEqual(bf.df.shape[0], 0)
