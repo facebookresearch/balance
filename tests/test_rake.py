@@ -20,6 +20,7 @@ import numpy as np
 import pandas as pd
 from balance import adjustment as balance_adjustment
 from balance.sample_class import Sample
+from balance.util import _assert_type
 from balance.weighting_methods.rake import (
     _find_lcm_of_array_lengths,
     _hare_niemeyer_allocation,
@@ -260,9 +261,9 @@ class Testrake(
 
         adjusted = rake(
             sample.covars().df,
-            sample.weight_column,
+            _assert_type(sample.weight_column),
             target.covars().df,
-            target.weight_column,
+            _assert_type(target.weight_column),
         )
 
         self.assertEqual(
@@ -294,16 +295,16 @@ class Testrake(
 
         baseline = rake(
             sample.covars().df,
-            sample.weight_column,
+            _assert_type(sample.weight_column),
             target.covars().df,
-            target.weight_column,
+            _assert_type(target.weight_column),
         )
 
         trimmed = rake(
             sample.covars().df,
-            sample.weight_column,
+            _assert_type(sample.weight_column),
             target.covars().df,
-            target.weight_column,
+            _assert_type(target.weight_column),
             weight_trimming_mean_ratio=1.0,
         )
 
@@ -339,16 +340,16 @@ class Testrake(
 
         baseline = rake(
             sample.covars().df,
-            sample.weight_column,
+            _assert_type(sample.weight_column),
             target.covars().df,
-            target.weight_column,
+            _assert_type(target.weight_column),
         )
 
         trimmed = rake(
             sample.covars().df,
-            sample.weight_column,
+            _assert_type(sample.weight_column),
             target.covars().df,
-            target.weight_column,
+            _assert_type(target.weight_column),
             weight_trimming_percentile=0.1,
         )
 
@@ -390,9 +391,9 @@ class Testrake(
 
         adjusted = rake(
             sample.covars().df,
-            sample.weight_column,
+            _assert_type(sample.weight_column),
             target.covars().df,
-            target.weight_column,
+            _assert_type(target.weight_column),
         )
 
         self.assertEqual(
@@ -429,9 +430,9 @@ class Testrake(
 
         adjusted = rake(
             sample.covars().df,
-            sample.weight_column,
+            _assert_type(sample.weight_column),
             target.covars().df,
-            target.weight_column,
+            _assert_type(target.weight_column),
         )
 
         self.assertEqual(round(sum(adjusted["weight"]), 2), 15.0)
@@ -476,7 +477,7 @@ class Testrake(
 
         adjusted = sample.adjust(method="rake", transformations=None, na_action="drop")
         self.assertEqual(
-            adjusted.weight_column.round(2),
+            _assert_type(adjusted.weight_column).round(2),
             pd.Series([1.67, 1.0, np.nan] * 6, name="weight"),
         )
 
@@ -491,7 +492,7 @@ class Testrake(
         )
 
         self.assertEqual(
-            adjusted.weight_column.round(2),
+            _assert_type(adjusted.weight_column).round(2),
             pd.Series([1.67, 1.0, 0.33] * 6, name="weight"),
         )
 
@@ -597,17 +598,17 @@ class Testrake(
 
         adjusted = rake(
             sample.covars().df,
-            sample.weight_column,
+            _assert_type(sample.weight_column),
             target.covars().df,
-            target.weight_column,
+            _assert_type(target.weight_column),
             variables=["a", "b"],
         )
 
         adjusted_two = rake(
             sample.covars().df,
-            sample.weight_column,
+            _assert_type(sample.weight_column),
             target.covars().df,
-            target.weight_column,
+            _assert_type(target.weight_column),
             variables=["b", "a"],
         )
 
@@ -667,13 +668,13 @@ class Testrake(
             sample_excess_levels.covars().df,
             sample_excess_levels.weight_column,
             target.covars().df,
-            target.weight_column,
+            _assert_type(target.weight_column),
         )
         self.assertWarnsRegexp(
             "'b' in sample is missing.*omega",
             rake,
             sample.covars().df,
-            sample.weight_column,
+            _assert_type(sample.weight_column),
             target_excess_levels.covars().df,
             target_excess_levels.weight_column,
         )
