@@ -42,6 +42,13 @@
   - `BalanceDFSource.weight_column` → `weight_series` — protocol accessor renamed.
   - All internal references updated across balance, graviton, and test files.
 
+- **Naming consistency: BalanceFrame internal attributes**
+  - `BalanceFrame._sf_with_outcomes` → `_sf_sample` — shorter, clearer.
+  - `BalanceFrame._sf_with_outcomes_pre_adjust` → `_sf_sample_pre_adjust`.
+  - `BalanceFrame(sf_with_outcomes=...)` constructor param → `sample=`.
+  - `BalanceFrame.id_column` and `weight_series` now delegate to `_sf_sample`
+    instead of caching redundant copies, removing stale-state risk.
+
 - **Refactored `Sample` to delegate to `SampleFrame` and `BalanceFrame` internally**
   - `Sample` is now a thin facade: `set_target()` creates a backing `BalanceFrame`,
     and `adjust()`, `summary()`, `diagnostics()`, `model()`, `is_adjusted`, and
@@ -77,10 +84,10 @@
 - **Added `BalanceFrame` — immutable adjustment orchestrator for survey weighting**
   - New class in `balance_frame.py` that pairs a responder `SampleFrame` with a
     target `SampleFrame` for survey/observational data reweighting.
-  - `__new__`-based constructor: `BalanceFrame(sf_with_outcomes=..., sf_target=...)` with
+  - `__new__`-based constructor: `BalanceFrame(sample=..., sf_target=...)` with
     covariate overlap validation.
   - `__new__`-based constructor now supports target-less construction:
-    `BalanceFrame(sf_with_outcomes=sf)` creates a BalanceFrame without a target.
+    `BalanceFrame(sample=sf)` creates a BalanceFrame without a target.
   - `set_target(target, in_place=True)`: set or replace the target population.
     When `in_place=True` (default), modifies and returns self; when `False`,
     returns a new BalanceFrame. Resets adjustment state when target changes.
