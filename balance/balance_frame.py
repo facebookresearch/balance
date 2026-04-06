@@ -577,7 +577,7 @@ class BalanceFrame:
             id_column=self._responders.id_column_name,
             weight_column=self._responders.active_weight_column,
             outcome_columns=self._responders.outcome_columns or None,
-            ignore_columns=self._responders.misc_columns or None,
+            ignore_columns=self._responders.ignore_columns or None,
             standardize_types=False,
         )
         target_sample = Sample.from_frame(
@@ -585,7 +585,7 @@ class BalanceFrame:
             id_column=target.id_column_name,
             weight_column=target.active_weight_column,
             outcome_columns=target.outcome_columns or None,
-            ignore_columns=target.misc_columns or None,
+            ignore_columns=target.ignore_columns or None,
             standardize_types=False,
         )
         result = resp_sample.set_target(target_sample)
@@ -596,7 +596,7 @@ class BalanceFrame:
                 id_column=self._unadjusted.id_column_name,
                 weight_column=self._unadjusted.active_weight_column,
                 outcome_columns=self._unadjusted.outcome_columns or None,
-                ignore_columns=self._unadjusted.misc_columns or None,
+                ignore_columns=self._unadjusted.ignore_columns or None,
                 standardize_types=False,
             )
             result._links["unadjusted"] = unadj_sample
@@ -952,7 +952,7 @@ class BalanceFrame:
             >>> resp = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0],
             ...                   "weight": [1.0, 1.0], "region": ["US", "UK"]}),
-            ...     misc_columns=["region"])
+            ...     ignore_columns=["region"])
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
             >>> bf = BalanceFrame(responders=resp, target=tgt)
@@ -1151,9 +1151,9 @@ class BalanceFrame:
                 sf._column_roles["predicted"] = [
                     c for c in sf._column_roles["predicted"] if c in keep_set
                 ]
-            if sf._column_roles["misc"]:
-                sf._column_roles["misc"] = [
-                    c for c in sf._column_roles["misc"] if c in keep_set
+            if sf._column_roles["ignored"]:
+                sf._column_roles["ignored"] = [
+                    c for c in sf._column_roles["ignored"] if c in keep_set
                 ]
 
         sf._df = df
