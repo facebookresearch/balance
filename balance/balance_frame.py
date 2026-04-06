@@ -332,8 +332,8 @@ class BalanceFrame:
         Raises:
             ValueError: If they share no covariate columns.
         """
-        resp_covars = set(responders.covars_columns)
-        target_covars = set(target.covars_columns)
+        resp_covars = set(responders.covar_columns)
+        target_covars = set(target.covar_columns)
         overlap = resp_covars & target_covars
         if len(overlap) == 0:
             raise ValueError(

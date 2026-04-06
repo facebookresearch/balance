@@ -99,13 +99,13 @@ class TestBalanceFrameCovarOverlap(BalanceTestCase):
         resp_sf = SampleFrame._create(
             df=pd.DataFrame({"id": [1], "a": [10.0], "w": [1.0]}),
             id_column="id",
-            covars_columns=["a"],
+            covar_columns=["a"],
             weight_columns=["w"],
         )
         tgt_sf = SampleFrame._create(
             df=pd.DataFrame({"id": [2], "b": [20.0], "w": [1.0]}),
             id_column="id",
-            covars_columns=["b"],
+            covar_columns=["b"],
             weight_columns=["w"],
         )
         with self.assertRaises(ValueError) as ctx:
@@ -116,13 +116,13 @@ class TestBalanceFrameCovarOverlap(BalanceTestCase):
         resp_sf = SampleFrame._create(
             df=pd.DataFrame({"id": [1], "x": [10.0], "a": [1.0], "w": [1.0]}),
             id_column="id",
-            covars_columns=["x", "a"],
+            covar_columns=["x", "a"],
             weight_columns=["w"],
         )
         tgt_sf = SampleFrame._create(
             df=pd.DataFrame({"id": [2], "x": [20.0], "b": [2.0], "w": [1.0]}),
             id_column="id",
-            covars_columns=["x", "b"],
+            covar_columns=["x", "b"],
             weight_columns=["w"],
         )
         with self.assertLogs("balance", level="WARNING") as cm:
@@ -134,13 +134,13 @@ class TestBalanceFrameCovarOverlap(BalanceTestCase):
         resp_sf = SampleFrame._create(
             df=pd.DataFrame({"id": [1], "x": [10.0], "w": [1.0]}),
             id_column="id",
-            covars_columns=["x"],
+            covar_columns=["x"],
             weight_columns=["w"],
         )
         tgt_sf = SampleFrame._create(
             df=pd.DataFrame({"id": [2], "x": [20.0], "w": [1.0]}),
             id_column="id",
-            covars_columns=["x"],
+            covar_columns=["x"],
             weight_columns=["w"],
         )
         # Capture any balance logger warnings — there should be none
@@ -157,13 +157,13 @@ class TestBalanceFrameDeepCopy(BalanceTestCase):
         resp_sf = SampleFrame._create(
             df=pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "w": [1.0, 1.0]}),
             id_column="id",
-            covars_columns=["x"],
+            covar_columns=["x"],
             weight_columns=["w"],
         )
         tgt_sf = SampleFrame._create(
             df=pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "w": [1.0, 1.0]}),
             id_column="id",
-            covars_columns=["x"],
+            covar_columns=["x"],
             weight_columns=["w"],
         )
         bf = BalanceFrame(sf_with_outcomes=resp_sf, sf_target=tgt_sf)
@@ -179,7 +179,7 @@ class TestBalanceFrameRepr(BalanceTestCase):
         resp_sf = SampleFrame._create(
             df=pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "w": [1.0, 1.0]}),
             id_column="id",
-            covars_columns=["x"],
+            covar_columns=["x"],
             weight_columns=["w"],
         )
         tgt_sf = SampleFrame._create(
@@ -187,7 +187,7 @@ class TestBalanceFrameRepr(BalanceTestCase):
                 {"id": [3, 4, 5], "x": [15.0, 25.0, 35.0], "w": [1.0, 1.0, 1.0]}
             ),
             id_column="id",
-            covars_columns=["x"],
+            covar_columns=["x"],
             weight_columns=["w"],
         )
         bf = BalanceFrame(sf_with_outcomes=resp_sf, sf_target=tgt_sf)
@@ -202,13 +202,13 @@ class TestBalanceFrameRepr(BalanceTestCase):
         resp_sf = SampleFrame._create(
             df=pd.DataFrame({"id": [1], "x": [10.0], "w": [1.0]}),
             id_column="id",
-            covars_columns=["x"],
+            covar_columns=["x"],
             weight_columns=["w"],
         )
         tgt_sf = SampleFrame._create(
             df=pd.DataFrame({"id": [2], "x": [20.0], "w": [1.0]}),
             id_column="id",
-            covars_columns=["x"],
+            covar_columns=["x"],
             weight_columns=["w"],
         )
         bf = BalanceFrame(sf_with_outcomes=resp_sf, sf_target=tgt_sf)
@@ -222,13 +222,13 @@ class TestBalanceFrameCreateDirect(BalanceTestCase):
         resp_sf = SampleFrame._create(
             df=pd.DataFrame({"id": [1], "x": [10.0], "w": [1.0]}),
             id_column="id",
-            covars_columns=["x"],
+            covar_columns=["x"],
             weight_columns=["w"],
         )
         tgt_sf = SampleFrame._create(
             df=pd.DataFrame({"id": [2], "x": [20.0], "w": [1.0]}),
             id_column="id",
-            covars_columns=["x"],
+            covar_columns=["x"],
             weight_columns=["w"],
         )
         bf = BalanceFrame._create(sf_with_outcomes=resp_sf, sf_target=tgt_sf)
@@ -242,14 +242,14 @@ class TestBalanceFrameCreateDirect(BalanceTestCase):
                 {"id": [1, 2], "x": [10.0, 20.0], "y": [1.0, 0.0], "w": [1.0, 2.0]}
             ),
             id_column="id",
-            covars_columns=["x"],
+            covar_columns=["x"],
             weight_columns=["w"],
             outcome_columns=["y"],
         )
         tgt_sf = SampleFrame._create(
             df=pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "w": [1.0, 1.0]}),
             id_column="id",
-            covars_columns=["x"],
+            covar_columns=["x"],
             weight_columns=["w"],
         )
         bf = BalanceFrame(sf_with_outcomes=resp_sf, sf_target=tgt_sf)
@@ -507,7 +507,7 @@ class TestBalanceFrameSetTarget(BalanceTestCase):
         bad_tgt = SampleFrame._create(
             df=pd.DataFrame({"id": [1], "z": [10.0], "w": [1.0]}),
             id_column="id",
-            covars_columns=["z"],
+            covar_columns=["z"],
             weight_columns=["w"],
         )
         with self.assertRaises(ValueError) as ctx:
@@ -1168,13 +1168,13 @@ class TestBalanceFrameDfExportFilter(BalanceTestCase):
         resp_sf = SampleFrame._create(
             df=pd.DataFrame({"id": ["1", "2"], "x1": [10.0, 20.0]}),
             id_column="id",
-            covars_columns=["x1"],
+            covar_columns=["x1"],
             weight_columns=[],
         )
         tgt_sf = SampleFrame._create(
             df=pd.DataFrame({"id": ["3", "4"], "x1": [15.0, 25.0]}),
             id_column="id",
-            covars_columns=["x1"],
+            covar_columns=["x1"],
             weight_columns=[],
         )
         bf = BalanceFrame(sf_with_outcomes=resp_sf, sf_target=tgt_sf)
