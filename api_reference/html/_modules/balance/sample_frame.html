@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>balance.sample_frame &#8212; balance  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=29da98fa" />
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../balance.html" accesskey="U">balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.sample_frame</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for balance.sample_frame</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) Meta Platforms, Inc. and affiliates.</span>
+<span class="c1">#</span>
+<span class="c1"># This source code is licensed under the MIT license found in the</span>
+<span class="c1"># LICENSE file in the root directory of this source tree.</span>
+
+<span class="c1"># pyre-strict</span>
+
+<span class="sd">&quot;&quot;&quot;SampleFrame: an explicit-role DataFrame container for the Balance library.</span>
+
+<span class="sd">Stores covariates, weights, outcomes, predicted, and ignored columns with</span>
+<span class="sd">explicit role metadata, replacing the inference-by-exclusion pattern used</span>
+<span class="sd">in the legacy Sample class.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Self</span>
+
+    <span class="kn">from</span><span class="w"> </span><span class="nn">balance.balancedf_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceDFSource</span>  <span class="c1"># noqa: F401</span>
+
+
+<span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="SampleFrame">
+<a class="viewcode-back" href="../../balance.sample_frame.html#balance.sample_frame.SampleFrame">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SampleFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A DataFrame container with explicit column-role metadata.</span>
+
+<span class="sd">    SampleFrame stores data as a single internal pd.DataFrame but with</span>
+<span class="sd">    explicit metadata tracking which columns belong to which role:</span>
+<span class="sd">    covars (X), weights (W), outcomes (Y), predicted_outcomes (Y_hat), ignored.</span>
+
+<span class="sd">    Must be constructed via SampleFrame.from_frame() or SampleFrame.from_sample().</span>
+
+<span class="sd">    Mutability:</span>
+<span class="sd">        SampleFrame is mostly-immutable at the data level.  The underlying</span>
+<span class="sd">        DataFrame and column-role assignments are set at construction time and</span>
+<span class="sd">        are not replaced afterwards.  All data-access properties (e.g.</span>
+<span class="sd">        ``df_covars``, ``df_weights``) return *copies*, so callers cannot</span>
+<span class="sd">        mutate internal state through the returned objects.</span>
+
+<span class="sd">        Controlled mutation points (methods that intentionally modify the</span>
+<span class="sd">        instance in-place):</span>
+
+<span class="sd">        * ``set_active_weight()`` — changes which weight column is active.</span>
+<span class="sd">        * ``add_weight_column()`` — appends a new weight column to the frame.</span>
+<span class="sd">        * ``set_weight_metadata()`` — updates weight provenance metadata.</span>
+
+<span class="sd">        These mutations are intentional and expected as part of normal usage</span>
+<span class="sd">        (e.g. after calling ``BalanceFrame.adjust()``).  Outside of these</span>
+<span class="sd">        methods the object behaves as immutable.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># pyre-fixme[13]: Initialized in _create() which bypasses __init__</span>
+    <span class="n">_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
+    <span class="c1"># pyre-fixme[13]: Initialized in _create() which bypasses __init__</span>
+    <span class="n">_id_column_name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="c1"># pyre-fixme[13]: Initialized in _create() which bypasses __init__</span>
+    <span class="n">_column_roles</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span>
+    <span class="c1"># pyre-fixme[13]: Initialized in _create() which bypasses __init__</span>
+    <span class="n">_weight_column_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="c1"># pyre-fixme[13]: Initialized in _create() which bypasses __init__</span>
+    <span class="n">_weight_metadata</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="c1"># pyre-fixme[13]: Initialized in _create() which bypasses __init__</span>
+    <span class="n">_links</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="c1"># pyre-fixme[13]: Initialized in _create() which bypasses __init__</span>
+    <span class="n">_df_dtypes</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="c1"># SampleFrame is a single-DataFrame container and does NOT manage</span>
+    <span class="c1"># multi-sample relationships.  _links is initialised to an empty dict</span>
+    <span class="c1"># in _create() to satisfy the BalanceDFSource protocol.  BalanceFrame</span>
+    <span class="c1"># overrides _links with a defaultdict(list) in its own _create().</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the number of rows in the SampleFrame.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Number of rows in the underlying DataFrame.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df, id_column=&quot;id&quot;, weight_column=&quot;w&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; len(sf)</span>
+<span class="sd">            3</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__deepcopy__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memo</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">SampleFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return an independent deep copy of this SampleFrame.</span>
+
+<span class="sd">        Uses :meth:`_create` to produce a new instance with deep-copied</span>
+<span class="sd">        data.  All column-role metadata, weight metadata, and prediction</span>
+<span class="sd">        metadata are also copied.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            memo: The memoisation dictionary passed by :func:`copy.deepcopy`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            SampleFrame: A new SampleFrame that shares no mutable state with</span>
+<span class="sd">            the original.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import copy</span>
+<span class="sd">            &gt;&gt;&gt; sf2 = copy.deepcopy(sf)</span>
+<span class="sd">            &gt;&gt;&gt; sf2._df is sf._df</span>
+<span class="sd">            False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">new_instance</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="n">memo</span><span class="p">[</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)]</span> <span class="o">=</span> <span class="n">new_instance</span>
+        <span class="n">new_instance</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">new_instance</span><span class="o">.</span><span class="n">_id_column_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id_column_name</span>
+        <span class="n">new_instance</span><span class="o">.</span><span class="n">_column_roles</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">,</span> <span class="n">memo</span><span class="p">)</span>
+        <span class="n">new_instance</span><span class="o">.</span><span class="n">_weight_column_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight_column_name</span>
+        <span class="n">new_instance</span><span class="o">.</span><span class="n">_weight_metadata</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weight_metadata</span><span class="p">,</span> <span class="n">memo</span><span class="p">)</span>
+        <span class="n">new_instance</span><span class="o">.</span><span class="n">_links</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_links&quot;</span><span class="p">,</span> <span class="p">{}),</span> <span class="n">memo</span><span class="p">)</span>
+        <span class="n">_df_dtypes</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_df_dtypes&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">new_instance</span><span class="o">.</span><span class="n">_df_dtypes</span> <span class="o">=</span> <span class="n">_df_dtypes</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">if</span> <span class="n">_df_dtypes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">new_instance</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">covar_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">weight_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">outcome_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">predicted_outcome_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">ignored_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">_skip_copy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">_df_dtypes</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SampleFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Internal factory method. Use from_frame() instead.&quot;&quot;&quot;</span>
+        <span class="n">instance</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="n">df</span> <span class="k">if</span> <span class="n">_skip_copy</span> <span class="k">else</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">_id_column_name</span> <span class="o">=</span> <span class="n">id_column</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">_column_roles</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;covars&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">covar_columns</span><span class="p">),</span>
+            <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">weight_columns</span><span class="p">),</span>
+            <span class="s2">&quot;outcomes&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">outcome_columns</span> <span class="ow">or</span> <span class="p">[]),</span>
+            <span class="s2">&quot;predicted&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">predicted_outcome_columns</span> <span class="ow">or</span> <span class="p">[]),</span>
+            <span class="s2">&quot;ignored&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">ignored_columns</span> <span class="ow">or</span> <span class="p">[]),</span>
+        <span class="p">}</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">_weight_column_name</span> <span class="o">=</span> <span class="n">weight_columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">weight_columns</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="c1"># Defaults; set via set_weight_metadata() etc.</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">_weight_metadata</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">_links</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">_df_dtypes</span> <span class="o">=</span> <span class="n">_df_dtypes</span>
+        <span class="k">return</span> <span class="n">instance</span>
+
+    <span class="c1"># --- Construction ---</span>
+
+<div class="viewcode-block" id="SampleFrame.from_frame">
+<a class="viewcode-back" href="../../balance.sample_frame.html#balance.sample_frame.SampleFrame.from_frame">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_frame</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">covar_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">weight_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">outcome_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">predicted_outcome_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">ignored_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">check_id_uniqueness</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">standardize_types</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">use_deepcopy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">id_column_candidates</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SampleFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a SampleFrame from a pandas DataFrame with auto-detection.</span>
+
+<span class="sd">        Infers id, weight, and covariate columns from column names when not</span>
+<span class="sd">        explicitly provided.  Validates the data (e.g., unique IDs,</span>
+<span class="sd">        non-negative weights) and standardizes dtypes (Int64 -&gt; float64,</span>
+<span class="sd">        pd.NA -&gt; np.nan).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            df (pd.DataFrame): The input DataFrame containing survey or</span>
+<span class="sd">                observational data.</span>
+<span class="sd">            id_column (str, optional): Name of the column to use as row</span>
+<span class="sd">                identifier. If None, guessed from common names</span>
+<span class="sd">                (``&quot;id&quot;``, ``&quot;ID&quot;``, etc.).</span>
+<span class="sd">            covar_columns (list of str, optional): Explicit list of covariate</span>
+<span class="sd">                column names. If None, inferred by exclusion (all columns</span>
+<span class="sd">                minus id, weight, outcome, predicted, and ignored columns).</span>
+<span class="sd">            weight_column (str, optional): Name of the column containing</span>
+<span class="sd">                sampling weights. If None, guesses ``&quot;weight&quot;``/``&quot;weights&quot;``</span>
+<span class="sd">                or creates one filled with 1.0.</span>
+<span class="sd">            outcome_columns (list of str or str, optional): Column names to</span>
+<span class="sd">                treat as outcome variables.</span>
+<span class="sd">            predicted_outcome_columns (list of str or str, optional): Column</span>
+<span class="sd">                names to treat as predicted outcome variables.</span>
+<span class="sd">            ignored_columns (list of str or str, optional): Column names to</span>
+<span class="sd">                ignore (excluded from covariates).</span>
+<span class="sd">            check_id_uniqueness (bool): Whether to verify id uniqueness.</span>
+<span class="sd">                Defaults to True.</span>
+<span class="sd">            standardize_types (bool): Whether to standardize dtypes.</span>
+<span class="sd">                Defaults to True.</span>
+<span class="sd">            use_deepcopy (bool): Whether to deep-copy the input DataFrame.</span>
+<span class="sd">                Defaults to True.</span>
+<span class="sd">            id_column_candidates (list of str, optional): Candidate id column</span>
+<span class="sd">                names to try when ``id_column`` is None.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            SampleFrame: A validated SampleFrame with standardized dtypes.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the id column contains nulls or duplicates, if the</span>
+<span class="sd">                weight column contains nulls or negative values, or if</span>
+<span class="sd">                specified outcome/predicted/ignore columns are missing from the</span>
+<span class="sd">                DataFrame.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [1, 2, 3], &quot;weight&quot;: [1.0, 2.0, 1.5],</span>
+<span class="sd">            ...                    &quot;age&quot;: [25, 30, 35], &quot;income&quot;: [50000, 60000, 70000]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df)</span>
+<span class="sd">            &gt;&gt;&gt; list(sf.df_covars.columns)</span>
+<span class="sd">            [&#39;age&#39;, &#39;income&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">_pd_convert_all_types</span><span class="p">,</span>
+            <span class="n">_safe_fillna_and_infer</span><span class="p">,</span>
+            <span class="n">_warn_of_df_dtypes_change</span><span class="p">,</span>
+            <span class="n">guess_id_column</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Normalize string inputs to lists</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">outcome_columns</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">outcome_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">outcome_columns</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">predicted_outcome_columns</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">predicted_outcome_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">predicted_outcome_columns</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ignored_columns</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">ignored_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">ignored_columns</span><span class="p">]</span>
+
+        <span class="c1"># Deep copy</span>
+        <span class="n">df_dtypes</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">dtypes</span>
+        <span class="k">if</span> <span class="n">use_deepcopy</span><span class="p">:</span>
+            <span class="n">_df</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_df</span> <span class="o">=</span> <span class="n">df</span>
+
+        <span class="c1"># --- Duplicate column check ---</span>
+        <span class="n">dup_mask</span> <span class="o">=</span> <span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">duplicated</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">dup_mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="n">dup_names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">dup_mask</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;DataFrame has duplicate column names: </span><span class="si">{</span><span class="n">dup_names</span><span class="si">}</span><span class="s2">. &quot;</span>
+                <span class="s2">&quot;Please rename columns to be unique before creating a SampleFrame.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># --- ID column ---</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">id_col_name</span> <span class="o">=</span> <span class="n">guess_id_column</span><span class="p">(</span>
+                <span class="n">df</span><span class="p">,</span> <span class="n">id_column</span><span class="p">,</span> <span class="n">possible_id_columns</span><span class="o">=</span><span class="n">id_column_candidates</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="nb">type</span><span class="p">(</span><span class="n">exc</span><span class="p">)(</span>
+                <span class="s2">&quot;Error while inferring id_column from DataFrame. Specify a valid &quot;</span>
+                <span class="s2">&quot;&#39;id_column&#39; or provide &#39;id_column_candidates&#39;. Original error: &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">_df</span><span class="p">[</span><span class="n">id_col_name</span><span class="p">]</span><span class="o">.</span><span class="n">isnull</span><span class="p">()):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Null values are not allowed in the id_column&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">_df</span><span class="p">[</span><span class="n">id_col_name</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Casting id column to string&quot;</span><span class="p">)</span>
+            <span class="n">_df</span><span class="p">[</span><span class="n">id_col_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">_df</span><span class="p">[</span><span class="n">id_col_name</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">check_id_uniqueness</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="n">_df</span><span class="p">[</span><span class="n">id_col_name</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">_df</span><span class="p">[</span><span class="n">id_col_name</span><span class="p">])</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Values in the id_column must be unique&quot;</span><span class="p">)</span>
+
+        <span class="c1"># --- Type standardization ---</span>
+        <span class="k">if</span> <span class="n">standardize_types</span><span class="p">:</span>
+            <span class="n">input_type</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Int64&quot;</span><span class="p">,</span> <span class="s2">&quot;Int32&quot;</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">,</span> <span class="s2">&quot;int32&quot;</span><span class="p">,</span> <span class="s2">&quot;int16&quot;</span><span class="p">,</span> <span class="s2">&quot;int8&quot;</span><span class="p">]</span>
+            <span class="n">output_type</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="s2">&quot;float64&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;float32&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;float64&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;float32&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;float16&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;float16&quot;</span><span class="p">,</span>
+            <span class="p">]</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">importlib.metadata</span><span class="w"> </span><span class="kn">import</span> <span class="n">version</span> <span class="k">as</span> <span class="n">importlib_version</span>
+
+            <span class="kn">from</span><span class="w"> </span><span class="nn">packaging.version</span><span class="w"> </span><span class="kn">import</span> <span class="n">Version</span>
+
+            <span class="k">if</span> <span class="n">Version</span><span class="p">(</span><span class="n">importlib_version</span><span class="p">(</span><span class="s2">&quot;pandas&quot;</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">Version</span><span class="p">(</span><span class="s2">&quot;3.0&quot;</span><span class="p">):</span>
+                <span class="n">input_type</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;string&quot;</span><span class="p">)</span>
+                <span class="n">output_type</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;object&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i_input</span><span class="p">,</span> <span class="n">i_output</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">input_type</span><span class="p">,</span> <span class="n">output_type</span><span class="p">):</span>
+                <span class="n">_df</span> <span class="o">=</span> <span class="n">_pd_convert_all_types</span><span class="p">(</span><span class="n">_df</span><span class="p">,</span> <span class="n">i_input</span><span class="p">,</span> <span class="n">i_output</span><span class="p">)</span>
+
+            <span class="n">_df</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">_safe_fillna_and_infer</span><span class="p">(</span><span class="n">_df</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">))</span>
+
+            <span class="n">_warn_of_df_dtypes_change</span><span class="p">(</span>
+                <span class="n">df_dtypes</span><span class="p">,</span>
+                <span class="n">_df</span><span class="o">.</span><span class="n">dtypes</span><span class="p">,</span>
+                <span class="s2">&quot;df&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;SampleFrame._df&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="c1"># --- Weight column ---</span>
+        <span class="k">if</span> <span class="n">weight_column</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;weight&quot;</span> <span class="ow">in</span> <span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Guessing weight column is &#39;weight&#39;&quot;</span><span class="p">)</span>
+                <span class="n">weight_column</span> <span class="o">=</span> <span class="s2">&quot;weight&quot;</span>
+            <span class="k">elif</span> <span class="s2">&quot;weights&quot;</span> <span class="ow">in</span> <span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Guessing weight column is &#39;weights&#39;&quot;</span><span class="p">)</span>
+                <span class="n">weight_column</span> <span class="o">=</span> <span class="s2">&quot;weights&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;No weights passed. Adding a &#39;weight&#39; column and setting all values to 1&quot;</span>
+                <span class="p">)</span>
+                <span class="n">weight_column</span> <span class="o">=</span> <span class="s2">&quot;weight&quot;</span>
+                <span class="k">if</span> <span class="n">standardize_types</span><span class="p">:</span>
+                    <span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">weight_column</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">weight_column</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="c1"># Validate weights</span>
+        <span class="n">null_weights</span> <span class="o">=</span> <span class="n">_df</span><span class="p">[</span><span class="n">weight_column</span><span class="p">]</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">null_weights</span><span class="p">):</span>
+            <span class="n">null_weight_rows</span> <span class="o">=</span> <span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">null_weights</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+            <span class="n">null_weight_rows_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">null_weights</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Null values (including None) are not allowed in the weight_column. &quot;</span>
+                <span class="s2">&quot;If you wish to remove an observation, either remove it from the df, or use a weight of 0. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="n">null_weight_rows_count</span><span class="si">}</span><span class="s2"> row(s) with null weights. Preview (up to 5 rows):</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="o">+</span> <span class="n">null_weight_rows</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">is_numeric</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">_df</span><span class="p">[</span><span class="n">weight_column</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="c1"># Extension dtypes (e.g. pandas StringDtype) can&#39;t be interpreted</span>
+            <span class="c1"># by np.issubdtype — treat them as non-numeric.</span>
+            <span class="n">is_numeric</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_numeric</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Weights must be numeric&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">_df</span><span class="p">[</span><span class="n">weight_column</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Weights must be non-negative&quot;</span><span class="p">)</span>
+
+        <span class="c1"># --- Outcome columns validation ---</span>
+        <span class="n">outcome_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">outcome_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">outcome_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">outcome_columns</span><span class="p">)</span>
+            <span class="n">missing_outcome</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">outcome_list</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">missing_outcome</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;outcome columns </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">missing_outcome</span><span class="p">)</span><span class="si">}</span><span class="s2"> not in df columns </span><span class="si">{</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+        <span class="c1"># --- Predicted outcome columns validation ---</span>
+        <span class="n">predicted_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">predicted_outcome_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">predicted_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">predicted_outcome_columns</span><span class="p">)</span>
+            <span class="n">missing_predicted</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">predicted_list</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">missing_predicted</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;predicted outcome columns </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">missing_predicted</span><span class="p">)</span><span class="si">}</span><span class="s2"> not in df columns </span><span class="si">{</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+        <span class="c1"># --- Ignore columns validation ---</span>
+        <span class="n">ignore_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">ignored_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ignore_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">ignored_columns</span><span class="p">))</span>  <span class="c1"># deduplicate</span>
+            <span class="n">missing_ignore</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">ignore_list</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">missing_ignore</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;ignore columns </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">missing_ignore</span><span class="p">)</span><span class="si">}</span><span class="s2"> not in df columns </span><span class="si">{</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="c1"># ignored_columns must not overlap with id/weight columns</span>
+            <span class="n">reserved</span> <span class="o">=</span> <span class="p">{</span><span class="n">id_col_name</span><span class="p">,</span> <span class="n">weight_column</span><span class="p">}</span> <span class="o">-</span> <span class="p">{</span><span class="kc">None</span><span class="p">}</span>
+            <span class="n">overlap_reserved</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">ignore_list</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">reserved</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">overlap_reserved</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;ignore columns cannot include id/weight columns: </span><span class="si">{</span><span class="n">overlap_reserved</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+        <span class="c1"># --- Covariate columns ---</span>
+        <span class="k">if</span> <span class="n">covar_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">covar_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">covar_columns</span><span class="p">)</span>
+            <span class="n">missing_covars</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">covar_list</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">missing_covars</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;covariate columns </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">missing_covars</span><span class="p">)</span><span class="si">}</span><span class="s2"> not in df columns </span><span class="si">{</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Infer by exclusion</span>
+            <span class="n">ignored</span> <span class="o">=</span> <span class="p">(</span><span class="n">predicted_list</span> <span class="ow">or</span> <span class="p">[])</span> <span class="o">+</span> <span class="p">(</span><span class="n">ignore_list</span> <span class="ow">or</span> <span class="p">[])</span>
+            <span class="n">special</span> <span class="o">=</span> <span class="p">{</span><span class="n">id_col_name</span><span class="p">,</span> <span class="n">weight_column</span><span class="p">}</span>
+            <span class="n">special</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">outcome_list</span> <span class="ow">or</span> <span class="p">[])</span>
+            <span class="n">special</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">ignored</span> <span class="ow">or</span> <span class="p">[])</span>
+            <span class="n">covar_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">_df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">special</span><span class="p">]</span>
+
+        <span class="c1"># --- Column role overlap validation ---</span>
+        <span class="n">role_to_columns</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;covars&quot;</span><span class="p">:</span> <span class="n">covar_list</span><span class="p">,</span>
+            <span class="s2">&quot;outcomes&quot;</span><span class="p">:</span> <span class="n">outcome_list</span> <span class="ow">or</span> <span class="p">[],</span>
+            <span class="s2">&quot;predicted&quot;</span><span class="p">:</span> <span class="n">predicted_list</span> <span class="ow">or</span> <span class="p">[],</span>
+            <span class="s2">&quot;ignored&quot;</span><span class="p">:</span> <span class="n">ignore_list</span> <span class="ow">or</span> <span class="p">[],</span>
+        <span class="p">}</span>
+        <span class="n">roles</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">role_to_columns</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">roles</span><span class="p">)):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">roles</span><span class="p">)):</span>
+                <span class="n">role_a</span><span class="p">,</span> <span class="n">role_b</span> <span class="o">=</span> <span class="n">roles</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">roles</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                <span class="n">overlap</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">role_to_columns</span><span class="p">[</span><span class="n">role_a</span><span class="p">])</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">role_to_columns</span><span class="p">[</span><span class="n">role_b</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">overlap</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Column(s) </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">overlap</span><span class="p">)</span><span class="si">!r}</span><span class="s2"> appear in both &#39;</span><span class="si">{</span><span class="n">role_a</span><span class="si">}</span><span class="s2">&#39; and &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">role_b</span><span class="si">}</span><span class="s2">&#39; roles. Each column must have exactly one role.&quot;</span>
+                    <span class="p">)</span>
+
+        <span class="c1"># M4: weight column must not overlap with outcome columns</span>
+        <span class="k">if</span> <span class="n">outcome_list</span> <span class="ow">and</span> <span class="n">weight_column</span> <span class="ow">in</span> <span class="n">outcome_list</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Weight column &#39;</span><span class="si">{</span><span class="n">weight_column</span><span class="si">}</span><span class="s2">&#39; is also listed as an &quot;</span>
+                <span class="s2">&quot;outcome column. The weight column must be separate from outcomes.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># M5: warn if explicitly-provided covariates include id or weight</span>
+        <span class="k">if</span> <span class="n">covar_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">special_in_covars</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">covar_list</span> <span class="k">if</span> <span class="n">c</span> <span class="o">==</span> <span class="n">id_col_name</span> <span class="ow">or</span> <span class="n">c</span> <span class="o">==</span> <span class="n">weight_column</span>
+            <span class="p">]</span>
+            <span class="k">if</span> <span class="n">special_in_covars</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;covar_columns contains column(s) </span><span class="si">%r</span><span class="s2"> that are also used as &quot;</span>
+                    <span class="s2">&quot;id or weight columns. This is likely unintentional.&quot;</span><span class="p">,</span>
+                    <span class="n">special_in_covars</span><span class="p">,</span>
+                <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span>
+            <span class="n">df</span><span class="o">=</span><span class="n">_df</span><span class="p">,</span>
+            <span class="n">id_column</span><span class="o">=</span><span class="n">id_col_name</span><span class="p">,</span>
+            <span class="n">covar_columns</span><span class="o">=</span><span class="n">covar_list</span><span class="p">,</span>
+            <span class="n">weight_columns</span><span class="o">=</span><span class="p">[</span><span class="n">weight_column</span><span class="p">],</span>
+            <span class="n">outcome_columns</span><span class="o">=</span><span class="n">outcome_list</span><span class="p">,</span>
+            <span class="n">predicted_outcome_columns</span><span class="o">=</span><span class="n">predicted_list</span><span class="p">,</span>
+            <span class="n">ignored_columns</span><span class="o">=</span><span class="n">ignore_list</span><span class="p">,</span>
+            <span class="n">_skip_copy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">_df_dtypes</span><span class="o">=</span><span class="n">df_dtypes</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+    <span class="c1"># --- Column role accessors ---</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">covar_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Names of the covariate columns.</span>
+
+<span class="sd">        Returns a copy so that callers cannot accidentally mutate the</span>
+<span class="sd">        internal column-role registry.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[str]: Covariate column names.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;], &quot;age&quot;: [25, 30],</span>
+<span class="sd">            ...                    &quot;income&quot;: [50000, 60000], &quot;weight&quot;: [1.0, 1.0]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df)</span>
+<span class="sd">            &gt;&gt;&gt; sf.covar_columns</span>
+<span class="sd">            [&#39;age&#39;, &#39;income&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;covars&quot;</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">weight_columns_all</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Names of all registered weight columns.</span>
+
+<span class="sd">        Returns a copy so that callers cannot accidentally mutate the</span>
+<span class="sd">        internal column-role registry.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[str]: Weight column names.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame._create(</span>
+<span class="sd">            ...     df=pd.DataFrame({&quot;id&quot;: [1], &quot;x&quot;: [10], &quot;w1&quot;: [1.0], &quot;w2&quot;: [2.0]}),</span>
+<span class="sd">            ...     id_column=&quot;id&quot;, covar_columns=[&quot;x&quot;],</span>
+<span class="sd">            ...     weight_columns=[&quot;w1&quot;, &quot;w2&quot;])</span>
+<span class="sd">            &gt;&gt;&gt; sf.weight_columns_all</span>
+<span class="sd">            [&#39;w1&#39;, &#39;w2&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">outcome_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Names of the outcome columns.</span>
+
+<span class="sd">        Returns a copy so that callers cannot accidentally mutate the</span>
+<span class="sd">        internal column-role registry.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[str]: Outcome column names (empty list if none).</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;], &quot;x&quot;: [10, 20],</span>
+<span class="sd">            ...                    &quot;weight&quot;: [1.0, 1.0], &quot;y&quot;: [5, 6]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df, outcome_columns=[&quot;y&quot;])</span>
+<span class="sd">            &gt;&gt;&gt; sf.outcome_columns</span>
+<span class="sd">            [&#39;y&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes&quot;</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predicted_outcome_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Names of the predicted outcome columns.</span>
+
+<span class="sd">        Returns a copy so that callers cannot accidentally mutate the</span>
+<span class="sd">        internal column-role registry.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[str]: Predicted outcome column names (empty list if none).</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;], &quot;x&quot;: [10, 20],</span>
+<span class="sd">            ...                    &quot;weight&quot;: [1.0, 1.0], &quot;p_y&quot;: [0.3, 0.7]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df, predicted_outcome_columns=[&quot;p_y&quot;])</span>
+<span class="sd">            &gt;&gt;&gt; sf.predicted_outcome_columns</span>
+<span class="sd">            [&#39;p_y&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;predicted&quot;</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ignored_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Names of the ignored columns.</span>
+
+<span class="sd">        Returns a copy so that callers cannot accidentally mutate the</span>
+<span class="sd">        internal column-role registry.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[str]: Ignored column names (empty list if none).</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;], &quot;x&quot;: [10, 20],</span>
+<span class="sd">            ...                    &quot;weight&quot;: [1.0, 1.0], &quot;region&quot;: [&quot;US&quot;, &quot;UK&quot;]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df, ignored_columns=[&quot;region&quot;])</span>
+<span class="sd">            &gt;&gt;&gt; sf.ignored_columns</span>
+<span class="sd">            [&#39;region&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;ignored&quot;</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">weight_column</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Name of the currently active weight column, or None.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str | None: The active weight column name.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;], &quot;x&quot;: [10, 20],</span>
+<span class="sd">            ...                    &quot;weight&quot;: [1.0, 2.0]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df)</span>
+<span class="sd">            &gt;&gt;&gt; sf.weight_column</span>
+<span class="sd">            &#39;weight&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight_column_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">id_column_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Name of the ID column.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The ID column name.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;], &quot;x&quot;: [10, 20],</span>
+<span class="sd">            ...                    &quot;weight&quot;: [1.0, 2.0]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df)</span>
+<span class="sd">            &gt;&gt;&gt; sf.id_column_name</span>
+<span class="sd">            &#39;id&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id_column_name</span>
+
+    <span class="c1"># --- DataFrame properties ---</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">df_covars</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Covariate columns as a DataFrame.</span>
+
+<span class="sd">        Returns a copy so that callers cannot accidentally mutate the</span>
+<span class="sd">        internal data.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame: A copy of the covariate columns.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;], &quot;age&quot;: [25, 30],</span>
+<span class="sd">            ...                    &quot;income&quot;: [50000, 60000], &quot;weight&quot;: [1.0, 1.0]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df)</span>
+<span class="sd">            &gt;&gt;&gt; covars = sf.df_covars</span>
+<span class="sd">            &gt;&gt;&gt; covars[&quot;age&quot;] = [999, 999]</span>
+<span class="sd">            &gt;&gt;&gt; list(sf.df_covars[&quot;age&quot;])  # internal data unchanged</span>
+<span class="sd">            [25.0, 30.0]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;covars&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">cols</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">if</span> <span class="n">cols</span> <span class="k">else</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">df_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Active weight column as a single-column DataFrame.</span>
+
+<span class="sd">        Returns a copy so that callers cannot accidentally mutate the</span>
+<span class="sd">        internal data.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame: A copy of the active weight column, or an empty</span>
+<span class="sd">                DataFrame if no active weight is set.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;], &quot;x&quot;: [10, 20],</span>
+<span class="sd">            ...                    &quot;weight&quot;: [1.0, 2.0]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df)</span>
+<span class="sd">            &gt;&gt;&gt; w = sf.df_weights</span>
+<span class="sd">            &gt;&gt;&gt; w[&quot;weight&quot;] = [999.0, 999.0]</span>
+<span class="sd">            &gt;&gt;&gt; list(sf.df_weights[&quot;weight&quot;])  # internal data unchanged</span>
+<span class="sd">            [1.0, 2.0]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight_column_name</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[[</span><span class="bp">self</span><span class="o">.</span><span class="n">_weight_column_name</span><span class="p">]]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">df_outcomes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Outcome columns, or None if no outcomes.</span>
+
+<span class="sd">        Returns a copy so that callers cannot accidentally mutate the</span>
+<span class="sd">        internal data.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame | None: A copy of outcome columns, or None if</span>
+<span class="sd">                no outcome columns are registered.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;], &quot;x&quot;: [10, 20],</span>
+<span class="sd">            ...                    &quot;weight&quot;: [1.0, 1.0], &quot;y&quot;: [5, 6]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df, outcome_columns=[&quot;y&quot;])</span>
+<span class="sd">            &gt;&gt;&gt; out = sf.df_outcomes</span>
+<span class="sd">            &gt;&gt;&gt; out[&quot;y&quot;] = [999, 999]</span>
+<span class="sd">            &gt;&gt;&gt; list(sf.df_outcomes[&quot;y&quot;])  # internal data unchanged</span>
+<span class="sd">            [5.0, 6.0]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">cols</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">if</span> <span class="n">cols</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">df_ignored</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Ignored columns, or None.</span>
+
+<span class="sd">        Returns a copy so that callers cannot accidentally mutate the</span>
+<span class="sd">        internal data.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame | None: A copy of ignored columns, or</span>
+<span class="sd">                None if no ignored columns are registered.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;], &quot;x&quot;: [10, 20],</span>
+<span class="sd">            ...                    &quot;weight&quot;: [1.0, 1.0], &quot;region&quot;: [&quot;US&quot;, &quot;UK&quot;]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df, ignored_columns=[&quot;region&quot;])</span>
+<span class="sd">            &gt;&gt;&gt; m = sf.df_ignored</span>
+<span class="sd">            &gt;&gt;&gt; m[&quot;region&quot;] = [&quot;XX&quot;, &quot;XX&quot;]</span>
+<span class="sd">            &gt;&gt;&gt; list(sf.df_ignored[&quot;region&quot;])  # internal data unchanged</span>
+<span class="sd">            [&#39;US&#39;, &#39;UK&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;ignored&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">cols</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">if</span> <span class="n">cols</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">id_column</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The ID column as a Series.</span>
+
+<span class="sd">        Returns a copy so that callers cannot accidentally mutate the</span>
+<span class="sd">        internal data.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.Series: A copy of the ID column.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;], &quot;x&quot;: [10, 20],</span>
+<span class="sd">            ...                    &quot;weight&quot;: [1.0, 1.0]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df)</span>
+<span class="sd">            &gt;&gt;&gt; ids = sf.id_column</span>
+<span class="sd">            &gt;&gt;&gt; ids.iloc[0] = &quot;MUTATED&quot;</span>
+<span class="sd">            &gt;&gt;&gt; sf.id_column.iloc[0]  # internal data unchanged</span>
+<span class="sd">            &#39;1&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_id_column_name</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">weight_series</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Active weight column as a Series (BalanceDFSource protocol).</span>
+
+<span class="sd">        Returns the active weight column values as a ``pd.Series``.  This is</span>
+<span class="sd">        the thin protocol-level accessor used by ``BalanceDF`` and its</span>
+<span class="sd">        subclasses.  Unlike :attr:`df_weights` which returns a single-column</span>
+<span class="sd">        DataFrame, this returns a plain Series.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.Series: The active weight column values.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If no active weight column is set.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [1, 2], &quot;x&quot;: [10, 20],</span>
+<span class="sd">            ...                    &quot;weight&quot;: [1.0, 2.0]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df)</span>
+<span class="sd">            &gt;&gt;&gt; sf.weight_series.tolist()</span>
+<span class="sd">            [1.0, 2.0]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight_column_name</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No active weight column is set.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_weight_column_name</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_covar_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the covariate DataFrame (BalanceDFSource protocol).</span>
+
+<span class="sd">        This method satisfies the ``BalanceDFSource`` protocol and is used</span>
+<span class="sd">        by ``BalanceDFCovars`` to obtain the covariate columns.  It returns</span>
+<span class="sd">        the same data as :attr:`df_covars`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame: A copy of the covariate columns.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [1, 2], &quot;x&quot;: [10, 20],</span>
+<span class="sd">            ...                    &quot;weight&quot;: [1.0, 2.0]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df)</span>
+<span class="sd">            &gt;&gt;&gt; list(sf._covar_columns().columns)</span>
+<span class="sd">            [&#39;x&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">df_covars</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_outcome_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Outcome columns as a DataFrame, or None (BalanceDFSource protocol).</span>
+
+<span class="sd">        This property satisfies the ``BalanceDFSource`` protocol and is used</span>
+<span class="sd">        by ``BalanceDFOutcomes`` to obtain the outcome columns.  It returns</span>
+<span class="sd">        the same data as :attr:`df_outcomes`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame | None: A copy of outcome columns, or None if no</span>
+<span class="sd">                outcome columns are registered.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [1, 2], &quot;x&quot;: [10, 20],</span>
+<span class="sd">            ...                    &quot;weight&quot;: [1.0, 1.0], &quot;y&quot;: [5, 6]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df, outcome_columns=[&quot;y&quot;])</span>
+<span class="sd">            &gt;&gt;&gt; sf._outcome_columns.columns.tolist()</span>
+<span class="sd">            [&#39;y&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">df_outcomes</span>
+
+<div class="viewcode-block" id="SampleFrame.set_weights">
+<a class="viewcode-back" href="../../balance.sample_frame.html#balance.sample_frame.SampleFrame.set_weights">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_weights</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">use_index</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Replace the active weight column values.</span>
+
+<span class="sd">        This is the canonical weight-update method for balance objects.</span>
+<span class="sd">        Both ``SampleFrame`` and ``BalanceFrame`` use this implementation</span>
+<span class="sd">        (BalanceFrame delegates here).  It also satisfies the</span>
+<span class="sd">        ``BalanceDFSource`` protocol and is used by</span>
+<span class="sd">        ``BalanceDFWeights.trim()`` to update weight values after trimming.</span>
+
+<span class="sd">        If *weights* is a float, all rows are set to that value.  If None,</span>
+<span class="sd">        all rows are set to 1.0.  If a Series, behavior depends on</span>
+<span class="sd">        *use_index*:</span>
+
+<span class="sd">        - ``use_index=False`` (default): the Series must have the same</span>
+<span class="sd">          length as the DataFrame; values are assigned positionally.</span>
+<span class="sd">        - ``use_index=True``: values are aligned by index.  Rows whose</span>
+<span class="sd">          index is missing from *weights* are set to NaN (pandas</span>
+<span class="sd">          index-alignment semantics), and a warning is emitted.</span>
+
+<span class="sd">        All weight values are cast to float64.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            weights: New weight values — a Series, scalar, or None.</span>
+<span class="sd">            use_index: If True, align a Series by index instead of</span>
+<span class="sd">                requiring an exact length match.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If no active weight column is set, or if</span>
+<span class="sd">                ``use_index=False`` and a Series has a different length</span>
+<span class="sd">                than the DataFrame.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [1, 2], &quot;x&quot;: [10, 20],</span>
+<span class="sd">            ...                    &quot;weight&quot;: [1.0, 2.0]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df)</span>
+<span class="sd">            &gt;&gt;&gt; sf.set_weights(pd.Series([3.0, 4.0]))</span>
+<span class="sd">            &gt;&gt;&gt; sf.weight_series.tolist()</span>
+<span class="sd">            [3.0, 4.0]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight_column_name</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No active weight column is set.&quot;</span><span class="p">)</span>
+
+        <span class="n">wc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight_column_name</span>
+
+        <span class="c1"># Ensure the column is float64 before any assignment.</span>
+        <span class="c1"># TODO: replace deprecated is_float_dtype (removed in pandas 3.0) with dtype.kind check</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_float_dtype</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">wc</span><span class="p">]):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">wc</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">wc</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">wc</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">wc</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">use_index</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_weights_by_index</span><span class="p">(</span><span class="n">wc</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_weights_positional</span><span class="p">(</span><span class="n">wc</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set_weights_by_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wc</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assign *weights* to column *wc* aligned by DataFrame index.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;use_index=True requires a pandas Series (got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">). &quot;</span>
+                <span class="s2">&quot;Pass a Series with an appropriate index, or use use_index=False.&quot;</span>
+            <span class="p">)</span>
+        <span class="c1"># TODO: replace deprecated is_float_dtype (removed in pandas 3.0) with dtype.kind check</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_float_dtype</span><span class="p">(</span><span class="n">weights</span><span class="p">):</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">idx</span> <span class="ow">in</span> <span class="n">weights</span><span class="o">.</span><span class="n">index</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Not all units will be assigned weights — the weights &quot;</span>
+                <span class="s2">&quot;Series is missing some of the indices in the DataFrame.&quot;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">wc</span><span class="p">]</span> <span class="o">=</span> <span class="n">weights</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set_weights_positional</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wc</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assign *weights* to column *wc* by position (length must match).&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;&#39;weights&#39; length (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span><span class="si">}</span><span class="s2">) doesn&#39;t match &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;DataFrame length (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+            <span class="c1"># TODO: replace deprecated is_float_dtype (removed in pandas 3.0) with dtype.kind check</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_float_dtype</span><span class="p">(</span><span class="n">weights</span><span class="p">):</span>
+                <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">wc</span><span class="p">]</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># numpy array or other array-like</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">wc</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_next_weight_action_number</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the next global action number for weight history columns.</span>
+
+<span class="sd">        Scans existing columns for ``weight_adjusted_N`` and</span>
+<span class="sd">        ``weight_trimmed_N`` patterns and returns ``max(N) + 1``, or ``1``</span>
+<span class="sd">        if no history columns exist yet.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;^weight_(?:adjusted|trimmed)_(\d+)$&quot;</span><span class="p">)</span>
+        <span class="n">max_n</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">col</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
+                <span class="n">max_n</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">max_n</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">max_n</span> <span class="o">+</span> <span class="mi">1</span>
+
+<div class="viewcode-block" id="SampleFrame.trim">
+<a class="viewcode-back" href="../../balance.sample_frame.html#balance.sample_frame.SampleFrame.trim">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">trim</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">percentile</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">keep_sum_of_weights</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">target_sum_weights</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">in_place</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Trim extreme weights using mean-ratio clipping or percentile winsorization.</span>
+
+<span class="sd">        Delegates to :func:`~balance.adjustment.trim_weights` for the</span>
+<span class="sd">        computation, then writes the result back via :meth:`set_weights`.</span>
+<span class="sd">        A weight history column (``weight_trimmed_N``) is added so the</span>
+<span class="sd">        pre-trim values are preserved.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ratio: Mean-ratio upper bound.  Mutually exclusive with</span>
+<span class="sd">                *percentile*.</span>
+<span class="sd">            percentile: Percentile(s) for winsorization.  Mutually exclusive</span>
+<span class="sd">                with *ratio*.</span>
+<span class="sd">            keep_sum_of_weights: Whether to rescale after trimming to</span>
+<span class="sd">                preserve the original sum of weights.</span>
+<span class="sd">            target_sum_weights: If provided, rescale trimmed weights so</span>
+<span class="sd">                their sum equals this numeric target value.  (This is a</span>
+<span class="sd">                general-purpose rescaling parameter — not related to</span>
+<span class="sd">                the &quot;target population&quot; concept in BalanceFrame.)</span>
+<span class="sd">            in_place: If True, mutate this SampleFrame and return it.</span>
+<span class="sd">                If False (default), return a new SampleFrame with trimmed</span>
+<span class="sd">                weights and the original left untouched.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The SampleFrame with trimmed weights (self if *in_place*,</span>
+<span class="sd">            else a new copy).</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [1, 2, 3], &quot;weight&quot;: [1.0, 2.0, 100.0]}))</span>
+<span class="sd">            &gt;&gt;&gt; sf2 = sf.trim(ratio=2)</span>
+<span class="sd">            &gt;&gt;&gt; sf2.weight_series.max() &lt; 100.0</span>
+<span class="sd">            True</span>
+<span class="sd">            &gt;&gt;&gt; &quot;weight_trimmed_1&quot; in sf2._df.columns</span>
+<span class="sd">            True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.adjustment</span><span class="w"> </span><span class="kn">import</span> <span class="n">trim_weights</span>
+
+        <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span> <span class="k">if</span> <span class="n">in_place</span> <span class="k">else</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="n">original_weight_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">_weight_column_name</span> <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">_weight_column_name</span> <span class="k">else</span> <span class="s2">&quot;weight&quot;</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Freeze original weights on first action (adjust or trim).</span>
+        <span class="k">if</span> <span class="s2">&quot;weight_pre_adjust&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">add_weight_column</span><span class="p">(</span>
+                <span class="s2">&quot;weight_pre_adjust&quot;</span><span class="p">,</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">original_weight_name</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Compute trimmed weights.</span>
+        <span class="n">trimmed</span> <span class="o">=</span> <span class="n">trim_weights</span><span class="p">(</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">original_weight_name</span><span class="p">],</span>
+            <span class="n">weight_trimming_mean_ratio</span><span class="o">=</span><span class="n">ratio</span><span class="p">,</span>
+            <span class="n">weight_trimming_percentile</span><span class="o">=</span><span class="n">percentile</span><span class="p">,</span>
+            <span class="n">keep_sum_of_weights</span><span class="o">=</span><span class="n">keep_sum_of_weights</span><span class="p">,</span>
+            <span class="n">target_sum_weights</span><span class="o">=</span><span class="n">target_sum_weights</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Record in weight history.</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">_next_weight_action_number</span><span class="p">()</span>
+        <span class="n">col_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;weight_trimmed_</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">add_weight_column</span><span class="p">(</span>
+            <span class="n">col_name</span><span class="p">,</span>
+            <span class="n">trimmed</span><span class="p">,</span>
+            <span class="n">metadata</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;trim&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;trimmed&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;ratio&quot;</span><span class="p">:</span> <span class="n">ratio</span><span class="p">,</span>
+                <span class="s2">&quot;percentile&quot;</span><span class="p">:</span> <span class="n">percentile</span><span class="p">,</span>
+                <span class="s2">&quot;keep_sum_of_weights&quot;</span><span class="p">:</span> <span class="n">keep_sum_of_weights</span><span class="p">,</span>
+                <span class="s2">&quot;target_sum_weights&quot;</span><span class="p">:</span> <span class="n">target_sum_weights</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Overwrite active weight column.</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">set_weights</span><span class="p">(</span><span class="n">trimmed</span><span class="p">,</span> <span class="n">use_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">target</span></div>
+
+
+    <span class="c1"># --- BalanceDF integration ---</span>
+
+<div class="viewcode-block" id="SampleFrame.covars">
+<a class="viewcode-back" href="../../balance.sample_frame.html#balance.sample_frame.SampleFrame.covars">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">covars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a :class:`~balance.balancedf_class.BalanceDFCovars` for this SampleFrame.</span>
+
+<span class="sd">        Creates a covariate analysis view backed by this SampleFrame,</span>
+<span class="sd">        inheriting any linked sources set via ``_links``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            formula: Optional formula string (or list) for model matrix</span>
+<span class="sd">                construction. Passed through to BalanceDFCovars.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            BalanceDFCovars: Covariate view backed by this SampleFrame.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [1, 2], &quot;x&quot;: [10.0, 20.0],</span>
+<span class="sd">            ...                   &quot;weight&quot;: [1.0, 1.0]}))</span>
+<span class="sd">            &gt;&gt;&gt; sf.covars().df.columns.tolist()</span>
+<span class="sd">            [&#39;x&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.balancedf_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceDFCovars</span>
+
+        <span class="c1"># pyre-ignore[6]: SampleFrame satisfies BalanceDFSource at runtime</span>
+        <span class="k">return</span> <span class="n">BalanceDFCovars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">formula</span><span class="o">=</span><span class="n">formula</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SampleFrame.weights">
+<a class="viewcode-back" href="../../balance.sample_frame.html#balance.sample_frame.SampleFrame.weights">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">weights</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a :class:`~balance.balancedf_class.BalanceDFWeights` for this SampleFrame.</span>
+
+<span class="sd">        Creates a weight analysis view backed by this SampleFrame,</span>
+<span class="sd">        inheriting any linked sources set via ``_links``.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            BalanceDFWeights: Weight view backed by this SampleFrame.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [1, 2], &quot;x&quot;: [10.0, 20.0],</span>
+<span class="sd">            ...                   &quot;weight&quot;: [1.0, 2.0]}))</span>
+<span class="sd">            &gt;&gt;&gt; sf.weights().df.columns.tolist()</span>
+<span class="sd">            [&#39;weight&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.balancedf_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceDFWeights</span>
+
+        <span class="c1"># pyre-ignore[6]: SampleFrame satisfies BalanceDFSource at runtime</span>
+        <span class="k">return</span> <span class="n">BalanceDFWeights</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SampleFrame.outcomes">
+<a class="viewcode-back" href="../../balance.sample_frame.html#balance.sample_frame.SampleFrame.outcomes">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">outcomes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a :class:`~balance.balancedf_class.BalanceDFOutcomes`, or None.</span>
+
+<span class="sd">        Returns ``None`` if this SampleFrame has no outcome columns.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            BalanceDFOutcomes or None: Outcome view backed by this SampleFrame,</span>
+<span class="sd">                or ``None`` if no outcomes are defined.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [1, 2], &quot;x&quot;: [10.0, 20.0],</span>
+<span class="sd">            ...                   &quot;y&quot;: [1.0, 0.0], &quot;weight&quot;: [1.0, 1.0]}),</span>
+<span class="sd">            ...     outcome_columns=[&quot;y&quot;])</span>
+<span class="sd">            &gt;&gt;&gt; sf.outcomes().df.columns.tolist()</span>
+<span class="sd">            [&#39;y&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes&quot;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="c1"># Deferred import to avoid circular dependency with balancedf_class</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.balancedf_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceDFOutcomes</span>
+
+        <span class="c1"># pyre-ignore[6]: SampleFrame satisfies BalanceDFSource at runtime</span>
+        <span class="k">return</span> <span class="n">BalanceDFOutcomes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">df</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Full DataFrame reconstruction.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># --- Weight &amp; prediction provenance ---</span>
+
+<div class="viewcode-block" id="SampleFrame.set_weight_metadata">
+<a class="viewcode-back" href="../../balance.sample_frame.html#balance.sample_frame.SampleFrame.set_weight_metadata">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_weight_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store provenance metadata for a weight column.</span>
+
+<span class="sd">        Metadata is an arbitrary dict that can track adjustment method,</span>
+<span class="sd">        hyperparameters, timestamps, or any other provenance information</span>
+<span class="sd">        relevant to how the weight column was computed.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            column (str): Name of the weight column.</span>
+<span class="sd">            metadata (dict): Arbitrary metadata dict (e.g. method name,</span>
+<span class="sd">                hyperparameters, timestamp).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If *column* is not a registered weight column.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;], &quot;x&quot;: [10, 20],</span>
+<span class="sd">            ...                    &quot;weight&quot;: [1.0, 2.0]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df)</span>
+<span class="sd">            &gt;&gt;&gt; sf.set_weight_metadata(&quot;weight&quot;, {&quot;method&quot;: &quot;ipw&quot;})</span>
+<span class="sd">            &gt;&gt;&gt; sf.weight_metadata()</span>
+<span class="sd">            {&#39;method&#39;: &#39;ipw&#39;}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">column</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s2">&#39; is not a weight column. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Weight columns: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_weight_metadata</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">metadata</span></div>
+
+
+<div class="viewcode-block" id="SampleFrame.weight_metadata">
+<a class="viewcode-back" href="../../balance.sample_frame.html#balance.sample_frame.SampleFrame.weight_metadata">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">weight_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve metadata for a weight column.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            column (str, optional): Weight column name. Defaults to the</span>
+<span class="sd">                active weight column.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: The metadata dict, or an empty dict if none was set.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;], &quot;x&quot;: [10, 20],</span>
+<span class="sd">            ...                    &quot;weight&quot;: [1.0, 2.0]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df)</span>
+<span class="sd">            &gt;&gt;&gt; sf.weight_metadata()</span>
+<span class="sd">            {}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">column</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">column</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight_column_name</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">column</span><span class="p">,</span> <span class="p">{})</span> <span class="k">if</span> <span class="n">column</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}</span></div>
+
+
+<div class="viewcode-block" id="SampleFrame.set_active_weight">
+<a class="viewcode-back" href="../../balance.sample_frame.html#balance.sample_frame.SampleFrame.set_active_weight">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_active_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">column_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set which weight column is the active one.</span>
+
+<span class="sd">        The active weight column is the one returned by :attr:`df_weights`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            column_name (str): Must be a registered weight column.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If *column_name* is not a weight column.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame._create(</span>
+<span class="sd">            ...     df=pd.DataFrame({&quot;id&quot;: [1], &quot;x&quot;: [10], &quot;w1&quot;: [1.0], &quot;w2&quot;: [2.0]}),</span>
+<span class="sd">            ...     id_column=&quot;id&quot;, covar_columns=[&quot;x&quot;],</span>
+<span class="sd">            ...     weight_columns=[&quot;w1&quot;, &quot;w2&quot;])</span>
+<span class="sd">            &gt;&gt;&gt; sf.set_active_weight(&quot;w2&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; list(sf.df_weights.columns)</span>
+<span class="sd">            [&#39;w2&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">column_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">column_name</span><span class="si">}</span><span class="s2">&#39; is not a weight column. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Weight columns: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_weight_column_name</span> <span class="o">=</span> <span class="n">column_name</span></div>
+
+
+<div class="viewcode-block" id="SampleFrame.rename_weight_column">
+<a class="viewcode-back" href="../../balance.sample_frame.html#balance.sample_frame.SampleFrame.rename_weight_column">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">rename_weight_column</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">old_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">new_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Rename a weight column in-place.</span>
+
+<span class="sd">        Renames the column in the DataFrame, updates the column roles list,</span>
+<span class="sd">        active weight pointer, and weight metadata.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            old_name: Current name of the weight column.</span>
+<span class="sd">            new_name: New name for the weight column.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If *old_name* is not a registered weight column,</span>
+<span class="sd">                or if *new_name* already exists in the DataFrame.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">old_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">old_name</span><span class="si">}</span><span class="s2">&#39; is not a weight column. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Weight columns: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">new_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">new_name</span><span class="si">}</span><span class="s2">&#39; already exists in the DataFrame. &quot;</span>
+                <span class="s2">&quot;Choose a different name.&quot;</span>
+            <span class="p">)</span>
+        <span class="c1"># Rename in DataFrame</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="n">old_name</span><span class="p">:</span> <span class="n">new_name</span><span class="p">})</span>
+        <span class="c1"># Update column roles</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">old_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_name</span>
+        <span class="c1"># Update active weight pointer</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight_column_name</span> <span class="o">==</span> <span class="n">old_name</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_weight_column_name</span> <span class="o">=</span> <span class="n">new_name</span>
+        <span class="c1"># Migrate metadata</span>
+        <span class="k">if</span> <span class="n">old_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight_metadata</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_weight_metadata</span><span class="p">[</span><span class="n">new_name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight_metadata</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">old_name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SampleFrame.add_weight_column">
+<a class="viewcode-back" href="../../balance.sample_frame.html#balance.sample_frame.SampleFrame.add_weight_column">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_weight_column</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">values</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a new weight column to the SampleFrame.</span>
+
+<span class="sd">        The column is appended to the internal DataFrame and registered</span>
+<span class="sd">        as a weight column.  Optionally associates provenance metadata.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): Name for the new weight column.</span>
+<span class="sd">            values (pd.Series): Weight values.  Must match the DataFrame</span>
+<span class="sd">                length, unless it is a shorter ``pd.Series`` — in which case</span>
+<span class="sd">                values are aligned by index and missing rows are filled with</span>
+<span class="sd">                NaN (this supports adjustment functions that drop rows</span>
+<span class="sd">                internally, e.g., ``na_action=&quot;drop&quot;``).  Note: this column</span>
+<span class="sd">                is a *history* column, not the active weight — the active</span>
+<span class="sd">                weight is set separately via ``set_weights()``.</span>
+<span class="sd">            metadata (dict, optional): Provenance metadata for the new</span>
+<span class="sd">                column.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If *name* is already a registered weight column,</span>
+<span class="sd">                if *name* already exists in the DataFrame as a non-weight</span>
+<span class="sd">                column, or if *values* is longer than the DataFrame or is</span>
+<span class="sd">                a non-Series with a different length.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;], &quot;x&quot;: [10, 20],</span>
+<span class="sd">            ...                    &quot;weight&quot;: [1.0, 2.0]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df)</span>
+<span class="sd">            &gt;&gt;&gt; sf.add_weight_column(&quot;w_adj&quot;, pd.Series([1.5, 1.5]),</span>
+<span class="sd">            ...                      metadata={&quot;method&quot;: &quot;rake&quot;})</span>
+<span class="sd">            &gt;&gt;&gt; sf._column_roles[&quot;weights&quot;]</span>
+<span class="sd">            [&#39;weight&#39;, &#39;w_adj&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; is already a weight column. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Use set_weight_metadata() to update metadata.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; already exists in the DataFrame as a non-weight column. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Choose a different name.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">):</span>
+                <span class="c1"># Align by index, padding missing rows with NaN.</span>
+                <span class="c1"># This supports adjustment functions that drop rows internally</span>
+                <span class="c1"># (e.g., na_action=&quot;drop&quot;) and return fewer weights.</span>
+                <span class="n">values</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;&#39;values&#39; length (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="si">}</span><span class="s2">) doesn&#39;t match &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;DataFrame length (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span>
+                <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">metadata</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_weight_metadata</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">metadata</span></div>
+
+
+<div class="viewcode-block" id="SampleFrame.from_sample">
+<a class="viewcode-back" href="../../balance.sample_frame.html#balance.sample_frame.SampleFrame.from_sample">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_sample</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">sample</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SampleFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert a :class:`~balance.sample_class.Sample` to a SampleFrame.</span>
+
+<span class="sd">        Preserves the Sample&#39;s tabular data and column role assignments:</span>
+<span class="sd">        id column, weight column, outcome columns, and ignored columns.</span>
+<span class="sd">        Covariate columns are inferred by exclusion,</span>
+<span class="sd">        matching the Sample&#39;s own logic.</span>
+
+<span class="sd">        The internal DataFrame is deep-copied so that the resulting</span>
+<span class="sd">        SampleFrame is fully independent of the original Sample.</span>
+
+<span class="sd">        .. warning:: **Data not preserved in the conversion**</span>
+
+<span class="sd">           The following Sample attributes are **not** carried over:</span>
+
+<span class="sd">           * ``_adjustment_model`` — the fitted model dictionary stored by</span>
+<span class="sd">             :meth:`~balance.sample_class.Sample.adjust`.</span>
+<span class="sd">           * ``_links`` — references to ``target``, ``unadjusted``, and other</span>
+<span class="sd">             linked Samples (used by :class:`~balance.balancedf_class.BalanceDF`</span>
+<span class="sd">             for comparative display).</span>
+<span class="sd">           * ``predicted_outcome_columns`` — Sample has no native concept of</span>
+<span class="sd">             predicted-outcome columns, so the resulting SampleFrame will</span>
+<span class="sd">             always have an empty ``predicted`` role.</span>
+<span class="sd">           * **Column ordering** may differ after a round-trip</span>
+<span class="sd">             (``Sample → SampleFrame → Sample``), since SampleFrame stores</span>
+<span class="sd">             columns grouped by role rather than preserving the original</span>
+<span class="sd">             DataFrame column order.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sample: A :class:`~balance.sample_class.Sample` instance.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            SampleFrame: A new SampleFrame mirroring the Sample&#39;s data and</span>
+<span class="sd">                column roles.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            TypeError: If *sample* is not a Sample instance.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_class import Sample</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; s = Sample.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [1, 2], &quot;x&quot;: [10.0, 20.0], &quot;weight&quot;: [1.0, 2.0]}))</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_sample(s)</span>
+<span class="sd">            &gt;&gt;&gt; list(sf.df_covars.columns)</span>
+<span class="sd">            [&#39;x&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Lazy import: sample_class ↔ sample_frame have a circular dependency.</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sample</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">Sample</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;&#39;sample&#39; must be a Sample instance, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">_id_col</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">id_column</span>
+        <span class="n">_weight_col</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">weight_series</span>
+        <span class="k">if</span> <span class="n">_id_col</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Sample must have an id_column before converting to SampleFrame.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">_weight_col</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Sample must have a weight_column before converting to SampleFrame.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">id_col_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">_id_col</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">weight_col_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">_weight_col</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="n">outcome_cols</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">sample</span><span class="o">.</span><span class="n">_outcome_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">outcome_cols</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_outcome_columns</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="n">ignored_cols</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="s2">&quot;_ignored_column_names&quot;</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="p">[]</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span>
+        <span class="k">if</span> <span class="n">df</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Sample has no DataFrame set.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span>
+            <span class="n">df</span><span class="o">=</span><span class="n">df</span><span class="p">,</span>
+            <span class="n">id_column</span><span class="o">=</span><span class="n">id_col_name</span><span class="p">,</span>
+            <span class="n">covar_columns</span><span class="o">=</span><span class="n">sample</span><span class="o">.</span><span class="n">_covar_columns_names</span><span class="p">(),</span>
+            <span class="n">weight_columns</span><span class="o">=</span><span class="p">[</span><span class="n">weight_col_name</span><span class="p">],</span>
+            <span class="n">outcome_columns</span><span class="o">=</span><span class="n">outcome_cols</span><span class="p">,</span>
+            <span class="n">ignored_columns</span><span class="o">=</span><span class="n">ignored_cols</span> <span class="k">if</span> <span class="n">ignored_cols</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">n_obs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">)</span>
+        <span class="n">n_covars</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;covars&quot;</span><span class="p">])</span>
+        <span class="n">covar_names</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;covars&quot;</span><span class="p">])</span>
+        <span class="n">outcome_info</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes&quot;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes&quot;</span><span class="p">]</span>
+            <span class="k">else</span> <span class="s2">&quot;None&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;SampleFrame: </span><span class="si">{</span><span class="n">n_obs</span><span class="si">}</span><span class="s2"> observations x </span><span class="si">{</span><span class="n">n_covars</span><span class="si">}</span><span class="s2"> covariates: </span><span class="si">{</span><span class="n">covar_names</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;  id_column: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_id_column_name</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;weight_columns_all: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;outcome_columns: </span><span class="si">{</span><span class="n">outcome_info</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../balance.html" >balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.sample_frame</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

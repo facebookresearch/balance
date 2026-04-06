@@ -42,6 +42,7 @@
 
 <span class="c1"># pyre-strict</span>
 
+<span class="c1"># TODO: replace with &quot;from __future__ import annotations&quot; and remove dead Python 2 imports</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
@@ -252,6 +253,9 @@
     <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
     <span class="n">target_df</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
 
+    <span class="c1"># TODO: When len(variables) == 1, fall back to poststratify instead of</span>
+    <span class="c1"># raising, so users can call adjust(method=&quot;rake&quot;) without worrying about</span>
+    <span class="c1"># the variable count.</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">,</span> <span class="p">(</span>
         <span class="s2">&quot;Must weight on at least two variables for raking. &quot;</span>
         <span class="sa">f</span><span class="s2">&quot;Currently have variables=</span><span class="si">{</span><span class="n">variables</span><span class="si">}</span><span class="s2"> only&quot;</span>

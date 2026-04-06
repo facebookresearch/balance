@@ -156,7 +156,7 @@ After adjustment, the output DataFrame is subsetted to contain
 <strong>only</strong> these columns (see <a class="reference internal" href="#balance.cli.BalanceCLI.adapt_output" title="balance.cli.BalanceCLI.adapt_output"><code class="xref py py-meth docutils literal notranslate"><span class="pre">adapt_output()</span></code></a>).</p>
 <p>Note that keep columns that are not the id, weight, a covariate,
 or an explicit outcome column will be placed into
-<code class="docutils literal notranslate"><span class="pre">ignore_columns</span></code> by <a class="reference internal" href="#balance.cli.BalanceCLI.process_batch" title="balance.cli.BalanceCLI.process_batch"><code class="xref py py-meth docutils literal notranslate"><span class="pre">process_batch()</span></code></a>.  They are still
+<code class="docutils literal notranslate"><span class="pre">ignored_columns</span></code> by <a class="reference internal" href="#balance.cli.BalanceCLI.process_batch" title="balance.cli.BalanceCLI.process_batch"><code class="xref py py-meth docutils literal notranslate"><span class="pre">process_batch()</span></code></a>.  They are still
 carried through the <code class="docutils literal notranslate"><span class="pre">Sample</span></code> and available in the output.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -208,7 +208,7 @@ carried through the <code class="docutils literal notranslate"><span class="pre"
 <dd><p>Return the subset of columns to keep in outputs.</p>
 <p>These columns are used to filter the final output DataFrame.
 Keep columns that are not the id, weight, a covariate, or an
-explicit outcome column will be placed into <code class="docutils literal notranslate"><span class="pre">ignore_columns</span></code>
+explicit outcome column will be placed into <code class="docutils literal notranslate"><span class="pre">ignored_columns</span></code>
 during processing but are still retained by the <code class="docutils literal notranslate"><span class="pre">Sample</span></code> and
 included in the output.</p>
 <dl class="field-list simple">

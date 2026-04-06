@@ -14,7 +14,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="balance.cli" href="balance.cli.html" />
-    <link rel="prev" title="balance.adjustment" href="balance.adjustment.html" /> 
+    <link rel="prev" title="balance.balance_frame" href="balance.balance_frame.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
@@ -29,7 +29,7 @@
           <a href="balance.cli.html" title="balance.cli"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="balance.adjustment.html" title="balance.adjustment"
+          <a href="balance.balance_frame.html" title="balance.balance_frame"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="balance.html" accesskey="U">balance</a> &#187;</li>
@@ -999,7 +999,7 @@ If library=”seaborn” then returns None, unless return_axes is True. Then eit
 If library=”balance” then returns a string with the ASCII text output.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Union[Union[List, np.ndarray], Dict[str, Figure], str, None]</p>
+<dd class="field-odd"><p>list | np.ndarray | dict[str, Figure] | str | None</p>
 </dd>
 </dl>
 <p>Examples:
@@ -1352,7 +1352,7 @@ s3_null = s3.adjust(method=”null”)</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="balance.balancedf_class.BalanceDFCovars">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">balance.balancedf_class.</span></span><span class="sig-name descname"><span class="pre">BalanceDFCovars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.balancedf_class.BalanceDFSource" title="balance.balancedf_class.BalanceDFSource"><span class="pre">BalanceDFSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">links</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#balance.balancedf_class.BalanceDFSource" title="balance.balancedf_class.BalanceDFSource"><span class="pre">BalanceDFSource</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">formula</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDFCovars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDFCovars" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">balance.balancedf_class.</span></span><span class="sig-name descname"><span class="pre">BalanceDFCovars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.balancedf_class.BalanceDFSource" title="balance.balancedf_class.BalanceDFSource"><span class="pre">BalanceDFSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">links</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#balance.balancedf_class.BalanceDFSource" title="balance.balancedf_class.BalanceDFSource"><span class="pre">BalanceDFSource</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">formula</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDFCovars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDFCovars" title="Link to this definition">¶</a></dt>
 <dd><dl class="py method">
 <dt class="sig sig-object py" id="balance.balancedf_class.BalanceDFCovars.from_frame">
 <span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_frame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">formula</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#balance.balancedf_class.BalanceDFCovars" title="balance.balancedf_class.BalanceDFCovars"><span class="pre">BalanceDFCovars</span></a></span></span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDFCovars.from_frame"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDFCovars.from_frame" title="Link to this definition">¶</a></dt>
@@ -1397,7 +1397,7 @@ covars.df.columns.tolist()
 
 <dl class="py class">
 <dt class="sig sig-object py" id="balance.balancedf_class.BalanceDFOutcomes">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">balance.balancedf_class.</span></span><span class="sig-name descname"><span class="pre">BalanceDFOutcomes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.balancedf_class.BalanceDFSource" title="balance.balancedf_class.BalanceDFSource"><span class="pre">BalanceDFSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">links</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#balance.balancedf_class.BalanceDFSource" title="balance.balancedf_class.BalanceDFSource"><span class="pre">BalanceDFSource</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDFOutcomes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDFOutcomes" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">balance.balancedf_class.</span></span><span class="sig-name descname"><span class="pre">BalanceDFOutcomes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.balancedf_class.BalanceDFSource" title="balance.balancedf_class.BalanceDFSource"><span class="pre">BalanceDFSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">links</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#balance.balancedf_class.BalanceDFSource" title="balance.balancedf_class.BalanceDFSource"><span class="pre">BalanceDFSource</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDFOutcomes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDFOutcomes" title="Link to this definition">¶</a></dt>
 <dd><dl class="py method">
 <dt class="sig sig-object py" id="balance.balancedf_class.BalanceDFOutcomes.outcome_sd_prop">
 <span class="sig-name descname"><span class="pre">outcome_sd_prop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDFOutcomes.outcome_sd_prop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDFOutcomes.outcome_sd_prop" title="Link to this definition">¶</a></dt>
@@ -1851,13 +1851,13 @@ outcome       2.5       4.0        1.5         -1.547          4.547   1.567    
 BalanceDFWeights, and BalanceDFOutcomes constructors. Both <code class="docutils literal notranslate"><span class="pre">Sample</span></code> and
 <code class="docutils literal notranslate"><span class="pre">SampleFrame</span></code> implement this protocol, allowing BalanceDF to work with
 either backing class without modification.</p>
-<p>The six members below are the complete set of attributes and methods that
+<p>The seven members below are the complete set of attributes and methods that
 BalanceDF and its subclasses access on the backing object (<code class="docutils literal notranslate"><span class="pre">self._sample</span></code>).
 They were identified by auditing every <code class="docutils literal notranslate"><span class="pre">self._sample.*</span></code> access in
 <code class="docutils literal notranslate"><span class="pre">balancedf_class.py</span></code>.</p>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="balance.balancedf_class.BalanceDFSource.weight_column">
-<span class="sig-name descname"><span class="pre">weight_column</span></span><a class="headerlink" href="#balance.balancedf_class.BalanceDFSource.weight_column" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="balance.balancedf_class.BalanceDFSource.weight_series">
+<span class="sig-name descname"><span class="pre">weight_series</span></span><a class="headerlink" href="#balance.balancedf_class.BalanceDFSource.weight_series" title="Link to this definition">¶</a></dt>
 <dd><p>Active weight column as a <code class="docutils literal notranslate"><span class="pre">pd.Series</span></code>.</p>
 </dd></dl>
 
@@ -1892,11 +1892,17 @@ They were identified by auditing every <code class="docutils literal notranslate
 <dd><p>Replace the active weight column.</p>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.balancedf_class.BalanceDFSource.trim">
+<span class="sig-name descname"><span class="pre">trim</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDFSource.trim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDFSource.trim" title="Link to this definition">¶</a></dt>
+<dd><p>Trim extreme weights.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="balance.balancedf_class.BalanceDFWeights">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">balance.balancedf_class.</span></span><span class="sig-name descname"><span class="pre">BalanceDFWeights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.balancedf_class.BalanceDFSource" title="balance.balancedf_class.BalanceDFSource"><span class="pre">BalanceDFSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">links</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#balance.balancedf_class.BalanceDFSource" title="balance.balancedf_class.BalanceDFSource"><span class="pre">BalanceDFSource</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDFWeights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDFWeights" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">balance.balancedf_class.</span></span><span class="sig-name descname"><span class="pre">BalanceDFWeights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.balancedf_class.BalanceDFSource" title="balance.balancedf_class.BalanceDFSource"><span class="pre">BalanceDFSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">links</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#balance.balancedf_class.BalanceDFSource" title="balance.balancedf_class.BalanceDFSource"><span class="pre">BalanceDFSource</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDFWeights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDFWeights" title="Link to this definition">¶</a></dt>
 <dd><dl class="py method">
 <dt class="sig sig-object py" id="balance.balancedf_class.BalanceDFWeights.design_effect">
 <span class="sig-name descname"><span class="pre">design_effect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float64</span></span></span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDFWeights.design_effect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDFWeights.design_effect" title="Link to this definition">¶</a></dt>
@@ -2027,7 +2033,7 @@ Defaults to True.</p></li>
 If library=”seaborn” then returns None, unless return_axes is True. Then either a list or an np.array of matplotlib axis.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Union[Union[List, np.ndarray], Dict[str, Figure], None]</p>
+<dd class="field-odd"><p>list | np.ndarray | dict[str, Figure] | None</p>
 </dd>
 </dl>
 <p>Examples:
@@ -2222,19 +2228,23 @@ outcome_columns=”o”,</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="balance.balancedf_class.BalanceDFWeights.trim">
 <span class="sig-name descname"><span class="pre">trim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">percentile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_sum_of_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDFWeights.trim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDFWeights.trim" title="Link to this definition">¶</a></dt>
-<dd><p>Trim weights in the sample object.</p>
-<p>Uses <code class="xref py py-func docutils literal notranslate"><span class="pre">adjustments.trim_weights()</span></code> for the weights trimming.</p>
+<dd><p>Trim weights in the backing sample object in-place.</p>
+<p>Delegates to <code class="xref py py-meth docutils literal notranslate"><span class="pre">SampleFrame.trim()</span></code> (or <code class="xref py py-meth docutils literal notranslate"><span class="pre">BalanceFrame.trim()</span></code>)
+with <code class="docutils literal notranslate"><span class="pre">in_place=True</span></code>, which adds a weight history column and
+overwrites the active weight column.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>self</strong> (<a class="reference internal" href="#balance.balancedf_class.BalanceDFWeights" title="balance.balancedf_class.BalanceDFWeights"><em>BalanceDFWeights</em></a>) – Object.</p></li>
-<li><p><strong>ratio</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – Maps to weight_trimming_mean_ratio. Defaults to None.</p></li>
-<li><p><strong>percentile</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em><em>, </em><em>optional</em>) – Maps to weight_trimming_percentile. Defaults to None.</p></li>
-<li><p><strong>keep_sum_of_weights</strong> (<em>bool</em><em>, </em><em>optional</em>) – Maps to weight_trimming_percentile. Defaults to True.</p></li>
+<li><p><strong>ratio</strong> – Mean-ratio upper bound.  Mutually exclusive with
+<em>percentile</em>.</p></li>
+<li><p><strong>percentile</strong> – Percentile(s) for winsorization.  Mutually exclusive
+with <em>ratio</em>.</p></li>
+<li><p><strong>keep_sum_of_weights</strong> – Whether to rescale after trimming to
+preserve the original sum of weights.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>None. This function updates the <code class="xref py py-func docutils literal notranslate"><span class="pre">_sample()</span></code> using <code class="xref py py-func docutils literal notranslate"><span class="pre">set_weights()</span></code></p>
+<dd class="field-even"><p>None. Mutates the backing sample’s weights in-place.</p>
 </dd>
 </dl>
 <p>Examples:
@@ -2311,12 +2321,13 @@ sample.weights().df[“weight”].max() &lt;= 100.0
 </ul>
 </li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFSource"><code class="docutils literal notranslate"><span class="pre">BalanceDFSource</span></code></a><ul>
-<li><a class="reference internal" href="#balance.balancedf_class.BalanceDFSource.weight_column"><code class="docutils literal notranslate"><span class="pre">BalanceDFSource.weight_column</span></code></a></li>
+<li><a class="reference internal" href="#balance.balancedf_class.BalanceDFSource.weight_series"><code class="docutils literal notranslate"><span class="pre">BalanceDFSource.weight_series</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFSource.id_column"><code class="docutils literal notranslate"><span class="pre">BalanceDFSource.id_column</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFSource._links"><code class="docutils literal notranslate"><span class="pre">BalanceDFSource._links</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFSource._outcome_columns"><code class="docutils literal notranslate"><span class="pre">BalanceDFSource._outcome_columns</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFSource._covar_columns"><code class="docutils literal notranslate"><span class="pre">BalanceDFSource._covar_columns()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFSource.set_weights"><code class="docutils literal notranslate"><span class="pre">BalanceDFSource.set_weights()</span></code></a></li>
+<li><a class="reference internal" href="#balance.balancedf_class.BalanceDFSource.trim"><code class="docutils literal notranslate"><span class="pre">BalanceDFSource.trim()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#balance.balancedf_class.BalanceDFWeights"><code class="docutils literal notranslate"><span class="pre">BalanceDFWeights</span></code></a><ul>
@@ -2336,8 +2347,8 @@ sample.weights().df[“weight”].max() &lt;= 100.0
   </div>
   <div>
     <h4>Previous topic</h4>
-    <p class="topless"><a href="balance.adjustment.html"
-                          title="previous chapter">balance.adjustment</a></p>
+    <p class="topless"><a href="balance.balance_frame.html"
+                          title="previous chapter">balance.balance_frame</a></p>
   </div>
   <div>
     <h4>Next topic</h4>
@@ -2378,7 +2389,7 @@ sample.weights().df[“weight”].max() &lt;= 100.0
           <a href="balance.cli.html" title="balance.cli"
              >next</a> |</li>
         <li class="right" >
-          <a href="balance.adjustment.html" title="balance.adjustment"
+          <a href="balance.balance_frame.html" title="balance.balance_frame"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="balance.html" >balance</a> &#187;</li>

@@ -282,7 +282,7 @@
 <span class="c1"># This is so to avoid various cyclic imports (since various files call sample_class, and then sample_class also calls these files)</span>
 <span class="c1"># TODO: (p2) move away from this method once we restructure Sample and BalanceDF objects...</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_isinstance_sample</span><span class="p">(</span><span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if an object is an instance of Sample.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if an object is an instance of Sample, BalanceFrame, or SampleFrame.</span>
 
 <span class="sd">    The import is done inside the function to avoid circular import issues at</span>
 <span class="sd">    module load time. Since this module is part of the balance package, the</span>
@@ -292,11 +292,10 @@
 <span class="sd">        obj: The object to check.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        bool: True if obj is a Sample instance, False otherwise.</span>
+<span class="sd">        bool: True if obj has a ``covars()`` method (Sample, BalanceFrame,</span>
+<span class="sd">            or SampleFrame), False otherwise.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample_class</span>
-
-    <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">sample_class</span><span class="o">.</span><span class="n">Sample</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;covars&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;covars&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
 
 
 <div class="viewcode-block" id="guess_id_column">

@@ -86,7 +86,9 @@
 </li>
       <li><a href="balance.util.html#balance.util.add_na_indicator_to_combined">add_na_indicator_to_combined() (in module balance.util)</a>
 </li>
-      <li><a href="balance.sample_class.html#balance.sample_class.Sample.adjust">adjust() (balance.sample_class.Sample method)</a>
+      <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.add_weight_column">add_weight_column() (balance.sample_frame.SampleFrame method)</a>
+</li>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.adjust">adjust() (balance.balance_frame.BalanceFrame method)</a>
 </li>
       <li><a href="balance.weighting_methods.adjust_null.html#balance.weighting_methods.adjust_null.adjust_null">adjust_null() (in module balance.weighting_methods.adjust_null)</a>
 </li>
@@ -94,10 +96,10 @@
 </li>
       <li><a href="balance.adjustment.html#balance.adjustment.apply_transformations">apply_transformations() (in module balance.adjustment)</a>
 </li>
-      <li><a href="balance.stats_and_plots.ascii_plots.html#balance.stats_and_plots.ascii_plots.ascii_comparative_hist">ascii_comparative_hist() (in module balance.stats_and_plots.ascii_plots)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="balance.stats_and_plots.ascii_plots.html#balance.stats_and_plots.ascii_plots.ascii_comparative_hist">ascii_comparative_hist() (in module balance.stats_and_plots.ascii_plots)</a>
+</li>
       <li><a href="balance.stats_and_plots.ascii_plots.html#balance.stats_and_plots.ascii_plots.ascii_plot_bar">ascii_plot_bar() (in module balance.stats_and_plots.ascii_plots)</a>
 </li>
       <li><a href="balance.stats_and_plots.ascii_plots.html#balance.stats_and_plots.ascii_plots.ascii_plot_dist">ascii_plot_dist() (in module balance.stats_and_plots.ascii_plots)</a>
@@ -143,6 +145,13 @@
 </li>
       </ul></li>
       <li>
+    balance.balance_frame
+
+      <ul>
+        <li><a href="balance.balance_frame.html#module-balance.balance_frame">module</a>
+</li>
+      </ul></li>
+      <li>
     balance.balancedf_class
 
       <ul>
@@ -161,6 +170,13 @@
 
       <ul>
         <li><a href="balance.sample_class.html#module-balance.sample_class">module</a>
+</li>
+      </ul></li>
+      <li>
+    balance.sample_frame
+
+      <ul>
+        <li><a href="balance.sample_frame.html#module-balance.sample_frame">module</a>
 </li>
       </ul></li>
       <li>
@@ -221,6 +237,13 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    balance.summary_utils
+
+      <ul>
+        <li><a href="balance.summary_utils.html#module-balance.summary_utils">module</a>
+</li>
+      </ul></li>
       <li>
     balance.testutil
 
@@ -296,6 +319,8 @@
 </li>
       <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDFWeights">BalanceDFWeights (class in balance.balancedf_class)</a>
 </li>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame">BalanceFrame (class in balance.balance_frame)</a>
+</li>
       <li><a href="balance.testutil.html#balance.testutil.BalanceTestCase">BalanceTestCase (class in balance.testutil)</a>
 </li>
       <li><a href="balance.cli.html#balance.cli.BalanceCLI.batch_columns">batch_columns() (balance.cli.BalanceCLI method)</a>
@@ -324,20 +349,26 @@
 </li>
       <li><a href="balance.util.html#balance.util.HighCardinalityFeature.column">column (balance.util.HighCardinalityFeature attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="balance.stats_and_plots.impact_of_weights_on_outcome.html#balance.stats_and_plots.impact_of_weights_on_outcome.compare_adjusted_weighted_outcome_ss">compare_adjusted_weighted_outcome_ss() (in module balance.stats_and_plots.impact_of_weights_on_outcome)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="balance.weighting_methods.cbps.html#balance.weighting_methods.cbps.compute_deff_from_beta">compute_deff_from_beta() (in module balance.weighting_methods.cbps)</a>
 </li>
       <li><a href="balance.weighting_methods.cbps.html#balance.weighting_methods.cbps.compute_pseudo_weights_from_logit_probs">compute_pseudo_weights_from_logit_probs() (in module balance.weighting_methods.cbps)</a>
+</li>
+      <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.covar_columns">covar_columns (balance.sample_frame.SampleFrame property)</a>
 </li>
       <li><a href="balance.cli.html#balance.cli.BalanceCLI.covariate_columns">covariate_columns() (balance.cli.BalanceCLI method)</a>
 </li>
       <li><a href="balance.cli.html#balance.cli.BalanceCLI.covariate_columns_for_diagnostics">covariate_columns_for_diagnostics() (balance.cli.BalanceCLI method)</a>
 </li>
-      <li><a href="balance.sample_class.html#balance.sample_class.Sample.covars">covars() (balance.sample_class.Sample method)</a>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.covars">covars() (balance.balance_frame.BalanceFrame method)</a>
+
+      <ul>
+        <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.covars">(balance.sample_frame.SampleFrame method)</a>
 </li>
+      </ul></li>
       <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDF.cvmd">cvmd() (balance.balancedf_class.BalanceDF method)</a>
 
       <ul>
@@ -364,17 +395,39 @@
       </ul></li>
       <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDFWeights.design_effect_prop">design_effect_prop() (balance.balancedf_class.BalanceDFWeights method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDF.df">df (balance.balancedf_class.BalanceDF property)</a>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.df">df (balance.balance_frame.BalanceFrame property)</a>
 
       <ul>
+        <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDF.df">(balance.balancedf_class.BalanceDF property)</a>
+</li>
         <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDFWeights.df">(balance.balancedf_class.BalanceDFWeights property)</a>
 </li>
-        <li><a href="balance.sample_class.html#balance.sample_class.Sample.df">(balance.sample_class.Sample property)</a>
+        <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.df">(balance.sample_frame.SampleFrame property)</a>
 </li>
       </ul></li>
-      <li><a href="balance.sample_class.html#balance.sample_class.Sample.diagnostics">diagnostics() (balance.sample_class.Sample method)</a>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.df_all">df_all (balance.balance_frame.BalanceFrame property)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.df_covars">df_covars (balance.sample_frame.SampleFrame property)</a>
+</li>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.df_ignored">df_ignored (balance.balance_frame.BalanceFrame property)</a>
+
+      <ul>
+        <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.df_ignored">(balance.sample_frame.SampleFrame property)</a>
+</li>
+      </ul></li>
+      <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.df_outcomes">df_outcomes (balance.sample_frame.SampleFrame property)</a>
+</li>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.df_responders">df_responders (balance.balance_frame.BalanceFrame property)</a>
+</li>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.df_responders_unadjusted">df_responders_unadjusted (balance.balance_frame.BalanceFrame property)</a>
+</li>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.df_target">df_target (balance.balance_frame.BalanceFrame property)</a>
+</li>
+      <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.df_weights">df_weights (balance.sample_frame.SampleFrame property)</a>
+</li>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.diagnostics">diagnostics() (balance.balance_frame.BalanceFrame method)</a>
 </li>
       <li><a href="balance.util.html#balance.util.dot_expansion">dot_expansion() (in module balance.util)</a>
 </li>
@@ -406,16 +459,24 @@
 </li>
       <li><a href="balance.util.html#balance.util.TruncationFormatter.format">format() (balance.util.TruncationFormatter method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="balance.cli.html#balance.cli.BalanceCLI.formula">formula() (balance.cli.BalanceCLI method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="balance.util.html#balance.util.formula_generator">formula_generator() (in module balance.util)</a>
 </li>
       <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDFCovars.from_frame">from_frame() (balance.balancedf_class.BalanceDFCovars class method)</a>
 
       <ul>
         <li><a href="balance.sample_class.html#balance.sample_class.Sample.from_frame">(balance.sample_class.Sample class method)</a>
+</li>
+        <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.from_frame">(balance.sample_frame.SampleFrame class method)</a>
+</li>
+      </ul></li>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.from_sample">from_sample() (balance.balance_frame.BalanceFrame class method)</a>
+
+      <ul>
+        <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.from_sample">(balance.sample_frame.SampleFrame class method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -452,7 +513,7 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="balance.cli.html#balance.cli.BalanceCLI.has_outcome_columns">has_outcome_columns() (balance.cli.BalanceCLI method)</a>
 </li>
-      <li><a href="balance.sample_class.html#balance.sample_class.Sample.has_target">has_target() (balance.sample_class.Sample method)</a>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.has_target">has_target (balance.balance_frame.BalanceFrame property)</a>
 </li>
       <li><a href="balance.html#balance.help">help() (in module balance)</a>
 </li>
@@ -464,22 +525,32 @@
 <h2 id="I">I</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDFSource.id_column">id_column (balance.balancedf_class.BalanceDFSource attribute)</a>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.id_column">id_column (balance.balance_frame.BalanceFrame property)</a>
 
       <ul>
+        <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDFSource.id_column">(balance.balancedf_class.BalanceDFSource attribute)</a>
+</li>
         <li><a href="balance.sample_class.html#balance.sample_class.Sample.id_column">(balance.sample_class.Sample attribute)</a>
+</li>
+        <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.id_column">(balance.sample_frame.SampleFrame property)</a>
 </li>
       </ul></li>
       <li><a href="balance.cli.html#balance.cli.BalanceCLI.id_column">id_column() (balance.cli.BalanceCLI method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="balance.sample_class.html#balance.sample_class.Sample.ignored_columns">ignored_columns() (balance.sample_class.Sample method)</a>
+      <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.id_column_name">id_column_name (balance.sample_frame.SampleFrame property)</a>
+</li>
+      <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.ignored_columns">ignored_columns (balance.sample_frame.SampleFrame property)</a>
 </li>
       <li><a href="balance.weighting_methods.ipw.html#balance.weighting_methods.ipw.ipw">ipw() (in module balance.weighting_methods.ipw)</a>
 </li>
-      <li><a href="balance.sample_class.html#balance.sample_class.Sample.is_adjusted">is_adjusted() (balance.sample_class.Sample method)</a>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.is_adjusted">is_adjusted (balance.balance_frame.BalanceFrame attribute)</a>
+
+      <ul>
+        <li><a href="balance.balance_frame.html#id0">(balance.balance_frame.BalanceFrame property)</a>
 </li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -488,7 +559,7 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="balance.cli.html#balance.cli.BalanceCLI.keep_columns">keep_columns() (balance.cli.BalanceCLI method)</a>
 </li>
-      <li><a href="balance.sample_class.html#balance.sample_class.Sample.keep_only_some_rows_columns">keep_only_some_rows_columns() (balance.sample_class.Sample method)</a>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.keep_only_some_rows_columns">keep_only_some_rows_columns() (balance.balance_frame.BalanceFrame method)</a>
 </li>
       <li><a href="balance.cli.html#balance.cli.BalanceCLI.keep_row_column">keep_row_column() (balance.cli.BalanceCLI method)</a>
 </li>
@@ -550,16 +621,16 @@
 </li>
       <li><a href="balance.cli.html#balance.cli.BalanceCLI.method">method() (balance.cli.BalanceCLI method)</a>
 </li>
-      <li><a href="balance.sample_class.html#balance.sample_class.Sample.model">model() (balance.sample_class.Sample method)</a>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.model">model (balance.balance_frame.BalanceFrame property)</a>
 </li>
       <li><a href="balance.weighting_methods.ipw.html#balance.weighting_methods.ipw.model_coefs">model_coefs() (in module balance.weighting_methods.ipw)</a>
 </li>
-      <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDF.model_matrix">model_matrix() (balance.balancedf_class.BalanceDF method)</a>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.model_matrix">model_matrix() (balance.balance_frame.BalanceFrame method)</a>
 
       <ul>
-        <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDFCovars.model_matrix">(balance.balancedf_class.BalanceDFCovars method)</a>
+        <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDF.model_matrix">(balance.balancedf_class.BalanceDF method)</a>
 </li>
-        <li><a href="balance.sample_class.html#balance.sample_class.Sample.model_matrix">(balance.sample_class.Sample method)</a>
+        <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDFCovars.model_matrix">(balance.balancedf_class.BalanceDFCovars method)</a>
 </li>
         <li><a href="balance.util.html#balance.util.model_matrix">(in module balance.util)</a>
 </li>
@@ -572,11 +643,15 @@
 </li>
         <li><a href="balance.adjustment.html#module-balance.adjustment">balance.adjustment</a>
 </li>
+        <li><a href="balance.balance_frame.html#module-balance.balance_frame">balance.balance_frame</a>
+</li>
         <li><a href="balance.balancedf_class.html#module-balance.balancedf_class">balance.balancedf_class</a>
 </li>
         <li><a href="balance.cli.html#module-balance.cli">balance.cli</a>
 </li>
         <li><a href="balance.sample_class.html#module-balance.sample_class">balance.sample_class</a>
+</li>
+        <li><a href="balance.sample_frame.html#module-balance.sample_frame">balance.sample_frame</a>
 </li>
         <li><a href="balance.stats_and_plots.html#module-balance.stats_and_plots">balance.stats_and_plots</a>
 </li>
@@ -593,6 +668,8 @@
         <li><a href="balance.stats_and_plots.weighted_stats.html#module-balance.stats_and_plots.weighted_stats">balance.stats_and_plots.weighted_stats</a>
 </li>
         <li><a href="balance.stats_and_plots.weights_stats.html#module-balance.stats_and_plots.weights_stats">balance.stats_and_plots.weights_stats</a>
+</li>
+        <li><a href="balance.summary_utils.html#module-balance.summary_utils">balance.summary_utils</a>
 </li>
         <li><a href="balance.testutil.html#module-balance.testutil">balance.testutil</a>
 </li>
@@ -639,6 +716,8 @@
 </li>
       <li><a href="balance.util.html#balance.util.one_hot_encoding_greater_2">one_hot_encoding_greater_2 (class in balance.util)</a>
 </li>
+      <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.outcome_columns">outcome_columns (balance.sample_frame.SampleFrame property)</a>
+</li>
       <li><a href="balance.cli.html#balance.cli.BalanceCLI.outcome_columns">outcome_columns() (balance.cli.BalanceCLI method)</a>
 </li>
   </ul></td>
@@ -651,8 +730,12 @@
         <li><a href="balance.stats_and_plots.weighted_comparisons_stats.html#balance.stats_and_plots.weighted_comparisons_stats.outcome_variance_ratio">(in module balance.stats_and_plots.weighted_comparisons_stats)</a>
 </li>
       </ul></li>
-      <li><a href="balance.sample_class.html#balance.sample_class.Sample.outcomes">outcomes() (balance.sample_class.Sample method)</a>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.outcomes">outcomes() (balance.balance_frame.BalanceFrame method)</a>
+
+      <ul>
+        <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.outcomes">(balance.sample_frame.SampleFrame method)</a>
 </li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -677,15 +760,17 @@
 </li>
       <li><a href="balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_bar">plotly_plot_bar() (in module balance.stats_and_plots.weighted_comparisons_plots)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_density">plotly_plot_density() (in module balance.stats_and_plots.weighted_comparisons_plots)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_dist">plotly_plot_dist() (in module balance.stats_and_plots.weighted_comparisons_plots)</a>
 </li>
       <li><a href="balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.plotly_plot_qq">plotly_plot_qq() (in module balance.stats_and_plots.weighted_comparisons_plots)</a>
 </li>
       <li><a href="balance.weighting_methods.poststratify.html#balance.weighting_methods.poststratify.poststratify">poststratify() (in module balance.weighting_methods.poststratify)</a>
+</li>
+      <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.predicted_outcome_columns">predicted_outcome_columns (balance.sample_frame.SampleFrame property)</a>
 </li>
       <li><a href="balance.weighting_methods.rake.html#balance.weighting_methods.rake.prepare_marginal_dist_for_raking">prepare_marginal_dist_for_raking() (in module balance.weighting_methods.rake)</a>
 </li>
@@ -725,12 +810,20 @@
 </li>
       <li><a href="balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.relative_frequency_table">relative_frequency_table() (in module balance.stats_and_plots.weighted_stats)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDFOutcomes.relative_response_rates">relative_response_rates() (balance.balancedf_class.BalanceDFOutcomes method)</a>
 
       <ul>
         <li><a href="balance.stats_and_plots.general_stats.html#balance.stats_and_plots.general_stats.relative_response_rates">(in module balance.stats_and_plots.general_stats)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.rename_weight_column">rename_weight_column() (balance.sample_frame.SampleFrame method)</a>
+</li>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.responders">responders (balance.balance_frame.BalanceFrame attribute)</a>
+
+      <ul>
+        <li><a href="balance.balance_frame.html#id1">(balance.balance_frame.BalanceFrame property)</a>
 </li>
       </ul></li>
       <li><a href="balance.util.html#balance.util.rm_mutual_nas">rm_mutual_nas() (in module balance.util)</a>
@@ -749,22 +842,30 @@
 </li>
       <li><a href="balance.cli.html#balance.cli.BalanceCLI.sample_column">sample_column() (balance.cli.BalanceCLI method)</a>
 </li>
+      <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame">SampleFrame (class in balance.sample_frame)</a>
+</li>
       <li><a href="balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.seaborn_plot_dist">seaborn_plot_dist() (in module balance.stats_and_plots.weighted_comparisons_plots)</a>
 </li>
-      <li><a href="balance.sample_class.html#balance.sample_class.Sample.set_target">set_target() (balance.sample_class.Sample method)</a>
+      <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.set_active_weight">set_active_weight() (balance.sample_frame.SampleFrame method)</a>
 </li>
-      <li><a href="balance.sample_class.html#balance.sample_class.Sample.set_unadjusted">set_unadjusted() (balance.sample_class.Sample method)</a>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.set_target">set_target() (balance.balance_frame.BalanceFrame method)</a>
 </li>
-      <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDFSource.set_weights">set_weights() (balance.balancedf_class.BalanceDFSource method)</a>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.set_unadjusted">set_unadjusted() (balance.balance_frame.BalanceFrame method)</a>
+</li>
+      <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.set_weight_metadata">set_weight_metadata() (balance.sample_frame.SampleFrame method)</a>
+</li>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.set_weights">set_weights() (balance.balance_frame.BalanceFrame method)</a>
 
       <ul>
-        <li><a href="balance.sample_class.html#balance.sample_class.Sample.set_weights">(balance.sample_class.Sample method)</a>
+        <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDFSource.set_weights">(balance.balancedf_class.BalanceDFSource method)</a>
+</li>
+        <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.set_weights">(balance.sample_frame.SampleFrame method)</a>
 </li>
       </ul></li>
-      <li><a href="balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.set_xy_axes_to_use_the_same_lim">set_xy_axes_to_use_the_same_lim() (in module balance.stats_and_plots.weighted_comparisons_plots)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="balance.stats_and_plots.weighted_comparisons_plots.html#balance.stats_and_plots.weighted_comparisons_plots.set_xy_axes_to_use_the_same_lim">set_xy_axes_to_use_the_same_lim() (in module balance.stats_and_plots.weighted_comparisons_plots)</a>
+</li>
       <li><a href="balance.html#balance.setup_logging">setup_logging() (in module balance)</a>
 </li>
       <li><a href="balance.cli.html#balance.cli.BalanceCLI.split_sample">split_sample() (balance.cli.BalanceCLI method)</a>
@@ -773,14 +874,14 @@
 </li>
       <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDF.std">std() (balance.balancedf_class.BalanceDF method)</a>
 </li>
-      <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDF.summary">summary() (balance.balancedf_class.BalanceDF method)</a>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.summary">summary() (balance.balance_frame.BalanceFrame method)</a>
 
       <ul>
+        <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDF.summary">(balance.balancedf_class.BalanceDF method)</a>
+</li>
         <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDFOutcomes.summary">(balance.balancedf_class.BalanceDFOutcomes method)</a>
 </li>
         <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDFWeights.summary">(balance.balancedf_class.BalanceDFWeights method)</a>
-</li>
-        <li><a href="balance.sample_class.html#balance.sample_class.Sample.summary">(balance.sample_class.Sample method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -789,32 +890,48 @@
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.target">target (balance.balance_frame.BalanceFrame attribute)</a>
+
+      <ul>
+        <li><a href="balance.balance_frame.html#id2">(balance.balance_frame.BalanceFrame property)</a>
+</li>
+      </ul></li>
       <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDFOutcomes.target_response_rates">target_response_rates() (balance.balancedf_class.BalanceDFOutcomes method)</a>
 </li>
       <li><a href="balance.testutil.html#balance.testutil.tempfile_path">tempfile_path() (in module balance.testutil)</a>
 </li>
       <li><a href="balance.sample_class.html#balance.sample_class.Sample.to_balance_frame">to_balance_frame() (balance.sample_class.Sample method)</a>
 </li>
-      <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDF.to_csv">to_csv() (balance.balancedf_class.BalanceDF method)</a>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.to_csv">to_csv() (balance.balance_frame.BalanceFrame method)</a>
 
       <ul>
-        <li><a href="balance.sample_class.html#balance.sample_class.Sample.to_csv">(balance.sample_class.Sample method)</a>
+        <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDF.to_csv">(balance.balancedf_class.BalanceDF method)</a>
 </li>
       </ul></li>
-      <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDF.to_download">to_download() (balance.balancedf_class.BalanceDF method)</a>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.to_download">to_download() (balance.balance_frame.BalanceFrame method)</a>
 
       <ul>
-        <li><a href="balance.sample_class.html#balance.sample_class.Sample.to_download">(balance.sample_class.Sample method)</a>
+        <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDF.to_download">(balance.balancedf_class.BalanceDF method)</a>
 </li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.to_sample">to_sample() (balance.balance_frame.BalanceFrame method)</a>
+</li>
       <li><a href="balance.sample_class.html#balance.sample_class.Sample.to_sample_frame">to_sample_frame() (balance.sample_class.Sample method)</a>
 </li>
       <li><a href="balance.cli.html#balance.cli.BalanceCLI.transformations">transformations() (balance.cli.BalanceCLI method)</a>
 </li>
-      <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDFWeights.trim">trim() (balance.balancedf_class.BalanceDFWeights method)</a>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.trim">trim() (balance.balance_frame.BalanceFrame method)</a>
+
+      <ul>
+        <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDFSource.trim">(balance.balancedf_class.BalanceDFSource method)</a>
 </li>
+        <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDFWeights.trim">(balance.balancedf_class.BalanceDFWeights method)</a>
+</li>
+        <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.trim">(balance.sample_frame.SampleFrame method)</a>
+</li>
+      </ul></li>
       <li><a href="balance.adjustment.html#balance.adjustment.trim_weights">trim_weights() (in module balance.adjustment)</a>
 </li>
       <li><a href="balance.util.html#balance.util.TruncationFormatter">TruncationFormatter (class in balance.util)</a>
@@ -825,6 +942,8 @@
 <h2 id="U">U</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.unadjusted">unadjusted (balance.balance_frame.BalanceFrame property)</a>
+</li>
       <li><a href="balance.util.html#balance.util.HighCardinalityFeature.unique_count">unique_count (balance.util.HighCardinalityFeature attribute)</a>
 </li>
   </ul></td>
@@ -851,30 +970,44 @@
 <h2 id="W">W</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDFSource.weight_column">weight_column (balance.balancedf_class.BalanceDFSource attribute)</a>
-
-      <ul>
-        <li><a href="balance.sample_class.html#balance.sample_class.Sample.weight_column">(balance.sample_class.Sample attribute)</a>
+      <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.weight_column">weight_column (balance.sample_frame.SampleFrame property)</a>
 </li>
-      </ul></li>
       <li><a href="balance.cli.html#balance.cli.BalanceCLI.weight_column">weight_column() (balance.cli.BalanceCLI method)</a>
 </li>
+      <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.weight_columns_all">weight_columns_all (balance.sample_frame.SampleFrame property)</a>
+</li>
+      <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.weight_metadata">weight_metadata() (balance.sample_frame.SampleFrame method)</a>
+</li>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.weight_series">weight_series (balance.balance_frame.BalanceFrame property)</a>
+
+      <ul>
+        <li><a href="balance.balancedf_class.html#balance.balancedf_class.BalanceDFSource.weight_series">(balance.balancedf_class.BalanceDFSource attribute)</a>
+</li>
+        <li><a href="balance.sample_class.html#balance.sample_class.Sample.weight_series">(balance.sample_class.Sample attribute)</a>
+</li>
+        <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.weight_series">(balance.sample_frame.SampleFrame property)</a>
+</li>
+      </ul></li>
       <li><a href="balance.cli.html#balance.cli.BalanceCLI.weight_trimming_mean_ratio">weight_trimming_mean_ratio() (balance.cli.BalanceCLI method)</a>
 </li>
       <li><a href="balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.weighted_mean">weighted_mean() (in module balance.stats_and_plots.weighted_stats)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="balance.stats_and_plots.weights_stats.html#balance.stats_and_plots.weights_stats.weighted_median_breakdown_point">weighted_median_breakdown_point() (in module balance.stats_and_plots.weights_stats)</a>
 </li>
       <li><a href="balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.weighted_quantile">weighted_quantile() (in module balance.stats_and_plots.weighted_stats)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.weighted_sd">weighted_sd() (in module balance.stats_and_plots.weighted_stats)</a>
 </li>
       <li><a href="balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.weighted_var">weighted_var() (in module balance.stats_and_plots.weighted_stats)</a>
 </li>
-      <li><a href="balance.sample_class.html#balance.sample_class.Sample.weights">weights() (balance.sample_class.Sample method)</a>
+      <li><a href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.weights">weights() (balance.balance_frame.BalanceFrame method)</a>
+
+      <ul>
+        <li><a href="balance.sample_frame.html#balance.sample_frame.SampleFrame.weights">(balance.sample_frame.SampleFrame method)</a>
 </li>
+      </ul></li>
       <li><a href="balance.weighting_methods.ipw.html#balance.weighting_methods.ipw.weights_from_link">weights_from_link() (in module balance.weighting_methods.ipw)</a>
 </li>
       <li><a href="balance.cli.html#balance.cli.BalanceCLI.weights_impact_on_outcome_method">weights_impact_on_outcome_method() (balance.cli.BalanceCLI method)</a>
