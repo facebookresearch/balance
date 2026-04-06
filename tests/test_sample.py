@@ -640,7 +640,7 @@ class TestSample_base_and_adjust_methods(
         s, t = self._create_test_sample_with_target()
 
         a = s.adjust(t, max_de=None, method="null")
-        m = a.model()
+        m = a.model
 
         self.assertEqual(_assert_type(m)["method"], "null_adjustment")
 
@@ -654,7 +654,7 @@ class TestSample_base_and_adjust_methods(
         s, t = self._create_test_sample_with_target()
 
         a = s.adjust(t, max_de=None, num_lambdas=1)
-        m = a.model()
+        m = a.model
 
         self.assertEqual(_assert_type(m)["method"], "ipw")
 
@@ -2309,7 +2309,7 @@ class TestSampleModelNone(balance.testutil.BalanceTestCase):
         Verifies lines 851-854 in sample_class.py.
         """
         sample = Sample.from_frame(pd.DataFrame({"a": [1, 2, 3], "id": [1, 2, 3]}))
-        self.assertIsNone(sample.model())
+        self.assertIsNone(sample.model)
 
 
 class TestSampleSetWeightsNonFloat(balance.testutil.BalanceTestCase):
@@ -2448,7 +2448,7 @@ class TestSampleDiagnosticsIPWModelParams(balance.testutil.BalanceTestCase):
 
     def _get_ipw_fit(self, adjusted: Sample) -> Any:
         """Return the fitted sklearn estimator for an IPW-adjusted sample."""
-        model = adjusted.model()
+        model = adjusted.model
         self.assertIsNotNone(model)
         self.assertIn("fit", model)
         fit = model["fit"]
