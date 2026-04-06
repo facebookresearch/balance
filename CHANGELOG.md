@@ -27,6 +27,16 @@
   - Formula settings are now propagated to linked covariate views (`target`,
     `unadjusted`) so comparative diagnostics run on consistent design matrices.
 
+## Internal Changes
+
+- **Refactored `Sample` to delegate to `SampleFrame` and `BalanceFrame` internally**
+  - `Sample` is now a thin facade: `set_target()` creates a backing `BalanceFrame`,
+    and `adjust()`, `summary()`, `diagnostics()`, `model()`, `is_adjusted`, and
+    `keep_only_some_rows_columns()` delegate to it.
+  - High-cardinality feature detection and large-target warnings moved from
+    `Sample.adjust()` to `BalanceFrame.adjust()` so both APIs share the same logic.
+  - No public API changes — all existing `Sample` methods continue to work identically.
+
 # 0.18.0 (2026-03-24)
 
 ## New Features
@@ -169,9 +179,24 @@
   - `to_csv()`: write combined DataFrame to CSV via `to_csv_with_defaults()`.
   - `to_download()`: create IPython `FileLink` for interactive download.
 
+- **Sample internally backed by SampleFrame**
+  - `Sample._df`, `_outcome_columns`, and `_ignored_column_names` are now `@property`
+    descriptors that delegate to a backing `_sample_frame: SampleFrame` instance.
+  - `from_frame()` refactored: all DataFrame mutations during construction use a local
+    `working_df` variable; at the end, `SampleFrame._create()` is called with explicit
+    column roles. The public API is fully backward-compatible.
+  - `adjust()` now records weight provenance metadata on the backing SampleFrame via
+    `set_weight_metadata()`, enabling downstream code to inspect how weights were produced.
+  - `keep_only_some_rows_columns()`: column filtering now always preserves outcome
+    columns in the keep set (per-link filtering uses each linked object's own outcomes).
+
+- **`Sample.is_adjusted` is now a `@property` returning `_CallableBool`** — works both
+  as `sample.is_adjusted` (property, consistent with BalanceFrame) and
+  `sample.is_adjusted()` (legacy method call, backward compatible).
+
 - **Added bidirectional conversion between Sample, SampleFrame, and BalanceFrame**
   - `SampleFrame.from_sample(sample)`: converts a Sample to a SampleFrame with
-    proper column-role mapping (id, weight, outcomes, ignored → misc).
+    proper column-role mapping (id, weight, outcomes, ignored).
   - `Sample.to_sample_frame()`: convenience method delegating to
     `SampleFrame.from_sample()`.
   - `BalanceFrame.from_sample(sample)`: converts a Sample (with target) to a
@@ -319,6 +344,32 @@
   - to_sample_frame_basic, to_sample_frame_with_outcomes,
     to_sample_frame_with_ignored, to_balance_frame_unadjusted,
     to_balance_frame_adjusted, to_balance_frame_no_target_raises
+
+- Added `TestSampleInternalSampleFrame` class in `test_sample.py` (19 tests):
+  - `test_sample_has_sample_frame` — Sample has a SampleFrame backing
+  - `test_df_property_returns_sample_frame_df` — `_df` delegates to SampleFrame
+  - `test_df_setter_updates_sample_frame` — setting `_df` updates SampleFrame
+  - `test_outcome_columns_property/none/setter` — outcome columns delegate
+  - `test_ignored_column_names_property/empty/setter` — ignored columns delegate
+  - `test_covar_columns_inferred_correctly` — covars inferred by exclusion
+  - `test_from_frame_builds_sample_frame_with_correct_roles` — all roles correct
+  - `test_set_target_preserves_sample_frame` — set_target keeps SampleFrame
+  - `test_unadjusted_has_no_weight_metadata` — no metadata before adjust
+  - `test_adjust_records_weight_metadata` — adjust() records method + adjusted
+  - `test_adjust_ipw_records_weight_metadata` — IPW method recorded
+  - `test_adjust_callable_records_weight_metadata` — callable __name__ recorded
+  - `test_set_weights_syncs_sample_frame` — set_weights updates SampleFrame
+  - `test_keep_only_some_rows_columns_preserves_outcomes` — outcomes kept in column filter
+  - `test_deepcopy_preserves_sample_frame` — deepcopy creates independent SampleFrame
+
+- Added `TestCallableBool` class in `test_sample.py` (11 tests):
+  - `test_bool_true/false`, `test_call_true/false`, `test_repr`,
+    `test_eq_with_bool`, `test_eq_with_callable_bool`,
+    `test_eq_not_implemented_for_other_types`, `test_hash`,
+    `test_mul`, `test_rmul`
+
+- Added `test_Sample_is_adjusted_property_and_callable` in `test_sample.py`:
+  verifies `is_adjusted` works both as property and method call
 
 - Added `TestBalanceDFSourceProtocol` class in `test_balancedf.py` (8 tests):
   - `test_sample_satisfies_protocol` — verifies `Sample` passes `isinstance` check
