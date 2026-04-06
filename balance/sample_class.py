@@ -10,7 +10,7 @@ from __future__ import annotations
 import inspect
 import logging
 from copy import deepcopy
-from typing import Any, List
+from typing import Any
 
 from balance.balance_frame import _CallableBool, BalanceFrame  # noqa: F401
 from balance.sample_frame import SampleFrame
@@ -87,13 +87,13 @@ class Sample(BalanceFrame, SampleFrame):
         id_column: str | None = None,
         covar_columns: list[str] | None = None,
         weight_column: str | None = None,
-        outcome_columns: List[str] | tuple[str, ...] | str | None = None,
-        predicted_outcome_columns: List[str] | tuple[str, ...] | str | None = None,
-        ignored_columns: List[str] | tuple[str, ...] | str | None = None,
+        outcome_columns: list[str] | tuple[str, ...] | str | None = None,
+        predicted_outcome_columns: list[str] | tuple[str, ...] | str | None = None,
+        ignored_columns: list[str] | tuple[str, ...] | str | None = None,
         check_id_uniqueness: bool = True,
         standardize_types: bool = True,
         use_deepcopy: bool = True,
-        id_column_candidates: List[str] | tuple[str, ...] | str | None = None,
+        id_column_candidates: list[str] | tuple[str, ...] | str | None = None,
     ) -> Sample:
         """Create a Sample from a pandas DataFrame.
 
