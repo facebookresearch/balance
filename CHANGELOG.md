@@ -18,6 +18,16 @@
 
 ## New Features
 
+- **Compound/sequential adjustments** — `adjust()` can now be called multiple
+  times on the same object. Each call uses the current (previously adjusted)
+  weights as design weights, compounding adjustments. For example, run IPW first
+  to correct broad imbalances, then rake on a specific variable for fine-tuning.
+  The active weight column always keeps its original name (e.g., `"weight"`);
+  the full weight history is tracked via `weight_pre_adjust` (frozen original
+  design weights) and `weight_adjusted_1`, `weight_adjusted_2`, etc. The
+  original unadjusted baseline is always preserved for diagnostics
+  (`asmd_improvement()` shows total improvement across all steps).
+
 - **Added formula support to `Sample.covars()` for downstream diagnostics**
   - `Sample.covars()` now accepts a `formula` argument and stores it on the
     returned `BalanceDFCovars` object.

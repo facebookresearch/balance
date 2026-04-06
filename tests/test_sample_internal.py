@@ -454,7 +454,7 @@ class TestSampleInternalSampleFrame(
         )
         s_with_target = s.set_target(t)
         adjusted = s_with_target.adjust(method="null")
-        meta = adjusted._sample_frame.weight_metadata()
+        meta = adjusted._sample_frame.weight_metadata("weight_adjusted_1")
         self.assertEqual(meta["method"], "null")
         self.assertTrue(meta["adjusted"])
 
@@ -485,7 +485,7 @@ class TestSampleInternalSampleFrame(
         )
         s_with_target = s.set_target(t)
         adjusted = s_with_target.adjust(method="ipw")
-        meta = adjusted._sample_frame.weight_metadata()
+        meta = adjusted._sample_frame.weight_metadata("weight_adjusted_1")
         self.assertEqual(meta["method"], "ipw")
         self.assertTrue(meta["adjusted"])
 
@@ -511,7 +511,7 @@ class TestSampleInternalSampleFrame(
         )
         s_with_target = s.set_target(t)
         adjusted = s_with_target.adjust(method=my_custom_method)
-        meta = adjusted._sample_frame.weight_metadata()
+        meta = adjusted._sample_frame.weight_metadata("weight_adjusted_1")
         self.assertEqual(meta["method"], "my_custom_method")
         self.assertTrue(meta["adjusted"])
 
