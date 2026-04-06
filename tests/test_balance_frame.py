@@ -1808,3 +1808,42 @@ class TestBalanceFrameToSample(BalanceTestCase):
             sorted(old_adjusted._covar_columns_names()),
             sorted(roundtrip._covar_columns_names()),
         )
+
+
+class TestBalanceFrameRIndicator(BalanceTestCase):
+    """Verify r_indicator() uses BalanceFrame's links, not SampleFrame._links."""
+
+    def test_r_indicator_uses_balance_frame_links(self) -> None:
+        """r_indicator on bf.weights() should resolve the target via links_override."""
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["1", "2"],
+                    "x": [1.0, 2.0],
+                    "weight": [2.0, 4.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        tgt_sf = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["10", "11", "12"],
+                    "x": [1.0, 2.0, 3.0],
+                    "weight": [1.0, 1.0, 1.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        bf = BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+        # This should work — the target is set via BalanceFrame's links.
+        # Before the fix, this would raise ValueError because r_indicator
+        # was accessing resp_sf._links directly (which has no target).
+        result = bf.weights().r_indicator()
+        self.assertIsInstance(result, np.floating)
+        self.assertGreater(result, 0.0)
+        self.assertLessEqual(result, 1.0)
