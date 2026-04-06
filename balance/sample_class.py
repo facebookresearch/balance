@@ -143,7 +143,7 @@ class Sample(BalanceFrame, SampleFrame):
             use_deepcopy=use_deepcopy,
             id_column_candidates=id_column_candidates,
         )
-        return cls._create(sample=sf, sf_target=None)
+        return cls._create(sample=sf, target=None)
 
     def __deepcopy__(self, memo: dict[int, Any]) -> Sample:
         """Return an independent deep copy of this Sample.

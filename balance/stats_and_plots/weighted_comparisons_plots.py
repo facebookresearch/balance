@@ -138,7 +138,7 @@ def _plotly_marker_color(
         col2 = 1
     else:
         raise ValueError(
-            "Invalid value for 'tycolor_typepe'. Must be either 'color' or 'line'."
+            "Invalid value for 'color_type'. Must be either 'color' or 'line'."
         )
 
     if name.lower() in ["sample", "unadjusted"] or (

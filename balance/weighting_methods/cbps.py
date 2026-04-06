@@ -5,6 +5,7 @@
 
 # pyre-strict
 
+# TODO: remove dead Python 2 __future__ imports, keep only annotations
 from __future__ import (
     absolute_import,
     annotations,
