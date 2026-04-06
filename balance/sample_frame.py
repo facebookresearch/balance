@@ -243,6 +243,15 @@ class SampleFrame:
         else:
             _df = df
 
+        # --- Duplicate column check ---
+        dup_mask = _df.columns.duplicated()
+        if dup_mask.any():
+            dup_names = sorted(set(_df.columns[dup_mask].tolist()))
+            raise ValueError(
+                f"DataFrame has duplicate column names: {dup_names}. "
+                "Please rename columns to be unique before creating a SampleFrame."
+            )
+
         # --- ID column ---
         try:
             id_col_name = guess_id_column(
