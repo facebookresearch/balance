@@ -24,6 +24,21 @@ logger: logging.Logger = logging.getLogger(__package__)
 # Re-export _concat_metric_val_var so existing imports from this module still work
 __all__ = ["Sample", "_concat_metric_val_var", "_CallableBool"]
 
+# Allowed callers for Sample.__new__ stack inspection guard.
+_ALLOWED_CALLERS: frozenset[str] = frozenset(
+    {
+        "__deepcopy__",
+        "__newobj__",
+        "__newobj_ex__",
+        "__reduce__",
+        "__reduce_ex__",
+        "deepcopy",
+        "_reconstruct",
+        "from_frame",
+        "_create",
+    }
+)
+
 
 class Sample(BalanceFrame, SampleFrame):
     """
@@ -75,15 +90,11 @@ class Sample(BalanceFrame, SampleFrame):
                     "Sample should not be constructed directly. "
                     "Use Sample.from_frame() instead."
                 )
-            if caller_func not in (
-                "__deepcopy__",
-                "__newobj__",
-                "__newobj_ex__",
-                "deepcopy",
-                "_reconstruct",
-                "from_frame",
-                "_create",
-            ):
+            # Stack inspection is used to allow internal construction
+            # paths while blocking direct Sample() calls.  Known limitation:
+            # any function with a matching name can bypass the guard, but the
+            # risk is minimal since these are all dunder or internal names.
+            if caller_func not in _ALLOWED_CALLERS:
                 raise NotImplementedError(
                     "Sample should not be constructed directly. "
                     "Use Sample.from_frame() instead."
