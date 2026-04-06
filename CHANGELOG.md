@@ -61,6 +61,13 @@
   - `BalanceFrame._check_outcomes_exists` → `_require_outcomes` — consistent with above.
   - Error messages now use `type(self).__name__` instead of hardcoded "Sample".
 
+- **Typing modernization and style cleanup**
+  - `Dict` → `dict`, `Tuple` → `tuple` in annotations (`balancedf_class.py`).
+  - `List[str]` → `list[str]` in annotations (`sample_class.py`).
+  - `cast(pd.DataFrame, ...)` → `_assert_type(...)` (`sample_frame.py`).
+  - `_check_if_not_BalanceDF` → `_check_if_not_balancedf` — snake_case convention.
+  - `_BalanceDF_child_from_linked_samples` → `_balancedf_child_from_linked_samples`.
+
 - **Refactored `Sample` to delegate to `SampleFrame` and `BalanceFrame` internally**
   - `Sample` is now a thin facade: `set_target()` creates a backing `BalanceFrame`,
     and `adjust()`, `summary()`, `diagnostics()`, `model()`, `is_adjusted`, and
@@ -122,7 +129,7 @@
     sources.
   - Added `covars()`, `weights()`, `outcomes()` methods to `SampleFrame` so that
     linked SampleFrames can produce BalanceDF views (required by the links
-    machinery in `_BalanceDF_child_from_linked_samples`).
+    machinery in `_balancedf_child_from_linked_samples`).
   - `summary()`: consolidated human-readable summary of covariate ASMD/KLD,
     weight design effect/ESS/ESSP, and outcome means. Delegates to shared
     `_build_summary()` in `summary_utils.py`.
@@ -176,7 +183,7 @@
 - **`BalanceDF.__init__()`: added optional `links` parameter for explicit link injection**
   - Allows BalanceDF to work with sources that do not carry mutable `_links`
     (e.g. the upcoming SampleFrame class).
-  - When `links` is provided, `_BalanceDF_child_from_linked_samples()` uses the
+  - When `links` is provided, `_balancedf_child_from_linked_samples()` uses the
     explicit dict; otherwise falls back to `sample._links` (backward compatible).
 
 ## Code Quality & Refactoring
