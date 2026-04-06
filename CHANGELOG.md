@@ -46,7 +46,7 @@
     columns) and `SampleFrame.from_csv()`.
   - DataFrame-access properties use `df_*` prefix convention: `df_covars`,
     `df_weights`, `df_outcomes`, `df_ignored`. All return copies for mutation safety.
-  - Column-role list properties: `covars_columns`, `weight_columns`,
+  - Column-role list properties: `covar_columns`, `weight_columns`,
     `outcome_columns`, `predicted_outcome_columns`, `ignore_columns` (all return
     copies). `misc_columns` is accepted as a deprecated alias.
   - `ignored_columns()`: alias for `df_ignored`, provided for API parity with

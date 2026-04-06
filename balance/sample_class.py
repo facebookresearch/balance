@@ -85,7 +85,7 @@ class Sample(BalanceFrame, SampleFrame):
         cls,
         df: Any,
         id_column: str | None = None,
-        covars_columns: list[str] | None = None,
+        covar_columns: list[str] | None = None,
         weight_column: str | None = None,
         outcome_columns: List[str] | tuple[str, ...] | str | None = None,
         predicted_outcome_columns: List[str] | tuple[str, ...] | str | None = None,
@@ -103,7 +103,7 @@ class Sample(BalanceFrame, SampleFrame):
         Args:
             df: DataFrame containing the sample data.
             id_column: Column name for respondent ids (must be unique).
-            covars_columns: Explicit covariate column names. If None,
+            covar_columns: Explicit covariate column names. If None,
                 covariates are inferred by exclusion.
             weight_column: Column to treat as weight.
             outcome_columns: Columns to treat as outcomes.
@@ -121,7 +121,7 @@ class Sample(BalanceFrame, SampleFrame):
         sf = SampleFrame.from_frame(
             df=df,
             id_column=id_column,
-            covars_columns=covars_columns,
+            covar_columns=covar_columns,
             weight_column=weight_column,
             outcome_columns=outcome_columns,
             predicted_outcome_columns=predicted_outcome_columns,
