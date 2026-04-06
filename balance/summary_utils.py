@@ -23,7 +23,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from balance.typing import DiagnosticScalar
-from balance.util import _assert_type, _coerce_scalar
+from balance.util import _coerce_scalar
 
 logger: logging.Logger = logging.getLogger(__package__)
 
@@ -286,8 +286,8 @@ def _build_diagnostics(
             (``_links["target"].covars().df``).
         weights_summary: Result of ``weights().summary()``.
         model_dict: The adjustment model dictionary, or ``None``. If ``None``,
-            an assertion error is raised internally (callers should ensure
-            the sample has been adjusted before calling).
+            the model diagnostics section is skipped (this can happen for
+            methods like rake/poststratify that don't produce a model dict).
         covars_asmd: Result of ``covars().asmd()``.
         covars_asmd_main: Result of
             ``covars().asmd(aggregate_by_main_covar=True)``.
@@ -358,124 +358,137 @@ def _build_diagnostics(
     # ----------------------------------------------------
     # Diagnostics on the model
     # ----------------------------------------------------
-    model = _assert_type(model_dict)
-    diagnostics = _concat_metric_val_var(
-        diagnostics,
-        "adjustment_method",
-        [0],
-        [model["method"]],
-    )
-    if model["method"] == "ipw":
-        fit = model["fit"]
-        params = fit.get_params(deep=False)
+    if model_dict is None:
+        # Some adjustment methods (e.g. null, rake, poststratify) don't
+        # produce a model dict.  Skip the model diagnostics section.
+        diagnostics = _concat_metric_val_var(
+            diagnostics,
+            "adjustment_method",
+            [0],
+            ["unknown"],
+        )
+    else:
+        model = model_dict
+        diagnostics = _concat_metric_val_var(
+            diagnostics,
+            "adjustment_method",
+            [0],
+            [model["method"]],
+        )
+        if model["method"] == "ipw":
+            fit = model["fit"]
+            params = fit.get_params(deep=False)
 
-        fit_list: list[pd.DataFrame] = []
+            fit_list: list[pd.DataFrame] = []
 
-        for array_key in ("n_iter_", "intercept_"):
-            array_val = getattr(fit, array_key, None)
-            if array_val is None:
-                continue
+            for array_key in ("n_iter_", "intercept_"):
+                array_val = getattr(fit, array_key, None)
+                if array_val is None:
+                    continue
 
-            array_as_np = np.asarray(array_val)
-            if array_as_np.size == 1:
+                array_as_np = np.asarray(array_val)
+                if array_as_np.size == 1:
+                    fit_list.append(
+                        _concat_metric_val_var(
+                            pd.DataFrame(),
+                            "ipw_model_glance",
+                            [array_as_np.item()],
+                            [array_key],
+                        )
+                    )
+
+            for param_key, metric_name in (
+                ("penalty", "ipw_penalty"),
+                ("solver", "ipw_solver"),
+            ):
+                param_val = params.get(param_key, getattr(fit, param_key, None))
+                if isinstance(param_val, str):
+                    fit_list.append(
+                        _concat_metric_val_var(
+                            pd.DataFrame(), metric_name, [0], [param_val]
+                        )
+                    )
+
+            for scalar_key in ("tol", "l1_ratio"):
+                scalar_value = _coerce_scalar(
+                    params.get(scalar_key, getattr(fit, scalar_key, None))
+                )
                 fit_list.append(
                     _concat_metric_val_var(
-                        pd.DataFrame(),
-                        "ipw_model_glance",
-                        [array_as_np.item()],
-                        [array_key],
+                        pd.DataFrame(), "model_glance", [scalar_value], [scalar_key]
                     )
                 )
 
-        for param_key, metric_name in (
-            ("penalty", "ipw_penalty"),
-            ("solver", "ipw_solver"),
-        ):
-            param_val = params.get(param_key, getattr(fit, param_key, None))
-            if isinstance(param_val, str):
-                fit_list.append(
-                    _concat_metric_val_var(
-                        pd.DataFrame(), metric_name, [0], [param_val]
-                    )
-                )
+            multi_class = params.get("multi_class", getattr(fit, "multi_class", None))
+            if multi_class is None:
+                multi_class = "auto"
+            elif not isinstance(multi_class, str):
+                multi_class = str(multi_class)
 
-        for scalar_key in ("tol", "l1_ratio"):
-            scalar_value = _coerce_scalar(
-                params.get(scalar_key, getattr(fit, scalar_key, None))
-            )
             fit_list.append(
                 _concat_metric_val_var(
-                    pd.DataFrame(), "model_glance", [scalar_value], [scalar_key]
+                    pd.DataFrame(), "ipw_multi_class", [0], [multi_class]
                 )
             )
 
-        multi_class = params.get("multi_class", getattr(fit, "multi_class", None))
-        if multi_class is None:
-            multi_class = "auto"
-        elif not isinstance(multi_class, str):
-            multi_class = str(multi_class)
+            if len(fit_list) > 0:
+                fit_single_values = pd.concat(fit_list, ignore_index=True)
+                fit_single_values = fit_single_values.drop_duplicates(
+                    subset=["metric", "var"], keep="first"
+                )
+                diagnostics = pd.concat((diagnostics, fit_single_values))
 
-        fit_list.append(
-            _concat_metric_val_var(
-                pd.DataFrame(), "ipw_multi_class", [0], [multi_class]
+            #  Extract info about the regularisation parameter
+            lambda_value = _coerce_scalar(model["lambda"])
+            diagnostics = _concat_metric_val_var(
+                diagnostics, "model_glance", [lambda_value], ["lambda"]
             )
-        )
 
-        if len(fit_list) > 0:
-            fit_single_values = pd.concat(fit_list, ignore_index=True)
-            fit_single_values = fit_single_values.drop_duplicates(
-                subset=["metric", "var"], keep="first"
-            )
-            diagnostics = pd.concat((diagnostics, fit_single_values))
-
-        #  Extract info about the regularisation parameter
-        lambda_value = _coerce_scalar(model["lambda"])
-        diagnostics = _concat_metric_val_var(
-            diagnostics, "model_glance", [lambda_value], ["lambda"]
-        )
-
-        #  Scalar values from 'perf' key of dictionary
-        perf_entries: list[pd.DataFrame] = []
-        for k, v in model["perf"].items():
-            if np.isscalar(v) and k != "coefs":
-                perf_entries.append(
-                    _concat_metric_val_var(
-                        pd.DataFrame(), "model_glance", [_coerce_scalar(v)], [k]
+            #  Scalar values from 'perf' key of dictionary
+            perf_entries: list[pd.DataFrame] = []
+            for k, v in model["perf"].items():
+                if np.isscalar(v) and k != "coefs":
+                    perf_entries.append(
+                        _concat_metric_val_var(
+                            pd.DataFrame(),
+                            "model_glance",
+                            [_coerce_scalar(v)],
+                            [k],
+                        )
                     )
-                )
 
-        if perf_entries:
-            diagnostics = pd.concat([diagnostics] + perf_entries, ignore_index=True)
+            if perf_entries:
+                diagnostics = pd.concat([diagnostics] + perf_entries, ignore_index=True)
 
-        # Model coefficients
-        coefs = (
-            model["perf"]["coefs"]
-            .reset_index()
-            .rename({0: "val", "index": "var"}, axis=1)
-            .assign(metric="model_coef")
-        )
-        diagnostics = pd.concat((diagnostics, coefs))
+            # Model coefficients
+            coefs = (
+                model["perf"]["coefs"]
+                .reset_index()
+                .rename({0: "val", "index": "var"}, axis=1)
+                .assign(metric="model_coef")
+            )
+            diagnostics = pd.concat((diagnostics, coefs))
 
-    elif model["method"] == "cbps":
-        beta_opt = pd.DataFrame(
-            {"val": model["beta_optimal"], "var": model["X_matrix_columns"]}
-        ).assign(metric="beta_optimal")
-        diagnostics = pd.concat((diagnostics, beta_opt))
+        elif model["method"] == "cbps":
+            beta_opt = pd.DataFrame(
+                {"val": model["beta_optimal"], "var": model["X_matrix_columns"]}
+            ).assign(metric="beta_optimal")
+            diagnostics = pd.concat((diagnostics, beta_opt))
 
-        metric = [
-            "rescale_initial_result",
-            "balance_optimize_result",
-            "gmm_optimize_result_glm_init",
-            "gmm_optimize_result_bal_init",
-        ]
-        metric = [x for x in metric for _ in range(2)]
-        var = ["success", "message"] * 4
-        val = [model[x][y] for (x, y) in zip(metric, var)]
+            metric = [
+                "rescale_initial_result",
+                "balance_optimize_result",
+                "gmm_optimize_result_glm_init",
+                "gmm_optimize_result_bal_init",
+            ]
+            metric = [x for x in metric for _ in range(2)]
+            var = ["success", "message"] * 4
+            val = [model[x][y] for (x, y) in zip(metric, var)]
 
-        optimizations = pd.DataFrame({"metric": metric, "var": var, "val": val})
-        diagnostics = pd.concat((diagnostics, optimizations))
+            optimizations = pd.DataFrame({"metric": metric, "var": var, "val": val})
+            diagnostics = pd.concat((diagnostics, optimizations))
 
-    # TODO: add model diagnostics for other models
+        # TODO: add model diagnostics for other models
 
     # ----------------------------------------------------
     # Diagnostics on the covariates correction
