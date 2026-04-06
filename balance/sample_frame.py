@@ -7,7 +7,7 @@
 
 """SampleFrame: an explicit-role DataFrame container for the Balance library.
 
-Stores covariates, weights, outcomes, predicted, and misc columns with
+Stores covariates, weights, outcomes, predicted, and ignored columns with
 explicit role metadata, replacing the inference-by-exclusion pattern used
 in the legacy Sample class.
 """
@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 
 if TYPE_CHECKING:
-    from balance.balancedf_class import BalanceDFSource
+    from balance.balancedf_class import BalanceDFSource  # noqa: F401
 
 
 logger: logging.Logger = logging.getLogger(__package__)
@@ -33,7 +33,7 @@ class SampleFrame:
 
     SampleFrame stores data as a single internal pd.DataFrame but with
     explicit metadata tracking which columns belong to which role:
-    covars (X), weights (W), outcomes (Y), predicted_outcomes (Y_hat), misc.
+    covars (X), weights (W), outcomes (Y), predicted_outcomes (Y_hat), ignored.
 
     Must be constructed via SampleFrame.from_frame() or SampleFrame.from_sample().
 
@@ -66,27 +66,17 @@ class SampleFrame:
     _active_weight_column: str | None
     # pyre-fixme[13]: Initialized in _create() which bypasses __init__
     _weight_metadata: dict[str, Any]
+    # pyre-fixme[13]: Initialized in _create() which bypasses __init__
+    _links: dict[str, Any]
+    # pyre-fixme[13]: Initialized in _create() which bypasses __init__
+    _df_dtypes: pd.Series | None
     # SampleFrame is a single-DataFrame container and does NOT manage
-    # multi-sample relationships.  _links is exposed as a read-only property
-    # returning an empty dict to satisfy the BalanceDFSource protocol.
-    # Link management belongs in BalanceDF/BalanceFrame, which can pass
-    # explicit links via the BalanceDF(links=...) parameter.
+    # multi-sample relationships.  _links is initialised to an empty dict
+    # in _create() to satisfy the BalanceDFSource protocol.  BalanceFrame
+    # overrides _links with a defaultdict(list) in its own _create().
 
     def __init__(self) -> None:
-        raise NotImplementedError(
-            "SampleFrame must be constructed via from_frame() or from_sample(). "
-            "Direct construction is not supported."
-        )
-
-    @property
-    def _links(self) -> dict[str, BalanceDFSource]:
-        """Return an empty links dict (satisfies BalanceDFSource protocol).
-
-        SampleFrame is a single-DataFrame container and does not manage
-        multi-sample relationships.  Link management belongs in
-        BalanceDF/BalanceFrame.
-        """
-        return {}
+        pass
 
     def __len__(self) -> int:
         """Return the number of rows in the SampleFrame.
@@ -121,13 +111,16 @@ class SampleFrame:
             >>> sf2._df is sf._df
             False
         """
-        new_instance = object.__new__(SampleFrame)
+        new_instance = object.__new__(type(self))
         memo[id(self)] = new_instance
         new_instance._df = self._df.copy()
         new_instance._id_column_name = self._id_column_name
         new_instance._column_roles = deepcopy(self._column_roles, memo)
         new_instance._active_weight_column = self._active_weight_column
         new_instance._weight_metadata = deepcopy(self._weight_metadata, memo)
+        new_instance._links = deepcopy(getattr(self, "_links", {}), memo)
+        _df_dtypes = getattr(self, "_df_dtypes", None)
+        new_instance._df_dtypes = _df_dtypes.copy() if _df_dtypes is not None else None
         return new_instance
 
     @classmethod
@@ -139,8 +132,9 @@ class SampleFrame:
         weight_columns: list[str],
         outcome_columns: list[str] | None = None,
         predicted_outcome_columns: list[str] | None = None,
-        misc_columns: list[str] | None = None,
+        ignore_columns: list[str] | None = None,
         _skip_copy: bool = False,
+        _df_dtypes: pd.Series | None = None,
     ) -> SampleFrame:
         """Internal factory method. Use from_frame() instead."""
         instance = object.__new__(cls)
@@ -151,11 +145,13 @@ class SampleFrame:
             "weights": list(weight_columns),
             "outcomes": list(outcome_columns or []),
             "predicted": list(predicted_outcome_columns or []),
-            "misc": list(misc_columns or []),
+            "ignored": list(ignore_columns or []),
         }
         instance._active_weight_column = weight_columns[0] if weight_columns else None
         # Defaults; set via set_weight_metadata() etc.
         instance._weight_metadata = {}
+        instance._links = {}
+        instance._df_dtypes = _df_dtypes
         return instance
 
     # --- Construction ---
@@ -169,7 +165,7 @@ class SampleFrame:
         weight_column: str | None = None,
         outcome_columns: list[str] | tuple[str, ...] | str | None = None,
         predicted_outcome_columns: list[str] | tuple[str, ...] | str | None = None,
-        misc_columns: list[str] | tuple[str, ...] | str | None = None,
+        ignore_columns: list[str] | tuple[str, ...] | str | None = None,
         check_id_uniqueness: bool = True,
         standardize_types: bool = True,
         use_deepcopy: bool = True,
@@ -190,7 +186,7 @@ class SampleFrame:
                 (``"id"``, ``"ID"``, etc.).
             covars_columns (list of str, optional): Explicit list of covariate
                 column names. If None, inferred by exclusion (all columns
-                minus id, weight, outcome, predicted, and misc columns).
+                minus id, weight, outcome, predicted, and ignored columns).
             weight_column (str, optional): Name of the column containing
                 sampling weights. If None, guesses ``"weight"``/``"weights"``
                 or creates one filled with 1.0.
@@ -198,8 +194,8 @@ class SampleFrame:
                 treat as outcome variables.
             predicted_outcome_columns (list of str or str, optional): Column
                 names to treat as predicted outcome variables.
-            misc_columns (list of str or str, optional): Column names to treat
-                as miscellaneous (excluded from covariates).
+            ignore_columns (list of str or str, optional): Column names to
+                ignore (excluded from covariates).
             check_id_uniqueness (bool): Whether to verify id uniqueness.
                 Defaults to True.
             standardize_types (bool): Whether to standardize dtypes.
@@ -208,14 +204,13 @@ class SampleFrame:
                 Defaults to True.
             id_column_candidates (list of str, optional): Candidate id column
                 names to try when ``id_column`` is None.
-
         Returns:
             SampleFrame: A validated SampleFrame with standardized dtypes.
 
         Raises:
             ValueError: If the id column contains nulls or duplicates, if the
                 weight column contains nulls or negative values, or if
-                specified outcome/predicted/misc columns are missing from the
+                specified outcome/predicted/ignore columns are missing from the
                 DataFrame.
 
         Examples:
@@ -238,8 +233,8 @@ class SampleFrame:
             outcome_columns = [outcome_columns]
         if isinstance(predicted_outcome_columns, str):
             predicted_outcome_columns = [predicted_outcome_columns]
-        if isinstance(misc_columns, str):
-            misc_columns = [misc_columns]
+        if isinstance(ignore_columns, str):
+            ignore_columns = [ignore_columns]
 
         # Deep copy
         df_dtypes = df.dtypes
@@ -364,14 +359,21 @@ class SampleFrame:
                     f"predicted outcome columns {list(missing_predicted)} not in df columns {_df.columns.values.tolist()}"
                 )
 
-        # --- Misc columns validation ---
-        misc_list: list[str] | None = None
-        if misc_columns is not None:
-            misc_list = list(misc_columns)
-            missing_misc = set(misc_list).difference(_df.columns)
-            if missing_misc:
+        # --- Ignore columns validation ---
+        ignore_list: list[str] | None = None
+        if ignore_columns is not None:
+            ignore_list = list(dict.fromkeys(ignore_columns))  # deduplicate
+            missing_ignore = set(ignore_list).difference(_df.columns)
+            if missing_ignore:
                 raise ValueError(
-                    f"misc columns {list(missing_misc)} not in df columns {_df.columns.values.tolist()}"
+                    f"ignore columns {list(missing_ignore)} not in df columns {_df.columns.values.tolist()}"
+                )
+            # ignore_columns must not overlap with id/weight columns
+            reserved = {id_col_name, weight_column} - {None}
+            overlap_reserved = set(ignore_list).intersection(reserved)
+            if overlap_reserved:
+                raise ValueError(
+                    f"ignore columns cannot include id/weight columns: {overlap_reserved}"
                 )
 
         # --- Covariate columns ---
@@ -384,7 +386,7 @@ class SampleFrame:
                 )
         else:
             # Infer by exclusion
-            ignored = (predicted_list or []) + (misc_list or [])
+            ignored = (predicted_list or []) + (ignore_list or [])
             special = {id_col_name, weight_column}
             special.update(outcome_list or [])
             special.update(ignored or [])
@@ -395,7 +397,7 @@ class SampleFrame:
             "covars": covar_list,
             "outcomes": outcome_list or [],
             "predicted": predicted_list or [],
-            "misc": misc_list or [],
+            "ignored": ignore_list or [],
         }
         roles = list(role_to_columns.keys())
         for i in range(len(roles)):
@@ -415,8 +417,9 @@ class SampleFrame:
             weight_columns=[weight_column],
             outcome_columns=outcome_list,
             predicted_outcome_columns=predicted_list,
-            misc_columns=misc_list,
+            ignore_columns=ignore_list,
             _skip_copy=True,
+            _df_dtypes=df_dtypes,
         )
 
     # --- Column role accessors ---
@@ -507,25 +510,25 @@ class SampleFrame:
         return list(self._column_roles["predicted"])
 
     @property
-    def misc_columns(self) -> list[str]:
-        """Names of the miscellaneous columns.
+    def ignore_columns(self) -> list[str]:
+        """Names of the ignored columns.
 
         Returns a copy so that callers cannot accidentally mutate the
         internal column-role registry.
 
         Returns:
-            list[str]: Misc column names (empty list if none).
+            list[str]: Ignored column names (empty list if none).
 
         Examples:
             >>> import pandas as pd
             >>> from balance.sample_frame import SampleFrame
             >>> df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20],
             ...                    "weight": [1.0, 1.0], "region": ["US", "UK"]})
-            >>> sf = SampleFrame.from_frame(df, misc_columns=["region"])
-            >>> sf.misc_columns
+            >>> sf = SampleFrame.from_frame(df, ignore_columns=["region"])
+            >>> sf.ignore_columns
             ['region']
         """
-        return list(self._column_roles["misc"])
+        return list(self._column_roles["ignored"])
 
     @property
     def active_weight_column(self) -> str | None:
@@ -641,53 +644,49 @@ class SampleFrame:
         return self._df[cols].copy() if cols else None
 
     @property
-    def df_misc(self) -> pd.DataFrame | None:
-        """Misc columns, or None.
+    def df_ignored(self) -> pd.DataFrame | None:
+        """Ignored columns, or None.
 
         Returns a copy so that callers cannot accidentally mutate the
         internal data.
 
         Returns:
-            pd.DataFrame | None: A copy of miscellaneous columns, or
-                None if no misc columns are registered.
+            pd.DataFrame | None: A copy of ignored columns, or
+                None if no ignored columns are registered.
 
         Examples:
             >>> import pandas as pd
             >>> from balance.sample_frame import SampleFrame
             >>> df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20],
             ...                    "weight": [1.0, 1.0], "region": ["US", "UK"]})
-            >>> sf = SampleFrame.from_frame(df, misc_columns=["region"])
-            >>> m = sf.df_misc
+            >>> sf = SampleFrame.from_frame(df, ignore_columns=["region"])
+            >>> m = sf.df_ignored
             >>> m["region"] = ["XX", "XX"]
-            >>> list(sf.df_misc["region"])  # internal data unchanged
+            >>> list(sf.df_ignored["region"])  # internal data unchanged
             ['US', 'UK']
         """
-        cols = self._column_roles["misc"]
+        cols = self._column_roles["ignored"]
         return self._df[cols].copy() if cols else None
 
     def ignored_columns(self) -> pd.DataFrame | None:
-        """Return ignored (misc) columns as a DataFrame, or None.
-
-        This is an alias for :attr:`df_misc`, provided for API parity with
-        :class:`~balance.sample_class.Sample` which uses ``ignored_columns()``
-        to access miscellaneous/ignored columns.
+        """Return ignored columns as a DataFrame, or None.
 
         Returns:
-            pd.DataFrame | None: A copy of miscellaneous columns, or
-                None if no misc columns are registered.
+            pd.DataFrame | None: A copy of ignored columns, or
+                None if no ignored columns are registered.
 
         Examples:
             >>> import pandas as pd
             >>> from balance.sample_frame import SampleFrame
             >>> df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20],
             ...                    "weight": [1.0, 1.0], "region": ["US", "UK"]})
-            >>> sf = SampleFrame.from_frame(df, misc_columns=["region"])
+            >>> sf = SampleFrame.from_frame(df, ignore_columns=["region"])
             >>> sf.ignored_columns()
                    region
             0     US
             1     UK
         """
-        return self.df_misc
+        return self.df_ignored
 
     @property
     def id_column(self) -> pd.Series:
@@ -827,11 +826,15 @@ class SampleFrame:
 
     # --- BalanceDF integration ---
 
-    def covars(self) -> Any:
+    def covars(self, formula: str | list[str] | None = None) -> Any:
         """Return a :class:`~balance.balancedf_class.BalanceDFCovars` for this SampleFrame.
 
         Creates a covariate analysis view backed by this SampleFrame,
         inheriting any linked sources set via ``_links``.
+
+        Args:
+            formula: Optional formula string (or list) for model matrix
+                construction. Passed through to BalanceDFCovars.
 
         Returns:
             BalanceDFCovars: Covariate view backed by this SampleFrame.
@@ -847,7 +850,8 @@ class SampleFrame:
         """
         from balance.balancedf_class import BalanceDFCovars
 
-        return BalanceDFCovars(self)
+        # pyre-ignore[6]: SampleFrame satisfies BalanceDFSource at runtime
+        return BalanceDFCovars(self, formula=formula)
 
     def weights(self) -> Any:
         """Return a :class:`~balance.balancedf_class.BalanceDFWeights` for this SampleFrame.
@@ -869,6 +873,7 @@ class SampleFrame:
         """
         from balance.balancedf_class import BalanceDFWeights
 
+        # pyre-ignore[6]: SampleFrame satisfies BalanceDFSource at runtime
         return BalanceDFWeights(self)
 
     def outcomes(self) -> Any | None:
@@ -895,6 +900,7 @@ class SampleFrame:
         # Deferred import to avoid circular dependency with balancedf_class
         from balance.balancedf_class import BalanceDFOutcomes
 
+        # pyre-ignore[6]: SampleFrame satisfies BalanceDFSource at runtime
         return BalanceDFOutcomes(self)
 
     @property
@@ -988,6 +994,42 @@ class SampleFrame:
             )
         self._active_weight_column = column_name
 
+    def rename_weight_column(self, old_name: str, new_name: str) -> None:
+        """Rename a weight column in-place.
+
+        Renames the column in the DataFrame, updates the column roles list,
+        active weight pointer, and weight metadata.
+
+        Args:
+            old_name: Current name of the weight column.
+            new_name: New name for the weight column.
+
+        Raises:
+            ValueError: If *old_name* is not a registered weight column,
+                or if *new_name* already exists in the DataFrame.
+        """
+        if old_name not in self._column_roles["weights"]:
+            raise ValueError(
+                f"'{old_name}' is not a weight column. "
+                f"Weight columns: {self._column_roles['weights']}"
+            )
+        if new_name in self._df.columns:
+            raise ValueError(
+                f"'{new_name}' already exists in the DataFrame. "
+                "Choose a different name."
+            )
+        # Rename in DataFrame
+        self._df = self._df.rename(columns={old_name: new_name})
+        # Update column roles
+        idx = self._column_roles["weights"].index(old_name)
+        self._column_roles["weights"][idx] = new_name
+        # Update active weight pointer
+        if self._active_weight_column == old_name:
+            self._active_weight_column = new_name
+        # Migrate metadata
+        if old_name in self._weight_metadata:
+            self._weight_metadata[new_name] = self._weight_metadata.pop(old_name)
+
     def add_weight_column(
         self,
         name: str,
@@ -1001,16 +1043,21 @@ class SampleFrame:
 
         Args:
             name (str): Name for the new weight column.
-            values (pd.Series): Weight values, must be the same length as
-                the DataFrame.
+            values (pd.Series): Weight values.  Must match the DataFrame
+                length, unless it is a shorter ``pd.Series`` — in which case
+                values are aligned by index and missing rows are filled with
+                NaN (this supports adjustment functions that drop rows
+                internally, e.g., ``na_action="drop"``).  Note: this column
+                is a *history* column, not the active weight — the active
+                weight is set separately via ``set_weights()``.
             metadata (dict, optional): Provenance metadata for the new
                 column.
 
         Raises:
             ValueError: If *name* is already a registered weight column,
                 if *name* already exists in the DataFrame as a non-weight
-                column, or if *values* has a different length than the
-                DataFrame.
+                column, or if *values* is longer than the DataFrame or is
+                a non-Series with a different length.
 
         Examples:
             >>> import pandas as pd
@@ -1034,10 +1081,16 @@ class SampleFrame:
                 f"Choose a different name."
             )
         if len(values) != len(self._df):
-            raise ValueError(
-                f"'values' length ({len(values)}) doesn't match "
-                f"DataFrame length ({len(self._df)})"
-            )
+            if isinstance(values, pd.Series) and len(values) < len(self._df):
+                # Align by index, padding missing rows with NaN.
+                # This supports adjustment functions that drop rows internally
+                # (e.g., na_action="drop") and return fewer weights.
+                values = values.reindex(self._df.index)
+            else:
+                raise ValueError(
+                    f"'values' length ({len(values)}) doesn't match "
+                    f"DataFrame length ({len(self._df)})"
+                )
         self._df[name] = values.to_numpy()
         self._column_roles["weights"].append(name)
         if metadata is not None:
@@ -1048,8 +1101,8 @@ class SampleFrame:
         """Convert a :class:`~balance.sample_class.Sample` to a SampleFrame.
 
         Preserves the Sample's tabular data and column role assignments:
-        id column, weight column, outcome columns, and ignored columns
-        (mapped to ``misc``).  Covariate columns are inferred by exclusion,
+        id column, weight column, outcome columns, and ignored columns.
+        Covariate columns are inferred by exclusion,
         matching the Sample's own logic.
 
         The internal DataFrame is deep-copied so that the resulting
@@ -1100,8 +1153,18 @@ class SampleFrame:
                 f"'sample' must be a Sample instance, got {type(sample).__name__}"
             )
 
-        id_col_name: str = sample.id_column.name
-        weight_col_name: str = sample.weight_column.name
+        _id_col = sample.id_column
+        _weight_col = sample.weight_column
+        if _id_col is None:
+            raise ValueError(
+                "Sample must have an id_column before converting to SampleFrame."
+            )
+        if _weight_col is None:
+            raise ValueError(
+                "Sample must have a weight_column before converting to SampleFrame."
+            )
+        id_col_name: str = str(_id_col.name)
+        weight_col_name: str = str(_weight_col.name)
 
         outcome_cols: list[str] | None = None
         if sample._outcome_columns is not None:
@@ -1119,7 +1182,7 @@ class SampleFrame:
             covars_columns=sample._covar_columns_names(),
             weight_columns=[weight_col_name],
             outcome_columns=outcome_cols,
-            misc_columns=ignored_cols if ignored_cols else None,
+            ignore_columns=ignored_cols if ignored_cols else None,
         )
 
     def __repr__(self) -> str:

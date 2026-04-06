@@ -987,7 +987,7 @@ class TestBalanceFrameParityHelpers(BalanceTestCase):
                 "weight": [1.0, 1.0, 1.0],
             }
         )
-        self.resp_sf = SampleFrame.from_frame(self.resp_df, misc_columns=["region"])
+        self.resp_sf = SampleFrame.from_frame(self.resp_df, ignore_columns=["region"])
         self.tgt_sf = SampleFrame.from_frame(self.tgt_df)
         self.bf = BalanceFrame(responders=self.resp_sf, target=self.tgt_sf)
 
