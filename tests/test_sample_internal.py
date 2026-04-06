@@ -251,7 +251,7 @@ class TestSampleModelNoAdjustmentModel(balance.testutil.BalanceTestCase):
         sample = Sample.from_frame(pd.DataFrame({"a": [1, 2, 3], "id": [1, 2, 3]}))
 
         # For an unadjusted sample, model() should return None
-        result = sample.model()
+        result = sample.model
         self.assertIsNone(result)
 
     def test_model_returns_adjustment_model_when_set(self) -> None:
@@ -263,7 +263,7 @@ class TestSampleModelNoAdjustmentModel(balance.testutil.BalanceTestCase):
         target = Sample.from_frame(pd.DataFrame({"a": [1, 2, 3], "id": [4, 5, 6]}))
         adjusted = sample.set_target(target).adjust(method="null")
 
-        result = adjusted.model()
+        result = adjusted.model
         self.assertIsNotNone(result)
         self.assertIsInstance(result, dict)
         self.assertIn("method", result)

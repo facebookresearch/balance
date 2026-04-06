@@ -391,11 +391,12 @@ class BalanceFrame:
             return self._sf_sample_pre_adjust
         return None
 
-    def has_target(self) -> bool:
-        """Check if this BalanceFrame has a target population set.
+    @property
+    def has_target(self) -> _CallableBool:
+        """Whether this BalanceFrame has a target population set.
 
-        Returns:
-            bool: True if a target population has been set, False otherwise.
+        Returns a dual-use ``_CallableBool``: both ``bf.has_target`` and
+        ``bf.has_target()`` work (the latter for backward compatibility).
 
         Examples:
             >>> import pandas as pd
@@ -404,16 +405,17 @@ class BalanceFrame:
             >>> resp = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))
             >>> bf = BalanceFrame(sample=resp)
-            >>> bf.has_target()
+            >>> bf.has_target
             False
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
             >>> bf.set_target(tgt)
-            >>> bf.has_target()
+            >>> bf.has_target
             True
         """
-        return self._sf_target is not None or (
-            self._links is not None and "target" in self._links
+        return _CallableBool(
+            self._sf_target is not None
+            or (self._links is not None and "target" in self._links)
         )
 
     def set_target(
@@ -741,11 +743,9 @@ class BalanceFrame:
 
         return self._build_adjusted_frame(result, method)
 
+    @property
     def model(self) -> dict[str, Any] | None:
-        """Return the adjustment model dictionary, or None if not adjusted.
-
-        Returns:
-            The model dict from the weighting method, or None.
+        """The adjustment model dictionary, or None if not adjusted.
 
         Examples:
             >>> import pandas as pd
@@ -756,7 +756,7 @@ class BalanceFrame:
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
             >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
-            >>> bf.model() is None
+            >>> bf.model is None
             True
         """
         return self._adjustment_model
@@ -818,7 +818,7 @@ class BalanceFrame:
             bf._sf_sample_pre_adjust = SampleFrame.from_sample(
                 sample._links["unadjusted"]
             )
-            bf._adjustment_model = sample.model()
+            bf._adjustment_model = sample.model
 
         return bf
 
@@ -1091,7 +1091,7 @@ class BalanceFrame:
             True
         """
         details: list[str] = []
-        model = self.model()
+        model = self.model
         if isinstance(model, dict):
             method = model.get("method")
             if isinstance(method, str):
@@ -1159,7 +1159,7 @@ class BalanceFrame:
                 design_effect=de,
                 effective_sample_size=ess,
                 effective_sample_proportion=essp,
-                model_dict=self.model(),
+                model_dict=self.model,
                 outcome_means=outcome_means,
             )
 
@@ -1193,7 +1193,7 @@ class BalanceFrame:
             design_effect=de,
             effective_sample_size=ess,
             effective_sample_proportion=essp,
-            model_dict=self.model(),
+            model_dict=self.model,
             outcome_means=outcome_means,
         )
 
@@ -1256,7 +1256,7 @@ class BalanceFrame:
             covars_df=self.covars().df,
             target_covars_df=target.df_covars,
             weights_summary=self.weights().summary(),
-            model_dict=self.model(),
+            model_dict=self.model,
             covars_asmd=self.covars().asmd(),
             covars_asmd_main=self.covars().asmd(aggregate_by_main_covar=True),
             outcome_columns=outcome_columns,
@@ -1716,8 +1716,8 @@ class BalanceFrame:
         n_variables = self._covar_columns().shape[1]
         has_target = self.has_target() * " with target set"
         adjustment_method = (
-            " using " + _assert_type(self.model())["method"]
-            if self.model() is not None
+            " using " + _assert_type(self.model)["method"]
+            if self.model is not None
             else ""
         )
         variables = ",".join(self._covar_columns_names())

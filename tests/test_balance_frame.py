@@ -60,7 +60,7 @@ class TestBalanceFrameConstruction(BalanceTestCase):
 
     def test_model_none_on_creation(self) -> None:
         bf = BalanceFrame(sample=self.resp_sf, sf_target=self.tgt_sf)
-        self.assertIsNone(bf.model())
+        self.assertIsNone(bf.model)
 
     def test_missing_responders_raises(self) -> None:
         with self.assertRaises(TypeError):
@@ -258,7 +258,7 @@ class TestBalanceFrameCreateDirect(BalanceTestCase):
         self.assertIsNotNone(bf.target)
         self.assertIsNone(bf.unadjusted)
         self.assertFalse(bf.is_adjusted)
-        self.assertIsNone(bf.model())
+        self.assertIsNone(bf.model)
         # Responder data is correct
         self.assertEqual(len(bf.responders.df_covars), 2)
         self.assertListEqual(list(bf.responders.df_weights.columns), ["w"])
@@ -290,7 +290,7 @@ class TestBalanceFrameAdjust(BalanceTestCase):
     def test_adjust_ipw(self) -> None:
         adjusted = self.bf.adjust(method="ipw")
         self.assertTrue(adjusted.is_adjusted)
-        model = adjusted.model()
+        model = adjusted.model
         self.assertIsNotNone(model)
         assert model is not None  # for Pyre narrowing
         self.assertIn("method", model)
@@ -312,7 +312,7 @@ class TestBalanceFrameAdjust(BalanceTestCase):
         adjusted = self.bf.adjust(method="ipw")
         # Original BalanceFrame is unchanged
         self.assertFalse(self.bf.is_adjusted)
-        self.assertIsNone(self.bf.model())
+        self.assertIsNone(self.bf.model)
         self.assertIsNone(self.bf.unadjusted)
         # Original weights unchanged
         after_weight_vals = self.bf.responders.df_weights.iloc[:, 0].tolist()
@@ -340,7 +340,7 @@ class TestBalanceFrameAdjust(BalanceTestCase):
         # All adjusted weights should be 42.0
         for w in adjusted.responders.df_weights.iloc[:, 0].tolist():
             self.assertAlmostEqual(w, 42.0, places=5)
-        model = adjusted.model()
+        model = adjusted.model
         assert model is not None
         self.assertEqual(model["method"], "dummy")
 
@@ -373,7 +373,7 @@ class TestBalanceFrameAdjust(BalanceTestCase):
     def test_adjust_stores_method_name_in_model(self) -> None:
         """adjust() stores the method name in the adjustment model dict."""
         adjusted = self.bf.adjust(method="null")
-        model = adjusted.model()
+        model = adjusted.model
         self.assertIsInstance(model, dict)
         assert model is not None
         self.assertEqual(model["method"], "null_adjustment")
@@ -390,7 +390,7 @@ class TestBalanceFrameAdjust(BalanceTestCase):
             return {"weight": sample_weights, "model": {"info": "test"}}
 
         adjusted = self.bf.adjust(method=custom_method)
-        model = adjusted.model()
+        model = adjusted.model
         self.assertIsInstance(model, dict)
         assert model is not None
         self.assertEqual(model["method"], "custom_method")
@@ -412,7 +412,7 @@ class TestBalanceFrameAdjust(BalanceTestCase):
         adjusted_copy = copy.deepcopy(adjusted)
         self.assertTrue(adjusted_copy.is_adjusted)
         self.assertIsNotNone(adjusted_copy.unadjusted)
-        self.assertIsNotNone(adjusted_copy.model())
+        self.assertIsNotNone(adjusted_copy.model)
         # The copy's weights should match
         pd.testing.assert_series_equal(
             adjusted_copy.responders.df_weights.iloc[:, 0],
@@ -495,7 +495,7 @@ class TestBalanceFrameSetTarget(BalanceTestCase):
         # set_target returns a NEW BalanceFrame; the original stays adjusted.
         retargeted = adjusted.set_target(tgt2_sf)
         self.assertFalse(retargeted.is_adjusted)
-        self.assertIsNone(retargeted.model())
+        self.assertIsNone(retargeted.model)
 
     def test_set_target_non_sampleframe_raises(self) -> None:
         bf = BalanceFrame(sample=self.resp_sf)
@@ -1263,7 +1263,7 @@ class TestBalanceFrameMissingIntegration(BalanceTestCase):
         adjusted = self.bf.adjust(method="null")
 
         self.assertTrue(adjusted.is_adjusted)
-        model = adjusted.model()
+        model = adjusted.model
         self.assertIsNotNone(model)
         assert model is not None
         self.assertEqual(model["method"], "null_adjustment")
@@ -1602,7 +1602,7 @@ class TestBalanceFrameFromSample(BalanceTestCase):
         bf = BalanceFrame.from_sample(adjusted)
         self.assertTrue(bf.is_adjusted)
         self.assertIsNotNone(bf.unadjusted)
-        self.assertIsNotNone(bf.model())
+        self.assertIsNotNone(bf.model)
 
     def test_from_sample_covars_preserved(self) -> None:
         sample_with_target = self.sample.set_target(self.target)
@@ -1722,7 +1722,7 @@ class TestBalanceFrameToSample(BalanceTestCase):
         s = adjusted_bf.to_sample()
         self.assertTrue(s.is_adjusted())
         self.assertTrue(s.has_target())
-        self.assertIsNotNone(s.model())
+        self.assertIsNotNone(s.model)
 
     def test_to_sample_adjusted_weight_column(self) -> None:
         adjusted_bf = self.bf.adjust(method="null")
