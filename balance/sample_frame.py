@@ -63,7 +63,7 @@ class SampleFrame:
     # pyre-fixme[13]: Initialized in _create() which bypasses __init__
     _column_roles: dict[str, list[str]]
     # pyre-fixme[13]: Initialized in _create() which bypasses __init__
-    _active_weight_column: str | None
+    _weight_column_name: str | None
     # pyre-fixme[13]: Initialized in _create() which bypasses __init__
     _weight_metadata: dict[str, Any]
     # pyre-fixme[13]: Initialized in _create() which bypasses __init__
@@ -116,7 +116,7 @@ class SampleFrame:
         new_instance._df = self._df.copy()
         new_instance._id_column_name = self._id_column_name
         new_instance._column_roles = deepcopy(self._column_roles, memo)
-        new_instance._active_weight_column = self._active_weight_column
+        new_instance._weight_column_name = self._weight_column_name
         new_instance._weight_metadata = deepcopy(self._weight_metadata, memo)
         new_instance._links = deepcopy(getattr(self, "_links", {}), memo)
         _df_dtypes = getattr(self, "_df_dtypes", None)
@@ -147,7 +147,7 @@ class SampleFrame:
             "predicted": list(predicted_outcome_columns or []),
             "ignored": list(ignored_columns or []),
         }
-        instance._active_weight_column = weight_columns[0] if weight_columns else None
+        instance._weight_column_name = weight_columns[0] if weight_columns else None
         # Defaults; set via set_weight_metadata() etc.
         instance._weight_metadata = {}
         instance._links = {}
@@ -446,7 +446,7 @@ class SampleFrame:
         return list(self._column_roles["covars"])
 
     @property
-    def weight_columns(self) -> list[str]:
+    def weight_columns_all(self) -> list[str]:
         """Names of all registered weight columns.
 
         Returns a copy so that callers cannot accidentally mutate the
@@ -462,7 +462,7 @@ class SampleFrame:
             ...     df=pd.DataFrame({"id": [1], "x": [10], "w1": [1.0], "w2": [2.0]}),
             ...     id_column="id", covar_columns=["x"],
             ...     weight_columns=["w1", "w2"])
-            >>> sf.weight_columns
+            >>> sf.weight_columns_all
             ['w1', 'w2']
         """
         return list(self._column_roles["weights"])
@@ -531,7 +531,7 @@ class SampleFrame:
         return list(self._column_roles["ignored"])
 
     @property
-    def active_weight_column(self) -> str | None:
+    def weight_column(self) -> str | None:
         """Name of the currently active weight column, or None.
 
         Returns:
@@ -543,10 +543,10 @@ class SampleFrame:
             >>> df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20],
             ...                    "weight": [1.0, 2.0]})
             >>> sf = SampleFrame.from_frame(df)
-            >>> sf.active_weight_column
+            >>> sf.weight_column
             'weight'
         """
-        return self._active_weight_column
+        return self._weight_column_name
 
     @property
     def id_column_name(self) -> str:
@@ -614,8 +614,8 @@ class SampleFrame:
             >>> list(sf.df_weights["weight"])  # internal data unchanged
             [1.0, 2.0]
         """
-        if self._active_weight_column:
-            return self._df[[self._active_weight_column]].copy()
+        if self._weight_column_name:
+            return self._df[[self._weight_column_name]].copy()
         return pd.DataFrame(index=self._df.index)
 
     @property
@@ -692,7 +692,7 @@ class SampleFrame:
         return self._df[self._id_column_name].copy()
 
     @property
-    def weight_column(self) -> pd.Series:
+    def weight_series(self) -> pd.Series:
         """Active weight column as a Series (BalanceDFSource protocol).
 
         Returns the active weight column values as a ``pd.Series``.  This is
@@ -712,12 +712,12 @@ class SampleFrame:
             >>> df = pd.DataFrame({"id": [1, 2], "x": [10, 20],
             ...                    "weight": [1.0, 2.0]})
             >>> sf = SampleFrame.from_frame(df)
-            >>> sf.weight_column.tolist()
+            >>> sf.weight_series.tolist()
             [1.0, 2.0]
         """
-        if not self._active_weight_column:
+        if not self._weight_column_name:
             raise ValueError("No active weight column is set.")
-        return self._df[self._active_weight_column].copy()
+        return self._df[self._weight_column_name].copy()
 
     def _covar_columns(self) -> pd.DataFrame:
         """Return the covariate DataFrame (BalanceDFSource protocol).
@@ -787,22 +787,22 @@ class SampleFrame:
             ...                    "weight": [1.0, 2.0]})
             >>> sf = SampleFrame.from_frame(df)
             >>> sf.set_weights(pd.Series([3.0, 4.0]))
-            >>> sf.weight_column.tolist()
+            >>> sf.weight_series.tolist()
             [3.0, 4.0]
         """
-        if not self._active_weight_column:
+        if not self._weight_column_name:
             raise ValueError("No active weight column is set.")
         if weights is None:
-            self._df[self._active_weight_column] = 1.0
+            self._df[self._weight_column_name] = 1.0
         elif isinstance(weights, (int, float)):
-            self._df[self._active_weight_column] = float(weights)
+            self._df[self._weight_column_name] = float(weights)
         else:
             if len(weights) != len(self._df):
                 raise ValueError(
                     f"'weights' length ({len(weights)}) doesn't match "
                     f"DataFrame length ({len(self._df)})"
                 )
-            self._df[self._active_weight_column] = weights.to_numpy()
+            self._df[self._weight_column_name] = weights.to_numpy()
 
     # --- BalanceDF integration ---
 
@@ -942,7 +942,7 @@ class SampleFrame:
             {}
         """
         if column is None:
-            column = self._active_weight_column
+            column = self._weight_column_name
         return self._weight_metadata.get(column, {}) if column is not None else {}
 
     def set_active_weight(self, column_name: str) -> None:
@@ -972,7 +972,7 @@ class SampleFrame:
                 f"'{column_name}' is not a weight column. "
                 f"Weight columns: {self._column_roles['weights']}"
             )
-        self._active_weight_column = column_name
+        self._weight_column_name = column_name
 
     def rename_weight_column(self, old_name: str, new_name: str) -> None:
         """Rename a weight column in-place.
@@ -1004,8 +1004,8 @@ class SampleFrame:
         idx = self._column_roles["weights"].index(old_name)
         self._column_roles["weights"][idx] = new_name
         # Update active weight pointer
-        if self._active_weight_column == old_name:
-            self._active_weight_column = new_name
+        if self._weight_column_name == old_name:
+            self._weight_column_name = new_name
         # Migrate metadata
         if old_name in self._weight_metadata:
             self._weight_metadata[new_name] = self._weight_metadata.pop(old_name)
@@ -1134,7 +1134,7 @@ class SampleFrame:
             )
 
         _id_col = sample.id_column
-        _weight_col = sample.weight_column
+        _weight_col = sample.weight_series
         if _id_col is None:
             raise ValueError(
                 "Sample must have an id_column before converting to SampleFrame."
@@ -1177,7 +1177,7 @@ class SampleFrame:
         return (
             f"SampleFrame: {n_obs} observations x {n_covars} covariates: {covar_names}\n"
             f"  id_column: {self._id_column_name}, "
-            f"weight_columns: {self._column_roles['weights']}, "
+            f"weight_columns_all: {self._column_roles['weights']}, "
             f"outcome_columns: {outcome_info}"
         )
 

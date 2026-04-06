@@ -258,12 +258,12 @@ def _align_samples_by_id(
             "Outcome values differ between adjusted Samples for common ids."
         )
 
-    weights0 = _assert_type(adjusted0.weight_column).to_numpy()
+    weights0 = _assert_type(adjusted0.weight_series).to_numpy()
     weights0_series = pd.Series(weights0, index=ids0)
     weights0_aligned = weights0_series.reindex(common_ids).to_numpy()
 
     weights1_series = pd.Series(
-        _assert_type(adjusted1.weight_column).to_numpy(),
+        _assert_type(adjusted1.weight_series).to_numpy(),
         index=ids1,
     ).reindex(common_ids)
 

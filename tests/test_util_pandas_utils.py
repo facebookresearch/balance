@@ -506,7 +506,7 @@ class TestSample_high_cardinality_warnings(balance.testutil.BalanceTestCase):
         with self.assertLogs("balance", level="WARNING") as logs:
             result = sample.adjust(target, variables=["identifier"], num_lambdas=1)
 
-        self.assertTrue(np.allclose(result.weight_column, np.ones(len(sample_df))))
+        self.assertTrue(np.allclose(result.weight_series, np.ones(len(sample_df))))
         self.assertTrue(
             any(
                 "High-cardinality features detected" in log and "unique=10" in log
@@ -560,7 +560,7 @@ class TestSample_high_cardinality_warnings(balance.testutil.BalanceTestCase):
         with self.assertLogs("balance", level="WARNING") as logs:
             result = sample.adjust(target, variables=["identifier"], num_lambdas=1)
 
-        self.assertTrue(np.allclose(result.weight_column, np.ones(len(sample_df))))
+        self.assertTrue(np.allclose(result.weight_series, np.ones(len(sample_df))))
         self.assertTrue(
             any(
                 "High-cardinality features detected" in log and "unique=9" in log
@@ -584,7 +584,7 @@ class TestSample_high_cardinality_warnings(balance.testutil.BalanceTestCase):
         with self.assertLogs("balance", level="WARNING") as logs:
             result = sample.adjust(target, variables=["identifier"], num_lambdas=1)
 
-        self.assertTrue(np.allclose(result.weight_column, np.ones(len(sample_df))))
+        self.assertTrue(np.allclose(result.weight_series, np.ones(len(sample_df))))
         self.assertFalse(
             any("High-cardinality features detected" in log for log in logs.output)
         )
