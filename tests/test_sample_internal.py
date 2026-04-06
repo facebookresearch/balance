@@ -16,11 +16,13 @@ SampleFrame/BalanceFrame.
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-from unittest.mock import MagicMock
+from copy import deepcopy
+from typing import Any
 
 import balance.testutil
 import pandas as pd
 from balance.sample_class import Sample
+from balance.sample_frame import SampleFrame
 
 
 # Test sample fixtures - shared across multiple test methods
@@ -154,15 +156,16 @@ class TestSamplePrivateAPI(balance.testutil.BalanceTestCase):
 class TestSampleDesignEffectDiagnostics(balance.testutil.BalanceTestCase):
     """Test cases for _design_effect_diagnostics edge cases (lines 342-351)."""
 
-    def test_design_effect_diagnostics_with_no_weight_column(self) -> None:
-        """Test _design_effect_diagnostics returns None values when weight_column is None.
+    def test_design_effect_diagnostics_with_uniform_weights(self) -> None:
+        """Test _design_effect_diagnostics with uniform weights returns Deff=1.
 
-        Verifies lines 344-345 in sample_class.py.
+        When all weights are equal, the design effect should be 1.0.
         """
         sample = Sample.from_frame(pd.DataFrame({"a": [1, 2, 3], "id": [1, 2, 3]}))
-        sample.weight_column = None
         result = sample._design_effect_diagnostics()
-        self.assertEqual(result, (None, None, None))
+        design_effect: float | None = result[0]
+        assert design_effect is not None
+        self.assertAlmostEqual(design_effect, 1.0)
 
     def test_design_effect_diagnostics_with_invalid_weights(self) -> None:
         """Test _design_effect_diagnostics handles ValueError gracefully.
@@ -267,72 +270,273 @@ class TestSampleModelNoAdjustmentModel(balance.testutil.BalanceTestCase):
 
 
 class TestSampleDesignEffectDiagnosticsExceptionTypes(balance.testutil.BalanceTestCase):
-    """Test cases for _design_effect_diagnostics exception handling (lines 349-351)."""
+    """Test cases for _design_effect_diagnostics exception handling."""
 
     def test_design_effect_diagnostics_type_error(self) -> None:
-        """Test _design_effect_diagnostics handles TypeError gracefully.
+        """Test _design_effect_diagnostics handles TypeError gracefully."""
+        from unittest.mock import patch
 
-        Verifies the try/except in _design_effect_diagnostics catches TypeError
-        from weights().design_effect().
-        """
         sample = Sample.from_frame(
             pd.DataFrame({"a": [1, 2, 3], "id": [1, 2, 3], "w": [1.0, 2.0, 3.0]}),
             weight_column="w",
         )
-
-        # Mock weights().design_effect() to raise TypeError
-        mock_weights = MagicMock()
-        mock_weights.design_effect = MagicMock(side_effect=TypeError("test error"))
-        original_weights = sample.weights
-        try:
-            sample.weights = MagicMock(return_value=mock_weights)
+        with patch(
+            "balance.stats_and_plots.weights_stats.design_effect",
+            side_effect=TypeError("test error"),
+        ):
             result = sample._design_effect_diagnostics()
             self.assertEqual(result, (None, None, None))
-        finally:
-            sample.weights = original_weights
 
     def test_design_effect_diagnostics_value_error(self) -> None:
-        """Test _design_effect_diagnostics handles ValueError gracefully.
+        """Test _design_effect_diagnostics handles ValueError gracefully."""
+        from unittest.mock import patch
 
-        Verifies the try/except in _design_effect_diagnostics catches ValueError
-        from weights().design_effect().
-        """
         sample = Sample.from_frame(
             pd.DataFrame({"a": [1, 2, 3], "id": [1, 2, 3], "w": [1.0, 2.0, 3.0]}),
             weight_column="w",
         )
-
-        # Mock weights().design_effect() to raise ValueError
-        mock_weights = MagicMock()
-        mock_weights.design_effect = MagicMock(side_effect=ValueError("test error"))
-        original_weights = sample.weights
-        try:
-            sample.weights = MagicMock(return_value=mock_weights)
+        with patch(
+            "balance.stats_and_plots.weights_stats.design_effect",
+            side_effect=ValueError("test error"),
+        ):
             result = sample._design_effect_diagnostics()
             self.assertEqual(result, (None, None, None))
-        finally:
-            sample.weights = original_weights
 
     def test_design_effect_diagnostics_zero_division_error(self) -> None:
-        """Test _design_effect_diagnostics handles ZeroDivisionError gracefully.
+        """Test _design_effect_diagnostics handles ZeroDivisionError gracefully."""
+        from unittest.mock import patch
 
-        Verifies the try/except in _design_effect_diagnostics catches
-        ZeroDivisionError from weights().design_effect().
-        """
         sample = Sample.from_frame(
             pd.DataFrame({"a": [1, 2, 3], "id": [1, 2, 3], "w": [1.0, 2.0, 3.0]}),
             weight_column="w",
         )
-
-        # Mock weights().design_effect() to raise ZeroDivisionError
-        mock_weights = MagicMock()
-        mock_weights.design_effect = MagicMock(
-            side_effect=ZeroDivisionError("test error")
-        )
-        original_weights = sample.weights
-        try:
-            sample.weights = MagicMock(return_value=mock_weights)
+        with patch(
+            "balance.stats_and_plots.weights_stats.design_effect",
+            side_effect=ZeroDivisionError("test error"),
+        ):
             result = sample._design_effect_diagnostics()
             self.assertEqual(result, (None, None, None))
-        finally:
-            sample.weights = original_weights
+
+
+class TestSampleInternalSampleFrame(
+    balance.testutil.BalanceTestCase,
+):
+    """Tests for the internal SampleFrame backing of Sample."""
+
+    def _make_sample(
+        self,
+        outcome: bool = True,
+        ignore: bool = False,
+    ) -> Sample:
+        data: dict[str, Any] = {
+            "id": ["1", "2", "3"],
+            "x": [10.0, 20.0, 30.0],
+            "y": [1.0, 2.0, 3.0],
+            "weight": [1.0, 1.0, 1.0],
+        }
+        if ignore:
+            data["misc_col"] = ["a", "b", "c"]
+        return Sample.from_frame(
+            pd.DataFrame(data),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns="y" if outcome else None,
+            ignore_columns="misc_col" if ignore else None,
+            standardize_types=False,
+        )
+
+    def test_sample_has_sample_frame(self) -> None:
+        s = self._make_sample()
+        self.assertIsNotNone(s._sample_frame)
+        self.assertIsInstance(s._sample_frame, SampleFrame)
+
+    def test_df_property_returns_sample_frame_df(self) -> None:
+        s = self._make_sample()
+        # _df should be the same object as _sample_frame._df
+        self.assertIs(s._df, s._sample_frame._df)
+
+    def test_df_setter_updates_sample_frame(self) -> None:
+        s = self._make_sample()
+        new_df = s._df.copy()
+        new_df["x"] = [100.0, 200.0, 300.0]
+        s._df = new_df
+        pd.testing.assert_frame_equal(s._sample_frame._df, new_df)
+
+    def test_outcome_columns_property(self) -> None:
+        s = self._make_sample(outcome=True)
+        outcome_cols = s._outcome_columns
+        self.assertIsNotNone(outcome_cols)
+        assert outcome_cols is not None
+        self.assertEqual(outcome_cols.columns.tolist(), ["y"])
+        pd.testing.assert_series_equal(
+            outcome_cols["y"],
+            pd.Series([1.0, 2.0, 3.0], name="y"),
+            check_names=False,
+        )
+
+    def test_outcome_columns_none_when_no_outcomes(self) -> None:
+        s = self._make_sample(outcome=False)
+        self.assertIsNone(s._outcome_columns)
+
+    def test_outcome_columns_setter(self) -> None:
+        s = self._make_sample(outcome=True)
+        # Setting to None clears outcomes
+        s._outcome_columns = None
+        self.assertIsNone(s._outcome_columns)
+        self.assertEqual(s._sample_frame._column_roles["outcomes"], [])
+
+    def test_ignored_column_names_property(self) -> None:
+        s = self._make_sample(ignore=True)
+        self.assertEqual(s._ignored_column_names, ["misc_col"])
+
+    def test_ignored_column_names_empty_by_default(self) -> None:
+        s = self._make_sample(ignore=False)
+        self.assertEqual(s._ignored_column_names, [])
+
+    def test_ignored_column_names_setter(self) -> None:
+        s = self._make_sample(ignore=True)
+        s._ignored_column_names = ["x"]
+        self.assertEqual(s._sample_frame._column_roles["ignored"], ["x"])
+
+    def test_covar_columns_inferred_correctly(self) -> None:
+        s = self._make_sample(outcome=True, ignore=True)
+        # covars = all columns minus id, weight, outcome, ignored
+        self.assertEqual(s._covar_columns_names(), ["x"])
+
+    def test_from_frame_builds_sample_frame_with_correct_roles(self) -> None:
+        s = self._make_sample(outcome=True, ignore=True)
+        sf = s._sample_frame
+        self.assertEqual(sf._id_column_name, "id")
+        self.assertEqual(sf._column_roles["weights"], ["weight"])
+        self.assertEqual(sf._column_roles["outcomes"], ["y"])
+        self.assertEqual(sf._column_roles["ignored"], ["misc_col"])
+        self.assertEqual(sf._column_roles["covars"], ["x"])
+
+    def test_set_target_preserves_sample_frame(self) -> None:
+        s = self._make_sample()
+        t = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["4", "5", "6"],
+                    "x": [40.0, 50.0, 60.0],
+                    "y": [4.0, 5.0, 6.0],
+                    "weight": [1.0, 1.0, 1.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            outcome_columns="y",
+            standardize_types=False,
+        )
+        s_with_target = s.set_target(t)
+        self.assertIsNotNone(s_with_target._sample_frame)
+        # Target should also have its own SampleFrame
+        target = s_with_target._links["target"]
+        self.assertIsNotNone(target._sample_frame)
+
+    def test_unadjusted_has_no_weight_metadata(self) -> None:
+        s = self._make_sample()
+        self.assertEqual(s._sample_frame.weight_metadata(), {})
+
+    def test_adjust_records_weight_metadata(self) -> None:
+        s = self._make_sample()
+        t = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["4", "5", "6"],
+                    "x": [40.0, 50.0, 60.0],
+                    "weight": [1.0, 1.0, 1.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        s_with_target = s.set_target(t)
+        adjusted = s_with_target.adjust(method="null")
+        meta = adjusted._sample_frame.weight_metadata()
+        self.assertEqual(meta["method"], "null")
+        self.assertTrue(meta["adjusted"])
+
+    def test_adjust_ipw_records_weight_metadata(self) -> None:
+        s = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(20)],
+                    "x": [float(i) for i in range(20)],
+                    "weight": [1.0] * 20,
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        t = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(20, 40)],
+                    "x": [float(i) for i in range(20, 40)],
+                    "weight": [1.0] * 20,
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        s_with_target = s.set_target(t)
+        adjusted = s_with_target.adjust(method="ipw")
+        meta = adjusted._sample_frame.weight_metadata()
+        self.assertEqual(meta["method"], "ipw")
+        self.assertTrue(meta["adjusted"])
+
+    def test_adjust_callable_records_weight_metadata(self) -> None:
+        def my_custom_method(*args: Any, **kwargs: Any) -> dict[str, Any]:
+            return {
+                "weight": pd.Series([1.0, 1.0, 1.0]),
+                "model": {"method": "custom"},
+            }
+
+        s = self._make_sample()
+        t = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["4", "5", "6"],
+                    "x": [40.0, 50.0, 60.0],
+                    "weight": [1.0, 1.0, 1.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        s_with_target = s.set_target(t)
+        adjusted = s_with_target.adjust(method=my_custom_method)
+        meta = adjusted._sample_frame.weight_metadata()
+        self.assertEqual(meta["method"], "my_custom_method")
+        self.assertTrue(meta["adjusted"])
+
+    def test_set_weights_syncs_sample_frame(self) -> None:
+        s = self._make_sample()
+        new_weights = pd.Series([2.0, 3.0, 4.0], index=s._df.index)
+        s.set_weights(new_weights)
+        # Both the plain weight_column attr and the SampleFrame's _df
+        # should reflect the new weights.
+        pd.testing.assert_series_equal(
+            s.weight_column,
+            s._sample_frame._df["weight"],
+        )
+        self.assertEqual(s._sample_frame._df["weight"].tolist(), [2.0, 3.0, 4.0])
+
+    def test_keep_only_some_rows_columns_preserves_outcomes(self) -> None:
+        s = self._make_sample(outcome=True)
+        # Keep only column "x" — outcome column "y" should be preserved
+        filtered = s.keep_only_some_rows_columns(columns_to_keep=["id", "x", "weight"])
+        self.assertIn("y", filtered._df.columns.tolist())
+
+    def test_deepcopy_preserves_sample_frame(self) -> None:
+        s = self._make_sample()
+        s2 = deepcopy(s)
+        self.assertIsNotNone(s2._sample_frame)
+        # Modifying the copy should not affect the original
+        s2._df["x"] = [100.0, 200.0, 300.0]
+        self.assertEqual(s._df["x"].tolist(), [10.0, 20.0, 30.0])
