@@ -29,6 +29,19 @@
 
 ## Internal Changes
 
+- **Naming consistency: weight-related property renames**
+  - `SampleFrame.active_weight_column` (str) → `weight_column` — simpler name for
+    the active weight column name.
+  - `SampleFrame.weight_column` (Series) → `weight_series` — clarifies this returns
+    weight values, not a column name.
+  - `SampleFrame.weight_columns` (list) → `weight_columns_all` — avoids confusion
+    with the singular `weight_column`.
+  - `SampleFrame._active_weight_column` → `_weight_column_name` — clearer: stores
+    a column name string.
+  - `BalanceFrame.weight_column` (Series) → `weight_series` — matches SampleFrame.
+  - `BalanceDFSource.weight_column` → `weight_series` — protocol accessor renamed.
+  - All internal references updated across balance, graviton, and test files.
+
 - **Refactored `Sample` to delegate to `SampleFrame` and `BalanceFrame` internally**
   - `Sample` is now a thin facade: `set_target()` creates a backing `BalanceFrame`,
     and `adjust()`, `summary()`, `diagnostics()`, `model()`, `is_adjusted`, and
@@ -152,7 +165,7 @@
 - **Defined `BalanceDFSource` protocol and decoupled `BalanceDF` from `Sample`**
   - Added `BalanceDFSource` — a `typing.Protocol` (runtime-checkable) that captures
     the 6 attributes/methods `BalanceDF` accesses on its backing object:
-    `weight_column`, `id_column`, `_links`, `_covar_columns()`,
+    `weight_series`, `id_column`, `_links`, `_covar_columns()`,
     `_outcome_columns`, and `set_weights()`.
   - Updated `BalanceDF.__init__`, `BalanceDFCovars.__init__`,
     `BalanceDFWeights.__init__`, and `BalanceDFOutcomes.__init__` to accept
@@ -212,7 +225,7 @@
   (21 tests):
   - `test_isinstance_balancedf_source` — verifies `isinstance(sf, BalanceDFSource)`
   - `test_weight_column_returns_series`, `test_weight_column_returns_copy`,
-    `test_weight_column_no_active_raises` — weight_column property
+    `test_weight_series_no_active_raises` — weight_series property
   - `test_id_column_returns_series` — id_column property
   - `test_links_default_empty`, `test_links_preserved_in_deepcopy` — _links attribute
   - `test_covar_columns_method`, `test_covar_columns_method_returns_copy` —
