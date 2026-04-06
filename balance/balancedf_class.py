@@ -2225,9 +2225,15 @@ class BalanceDFOutcomes(BalanceDF):
             sample (BalanceDFSource): A BalanceDFSource-compatible object (e.g. Sample, SampleFrame).
             links (Dict | None): Optional explicit links for BalanceDF.
         """
-        # pyre-fixme[6]: _outcome_columns is Optional[DataFrame]; callers must
-        # ensure it is not None before constructing BalanceDFOutcomes.
-        super().__init__(sample._outcome_columns, sample, name="outcomes", links=links)
+        outcome_df = sample._outcome_columns
+        if outcome_df is None:
+            source_type = type(sample).__name__
+            raise ValueError(
+                f"Cannot create BalanceDFOutcomes: no outcome columns are defined "
+                f"on the provided {source_type}. Configure the underlying object "
+                "with outcome_columns= before constructing or accessing outcomes."
+            )
+        super().__init__(outcome_df, sample, name="outcomes", links=links)
 
     # TODO: add the `relative_to` argument (with options 'self' and 'target')
     #       this will also require to update _relative_response_rates a bit.
