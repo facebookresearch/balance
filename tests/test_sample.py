@@ -2708,8 +2708,8 @@ class TestSampleConversion(balance.testutil.BalanceTestCase):
         )
         sf = sample_with_ignored.to_sample_frame()
         self.assertIsInstance(sf, SampleFrame)
-        self.assertIsNotNone(sf.misc_columns)
-        self.assertIn("b", sf.misc_columns)
+        self.assertIsNotNone(sf.ignore_columns)
+        self.assertIn("b", sf.ignore_columns)
 
     def test_to_balance_frame_unadjusted(self) -> None:
         """to_balance_frame converts a Sample with target to a BalanceFrame."""
