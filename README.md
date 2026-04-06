@@ -283,6 +283,11 @@ _You can read more on evaluation of the post-adjusted data in the
 [Evaluating and using the adjustment weights](https://import-balance.org/docs/docs/general_framework/evaluation_of_results/)
 page._
 
+## Developer and AI assistant resources
+
+- [`ARCHITECTURE.md`](https://github.com/facebookresearch/balance/blob/main/ARCHITECTURE.md) — internal architecture documentation (class hierarchy, data flow, design decisions)
+- [`.github/copilot-instructions.md`](https://github.com/facebookresearch/balance/blob/main/.github/copilot-instructions.md) — instructions for LLM/AI coding assistants working on balance
+
 ## Other resources
 
 - Presentation:
