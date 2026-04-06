@@ -1856,6 +1856,21 @@ class TestBalanceFrameSetWeights(BalanceTestCase):
         self.assertEqual(_assert_type(adjusted.weight_series).tolist(), [3.0, 3.0])
 
 
+class TestBalanceFrameDfSetterRejectsNone(BalanceTestCase):
+    """Verify _df setter raises on None instead of silently ignoring."""
+
+    def test_set_df_to_none_raises(self) -> None:
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]}),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        bf = BalanceFrame(sample=resp_sf)
+        with self.assertRaises(ValueError):
+            bf._df = None  # pyre-ignore[8]
+
+
 class TestBalanceFrameRIndicator(BalanceTestCase):
     """Verify r_indicator() uses BalanceFrame's links, not SampleFrame._links."""
 
