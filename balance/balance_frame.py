@@ -180,8 +180,12 @@ class BalanceFrame:
 
     @_df.setter
     def _df(self, value: pd.DataFrame | None) -> None:  # pyre-ignore[2,3]
-        if value is not None:
-            self._sf_sample._df = value
+        if value is None:
+            raise ValueError(
+                "Cannot set _df to None. A BalanceFrame must always have a "
+                "backing DataFrame."
+            )
+        self._sf_sample._df = value
 
     @property
     def _outcome_columns(self) -> pd.DataFrame | None:
