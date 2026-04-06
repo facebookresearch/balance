@@ -338,13 +338,23 @@ class BalanceFrame:
     ) -> None:
         """Check that responders and target share at least one covariate.
 
+        When both have no covariates (outcome-only comparison), a warning
+        is issued instead of raising.
+
         Raises:
-            ValueError: If they share no covariate columns.
+            ValueError: If both have covariates but share none.
         """
         resp_covars = set(responders.covar_columns)
         target_covars = set(target.covar_columns)
         overlap = resp_covars & target_covars
         if len(overlap) == 0:
+            if len(resp_covars) == 0 and len(target_covars) == 0:
+                # Both have no covariates — legitimate for outcome-only use.
+                logger.warning(
+                    "Both responders and target have no covariate columns. "
+                    "adjust() will not be available."
+                )
+                return
             raise ValueError(
                 "Responders and target share no covariate columns. "
                 f"Responder covariates: {sorted(resp_covars)}, "
@@ -465,15 +475,9 @@ class BalanceFrame:
             # BalanceFrame / Sample path: return a deep copy (immutable)
             new_copy = deepcopy(self)
             new_copy._links["target"] = target
-            # Validation may fail if sample and target share no covariates
-            # (e.g., outcome-only targets). In that case, skip validation —
-            # adjust() will report the error when called.
-            try:
-                BalanceFrame._validate_covariate_overlap(
-                    new_copy._sf_sample, target._sf_sample
-                )
-            except (ValueError, TypeError):
-                pass
+            BalanceFrame._validate_covariate_overlap(
+                new_copy._sf_sample, target._sf_sample
+            )
             new_copy._sf_target = target._sf_sample
             return new_copy
 
