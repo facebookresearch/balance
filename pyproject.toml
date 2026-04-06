@@ -91,6 +91,9 @@ target-version = ["py39", "py310", "py311", "py312", "py313"]
 first_party_detection = false
 
 [tool.pytest.ini_options]
+markers = [
+    "requires_sklearn_1_4: test requires scikit-learn >= 1.4 (deselected otherwise)",
+]
 filterwarnings = [
     # Ignore third-party deprecation warnings from matplotlib's internal dependencies
     "ignore:'oneOf' deprecated:DeprecationWarning:matplotlib._fontconfig_pattern",
