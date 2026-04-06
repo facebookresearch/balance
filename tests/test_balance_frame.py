@@ -298,14 +298,14 @@ class TestBalanceFrameAdjust(BalanceTestCase):
 
     def test_adjust_preserves_original_weights(self) -> None:
         adjusted = self.bf.adjust(method="null")
-        # Original weight column still present alongside adjusted
+        # Weight history columns present
         all_w_cols = adjusted.responders.weight_columns_all
         self.assertIn("weight", all_w_cols)
-        self.assertIn("weight_adjusted", all_w_cols)
-        # Active weight is the adjusted one
-        self.assertListEqual(
-            list(adjusted.responders.df_weights.columns), ["weight_adjusted"]
-        )
+        self.assertIn("weight_pre_adjust", all_w_cols)
+        self.assertIn("weight_adjusted_1", all_w_cols)
+        # Active weight keeps its original name
+        self.assertEqual(_assert_type(adjusted.weight_series).name, "weight")
+        self.assertListEqual(list(adjusted.responders.df_weights.columns), ["weight"])
 
     def test_adjust_immutability(self) -> None:
         original_weight_vals = self.bf.responders.df_weights.iloc[:, 0].tolist()
@@ -359,16 +359,121 @@ class TestBalanceFrameAdjust(BalanceTestCase):
 
     def test_adjust_weight_metadata(self) -> None:
         adjusted = self.bf.adjust(method="null")
-        meta = adjusted.responders.weight_metadata("weight_adjusted")
+        meta = adjusted.responders.weight_metadata("weight_adjusted_1")
         self.assertEqual(meta["method"], "null")
         self.assertIn("model", meta)
 
-    def test_adjust_already_adjusted_raises(self) -> None:
-        """Calling adjust() on an already-adjusted BalanceFrame raises ValueError."""
-        adjusted = self.bf.adjust(method="null")
-        with self.assertRaises(ValueError) as ctx:
-            adjusted.adjust(method="null")
-        self.assertIn("already-adjusted", str(ctx.exception))
+    def test_adjust_compound_null_then_null(self) -> None:
+        """Adjusting twice with null method produces a valid adjusted BF."""
+        adj1 = self.bf.adjust(method="null")
+        adj2 = adj1.adjust(method="null")
+        self.assertTrue(adj2.is_adjusted)
+        self.assertIsNotNone(adj2.model)
+
+    def test_adjust_compound_preserves_original_pre_adjust(self) -> None:
+        """_sf_sample_pre_adjust always points to the original baseline."""
+        adj1 = self.bf.adjust(method="null")
+        adj2 = adj1.adjust(method="null")
+        adj3 = adj2.adjust(method="null")
+        # All should share the same original pre-adjust SampleFrame
+        self.assertIs(adj1._sf_sample_pre_adjust, self.resp_sf)
+        self.assertIs(adj2._sf_sample_pre_adjust, self.resp_sf)
+        self.assertIs(adj3._sf_sample_pre_adjust, self.resp_sf)
+
+    def test_adjust_compound_unadjusted_link_is_original(self) -> None:
+        """_links['unadjusted'] always points to the original BF."""
+        adj1 = self.bf.adjust(method="null")
+        adj2 = adj1.adjust(method="null")
+        adj3 = adj2.adjust(method="null")
+        # The unadjusted link should always be the original (self.bf)
+        self.assertIs(adj1._links["unadjusted"], self.bf)
+        self.assertIs(adj2._links["unadjusted"], self.bf)
+        self.assertIs(adj3._links["unadjusted"], self.bf)
+        # _build_links_dict should also return the original pre-adjust
+        links2 = adj2._build_links_dict()
+        self.assertIs(links2["unadjusted"], self.resp_sf)
+        links3 = adj3._build_links_dict()
+        self.assertIs(links3["unadjusted"], self.resp_sf)
+
+    def test_adjust_compound_uses_previous_weights_as_design(self) -> None:
+        """Second adjust uses the first adjustment's weights as design weights."""
+        # First adjust with null: weights pass through unchanged
+        adj1 = self.bf.adjust(method="null")
+        w1 = adj1.responders.df_weights.iloc[:, 0].copy()
+
+        # Manually set different weights, then adjust again
+        adj1_modified = copy.deepcopy(adj1)
+        adj1_modified.set_weights(pd.Series([2.0, 3.0, 1.0, 4.0, 0.5]))
+        adj2 = adj1_modified.adjust(method="null")
+        w2 = adj2.responders.df_weights.iloc[:, 0]
+        # Null passes through design weights, so second adjust should
+        # use the modified weights as input
+        self.assertFalse(w1.equals(w2))
+
+    def test_adjust_compound_model_is_latest(self) -> None:
+        """model stores only the latest adjustment's info."""
+        adj1 = self.bf.adjust(method="null")
+        adj2 = adj1.adjust(method="ipw")
+        model = adj2.model
+        self.assertIsNotNone(model)
+        assert model is not None
+        # Should reflect IPW, not null
+        self.assertIn("ipw", model["method"])
+
+    def test_adjust_compound_three_steps(self) -> None:
+        """Three sequential adjustments maintain all invariants."""
+        adj1 = self.bf.adjust(method="null")
+        adj2 = adj1.adjust(method="null")
+        adj3 = adj2.adjust(method="null")
+        self.assertTrue(adj3.is_adjusted)
+        self.assertTrue(adj3.has_target)
+        # Original BF is unchanged
+        self.assertFalse(self.bf.is_adjusted)
+        # Pre-adjust is original
+        self.assertIs(adj3._sf_sample_pre_adjust, self.resp_sf)
+        # Summary should work without error
+        adj3.summary()
+
+    def test_adjust_compound_weight_history(self) -> None:
+        """Weight history columns accumulate across compound adjustments."""
+        adj1 = self.bf.adjust(method="null")
+        # After 1st adjust: weight, weight_pre_adjust, weight_adjusted_1
+        w1_cols = adj1.responders.weight_columns_all
+        self.assertIn("weight", w1_cols)
+        self.assertIn("weight_pre_adjust", w1_cols)
+        self.assertIn("weight_adjusted_1", w1_cols)
+        self.assertEqual(_assert_type(adj1.weight_series).name, "weight")
+
+        adj2 = adj1.adjust(method="null")
+        # After 2nd adjust: adds weight_adjusted_2
+        w2_cols = adj2.responders.weight_columns_all
+        self.assertIn("weight_adjusted_1", w2_cols)
+        self.assertIn("weight_adjusted_2", w2_cols)
+        self.assertEqual(_assert_type(adj2.weight_series).name, "weight")
+
+        adj3 = adj2.adjust(method="null")
+        # After 3rd adjust: adds weight_adjusted_3
+        w3_cols = adj3.responders.weight_columns_all
+        self.assertIn("weight_adjusted_1", w3_cols)
+        self.assertIn("weight_adjusted_2", w3_cols)
+        self.assertIn("weight_adjusted_3", w3_cols)
+        self.assertEqual(_assert_type(adj3.weight_series).name, "weight")
+
+        # Active weight values should equal the latest weight_adjusted_N
+        pd.testing.assert_series_equal(
+            adj3.responders._df["weight"],
+            adj3.responders._df["weight_adjusted_3"],
+            check_names=False,
+        )
+
+    def test_adjust_compound_asmd_improvement_vs_original(self) -> None:
+        """asmd_improvement() computes total improvement vs original baseline."""
+        adj1 = self.bf.adjust(method="ipw")
+        adj2 = adj1.adjust(method="null")
+        # Since null doesn't change weights, improvement should be the same
+        imp1 = adj1.covars().asmd_improvement()
+        imp2 = adj2.covars().asmd_improvement()
+        self.assertAlmostEqual(imp1, imp2, places=5)
 
     def test_adjust_stores_method_name_in_model(self) -> None:
         """adjust() stores the method name in the adjustment model dict."""
@@ -1727,7 +1832,7 @@ class TestBalanceFrameToSample(BalanceTestCase):
     def test_to_sample_adjusted_weight_column(self) -> None:
         adjusted_bf = self.bf.adjust(method="null")
         s = adjusted_bf.to_sample()
-        self.assertEqual(s.weight_series.name, "weight_adjusted")
+        self.assertEqual(s.weight_series.name, "weight")
 
     def test_to_sample_with_outcomes(self) -> None:
         resp_df = pd.DataFrame(

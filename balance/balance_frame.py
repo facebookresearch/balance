@@ -28,6 +28,8 @@ from balance.sample_frame import SampleFrame
 from balance.stats_and_plots import weights_stats
 from balance.summary_utils import _build_diagnostics, _build_summary
 from balance.typing import FilePathOrBuffer
+
+logger = logging.getLogger(__package__)
 from balance.util import (
     _assert_type,
     _detect_high_cardinality_features,
@@ -142,11 +144,6 @@ class BalanceFrame:
         >>> bf.is_adjusted  # original unchanged
         False
     """
-
-    # When True, _build_adjusted_frame renames weight_adjusted → original
-    # weight column name.  Sample sets this to True so the public API always
-    # sees the original weight column name; direct BalanceFrame keeps both.
-    _RENAME_WEIGHT_ON_ADJUST: bool = False
 
     # pyre-fixme[13]: Attributes are initialized in _create() / from_frame()
     _sf_sample_pre_adjust: SampleFrame
@@ -521,12 +518,21 @@ class BalanceFrame:
 
         raise TypeError("A target, a Sample object, must be specified")
 
+    # TODO: Add a set_as_pre_adjust() method that resets
+    # _sf_sample_pre_adjust to the current _sf_sample state, allowing
+    # users to "lock in" a compound adjustment as the new baseline.
+
     @property
     def is_adjusted(self) -> _CallableBool:
         """Whether this BalanceFrame has been adjusted.
 
         Returns a ``_CallableBool`` so both ``bf.is_adjusted`` (property)
         and ``bf.is_adjusted()`` (legacy call) work.
+
+        For compound adjustments (calling ``adjust()`` multiple times),
+        ``is_adjusted`` is True after the first adjustment and remains True
+        for all subsequent adjustments.  The original unadjusted baseline is
+        always preserved in ``_sf_sample_pre_adjust``.
         """
         return _CallableBool(self._sf_sample is not self._sf_sample_pre_adjust)
 
@@ -591,8 +597,40 @@ class BalanceFrame:
             if isinstance(method, str)
             else getattr(method, "__name__", str(method))
         )
+
+        # --- Unified weight history tracking ---
+        #
+        # After each adjustment the SampleFrame accumulates weight columns:
+        #
+        #   | After        | Weight columns                                    | Active   |
+        #   |--------------|---------------------------------------------------|----------|
+        #   | Before adj.  | weight                                            | weight   |
+        #   | 1st adjust   | weight, weight_pre_adjust, weight_adjusted_1      | weight   |
+        #   | 2nd adjust   | weight, weight_pre_adjust, weight_adjusted_1, _2  | weight   |
+        #   | 3rd adjust   | ... weight_adjusted_1, _2, _3                     | weight   |
+        #
+        # * weight_pre_adjust — frozen copy of original design weights (first adj only)
+        # * weight_adjusted_N — output of the Nth adjustment step
+        # * weight — always overwritten with the latest adjusted values
+        original_weight_name = str(_assert_type(self.weight_series).name)
+
+        # On first adjustment: freeze the original design weights as
+        # "weight_pre_adjust" so the full history is in one SampleFrame.
+        if "weight_pre_adjust" not in new_responders._df.columns:
+            new_responders.add_weight_column(
+                "weight_pre_adjust",
+                new_responders._df[original_weight_name].copy(),
+            )
+
+        # Find next adjustment number (weight_adjusted_1, weight_adjusted_2, ...)
+        n = 1
+        while f"weight_adjusted_{n}" in new_responders._df.columns:
+            n += 1
+        adj_col_name = f"weight_adjusted_{n}"
+
+        # Add the new adjusted weights as weight_adjusted_N
         new_responders.add_weight_column(
-            "weight_adjusted",
+            adj_col_name,
             result["weight"],
             metadata={
                 "method": method_name,
@@ -600,40 +638,58 @@ class BalanceFrame:
                 "model": result.get("model", {}),
             },
         )
-        new_responders.set_active_weight("weight_adjusted")
 
-        # For Sample subclasses: rename "weight_adjusted" → original weight
-        # column name so the public API always sees the original name.
-        # For direct BalanceFrame: keep both columns (weight + weight_adjusted).
-        original_weight_name = _assert_type(self.weight_series).name
-        if self._RENAME_WEIGHT_ON_ADJUST:
-            # Sample (or other subclass) path: rename weight_adjusted → original
-            if (
-                original_weight_name in new_responders._df.columns
-                and original_weight_name != "weight_adjusted"
-            ):
-                new_responders._df = new_responders._df.drop(
-                    columns=[original_weight_name]
+        # Overwrite the original weight column with the new adjusted values,
+        # so the active weight column always keeps its original name.
+        # Use index-aligned assignment so that na_action="drop" (which
+        # returns fewer weights) fills dropped rows with NaN.
+        result_weights = result["weight"]
+        if isinstance(result_weights, pd.Series) and len(result_weights) < len(
+            new_responders._df
+        ):
+            result_weights = result_weights.reindex(new_responders._df.index)
+            n_nan = int(result_weights.isna().sum())
+            if n_nan > 0:
+                logger.warning(
+                    "%d of %d units received NaN weights after na_action='drop' "
+                    "(these units were excluded from the weighting model). "
+                    "Downstream weighted calculations will ignore them.",
+                    n_nan,
+                    len(new_responders._df),
                 )
-                if original_weight_name in new_responders._column_roles["weights"]:
-                    new_responders._column_roles["weights"].remove(original_weight_name)
-            new_responders.rename_weight_column("weight_adjusted", original_weight_name)
+        new_responders._df[original_weight_name] = result_weights.to_numpy()
+        new_responders.set_active_weight(original_weight_name)
+
+        # TODO: The weight history columns (weight_pre_adjust, weight_adjusted_1,
+        # weight_adjusted_2, ...) make _sf_sample_pre_adjust redundant.  Once all
+        # consumers are updated to read weight_pre_adjust instead,
+        # _sf_sample_pre_adjust can be removed entirely.
 
         # Use type(self) so subclasses (e.g. Sample) get their own type back.
         new_bf = type(self)._create(
             sample=new_responders,
             sf_target=self._sf_target,
         )
-        # Point _sf_sample_pre_adjust to the original (pre-adjustment) data
+        # Point _sf_sample_pre_adjust to the original (pre-adjustment) data.
+        # For compound adjustments this is always the *very first* baseline,
+        # so diagnostics (asmd_improvement, summary) show total improvement.
         new_bf._sf_sample_pre_adjust = self._sf_sample_pre_adjust
-        # Set _links for __str__() and BalanceDF integration
-        new_bf._links["unadjusted"] = self
+        # Always link back to the original unadjusted BalanceFrame so that
+        # 3-way comparisons (adjusted vs original vs target) span the full
+        # adjustment chain, not just the last step.
+        if "unadjusted" in self._links:
+            new_bf._links["unadjusted"] = self._links["unadjusted"]
+        else:
+            new_bf._links["unadjusted"] = self
         if "target" in self._links:
             new_bf._links["target"] = self._links["target"]
 
         raw_model = result.get("model")
         # Defensive copy: the weighting function may retain a reference to the
         # dict it returned, so mutating it here could cause surprising side effects.
+        # TODO: Track adjustment history — currently only the latest model is
+        # stored. A future enhancement should maintain a list of
+        # (method, model_dict) tuples for each adjustment step.
         new_bf._adjustment_model = (
             dict(raw_model) if isinstance(raw_model, dict) else raw_model
         )
@@ -653,9 +709,50 @@ class BalanceFrame:
         """Adjust responder weights to match the target. Returns a NEW BalanceFrame.
 
         The original BalanceFrame is not modified (immutable pattern).  The
-        returned BalanceFrame has ``is_adjusted == True``, a new weight column
-        (``"weight_adjusted"``), and the pre-adjustment responders stored in
-        :attr:`unadjusted`.
+        returned BalanceFrame has ``is_adjusted == True`` and the pre-adjustment
+        responders stored in :attr:`unadjusted`.
+
+        The active weight column always keeps its original name (e.g.,
+        ``"weight"``).  Its values are overwritten with the new adjusted
+        weights.  The full weight history is tracked via additional columns:
+
+        .. list-table:: Weight columns after each adjustment
+           :header-rows: 1
+
+           * - After
+             - Weight columns in ``responders``
+             - Active (``"weight"``)
+           * - Before adjust
+             - ``weight``
+             - original design weights
+           * - 1st adjust
+             - ``weight``, ``weight_pre_adjust``, ``weight_adjusted_1``
+             - = ``weight_adjusted_1`` values
+           * - 2nd adjust
+             - + ``weight_adjusted_2``
+             - = ``weight_adjusted_2`` values
+           * - 3rd adjust
+             - + ``weight_adjusted_3``
+             - = ``weight_adjusted_3`` values
+
+        **Compound / sequential adjustments:** ``adjust()`` can be called
+        multiple times.  Each call uses the *current* (previously adjusted)
+        weights as design weights, so adjustments compound.  For example, run
+        IPW first to correct broad imbalances, then rake on a specific variable
+        for fine-tuning::
+
+            adjusted_ipw = bf.adjust(method="ipw", max_de=2)
+            adjusted_final = adjusted_ipw.adjust(method="rake")
+
+        The original unadjusted baseline is always preserved:
+
+        * ``_sf_sample_pre_adjust`` always points to the **original**
+          (pre-first-adjustment) SampleFrame.
+        * ``_links["unadjusted"]`` always points to the **original**
+          unadjusted BalanceFrame, so 3-way comparisons
+          (adjusted vs original vs target) and ``asmd_improvement()`` show
+          **total** improvement across all adjustment steps.
+        * ``model`` stores only the **latest** adjustment's model dict.
 
         Args:
             target: Optional target BalanceFrame/Sample. If provided, calls
@@ -674,8 +771,7 @@ class BalanceFrame:
 
         Raises:
             ValueError: If *method* is a string that doesn't match any
-                registered adjustment method, or if the BalanceFrame has
-                already been adjusted.
+                registered adjustment method.
 
         Examples:
             >>> import pandas as pd
@@ -691,6 +787,9 @@ class BalanceFrame:
             >>> adjusted = bf.adjust(method="ipw")
             >>> adjusted.is_adjusted
             True
+            >>> adjusted2 = adjusted.adjust(method="null")
+            >>> adjusted2.is_adjusted
+            True
         """
         if target is not None:
             # Inline target: set it first, then recurse
@@ -698,12 +797,6 @@ class BalanceFrame:
             return self_with_target.adjust(*args, method=method, **kwargs)
 
         self._require_target()
-
-        if self.is_adjusted:
-            raise ValueError(
-                "Cannot adjust an already-adjusted BalanceFrame. "
-                "Use the original (unadjusted) BalanceFrame instead."
-            )
 
         sf_target = self._sf_target
         assert sf_target is not None  # guaranteed by _require_target() above
@@ -1608,6 +1701,11 @@ class BalanceFrame:
             balance_util.model_matrix(self, add_na=True)["sample"], pd.DataFrame
         )
         return res
+
+    # TODO: Add a trim() method directly on BalanceFrame that delegates
+    # to trim_weights() and calls set_weights(), providing a convenient
+    # path for permanent weight trimming without going through
+    # weights().trim().
 
     def set_weights(self, weights: pd.Series | float | None) -> None:
         """Set or replace the responder weights.
