@@ -316,7 +316,7 @@ class BalanceCLI:
 
         Note that keep columns that are not the id, weight, a covariate,
         or an explicit outcome column will be placed into
-        ``ignore_columns`` by :meth:`process_batch`.  They are still
+        ``ignored_columns`` by :meth:`process_batch`.  They are still
         carried through the ``Sample`` and available in the output.
 
         Returns:
@@ -335,7 +335,7 @@ class BalanceCLI:
 
         These columns are used to filter the final output DataFrame.
         Keep columns that are not the id, weight, a covariate, or an
-        explicit outcome column will be placed into ``ignore_columns``
+        explicit outcome column will be placed into ``ignored_columns``
         during processing but are still retained by the ``Sample`` and
         included in the output.
 
@@ -714,7 +714,7 @@ class BalanceCLI:
             }
 
         # Build the set of explicitly mentioned columns.  Any column not in
-        # this set is placed into ignore_columns so it is carried through
+        # this set is placed into ignored_columns so it is carried through
         # the Sample but does not participate in the adjustment.
         outcome_columns = self.outcome_columns()
         explicitly_mentioned: set[str] = {
@@ -725,7 +725,7 @@ class BalanceCLI:
         if outcome_columns is not None:
             explicitly_mentioned.update(outcome_columns)
 
-        ignore_columns = [
+        ignored_columns = [
             column for column in batch_df.columns if column not in explicitly_mentioned
         ]
         outcome_columns = tuple(outcome_columns) if outcome_columns else None
@@ -740,7 +740,7 @@ class BalanceCLI:
             id_column=self.id_column(),
             weight_column=self.weight_column(),
             outcome_columns=outcome_columns,
-            ignore_columns=ignore_columns,
+            ignored_columns=ignored_columns,
             check_id_uniqueness=False,
             standardize_types=self.standardize_types(),
         )
@@ -751,7 +751,7 @@ class BalanceCLI:
             id_column=self.id_column(),
             weight_column=self.weight_column(),
             outcome_columns=outcome_columns,
-            ignore_columns=ignore_columns,
+            ignored_columns=ignored_columns,
             check_id_uniqueness=False,
             standardize_types=self.standardize_types(),
         )
@@ -1259,7 +1259,7 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
         help=(
             "Comma-separated columns used as outcomes. If not supplied, "
             "columns that are not id, weight, or covariates are placed into "
-            "ignore_columns (carried through but not used in adjustment)."
+            "ignored_columns (carried through but not used in adjustment)."
         ),
     )
     parser.add_argument(

@@ -132,7 +132,7 @@ class SampleFrame:
         weight_columns: list[str],
         outcome_columns: list[str] | None = None,
         predicted_outcome_columns: list[str] | None = None,
-        ignore_columns: list[str] | None = None,
+        ignored_columns: list[str] | None = None,
         _skip_copy: bool = False,
         _df_dtypes: pd.Series | None = None,
     ) -> SampleFrame:
@@ -145,7 +145,7 @@ class SampleFrame:
             "weights": list(weight_columns),
             "outcomes": list(outcome_columns or []),
             "predicted": list(predicted_outcome_columns or []),
-            "ignored": list(ignore_columns or []),
+            "ignored": list(ignored_columns or []),
         }
         instance._active_weight_column = weight_columns[0] if weight_columns else None
         # Defaults; set via set_weight_metadata() etc.
@@ -165,7 +165,7 @@ class SampleFrame:
         weight_column: str | None = None,
         outcome_columns: list[str] | tuple[str, ...] | str | None = None,
         predicted_outcome_columns: list[str] | tuple[str, ...] | str | None = None,
-        ignore_columns: list[str] | tuple[str, ...] | str | None = None,
+        ignored_columns: list[str] | tuple[str, ...] | str | None = None,
         check_id_uniqueness: bool = True,
         standardize_types: bool = True,
         use_deepcopy: bool = True,
@@ -194,7 +194,7 @@ class SampleFrame:
                 treat as outcome variables.
             predicted_outcome_columns (list of str or str, optional): Column
                 names to treat as predicted outcome variables.
-            ignore_columns (list of str or str, optional): Column names to
+            ignored_columns (list of str or str, optional): Column names to
                 ignore (excluded from covariates).
             check_id_uniqueness (bool): Whether to verify id uniqueness.
                 Defaults to True.
@@ -233,8 +233,8 @@ class SampleFrame:
             outcome_columns = [outcome_columns]
         if isinstance(predicted_outcome_columns, str):
             predicted_outcome_columns = [predicted_outcome_columns]
-        if isinstance(ignore_columns, str):
-            ignore_columns = [ignore_columns]
+        if isinstance(ignored_columns, str):
+            ignored_columns = [ignored_columns]
 
         # Deep copy
         df_dtypes = df.dtypes
@@ -361,14 +361,14 @@ class SampleFrame:
 
         # --- Ignore columns validation ---
         ignore_list: list[str] | None = None
-        if ignore_columns is not None:
-            ignore_list = list(dict.fromkeys(ignore_columns))  # deduplicate
+        if ignored_columns is not None:
+            ignore_list = list(dict.fromkeys(ignored_columns))  # deduplicate
             missing_ignore = set(ignore_list).difference(_df.columns)
             if missing_ignore:
                 raise ValueError(
                     f"ignore columns {list(missing_ignore)} not in df columns {_df.columns.values.tolist()}"
                 )
-            # ignore_columns must not overlap with id/weight columns
+            # ignored_columns must not overlap with id/weight columns
             reserved = {id_col_name, weight_column} - {None}
             overlap_reserved = set(ignore_list).intersection(reserved)
             if overlap_reserved:
@@ -417,7 +417,7 @@ class SampleFrame:
             weight_columns=[weight_column],
             outcome_columns=outcome_list,
             predicted_outcome_columns=predicted_list,
-            ignore_columns=ignore_list,
+            ignored_columns=ignore_list,
             _skip_copy=True,
             _df_dtypes=df_dtypes,
         )
@@ -510,7 +510,7 @@ class SampleFrame:
         return list(self._column_roles["predicted"])
 
     @property
-    def ignore_columns(self) -> list[str]:
+    def ignored_columns(self) -> list[str]:
         """Names of the ignored columns.
 
         Returns a copy so that callers cannot accidentally mutate the
@@ -524,8 +524,8 @@ class SampleFrame:
             >>> from balance.sample_frame import SampleFrame
             >>> df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20],
             ...                    "weight": [1.0, 1.0], "region": ["US", "UK"]})
-            >>> sf = SampleFrame.from_frame(df, ignore_columns=["region"])
-            >>> sf.ignore_columns
+            >>> sf = SampleFrame.from_frame(df, ignored_columns=["region"])
+            >>> sf.ignored_columns
             ['region']
         """
         return list(self._column_roles["ignored"])
@@ -659,7 +659,7 @@ class SampleFrame:
             >>> from balance.sample_frame import SampleFrame
             >>> df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20],
             ...                    "weight": [1.0, 1.0], "region": ["US", "UK"]})
-            >>> sf = SampleFrame.from_frame(df, ignore_columns=["region"])
+            >>> sf = SampleFrame.from_frame(df, ignored_columns=["region"])
             >>> m = sf.df_ignored
             >>> m["region"] = ["XX", "XX"]
             >>> list(sf.df_ignored["region"])  # internal data unchanged
@@ -667,26 +667,6 @@ class SampleFrame:
         """
         cols = self._column_roles["ignored"]
         return self._df[cols].copy() if cols else None
-
-    def ignored_columns(self) -> pd.DataFrame | None:
-        """Return ignored columns as a DataFrame, or None.
-
-        Returns:
-            pd.DataFrame | None: A copy of ignored columns, or
-                None if no ignored columns are registered.
-
-        Examples:
-            >>> import pandas as pd
-            >>> from balance.sample_frame import SampleFrame
-            >>> df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20],
-            ...                    "weight": [1.0, 1.0], "region": ["US", "UK"]})
-            >>> sf = SampleFrame.from_frame(df, ignore_columns=["region"])
-            >>> sf.ignored_columns()
-                   region
-            0     US
-            1     UK
-        """
-        return self.df_ignored
 
     @property
     def id_column(self) -> pd.Series:
@@ -1182,7 +1162,7 @@ class SampleFrame:
             covar_columns=sample._covar_columns_names(),
             weight_columns=[weight_col_name],
             outcome_columns=outcome_cols,
-            ignore_columns=ignored_cols if ignored_cols else None,
+            ignored_columns=ignored_cols if ignored_cols else None,
         )
 
     def __repr__(self) -> str:

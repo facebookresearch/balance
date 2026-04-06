@@ -341,7 +341,7 @@ class TestSampleInternalSampleFrame(
             id_column="id",
             weight_column="weight",
             outcome_columns="y" if outcome else None,
-            ignore_columns="misc_col" if ignore else None,
+            ignored_columns="misc_col" if ignore else None,
             standardize_types=False,
         )
 

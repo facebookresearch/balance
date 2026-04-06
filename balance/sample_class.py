@@ -89,7 +89,7 @@ class Sample(BalanceFrame, SampleFrame):
         weight_column: str | None = None,
         outcome_columns: List[str] | tuple[str, ...] | str | None = None,
         predicted_outcome_columns: List[str] | tuple[str, ...] | str | None = None,
-        ignore_columns: List[str] | tuple[str, ...] | str | None = None,
+        ignored_columns: List[str] | tuple[str, ...] | str | None = None,
         check_id_uniqueness: bool = True,
         standardize_types: bool = True,
         use_deepcopy: bool = True,
@@ -108,7 +108,7 @@ class Sample(BalanceFrame, SampleFrame):
             weight_column: Column to treat as weight.
             outcome_columns: Columns to treat as outcomes.
             predicted_outcome_columns: Columns to treat as predicted outcomes.
-            ignore_columns: Columns to ignore (excluded from covariates).
+            ignored_columns: Columns to ignore (excluded from covariates).
             check_id_uniqueness: Whether to verify id uniqueness.
             standardize_types: Whether to convert int types to float.
             use_deepcopy: Whether to deepcopy the input DataFrame.
@@ -125,7 +125,7 @@ class Sample(BalanceFrame, SampleFrame):
             weight_column=weight_column,
             outcome_columns=outcome_columns,
             predicted_outcome_columns=predicted_outcome_columns,
-            ignore_columns=ignore_columns,
+            ignored_columns=ignored_columns,
             check_id_uniqueness=check_id_uniqueness,
             standardize_types=standardize_types,
             use_deepcopy=use_deepcopy,
@@ -171,7 +171,7 @@ class Sample(BalanceFrame, SampleFrame):
     # All public API methods (df, covars, outcomes, weights,
     # adjust, set_target, has_target, set_unadjusted, is_adjusted, summary,
     # diagnostics, keep_only_some_rows_columns, to_csv, to_download,
-    # model_matrix, set_weights, __str__, __repr__, ignored_columns, model)
+    # model_matrix, set_weights, __str__, __repr__, model)
     # are inherited from BalanceFrame.
 
     # --- Conversion to new API (kept temporarily) ---
