@@ -163,11 +163,11 @@ class TestCli(
                 id_column: str | None = None,
                 weight_column: str | None = None,
                 outcome_columns: tuple[str, ...] | None = None,
-                ignore_columns: list[str] | None = None,
+                ignored_columns: list[str] | None = None,
                 **kwargs: object,
             ) -> "RecordingSample":
                 cls.calls.append(outcome_columns)
-                cls.ignore_calls.append(ignore_columns)
+                cls.ignore_calls.append(ignored_columns)
                 return cls(df)
 
             def set_target(self, target: "RecordingSample") -> "RecordingSample":
@@ -1584,10 +1584,10 @@ class TestBalanceCLI_csv_column_parsing(balance.testutil.BalanceTestCase):
         self.assertEqual(cli.covariate_columns_for_diagnostics(), ["x", "y"])
 
     def test_keep_columns_preserved_in_adjusted_output(self) -> None:
-        """Test that --keep_columns columns survive adjustment via ignore_columns.
+        """Test that --keep_columns columns survive adjustment via ignored_columns.
 
         A keep column that is not id, weight, covariate, or outcome should be
-        routed to ignore_columns by process_batch, carried through the Sample,
+        routed to ignored_columns by process_batch, carried through the Sample,
         and available for adapt_output to subset without KeyError.
         """
         with (
