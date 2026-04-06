@@ -1960,6 +1960,43 @@ class TestBalanceFrameSetWeights(BalanceTestCase):
         self.assertTrue(adjusted.is_adjusted)
         self.assertEqual(_assert_type(adjusted.weight_series).tolist(), [3.0, 3.0])
 
+    def test_set_weights_none_sets_one(self) -> None:
+        """set_weights(None) should set all weights to 1.0 (delegates to SampleFrame)."""
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [3.0, 4.0]}),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        tgt_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["3", "4"], "x": [1.5, 2.5], "weight": [1.0, 1.0]}),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        bf = BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+        bf.set_weights(None)
+        self.assertEqual(_assert_type(bf.weight_series).tolist(), [1.0, 1.0])
+
+    def test_set_weights_use_index(self) -> None:
+        """set_weights with use_index=True should delegate correctly."""
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]}),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        tgt_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["3", "4"], "x": [1.5, 2.5], "weight": [1.0, 1.0]}),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        bf = BalanceFrame(sample=resp_sf, sf_target=tgt_sf)
+        weights = pd.Series([5.0, 6.0], index=bf.df.index)
+        bf.set_weights(weights, use_index=True)
+        self.assertEqual(_assert_type(bf.weight_series).tolist(), [5.0, 6.0])
+
 
 class TestBalanceFrameDfSetterRejectsNone(BalanceTestCase):
     """Verify _df setter raises on None instead of silently ignoring."""

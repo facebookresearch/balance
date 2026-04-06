@@ -639,24 +639,9 @@ class BalanceFrame:
 
         # Overwrite the original weight column with the new adjusted values,
         # so the active weight column always keeps its original name.
-        # Use index-aligned assignment so that na_action="drop" (which
-        # returns fewer weights) fills dropped rows with NaN.
-        result_weights = result["weight"]
-        if isinstance(result_weights, pd.Series) and len(result_weights) < len(
-            new_responders._df
-        ):
-            result_weights = result_weights.reindex(new_responders._df.index)
-            n_nan = int(result_weights.isna().sum())
-            if n_nan > 0:
-                logger.warning(
-                    "%d of %d units received NaN weights after na_action='drop' "
-                    "(these units were excluded from the weighting model). "
-                    "Downstream weighted calculations will ignore them.",
-                    n_nan,
-                    len(new_responders._df),
-                )
-        new_responders._df[original_weight_name] = result_weights.to_numpy()
-        new_responders.set_active_weight(original_weight_name)
+        # use_index=True lets na_action="drop" (which returns fewer weights)
+        # fill dropped rows with NaN; set_weights warns about missing indices.
+        new_responders.set_weights(result["weight"], use_index=True)
 
         # TODO: The weight history columns (weight_pre_adjust, weight_adjusted_1,
         # weight_adjusted_2, ...) make _sf_sample_pre_adjust redundant.  Once all
@@ -1705,47 +1690,28 @@ class BalanceFrame:
     # path for permanent weight trimming without going through
     # weights().trim().
 
-    def set_weights(self, weights: pd.Series | float | None) -> None:
+    def set_weights(
+        self,
+        weights: pd.Series | float | None,
+        *,
+        use_index: bool = False,
+    ) -> None:
         """Set or replace the responder weights.
 
-        Overwrites the weight column on the underlying DataFrame.
-        When *weights* is a ``pd.Series``, values are aligned by index.
+        Delegates to the underlying SampleFrame's ``set_weights``.
 
         When called on an unadjusted BalanceFrame (``is_adjusted`` is False),
-        the change is applied to both the current and baseline SampleFrames so
-        that ``is_adjusted`` remains False — changing base weights is not an
-        adjustment.  When called on an already-adjusted BalanceFrame, only the
-        current weights are modified (the pre-adjustment baseline is preserved).
+        ``_sf_sample`` and ``_sf_sample_pre_adjust`` share the same DataFrame,
+        so the change is visible to both automatically — changing base weights
+        is not an adjustment.
 
         Args:
-            weights: New weights. A Series (aligned by index), a scalar
-                (broadcast to all rows), or ``None`` (sets all to NaN).
+            weights: New weights. A Series, a scalar (broadcast to all rows),
+                or ``None`` (sets all to 1.0).
+            use_index: If True, align *weights* by index instead of requiring
+                matching length.  See :meth:`SampleFrame.set_weights`.
         """
-        if isinstance(weights, pd.Series):
-            if not all(idx in weights.index for idx in self.df.index):
-                logger.warning(
-                    "Note that not all Sample units will be assigned weights, "
-                    "since weights are missing some of the indices in Sample.df"
-                )
-
-        wc_name = _assert_type(self.weight_series).name
-        if isinstance(weights, pd.Series):
-            if not pd.api.types.is_float_dtype(self._df[wc_name]):
-                self._df[wc_name] = self._df[wc_name].astype("float64")
-            if not pd.api.types.is_float_dtype(weights):
-                weights = weights.astype("float64")
-            self._df.loc[:, wc_name] = weights
-        else:
-            if not pd.api.types.is_float_dtype(self._df[wc_name]):
-                self._df[wc_name] = self._df[wc_name].astype("float64")
-            weights_value = np.nan if weights is None else weights
-            self._df.loc[:, wc_name] = weights_value
-
-        # When unadjusted, _sf_sample and _sf_sample_pre_adjust share the
-        # same SampleFrame.  Since the weight change was applied to the shared
-        # DataFrame via _df, both references already see the new weights and
-        # the identity (is_adjusted == False) is preserved.  No deep copy is
-        # needed — changing base weights is not an adjustment.
+        self._sf_sample.set_weights(weights, use_index=use_index)
 
     def set_unadjusted(self, second: BalanceFrame) -> Self:
         """Set the unadjusted link for comparative analysis.

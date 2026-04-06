@@ -3438,7 +3438,9 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
             def _outcome_columns(self) -> pd.DataFrame | None:
                 return None
 
-            def set_weights(self, weights: pd.Series | float | None) -> None:
+            def set_weights(
+                self, weights: pd.Series | float | None, *, use_index: bool = False
+            ) -> None:
                 pass
 
         mock = _MockSource()
@@ -3481,7 +3483,9 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
             def _outcome_columns(self) -> pd.DataFrame | None:
                 return None
 
-            def set_weights(self, weights: pd.Series | float | None) -> None:
+            def set_weights(
+                self, weights: pd.Series | float | None, *, use_index: bool = False
+            ) -> None:
                 pass
 
         mock = _MockCovarsSource()
@@ -3524,7 +3528,9 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
             def _outcome_columns(self) -> pd.DataFrame | None:
                 return None
 
-            def set_weights(self, weights: pd.Series | float | None) -> None:
+            def set_weights(
+                self, weights: pd.Series | float | None, *, use_index: bool = False
+            ) -> None:
                 pass
 
         mock = _MockWeightsSource()
@@ -3558,7 +3564,9 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
             def _outcome_columns(self) -> pd.DataFrame | None:
                 return pd.DataFrame({"o1": [7.0, 8.0, 9.0]})
 
-            def set_weights(self, weights: pd.Series | float | None) -> None:
+            def set_weights(
+                self, weights: pd.Series | float | None, *, use_index: bool = False
+            ) -> None:
                 pass
 
         mock = _MockOutcomesSource()
