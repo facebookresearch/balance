@@ -47,10 +47,8 @@
   - DataFrame-access properties use `df_*` prefix convention: `df_covars`,
     `df_weights`, `df_outcomes`, `df_ignored`. All return copies for mutation safety.
   - Column-role list properties: `covar_columns`, `weight_columns`,
-    `outcome_columns`, `predicted_outcome_columns`, `ignore_columns` (all return
+    `outcome_columns`, `predicted_outcome_columns`, `ignored_columns` (all return
     copies). `misc_columns` is accepted as a deprecated alias.
-  - `ignored_columns()`: alias for `df_ignored`, provided for API parity with
-    `Sample.ignored_columns()`.
   - Internal `_create()` factory with `_skip_copy` optimization for callers that
     have already deep-copied.
   - Comprehensive validation: null/negative/non-numeric weights, null IDs,
@@ -80,8 +78,6 @@
     no target is set.
   - Properties: `responders`, `target`, `unadjusted`, `is_adjusted`.
   - `model()`: returns the adjustment model dictionary.
-  - `ignored_columns()`: returns ignored (misc) columns from the responder
-    SampleFrame (alias for `responders.ignored_columns()`).
   - `id_column` property: returns the ID column of the responder SampleFrame.
   - Records weight provenance metadata on the adjusted weight column.
   - Default transformations applied when neither SampleFrame has custom transforms.

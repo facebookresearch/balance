@@ -321,7 +321,7 @@ class TestSample(
             Sample.from_frame(df).weight_column, pd.Series((0.0, 2.0), name="weight")
         )
 
-    def test_Sample_from_frame_ignore_columns(self) -> None:
+    def test_Sample_from_frame_ignored_columns(self) -> None:
         """Ensure ignored columns are preserved but excluded from outcomes/covars."""
 
         df = pd.DataFrame(
@@ -335,7 +335,7 @@ class TestSample(
         )
 
         sample = Sample.from_frame(
-            df, outcome_columns="out", ignore_columns="note", weight_column=None
+            df, outcome_columns="out", ignored_columns="note", weight_column=None
         )
 
         self.assertListEqual(sample.covars().names(), ["a", "b"])
@@ -343,7 +343,7 @@ class TestSample(
         self.assertListEqual(
             sample.df.columns.tolist(), ["id", "a", "b", "out", "weight", "note"]
         )
-        ignored = sample.ignored_columns()
+        ignored = sample.df_ignored
         assert ignored is not None
         self.assertListEqual(ignored.columns.tolist(), ["note"])
 
@@ -361,40 +361,40 @@ class TestSample(
         )
 
         with self.assertRaisesRegex(ValueError, "cannot include id/weight"):
-            Sample.from_frame(df, weight_column="weight", ignore_columns=["id"])
+            Sample.from_frame(df, weight_column="weight", ignored_columns=["id"])
 
         with self.assertRaisesRegex(ValueError, "cannot include id/weight"):
-            Sample.from_frame(df, ignore_columns=["weight"])
+            Sample.from_frame(df, ignored_columns=["weight"])
 
         with self.assertRaisesRegex(ValueError, "'outcomes' and 'ignored'"):
             Sample.from_frame(
                 df,
                 outcome_columns=["out"],
-                ignore_columns=["out"],
+                ignored_columns=["out"],
                 weight_column=None,
             )
 
         with self.assertRaisesRegex(ValueError, "not in df columns"):
             # pyre-ignore[6]: Intentionally passing int to test validation
-            Sample.from_frame(df, ignore_columns=["a", 3])
+            Sample.from_frame(df, ignored_columns=["a", 3])
 
         with self.assertRaisesRegex(ValueError, "not in df columns"):
-            Sample.from_frame(df, ignore_columns=["missing"])
+            Sample.from_frame(df, ignored_columns=["missing"])
 
         sample = Sample.from_frame(
             df,
             outcome_columns="out",
-            ignore_columns=["a", "a", "meta"],
+            ignored_columns=["a", "a", "meta"],
             weight_column=None,
         )
-        ignored = _assert_type(sample.ignored_columns())
+        ignored = _assert_type(sample.df_ignored)
         self.assertListEqual(ignored.columns.tolist(), ["a", "meta"])
         self.assertListEqual(sample.covars().names(), [])
 
         sample_no_ignored = Sample.from_frame(
             df, outcome_columns="out", weight_column=None
         )
-        self.assertIsNone(sample_no_ignored.ignored_columns())
+        self.assertIsNone(sample_no_ignored.df_ignored)
 
     def test_Sample_from_frame_type_conversion(self) -> None:
         """Test automatic type conversion for different numeric types.
@@ -2737,12 +2737,12 @@ class TestSampleConversion(balance.testutil.BalanceTestCase):
             ),
             id_column="id",
             weight_column="w",
-            ignore_columns=["b"],
+            ignored_columns=["b"],
         )
         sf = sample_with_ignored.to_sample_frame()
         self.assertIsInstance(sf, SampleFrame)
-        self.assertIsNotNone(sf.ignore_columns)
-        self.assertIn("b", sf.ignore_columns)
+        self.assertIsNotNone(sf.ignored_columns)
+        self.assertIn("b", sf.ignored_columns)
 
     def test_to_balance_frame_unadjusted(self) -> None:
         """to_balance_frame converts a Sample with target to a BalanceFrame."""
