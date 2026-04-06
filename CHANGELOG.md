@@ -49,6 +49,12 @@
   - `BalanceFrame.id_column` and `weight_series` now delegate to `_sf_sample`
     instead of caching redundant copies, removing stale-state risk.
 
+- **`has_target` and `model` are now properties**
+  - `BalanceFrame.has_target` is a `_CallableBool` property — both `bf.has_target`
+    and `bf.has_target()` work (the latter for backward compatibility).
+  - `BalanceFrame.model` is a plain `@property` — all `model()` call sites updated
+    to `model`.
+
 - **Refactored `Sample` to delegate to `SampleFrame` and `BalanceFrame` internally**
   - `Sample` is now a thin facade: `set_target()` creates a backing `BalanceFrame`,
     and `adjust()`, `summary()`, `diagnostics()`, `model()`, `is_adjusted`, and
