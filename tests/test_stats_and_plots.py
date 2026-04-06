@@ -897,10 +897,10 @@ class TestImpactOfWeightsOnOutcome(
         )
         adjusted = sample.set_target(target).adjust(method="null")
 
-        with self.assertRaisesRegex(ValueError, "This is not an adjusted Sample"):
+        with self.assertRaisesRegex(ValueError, r"is not adjusted\. Use \.adjust\(\)"):
             _validate_adjusted_samples(sample, adjusted)
 
-        with self.assertRaisesRegex(ValueError, "This is not an adjusted Sample"):
+        with self.assertRaisesRegex(ValueError, r"is not adjusted\. Use \.adjust\(\)"):
             _validate_adjusted_samples(adjusted, sample)
 
     def test_validate_adjusted_samples_success(self) -> None:

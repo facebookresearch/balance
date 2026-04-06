@@ -199,8 +199,8 @@ def _validate_adjusted_samples(
     if not isinstance(adjusted0, Sample) or not isinstance(adjusted1, Sample):
         raise ValueError("compare_adjusted_weighted_outcome_ss expects Sample inputs.")
 
-    adjusted0._check_if_adjusted()
-    adjusted1._check_if_adjusted()
+    adjusted0._require_adjusted()
+    adjusted1._require_adjusted()
 
     outcomes0 = adjusted0.outcomes()
     outcomes1 = adjusted1.outcomes()

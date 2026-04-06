@@ -120,37 +120,37 @@ class TestSamplePrivateAPI(balance.testutil.BalanceTestCase):
             ),
         )
 
-    def test_Sample__check_if_adjusted(self) -> None:
+    def test_Sample__require_adjusted(self) -> None:
         with self.assertRaisesRegex(
             ValueError,
-            "This is not an adjusted Sample. Use sample.adjust to adjust the sample to target",
+            r"is not adjusted\. Use \.adjust\(\)",
         ):
-            s1._check_if_adjusted()
+            s1._require_adjusted()
         with self.assertRaisesRegex(
             ValueError,
-            "This is not an adjusted Sample. Use sample.adjust to adjust the sample to target",
+            r"is not adjusted\. Use \.adjust\(\)",
         ):
-            s3._check_if_adjusted()
+            s3._require_adjusted()
         self.assertTrue(
-            s3_adjusted_null._check_if_adjusted() is None
+            s3_adjusted_null._require_adjusted() is None
         )  # Does not raise an error
 
-    def test_Sample__no_target_error(self) -> None:
-        # test exception when the is no target
+    def test_Sample__require_target(self) -> None:
+        # test exception when there is no target
         with self.assertRaisesRegex(
             ValueError,
-            "This Sample does not have a target set. Use sample.set_target to add target",
+            r"does not have a target set\. Use \.set_target\(\)",
         ):
-            s1._no_target_error()
-        s3._no_target_error()  # Should not raise an error
+            s1._require_target()
+        s3._require_target()  # Should not raise an error
 
-    def test_Sample__check_outcomes_exists(self) -> None:
+    def test_Sample__require_outcomes(self) -> None:
         with self.assertRaisesRegex(
             ValueError,
-            "This Sample does not have outcome columns specified",
+            r"does not have outcome columns specified",
         ):
-            s2._check_outcomes_exists()
-        self.assertTrue(s1._check_outcomes_exists() is None)  # Does not raise an error
+            s2._require_outcomes()
+        self.assertTrue(s1._require_outcomes() is None)  # Does not raise an error
 
 
 class TestSampleDesignEffectDiagnostics(balance.testutil.BalanceTestCase):
