@@ -55,6 +55,12 @@
   - `BalanceFrame.model` is a plain `@property` — all `model()` call sites updated
     to `model`.
 
+- **Guard method renames for consistency**
+  - `BalanceFrame._check_if_adjusted` → `_require_adjusted` — imperative verb pattern.
+  - `BalanceFrame._no_target_error` → `_require_target` — consistent with above.
+  - `BalanceFrame._check_outcomes_exists` → `_require_outcomes` — consistent with above.
+  - Error messages now use `type(self).__name__` instead of hardcoded "Sample".
+
 - **Refactored `Sample` to delegate to `SampleFrame` and `BalanceFrame` internally**
   - `Sample` is now a thin facade: `set_target()` creates a backing `BalanceFrame`,
     and `adjust()`, `summary()`, `diagnostics()`, `model()`, `is_adjusted`, and
