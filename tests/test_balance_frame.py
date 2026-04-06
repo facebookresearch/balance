@@ -1921,3 +1921,28 @@ class TestBalanceFrameDiagnosticsNullMethod(BalanceTestCase):
         method_rows = diag[diag["metric"] == "adjustment_method"]
         self.assertGreater(len(method_rows), 0)
         self.assertEqual(method_rows["var"].iloc[0], "null_adjustment")
+
+
+class TestBalanceFrameSetTargetValidation(BalanceTestCase):
+    """Verify set_target propagates validation errors immediately."""
+
+    def test_set_target_no_shared_covariates_raises(self) -> None:
+        """set_target with no shared covariates should raise ValueError."""
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]}),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        # Target has column "y" — no overlap with "x"
+        tgt_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["3", "4"], "y": [1.5, 2.5], "weight": [1.0, 1.0]}),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        bf = BalanceFrame(sample=resp_sf)
+        # Wrapping target in BalanceFrame to test the BalanceFrame path
+        tgt_bf = BalanceFrame(sample=tgt_sf)
+        with self.assertRaises(ValueError):
+            bf.set_target(tgt_bf)
