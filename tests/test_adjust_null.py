@@ -64,4 +64,10 @@ class TestAdjustNull(
         self.assertEqual(res["model"]["method"], "null_adjustment")
 
         result = sample.adjust(target, method="null")
-        self.assertEqual(sample.weights().df, result.weights().df)
+        # Weight values should be identical; column name may differ
+        # (BF uses "weight_adjusted" internally).
+        pd.testing.assert_series_equal(
+            sample.weights().df.iloc[:, 0],
+            result.weights().df.iloc[:, 0],
+            check_names=False,
+        )
