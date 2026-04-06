@@ -2714,9 +2714,9 @@ class TestSampleConversion(balance.testutil.BalanceTestCase):
         self.assertIsInstance(sf, SampleFrame)
         self.assertEqual(sf.id_column_name, "id")
         self.assertEqual(sf.active_weight_column, "w")
-        self.assertIn("a", sf.covars_columns)
-        self.assertIn("b", sf.covars_columns)
-        self.assertIn("c", sf.covars_columns)
+        self.assertIn("a", sf.covar_columns)
+        self.assertIn("b", sf.covar_columns)
+        self.assertIn("c", sf.covar_columns)
 
     def test_to_sample_frame_with_outcomes(self) -> None:
         """to_sample_frame preserves outcome columns."""
