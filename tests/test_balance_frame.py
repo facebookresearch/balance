@@ -621,14 +621,14 @@ class TestBalanceFrameCovarsWeightsOutcomes(BalanceTestCase):
 
     def test_covars_links_unadjusted(self) -> None:
         adjusted = self.bf.adjust(method="null")
-        linked = adjusted.covars()._BalanceDF_child_from_linked_samples()
+        linked = adjusted.covars()._balancedf_child_from_linked_samples()
         self.assertIn("self", linked)
         self.assertIn("target", linked)
         self.assertIn("unadjusted", linked)
         self.assertEqual(len(linked), 3)
 
     def test_covars_links_no_unadjusted(self) -> None:
-        linked = self.bf.covars()._BalanceDF_child_from_linked_samples()
+        linked = self.bf.covars()._balancedf_child_from_linked_samples()
         self.assertIn("self", linked)
         self.assertIn("target", linked)
         self.assertNotIn("unadjusted", linked)
