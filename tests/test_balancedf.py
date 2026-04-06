@@ -848,46 +848,46 @@ class TestBalanceDFWeights(BalanceTestCase):
         self.assertEqual(w.summary().round(2).to_dict(), exp)
 
 
-class TestBalanceDF__BalanceDF_child_from_linked_samples(BalanceTestCase):
-    def test__BalanceDF_child_from_linked_samples_keys(self) -> None:
+class TestBalanceDF__balancedf_child_from_linked_samples(BalanceTestCase):
+    def test__balancedf_child_from_linked_samples_keys(self) -> None:
         self.assertEqual(
-            list(s1.covars()._BalanceDF_child_from_linked_samples().keys()), ["self"]
+            list(s1.covars()._balancedf_child_from_linked_samples().keys()), ["self"]
         )
         self.assertEqual(
-            list(s3.covars()._BalanceDF_child_from_linked_samples().keys()),
+            list(s3.covars()._balancedf_child_from_linked_samples().keys()),
             ["self", "target"],
         )
         self.assertEqual(
-            list(s3_null.covars()._BalanceDF_child_from_linked_samples().keys()),
+            list(s3_null.covars()._balancedf_child_from_linked_samples().keys()),
             ["self", "target", "unadjusted"],
         )
 
         self.assertEqual(
-            list(s1.weights()._BalanceDF_child_from_linked_samples().keys()), ["self"]
+            list(s1.weights()._balancedf_child_from_linked_samples().keys()), ["self"]
         )
         self.assertEqual(
-            list(s3.weights()._BalanceDF_child_from_linked_samples().keys()),
+            list(s3.weights()._balancedf_child_from_linked_samples().keys()),
             ["self", "target"],
         )
         self.assertEqual(
-            list(s3_null.weights()._BalanceDF_child_from_linked_samples().keys()),
+            list(s3_null.weights()._balancedf_child_from_linked_samples().keys()),
             ["self", "target", "unadjusted"],
         )
 
         self.assertEqual(
-            list(s1.outcomes()._BalanceDF_child_from_linked_samples().keys()), ["self"]
+            list(s1.outcomes()._balancedf_child_from_linked_samples().keys()), ["self"]
         )
         self.assertEqual(
-            list(s3.outcomes()._BalanceDF_child_from_linked_samples().keys()),
+            list(s3.outcomes()._balancedf_child_from_linked_samples().keys()),
             ["self", "target"],
         )
         self.assertEqual(
-            list(s3_null.outcomes()._BalanceDF_child_from_linked_samples().keys()),
+            list(s3_null.outcomes()._balancedf_child_from_linked_samples().keys()),
             ["self", "target", "unadjusted"],
         )
 
-    def test__BalanceDF_child_from_linked_samples_class_types(self) -> None:
-        """Test that _BalanceDF_child_from_linked_samples returns correct class types.
+    def test__balancedf_child_from_linked_samples_class_types(self) -> None:
+        """Test that _balancedf_child_from_linked_samples returns correct class types.
 
         Verifies that the method returns appropriate BalanceDF subclasses
         based on the type and number of linked samples.
@@ -896,29 +896,29 @@ class TestBalanceDF__BalanceDF_child_from_linked_samples(BalanceTestCase):
         self.assertEqual(s1.covars().__class__, BalanceDFCovars)
 
         # We get a different number of classes based on the number of linked items:
-        the_dict = s1.covars()._BalanceDF_child_from_linked_samples()
+        the_dict = s1.covars()._balancedf_child_from_linked_samples()
         exp = [BalanceDFCovars]
         self.assertEqual([v.__class__ for (k, v) in the_dict.items()], exp)
 
-        the_dict = s3.covars()._BalanceDF_child_from_linked_samples()
+        the_dict = s3.covars()._balancedf_child_from_linked_samples()
         exp = 2 * [BalanceDFCovars]
         self.assertEqual([v.__class__ for (k, v) in the_dict.items()], exp)
 
-        the_dict = s3_null.covars()._BalanceDF_child_from_linked_samples()
+        the_dict = s3_null.covars()._balancedf_child_from_linked_samples()
         exp = 3 * [BalanceDFCovars]
         self.assertEqual([v.__class__ for (k, v) in the_dict.items()], exp)
 
-    def test__BalanceDF_child_from_linked_samples_weights_class(self) -> None:
-        """Test that _BalanceDF_child_from_linked_samples works for BalanceDFWeights."""
+    def test__balancedf_child_from_linked_samples_weights_class(self) -> None:
+        """Test that _balancedf_child_from_linked_samples works for BalanceDFWeights."""
         # This also works for things other than BalanceDFCovars:
-        the_dict = s3_null.weights()._BalanceDF_child_from_linked_samples()
+        the_dict = s3_null.weights()._balancedf_child_from_linked_samples()
         exp = 3 * [BalanceDFWeights]
         self.assertEqual([v.__class__ for (k, v) in the_dict.items()], exp)
 
-    def test__BalanceDF_child_from_linked_samples_outcomes_with_none(self) -> None:
-        """Test that _BalanceDF_child_from_linked_samples handles None outcomes correctly."""
+    def test__balancedf_child_from_linked_samples_outcomes_with_none(self) -> None:
+        """Test that _balancedf_child_from_linked_samples handles None outcomes correctly."""
         # Notice that with something like outcomes, we might get a None in return!
-        the_dict = s3_null.outcomes()._BalanceDF_child_from_linked_samples()
+        the_dict = s3_null.outcomes()._balancedf_child_from_linked_samples()
         exp = [
             BalanceDFOutcomes,
             type(None),
@@ -926,11 +926,11 @@ class TestBalanceDF__BalanceDF_child_from_linked_samples(BalanceTestCase):
         ]
         self.assertEqual([v.__class__ for (k, v) in the_dict.items()], exp)
 
-    def test__BalanceDF_child_from_linked_samples_covars_values(self) -> None:
+    def test__balancedf_child_from_linked_samples_covars_values(self) -> None:
         """Test that covariates DataFrame values are correctly preserved in linked samples."""
         # Verify DataFrame values makes sense:
         # for covars
-        the_dict = s3_null.covars()._BalanceDF_child_from_linked_samples()
+        the_dict = s3_null.covars()._balancedf_child_from_linked_samples()
         exp = [
             {
                 "a": {0: 1, 1: 2, 2: 3, 3: 1},
@@ -950,20 +950,20 @@ class TestBalanceDF__BalanceDF_child_from_linked_samples(BalanceTestCase):
         ]
         self.assertEqual([v.df.to_dict() for (k, v) in the_dict.items()], exp)
 
-    def test__BalanceDF_child_from_linked_samples_outcomes_values(self) -> None:
+    def test__balancedf_child_from_linked_samples_outcomes_values(self) -> None:
         """Test that outcomes DataFrame values are correctly preserved, excluding None values."""
         # for outcomes
-        the_dict = s3_null.outcomes()._BalanceDF_child_from_linked_samples()
+        the_dict = s3_null.outcomes()._balancedf_child_from_linked_samples()
         exp = [{"o": {0: 7, 1: 8, 2: 9, 3: 10}}, {"o": {0: 7, 1: 8, 2: 9, 3: 10}}]
         # need to exclude None v:
         self.assertEqual(
             [v.df.to_dict() for (k, v) in the_dict.items() if v is not None], exp
         )
 
-    def test__BalanceDF_child_from_linked_samples_weights_values(self) -> None:
+    def test__balancedf_child_from_linked_samples_weights_values(self) -> None:
         """Test that weights DataFrame values are correctly preserved in linked samples."""
         # for weights
-        the_dict = s3_null.weights()._BalanceDF_child_from_linked_samples()
+        the_dict = s3_null.weights()._balancedf_child_from_linked_samples()
         exp = [
             {"w": {0: 0.5, 1: 2.0, 2: 1.0, 3: 1.0}},
             {"w": {0: 0.5, 1: 1.0, 2: 2.0}},
@@ -1533,7 +1533,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
         covars = adjusted.covars(formula="age_group * gender")
         output = covars.kld(on_linked_samples=True)
 
-        links = covars._BalanceDF_child_from_linked_samples()
+        links = covars._balancedf_child_from_linked_samples()
         self_df = links["self"].df
         target_df = links["target"].df
         unadj_df = links["unadjusted"].df
@@ -1758,7 +1758,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
         covars = adjusted.covars(formula="age_group * gender")
         output = covars.kld(on_linked_samples=True)
 
-        links = covars._BalanceDF_child_from_linked_samples()
+        links = covars._balancedf_child_from_linked_samples()
         self_df = links["self"].df
         target_df = links["target"].df
         unadj_df = links["unadjusted"].df
@@ -1937,7 +1937,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
 
     def test_BalanceDF_kld_on_linked_samples(self) -> None:
         covars = s3_null_madeup_weights.covars()
-        links = covars._BalanceDF_child_from_linked_samples()
+        links = covars._balancedf_child_from_linked_samples()
 
         self.assertIn("unadjusted", links)
         self.assertIn("target", links)
@@ -2030,7 +2030,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
         pd.testing.assert_frame_equal(covars.df, original_df)
 
         # Build expected values using the same NA-indicator logic
-        links = covars._BalanceDF_child_from_linked_samples()
+        links = covars._balancedf_child_from_linked_samples()
         self_df, self_w = links["self"]._get_df_and_weights(use_model_matrix=False)
         target_df, target_w = links["target"]._get_df_and_weights(
             use_model_matrix=False
@@ -2545,13 +2545,13 @@ class TestBalanceDF(BalanceTestCase):
         with self.assertRaises(PatsyError):
             covars.model_matrix(formula="missing_column + a")
 
-    def test_check_if_not_BalanceDF(self) -> None:
+    def test_check_if_not_balancedf(self) -> None:
         with self.assertRaisesRegex(ValueError, "number must be balancedf_class"):
-            BalanceDF._check_if_not_BalanceDF(
+            BalanceDF._check_if_not_balancedf(
                 5,  # pyre-ignore[6]: Testing error handling with wrong type
                 "number",
             )
-        self.assertTrue(BalanceDF._check_if_not_BalanceDF(s3.covars()) is None)
+        self.assertTrue(BalanceDF._check_if_not_balancedf(s3.covars()) is None)
 
 
 class TestBalanceDFCovars_from_frame(BalanceTestCase):
@@ -3609,7 +3609,7 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
         covars = s3_null.covars()
         self.assertIsNotNone(covars.df)
         self.assertIsNotNone(covars.mean())
-        linked = covars._BalanceDF_child_from_linked_samples()
+        linked = covars._balancedf_child_from_linked_samples()
         self.assertIn("self", linked)
         self.assertIn("target", linked)
         self.assertIn("unadjusted", linked)

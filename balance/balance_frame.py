@@ -902,7 +902,7 @@ class BalanceFrame:
 
         Creates a dict mapping link names to SampleFrame instances for the
         target and (if adjusted) the unadjusted responders so that
-        ``BalanceDF._BalanceDF_child_from_linked_samples`` can walk the
+        ``BalanceDF._balancedf_child_from_linked_samples`` can walk the
         links just as it does for the old ``Sample`` class.
 
         Returns:

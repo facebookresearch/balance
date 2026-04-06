@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Callable, Dict, Literal, Protocol, runtime_checkable, Tuple
+from typing import Any, Callable, Literal, Protocol, runtime_checkable
 
 import numpy as np
 import numpy.typing as npt
@@ -113,7 +113,7 @@ class BalanceDF:
             name (Literal["outcomes", "weights", "covars"]): The type of object that will be created. In practice, used for "outcomes", "weights" and "covars".
             links (dict[str, BalanceDFSource] | None): Optional explicit links dict
                 (e.g. {"target": ..., "unadjusted": ...}).  When provided,
-                _BalanceDF_child_from_linked_samples uses this instead of
+                _balancedf_child_from_linked_samples uses this instead of
                 sample._links.  This allows BalanceDF to work with sources
                 that do not carry mutable _links (e.g. SampleFrame).
         """
@@ -139,7 +139,7 @@ class BalanceDF:
 
     #  Private API
     @staticmethod
-    def _check_if_not_BalanceDF(
+    def _check_if_not_balancedf(
         BalanceDF_class_obj: "BalanceDF", object_name: str = "sample_BalanceDF"
     ) -> None:
         """Check if an object is BalanceDF, if not then it raises ValueError
@@ -186,9 +186,9 @@ class BalanceDF:
         return w.rename(None)
 
     # NOTE: only in the case of BalanceDFOutcomes can it result in a None value.
-    def _BalanceDF_child_from_linked_samples(
+    def _balancedf_child_from_linked_samples(
         self: "BalanceDF",
-    ) -> Dict[
+    ) -> dict[
         str,
         "BalanceDF"
         | "BalanceDFCovars"
@@ -209,7 +209,7 @@ class BalanceDF:
 
 
         Returns:
-            Dict[str, Union["BalanceDFCovars", "BalanceDFWeights", Union["BalanceDFOutcomes", None]],]:
+            dict[str, BalanceDFCovars | BalanceDFWeights | BalanceDFOutcomes | None]:
             A dict mapping the link relationship to the result.
                 First item is self, and it just returns it without using method on it.
                 The other items are based on the objects in _links. E.g.: it can be 'target'
@@ -256,12 +256,12 @@ class BalanceDF:
 
 
                 # keys depends on which samples are linked to the object:
-                list(s1.covars()._BalanceDF_child_from_linked_samples().keys())  # ['self']
-                list(s3.covars()._BalanceDF_child_from_linked_samples().keys())  # ['self', 'target']
-                list(s3_null.covars()._BalanceDF_child_from_linked_samples().keys())  # ['self', 'target', 'unadjusted']
+                list(s1.covars()._balancedf_child_from_linked_samples().keys())  # ['self']
+                list(s3.covars()._balancedf_child_from_linked_samples().keys())  # ['self', 'target']
+                list(s3_null.covars()._balancedf_child_from_linked_samples().keys())  # ['self', 'target', 'unadjusted']
 
                 # Indeed, all are of the same BalanceDF child type:
-                s3.covars()._BalanceDF_child_from_linked_samples()
+                s3.covars()._balancedf_child_from_linked_samples()
                 # {'self': (balance.balancedf_class.BalanceDFCovars)
                 # covars from <balance.sample_class.Sample object at 0x7f4392ea61c0>:
                 #     a   b  c
@@ -276,7 +276,7 @@ class BalanceDF:
                 # 1  2  6  y
                 # 2  3  8  z}
 
-                s3_null.covars()._BalanceDF_child_from_linked_samples()
+                s3_null.covars()._balancedf_child_from_linked_samples()
                 # {'self': (balance.balancedf_class.BalanceDFCovars)
                 # covars from <balance.sample_class.Sample object at 0x7f4392ea60d0>:
                 #     a   b  c
@@ -298,7 +298,7 @@ class BalanceDF:
                 # 2  3   2  z
                 # 3  1 -42  v}
 
-                the_dict = s3_null.covars()._BalanceDF_child_from_linked_samples()
+                the_dict = s3_null.covars()._balancedf_child_from_linked_samples()
                 [v.__class__ for (k,v) in the_dict.items()]
                 [balance.balancedf_class.BalanceDFCovars,
                 balance.balancedf_class.BalanceDFCovars,
@@ -306,7 +306,7 @@ class BalanceDF:
 
 
                 # This also works for outcomes (returns None if there is none):
-                s3.outcomes()._BalanceDF_child_from_linked_samples()
+                s3.outcomes()._balancedf_child_from_linked_samples()
                 # {'self': (balance.balancedf_class.BalanceDFOutcomes)
                 #  outcomes from <balance.sample_class.Sample object at 0x7f4392ea61c0>:
                 #      o
@@ -317,7 +317,7 @@ class BalanceDF:
                 #  'target': None}
 
                 # And also works for weights:
-                s3.weights()._BalanceDF_child_from_linked_samples()
+                s3.weights()._balancedf_child_from_linked_samples()
                 # {'self': (balance.balancedf_class.BalanceDFWeights)
                 #  weights from <balance.sample_class.Sample object at 0x7f4392ea61c0>:
                 #       w
@@ -334,7 +334,7 @@ class BalanceDF:
         """
         # NOTE: this assumes that the .__name is the same as the creation method (i.e.: .covars(), .weights(), .outcomes())
         BalanceDF_child_method = self.__name
-        d: Dict[
+        d: dict[
             str,
             "BalanceDF"
             | "BalanceDFCovars"
@@ -380,7 +380,7 @@ class BalanceDF:
             self (BalanceDF): Object.
             method (str): A name of a method to call (e.g.: "mean", "std", etc.).
                 Can also be a name of an attribute that is a DataFrame (e.g.: 'df')
-            exclude (Tuple[str], optional): A tuple of strings which indicates which source should be excluded from the output. Defaults to ().
+            exclude (tuple[str], optional): A tuple of strings which indicates which source should be excluded from the output. Defaults to ().
                 E.g.: "self", "target".
 
         Returns:
@@ -445,7 +445,7 @@ class BalanceDF:
                     # target  3   8  z
         """
         output = []
-        for k, v in self._BalanceDF_child_from_linked_samples().items():
+        for k, v in self._balancedf_child_from_linked_samples().items():
             if v is not None and k not in exclude:
                 v_att_method = getattr(v, method)
                 if callable(v_att_method):
@@ -464,7 +464,7 @@ class BalanceDF:
         #     else getattr(v, method)(on_linked_samples=False, *args, **kwargs)
         #     .assign(source=k)
         #     .set_index("source")
-        #     for k, v in self._BalanceDF_child_from_linked_samples().items()
+        #     for k, v in self._balancedf_child_from_linked_samples().items()
         #     if v is not None and k not in exclude
         # )
 
@@ -716,7 +716,7 @@ class BalanceDF:
             **kwargs: passed to :func:`weighted_comparisons_plots.plot_dist`.
 
         Returns:
-            Union[Union[List, np.ndarray], Dict[str, Figure], str, None]:
+            list | np.ndarray | dict[str, Figure] | str | None:
                 If library="plotly" then returns a dictionary containing plots if return_dict_of_figures is True. None otherwise.
                 If library="seaborn" then returns None, unless return_axes is True. Then either a list or an np.array of matplotlib axis.
                 If library="balance" then returns a string with the ASCII text output.
@@ -771,7 +771,7 @@ class BalanceDF:
                 s3_null.covars().plot(library = "balance", comparative = False)
         """
         if on_linked_samples:
-            dfs_to_add = self._BalanceDF_child_from_linked_samples()
+            dfs_to_add = self._balancedf_child_from_linked_samples()
         else:
             dfs_to_add = {"self": self}
 
@@ -1201,7 +1201,7 @@ class BalanceDF:
     def _get_df_and_weights(
         self: "BalanceDF",
         use_model_matrix: bool = True,
-    ) -> Tuple[pd.DataFrame, npt.NDArray | None]:
+    ) -> tuple[pd.DataFrame, npt.NDArray | None]:
         """Extract df values and weights from a BalanceDF object.
 
         Args:
@@ -1210,7 +1210,7 @@ class BalanceDF:
                 If False, use the raw df. Defaults to True.
 
         Returns:
-            Tuple[pd.DataFrame, np.ndarray | None]:
+            tuple[pd.DataFrame, np.ndarray | None]:
                 A pd.DataFrame output from running :func:`model_matrix` or using the raw df, and
                 A np.ndarray of weights from :func:`_weights`, or just None (if there are no weights).
         """
@@ -1260,8 +1260,8 @@ class BalanceDF:
         Returns:
             pd.Series: The result from the comparison function.
         """
-        BalanceDF._check_if_not_BalanceDF(sample_BalanceDF, "sample_BalanceDF")
-        BalanceDF._check_if_not_BalanceDF(target_BalanceDF, "target_BalanceDF")
+        BalanceDF._check_if_not_balancedf(sample_BalanceDF, "sample_BalanceDF")
+        BalanceDF._check_if_not_balancedf(target_BalanceDF, "target_BalanceDF")
 
         sample_df_values, sample_weights = sample_BalanceDF._get_df_and_weights(
             use_model_matrix=use_model_matrix,
@@ -1369,8 +1369,8 @@ class BalanceDF:
         Returns:
             pd.Series: See :func:`weighted_comparisons_stats.kld`.
         """
-        BalanceDF._check_if_not_BalanceDF(sample_BalanceDF, "sample_BalanceDF")
-        BalanceDF._check_if_not_BalanceDF(target_BalanceDF, "target_BalanceDF")
+        BalanceDF._check_if_not_balancedf(sample_BalanceDF, "sample_BalanceDF")
+        BalanceDF._check_if_not_balancedf(target_BalanceDF, "target_BalanceDF")
 
         sample_formula = sample_BalanceDF._kld_formula()
         target_formula = target_BalanceDF._kld_formula()
@@ -1624,7 +1624,7 @@ class BalanceDF:
                     # unadjusted         0.560055  8.746742   NaN  ...  0.265606  0.533422    3.174566
                     # unadjusted - self  0.263555  0.592999   NaN  ...  0.265606  0.315204    0.33963
         """
-        target_from_self = self._BalanceDF_child_from_linked_samples().get("target")
+        target_from_self = self._balancedf_child_from_linked_samples().get("target")
 
         if target is None:
             target = target_from_self
@@ -1735,7 +1735,7 @@ class BalanceDF:
                     # covars   0.0  0.173287   0.086643
         """
 
-        target_from_self = self._BalanceDF_child_from_linked_samples().get("target")
+        target_from_self = self._balancedf_child_from_linked_samples().get("target")
 
         if target is None:
             target = target_from_self
@@ -1827,7 +1827,7 @@ class BalanceDF:
 
                 sample.set_target(target).covars().emd(on_linked_samples=False)
         """
-        target_from_self = self._BalanceDF_child_from_linked_samples().get("target")
+        target_from_self = self._balancedf_child_from_linked_samples().get("target")
 
         if target is None:
             target = target_from_self
@@ -1919,7 +1919,7 @@ class BalanceDF:
 
                 sample.set_target(target).covars().cvmd(on_linked_samples=False)
         """
-        target_from_self = self._BalanceDF_child_from_linked_samples().get("target")
+        target_from_self = self._balancedf_child_from_linked_samples().get("target")
 
         if target is None:
             target = target_from_self
@@ -2013,7 +2013,7 @@ class BalanceDF:
 
                 sample.set_target(target).covars().ks(on_linked_samples=False)
         """
-        target_from_self = self._BalanceDF_child_from_linked_samples().get("target")
+        target_from_self = self._balancedf_child_from_linked_samples().get("target")
 
         if target is None:
             target = target_from_self
@@ -2122,14 +2122,14 @@ class BalanceDF:
                 # just like asmd_improvement
         """
         if unadjusted is None:
-            unadjusted = self._BalanceDF_child_from_linked_samples().get("unadjusted")
+            unadjusted = self._balancedf_child_from_linked_samples().get("unadjusted")
         if unadjusted is None:
             raise ValueError(
                 f"Sample {object.__repr__(self._sample)} has no unadjusted set or unadjusted has no {self.__name}."
             )
 
         if target is None:
-            target = self._BalanceDF_child_from_linked_samples().get("target")
+            target = self._balancedf_child_from_linked_samples().get("target")
         if target is None:
             raise ValueError(
                 f"Sample {object.__repr__(self._sample)} has no target set or target has no {self.__name}."
@@ -2202,7 +2202,7 @@ class BalanceDFOutcomes(BalanceDF):
     def __init__(
         self: "BalanceDFOutcomes",
         sample: BalanceDFSource,
-        links: Dict[str, BalanceDFSource] | None = None,
+        links: dict[str, BalanceDFSource] | None = None,
     ) -> None:
         """A factory function to create BalanceDFOutcomes
 
@@ -2307,7 +2307,7 @@ class BalanceDFOutcomes(BalanceDF):
         if type(target) is bool:
             # Then: get target from self:
             if target:
-                self_target = self._BalanceDF_child_from_linked_samples().get("target")
+                self_target = self._balancedf_child_from_linked_samples().get("target")
                 if self_target is None:
                     logger.warning("Sample does not have target set")
                     return None
@@ -2367,7 +2367,7 @@ class BalanceDFOutcomes(BalanceDF):
                     # n    8.0   7.0
                     # %  100.0  87.5
         """
-        self_target = self._BalanceDF_child_from_linked_samples().get("target")
+        self_target = self._balancedf_child_from_linked_samples().get("target")
         if self_target is None:
             logger.warning("Sample does not have target set")
             return None
@@ -2708,7 +2708,7 @@ class BalanceDFOutcomes(BalanceDF):
             adjusted = sample.set_target(target).adjust(method="null")
             adjusted.outcomes().outcome_variance_ratio()
         """
-        linked = self._BalanceDF_child_from_linked_samples()
+        linked = self._balancedf_child_from_linked_samples()
         unadjusted_outcomes = linked.get("unadjusted")
         if unadjusted_outcomes is None:
             raise ValueError(
@@ -2730,7 +2730,7 @@ class BalanceDFCovars(BalanceDF):
     def __init__(
         self: "BalanceDFCovars",
         sample: BalanceDFSource,
-        links: Dict[str, BalanceDFSource] | None = None,
+        links: dict[str, BalanceDFSource] | None = None,
         formula: str | list[str] | None = None,
     ) -> None:
         """A factory function to create BalanceDFCovars
@@ -2816,7 +2816,7 @@ class BalanceDFWeights(BalanceDF):
     def __init__(
         self: "BalanceDFWeights",
         sample: BalanceDFSource,
-        links: Dict[str, BalanceDFSource] | None = None,
+        links: dict[str, BalanceDFSource] | None = None,
     ) -> None:
         """A factory function to create BalanceDFWeights
 
@@ -2860,7 +2860,7 @@ class BalanceDFWeights(BalanceDF):
                 Defaults to True.
 
         Returns:
-            Union[Union[List, np.ndarray], Dict[str, Figure], None]:
+            list | np.ndarray | dict[str, Figure] | None:
                 If library="plotly" then returns a dictionary containing plots if return_dict_of_figures is True. None otherwise.
                 If library="seaborn" then returns None, unless return_axes is True. Then either a list or an np.array of matplotlib axis.
 
@@ -2980,7 +2980,7 @@ class BalanceDFWeights(BalanceDF):
             adjusted = sample.set_target(target).adjust(method="null")
             adjusted.weights().design_effect_prop()
         """
-        linked = self._BalanceDF_child_from_linked_samples()
+        linked = self._balancedf_child_from_linked_samples()
         unadjusted_weights = linked.get("unadjusted")
         if unadjusted_weights is None:
             raise ValueError(
