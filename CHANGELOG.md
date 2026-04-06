@@ -113,7 +113,7 @@
 - **Added `BalanceFrame` — immutable adjustment orchestrator for survey weighting**
   - New class in `balance_frame.py` that pairs a responder `SampleFrame` with a
     target `SampleFrame` for survey/observational data reweighting.
-  - `__new__`-based constructor: `BalanceFrame(sample=..., sf_target=...)` with
+  - `__new__`-based constructor: `BalanceFrame(sample=..., target=...)` with
     covariate overlap validation.
   - `__new__`-based constructor now supports target-less construction:
     `BalanceFrame(sample=sf)` creates a BalanceFrame without a target.

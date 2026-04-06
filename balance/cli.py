@@ -1379,7 +1379,7 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
     )
     parser.add_argument(
         "--num_lambdas",
-        type=float,
+        type=float,  # TODO: change to type=int (num_lambdas is an integer count)
         required=False,
         default=250,
         help=(

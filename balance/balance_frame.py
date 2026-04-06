@@ -117,7 +117,7 @@ class BalanceFrame:
     it safe to keep a reference to the pre-adjustment state.
 
     Must be constructed via the public constructor
-    ``BalanceFrame(sample=..., sf_target=...)`` which delegates to the
+    ``BalanceFrame(sample=..., target=...)`` which delegates to the
     internal :meth:`_create` factory.
 
     Attributes:
@@ -133,7 +133,7 @@ class BalanceFrame:
         ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))
         >>> tgt = SampleFrame.from_frame(
         ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
-        >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
+        >>> bf = BalanceFrame(sample=resp, target=tgt)
         >>> bf.is_adjusted
         False
         >>> adjusted = bf.adjust(method="ipw")
@@ -238,7 +238,7 @@ class BalanceFrame:
     #
     # The solution used here:
     #   - __new__ handles BOTH construction paths:
-    #       1. Public constructor: BalanceFrame(sample=sf1, sf_target=sf2)
+    #       1. Public constructor: BalanceFrame(sample=sf1, target=sf2)
     #          → validates args and delegates to _create().
     #       2. deepcopy path: BalanceFrame() (no args)
     #          → returns a bare object via object.__new__(cls); deepcopy
@@ -248,41 +248,41 @@ class BalanceFrame:
     def __new__(
         cls,
         sample: SampleFrame | None = None,
-        sf_target: SampleFrame | None = None,
+        target: SampleFrame | None = None,
     ) -> BalanceFrame:
         """Create a BalanceFrame from responder and target SampleFrames.
 
         This uses ``__new__`` so that the natural constructor syntax
-        ``BalanceFrame(sample=..., sf_target=...)`` works while still
+        ``BalanceFrame(sample=..., target=...)`` works while still
         routing through the validated :meth:`_create` factory.
 
         Args:
             sample: The responder / sample data.
-            sf_target: The target / population data.
+            target: The target / population data.
 
         Returns:
             A new BalanceFrame pairing the two samples.
 
         Raises:
-            TypeError: If *sample* or *sf_target* is not a SampleFrame.
-            ValueError: If *sample* and *sf_target* share no covariate
+            TypeError: If *sample* or *target* is not a SampleFrame.
+            ValueError: If *sample* and *target* share no covariate
                 columns.
         """
         if sample is None:
             # Allow object.__new__(cls) for copy.deepcopy() support.
-            if sf_target is None:
+            if target is None:
                 return object.__new__(cls)
             raise TypeError(
                 "BalanceFrame requires at least a 'sample' argument. "
                 "Usage: BalanceFrame(sample=sf1) or "
-                "BalanceFrame(sample=sf1, sf_target=sf2)"
+                "BalanceFrame(sample=sf1, target=sf2)"
             )
-        return cls._create(sample=sample, sf_target=sf_target)
+        return cls._create(sample=sample, target=target)
 
     def __init__(
         self,
         sample: SampleFrame | None = None,
-        sf_target: SampleFrame | None = None,
+        target: SampleFrame | None = None,
     ) -> None:
         # All initialisation happens in _create(); __init__ is intentionally
         # empty so that __new__ + _create() handles everything.
@@ -292,42 +292,42 @@ class BalanceFrame:
     def _create(
         cls,
         sample: SampleFrame,
-        sf_target: SampleFrame | None = None,
+        target: SampleFrame | None = None,
     ) -> Self:
         """Internal factory method.
 
         Validates covariate overlap and builds the BalanceFrame instance.
-        Prefer the public constructor ``BalanceFrame(sample=..., sf_target=...)``.
+        Prefer the public constructor ``BalanceFrame(sample=..., target=...)``.
 
         Args:
             sample: The responder sample.
-            sf_target: The target population. If None, creates a target-less
+            target: The target population. If None, creates a target-less
                 BalanceFrame that can be completed later via :meth:`set_target`.
 
         Returns:
             A validated BalanceFrame.
 
         Raises:
-            TypeError: If *sample* or *sf_target* is not a SampleFrame.
+            TypeError: If *sample* or *target* is not a SampleFrame.
             ValueError: If they share no covariate columns.
         """
         if not isinstance(sample, SampleFrame):
             raise TypeError(
                 f"'sample' must be a SampleFrame, got {type(sample).__name__}"
             )
-        if sf_target is not None and not isinstance(sf_target, SampleFrame):
+        if target is not None and not isinstance(target, SampleFrame):
             raise TypeError(
-                f"'sf_target' must be a SampleFrame, got {type(sf_target).__name__}"
+                f"'target' must be a SampleFrame, got {type(target).__name__}"
             )
 
         instance = object.__new__(cls)
         instance._sf_sample_pre_adjust = sample
         instance._sf_sample = sample  # same object initially
-        instance._sf_target = sf_target
+        instance._sf_target = target
         instance._adjustment_model = None
         instance._links = collections.defaultdict(list)
-        if sf_target is not None:
-            instance._links["target"] = sf_target
+        if target is not None:
+            instance._links["target"] = target
 
         # When the instance is also a SampleFrame (e.g., Sample inherits
         # from both BalanceFrame and SampleFrame), copy SampleFrame state
@@ -341,8 +341,8 @@ class BalanceFrame:
             instance._df_dtypes = sample._df_dtypes
 
         # Validate covariate overlap using public properties
-        if sf_target is not None:
-            cls._validate_covariate_overlap(sample, sf_target)
+        if target is not None:
+            cls._validate_covariate_overlap(sample, target)
 
         return instance
 
@@ -505,13 +505,14 @@ class BalanceFrame:
                 self._sf_target = target
                 self._links["target"] = target
                 # Reset adjustment state — old adjustment is no longer valid.
+                # TODO: add logger.warning when discarding adjusted weights (silent data loss risk)
                 self._sf_sample = self._sf_sample_pre_adjust
                 self._adjustment_model = None
                 return self
             else:
                 return type(self)._create(
                     sample=copy.deepcopy(self._sf_sample_pre_adjust),
-                    sf_target=target,
+                    target=target,
                 )
 
         raise TypeError("A target, a Sample object, must be specified")
@@ -649,7 +650,7 @@ class BalanceFrame:
         # Use type(self) so subclasses (e.g. Sample) get their own type back.
         new_bf = type(self)._create(
             sample=new_responders,
-            sf_target=self._sf_target,
+            target=self._sf_target,
         )
         # Point _sf_sample_pre_adjust to the original (pre-adjustment) data.
         # For compound adjustments this is always the *very first* baseline,
@@ -764,7 +765,7 @@ class BalanceFrame:
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [4, 5, 6], "x": [15.0, 25.0, 35.0],
             ...                   "weight": [1.0, 1.0, 1.0]}))
-            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, target=tgt)
             >>> adjusted = bf.adjust(method="ipw")
             >>> adjusted.is_adjusted
             True
@@ -857,7 +858,7 @@ class BalanceFrame:
             ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
-            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, target=tgt)
             >>> bf.model is None
             True
         """
@@ -913,7 +914,7 @@ class BalanceFrame:
         responders_sf = SampleFrame.from_sample(sample)
         target_sf = SampleFrame.from_sample(sample._links["target"])
 
-        bf = cls._create(sample=responders_sf, sf_target=target_sf)
+        bf = cls._create(sample=responders_sf, target=target_sf)
 
         if sample.is_adjusted():
             # Set unadjusted to a DIFFERENT SampleFrame so is_adjusted returns True
@@ -947,7 +948,7 @@ class BalanceFrame:
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [4, 5, 6], "x": [15.0, 25.0, 35.0],
             ...                   "weight": [1.0, 1.0, 1.0]}))
-            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, target=tgt)
             >>> s = bf.to_sample()
             >>> s.has_target()
             True
@@ -1039,7 +1040,7 @@ class BalanceFrame:
             ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
-            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, target=tgt)
             >>> bf.covars().df.columns.tolist()
             ['x']
         """
@@ -1068,7 +1069,7 @@ class BalanceFrame:
             ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 2.0]}))
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
-            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, target=tgt)
             >>> bf.weights().df.columns.tolist()
             ['weight']
         """
@@ -1099,7 +1100,7 @@ class BalanceFrame:
             ...     outcome_columns=["y"])
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
-            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, target=tgt)
             >>> bf.outcomes().df.columns.tolist()
             ['y']
         """
@@ -1136,7 +1137,7 @@ class BalanceFrame:
             ...     pd.DataFrame({"id": [1, 2], "x": [0, 1], "weight": [1.0, 1.0]}))
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [3, 4], "x": [0, 1], "weight": [1.0, 1.0]}))
-            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, target=tgt)
             >>> bf._design_effect_diagnostics()
             (1.0, 2.0, 1.0)
         """
@@ -1187,7 +1188,7 @@ class BalanceFrame:
             ...     pd.DataFrame({"id": [1, 2], "x": [0, 1], "weight": [1.0, 1.0]}))
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [3, 4], "x": [0, 1], "weight": [1.0, 1.0]}))
-            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, target=tgt)
             >>> adjusted = bf.adjust(method="null")
             >>> "method: null" in adjusted._quick_adjustment_details()
             True
@@ -1240,7 +1241,7 @@ class BalanceFrame:
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [5, 6, 7, 8], "x": [0, 0, 1, 1],
             ...                   "weight": [1.0, 1.0, 1.0, 1.0]}))
-            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, target=tgt)
             >>> adjusted = bf.adjust(method="null")
             >>> "Covariate diagnostics:" in adjusted.summary()
             True
@@ -1335,7 +1336,7 @@ class BalanceFrame:
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": ["3", "4"], "x": [0, 1],
             ...                   "weight": [1.0, 1.0]}))
-            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, target=tgt)
             >>> adjusted = bf.adjust(method="null")
             >>> adjusted.diagnostics().columns.tolist()
             ['metric', 'val', 'var']
@@ -1394,7 +1395,7 @@ class BalanceFrame:
             ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
-            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, target=tgt)
             >>> bf.df_all["source"].unique().tolist()
             ['self', 'target']
         """
@@ -1478,7 +1479,7 @@ class BalanceFrame:
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [4, 5, 6], "x": [15.0, 25.0, 35.0],
             ...                   "weight": [1.0, 1.0, 1.0]}))
-            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, target=tgt)
             >>> filtered = bf.keep_only_some_rows_columns(rows_to_keep="x > 15")
             >>> len(filtered._sf_sample._df)
             2
@@ -1634,7 +1635,7 @@ class BalanceFrame:
             ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
-            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, target=tgt)
             >>> "id" in bf.to_csv()
             True
         """
@@ -1662,7 +1663,7 @@ class BalanceFrame:
             ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
-            >>> bf = BalanceFrame(sample=resp, sf_target=tgt)
+            >>> bf = BalanceFrame(sample=resp, target=tgt)
             >>> link = bf.to_download(tempdir=tempfile.gettempdir())
         """
         return _to_download(self.df, tempdir)
@@ -1761,7 +1762,7 @@ class BalanceFrame:
         )
         new_bf = type(self)._create(
             sample=new_sf,
-            sf_target=self._sf_target,
+            target=self._sf_target,
         )
         new_bf._sf_sample_pre_adjust = self._sf_sample_pre_adjust
         # Preserve existing links (target, unadjusted).

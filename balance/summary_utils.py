@@ -544,6 +544,7 @@ def _build_diagnostics(
     diagnostics = pd.concat(
         (
             diagnostics,
+            # TODO: wire adjustment_failure to actual adjustment outcome instead of hardcoding 0
             pd.DataFrame({"metric": ("adjustment_failure",), "val": (0,)}),
         )
     )
