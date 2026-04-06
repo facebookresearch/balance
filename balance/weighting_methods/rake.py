@@ -213,6 +213,9 @@ def rake(
     sample_df = sample_df.loc[:, variables]
     target_df = target_df.loc[:, variables]
 
+    # TODO: When len(variables) == 1, fall back to poststratify instead of
+    # raising, so users can call adjust(method="rake") without worrying about
+    # the variable count.
     assert len(variables) > 1, (
         "Must weight on at least two variables for raking. "
         f"Currently have variables={variables} only"
