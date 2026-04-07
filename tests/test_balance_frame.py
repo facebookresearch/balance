@@ -599,8 +599,9 @@ class TestBalanceFrameSetTarget(BalanceTestCase):
             }
         )
         tgt2_sf = SampleFrame.from_frame(tgt2_df)
-        # set_target returns a NEW BalanceFrame; the original stays adjusted.
+        # For SampleFrame targets, set_target defaults to in-place behavior.
         retargeted = adjusted.set_target(tgt2_sf)
+        self.assertIs(retargeted, adjusted)
         self.assertFalse(retargeted.is_adjusted)
         self.assertIsNone(retargeted.model)
         self.assertNotIn("unadjusted", retargeted._links)
