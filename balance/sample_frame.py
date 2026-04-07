@@ -31,12 +31,6 @@ if TYPE_CHECKING:
 logger: logging.Logger = logging.getLogger(__package__)
 
 
-def _is_float_dtype_kind(series: pd.Series) -> bool:
-    """Return True when the series dtype has NumPy kind ``"f"`` (float)."""
-    dtype_kind = getattr(series.dtype, "kind", None)
-    return dtype_kind == "f"
-
-
 def _is_float64_dtype(series: pd.Series) -> bool:
     """Return True when the series dtype is exactly NumPy float64."""
     return series.dtype == np.dtype("float64")

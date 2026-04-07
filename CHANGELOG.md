@@ -4,9 +4,9 @@
 
 - **Modernized weight dtype checks for pandas 3.0 compatibility**
   - Replaced deprecated float-dtype checks in `SampleFrame.set_weights()` paths
-    with dtype kind (`dtype.kind == "f"`) checks.
-  - Ensures weight assignment continues to cast to `float64` without relying on
-    deprecated pandas APIs.
+    with explicit exact-`float64` checks.
+  - Ensures weight assignment always coerces to exact `float64` without relying
+    on deprecated pandas APIs.
 
 - **Safer target replacement on adjusted objects**
   - `BalanceFrame.set_target(...)` now emits a warning when replacing the target
@@ -25,8 +25,11 @@
 
 - Added coverage for:
   - warning emission when replacing target on adjusted objects,
+  - no-warning behavior when replacing target on unadjusted objects,
   - `set_as_pre_adjust()` behavior (copy and in-place),
-  - and weight-column casting when active weight dtype is non-float.
+  - synchronization of inherited `SampleFrame` views after
+    `Sample.set_as_pre_adjust()`,
+  - and weight-column casting when active weight dtype is non-float/float32.
 
 # 0.19.0 (2026-04-06)
 

@@ -534,10 +534,14 @@ class BalanceFrame:
                 (default), return a deep-copied object with the baseline reset.
 
         Returns:
-            BalanceFrame with ``_sf_sample_pre_adjust`` reset to a deep copy of
-            the current responder SampleFrame. Any current adjustment model is
-            cleared because the object is no longer considered adjusted after
-            this operation.
+            BalanceFrame with ``_sf_sample_pre_adjust`` reset to the current
+            responder SampleFrame state. In copy mode (``in_place=False``), the
+            responder frame is already deep-copied as part of ``deepcopy(self)``.
+            In in-place mode, the baseline is set to the existing responder
+            frame object so baseline/current share identity, matching
+            unadjusted-object semantics elsewhere in the API.
+            Any current adjustment model is cleared because the object is no
+            longer considered adjusted after this operation.
         """
         bf = self if in_place else deepcopy(self)
         frozen = bf._sf_sample
