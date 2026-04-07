@@ -513,6 +513,7 @@ class BalanceFrame:
                 # Reset adjustment state — old adjustment is no longer valid.
                 self._sf_sample = self._sf_sample_pre_adjust
                 self._adjustment_model = None
+                self._links.pop("unadjusted", None)
                 return self
             else:
                 return type(self)._create(

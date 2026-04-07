@@ -588,6 +588,7 @@ class TestBalanceFrameSetTarget(BalanceTestCase):
         bf = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf)
         adjusted = bf.adjust(method="null")
         self.assertTrue(adjusted.is_adjusted)
+        self.assertIn("unadjusted", adjusted._links)
         # Replace target on the adjusted frame — should reset adjustment state
         tgt2_df = pd.DataFrame(
             {
@@ -602,6 +603,7 @@ class TestBalanceFrameSetTarget(BalanceTestCase):
         retargeted = adjusted.set_target(tgt2_sf)
         self.assertFalse(retargeted.is_adjusted)
         self.assertIsNone(retargeted.model)
+        self.assertNotIn("unadjusted", retargeted._links)
 
     def test_set_target_on_adjusted_logs_reset_warning(self) -> None:
         adjusted = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf).adjust(
