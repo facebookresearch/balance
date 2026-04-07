@@ -540,11 +540,18 @@ class BalanceFrame:
             this operation.
         """
         bf = self if in_place else deepcopy(self)
-        frozen = copy.deepcopy(bf._sf_sample)
+        frozen = bf._sf_sample
         bf._sf_sample_pre_adjust = frozen
         bf._sf_sample = frozen
         bf._adjustment_model = None
         bf._links.pop("unadjusted", None)
+        if isinstance(bf, SampleFrame):
+            bf._df = frozen._df
+            bf._id_column_name = frozen._id_column_name
+            bf._column_roles = frozen._column_roles
+            bf._weight_column_name = frozen._weight_column_name
+            bf._weight_metadata = frozen._weight_metadata
+            bf._df_dtypes = frozen._df_dtypes
         return bf
 
     @property

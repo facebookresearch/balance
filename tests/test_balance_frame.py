@@ -11,6 +11,7 @@ import copy
 import io
 import logging
 from typing import Any, Literal
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -632,8 +633,9 @@ class TestBalanceFrameSetTarget(BalanceTestCase):
                 }
             )
         )
-        with self.assertNoLogs("balance", level="WARNING"):
+        with patch("balance.balance_frame.logger.warning") as mock_warning:
             bf.set_target(tgt2_sf)
+        self.assertFalse(mock_warning.called)
 
     def test_set_target_non_sampleframe_raises(self) -> None:
         bf = BalanceFrame(sample=self.resp_sf)

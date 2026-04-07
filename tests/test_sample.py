@@ -2754,6 +2754,39 @@ class TestSampleConversion(balance.testutil.BalanceTestCase):
             s1.to_balance_frame()
 
 
+class TestSampleSetAsPreAdjust(balance.testutil.BalanceTestCase):
+    def test_set_as_pre_adjust_keeps_sampleframe_views_in_sync(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [1, 2, 3],
+                    "x": [10.0, 20.0, 30.0],
+                    "weight": [1.0, 1.0, 1.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [4, 5, 6],
+                    "x": [12.0, 22.0, 32.0],
+                    "weight": [1.0, 1.0, 1.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+        )
+        adjusted = sample.set_target(target).adjust(method="null")
+        reset = adjusted.set_as_pre_adjust()
+
+        self.assertFalse(reset.is_adjusted)
+        self.assertIsNone(reset.model)
+        pd.testing.assert_frame_equal(reset._df, reset._sf_sample._df)
+        pd.testing.assert_frame_equal(reset.df_covars, reset._sf_sample.df_covars)
+
+
 class TestCallableBool(balance.testutil.BalanceTestCase):
     """Tests for the _CallableBool helper class."""
 

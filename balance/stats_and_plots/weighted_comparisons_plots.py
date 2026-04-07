@@ -13,6 +13,8 @@ from __future__ import (
     unicode_literals,
 )
 
+import inspect
+
 import logging
 import random
 from typing import Any, cast, Dict, List, Literal, Optional, Tuple, TypedDict, Union
@@ -397,7 +399,10 @@ def plot_hist_kde(
     }
     if dist_type != "ecdf":
         kwargs_for_dist_function["common_norm"] = False
-    if dist_type == "kde":
+    if (
+        dist_type == "kde"
+        and "warn_singular" in inspect.signature(dist_function).parameters
+    ):
         kwargs_for_dist_function["warn_singular"] = False
     # Set explicit bins for histplot when using weights to avoid seaborn 'bins cannot be auto' warning.
     # Use Freedman-Diaconis rule which adapts to data distribution.
