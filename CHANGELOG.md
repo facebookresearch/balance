@@ -1,3 +1,33 @@
+# 0.20.0 (Unreleased)
+
+## New Features
+
+- **Modernized weight dtype checks for pandas 3.0 compatibility**
+  - Replaced deprecated float-dtype checks in `SampleFrame.set_weights()` paths
+    with dtype kind (`dtype.kind == "f"`) checks.
+  - Ensures weight assignment continues to cast to `float64` without relying on
+    deprecated pandas APIs.
+
+- **Safer target replacement on adjusted objects**
+  - `BalanceFrame.set_target(...)` now emits a warning when replacing the target
+    on an adjusted object in in-place mode because this resets responder weights
+    to pre-adjust values and drops the current adjustment result.
+
+- **Added `BalanceFrame.set_as_pre_adjust()`**
+  - New helper to lock in the current responder state as the new
+    pre-adjust baseline.
+  - Supports both immutable usage (`in_place=False`, default) and in-place
+    mutation (`in_place=True`).
+  - Clears the current adjustment model and unadjusted link since the object
+    is no longer considered adjusted after baseline reset.
+
+## Tests
+
+- Added coverage for:
+  - warning emission when replacing target on adjusted objects,
+  - `set_as_pre_adjust()` behavior (copy and in-place),
+  - and weight-column casting when active weight dtype is non-float.
+
 # 0.19.0 (2026-04-06)
 
 ## Highlights

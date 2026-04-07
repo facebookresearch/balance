@@ -502,10 +502,15 @@ class BalanceFrame:
             BalanceFrame._validate_covariate_overlap(self._sf_sample, target)
 
             if in_place:
+                if self.is_adjusted:
+                    logger.warning(
+                        "Replacing target on an adjusted object resets responder "
+                        "weights to pre-adjust values and discards current "
+                        "adjustment results."
+                    )
                 self._sf_target = target
                 self._links["target"] = target
                 # Reset adjustment state — old adjustment is no longer valid.
-                # TODO: add logger.warning when discarding adjusted weights (silent data loss risk)
                 self._sf_sample = self._sf_sample_pre_adjust
                 self._adjustment_model = None
                 return self
@@ -517,9 +522,30 @@ class BalanceFrame:
 
         raise TypeError("A target, a Sample object, must be specified")
 
-    # TODO: Add a set_as_pre_adjust() method that resets
-    # _sf_sample_pre_adjust to the current _sf_sample state, allowing
-    # users to "lock in" a compound adjustment as the new baseline.
+    def set_as_pre_adjust(self, *, in_place: bool = False) -> Self:
+        """Set the current responder state as the new pre-adjust baseline.
+
+        This "locks in" the current responder weights (which may already be
+        adjusted and/or trimmed) as the baseline for future diagnostics and
+        subsequent adjustments.
+
+        Args:
+            in_place: If True, mutate this object and return it. If False
+                (default), return a deep-copied object with the baseline reset.
+
+        Returns:
+            BalanceFrame with ``_sf_sample_pre_adjust`` reset to a deep copy of
+            the current responder SampleFrame. Any current adjustment model is
+            cleared because the object is no longer considered adjusted after
+            this operation.
+        """
+        bf = self if in_place else deepcopy(self)
+        frozen = copy.deepcopy(bf._sf_sample)
+        bf._sf_sample_pre_adjust = frozen
+        bf._sf_sample = frozen
+        bf._adjustment_model = None
+        bf._links.pop("unadjusted", None)
+        return bf
 
     @property
     def is_adjusted(self) -> _CallableBool:

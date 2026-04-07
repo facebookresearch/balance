@@ -397,6 +397,8 @@ def plot_hist_kde(
     }
     if dist_type != "ecdf":
         kwargs_for_dist_function["common_norm"] = False
+    if dist_type == "kde":
+        kwargs_for_dist_function["warn_singular"] = False
     # Set explicit bins for histplot when using weights to avoid seaborn 'bins cannot be auto' warning.
     # Use Freedman-Diaconis rule which adapts to data distribution.
     if dist_type == "hist" and weighted:

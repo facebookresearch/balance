@@ -941,6 +941,12 @@ class TestSampleFrameBalanceDFSourceProtocol(BalanceTestCase):
         sf.set_weights(2.5)
         self.assertEqual(sf.weight_series.tolist(), [2.5, 2.5, 2.5])
 
+    def test_set_weights_casts_non_float_weight_column_to_float64(self) -> None:
+        sf = self._make_sf()
+        sf._df[sf._weight_column_name] = sf._df[sf._weight_column_name].astype("int64")
+        sf.set_weights(pd.Series([3, 4, 5]))
+        self.assertEqual(sf._df[sf._weight_column_name].dtype, np.float64)
+
     def test_set_weights_none_resets_to_one(self) -> None:
         sf = self._make_sf()
         sf.set_weights(None)

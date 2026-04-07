@@ -602,6 +602,39 @@ class TestBalanceFrameSetTarget(BalanceTestCase):
         self.assertFalse(retargeted.is_adjusted)
         self.assertIsNone(retargeted.model)
 
+    def test_set_target_on_adjusted_logs_reset_warning(self) -> None:
+        adjusted = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf).adjust(
+            method="null"
+        )
+        tgt2_sf = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["7", "8"],
+                    "x1": [50.0, 60.0],
+                    "x2": [5.0, 6.0],
+                    "weight": [1.0, 1.0],
+                }
+            )
+        )
+        with self.assertLogs("balance", level="WARNING") as cm:
+            adjusted.set_target(tgt2_sf)
+        self.assertIn("discards current adjustment results", cm.output[0])
+
+    def test_set_target_on_unadjusted_does_not_log_reset_warning(self) -> None:
+        bf = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf)
+        tgt2_sf = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["7", "8"],
+                    "x1": [50.0, 60.0],
+                    "x2": [5.0, 6.0],
+                    "weight": [1.0, 1.0],
+                }
+            )
+        )
+        with self.assertNoLogs("balance", level="WARNING"):
+            bf.set_target(tgt2_sf)
+
     def test_set_target_non_sampleframe_raises(self) -> None:
         bf = BalanceFrame(sample=self.resp_sf)
         with self.assertRaises(TypeError):
@@ -1996,6 +2029,53 @@ class TestBalanceFrameSetWeights(BalanceTestCase):
         weights = pd.Series([5.0, 6.0], index=bf.df.index)
         bf.set_weights(weights, use_index=True)
         self.assertEqual(_assert_type(bf.weight_series).tolist(), [5.0, 6.0])
+
+
+class TestBalanceFrameSetAsPreAdjust(BalanceTestCase):
+    def _make_adjusted(self) -> BalanceFrame:
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]})
+        )
+        tgt_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["3", "4"], "x": [1.5, 2.5], "weight": [1.0, 1.0]})
+        )
+        return BalanceFrame(sample=resp_sf, target=tgt_sf).adjust(method="null")
+
+    def test_set_as_pre_adjust_returns_copy_by_default(self) -> None:
+        adjusted = self._make_adjusted()
+        reset = adjusted.set_as_pre_adjust()
+        self.assertIsNot(reset, adjusted)
+        self.assertFalse(reset.is_adjusted)
+        self.assertNotIn("unadjusted", reset._links)
+        self.assertIsNone(reset.model)
+        # Original object remains adjusted and keeps its model.
+        self.assertTrue(adjusted.is_adjusted)
+        self.assertIsNotNone(adjusted.model)
+
+    def test_set_as_pre_adjust_in_place(self) -> None:
+        adjusted = self._make_adjusted()
+        result = adjusted.set_as_pre_adjust(in_place=True)
+        self.assertIs(result, adjusted)
+        self.assertFalse(adjusted.is_adjusted)
+        self.assertNotIn("unadjusted", adjusted._links)
+        self.assertIsNone(adjusted.model)
+
+    def test_set_as_pre_adjust_preserves_target_link(self) -> None:
+        adjusted = self._make_adjusted()
+        reset = adjusted.set_as_pre_adjust()
+        self.assertTrue(reset.has_target())
+
+    def test_set_as_pre_adjust_unadjusted_noop_semantics(self) -> None:
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]})
+        )
+        tgt_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["3", "4"], "x": [1.5, 2.5], "weight": [1.0, 1.0]})
+        )
+        bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
+        reset = bf.set_as_pre_adjust()
+        self.assertFalse(reset.is_adjusted)
+        self.assertIsNone(reset.model)
 
 
 class TestBalanceFrameTrim(BalanceTestCase):
