@@ -161,7 +161,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
 
         # Set up matplotlib figure
         plt.figure(1)
-        fig, ax = plt.subplots(1, 1, figsize=(7.2, 7.2))
+        _, ax = plt.subplots(1, 1, figsize=(7.2, 7.2))
 
         # Create test data with proper type
         test_data: List[DataFrameWithWeight] = [
@@ -480,7 +480,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         )
 
         # Test 1: ylim parameter
-        fig, ax = plt.subplots(1, 1, figsize=(7.2, 7.2))
+        _, ax = plt.subplots(1, 1, figsize=(7.2, 7.2))
         test_data: List[DataFrameWithWeight] = [
             {"df": test_df, "weight": pd.Series((1, 1, 1, 1))},
             {"df": test_df, "weight": pd.Series((2, 1, 1, 1))},
@@ -498,7 +498,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         self.assertEqual(ylim[1], 1)
 
         # Test 2: custom title
-        fig, ax = plt.subplots(1, 1, figsize=(7.2, 7.2))
+        _, ax = plt.subplots(1, 1, figsize=(7.2, 7.2))
         custom_title = "Custom Bar Plot Title"
         plot_bar(
             [{"df": test_df, "weight": pd.Series((1, 1, 1, 1))}],
