@@ -159,6 +159,21 @@ class BalanceFrame:
     #         _links["unadjusted"] → BalanceFrame
     _links = None
 
+    def _sync_sampleframe_state_from_responder(self, responder: SampleFrame) -> None:
+        """Sync inherited SampleFrame fields from a responder SampleFrame.
+
+        This is only needed when ``self`` is also a ``SampleFrame`` (e.g.
+        ``Sample`` via multiple inheritance), so inherited SampleFrame
+        properties stay consistent with ``_sf_sample``.
+        """
+        if isinstance(self, SampleFrame):
+            self._df = responder._df
+            self._id_column_name = responder._id_column_name
+            self._column_roles = responder._column_roles
+            self._weight_column_name = responder._weight_column_name
+            self._weight_metadata = responder._weight_metadata
+            self._df_dtypes = responder._df_dtypes
+
     @property
     def _df_dtypes(self) -> pd.Series | None:
         """Original dtypes, delegated to ``_sf_sample._df_dtypes``."""
@@ -332,13 +347,7 @@ class BalanceFrame:
         # When the instance is also a SampleFrame (e.g., Sample inherits
         # from both BalanceFrame and SampleFrame), copy SampleFrame state
         # so that inherited SampleFrame properties work on the instance.
-        if isinstance(instance, SampleFrame):
-            instance._df = sample._df
-            instance._id_column_name = sample._id_column_name
-            instance._column_roles = sample._column_roles
-            instance._weight_column_name = sample._weight_column_name
-            instance._weight_metadata = sample._weight_metadata
-            instance._df_dtypes = sample._df_dtypes
+        instance._sync_sampleframe_state_from_responder(sample)
 
         # Validate covariate overlap using public properties
         if target is not None:
@@ -516,6 +525,7 @@ class BalanceFrame:
                 self._sf_sample = self._sf_sample_pre_adjust
                 self._adjustment_model = None
                 self._links.pop("unadjusted", None)
+                self._sync_sampleframe_state_from_responder(self._sf_sample)
                 return self
             else:
                 return type(self)._create(
@@ -552,13 +562,7 @@ class BalanceFrame:
         bf._sf_sample = frozen
         bf._adjustment_model = None
         bf._links.pop("unadjusted", None)
-        if isinstance(bf, SampleFrame):
-            bf._df = frozen._df
-            bf._id_column_name = frozen._id_column_name
-            bf._column_roles = frozen._column_roles
-            bf._weight_column_name = frozen._weight_column_name
-            bf._weight_metadata = frozen._weight_metadata
-            bf._df_dtypes = frozen._df_dtypes
+        bf._sync_sampleframe_state_from_responder(frozen)
         return bf
 
     @property

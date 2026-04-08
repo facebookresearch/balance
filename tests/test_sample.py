@@ -2787,6 +2787,58 @@ class TestSampleSetAsPreAdjust(balance.testutil.BalanceTestCase):
         pd.testing.assert_frame_equal(reset.df_covars, reset._sf_sample.df_covars)
 
 
+class TestSampleSetTargetRegression(balance.testutil.BalanceTestCase):
+    def test_set_target_in_place_after_adjust_keeps_sampleframe_state_synced(
+        self,
+    ) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [1, 2, 3],
+                    "x": [10.0, 20.0, 30.0],
+                    "weight": [1.0, 1.0, 1.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+        )
+        target1 = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [4, 5, 6],
+                    "x": [12.0, 22.0, 32.0],
+                    "weight": [1.0, 1.0, 1.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+        )
+        target2 = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [7, 8, 9],
+                    "x": [11.0, 21.0, 31.0],
+                    "weight": [1.0, 1.0, 1.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+        )
+
+        adjusted = sample.set_target(target1).adjust(method="null")
+        self.assertTrue(adjusted.is_adjusted)
+
+        retargeted = adjusted.set_target(target2.to_sample_frame())
+        self.assertIs(retargeted, adjusted)
+        self.assertFalse(retargeted.is_adjusted)
+        # Regression: inherited SampleFrame views must track _sf_sample after reset.
+        pd.testing.assert_frame_equal(retargeted._df, retargeted._sf_sample._df)
+        pd.testing.assert_series_equal(
+            retargeted.df_weights.iloc[:, 0],
+            retargeted._sf_sample.df_weights.iloc[:, 0],
+        )
+
+
 class TestCallableBool(balance.testutil.BalanceTestCase):
     """Tests for the _CallableBool helper class."""
 
