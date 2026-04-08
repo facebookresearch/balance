@@ -544,17 +544,33 @@ class BalanceFrame:
 
         Args:
             in_place: If True, mutate this object and return it. If False
-                (default), return a deep-copied object with the baseline reset.
+                (default), return a new object with a deep-copied responder
+                frame and reset baseline.
 
         Returns:
             BalanceFrame with ``_sf_sample_pre_adjust`` reset to the current
-            responder SampleFrame state. In copy mode (``in_place=False``), the
-            responder frame is already deep-copied as part of ``deepcopy(self)``.
-            In in-place mode, the baseline is set to the existing responder
+            responder SampleFrame state. In copy mode (``in_place=False``),
+            only the responder frame is deep-copied and used to construct a new
+            object (the full ``_links`` graph is not deep-copied). In in-place
+            mode, the baseline is set to the existing responder
             frame object so baseline/current share identity, matching
             unadjusted-object semantics elsewhere in the API.
             Any current adjustment model is cleared because the object is no
             longer considered adjusted after this operation.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
+            >>> adjusted = BalanceFrame(sample=resp, target=tgt).adjust(method="null")
+            >>> baseline_locked = adjusted.set_as_pre_adjust()  # copy mode
+            >>> baseline_locked.is_adjusted
+            False
+            >>> _ = adjusted.set_as_pre_adjust(in_place=True)  # in-place mode
         """
         if in_place:
             bf = self

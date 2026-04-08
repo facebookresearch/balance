@@ -2039,6 +2039,10 @@ class TestBalanceFrameSetWeights(BalanceTestCase):
 
 
 class TestBalanceFrameSetAsPreAdjust(BalanceTestCase):
+    class _NoDeepcopy:
+        def __deepcopy__(self, memo: dict[int, object]) -> object:
+            raise RuntimeError("should not be deep-copied")
+
     def _make_adjusted(self) -> BalanceFrame:
         resp_sf = SampleFrame.from_frame(
             pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]})
@@ -2083,6 +2087,12 @@ class TestBalanceFrameSetAsPreAdjust(BalanceTestCase):
         reset = bf.set_as_pre_adjust()
         self.assertFalse(reset.is_adjusted)
         self.assertIsNone(reset.model)
+
+    def test_set_as_pre_adjust_copy_does_not_deepcopy_unadjusted_link(self) -> None:
+        adjusted = self._make_adjusted()
+        adjusted._links["unadjusted"] = self._NoDeepcopy()
+        reset = adjusted.set_as_pre_adjust()
+        self.assertFalse(reset.is_adjusted)
 
 
 class TestBalanceFrameTrim(BalanceTestCase):
