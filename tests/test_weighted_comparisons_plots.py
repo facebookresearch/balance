@@ -950,7 +950,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
             {"df": test_df, "weight": pd.Series(np.ones(len(test_df)))},
             {"df": test_df, "weight": pd.Series(np.ones(len(test_df)))},
         ]
-        fig, ax = plt.subplots(1, 1, figsize=(7.2, 7.2))
+        _, ax = plt.subplots(1, 1, figsize=(7.2, 7.2))
         with patch(
             "balance.stats_and_plots.weighted_comparisons_plots.inspect.signature",
             side_effect=ValueError("unsupported signature"),
