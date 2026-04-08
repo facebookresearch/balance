@@ -556,8 +556,16 @@ class BalanceFrame:
             Any current adjustment model is cleared because the object is no
             longer considered adjusted after this operation.
         """
-        bf = self if in_place else deepcopy(self)
-        frozen = bf._sf_sample
+        if in_place:
+            bf = self
+            frozen = bf._sf_sample
+        else:
+            frozen = copy.deepcopy(self._sf_sample)
+            bf = type(self)._create(sample=frozen, target=self._sf_target)
+            # Preserve a richer target link (e.g., BalanceFrame/Sample object)
+            # when present on the original.
+            if "target" in self._links:
+                bf._links["target"] = self._links["target"]
         bf._sf_sample_pre_adjust = frozen
         bf._sf_sample = frozen
         bf._adjustment_model = None

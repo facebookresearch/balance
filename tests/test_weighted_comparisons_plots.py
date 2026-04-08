@@ -8,6 +8,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 from typing import List
+from unittest.mock import patch
 
 import balance.testutil
 import matplotlib
@@ -940,6 +941,28 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
                 ecdf_y_values_self_unweighted, ecdf_y_values_target_unweighted
             ):
                 self.assertAlmostEqual(y_self, y_target, places=5)
+
+    def test_plot_hist_kde_handles_signature_inspection_failure(self) -> None:
+        from balance.stats_and_plots.weighted_comparisons_plots import plot_hist_kde
+
+        test_df = pd.DataFrame({"v1": [1, 2, 2, 3, 4, 5]})
+        test_data: List[DataFrameWithWeight] = [
+            {"df": test_df, "weight": pd.Series(np.ones(len(test_df)))},
+            {"df": test_df, "weight": pd.Series(np.ones(len(test_df)))},
+        ]
+        fig, ax = plt.subplots(1, 1, figsize=(7.2, 7.2))
+        with patch(
+            "balance.stats_and_plots.weighted_comparisons_plots.inspect.signature",
+            side_effect=ValueError("unsupported signature"),
+        ):
+            plot_hist_kde(
+                test_data,
+                names=["self", "target"],
+                column="v1",
+                axis=ax,
+                weighted=True,
+                dist_type="kde",
+            )
 
     def test_plot_hist_kde_unweighted(self) -> None:
         """
