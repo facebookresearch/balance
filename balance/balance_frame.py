@@ -506,7 +506,9 @@ class BalanceFrame:
                     logger.warning(
                         "Replacing target on an adjusted object resets responder "
                         "weights to pre-adjust values and discards current "
-                        "adjustment results."
+                        "adjustment results. Pass in_place=False to return a new "
+                        "object and keep the current adjusted state on this "
+                        "instance."
                     )
                 self._sf_target = target
                 self._links["target"] = target

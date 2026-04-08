@@ -622,7 +622,9 @@ class TestBalanceFrameSetTarget(BalanceTestCase):
         )
         with self.assertLogs("balance", level="WARNING") as cm:
             adjusted.set_target(tgt2_sf)
-        self.assertIn("discards current adjustment results", cm.output[0])
+        self.assertTrue(
+            any("discards current adjustment results" in line for line in cm.output)
+        )
 
     def test_set_target_on_unadjusted_does_not_log_reset_warning(self) -> None:
         bf = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf)
