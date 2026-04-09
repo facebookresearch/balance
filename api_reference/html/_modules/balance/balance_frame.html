@@ -198,6 +198,21 @@
     <span class="c1">#         _links[&quot;unadjusted&quot;] → BalanceFrame</span>
     <span class="n">_links</span> <span class="o">=</span> <span class="kc">None</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sync_sampleframe_state_from_responder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">responder</span><span class="p">:</span> <span class="n">SampleFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sync inherited SampleFrame fields from a responder SampleFrame.</span>
+
+<span class="sd">        This is only needed when ``self`` is also a ``SampleFrame`` (e.g.</span>
+<span class="sd">        ``Sample`` via multiple inheritance), so inherited SampleFrame</span>
+<span class="sd">        properties stay consistent with ``_sf_sample``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">SampleFrame</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="n">responder</span><span class="o">.</span><span class="n">_df</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_id_column_name</span> <span class="o">=</span> <span class="n">responder</span><span class="o">.</span><span class="n">_id_column_name</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span> <span class="o">=</span> <span class="n">responder</span><span class="o">.</span><span class="n">_column_roles</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_weight_column_name</span> <span class="o">=</span> <span class="n">responder</span><span class="o">.</span><span class="n">_weight_column_name</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_weight_metadata</span> <span class="o">=</span> <span class="n">responder</span><span class="o">.</span><span class="n">_weight_metadata</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_df_dtypes</span> <span class="o">=</span> <span class="n">responder</span><span class="o">.</span><span class="n">_df_dtypes</span>
+
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_df_dtypes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Original dtypes, delegated to ``_sf_sample._df_dtypes``.&quot;&quot;&quot;</span>
@@ -371,13 +386,7 @@
         <span class="c1"># When the instance is also a SampleFrame (e.g., Sample inherits</span>
         <span class="c1"># from both BalanceFrame and SampleFrame), copy SampleFrame state</span>
         <span class="c1"># so that inherited SampleFrame properties work on the instance.</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="n">SampleFrame</span><span class="p">):</span>
-            <span class="n">instance</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span>
-            <span class="n">instance</span><span class="o">.</span><span class="n">_id_column_name</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_id_column_name</span>
-            <span class="n">instance</span><span class="o">.</span><span class="n">_column_roles</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_column_roles</span>
-            <span class="n">instance</span><span class="o">.</span><span class="n">_weight_column_name</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_weight_column_name</span>
-            <span class="n">instance</span><span class="o">.</span><span class="n">_weight_metadata</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_weight_metadata</span>
-            <span class="n">instance</span><span class="o">.</span><span class="n">_df_dtypes</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df_dtypes</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">_sync_sampleframe_state_from_responder</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
 
         <span class="c1"># Validate covariate overlap using public properties</span>
         <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -543,12 +552,21 @@
             <span class="n">BalanceFrame</span><span class="o">.</span><span class="n">_validate_covariate_overlap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">in_place</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="s2">&quot;Replacing target on an adjusted object resets responder &quot;</span>
+                        <span class="s2">&quot;weights to pre-adjust values and discards current &quot;</span>
+                        <span class="s2">&quot;adjustment results. Pass in_place=False to return a new &quot;</span>
+                        <span class="s2">&quot;object and keep the current adjusted state on this &quot;</span>
+                        <span class="s2">&quot;instance.&quot;</span>
+                    <span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span> <span class="o">=</span> <span class="n">target</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">target</span>
                 <span class="c1"># Reset adjustment state — old adjustment is no longer valid.</span>
-                <span class="c1"># TODO: add logger.warning when discarding adjusted weights (silent data loss risk)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_adjustment_model</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sync_sampleframe_state_from_responder</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="p">)</span>
                 <span class="k">return</span> <span class="bp">self</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span>
@@ -559,9 +577,62 @@
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;A target, a Sample object, must be specified&quot;</span><span class="p">)</span></div>
 
 
-    <span class="c1"># TODO: Add a set_as_pre_adjust() method that resets</span>
-    <span class="c1"># _sf_sample_pre_adjust to the current _sf_sample state, allowing</span>
-    <span class="c1"># users to &quot;lock in&quot; a compound adjustment as the new baseline.</span>
+<div class="viewcode-block" id="BalanceFrame.set_as_pre_adjust">
+<a class="viewcode-back" href="../../balance.balance_frame.html#balance.balance_frame.BalanceFrame.set_as_pre_adjust">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_as_pre_adjust</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">in_place</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the current responder state as the new pre-adjust baseline.</span>
+
+<span class="sd">        This &quot;locks in&quot; the current responder weights (which may already be</span>
+<span class="sd">        adjusted and/or trimmed) as the baseline for future diagnostics and</span>
+<span class="sd">        subsequent adjustments.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            in_place: If True, mutate this object and return it. If False</span>
+<span class="sd">                (default), return a new object with a deep-copied responder</span>
+<span class="sd">                frame and reset baseline.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            BalanceFrame with ``_sf_sample_pre_adjust`` reset to the current</span>
+<span class="sd">            responder SampleFrame state. In copy mode (``in_place=False``),</span>
+<span class="sd">            only the responder frame is deep-copied and used to construct a new</span>
+<span class="sd">            object (the full ``_links`` graph is not deep-copied). In in-place</span>
+<span class="sd">            mode, the baseline is set to the existing responder</span>
+<span class="sd">            frame object so baseline/current share identity, matching</span>
+<span class="sd">            unadjusted-object semantics elsewhere in the API.</span>
+<span class="sd">            Any current adjustment model is cleared because the object is no</span>
+<span class="sd">            longer considered adjusted after this operation.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; from balance.balance_frame import BalanceFrame</span>
+<span class="sd">            &gt;&gt;&gt; resp = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [1, 2], &quot;x&quot;: [10.0, 20.0], &quot;weight&quot;: [1.0, 1.0]}))</span>
+<span class="sd">            &gt;&gt;&gt; tgt = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [3, 4], &quot;x&quot;: [15.0, 25.0], &quot;weight&quot;: [1.0, 1.0]}))</span>
+<span class="sd">            &gt;&gt;&gt; adjusted = BalanceFrame(sample=resp, target=tgt).adjust(method=&quot;null&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; baseline_locked = adjusted.set_as_pre_adjust()  # copy mode</span>
+<span class="sd">            &gt;&gt;&gt; baseline_locked.is_adjusted</span>
+<span class="sd">            False</span>
+<span class="sd">            &gt;&gt;&gt; _ = adjusted.set_as_pre_adjust(in_place=True)  # in-place mode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">in_place</span><span class="p">:</span>
+            <span class="n">bf</span> <span class="o">=</span> <span class="bp">self</span>
+            <span class="n">frozen</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">frozen</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="p">)</span>
+            <span class="n">bf</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">frozen</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span>
+            <span class="c1"># Preserve a richer target link (e.g., BalanceFrame/Sample object)</span>
+            <span class="c1"># when present on the original.</span>
+            <span class="k">if</span> <span class="s2">&quot;target&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">:</span>
+                <span class="n">bf</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span>
+        <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span> <span class="o">=</span> <span class="n">frozen</span>
+        <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span> <span class="o">=</span> <span class="n">frozen</span>
+        <span class="n">bf</span><span class="o">.</span><span class="n">_adjustment_model</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">bf</span><span class="o">.</span><span class="n">_links</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">bf</span><span class="o">.</span><span class="n">_sync_sampleframe_state_from_responder</span><span class="p">(</span><span class="n">frozen</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">bf</span></div>
+
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_adjusted</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_CallableBool</span><span class="p">:</span>

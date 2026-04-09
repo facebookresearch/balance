@@ -584,6 +584,48 @@ adding NA indicators for null values.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.set_as_pre_adjust">
+<span class="sig-name descname"><span class="pre">set_as_pre_adjust</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_place</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="_modules/balance/balance_frame.html#BalanceFrame.set_as_pre_adjust"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balance_frame.BalanceFrame.set_as_pre_adjust" title="Link to this definition">¶</a></dt>
+<dd><p>Set the current responder state as the new pre-adjust baseline.</p>
+<p>This “locks in” the current responder weights (which may already be
+adjusted and/or trimmed) as the baseline for future diagnostics and
+subsequent adjustments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>in_place</strong> – If True, mutate this object and return it. If False
+(default), return a new object with a deep-copied responder
+frame and reset baseline.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>BalanceFrame with <code class="docutils literal notranslate"><span class="pre">_sf_sample_pre_adjust</span></code> reset to the current
+responder SampleFrame state. In copy mode (<code class="docutils literal notranslate"><span class="pre">in_place=False</span></code>),
+only the responder frame is deep-copied and used to construct a new
+object (the full <code class="docutils literal notranslate"><span class="pre">_links</span></code> graph is not deep-copied). In in-place
+mode, the baseline is set to the existing responder
+frame object so baseline/current share identity, matching
+unadjusted-object semantics elsewhere in the API.
+Any current adjustment model is cleared because the object is no
+longer considered adjusted after this operation.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampleFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.balance_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">resp</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">],</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tgt</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">15.0</span><span class="p">,</span> <span class="mf">25.0</span><span class="p">],</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">adjusted</span> <span class="o">=</span> <span class="n">BalanceFrame</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">resp</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">tgt</span><span class="p">)</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;null&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">baseline_locked</span> <span class="o">=</span> <span class="n">adjusted</span><span class="o">.</span><span class="n">set_as_pre_adjust</span><span class="p">()</span>  <span class="c1"># copy mode</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">baseline_locked</span><span class="o">.</span><span class="n">is_adjusted</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">_</span> <span class="o">=</span> <span class="n">adjusted</span><span class="o">.</span><span class="n">set_as_pre_adjust</span><span class="p">(</span><span class="n">in_place</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># in-place mode</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.set_target">
 <span class="sig-name descname"><span class="pre">set_target</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.balance_frame.BalanceFrame" title="balance.balance_frame.BalanceFrame"><span class="pre">BalanceFrame</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="balance.sample_frame.html#balance.sample_frame.SampleFrame" title="balance.sample_frame.SampleFrame"><span class="pre">SampleFrame</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_place</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="_modules/balance/balance_frame.html#BalanceFrame.set_target"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balance_frame.BalanceFrame.set_target" title="Link to this definition">¶</a></dt>
 <dd><p>Set or replace the target population.</p>
@@ -926,6 +968,7 @@ adjusted) views for comparative weight analysis.</p>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.model_matrix"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.model_matrix()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.outcomes"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.outcomes()</span></code></a></li>
 <li><a class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.responders</span></code></a></li>
+<li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_as_pre_adjust"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.set_as_pre_adjust()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_target"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.set_target()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_unadjusted"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.set_unadjusted()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_weights"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.set_weights()</span></code></a></li>

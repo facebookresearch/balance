@@ -68,6 +68,11 @@
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_is_float64_dtype</span><span class="p">(</span><span class="n">series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return True when the series dtype is exactly NumPy float64.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">series</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+
+
 <div class="viewcode-block" id="SampleFrame">
 <a class="viewcode-back" href="../../balance.sample_frame.html#balance.sample_frame.SampleFrame">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SampleFrame</span><span class="p">:</span>
@@ -890,8 +895,7 @@
         <span class="n">wc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight_column_name</span>
 
         <span class="c1"># Ensure the column is float64 before any assignment.</span>
-        <span class="c1"># TODO: replace deprecated is_float_dtype (removed in pandas 3.0) with dtype.kind check</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_float_dtype</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">wc</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_is_float64_dtype</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">wc</span><span class="p">]):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">wc</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">wc</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -911,8 +915,7 @@
                 <span class="sa">f</span><span class="s2">&quot;use_index=True requires a pandas Series (got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">). &quot;</span>
                 <span class="s2">&quot;Pass a Series with an appropriate index, or use use_index=False.&quot;</span>
             <span class="p">)</span>
-        <span class="c1"># TODO: replace deprecated is_float_dtype (removed in pandas 3.0) with dtype.kind check</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_float_dtype</span><span class="p">(</span><span class="n">weights</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_is_float64_dtype</span><span class="p">(</span><span class="n">weights</span><span class="p">):</span>
             <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">idx</span> <span class="ow">in</span> <span class="n">weights</span><span class="o">.</span><span class="n">index</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
@@ -929,8 +932,7 @@
                 <span class="sa">f</span><span class="s2">&quot;DataFrame length (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
-            <span class="c1"># TODO: replace deprecated is_float_dtype (removed in pandas 3.0) with dtype.kind check</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_float_dtype</span><span class="p">(</span><span class="n">weights</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_is_float64_dtype</span><span class="p">(</span><span class="n">weights</span><span class="p">):</span>
                 <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">wc</span><span class="p">]</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
