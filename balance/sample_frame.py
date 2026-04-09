@@ -31,6 +31,11 @@ if TYPE_CHECKING:
 logger: logging.Logger = logging.getLogger(__package__)
 
 
+def _is_float64_dtype(series: pd.Series) -> bool:
+    """Return True when the series dtype is exactly NumPy float64."""
+    return series.dtype == np.dtype("float64")
+
+
 class SampleFrame:
     """A DataFrame container with explicit column-role metadata.
 
@@ -846,8 +851,7 @@ class SampleFrame:
         wc = self._weight_column_name
 
         # Ensure the column is float64 before any assignment.
-        # TODO: replace deprecated is_float_dtype (removed in pandas 3.0) with dtype.kind check
-        if not pd.api.types.is_float_dtype(self._df[wc]):
+        if not _is_float64_dtype(self._df[wc]):
             self._df[wc] = self._df[wc].astype("float64")
 
         if weights is None:
@@ -866,8 +870,7 @@ class SampleFrame:
                 f"use_index=True requires a pandas Series (got {type(weights).__name__}). "
                 "Pass a Series with an appropriate index, or use use_index=False."
             )
-        # TODO: replace deprecated is_float_dtype (removed in pandas 3.0) with dtype.kind check
-        if not pd.api.types.is_float_dtype(weights):
+        if not _is_float64_dtype(weights):
             weights = weights.astype("float64")
         if not all(idx in weights.index for idx in self._df.index):
             logger.warning(
@@ -884,8 +887,7 @@ class SampleFrame:
                 f"DataFrame length ({len(self._df)})"
             )
         if isinstance(weights, pd.Series):
-            # TODO: replace deprecated is_float_dtype (removed in pandas 3.0) with dtype.kind check
-            if not pd.api.types.is_float_dtype(weights):
+            if not _is_float64_dtype(weights):
                 weights = weights.astype("float64")
             self._df[wc] = weights.to_numpy()
         else:

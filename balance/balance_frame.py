@@ -159,6 +159,21 @@ class BalanceFrame:
     #         _links["unadjusted"] → BalanceFrame
     _links = None
 
+    def _sync_sampleframe_state_from_responder(self, responder: SampleFrame) -> None:
+        """Sync inherited SampleFrame fields from a responder SampleFrame.
+
+        This is only needed when ``self`` is also a ``SampleFrame`` (e.g.
+        ``Sample`` via multiple inheritance), so inherited SampleFrame
+        properties stay consistent with ``_sf_sample``.
+        """
+        if isinstance(self, SampleFrame):
+            self._df = responder._df
+            self._id_column_name = responder._id_column_name
+            self._column_roles = responder._column_roles
+            self._weight_column_name = responder._weight_column_name
+            self._weight_metadata = responder._weight_metadata
+            self._df_dtypes = responder._df_dtypes
+
     @property
     def _df_dtypes(self) -> pd.Series | None:
         """Original dtypes, delegated to ``_sf_sample._df_dtypes``."""
@@ -332,13 +347,7 @@ class BalanceFrame:
         # When the instance is also a SampleFrame (e.g., Sample inherits
         # from both BalanceFrame and SampleFrame), copy SampleFrame state
         # so that inherited SampleFrame properties work on the instance.
-        if isinstance(instance, SampleFrame):
-            instance._df = sample._df
-            instance._id_column_name = sample._id_column_name
-            instance._column_roles = sample._column_roles
-            instance._weight_column_name = sample._weight_column_name
-            instance._weight_metadata = sample._weight_metadata
-            instance._df_dtypes = sample._df_dtypes
+        instance._sync_sampleframe_state_from_responder(sample)
 
         # Validate covariate overlap using public properties
         if target is not None:
@@ -502,12 +511,21 @@ class BalanceFrame:
             BalanceFrame._validate_covariate_overlap(self._sf_sample, target)
 
             if in_place:
+                if self.is_adjusted:
+                    logger.warning(
+                        "Replacing target on an adjusted object resets responder "
+                        "weights to pre-adjust values and discards current "
+                        "adjustment results. Pass in_place=False to return a new "
+                        "object and keep the current adjusted state on this "
+                        "instance."
+                    )
                 self._sf_target = target
                 self._links["target"] = target
                 # Reset adjustment state — old adjustment is no longer valid.
-                # TODO: add logger.warning when discarding adjusted weights (silent data loss risk)
                 self._sf_sample = self._sf_sample_pre_adjust
                 self._adjustment_model = None
+                self._links.pop("unadjusted", None)
+                self._sync_sampleframe_state_from_responder(self._sf_sample)
                 return self
             else:
                 return type(self)._create(
@@ -517,9 +535,59 @@ class BalanceFrame:
 
         raise TypeError("A target, a Sample object, must be specified")
 
-    # TODO: Add a set_as_pre_adjust() method that resets
-    # _sf_sample_pre_adjust to the current _sf_sample state, allowing
-    # users to "lock in" a compound adjustment as the new baseline.
+    def set_as_pre_adjust(self, *, in_place: bool = False) -> Self:
+        """Set the current responder state as the new pre-adjust baseline.
+
+        This "locks in" the current responder weights (which may already be
+        adjusted and/or trimmed) as the baseline for future diagnostics and
+        subsequent adjustments.
+
+        Args:
+            in_place: If True, mutate this object and return it. If False
+                (default), return a new object with a deep-copied responder
+                frame and reset baseline.
+
+        Returns:
+            BalanceFrame with ``_sf_sample_pre_adjust`` reset to the current
+            responder SampleFrame state. In copy mode (``in_place=False``),
+            only the responder frame is deep-copied and used to construct a new
+            object (the full ``_links`` graph is not deep-copied). In in-place
+            mode, the baseline is set to the existing responder
+            frame object so baseline/current share identity, matching
+            unadjusted-object semantics elsewhere in the API.
+            Any current adjustment model is cleared because the object is no
+            longer considered adjusted after this operation.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
+            >>> adjusted = BalanceFrame(sample=resp, target=tgt).adjust(method="null")
+            >>> baseline_locked = adjusted.set_as_pre_adjust()  # copy mode
+            >>> baseline_locked.is_adjusted
+            False
+            >>> _ = adjusted.set_as_pre_adjust(in_place=True)  # in-place mode
+        """
+        if in_place:
+            bf = self
+            frozen = bf._sf_sample
+        else:
+            frozen = copy.deepcopy(self._sf_sample)
+            bf = type(self)._create(sample=frozen, target=self._sf_target)
+            # Preserve a richer target link (e.g., BalanceFrame/Sample object)
+            # when present on the original.
+            if "target" in self._links:
+                bf._links["target"] = self._links["target"]
+        bf._sf_sample_pre_adjust = frozen
+        bf._sf_sample = frozen
+        bf._adjustment_model = None
+        bf._links.pop("unadjusted", None)
+        bf._sync_sampleframe_state_from_responder(frozen)
+        return bf
 
     @property
     def is_adjusted(self) -> _CallableBool:

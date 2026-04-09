@@ -11,6 +11,7 @@ import copy
 import io
 import logging
 from typing import Any, Literal
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -587,6 +588,7 @@ class TestBalanceFrameSetTarget(BalanceTestCase):
         bf = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf)
         adjusted = bf.adjust(method="null")
         self.assertTrue(adjusted.is_adjusted)
+        self.assertIn("unadjusted", adjusted._links)
         # Replace target on the adjusted frame — should reset adjustment state
         tgt2_df = pd.DataFrame(
             {
@@ -597,10 +599,48 @@ class TestBalanceFrameSetTarget(BalanceTestCase):
             }
         )
         tgt2_sf = SampleFrame.from_frame(tgt2_df)
-        # set_target returns a NEW BalanceFrame; the original stays adjusted.
+        # For SampleFrame targets, set_target defaults to in-place behavior.
         retargeted = adjusted.set_target(tgt2_sf)
+        self.assertIs(retargeted, adjusted)
         self.assertFalse(retargeted.is_adjusted)
         self.assertIsNone(retargeted.model)
+        self.assertNotIn("unadjusted", retargeted._links)
+
+    def test_set_target_on_adjusted_logs_reset_warning(self) -> None:
+        adjusted = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf).adjust(
+            method="null"
+        )
+        tgt2_sf = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["7", "8"],
+                    "x1": [50.0, 60.0],
+                    "x2": [5.0, 6.0],
+                    "weight": [1.0, 1.0],
+                }
+            )
+        )
+        with self.assertLogs("balance", level="WARNING") as cm:
+            adjusted.set_target(tgt2_sf)
+        self.assertTrue(
+            any("discards current adjustment results" in line for line in cm.output)
+        )
+
+    def test_set_target_on_unadjusted_does_not_log_reset_warning(self) -> None:
+        bf = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf)
+        tgt2_sf = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["7", "8"],
+                    "x1": [50.0, 60.0],
+                    "x2": [5.0, 6.0],
+                    "weight": [1.0, 1.0],
+                }
+            )
+        )
+        with patch("balance.balance_frame.logger.warning") as mock_warning:
+            bf.set_target(tgt2_sf)
+        self.assertFalse(mock_warning.called)
 
     def test_set_target_non_sampleframe_raises(self) -> None:
         bf = BalanceFrame(sample=self.resp_sf)
@@ -1996,6 +2036,63 @@ class TestBalanceFrameSetWeights(BalanceTestCase):
         weights = pd.Series([5.0, 6.0], index=bf.df.index)
         bf.set_weights(weights, use_index=True)
         self.assertEqual(_assert_type(bf.weight_series).tolist(), [5.0, 6.0])
+
+
+class TestBalanceFrameSetAsPreAdjust(BalanceTestCase):
+    class _NoDeepcopy:
+        def __deepcopy__(self, memo: dict[int, object]) -> object:
+            raise RuntimeError("should not be deep-copied")
+
+    def _make_adjusted(self) -> BalanceFrame:
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]})
+        )
+        tgt_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["3", "4"], "x": [1.5, 2.5], "weight": [1.0, 1.0]})
+        )
+        return BalanceFrame(sample=resp_sf, target=tgt_sf).adjust(method="null")
+
+    def test_set_as_pre_adjust_returns_copy_by_default(self) -> None:
+        adjusted = self._make_adjusted()
+        reset = adjusted.set_as_pre_adjust()
+        self.assertIsNot(reset, adjusted)
+        self.assertFalse(reset.is_adjusted)
+        self.assertNotIn("unadjusted", reset._links)
+        self.assertIsNone(reset.model)
+        # Original object remains adjusted and keeps its model.
+        self.assertTrue(adjusted.is_adjusted)
+        self.assertIsNotNone(adjusted.model)
+
+    def test_set_as_pre_adjust_in_place(self) -> None:
+        adjusted = self._make_adjusted()
+        result = adjusted.set_as_pre_adjust(in_place=True)
+        self.assertIs(result, adjusted)
+        self.assertFalse(adjusted.is_adjusted)
+        self.assertNotIn("unadjusted", adjusted._links)
+        self.assertIsNone(adjusted.model)
+
+    def test_set_as_pre_adjust_preserves_target_link(self) -> None:
+        adjusted = self._make_adjusted()
+        reset = adjusted.set_as_pre_adjust()
+        self.assertTrue(reset.has_target())
+
+    def test_set_as_pre_adjust_unadjusted_noop_semantics(self) -> None:
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]})
+        )
+        tgt_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["3", "4"], "x": [1.5, 2.5], "weight": [1.0, 1.0]})
+        )
+        bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
+        reset = bf.set_as_pre_adjust()
+        self.assertFalse(reset.is_adjusted)
+        self.assertIsNone(reset.model)
+
+    def test_set_as_pre_adjust_copy_does_not_deepcopy_unadjusted_link(self) -> None:
+        adjusted = self._make_adjusted()
+        adjusted._links["unadjusted"] = self._NoDeepcopy()
+        reset = adjusted.set_as_pre_adjust()
+        self.assertFalse(reset.is_adjusted)
 
 
 class TestBalanceFrameTrim(BalanceTestCase):
