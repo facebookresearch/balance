@@ -34,7 +34,6 @@ from balance.util import (
     HighCardinalityFeature,
 )
 from balance.utils.file_utils import _to_download
-from balance.weighting_methods.ipw import weights_from_link
 from scipy.sparse import spmatrix
 
 if TYPE_CHECKING:
@@ -942,7 +941,7 @@ class BalanceFrame:
 
     def fit(
         self,
-        target: BalanceFrame | None = None,
+        target: BalanceFrame | SampleFrame | None = None,
         method: str | Callable[..., Any] = "ipw",
         *args: Any,
         **kwargs: Any,
@@ -989,7 +988,7 @@ class BalanceFrame:
 
     def fit_transform(
         self,
-        target: BalanceFrame | None = None,
+        target: BalanceFrame | SampleFrame | None = None,
         method: str | Callable[..., Any] = "ipw",
         *args: Any,
         **kwargs: Any,
@@ -1252,6 +1251,8 @@ class BalanceFrame:
             >>> int(w.shape[0])
             2
         """
+        from balance.weighting_methods.ipw import weights_from_link
+
         self._require_target()
         model = self._require_ipw_model()
         model_link = model.get("sample_link")
