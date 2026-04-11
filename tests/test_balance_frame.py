@@ -2391,6 +2391,27 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         x_sample = adjusted.transform(on="sample")
         self.assertEqual(x_sample.shape[0], len(self.sample.df))
 
+    def test_fit_sampleframe_target_keeps_immutability(self) -> None:
+        bf_no_target = BalanceFrame(sample=SampleFrame.from_sample(self.sample))
+        target_sf = SampleFrame.from_sample(self.target)
+        adjusted = bf_no_target.fit(target=target_sf, method="null")
+        self.assertFalse(bf_no_target.has_target)
+        self.assertTrue(adjusted.has_target)
+        self.assertTrue(adjusted.is_adjusted)
+
+    def test_fit_custom_callable_named_ipw_does_not_inject_ipw_kwargs(self) -> None:
+        def ipw(
+            sample_df: pd.DataFrame,
+            sample_weights: pd.Series,
+            target_df: pd.DataFrame,
+            target_weights: pd.Series,
+        ) -> dict[str, Any]:
+            return {"weight": sample_weights, "model": {"method": "custom_ipw"}}
+
+        adjusted = self.bf.fit(method=ipw)
+        self.assertTrue(adjusted.is_adjusted)
+        self.assertEqual(_assert_type(adjusted.model)["method"], "custom_ipw")
+
     def test_transform_predict_and_predict_weights(self) -> None:
         adjusted = self.bf.fit(method="ipw")
 

@@ -485,6 +485,7 @@ def ipw(
     use_model_matrix: bool = True,
     random_seed: int = 2020,
     store_fit_matrices: bool = False,
+    store_fit_metadata: bool = False,
     *args: Any,
     **kwargs: Any,
 ) -> Dict[str, Any]:
@@ -560,6 +561,11 @@ def ipw(
             memory-intensive for large datasets, so it defaults to ``False``.
             Set to ``True`` when downstream consumers need exact fit-time
             matrices (e.g., :meth:`balance.balance_frame.BalanceFrame.transform`).
+        store_fit_metadata (bool, optional): Whether to persist per-row fit-time
+            metadata (links, probabilities, indices, and fit-time weights) in
+            the returned ``model`` dictionary. This is disabled by default to
+            preserve historical memory footprint; enable it for downstream
+            sklearn-style prediction/weight reproduction workflows.
 
     Examples:
         Example 1: Using HistGradientBoostingClassifier with native categorical support
@@ -1049,8 +1055,9 @@ def ipw(
     # the chosen estimator. These are used by BalanceFrame.predict() so we do
     # not need to reconstruct preprocessing after fitting.
     best_pred = best_model.predict_proba(X_matrix)[:, chosen_class_index]
-    target_probability = np.asarray(best_pred[sample_n:])
-    target_link = link_transform(target_probability)
+    target_probability_raw = np.asarray(best_pred[sample_n:])
+    target_link = link_transform(target_probability_raw)
+    target_probability = 1.0 / (1.0 + np.exp(-target_link))
 
     logger.debug("Predicting")
     weights = weights_from_link(
@@ -1092,33 +1099,54 @@ def ipw(
             f"({dev}). Results may not be accurate"
         )
 
+    model_out: Dict[str, Any] = {
+        "method": "ipw",
+        "X_matrix_columns": X_matrix_columns_names,
+        "fit": fits[best_s_index],
+        "perf": performance,
+        "lambda": best_s,
+        "balance_classes": balance_classes,
+        "weight_trimming_mean_ratio": weight_trimming_mean_ratio,
+        "weight_trimming_percentile": weight_trimming_percentile,
+        "use_model_matrix": use_model_matrix,
+        "na_action": na_action,
+        "one_hot_encoding": one_hot_encoding,
+        "formula": formula,
+        "regularisation_perf": regularisation_perf,
+    }
+
+    if store_fit_metadata:
+        model_out.update(
+            {
+                "sample_link": sample_link,
+                "target_link": target_link,
+                "sample_probability": sample_probability,
+                "target_probability": target_probability,
+                "sample_index": sample_df.index.copy(),
+                "target_index": target_df.index.copy(),
+                "fit_sample_weights": sample_weights.copy(),
+                "fit_target_weights": target_weights.copy(),
+            }
+        )
+
+    if store_fit_matrices:
+        model_out.update(
+            {
+                "model_matrix_sample": X_matrix[:sample_n],
+                "model_matrix_target": X_matrix[sample_n:],
+            }
+        )
+    else:
+        model_out.update(
+            {
+                "model_matrix_sample": None,
+                "model_matrix_target": None,
+            }
+        )
+
     out = {
         "weight": weights,
-        "model": {
-            "method": "ipw",
-            "X_matrix_columns": X_matrix_columns_names,
-            "fit": fits[best_s_index],
-            "perf": performance,
-            "lambda": best_s,
-            "sample_link": sample_link,
-            "target_link": target_link,
-            "sample_probability": sample_probability,
-            "target_probability": target_probability,
-            "sample_index": sample_df.index.copy(),
-            "target_index": target_df.index.copy(),
-            "fit_sample_weights": sample_weights.copy(),
-            "fit_target_weights": target_weights.copy(),
-            "model_matrix_sample": X_matrix[:sample_n] if store_fit_matrices else None,
-            "model_matrix_target": X_matrix[sample_n:] if store_fit_matrices else None,
-            "balance_classes": balance_classes,
-            "weight_trimming_mean_ratio": weight_trimming_mean_ratio,
-            "weight_trimming_percentile": weight_trimming_percentile,
-            "use_model_matrix": use_model_matrix,
-            "na_action": na_action,
-            "one_hot_encoding": one_hot_encoding,
-            "formula": formula,
-            "regularisation_perf": regularisation_perf,
-        },
+        "model": model_out,
     }
 
     logger.debug("Done ipw function")

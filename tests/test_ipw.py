@@ -730,6 +730,7 @@ class TestIPW(
             transformations=None,
             num_lambdas=1,
             store_fit_matrices=True,
+            store_fit_metadata=True,
         )
         model = result["model"]
         fit = model["fit"]
@@ -751,6 +752,7 @@ class TestIPW(
             target_weights=target_weights,
             num_lambdas=2,
             store_fit_matrices=True,
+            store_fit_metadata=True,
         )
         model = result["model"]
         self.assertIn("model_matrix_sample", model)
@@ -773,6 +775,21 @@ class TestIPW(
         )
         self.assertIsNone(result["model"]["model_matrix_sample"])
         self.assertIsNone(result["model"]["model_matrix_target"])
+
+    def test_ipw_does_not_store_fit_metadata_by_default(self) -> None:
+        """Per-row fit metadata is omitted by default to preserve memory."""
+        rng = np.random.RandomState(32)
+        sample_df = pd.DataFrame({"a": rng.normal(size=20), "b": rng.normal(size=20)})
+        target_df = pd.DataFrame({"a": rng.normal(size=30), "b": rng.normal(size=30)})
+        result = balance_ipw.ipw(
+            sample_df=sample_df,
+            sample_weights=pd.Series(np.ones(len(sample_df))),
+            target_df=target_df,
+            target_weights=pd.Series(np.ones(len(target_df))),
+            num_lambdas=2,
+        )
+        self.assertNotIn("sample_link", result["model"])
+        self.assertNotIn("target_probability", result["model"])
 
     def test_ipw_warns_when_penalty_factor_with_custom_model(self) -> None:
         """Providing penalty_factor with custom models emits a warning."""

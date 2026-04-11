@@ -980,10 +980,27 @@ class BalanceFrame:
             >>> adjusted = BalanceFrame(sample=resp, target=tgt).fit(method="null")
             >>> bool(adjusted.is_adjusted)
             True
+
+        Notes:
+            For the built-in IPW method, ``fit()`` enables
+            ``store_fit_metadata=True`` and ``store_fit_matrices=True`` by
+            default so sklearn-style ``transform``/``predict`` APIs can consume
+            fit-time artifacts directly. This may increase memory usage for
+            large inputs; pass these kwargs explicitly as ``False`` to opt out.
         """
+        from balance.weighting_methods.ipw import ipw as built_in_ipw
+
         resolved_method = self._resolve_adjustment_function(method)
-        if getattr(resolved_method, "__name__", None) == "ipw":
+        if resolved_method is built_in_ipw:
             kwargs.setdefault("store_fit_matrices", True)
+            kwargs.setdefault("store_fit_metadata", True)
+
+        if isinstance(target, SampleFrame):
+            # Keep fit immutable when inline target is a SampleFrame.
+            return self.set_target(target, in_place=False).adjust(
+                method=method, *args, **kwargs
+            )
+
         return self.adjust(target=target, method=method, *args, **kwargs)
 
     def fit_transform(
