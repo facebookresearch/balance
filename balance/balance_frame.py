@@ -1039,7 +1039,8 @@ class BalanceFrame:
         model = _assert_type(self._adjustment_model)
         if not isinstance(model, dict) or model.get("method") != "ipw":
             raise ValueError(
-                "predict/transform currently support only IPW-adjusted objects."
+                "predict/transform/predict_weights currently support only "
+                "IPW-adjusted objects."
             )
         fit = model.get("fit")
         columns = model.get("X_matrix_columns")

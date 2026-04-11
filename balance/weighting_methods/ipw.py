@@ -1140,13 +1140,6 @@ def ipw(
                 "model_matrix_target": X_matrix[sample_n:],
             }
         )
-    else:
-        model_out.update(
-            {
-                "model_matrix_sample": None,
-                "model_matrix_target": None,
-            }
-        )
 
     out = {
         "weight": weights,

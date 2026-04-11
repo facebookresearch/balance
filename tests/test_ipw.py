@@ -773,8 +773,8 @@ class TestIPW(
             target_weights=pd.Series(np.ones(len(target_df))),
             num_lambdas=2,
         )
-        self.assertIsNone(result["model"]["model_matrix_sample"])
-        self.assertIsNone(result["model"]["model_matrix_target"])
+        self.assertNotIn("model_matrix_sample", result["model"])
+        self.assertNotIn("model_matrix_target", result["model"])
 
     def test_ipw_does_not_store_fit_metadata_by_default(self) -> None:
         """Per-row fit metadata is omitted by default to preserve memory."""
