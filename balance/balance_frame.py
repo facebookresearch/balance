@@ -1175,6 +1175,8 @@ class BalanceFrame:
             >>> int(p.shape[0])
             2
         """
+        if output not in ("probability", "link"):
+            raise ValueError("output must be one of: 'probability', 'link'")
         model = self._require_ipw_model()
         if output == "probability":
             sample_values = model.get("sample_probability")
@@ -1226,7 +1228,7 @@ class BalanceFrame:
 
         Uses stored fit-time IPW metadata (links, class balancing, trimming,
         and design weights) when available to reproduce fitted responder
-        weights. Falls back to re-predicting links from covariates if needed.
+        weights.
 
         Returns:
             A Series of predicted responder weights.

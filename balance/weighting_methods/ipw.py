@@ -766,7 +766,6 @@ def ipw(
         )
         logger.info(f"The number of columns in the model matrix: {X_matrix.shape[1]}")
         logger.info(f"The number of rows in the model matrix: {X_matrix.shape[0]}")
-        transform_matrix = X_matrix.copy()
     else:
         if custom_model is None:
             raise ValueError(
@@ -816,7 +815,6 @@ def ipw(
         X_matrix = combined
         X_matrix_columns_names = combined.columns.tolist()
         penalty_factor_expanded = [1.0] * combined.shape[1]
-        transform_matrix = X_matrix.copy()
         logger.info(
             "Fitting model on raw covariates without model matrix encoding. "
             "Categorical columns are preserved as pandas Categorical dtype."
@@ -869,6 +867,7 @@ def ipw(
         model_weights,
     )
 
+    chosen_class_index = 1
     if custom_model is None:  # using_default_logistic
         # Standardize columns of the X matrix and penalize the columns of the X matrix according to the penalty_factor.
         # Workaround for sklearn, which doesn't allow for covariate specific penalty terms.
@@ -983,6 +982,7 @@ def ipw(
             raise ValueError(
                 "The provided custom model must be trained on the binary labels {0, 1}."
             ) from error
+        chosen_class_index = class_index
         pred = probas[:, class_index]
         dev[0] = _compute_deviance(y, pred, model_weights)
         prop_dev[0] = _compute_proportion_deviance(dev[0], null_dev)
@@ -1042,7 +1042,7 @@ def ipw(
     # Fit-time target predictions using the exact matrix consumed by
     # the chosen estimator. These are used by BalanceFrame.predict() so we do
     # not need to reconstruct preprocessing after fitting.
-    best_pred = best_model.predict_proba(X_matrix)[:, 1]
+    best_pred = best_model.predict_proba(X_matrix)[:, chosen_class_index]
     target_probability = np.asarray(best_pred[sample_n:])
     target_link = link_transform(target_probability)
 
@@ -1102,8 +1102,8 @@ def ipw(
             "target_index": target_df.index.copy(),
             "fit_sample_weights": sample_weights.copy(),
             "fit_target_weights": target_weights.copy(),
-            "model_matrix_sample": transform_matrix[:sample_n],
-            "model_matrix_target": transform_matrix[sample_n:],
+            "model_matrix_sample": X_matrix[:sample_n],
+            "model_matrix_target": X_matrix[sample_n:],
             "balance_classes": balance_classes,
             "weight_trimming_mean_ratio": weight_trimming_mean_ratio,
             "weight_trimming_percentile": weight_trimming_percentile,

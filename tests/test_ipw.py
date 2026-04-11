@@ -19,7 +19,7 @@ import pandas as pd
 import pytest
 from balance.sample_class import Sample
 from balance.weighting_methods import ipw as balance_ipw
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, issparse
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import log_loss
@@ -704,6 +704,56 @@ class TestIPW(
                 transformations=None,
                 num_lambdas=1,
             )
+
+    def test_ipw_target_probability_respects_custom_class_order(self) -> None:
+        """Stored target_probability follows class-index lookup for custom models."""
+
+        class ReversedClassOrderLR(LogisticRegression):
+            def fit(self, X, y, sample_weight=None):  # type: ignore[override]
+                super().fit(X, y, sample_weight=sample_weight)
+                self.classes_ = self.classes_[::-1]
+                return self
+
+            def predict_proba(self, X):  # type: ignore[override]
+                proba = super().predict_proba(X)
+                return proba[:, ::-1]
+
+        rng = np.random.RandomState(19)
+        sample = pd.DataFrame({"a": rng.normal(size=35)})
+        target = pd.DataFrame({"a": rng.normal(size=40)})
+        result = balance_ipw.ipw(
+            sample_df=sample,
+            sample_weights=pd.Series(np.ones(len(sample))),
+            target_df=target,
+            target_weights=pd.Series(np.ones(len(target))),
+            model=ReversedClassOrderLR(max_iter=300),
+            transformations=None,
+            num_lambdas=1,
+        )
+        model = result["model"]
+        self.assertEqual(model["target_probability"].shape[0], len(target))
+        self.assertTrue(np.all(np.isfinite(model["target_probability"])))
+
+    def test_ipw_stores_fit_time_model_matrices(self) -> None:
+        """IPW model output persists fit-time sample/target matrices."""
+        rng = np.random.RandomState(27)
+        sample_df = pd.DataFrame({"a": rng.normal(size=50), "b": rng.normal(size=50)})
+        target_df = pd.DataFrame({"a": rng.normal(size=70), "b": rng.normal(size=70)})
+        sample_weights = pd.Series(np.ones(len(sample_df)))
+        target_weights = pd.Series(np.ones(len(target_df)))
+        result = balance_ipw.ipw(
+            sample_df=sample_df,
+            sample_weights=sample_weights,
+            target_df=target_df,
+            target_weights=target_weights,
+            num_lambdas=2,
+        )
+        model = result["model"]
+        self.assertIn("model_matrix_sample", model)
+        self.assertIn("model_matrix_target", model)
+        self.assertEqual(model["model_matrix_sample"].shape[0], sample_df.shape[0])
+        self.assertEqual(model["model_matrix_target"].shape[0], target_df.shape[0])
+        self.assertTrue(issparse(model["model_matrix_sample"]))
 
     def test_ipw_warns_when_penalty_factor_with_custom_model(self) -> None:
         """Providing penalty_factor with custom models emits a warning."""

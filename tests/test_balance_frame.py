@@ -2421,6 +2421,8 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             adjusted.transform(on="bad")  # pyre-ignore[6]
         with self.assertRaises(ValueError):
             adjusted.predict(on="bad")  # pyre-ignore[6]
+        with self.assertRaises(ValueError):
+            adjusted.predict(output="bad")  # pyre-ignore[6]
 
     def test_predict_transform_raise_for_non_ipw(self) -> None:
         adjusted = self.bf.fit(method="null")
