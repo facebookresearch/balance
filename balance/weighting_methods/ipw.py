@@ -1055,8 +1055,9 @@ def ipw(
         # Fit-time target predictions using the exact matrix consumed by
         # the chosen estimator. These are used by BalanceFrame.predict() so we do
         # not need to reconstruct preprocessing after fitting.
-        best_pred = best_model.predict_proba(X_matrix)[:, chosen_class_index]
-        target_probability_raw = np.asarray(best_pred[sample_n:])
+        target_matrix = X_matrix[sample_n:]
+        best_pred_target = best_model.predict_proba(target_matrix)[:, chosen_class_index]
+        target_probability_raw = np.asarray(best_pred_target)
         target_link = link_transform(target_probability_raw)
         target_probability = 1.0 / (1.0 + np.exp(-target_link))
 
