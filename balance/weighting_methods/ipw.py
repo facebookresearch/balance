@@ -483,6 +483,7 @@ def ipw(
     # The best practice is for this to be true.
     one_hot_encoding: bool = False,
     use_model_matrix: bool = True,
+    store_fit_matrices: bool = False,
     random_seed: int = 2020,
     *args: Any,
     **kwargs: Any,
@@ -553,6 +554,11 @@ def ipw(
             ``model`` is ``None`` or the default) currently requires
             ``use_model_matrix=True`` and will raise if ``use_model_matrix=False``.
             Defaults to True.
+        store_fit_matrices (bool, optional): Whether to persist fit-time sample/target
+            model matrices in the returned ``model`` dictionary. This can be
+            memory-intensive for large datasets, so it defaults to ``False``.
+            Set to ``True`` when downstream consumers need exact fit-time
+            matrices (e.g., :meth:`balance.balance_frame.BalanceFrame.transform`).
         random_seed (int, optional): Random seed to use. Defaults to 2020.
 
     Examples:
@@ -1102,8 +1108,8 @@ def ipw(
             "target_index": target_df.index.copy(),
             "fit_sample_weights": sample_weights.copy(),
             "fit_target_weights": target_weights.copy(),
-            "model_matrix_sample": X_matrix[:sample_n],
-            "model_matrix_target": X_matrix[sample_n:],
+            "model_matrix_sample": X_matrix[:sample_n] if store_fit_matrices else None,
+            "model_matrix_target": X_matrix[sample_n:] if store_fit_matrices else None,
             "balance_classes": balance_classes,
             "weight_trimming_mean_ratio": weight_trimming_mean_ratio,
             "weight_trimming_percentile": weight_trimming_percentile,

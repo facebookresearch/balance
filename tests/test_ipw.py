@@ -729,10 +729,13 @@ class TestIPW(
             model=ReversedClassOrderLR(max_iter=300),
             transformations=None,
             num_lambdas=1,
+            store_fit_matrices=True,
         )
         model = result["model"]
-        self.assertEqual(model["target_probability"].shape[0], len(target))
-        self.assertTrue(np.all(np.isfinite(model["target_probability"])))
+        fit = model["fit"]
+        class_index = list(fit.classes_).index(1)
+        expected = fit.predict_proba(model["model_matrix_target"])[:, class_index]
+        np.testing.assert_allclose(model["target_probability"], expected)
 
     def test_ipw_stores_fit_time_model_matrices(self) -> None:
         """IPW model output persists fit-time sample/target matrices."""
@@ -747,6 +750,7 @@ class TestIPW(
             target_df=target_df,
             target_weights=target_weights,
             num_lambdas=2,
+            store_fit_matrices=True,
         )
         model = result["model"]
         self.assertIn("model_matrix_sample", model)
@@ -754,6 +758,21 @@ class TestIPW(
         self.assertEqual(model["model_matrix_sample"].shape[0], sample_df.shape[0])
         self.assertEqual(model["model_matrix_target"].shape[0], target_df.shape[0])
         self.assertTrue(issparse(model["model_matrix_sample"]))
+
+    def test_ipw_does_not_store_fit_matrices_by_default(self) -> None:
+        """Fit matrices are omitted by default to avoid extra memory use."""
+        rng = np.random.RandomState(31)
+        sample_df = pd.DataFrame({"a": rng.normal(size=20), "b": rng.normal(size=20)})
+        target_df = pd.DataFrame({"a": rng.normal(size=30), "b": rng.normal(size=30)})
+        result = balance_ipw.ipw(
+            sample_df=sample_df,
+            sample_weights=pd.Series(np.ones(len(sample_df))),
+            target_df=target_df,
+            target_weights=pd.Series(np.ones(len(target_df))),
+            num_lambdas=2,
+        )
+        self.assertIsNone(result["model"]["model_matrix_sample"])
+        self.assertIsNone(result["model"]["model_matrix_target"])
 
     def test_ipw_warns_when_penalty_factor_with_custom_model(self) -> None:
         """Providing penalty_factor with custom models emits a warning."""

@@ -2400,6 +2400,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         w_sample = adjusted.predict_weights()
         self.assertEqual(w_sample.shape[0], len(self.sample.df))
         self.assertTrue(np.all(w_sample.to_numpy() > 0))
+        self.assertEqual(w_sample.name, _assert_type(adjusted.weight_series).name)
         np.testing.assert_allclose(
             w_sample.to_numpy(),
             _assert_type(adjusted.weight_series).to_numpy(),

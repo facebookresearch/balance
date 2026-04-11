@@ -982,6 +982,8 @@ class BalanceFrame:
             >>> bool(adjusted.is_adjusted)
             True
         """
+        if method == "ipw":
+            kwargs.setdefault("store_fit_matrices", True)
         return self.adjust(target=target, method=method, *args, **kwargs)
 
     def fit_transform(
@@ -1272,8 +1274,11 @@ class BalanceFrame:
             weight_trimming_percentile=model.get("weight_trimming_percentile"),
         )
         sample_idx = pd.Index(model.get("sample_index", sample_weights.index))
-        return pd.Series(predicted.values, index=sample_idx).reindex(
-            self._sf_sample.df.index
+        weight_name = getattr(_assert_type(self.weight_series), "name", None)
+        return (
+            pd.Series(predicted.values, index=sample_idx)
+            .reindex(self._sf_sample.df.index)
+            .rename(weight_name)
         )
 
     @property
