@@ -1049,15 +1049,16 @@ def ipw(
     best_s = lambdas[best_s_index]
     best_model = _assert_type(best_model)
     sample_link = _assert_type(link)
-    sample_probability = 1.0 / (1.0 + np.exp(-sample_link))
+    if store_fit_metadata:
+        sample_probability = 1.0 / (1.0 + np.exp(-sample_link))
 
-    # Fit-time target predictions using the exact matrix consumed by
-    # the chosen estimator. These are used by BalanceFrame.predict() so we do
-    # not need to reconstruct preprocessing after fitting.
-    best_pred = best_model.predict_proba(X_matrix)[:, chosen_class_index]
-    target_probability_raw = np.asarray(best_pred[sample_n:])
-    target_link = link_transform(target_probability_raw)
-    target_probability = 1.0 / (1.0 + np.exp(-target_link))
+        # Fit-time target predictions using the exact matrix consumed by
+        # the chosen estimator. These are used by BalanceFrame.predict() so we do
+        # not need to reconstruct preprocessing after fitting.
+        best_pred = best_model.predict_proba(X_matrix)[:, chosen_class_index]
+        target_probability_raw = np.asarray(best_pred[sample_n:])
+        target_link = link_transform(target_probability_raw)
+        target_probability = 1.0 / (1.0 + np.exp(-target_link))
 
     logger.debug("Predicting")
     weights = weights_from_link(
