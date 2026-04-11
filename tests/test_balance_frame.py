@@ -2460,3 +2460,12 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             adjusted.predict()
         with self.assertRaises(ValueError):
             adjusted.predict_weights()
+
+    def test_predict_and_predict_weights_actionable_error_without_fit_metadata(
+        self,
+    ) -> None:
+        adjusted = self.bf.adjust(method="ipw")
+        with self.assertRaisesRegex(ValueError, "store_fit_metadata=True"):
+            adjusted.predict(on="sample", output="link")
+        with self.assertRaisesRegex(ValueError, "store_fit_metadata=True"):
+            adjusted.predict_weights()

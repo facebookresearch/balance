@@ -1010,10 +1010,12 @@ class BalanceFrame:
         *args: Any,
         **kwargs: Any,
     ) -> Self:
-        """Sklearn-style alias combining ``fit`` and ``transform`` in one step.
+        """Convenience alias for :meth:`fit` that returns an adjusted object.
 
-        For weighting methods this is equivalent to :meth:`fit` / :meth:`adjust`,
-        because weights are fitted and applied in a single operation.
+        Unlike sklearn's matrix-oriented ``fit_transform``, this returns a
+        fitted-and-adjusted :class:`BalanceFrame` (it does not return ``X``).
+        For weighting methods, fitting and applying the adjustment happen in a
+        single operation.
 
         Args:
             target: Optional target population to set before fitting.
@@ -1205,7 +1207,9 @@ class BalanceFrame:
             target_values = model.get("target_link")
         if not isinstance(sample_values, np.ndarray):
             raise ValueError(
-                "IPW model is missing fit-time sample predictions for predict()."
+                "IPW model is missing fit-time sample predictions for predict(). "
+                "Call BalanceFrame.fit(method='ipw') or run ipw(..., "
+                "store_fit_metadata=True) before using predict()."
             )
         sample_idx = pd.Index(model.get("sample_index", self._sf_sample.df.index))
         sample_series = pd.Series(sample_values, index=sample_idx).reindex(
@@ -1217,7 +1221,9 @@ class BalanceFrame:
             self._require_target()
             if not isinstance(target_values, np.ndarray):
                 raise ValueError(
-                    "IPW model is missing fit-time target predictions for predict()."
+                    "IPW model is missing fit-time target predictions for predict(). "
+                    "Call BalanceFrame.fit(method='ipw') or run ipw(..., "
+                    "store_fit_metadata=True) before using predict()."
                 )
             target_idx = pd.Index(
                 model.get("target_index", _assert_type(self._sf_target).df.index)
@@ -1229,7 +1235,9 @@ class BalanceFrame:
             self._require_target()
             if not isinstance(target_values, np.ndarray):
                 raise ValueError(
-                    "IPW model is missing fit-time target predictions for predict()."
+                    "IPW model is missing fit-time target predictions for predict(). "
+                    "Call BalanceFrame.fit(method='ipw') or run ipw(..., "
+                    "store_fit_metadata=True) before using predict()."
                 )
             target_idx = pd.Index(
                 model.get("target_index", _assert_type(self._sf_target).df.index)
@@ -1276,7 +1284,11 @@ class BalanceFrame:
         if isinstance(model_link, np.ndarray):
             link = model_link
         else:
-            link = _assert_type(self.predict(on="sample", output="link")).to_numpy()
+            raise ValueError(
+                "IPW model is missing fit-time sample link values for "
+                "predict_weights(). Call BalanceFrame.fit(method='ipw') or run "
+                "ipw(..., store_fit_metadata=True) before using predict_weights()."
+            )
         sample_weights = model.get("training_sample_weights")
         target_weights = model.get("training_target_weights")
         if not isinstance(sample_weights, pd.Series):
