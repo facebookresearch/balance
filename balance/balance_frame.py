@@ -937,7 +937,6 @@ class BalanceFrame:
         self,
         target: BalanceFrame | SampleFrame | None = None,
         method: str | Callable[..., Any] = "ipw",
-        *args: Any,
         **kwargs: Any,
     ) -> Self:
         """Sklearn-style alias for :meth:`adjust`.
@@ -953,7 +952,6 @@ class BalanceFrame:
             method: Adjustment method name (``"ipw"``, ``"cbps"``, ``"rake"``,
                 ``"poststratify"``, ``"null"``) or a custom callable with the
                 weighting-method signature.
-            *args: Positional arguments forwarded to :meth:`adjust`.
             **kwargs: Keyword arguments forwarded to :meth:`adjust`.
 
         Returns:
@@ -992,16 +990,15 @@ class BalanceFrame:
         if isinstance(target, SampleFrame):
             # Keep fit immutable when inline target is a SampleFrame.
             return self.set_target(target, in_place=False).adjust(
-                method=method, *args, **kwargs
+                method=method, **kwargs
             )
 
-        return self.adjust(target=target, method=method, *args, **kwargs)
+        return self.adjust(target=target, method=method, **kwargs)
 
     def fit_transform(
         self,
         target: BalanceFrame | SampleFrame | None = None,
         method: str | Callable[..., Any] = "ipw",
-        *args: Any,
         **kwargs: Any,
     ) -> Self:
         """Convenience alias for :meth:`fit` that returns an adjusted object.
@@ -1014,7 +1011,6 @@ class BalanceFrame:
         Args:
             target: Optional target population to set before fitting.
             method: Adjustment method name or callable.
-            *args: Positional arguments forwarded to :meth:`fit`.
             **kwargs: Keyword arguments forwarded to :meth:`fit`.
 
         Returns:
@@ -1036,7 +1032,7 @@ class BalanceFrame:
             >>> bool(adjusted.is_adjusted)
             True
         """
-        return self.fit(target=target, method=method, *args, **kwargs)
+        return self.fit(target=target, method=method, **kwargs)
 
     def _require_ipw_model(self) -> dict[str, Any]:
         self._require_adjusted()

@@ -2386,6 +2386,14 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         self.assertTrue(adjusted.is_adjusted)
         self.assertEqual(_assert_type(adjusted.model)["method"], "ipw")
 
+    def test_fit_and_fit_transform_reject_positional_forwarding(self) -> None:
+        with self.assertRaises(TypeError):
+            self.bf.fit(None, "ipw", "unexpected positional")  # pyre-ignore[6]
+        with self.assertRaises(TypeError):
+            self.bf.fit_transform(
+                None, "ipw", "unexpected positional"
+            )  # pyre-ignore[6]
+
     def test_fit_callable_ipw_enables_store_fit_matrices(self) -> None:
         adjusted = self.bf.fit(method=ipw_func)
         x_sample = adjusted.transform(on="sample")
