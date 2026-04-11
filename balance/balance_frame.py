@@ -34,7 +34,8 @@ from balance.util import (
     HighCardinalityFeature,
 )
 from balance.utils.file_utils import _to_download
-from balance.weighting_methods.ipw import link_transform, weights_from_link
+from balance.weighting_methods.ipw import weights_from_link
+from scipy.sparse import spmatrix
 
 if TYPE_CHECKING:
     from typing import Self
@@ -751,14 +752,26 @@ class BalanceFrame:
             if new_bf._adjustment_model.get("method") == "ipw":
                 # Preserve training-time design weights so predict_weights can
                 # reproduce IPW weights from fitted links.
+                fit_sample_weights = new_bf._adjustment_model.get("fit_sample_weights")
                 new_bf._adjustment_model.setdefault(
                     "training_sample_weights",
-                    self._sf_sample.df_weights.iloc[:, 0].copy(),
+                    (
+                        fit_sample_weights
+                        if isinstance(fit_sample_weights, pd.Series)
+                        else self._sf_sample.df_weights.iloc[:, 0].copy()
+                    ),
                 )
                 if self._sf_target is not None:
+                    fit_target_weights = new_bf._adjustment_model.get(
+                        "fit_target_weights"
+                    )
                     new_bf._adjustment_model.setdefault(
                         "training_target_weights",
-                        self._sf_target.df_weights.iloc[:, 0].copy(),
+                        (
+                            fit_target_weights
+                            if isinstance(fit_target_weights, pd.Series)
+                            else self._sf_target.df_weights.iloc[:, 0].copy()
+                        ),
                     )
         return new_bf
 
@@ -1023,16 +1036,25 @@ class BalanceFrame:
             raise ValueError("IPW model metadata is missing fitted model information.")
         return model
 
-    def _ipw_aligned_model_matrix(self, covars_df: pd.DataFrame) -> pd.DataFrame:
-        model = self._require_ipw_model()
-        mm = balance_util.model_matrix(
-            sample=covars_df,
-            return_type="one",
-            return_var_type="dataframe",
-        )["model_matrix"]
-        mm_df = _assert_type(mm)
-        expected_cols = _assert_type(model.get("X_matrix_columns"))
-        return mm_df.reindex(columns=expected_cols, fill_value=0.0)
+    def _matrix_to_dataframe(
+        self,
+        matrix: Any,
+        index: pd.Index,
+        columns: list[str],
+    ) -> pd.DataFrame:
+        if isinstance(matrix, pd.DataFrame):
+            return matrix.reindex(index=index, columns=columns)
+        if isinstance(matrix, np.ndarray):
+            return pd.DataFrame(matrix, index=index, columns=columns)
+        if isinstance(matrix, spmatrix):
+            return pd.DataFrame.sparse.from_spmatrix(
+                matrix,
+                index=index,
+                columns=columns,
+            )
+        raise ValueError(
+            "Stored IPW fit-time model matrix is unavailable for this configuration."
+        )
 
     def transform(
         self,
@@ -1069,18 +1091,54 @@ class BalanceFrame:
             >>> x_s.shape[0], x_t.shape[0]
             (2, 2)
         """
+        model = self._require_ipw_model()
+        columns = _assert_type(model.get("X_matrix_columns"))
+        sample_idx = pd.Index(model.get("sample_index", self._sf_sample.df.index))
+        sample_matrix = model.get("model_matrix_sample")
+        if sample_matrix is None:
+            raise ValueError(
+                "IPW model is missing fit-time matrices. transform() cannot "
+                "reconstruct arbitrary preprocessing reliably."
+            )
+        sample_df = self._matrix_to_dataframe(
+            sample_matrix,
+            sample_idx,
+            columns,
+        ).reindex(self._sf_sample.df.index)
         if on == "sample":
-            return self._ipw_aligned_model_matrix(self._sf_sample.df_covars)
+            return sample_df
         if on == "target":
             self._require_target()
-            return self._ipw_aligned_model_matrix(
-                _assert_type(self._sf_target).df_covars
+            target_idx = pd.Index(
+                model.get("target_index", _assert_type(self._sf_target).df.index)
             )
+            target_matrix = model.get("model_matrix_target")
+            if target_matrix is None:
+                raise ValueError(
+                    "IPW model is missing fit-time target matrix for transform()."
+                )
+            return self._matrix_to_dataframe(
+                target_matrix,
+                target_idx,
+                columns,
+            ).reindex(_assert_type(self._sf_target).df.index)
         if on == "both":
             self._require_target()
+            target_idx = pd.Index(
+                model.get("target_index", _assert_type(self._sf_target).df.index)
+            )
+            target_matrix = model.get("model_matrix_target")
+            if target_matrix is None:
+                raise ValueError(
+                    "IPW model is missing fit-time target matrix for transform()."
+                )
             return (
-                self._ipw_aligned_model_matrix(self._sf_sample.df_covars),
-                self._ipw_aligned_model_matrix(_assert_type(self._sf_target).df_covars),
+                sample_df,
+                self._matrix_to_dataframe(
+                    target_matrix,
+                    target_idx,
+                    columns,
+                ).reindex(_assert_type(self._sf_target).df.index),
             )
         raise ValueError("on must be one of: 'sample', 'target', 'both'")
 
@@ -1118,28 +1176,48 @@ class BalanceFrame:
             2
         """
         model = self._require_ipw_model()
-        fit = model["fit"]
-
-        def _predict_for(df_covars: pd.DataFrame, index: pd.Index) -> pd.Series:
-            mm = self._ipw_aligned_model_matrix(df_covars)
-            # pyre-ignore[16]: sklearn estimators expose predict_proba at runtime.
-            probs = fit.predict_proba(mm.to_numpy())[:, 1]
-            if output == "probability":
-                return pd.Series(probs, index=index)
-            return pd.Series(link_transform(np.asarray(probs)), index=index)
-
+        if output == "probability":
+            sample_values = model.get("sample_probability")
+            target_values = model.get("target_probability")
+        else:
+            sample_values = model.get("sample_link")
+            target_values = model.get("target_link")
+        if not isinstance(sample_values, np.ndarray):
+            raise ValueError(
+                "IPW model is missing fit-time sample predictions for predict()."
+            )
+        sample_idx = pd.Index(model.get("sample_index", self._sf_sample.df.index))
+        sample_series = pd.Series(sample_values, index=sample_idx).reindex(
+            self._sf_sample.df.index
+        )
         if on == "sample":
-            return _predict_for(self._sf_sample.df_covars, self._sf_sample.df.index)
+            return sample_series
         if on == "target":
             self._require_target()
-            sf_target = _assert_type(self._sf_target)
-            return _predict_for(sf_target.df_covars, sf_target.df.index)
+            if not isinstance(target_values, np.ndarray):
+                raise ValueError(
+                    "IPW model is missing fit-time target predictions for predict()."
+                )
+            target_idx = pd.Index(
+                model.get("target_index", _assert_type(self._sf_target).df.index)
+            )
+            return pd.Series(target_values, index=target_idx).reindex(
+                _assert_type(self._sf_target).df.index
+            )
         if on == "both":
             self._require_target()
-            sf_target = _assert_type(self._sf_target)
+            if not isinstance(target_values, np.ndarray):
+                raise ValueError(
+                    "IPW model is missing fit-time target predictions for predict()."
+                )
+            target_idx = pd.Index(
+                model.get("target_index", _assert_type(self._sf_target).df.index)
+            )
             return (
-                _predict_for(self._sf_sample.df_covars, self._sf_sample.df.index),
-                _predict_for(sf_target.df_covars, sf_target.df.index),
+                sample_series,
+                pd.Series(target_values, index=target_idx).reindex(
+                    _assert_type(self._sf_target).df.index
+                ),
             )
         raise ValueError("on must be one of: 'sample', 'target', 'both'")
 
@@ -1183,13 +1261,17 @@ class BalanceFrame:
         if not isinstance(target_weights, pd.Series):
             target_weights = _assert_type(self._sf_target).df_weights.iloc[:, 0]
 
-        return weights_from_link(
+        predicted = weights_from_link(
             link=link,
             balance_classes=bool(model.get("balance_classes", True)),
             sample_weights=sample_weights,
             target_weights=target_weights,
             weight_trimming_mean_ratio=model.get("weight_trimming_mean_ratio"),
             weight_trimming_percentile=model.get("weight_trimming_percentile"),
+        )
+        sample_idx = pd.Index(model.get("sample_index", sample_weights.index))
+        return pd.Series(predicted.values, index=sample_idx).reindex(
+            self._sf_sample.df.index
         )
 
     @property

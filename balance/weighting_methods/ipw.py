@@ -766,6 +766,7 @@ def ipw(
         )
         logger.info(f"The number of columns in the model matrix: {X_matrix.shape[1]}")
         logger.info(f"The number of rows in the model matrix: {X_matrix.shape[0]}")
+        transform_matrix = X_matrix.copy()
     else:
         if custom_model is None:
             raise ValueError(
@@ -815,6 +816,7 @@ def ipw(
         X_matrix = combined
         X_matrix_columns_names = combined.columns.tolist()
         penalty_factor_expanded = [1.0] * combined.shape[1]
+        transform_matrix = X_matrix.copy()
         logger.info(
             "Fitting model on raw covariates without model matrix encoding. "
             "Categorical columns are preserved as pandas Categorical dtype."
@@ -1033,10 +1035,20 @@ def ipw(
     best_model = fits[best_s_index]
     link = links[best_s_index]
     best_s = lambdas[best_s_index]
+    best_model = _assert_type(best_model)
+    sample_link = _assert_type(link)
+    sample_probability = 1.0 / (1.0 + np.exp(-sample_link))
+
+    # Fit-time target predictions using the exact matrix consumed by
+    # the chosen estimator. These are used by BalanceFrame.predict() so we do
+    # not need to reconstruct preprocessing after fitting.
+    best_pred = best_model.predict_proba(X_matrix)[:, 1]
+    target_probability = np.asarray(best_pred[sample_n:])
+    target_link = link_transform(target_probability)
 
     logger.debug("Predicting")
     weights = weights_from_link(
-        link,
+        sample_link,
         balance_classes,
         sample_weights,
         target_weights,
@@ -1045,7 +1057,6 @@ def ipw(
     )
 
     logger.info(f"Chosen lambda: {best_s}")
-    best_model = _assert_type(best_model)
     performance = model_coefs(
         best_model,
         feature_names=list(X_matrix_columns_names),
@@ -1083,11 +1094,23 @@ def ipw(
             "fit": fits[best_s_index],
             "perf": performance,
             "lambda": best_s,
-            "sample_link": link,
+            "sample_link": sample_link,
+            "target_link": target_link,
+            "sample_probability": sample_probability,
+            "target_probability": target_probability,
+            "sample_index": sample_df.index.copy(),
+            "target_index": target_df.index.copy(),
+            "fit_sample_weights": sample_weights.copy(),
+            "fit_target_weights": target_weights.copy(),
+            "model_matrix_sample": transform_matrix[:sample_n],
+            "model_matrix_target": transform_matrix[sample_n:],
             "balance_classes": balance_classes,
             "weight_trimming_mean_ratio": weight_trimming_mean_ratio,
             "weight_trimming_percentile": weight_trimming_percentile,
             "use_model_matrix": use_model_matrix,
+            "na_action": na_action,
+            "one_hot_encoding": one_hot_encoding,
+            "formula": formula,
             "regularisation_perf": regularisation_perf,
         },
     }
