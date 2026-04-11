@@ -2480,3 +2480,29 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             adjusted.predict(on="sample", output="link")
         with self.assertRaisesRegex(ValueError, "store_fit_metadata=True"):
             adjusted.predict_weights()
+
+    def test_transform_error_message_is_actionable_without_fit_matrices(self) -> None:
+        adjusted = self.bf.adjust(method="ipw")
+        with self.assertRaisesRegex(ValueError, "store_fit_matrices=True"):
+            adjusted.transform(on="sample")
+
+    def test_transform_predict_and_predict_weights_handle_duplicate_indices(
+        self,
+    ) -> None:
+        adjusted = self.bf.fit(method="ipw")
+        model = _assert_type(adjusted.model)
+        model["sample_index"] = pd.Index(["dup"] * len(adjusted._sf_sample.df))
+        model["target_index"] = pd.Index(
+            ["dup_t"] * len(_assert_type(adjusted._sf_target).df)
+        )
+
+        transformed = adjusted.transform(on="sample")
+        self.assertEqual(list(transformed.index), list(adjusted._sf_sample.df.index))
+
+        predicted = adjusted.predict(on="sample", output="probability")
+        self.assertEqual(list(predicted.index), list(adjusted._sf_sample.df.index))
+
+        predicted_weights = adjusted.predict_weights()
+        self.assertEqual(
+            list(predicted_weights.index), list(adjusted._sf_sample.df.index)
+        )

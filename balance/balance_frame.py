@@ -1068,6 +1068,38 @@ class BalanceFrame:
             "Stored IPW fit-time model matrix is unavailable for this configuration."
         )
 
+    def _align_frame_to_index(
+        self,
+        frame: pd.DataFrame,
+        index: pd.Index,
+        caller: str,
+    ) -> pd.DataFrame:
+        if frame.index.is_unique and index.is_unique:
+            return frame.reindex(index)
+        if len(frame.index) != len(index):
+            raise ValueError(
+                f"Stored IPW {caller} output cannot be aligned to the current "
+                "index because lengths differ. Re-fit with "
+                "BalanceFrame.fit(method='ipw') to refresh stored artifacts."
+            )
+        return frame.set_axis(index, axis=0)
+
+    def _align_series_to_index(
+        self,
+        series: pd.Series,
+        index: pd.Index,
+        caller: str,
+    ) -> pd.Series:
+        if series.index.is_unique and index.is_unique:
+            return series.reindex(index)
+        if len(series.index) != len(index):
+            raise ValueError(
+                f"Stored IPW {caller} output cannot be aligned to the current "
+                "index because lengths differ. Re-fit with "
+                "BalanceFrame.fit(method='ipw') to refresh stored artifacts."
+            )
+        return series.set_axis(index, axis=0)
+
     def transform(
         self,
         on: Literal["sample", "target", "both"] = "both",
@@ -1110,13 +1142,19 @@ class BalanceFrame:
         if sample_matrix is None:
             raise ValueError(
                 "IPW model is missing fit-time matrices. transform() cannot "
-                "reconstruct arbitrary preprocessing reliably."
+                "reconstruct arbitrary preprocessing reliably. Call "
+                "BalanceFrame.fit(method='ipw') or run ipw(..., "
+                "store_fit_matrices=True) before using transform()."
             )
-        sample_df = self._matrix_to_dataframe(
-            sample_matrix,
-            sample_idx,
-            columns,
-        ).reindex(self._sf_sample.df.index)
+        sample_df = self._align_frame_to_index(
+            self._matrix_to_dataframe(
+                sample_matrix,
+                sample_idx,
+                columns,
+            ),
+            self._sf_sample.df.index,
+            caller="transform()",
+        )
         if on == "sample":
             return sample_df
         if on == "target":
@@ -1129,11 +1167,15 @@ class BalanceFrame:
                 raise ValueError(
                     "IPW model is missing fit-time target matrix for transform()."
                 )
-            return self._matrix_to_dataframe(
-                target_matrix,
-                target_idx,
-                columns,
-            ).reindex(_assert_type(self._sf_target).df.index)
+            return self._align_frame_to_index(
+                self._matrix_to_dataframe(
+                    target_matrix,
+                    target_idx,
+                    columns,
+                ),
+                _assert_type(self._sf_target).df.index,
+                caller="transform()",
+            )
         if on == "both":
             self._require_target()
             target_idx = pd.Index(
@@ -1146,11 +1188,15 @@ class BalanceFrame:
                 )
             return (
                 sample_df,
-                self._matrix_to_dataframe(
-                    target_matrix,
-                    target_idx,
-                    columns,
-                ).reindex(_assert_type(self._sf_target).df.index),
+                self._align_frame_to_index(
+                    self._matrix_to_dataframe(
+                        target_matrix,
+                        target_idx,
+                        columns,
+                    ),
+                    _assert_type(self._sf_target).df.index,
+                    caller="transform()",
+                ),
             )
         raise ValueError("on must be one of: 'sample', 'target', 'both'")
 
@@ -1203,8 +1249,10 @@ class BalanceFrame:
                 "store_fit_metadata=True) before using predict()."
             )
         sample_idx = pd.Index(model.get("sample_index", self._sf_sample.df.index))
-        sample_series = pd.Series(sample_values, index=sample_idx).reindex(
-            self._sf_sample.df.index
+        sample_series = self._align_series_to_index(
+            pd.Series(sample_values, index=sample_idx),
+            self._sf_sample.df.index,
+            caller="predict()",
         )
         if on == "sample":
             return sample_series
@@ -1219,8 +1267,10 @@ class BalanceFrame:
             target_idx = pd.Index(
                 model.get("target_index", _assert_type(self._sf_target).df.index)
             )
-            return pd.Series(target_values, index=target_idx).reindex(
-                _assert_type(self._sf_target).df.index
+            return self._align_series_to_index(
+                pd.Series(target_values, index=target_idx),
+                _assert_type(self._sf_target).df.index,
+                caller="predict()",
             )
         if on == "both":
             self._require_target()
@@ -1235,8 +1285,10 @@ class BalanceFrame:
             )
             return (
                 sample_series,
-                pd.Series(target_values, index=target_idx).reindex(
-                    _assert_type(self._sf_target).df.index
+                self._align_series_to_index(
+                    pd.Series(target_values, index=target_idx),
+                    _assert_type(self._sf_target).df.index,
+                    caller="predict()",
                 ),
             )
         raise ValueError("on must be one of: 'sample', 'target', 'both'")
@@ -1297,11 +1349,11 @@ class BalanceFrame:
         )
         sample_idx = pd.Index(model.get("sample_index", sample_weights.index))
         weight_name = getattr(_assert_type(self.weight_series), "name", None)
-        return (
-            pd.Series(predicted.values, index=sample_idx)
-            .reindex(self._sf_sample.df.index)
-            .rename(weight_name)
-        )
+        return self._align_series_to_index(
+            pd.Series(predicted.values, index=sample_idx),
+            self._sf_sample.df.index,
+            caller="predict_weights()",
+        ).rename(weight_name)
 
     @property
     def model(self) -> dict[str, Any] | None:
