@@ -982,7 +982,8 @@ class BalanceFrame:
             >>> bool(adjusted.is_adjusted)
             True
         """
-        if method == "ipw":
+        resolved_method = self._resolve_adjustment_function(method)
+        if getattr(resolved_method, "__name__", None) == "ipw":
             kwargs.setdefault("store_fit_matrices", True)
         return self.adjust(target=target, method=method, *args, **kwargs)
 

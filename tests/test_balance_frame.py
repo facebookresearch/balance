@@ -21,6 +21,7 @@ from balance.sample_class import Sample
 from balance.sample_frame import SampleFrame
 from balance.testutil import BalanceTestCase
 from balance.util import _assert_type
+from balance.weighting_methods.ipw import ipw as ipw_func
 
 
 class TestBalanceFrameConstruction(BalanceTestCase):
@@ -2384,6 +2385,11 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         adjusted = self.bf.fit_transform(method="ipw")
         self.assertTrue(adjusted.is_adjusted)
         self.assertEqual(_assert_type(adjusted.model)["method"], "ipw")
+
+    def test_fit_callable_ipw_enables_store_fit_matrices(self) -> None:
+        adjusted = self.bf.fit(method=ipw_func)
+        x_sample = adjusted.transform(on="sample")
+        self.assertEqual(x_sample.shape[0], len(self.sample.df))
 
     def test_transform_predict_and_predict_weights(self) -> None:
         adjusted = self.bf.fit(method="ipw")
