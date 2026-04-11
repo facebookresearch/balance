@@ -749,29 +749,23 @@ class BalanceFrame:
         if isinstance(new_bf._adjustment_model, dict):
             new_bf._adjustment_model.setdefault("method", method_name)
             if new_bf._adjustment_model.get("method") == "ipw":
-                # Preserve training-time design weights so predict_weights can
-                # reproduce IPW weights from fitted links.
+                # Preserve training-time design weights only when the weighting
+                # method already opted into fit metadata.
                 fit_sample_weights = new_bf._adjustment_model.get("fit_sample_weights")
-                new_bf._adjustment_model.setdefault(
-                    "training_sample_weights",
-                    (
-                        fit_sample_weights
-                        if isinstance(fit_sample_weights, pd.Series)
-                        else self._sf_sample.df_weights.iloc[:, 0].copy()
-                    ),
-                )
+                if isinstance(fit_sample_weights, pd.Series):
+                    new_bf._adjustment_model.setdefault(
+                        "training_sample_weights",
+                        fit_sample_weights,
+                    )
                 if self._sf_target is not None:
                     fit_target_weights = new_bf._adjustment_model.get(
                         "fit_target_weights"
                     )
-                    new_bf._adjustment_model.setdefault(
-                        "training_target_weights",
-                        (
-                            fit_target_weights
-                            if isinstance(fit_target_weights, pd.Series)
-                            else self._sf_target.df_weights.iloc[:, 0].copy()
-                        ),
-                    )
+                    if isinstance(fit_target_weights, pd.Series):
+                        new_bf._adjustment_model.setdefault(
+                            "training_target_weights",
+                            fit_target_weights,
+                        )
         return new_bf
 
     def adjust(

@@ -484,9 +484,9 @@ def ipw(
     one_hot_encoding: bool = False,
     use_model_matrix: bool = True,
     random_seed: int = 2020,
+    *args: Any,
     store_fit_matrices: bool = False,
     store_fit_metadata: bool = False,
-    *args: Any,
     **kwargs: Any,
 ) -> Dict[str, Any]:
     """Fit an ipw (inverse propensity score weighting) for the sample using the target.
@@ -1056,7 +1056,9 @@ def ipw(
         # the chosen estimator. These are used by BalanceFrame.predict() so we do
         # not need to reconstruct preprocessing after fitting.
         target_matrix = X_matrix[sample_n:]
-        best_pred_target = best_model.predict_proba(target_matrix)[:, chosen_class_index]
+        best_pred_target = best_model.predict_proba(target_matrix)[
+            :, chosen_class_index
+        ]
         target_probability_raw = np.asarray(best_pred_target)
         target_link = link_transform(target_probability_raw)
         target_probability = 1.0 / (1.0 + np.exp(-target_link))

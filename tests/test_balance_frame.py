@@ -2465,6 +2465,9 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         self,
     ) -> None:
         adjusted = self.bf.adjust(method="ipw")
+        model = _assert_type(adjusted.model)
+        self.assertNotIn("training_sample_weights", model)
+        self.assertNotIn("training_target_weights", model)
         with self.assertRaisesRegex(ValueError, "store_fit_metadata=True"):
             adjusted.predict(on="sample", output="link")
         with self.assertRaisesRegex(ValueError, "store_fit_metadata=True"):
