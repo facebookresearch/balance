@@ -761,6 +761,26 @@ class TestIPW(
         self.assertEqual(model["model_matrix_target"].shape[0], target_df.shape[0])
         self.assertTrue(issparse(model["model_matrix_sample"]))
 
+    def test_ipw_stores_indices_with_fit_matrices_only(self) -> None:
+        """Stored matrices include matching row indices even without fit metadata."""
+        rng = np.random.RandomState(33)
+        sample_df = pd.DataFrame({"a": rng.normal(size=12), "b": rng.normal(size=12)})
+        target_df = pd.DataFrame({"a": rng.normal(size=15), "b": rng.normal(size=15)})
+        result = balance_ipw.ipw(
+            sample_df=sample_df,
+            sample_weights=pd.Series(np.ones(len(sample_df))),
+            target_df=target_df,
+            target_weights=pd.Series(np.ones(len(target_df))),
+            num_lambdas=2,
+            store_fit_matrices=True,
+            store_fit_metadata=False,
+        )
+        model = result["model"]
+        self.assertIn("sample_index", model)
+        self.assertIn("target_index", model)
+        self.assertTrue(model["sample_index"].equals(sample_df.index))
+        self.assertTrue(model["target_index"].equals(target_df.index))
+
     def test_ipw_does_not_store_fit_matrices_by_default(self) -> None:
         """Fit matrices are omitted by default to avoid extra memory use."""
         rng = np.random.RandomState(31)
