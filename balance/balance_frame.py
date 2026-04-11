@@ -34,6 +34,7 @@ from balance.util import (
     HighCardinalityFeature,
 )
 from balance.utils.file_utils import _to_download
+from balance.weighting_methods.ipw import link_transform, weights_from_link
 
 if TYPE_CHECKING:
     from typing import Self
@@ -747,6 +748,18 @@ class BalanceFrame:
         # present; only set a fallback when the model doesn't include one.
         if isinstance(new_bf._adjustment_model, dict):
             new_bf._adjustment_model.setdefault("method", method_name)
+            if new_bf._adjustment_model.get("method") == "ipw":
+                # Preserve training-time design weights so predict_weights can
+                # reproduce IPW weights from fitted links.
+                new_bf._adjustment_model.setdefault(
+                    "training_sample_weights",
+                    self._sf_sample.df_weights.iloc[:, 0].copy(),
+                )
+                if self._sf_target is not None:
+                    new_bf._adjustment_model.setdefault(
+                        "training_target_weights",
+                        self._sf_target.df_weights.iloc[:, 0].copy(),
+                    )
         return new_bf
 
     def adjust(
@@ -913,6 +926,271 @@ class BalanceFrame:
         )
 
         return self._build_adjusted_frame(result, method)
+
+    def fit(
+        self,
+        target: BalanceFrame | None = None,
+        method: str | Callable[..., Any] = "ipw",
+        *args: Any,
+        **kwargs: Any,
+    ) -> Self:
+        """Sklearn-style alias for :meth:`adjust`.
+
+        In ``balance``, fitting the survey-weight model also produces the adjusted
+        sample weights, so ``fit(...)`` maps directly to ``adjust(...)`` and
+        returns an adjusted object.
+
+        Args:
+            target: Optional target population to set before fitting. If
+                provided, this method behaves like ``set_target(target)``
+                followed by fitting.
+            method: Adjustment method name (``"ipw"``, ``"cbps"``, ``"rake"``,
+                ``"poststratify"``, ``"null"``) or a custom callable with the
+                weighting-method signature.
+            *args: Positional arguments forwarded to :meth:`adjust`.
+            **kwargs: Keyword arguments forwarded to :meth:`adjust`.
+
+        Returns:
+            A new adjusted BalanceFrame (or subclass instance).
+
+        Raises:
+            ValueError: If no target is available and none is provided, or if
+                ``method`` is invalid.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [0.0, 1.0], "weight": [1.0, 1.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [0.2, 0.8], "weight": [1.0, 1.0]}))
+            >>> adjusted = BalanceFrame(sample=resp, target=tgt).fit(method="null")
+            >>> bool(adjusted.is_adjusted)
+            True
+        """
+        return self.adjust(target=target, method=method, *args, **kwargs)
+
+    def fit_transform(
+        self,
+        target: BalanceFrame | None = None,
+        method: str | Callable[..., Any] = "ipw",
+        *args: Any,
+        **kwargs: Any,
+    ) -> Self:
+        """Sklearn-style alias combining ``fit`` and ``transform`` in one step.
+
+        For weighting methods this is equivalent to :meth:`fit` / :meth:`adjust`,
+        because weights are fitted and applied in a single operation.
+
+        Args:
+            target: Optional target population to set before fitting.
+            method: Adjustment method name or callable.
+            *args: Positional arguments forwarded to :meth:`fit`.
+            **kwargs: Keyword arguments forwarded to :meth:`fit`.
+
+        Returns:
+            A new adjusted BalanceFrame.
+
+        Raises:
+            ValueError: If no target is available and none is provided, or if
+                ``method`` is invalid.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [0.0, 1.0], "weight": [1.0, 1.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [0.2, 0.8], "weight": [1.0, 1.0]}))
+            >>> adjusted = BalanceFrame(sample=resp, target=tgt).fit_transform(method="null")
+            >>> bool(adjusted.is_adjusted)
+            True
+        """
+        return self.fit(target=target, method=method, *args, **kwargs)
+
+    def _require_ipw_model(self) -> dict[str, Any]:
+        self._require_adjusted()
+        model = _assert_type(self._adjustment_model)
+        if not isinstance(model, dict) or model.get("method") != "ipw":
+            raise ValueError(
+                "predict/transform currently support only IPW-adjusted objects."
+            )
+        fit = model.get("fit")
+        columns = model.get("X_matrix_columns")
+        if fit is None or not isinstance(columns, list):
+            raise ValueError("IPW model metadata is missing fitted model information.")
+        return model
+
+    def _ipw_aligned_model_matrix(self, covars_df: pd.DataFrame) -> pd.DataFrame:
+        model = self._require_ipw_model()
+        mm = balance_util.model_matrix(
+            sample=covars_df,
+            return_type="one",
+            return_var_type="dataframe",
+        )["model_matrix"]
+        mm_df = _assert_type(mm)
+        expected_cols = _assert_type(model.get("X_matrix_columns"))
+        return mm_df.reindex(columns=expected_cols, fill_value=0.0)
+
+    def transform(
+        self,
+        on: Literal["sample", "target", "both"] = "both",
+    ) -> pd.DataFrame | tuple[pd.DataFrame, pd.DataFrame]:
+        """Return fitted-model feature matrices (IPW only).
+
+        This applies the same model-matrix transformation to sample/target
+        covariates and aligns columns to the fitted IPW model.
+
+        Args:
+            on: Which population to transform. ``"sample"`` returns the responder
+                matrix, ``"target"`` returns the target matrix, and ``"both"``
+                returns ``(sample_matrix, target_matrix)``.
+
+        Returns:
+            A transformed model matrix DataFrame, or a tuple of two DataFrames
+            when ``on="both"``.
+
+        Raises:
+            ValueError: If the object is not IPW-adjusted, if target is missing
+                for ``on in {"target", "both"}``, or if ``on`` is invalid.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [0.0, 1.0], "weight": [1.0, 1.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [0.2, 0.8], "weight": [1.0, 1.0]}))
+            >>> adjusted = BalanceFrame(sample=resp, target=tgt).fit(method="ipw")
+            >>> x_s, x_t = adjusted.transform(on="both")
+            >>> x_s.shape[0], x_t.shape[0]
+            (2, 2)
+        """
+        if on == "sample":
+            return self._ipw_aligned_model_matrix(self._sf_sample.df_covars)
+        if on == "target":
+            self._require_target()
+            return self._ipw_aligned_model_matrix(
+                _assert_type(self._sf_target).df_covars
+            )
+        if on == "both":
+            self._require_target()
+            return (
+                self._ipw_aligned_model_matrix(self._sf_sample.df_covars),
+                self._ipw_aligned_model_matrix(_assert_type(self._sf_target).df_covars),
+            )
+        raise ValueError("on must be one of: 'sample', 'target', 'both'")
+
+    def predict(
+        self,
+        on: Literal["sample", "target", "both"] = "target",
+        output: Literal["probability", "link"] = "probability",
+    ) -> pd.Series | tuple[pd.Series, pd.Series]:
+        """Predict IPW propensity outputs on sample/target covariates.
+
+        Args:
+            on: Which population to predict on (``"sample"``, ``"target"``,
+                or ``"both"``).
+            output: Output scale. ``"probability"`` returns class-1 propensity
+                probabilities. ``"link"`` returns logit-transformed values.
+
+        Returns:
+            A prediction Series, or a tuple of two Series when ``on="both"``.
+
+        Raises:
+            ValueError: If the object is not IPW-adjusted, if target is missing
+                for ``on in {"target", "both"}``, or if ``on`` is invalid.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [0.0, 1.0], "weight": [1.0, 1.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [0.2, 0.8], "weight": [1.0, 1.0]}))
+            >>> adjusted = BalanceFrame(sample=resp, target=tgt).fit(method="ipw")
+            >>> p = adjusted.predict(on="target", output="probability")
+            >>> int(p.shape[0])
+            2
+        """
+        model = self._require_ipw_model()
+        fit = model["fit"]
+
+        def _predict_for(df_covars: pd.DataFrame, index: pd.Index) -> pd.Series:
+            mm = self._ipw_aligned_model_matrix(df_covars)
+            # pyre-ignore[16]: sklearn estimators expose predict_proba at runtime.
+            probs = fit.predict_proba(mm.to_numpy())[:, 1]
+            if output == "probability":
+                return pd.Series(probs, index=index)
+            return pd.Series(link_transform(np.asarray(probs)), index=index)
+
+        if on == "sample":
+            return _predict_for(self._sf_sample.df_covars, self._sf_sample.df.index)
+        if on == "target":
+            self._require_target()
+            sf_target = _assert_type(self._sf_target)
+            return _predict_for(sf_target.df_covars, sf_target.df.index)
+        if on == "both":
+            self._require_target()
+            sf_target = _assert_type(self._sf_target)
+            return (
+                _predict_for(self._sf_sample.df_covars, self._sf_sample.df.index),
+                _predict_for(sf_target.df_covars, sf_target.df.index),
+            )
+        raise ValueError("on must be one of: 'sample', 'target', 'both'")
+
+    def predict_weights(self) -> pd.Series:
+        """Predict responder weights from a fitted IPW model.
+
+        Uses stored fit-time IPW metadata (links, class balancing, trimming,
+        and design weights) when available to reproduce fitted responder
+        weights. Falls back to re-predicting links from covariates if needed.
+
+        Returns:
+            A Series of predicted responder weights.
+
+        Raises:
+            ValueError: If the object is not IPW-adjusted or has no target.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [0.0, 1.0], "weight": [1.0, 1.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [0.2, 0.8], "weight": [1.0, 1.0]}))
+            >>> adjusted = BalanceFrame(sample=resp, target=tgt).fit(method="ipw")
+            >>> w = adjusted.predict_weights()
+            >>> int(w.shape[0])
+            2
+        """
+        self._require_target()
+        model = self._require_ipw_model()
+        model_link = model.get("sample_link")
+        if isinstance(model_link, np.ndarray):
+            link = model_link
+        else:
+            link = _assert_type(self.predict(on="sample", output="link")).to_numpy()
+        sample_weights = model.get("training_sample_weights")
+        target_weights = model.get("training_target_weights")
+        if not isinstance(sample_weights, pd.Series):
+            sample_weights = self._sf_sample.df_weights.iloc[:, 0]
+        if not isinstance(target_weights, pd.Series):
+            target_weights = _assert_type(self._sf_target).df_weights.iloc[:, 0]
+
+        return weights_from_link(
+            link=link,
+            balance_classes=bool(model.get("balance_classes", True)),
+            sample_weights=sample_weights,
+            target_weights=target_weights,
+            weight_trimming_mean_ratio=model.get("weight_trimming_mean_ratio"),
+            weight_trimming_percentile=model.get("weight_trimming_percentile"),
+        )
 
     @property
     def model(self) -> dict[str, Any] | None:

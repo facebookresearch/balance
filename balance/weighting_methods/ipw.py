@@ -1083,7 +1083,11 @@ def ipw(
             "fit": fits[best_s_index],
             "perf": performance,
             "lambda": best_s,
+            "sample_link": link,
+            "balance_classes": balance_classes,
             "weight_trimming_mean_ratio": weight_trimming_mean_ratio,
+            "weight_trimming_percentile": weight_trimming_percentile,
+            "use_model_matrix": use_model_matrix,
             "regularisation_perf": regularisation_perf,
         },
     }

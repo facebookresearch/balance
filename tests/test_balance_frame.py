@@ -2347,3 +2347,86 @@ class TestBalanceFrameEdgeCases(BalanceTestCase):
         )
         bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
         self.assertEqual(bf.df.shape[0], 0)
+
+
+class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [f"s{i}" for i in range(8)],
+                    "x": [0.1, 0.3, 0.7, 1.1, 1.4, 1.7, 2.0, 2.2],
+                    "z": ["a", "a", "b", "b", "a", "b", "a", "b"],
+                    "weight": [1.0] * 8,
+                }
+            )
+        )
+        self.target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [f"t{i}" for i in range(8)],
+                    "x": [0.2, 0.5, 0.8, 1.0, 1.6, 1.9, 2.1, 2.4],
+                    "z": ["a", "b", "a", "b", "a", "b", "a", "b"],
+                    "weight": [1.0] * 8,
+                }
+            )
+        )
+        self.bf = BalanceFrame.from_sample(self.sample.set_target(self.target))
+
+    def test_fit_is_alias_for_adjust(self) -> None:
+        adjusted = self.bf.fit(method="ipw")
+        self.assertTrue(adjusted.is_adjusted)
+        self.assertIsNotNone(adjusted.model)
+        self.assertEqual(_assert_type(adjusted.model)["method"], "ipw")
+
+    def test_fit_transform_is_alias_for_fit(self) -> None:
+        adjusted = self.bf.fit_transform(method="ipw")
+        self.assertTrue(adjusted.is_adjusted)
+        self.assertEqual(_assert_type(adjusted.model)["method"], "ipw")
+
+    def test_transform_predict_and_predict_weights(self) -> None:
+        adjusted = self.bf.fit(method="ipw")
+
+        x_sample, x_target = adjusted.transform(on="both")
+        self.assertEqual(x_sample.shape[1], x_target.shape[1])
+        self.assertEqual(x_sample.shape[0], len(self.sample.df))
+        self.assertEqual(x_target.shape[0], len(self.target.df))
+
+        p_target = adjusted.predict(on="target", output="probability")
+        self.assertEqual(p_target.shape[0], len(self.target.df))
+        self.assertTrue(np.all(np.isfinite(p_target.to_numpy())))
+
+        w_sample = adjusted.predict_weights()
+        self.assertEqual(w_sample.shape[0], len(self.sample.df))
+        self.assertTrue(np.all(w_sample.to_numpy() > 0))
+        np.testing.assert_allclose(
+            w_sample.to_numpy(),
+            _assert_type(adjusted.weight_series).to_numpy(),
+            rtol=1e-6,
+            atol=1e-8,
+        )
+
+    def test_predict_on_both_and_link_output(self) -> None:
+        adjusted = self.bf.fit(method="ipw")
+        link_sample, link_target = adjusted.predict(on="both", output="link")
+        self.assertEqual(link_sample.shape[0], len(self.sample.df))
+        self.assertEqual(link_target.shape[0], len(self.target.df))
+        self.assertTrue(np.all(np.isfinite(link_sample.to_numpy())))
+        self.assertTrue(np.all(np.isfinite(link_target.to_numpy())))
+
+    def test_transform_predict_invalid_on_raises(self) -> None:
+        adjusted = self.bf.fit(method="ipw")
+        with self.assertRaises(ValueError):
+            adjusted.transform(on="bad")  # pyre-ignore[6]
+        with self.assertRaises(ValueError):
+            adjusted.predict(on="bad")  # pyre-ignore[6]
+
+    def test_predict_transform_raise_for_non_ipw(self) -> None:
+        adjusted = self.bf.fit(method="null")
+        with self.assertRaises(ValueError):
+            adjusted.transform()
+        with self.assertRaises(ValueError):
+            adjusted.predict()
+        with self.assertRaises(ValueError):
+            adjusted.predict_weights()

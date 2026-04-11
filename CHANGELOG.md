@@ -21,6 +21,19 @@
   - Clears the current adjustment model and unadjusted link since the object
     is no longer considered adjusted after baseline reset.
 
+- **Added sklearn-style `fit` / `transform` / `predict` workflow on `BalanceFrame`**
+  - Added `BalanceFrame.fit(...)` and `fit_transform(...)` as explicit,
+    sklearn-like entry points that map to `adjust(...)`.
+  - Added `BalanceFrame.transform(on=...)` to return IPW-aligned transformed
+    feature matrices for sample, target, or both.
+  - Added `BalanceFrame.predict(on=..., output=...)` for fitted IPW propensity
+    predictions and `predict_weights()` for reproducing responder weights from
+    the fitted IPW model.
+  - Stored IPW fit metadata needed to reproduce weights (`balance_classes`,
+    trimming options, and training design weights used at fit-time).
+  - This makes the weighting API easier to use in sklearn-style workflows while
+    preserving existing `adjust(...)` behavior.
+
 ## Tests
 
 - Added coverage for:
