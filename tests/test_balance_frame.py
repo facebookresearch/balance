@@ -2522,8 +2522,27 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
 
         transformed = scored_holdout.transform(on="sample")
         propensity = scored_holdout.predict(on="sample", output="probability")
+        link = scored_holdout.predict(on="sample", output="link")
         weights = scored_holdout.predict_weights()
 
         self.assertEqual(transformed.shape[0], len(holdout_bf._sf_sample.df))
         self.assertEqual(propensity.shape[0], len(holdout_bf._sf_sample.df))
         self.assertEqual(weights.shape[0], len(holdout_bf._sf_sample.df))
+        self.assertTrue(np.all(np.isfinite(weights.to_numpy())))
+        self.assertTrue(np.all(weights.to_numpy() > 0))
+
+        from balance.weighting_methods.ipw import weights_from_link
+
+        expected_weights = weights_from_link(
+            link=link.to_numpy(),
+            balance_classes=bool(_assert_type(scored_holdout.model).get("balance_classes")),
+            sample_weights=holdout_bf._sf_sample.df_weights.iloc[:, 0],
+            target_weights=_assert_type(holdout_bf._sf_target).df_weights.iloc[:, 0],
+            weight_trimming_mean_ratio=_assert_type(scored_holdout.model).get(
+                "weight_trimming_mean_ratio"
+            ),
+            weight_trimming_percentile=_assert_type(scored_holdout.model).get(
+                "weight_trimming_percentile"
+            ),
+        )
+        np.testing.assert_allclose(weights.to_numpy(), expected_weights.to_numpy())
