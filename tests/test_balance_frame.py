@@ -2941,3 +2941,56 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
 
         propensity = scored_holdout.predict(on="sample", output="probability")
         self.assertEqual(propensity.shape[0], len(holdout_bf._sf_sample.df))
+
+    def test_holdout_recompute_handles_missing_na_indicator_columns_in_formula(
+        self,
+    ) -> None:
+        train_sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(6)],
+                "gender": ["f", None, "m", "f", "m", "f"],
+                "income": [10, 20, 30, 40, 50, 60],
+                "weight": [1.0] * 6,
+            }
+        )
+        train_target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(6)],
+                "gender": ["m", "m", None, "f", "m", "f"],
+                "income": [15, 25, 35, 45, 55, 65],
+                "weight": [1.0] * 6,
+            }
+        )
+        holdout_sample_df = pd.DataFrame(
+            {
+                "id": [f"hs{i}" for i in range(4)],
+                "gender": ["f", "m", "m", "f"],
+                "income": [11, 22, 33, 44],
+                "weight": [1.0] * 4,
+            }
+        )
+        holdout_target_df = pd.DataFrame(
+            {
+                "id": [f"ht{i}" for i in range(4)],
+                "gender": ["m", "f", "m", "f"],
+                "income": [12, 24, 36, 48],
+                "weight": [1.0] * 4,
+            }
+        )
+        train_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(train_sample_df),
+            target=SampleFrame.from_frame(train_target_df),
+        )
+        holdout_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(holdout_sample_df),
+            target=SampleFrame.from_frame(holdout_target_df),
+        )
+
+        fitted_train = train_bf.fit(method="ipw", na_action="add_indicator")
+        scored_holdout = holdout_bf.with_fitted_ipw_model(fitted_train)
+
+        transformed = scored_holdout.transform(on="sample")
+        propensity = scored_holdout.predict(on="sample", output="probability")
+
+        self.assertEqual(transformed.shape[0], len(holdout_sample_df))
+        self.assertEqual(propensity.shape[0], len(holdout_sample_df))

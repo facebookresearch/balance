@@ -16,6 +16,7 @@ from __future__ import annotations
 import collections
 import copy
 import logging
+import re
 from copy import deepcopy
 from typing import Any, Callable, cast, Literal, TYPE_CHECKING
 
@@ -1246,13 +1247,30 @@ class BalanceFrame:
             formula = model.get("formula")
             one_hot_encoding = bool(model.get("one_hot_encoding", False))
             combined = pd.concat((sample_covars, target_covars), axis=0)
+            add_na_to_model_matrix = na_action == "add_indicator"
+            if na_action == "add_indicator":
+                combined = balance_util.add_na_indicator_to_combined(combined)
+                formula_items = (
+                    [formula]
+                    if isinstance(formula, str)
+                    else formula if isinstance(formula, list) else []
+                )
+                expected_na_indicators = {
+                    token
+                    for formula_item in formula_items
+                    for token in re.findall(r"\b_is_na_[A-Za-z0-9_]+\b", formula_item)
+                }
+                for indicator in expected_na_indicators:
+                    if indicator not in combined.columns:
+                        combined[indicator] = False
+                add_na_to_model_matrix = False
             model_matrix_out = balance_util.model_matrix(
                 combined,
                 return_type="one",
                 return_var_type="sparse",
                 formula=formula,
                 one_hot_encoding=one_hot_encoding,
-                add_na=(na_action == "add_indicator"),
+                add_na=add_na_to_model_matrix,
             )
             sparse_matrix = _assert_type(model_matrix_out["model_matrix"], csc_matrix)
             sparse_columns = _assert_type(
