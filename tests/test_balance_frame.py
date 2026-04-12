@@ -2493,6 +2493,23 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         ):
             self.bf.with_fitted_ipw_model(no_model)
 
+    def test_with_fitted_ipw_model_requires_matching_covariate_columns(self) -> None:
+        train_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),
+            target=SampleFrame.from_frame(self.target.df.iloc[:5].copy()),
+        )
+        holdout_sample_df = self.sample.df.iloc[:5].copy().rename(columns={"x": "x2"})
+        holdout_target_df = self.target.df.iloc[:5].copy().rename(columns={"x": "x2"})
+        holdout_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(holdout_sample_df),
+            target=SampleFrame.from_frame(holdout_target_df),
+        )
+        fitted_train = train_bf.fit(method="ipw")
+        with self.assertRaisesRegex(
+            ValueError, "matching sample covariate column names"
+        ):
+            holdout_bf.with_fitted_ipw_model(fitted_train)
+
     def test_predict_and_predict_weights_actionable_error_without_fit_metadata(
         self,
     ) -> None:
@@ -2507,6 +2524,17 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
 
     def test_transform_error_message_is_actionable_without_fit_matrices(self) -> None:
         adjusted = self.bf.adjust(method="ipw")
+        with self.assertRaisesRegex(ValueError, "store_fit_matrices=True"):
+            adjusted.transform(on="sample")
+
+    def test_fit_with_store_fit_flags_disabled_keeps_transform_actionable_error(
+        self,
+    ) -> None:
+        adjusted = self.bf.fit(
+            method="ipw",
+            store_fit_matrices=False,
+            store_fit_metadata=False,
+        )
         with self.assertRaisesRegex(ValueError, "store_fit_matrices=True"):
             adjusted.transform(on="sample")
 

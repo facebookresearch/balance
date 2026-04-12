@@ -1068,13 +1068,20 @@ class BalanceFrame:
 
         Raises:
             ValueError: If ``fitted`` is not IPW-adjusted or lacks estimator
-                information in its stored model.
+                information in its stored model, or if covariate column names
+                differ between ``self`` and ``fitted``.
 
         Examples:
             >>> fitted = self.fit(method="ipw")
             >>> holdout_scored = holdout_bf.with_fitted_ipw_model(fitted)
             >>> holdout_scored.predict(on="sample").shape[0]
             len(holdout_bf._sf_sample.df)
+
+        Notes:
+            The attached estimator object is intentionally shared (shallow-copied)
+            between ``fitted`` and the returned object to avoid duplicating model
+            memory. The returned object remains unadjusted; this method attaches
+            scoring artifacts only.
         """
         if fitted.model is None:
             raise ValueError(
@@ -1085,6 +1092,19 @@ class BalanceFrame:
             raise ValueError("fitted must contain an IPW adjustment model.")
         if model.get("fit") is None:
             raise ValueError("fitted IPW model is missing estimator information.")
+        if list(self._sf_sample.covars().df.columns) != list(
+            fitted._sf_sample.covars().df.columns
+        ):
+            raise ValueError(
+                "self and fitted must have matching sample covariate column names."
+            )
+        if self._sf_target is not None and fitted._sf_target is not None:
+            if list(self._sf_target.covars().df.columns) != list(
+                fitted._sf_target.covars().df.columns
+            ):
+                raise ValueError(
+                    "self and fitted must have matching target covariate column names."
+                )
 
         out = type(self)._create(
             sample=copy.deepcopy(self._sf_sample),
@@ -1327,6 +1347,11 @@ class BalanceFrame:
                 artifacts is required but no target is available, or if ``on`` is
                 invalid.
 
+        Notes:
+            When stored fit artifacts are stale for the current rows, this method
+            may recompute and cache refreshed matrices in the attached IPW model.
+            That cache update is an intentional in-memory mutation.
+
         Examples:
             >>> import pandas as pd
             >>> from balance.sample_frame import SampleFrame
@@ -1440,6 +1465,12 @@ class BalanceFrame:
                 for ``on in {"target", "both"}``, if recomputation of sample-side
                 predictions is required but no target is available, or if ``on`` is
                 invalid.
+
+        Notes:
+            When stored fit-time predictions are stale for the current rows, this
+            method may recompute and cache refreshed probabilities/links in the
+            attached IPW model. That cache update is an intentional in-memory
+            mutation.
 
         Examples:
             >>> import pandas as pd
@@ -1605,12 +1636,20 @@ class BalanceFrame:
             or len(sample_weights) != len(link)
             or not sample_weights.index.equals(current_sample_weights.index)
         ):
+            logger.debug(
+                "Falling back to current sample design weights in predict_weights(); "
+                "stored training_sample_weights are unavailable or incompatible."
+            )
             sample_weights = current_sample_weights
         if (
             not isinstance(target_weights, pd.Series)
             or len(target_weights) != len(current_target_weights)
             or not target_weights.index.equals(current_target_weights.index)
         ):
+            logger.debug(
+                "Falling back to current target design weights in predict_weights(); "
+                "stored training_target_weights are unavailable or incompatible."
+            )
             target_weights = current_target_weights
 
         predicted = weights_from_link(
