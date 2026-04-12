@@ -1341,9 +1341,10 @@ class BalanceFrame:
                 "BalanceFrame.fit(method='ipw') or run ipw(..., "
                 "store_fit_matrices=True) before using transform()."
             )
-        sample_same_set = sample_idx.isin(current_sample_idx).all() and current_sample_idx.isin(
-            sample_idx
-        ).all()
+        sample_same_set = (
+            sample_idx.isin(current_sample_idx).all()
+            and current_sample_idx.isin(sample_idx).all()
+        )
         if getattr(sample_matrix, "shape", [0])[0] != len(current_sample_idx) or (
             len(sample_idx) == len(current_sample_idx) and not sample_same_set
         ):
@@ -1370,9 +1371,10 @@ class BalanceFrame:
             )
         current_target_idx = _assert_type(self._sf_target).df.index
         target_idx_fallback = pd.Index(model.get("target_index", current_target_idx))
-        target_same_set = target_idx_fallback.isin(current_target_idx).all() and current_target_idx.isin(
-            target_idx_fallback
-        ).all()
+        target_same_set = (
+            target_idx_fallback.isin(current_target_idx).all()
+            and current_target_idx.isin(target_idx_fallback).all()
+        )
         if getattr(target_matrix, "shape", [0])[0] != len(current_target_idx) or (
             len(target_idx_fallback) == len(current_target_idx) and not target_same_set
         ):
