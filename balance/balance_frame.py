@@ -34,7 +34,7 @@ from balance.util import (
     HighCardinalityFeature,
 )
 from balance.utils.file_utils import _to_download
-from scipy.sparse import csc_matrix, diags, hstack, spmatrix
+from scipy.sparse import csc_matrix, diags, spmatrix
 from scipy.special import expit
 
 if TYPE_CHECKING:
@@ -758,7 +758,7 @@ class BalanceFrame:
                         "training_sample_weights",
                         fit_sample_weights,
                     )
-                if self._sf_target is not None:
+                if new_bf._sf_target is not None:
                     fit_target_weights = new_bf._adjustment_model.get(
                         "fit_target_weights"
                     )
@@ -1191,14 +1191,19 @@ class BalanceFrame:
                 model_matrix_out["model_matrix_columns_names"], list
             )
             sparse_col_to_idx = {col: i for i, col in enumerate(sparse_columns)}
-            aligned_cols = []
-            for col in columns:
-                idx = sparse_col_to_idx.get(col)
-                if idx is None:
-                    aligned_cols.append(csc_matrix((sparse_matrix.shape[0], 1)))
-                else:
-                    aligned_cols.append(sparse_matrix[:, idx])
-            combined_matrix = hstack(aligned_cols, format="csc")
+            target_idx = np.array([sparse_col_to_idx.get(col, -1) for col in columns])
+            present_mask = target_idx >= 0
+            if present_mask.any():
+                projection = csc_matrix(
+                    (
+                        np.ones(int(present_mask.sum()), dtype=float),
+                        (target_idx[present_mask], np.flatnonzero(present_mask)),
+                    ),
+                    shape=(sparse_matrix.shape[1], len(columns)),
+                )
+                combined_matrix = sparse_matrix @ projection
+            else:
+                combined_matrix = csc_matrix((sparse_matrix.shape[0], len(columns)))
         else:
             combined_matrix = pd.concat((sample_covars, target_covars), axis=0)
             na_action = cast(str, model.get("na_action", "add_indicator"))
