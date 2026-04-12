@@ -1189,6 +1189,17 @@ class BalanceFrame:
             combined_matrix = hstack(aligned_cols, format="csc")
         else:
             combined_matrix = pd.concat((sample_covars, target_covars), axis=0)
+            na_action = cast(str, model.get("na_action", "add_indicator"))
+            if na_action == "add_indicator":
+                combined_matrix = balance_util.add_na_indicator_to_combined(
+                    combined_matrix
+                )
+
+            categorical_cols = combined_matrix.select_dtypes(
+                ["string", "boolean", "object"]
+            ).columns
+            for col in categorical_cols:
+                combined_matrix[col] = pd.Categorical(combined_matrix[col])
 
         if isinstance(combined_matrix, pd.DataFrame):
             combined_matrix = combined_matrix.reindex(columns=columns, fill_value=0)

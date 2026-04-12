@@ -2646,3 +2646,56 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             ),
         )
         np.testing.assert_allclose(weights.to_numpy(), expected.to_numpy())
+
+    def test_use_model_matrix_false_recompute_matches_fit_preprocessing(self) -> None:
+        from sklearn.ensemble import HistGradientBoostingClassifier
+
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(6)],
+                "x": [1.0, np.nan, 2.0, 3.0, np.nan, 4.0],
+                "z": ["a", "b", "a", "b", "a", "b"],
+                "weight": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(6)],
+                "x": [1.5, 2.5, np.nan, 3.5, 4.5, np.nan],
+                "z": ["a", "b", "a", "b", "a", "b"],
+                "weight": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            }
+        )
+        train_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df.copy()),
+            target=SampleFrame.from_frame(target_df.copy()),
+        )
+        holdout_sample_df = sample_df.copy()
+        holdout_target_df = target_df.copy()
+        holdout_sample_df.index = pd.Index(
+            [f"h{i}" for i in range(len(holdout_sample_df))]
+        )
+        holdout_target_df.index = pd.Index(
+            [f"ht{i}" for i in range(len(holdout_target_df))]
+        )
+        holdout_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(holdout_sample_df),
+            target=SampleFrame.from_frame(holdout_target_df),
+        )
+
+        fitted_train = train_bf.fit(
+            method="ipw",
+            use_model_matrix=False,
+            model=HistGradientBoostingClassifier(random_state=0),
+            na_action="add_indicator",
+            transformations=None,
+        )
+        scored_holdout = holdout_bf.with_fitted_ipw_model(fitted_train)
+
+        transformed = scored_holdout.transform(on="sample")
+        self.assertListEqual(
+            list(transformed.columns),
+            list(_assert_type(scored_holdout.model)["X_matrix_columns"]),
+        )
+        self.assertEqual(list(transformed.index), list(holdout_bf._sf_sample.df.index))
+        self.assertIsInstance(transformed["z"].dtype, pd.CategoricalDtype)
