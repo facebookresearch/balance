@@ -777,7 +777,9 @@ def ipw(
         logger.info(
             f"The formula used to build the model matrix: {model_matrix_output['formula']}"
         )
-        resolved_formula = cast(str | list[str] | None, model_matrix_output["formula"])
+        resolved_formula = cast(
+            Union[str, List[str], None], model_matrix_output["formula"]
+        )
         logger.info(f"The number of columns in the model matrix: {X_matrix.shape[1]}")
         logger.info(f"The number of rows in the model matrix: {X_matrix.shape[0]}")
     else:
