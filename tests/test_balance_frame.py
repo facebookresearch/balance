@@ -2696,6 +2696,29 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             scored_holdout_for_predict.predict(on="sample", output="probability")
             self.assertEqual(compute_mock.call_count, 1)
 
+    def test_predict_reordered_indices_uses_alignment_without_recompute(self) -> None:
+        train_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),
+            target=SampleFrame.from_frame(self.target.df.iloc[:5].copy()),
+        )
+        reordered_sample_df = self.sample.df.iloc[:5].copy().iloc[::-1]
+        reordered_target_df = self.target.df.iloc[:5].copy().iloc[::-1]
+        holdout_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(reordered_sample_df),
+            target=SampleFrame.from_frame(reordered_target_df),
+        )
+        fitted_train = train_bf.fit(method="ipw")
+        scored_holdout = holdout_bf.with_fitted_ipw_model(fitted_train)
+
+        with patch.object(
+            scored_holdout,
+            "_compute_ipw_matrices_from_fit",
+            wraps=scored_holdout._compute_ipw_matrices_from_fit,
+        ) as compute_mock:
+            scored_holdout.predict(on="sample", output="probability")
+            scored_holdout.predict(on="target", output="probability")
+            self.assertEqual(compute_mock.call_count, 0)
+
     def test_transform_on_target_does_not_require_sample_matrix(self) -> None:
         train_bf = BalanceFrame(
             sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),

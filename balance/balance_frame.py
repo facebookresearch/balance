@@ -1474,9 +1474,12 @@ class BalanceFrame:
                     "Call BalanceFrame.fit(method='ipw') or run ipw(..., "
                     "store_fit_metadata=True) before using predict(on='sample'/'both')."
                 )
+            sample_same_set = (
+                sample_idx.isin(current_sample_idx).all()
+                and current_sample_idx.isin(sample_idx).all()
+            )
             if sample_values.shape[0] != len(current_sample_idx) or (
-                len(sample_idx) == len(current_sample_idx)
-                and not sample_idx.equals(current_sample_idx)
+                len(sample_idx) == len(current_sample_idx) and not sample_same_set
             ):
                 from balance.weighting_methods.ipw import link_transform
 
@@ -1515,9 +1518,12 @@ class BalanceFrame:
                     "Call BalanceFrame.fit(method='ipw') or run ipw(..., "
                     "store_fit_metadata=True) before using predict(on='target'/'both')."
                 )
+            target_same_set = (
+                target_idx.isin(current_target_idx).all()
+                and current_target_idx.isin(target_idx).all()
+            )
             if target_values.shape[0] != len(current_target_idx) or (
-                len(target_idx) == len(current_target_idx)
-                and not target_idx.equals(current_target_idx)
+                len(target_idx) == len(current_target_idx) and not target_same_set
             ):
                 from balance.weighting_methods.ipw import link_transform
 
