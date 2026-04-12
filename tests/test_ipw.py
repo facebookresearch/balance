@@ -19,7 +19,7 @@ import pandas as pd
 import pytest
 from balance.sample_class import Sample
 from balance.weighting_methods import ipw as balance_ipw
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, issparse
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import log_loss
@@ -704,6 +704,140 @@ class TestIPW(
                 transformations=None,
                 num_lambdas=1,
             )
+
+    def test_ipw_target_probability_respects_custom_class_order(self) -> None:
+        """Stored target_probability follows class-index lookup for custom models."""
+
+        class ReversedClassOrderLR(LogisticRegression):
+            def fit(self, X, y, sample_weight=None):  # type: ignore[override]
+                super().fit(X, y, sample_weight=sample_weight)
+                self.classes_ = self.classes_[::-1]
+                return self
+
+            def predict_proba(self, X):  # type: ignore[override]
+                proba = super().predict_proba(X)
+                return proba[:, ::-1]
+
+        rng = np.random.RandomState(19)
+        sample = pd.DataFrame({"a": rng.normal(size=35)})
+        target = pd.DataFrame({"a": rng.normal(size=40)})
+        result = balance_ipw.ipw(
+            sample_df=sample,
+            sample_weights=pd.Series(np.ones(len(sample))),
+            target_df=target,
+            target_weights=pd.Series(np.ones(len(target))),
+            model=ReversedClassOrderLR(max_iter=300),
+            transformations=None,
+            num_lambdas=1,
+            store_fit_matrices=True,
+            store_fit_metadata=True,
+        )
+        model = result["model"]
+        fit = model["fit"]
+        class_index = list(fit.classes_).index(1)
+        expected = fit.predict_proba(model["model_matrix_target"])[:, class_index]
+        np.testing.assert_allclose(model["target_probability"], expected)
+
+    def test_ipw_stored_probabilities_match_raw_predict_proba(self) -> None:
+        """Stored sample/target probabilities are raw estimator outputs."""
+        sample_df = pd.DataFrame({"x": [0.0, 0.1, 0.2, 0.3, 1.0, 1.1, 1.2, 1.3]})
+        target_df = pd.DataFrame({"x": [0.05, 0.25, 0.95, 1.15]})
+        result = balance_ipw.ipw(
+            sample_df=sample_df,
+            sample_weights=pd.Series(np.ones(len(sample_df))),
+            target_df=target_df,
+            target_weights=pd.Series(np.ones(len(target_df))),
+            model=DecisionTreeClassifier(max_depth=2, random_state=0),
+            transformations=None,
+            num_lambdas=1,
+            store_fit_matrices=True,
+            store_fit_metadata=True,
+        )
+        model = result["model"]
+        fit = model["fit"]
+        class_index = list(fit.classes_).index(1)
+        expected_sample = fit.predict_proba(model["model_matrix_sample"])[
+            :, class_index
+        ]
+        expected_target = fit.predict_proba(model["model_matrix_target"])[
+            :, class_index
+        ]
+
+        np.testing.assert_allclose(model["sample_probability"], expected_sample)
+        np.testing.assert_allclose(model["target_probability"], expected_target)
+
+    def test_ipw_stores_fit_time_model_matrices(self) -> None:
+        """IPW model output persists fit-time sample/target matrices."""
+        rng = np.random.RandomState(27)
+        sample_df = pd.DataFrame({"a": rng.normal(size=50), "b": rng.normal(size=50)})
+        target_df = pd.DataFrame({"a": rng.normal(size=70), "b": rng.normal(size=70)})
+        sample_weights = pd.Series(np.ones(len(sample_df)))
+        target_weights = pd.Series(np.ones(len(target_df)))
+        result = balance_ipw.ipw(
+            sample_df=sample_df,
+            sample_weights=sample_weights,
+            target_df=target_df,
+            target_weights=target_weights,
+            num_lambdas=2,
+            store_fit_matrices=True,
+            store_fit_metadata=True,
+        )
+        model = result["model"]
+        self.assertIn("model_matrix_sample", model)
+        self.assertIn("model_matrix_target", model)
+        self.assertEqual(model["model_matrix_sample"].shape[0], sample_df.shape[0])
+        self.assertEqual(model["model_matrix_target"].shape[0], target_df.shape[0])
+        self.assertTrue(issparse(model["model_matrix_sample"]))
+
+    def test_ipw_stores_indices_with_fit_matrices_only(self) -> None:
+        """Stored matrices include matching row indices even without fit metadata."""
+        rng = np.random.RandomState(33)
+        sample_df = pd.DataFrame({"a": rng.normal(size=12), "b": rng.normal(size=12)})
+        target_df = pd.DataFrame({"a": rng.normal(size=15), "b": rng.normal(size=15)})
+        result = balance_ipw.ipw(
+            sample_df=sample_df,
+            sample_weights=pd.Series(np.ones(len(sample_df))),
+            target_df=target_df,
+            target_weights=pd.Series(np.ones(len(target_df))),
+            num_lambdas=2,
+            store_fit_matrices=True,
+            store_fit_metadata=False,
+        )
+        model = result["model"]
+        self.assertIn("sample_index", model)
+        self.assertIn("target_index", model)
+        self.assertTrue(model["sample_index"].equals(sample_df.index))
+        self.assertTrue(model["target_index"].equals(target_df.index))
+
+    def test_ipw_does_not_store_fit_matrices_by_default(self) -> None:
+        """Fit matrices are omitted by default to avoid extra memory use."""
+        rng = np.random.RandomState(31)
+        sample_df = pd.DataFrame({"a": rng.normal(size=20), "b": rng.normal(size=20)})
+        target_df = pd.DataFrame({"a": rng.normal(size=30), "b": rng.normal(size=30)})
+        result = balance_ipw.ipw(
+            sample_df=sample_df,
+            sample_weights=pd.Series(np.ones(len(sample_df))),
+            target_df=target_df,
+            target_weights=pd.Series(np.ones(len(target_df))),
+            num_lambdas=2,
+        )
+        self.assertNotIn("model_matrix_sample", result["model"])
+        self.assertNotIn("model_matrix_target", result["model"])
+
+    def test_ipw_does_not_store_fit_metadata_by_default(self) -> None:
+        """Per-row fit metadata is omitted by default to preserve memory."""
+        rng = np.random.RandomState(32)
+        sample_df = pd.DataFrame({"a": rng.normal(size=20), "b": rng.normal(size=20)})
+        target_df = pd.DataFrame({"a": rng.normal(size=30), "b": rng.normal(size=30)})
+        result = balance_ipw.ipw(
+            sample_df=sample_df,
+            sample_weights=pd.Series(np.ones(len(sample_df))),
+            target_df=target_df,
+            target_weights=pd.Series(np.ones(len(target_df))),
+            num_lambdas=2,
+        )
+        self.assertNotIn("sample_link", result["model"])
+        self.assertNotIn("target_probability", result["model"])
 
     def test_ipw_warns_when_penalty_factor_with_custom_model(self) -> None:
         """Providing penalty_factor with custom models emits a warning."""

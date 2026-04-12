@@ -485,6 +485,8 @@ def ipw(
     use_model_matrix: bool = True,
     random_seed: int = 2020,
     *args: Any,
+    store_fit_matrices: bool = False,
+    store_fit_metadata: bool = False,
     **kwargs: Any,
 ) -> Dict[str, Any]:
     """Fit an ipw (inverse propensity score weighting) for the sample using the target.
@@ -554,6 +556,16 @@ def ipw(
             ``use_model_matrix=True`` and will raise if ``use_model_matrix=False``.
             Defaults to True.
         random_seed (int, optional): Random seed to use. Defaults to 2020.
+        store_fit_matrices (bool, optional): Whether to persist fit-time sample/target
+            model matrices in the returned ``model`` dictionary. This can be
+            memory-intensive for large datasets, so it defaults to ``False``.
+            Set to ``True`` when downstream consumers need exact fit-time
+            matrices (e.g., :meth:`balance.balance_frame.BalanceFrame.transform`).
+        store_fit_metadata (bool, optional): Whether to persist per-row fit-time
+            metadata (links, probabilities, indices, and fit-time weights) in
+            the returned ``model`` dictionary. This is disabled by default to
+            preserve historical memory footprint; enable it for downstream
+            sklearn-style prediction/weight reproduction workflows.
 
     Examples:
         Example 1: Using HistGradientBoostingClassifier with native categorical support
@@ -867,6 +879,9 @@ def ipw(
         model_weights,
     )
 
+    chosen_class_index = 1
+    fit_scaler: StandardScaler | None = None
+    fit_penalties_skl: list[float] | None = None
     if custom_model is None:  # using_default_logistic
         # Standardize columns of the X matrix and penalize the columns of the X matrix according to the penalty_factor.
         # Workaround for sklearn, which doesn't allow for covariate specific penalty terms.
@@ -877,6 +892,7 @@ def ipw(
 
         # TODO: add test to verify expected behavior from model_weights
         X_matrix = scaler.fit_transform(X_matrix, sample_weight=model_weights)
+        fit_scaler = scaler
 
         if penalty_factor is not None:
             penalties_skl = [
@@ -886,6 +902,7 @@ def ipw(
             ]
             for i in range(len(penalties_skl)):
                 X_matrix[:, i] *= penalties_skl[i]
+            fit_penalties_skl = penalties_skl
 
         X_matrix = csr_matrix(X_matrix)
 
@@ -981,6 +998,7 @@ def ipw(
             raise ValueError(
                 "The provided custom model must be trained on the binary labels {0, 1}."
             ) from error
+        chosen_class_index = class_index
         pred = probas[:, class_index]
         dev[0] = _compute_deviance(y, pred, model_weights)
         prop_dev[0] = _compute_proportion_deviance(dev[0], null_dev)
@@ -1033,10 +1051,28 @@ def ipw(
     best_model = fits[best_s_index]
     link = links[best_s_index]
     best_s = lambdas[best_s_index]
+    best_model = _assert_type(best_model)
+    sample_link = _assert_type(link)
+    if store_fit_metadata:
+        sample_matrix = X_matrix[:sample_n]
+        sample_probability = np.asarray(
+            best_model.predict_proba(sample_matrix)[:, chosen_class_index]
+        )
+        sample_link = link_transform(sample_probability)
+
+        # Fit-time target predictions using the exact matrix consumed by
+        # the chosen estimator. These are used by BalanceFrame.predict() so we do
+        # not need to reconstruct preprocessing after fitting.
+        target_matrix = X_matrix[sample_n:]
+        best_pred_target = best_model.predict_proba(target_matrix)[
+            :, chosen_class_index
+        ]
+        target_probability = np.asarray(best_pred_target)
+        target_link = link_transform(target_probability)
 
     logger.debug("Predicting")
     weights = weights_from_link(
-        link,
+        sample_link,
         balance_classes,
         sample_weights,
         target_weights,
@@ -1045,7 +1081,6 @@ def ipw(
     )
 
     logger.info(f"Chosen lambda: {best_s}")
-    best_model = _assert_type(best_model)
     performance = model_coefs(
         best_model,
         feature_names=list(X_matrix_columns_names),
@@ -1075,17 +1110,57 @@ def ipw(
             f"({dev}). Results may not be accurate"
         )
 
+    model_out: Dict[str, Any] = {
+        "method": "ipw",
+        "X_matrix_columns": X_matrix_columns_names,
+        "fit": fits[best_s_index],
+        "perf": performance,
+        "lambda": best_s,
+        "balance_classes": balance_classes,
+        "weight_trimming_mean_ratio": weight_trimming_mean_ratio,
+        "weight_trimming_percentile": weight_trimming_percentile,
+        "use_model_matrix": use_model_matrix,
+        "na_action": na_action,
+        "one_hot_encoding": one_hot_encoding,
+        "transformations": transformations,
+        "formula": formula,
+        "regularisation_perf": regularisation_perf,
+        "fit_scaler": fit_scaler,
+        "fit_penalties_skl": fit_penalties_skl,
+        "fit_matrix_type": (
+            "sparse"
+            if issparse(X_matrix)
+            else "dataframe" if isinstance(X_matrix, pd.DataFrame) else "dense"
+        ),
+    }
+
+    if store_fit_metadata:
+        model_out.update(
+            {
+                "sample_link": sample_link,
+                "target_link": target_link,
+                "sample_probability": sample_probability,
+                "target_probability": target_probability,
+                "sample_index": sample_df.index.copy(),
+                "target_index": target_df.index.copy(),
+                "fit_sample_weights": sample_weights.copy(),
+                "fit_target_weights": target_weights.copy(),
+            }
+        )
+
+    if store_fit_matrices:
+        model_out.update(
+            {
+                "model_matrix_sample": X_matrix[:sample_n],
+                "model_matrix_target": X_matrix[sample_n:],
+                "sample_index": sample_df.index.copy(),
+                "target_index": target_df.index.copy(),
+            }
+        )
+
     out = {
         "weight": weights,
-        "model": {
-            "method": "ipw",
-            "X_matrix_columns": X_matrix_columns_names,
-            "fit": fits[best_s_index],
-            "perf": performance,
-            "lambda": best_s,
-            "weight_trimming_mean_ratio": weight_trimming_mean_ratio,
-            "regularisation_perf": regularisation_perf,
-        },
+        "model": model_out,
     }
 
     logger.debug("Done ipw function")
