@@ -2474,6 +2474,24 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         with self.assertRaises(ValueError):
             adjusted.predict_weights()
 
+    def test_predict_transform_raise_actionable_error_without_attached_model(
+        self,
+    ) -> None:
+        no_model = BalanceFrame.from_sample(self.sample.set_target(self.target))
+        with self.assertRaisesRegex(ValueError, "attached IPW model"):
+            no_model.transform()
+        with self.assertRaisesRegex(ValueError, "attached IPW model"):
+            no_model.predict()
+        with self.assertRaisesRegex(ValueError, "attached IPW model"):
+            no_model.predict_weights()
+
+    def test_with_fitted_ipw_model_requires_adjusted_input(self) -> None:
+        no_model = BalanceFrame(sample=SampleFrame.from_sample(self.sample))
+        with self.assertRaisesRegex(
+            ValueError, "IPW-adjusted BalanceFrame with a stored model"
+        ):
+            self.bf.with_fitted_ipw_model(no_model)
+
     def test_predict_and_predict_weights_actionable_error_without_fit_metadata(
         self,
     ) -> None:
@@ -2648,7 +2666,12 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         np.testing.assert_allclose(weights.to_numpy(), expected.to_numpy())
 
     def test_use_model_matrix_false_recompute_matches_fit_preprocessing(self) -> None:
+        import sklearn as _sklearn_mod
+        from packaging.version import Version
         from sklearn.ensemble import HistGradientBoostingClassifier
+
+        if Version(_sklearn_mod.__version__) < Version("1.4"):
+            self.skipTest("requires scikit-learn >= 1.4 for categorical support")
 
         sample_df = pd.DataFrame(
             {
@@ -2699,3 +2722,25 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         )
         self.assertIn("_is_na_x", transformed.columns)
         self.assertEqual(list(transformed.index), list(holdout_bf._sf_sample.df.index))
+
+    def test_custom_model_dense_recompute_for_holdout(self) -> None:
+        from sklearn.naive_bayes import GaussianNB
+
+        train_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),
+            target=SampleFrame.from_frame(self.target.df.iloc[:5].copy()),
+        )
+        holdout_sample_df = self.sample.df.iloc[:5].copy()
+        holdout_target_df = self.target.df.iloc[:5].copy()
+        holdout_sample_df.index = pd.Index([f"gh{i}" for i in range(5)])
+        holdout_target_df.index = pd.Index([f"ght{i}" for i in range(5)])
+        holdout_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(holdout_sample_df),
+            target=SampleFrame.from_frame(holdout_target_df),
+        )
+
+        fitted_train = train_bf.fit(method="ipw", model=GaussianNB())
+        scored_holdout = holdout_bf.with_fitted_ipw_model(fitted_train)
+
+        propensity = scored_holdout.predict(on="sample", output="probability")
+        self.assertEqual(propensity.shape[0], len(holdout_bf._sf_sample.df))

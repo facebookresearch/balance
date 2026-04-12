@@ -1125,6 +1125,11 @@ def ipw(
         "regularisation_perf": regularisation_perf,
         "fit_scaler": fit_scaler,
         "fit_penalties_skl": fit_penalties_skl,
+        "fit_matrix_type": (
+            "sparse"
+            if issparse(X_matrix)
+            else "dataframe" if isinstance(X_matrix, pd.DataFrame) else "dense"
+        ),
     }
 
     if store_fit_metadata:

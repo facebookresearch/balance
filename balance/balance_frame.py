@@ -1044,7 +1044,11 @@ class BalanceFrame:
         example, a subset) and apply `transform`/`predict`/`predict_weights` on
         another BalanceFrame with the same covariate schema.
         """
-        model = _assert_type(fitted.model)
+        if fitted.model is None:
+            raise ValueError(
+                "fitted must be an IPW-adjusted BalanceFrame with a stored model."
+            )
+        model = fitted.model
         if not isinstance(model, dict) or model.get("method") != "ipw":
             raise ValueError("fitted must contain an IPW adjustment model.")
         if model.get("fit") is None:
@@ -1056,7 +1060,12 @@ class BalanceFrame:
         return out
 
     def _require_ipw_model(self) -> dict[str, Any]:
-        model = _assert_type(self._adjustment_model)
+        model = self._adjustment_model
+        if model is None:
+            raise ValueError(
+                "predict/transform/predict_weights currently support only "
+                "objects with an attached IPW model."
+            )
         if not isinstance(model, dict) or model.get("method") != "ipw":
             raise ValueError(
                 "predict/transform/predict_weights currently support only "
@@ -1215,6 +1224,26 @@ class BalanceFrame:
                 combined_matrix = combined_matrix @ diags(penalties, format="csc")
             else:
                 combined_matrix = np.asarray(combined_matrix) * penalties
+
+        matrix_type = model.get("fit_matrix_type")
+        if matrix_type is None:
+            fit_sample_matrix = model.get("model_matrix_sample")
+            if isinstance(fit_sample_matrix, spmatrix):
+                matrix_type = "sparse"
+            elif isinstance(fit_sample_matrix, np.ndarray):
+                matrix_type = "dense"
+            elif isinstance(fit_sample_matrix, pd.DataFrame):
+                matrix_type = "dataframe"
+        if matrix_type == "dense":
+            if isinstance(combined_matrix, spmatrix):
+                combined_matrix = combined_matrix.toarray()
+            elif isinstance(combined_matrix, pd.DataFrame):
+                combined_matrix = np.asarray(combined_matrix)
+        elif matrix_type == "sparse":
+            if isinstance(combined_matrix, np.ndarray):
+                combined_matrix = csc_matrix(combined_matrix)
+            elif isinstance(combined_matrix, pd.DataFrame):
+                combined_matrix = csc_matrix(np.asarray(combined_matrix))
 
         return combined_matrix[:sample_n], combined_matrix[sample_n:]
 
