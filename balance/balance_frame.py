@@ -1073,7 +1073,19 @@ class BalanceFrame:
                 differ between ``self`` and ``fitted``.
 
         Examples:
-            >>> fitted = self.fit(method="ipw")
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> train_resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [0.0, 1.0], "weight": [1.0, 1.0]}))
+            >>> train_tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [0.2, 0.8], "weight": [1.0, 1.0]}))
+            >>> holdout_resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [5, 6], "x": [0.1, 0.9], "weight": [1.0, 1.0]}))
+            >>> holdout_tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [7, 8], "x": [0.3, 0.7], "weight": [1.0, 1.0]}))
+            >>> train_bf = BalanceFrame(sample=train_resp, target=train_tgt)
+            >>> holdout_bf = BalanceFrame(sample=holdout_resp, target=holdout_tgt)
+            >>> fitted = train_bf.fit(method="ipw")
             >>> holdout_scored = holdout_bf.with_fitted_ipw_model(fitted)
             >>> holdout_scored.predict(on="sample").shape[0]
             len(holdout_bf._sf_sample.df)
