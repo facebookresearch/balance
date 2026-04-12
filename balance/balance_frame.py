@@ -1090,7 +1090,9 @@ class BalanceFrame:
             sample=copy.deepcopy(self._sf_sample),
             target=copy.deepcopy(self._sf_target),
         )
-        out._links = copy.deepcopy(self._links)
+        if "target" in self._links:
+            out._links["target"] = copy.deepcopy(self._links["target"])
+        out._links.pop("unadjusted", None)
         out._attached_ipw_model = dict(model)
         return out
 
@@ -1341,7 +1343,7 @@ class BalanceFrame:
         if on not in ("sample", "target", "both"):
             raise ValueError("on must be one of: 'sample', 'target', 'both'")
         model = self._require_ipw_model()
-        columns = _assert_type(model.get("X_matrix_columns"))
+        columns = _assert_type(model.get("X_matrix_columns"), list)
         sample_df: pd.DataFrame | None = None
         target_df: pd.DataFrame | None = None
 
