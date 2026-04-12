@@ -2506,3 +2506,24 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         self.assertEqual(
             list(predicted_weights.index), list(adjusted._sf_sample.df.index)
         )
+
+    def test_fit_on_subset_and_apply_to_holdout(self) -> None:
+        train_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),
+            target=SampleFrame.from_frame(self.target.df.iloc[:5].copy()),
+        )
+        holdout_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[5:].copy()),
+            target=SampleFrame.from_frame(self.target.df.iloc[5:].copy()),
+        )
+
+        fitted_train = train_bf.fit(method="ipw")
+        scored_holdout = holdout_bf.with_fitted_ipw_model(fitted_train)
+
+        transformed = scored_holdout.transform(on="sample")
+        propensity = scored_holdout.predict(on="sample", output="probability")
+        weights = scored_holdout.predict_weights()
+
+        self.assertEqual(transformed.shape[0], len(holdout_bf._sf_sample.df))
+        self.assertEqual(propensity.shape[0], len(holdout_bf._sf_sample.df))
+        self.assertEqual(weights.shape[0], len(holdout_bf._sf_sample.df))

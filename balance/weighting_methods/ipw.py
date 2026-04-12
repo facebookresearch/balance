@@ -1116,6 +1116,7 @@ def ipw(
         "use_model_matrix": use_model_matrix,
         "na_action": na_action,
         "one_hot_encoding": one_hot_encoding,
+        "transformations": transformations,
         "formula": formula,
         "regularisation_perf": regularisation_perf,
     }

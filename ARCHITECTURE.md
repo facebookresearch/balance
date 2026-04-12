@@ -59,6 +59,8 @@ Key: BalanceFrame does NOT inherit from SampleFrame.
   `SampleFrame` with a target `SampleFrame`. Handles `adjust()`, `summary()`, `diagnostics()`,
   `covars()`, `weights()`, `outcomes()`, `set_weights()` (delegates to `_sf_sample`),
   `trim()` (delegates to `_sf_sample`), and all linked-source comparisons.
+  Also exposes sklearn-style convenience methods for IPW workflows:
+  `fit()`, `fit_transform()`, `transform()`, `predict()`, and `predict_weights()`.
   Supports compound/sequential adjustments with unified weight history tracking.
 - **`BalanceDF`** hierarchy (`balancedf_class.py`) — role-specific views:
   - `BalanceDFCovars` — covariate access and statistics
@@ -151,6 +153,21 @@ adjusted.weights().design_effect()          # Variance inflation factor
 - `_next_weight_action_number()` — shared counter across `weight_adjusted_N` and `weight_trimmed_N`
 
 For compound adjustments, `_sf_sample_pre_adjust` always points to the very first baseline, and `_links["unadjusted"]` chains back through the full adjustment history.
+
+## Fit-artifact workflow (IPW)
+
+`BalanceFrame.fit(method="ipw")` is an alias for `adjust(...)` that enables
+`store_fit_matrices=True` and `store_fit_metadata=True` by default for the built-in
+IPW method. This stores fit-time artifacts in `model` so downstream calls can reuse
+the exact training transformation/predictions without recomputing preprocessing:
+
+- `transform(on=...)` → stored model matrices
+- `predict(on=..., output=...)` → stored probabilities or link values
+- `predict_weights()` → reproduced responder weights using stored links + design weights
+
+When these artifacts are not stored (e.g. plain `adjust(method="ipw")`), the API
+raises actionable errors that direct users to `fit(method="ipw")` or the explicit
+`ipw(..., store_fit_matrices=True/store_fit_metadata=True)` flags.
 
 ## Weighting methods (`weighting_methods/`)
 
