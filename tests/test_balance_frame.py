@@ -2575,3 +2575,74 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
 
         with self.assertRaisesRegex(ValueError, "na_action='drop'"):
             scored_holdout.transform(on="sample")
+
+    def test_same_length_holdout_recomputes_instead_of_silent_reindex(self) -> None:
+        train_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),
+            target=SampleFrame.from_frame(self.target.df.iloc[:5].copy()),
+        )
+        holdout_sample_df = self.sample.df.iloc[:5].copy()
+        holdout_target_df = self.target.df.iloc[:5].copy()
+        holdout_sample_df.index = pd.Index([f"h{i}" for i in range(5)])
+        holdout_target_df.index = pd.Index([f"ht{i}" for i in range(5)])
+        holdout_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(holdout_sample_df),
+            target=SampleFrame.from_frame(holdout_target_df),
+        )
+
+        fitted_train = train_bf.fit(method="ipw")
+        scored_holdout = holdout_bf.with_fitted_ipw_model(fitted_train)
+
+        transformed = scored_holdout.transform(on="sample")
+        propensity = scored_holdout.predict(on="sample", output="probability")
+
+        self.assertEqual(list(transformed.index), list(holdout_bf._sf_sample.df.index))
+        self.assertEqual(list(propensity.index), list(holdout_bf._sf_sample.df.index))
+        self.assertFalse(transformed.isna().all(axis=None))
+
+    def test_predict_weights_uses_current_design_weights_for_different_index(
+        self,
+    ) -> None:
+        train_sample_df = self.sample.df.iloc[:5].copy()
+        train_target_df = self.target.df.iloc[:5].copy()
+        holdout_sample_df = self.sample.df.iloc[:5].copy()
+        holdout_target_df = self.target.df.iloc[:5].copy()
+
+        train_sample_df["weight"] = [1.0, 1.0, 1.0, 1.0, 1.0]
+        train_target_df["weight"] = [2.0, 2.0, 2.0, 2.0, 2.0]
+        holdout_sample_df["weight"] = [7.0, 8.0, 9.0, 10.0, 11.0]
+        holdout_target_df["weight"] = [3.0, 4.0, 5.0, 6.0, 7.0]
+        holdout_sample_df.index = pd.Index([f"h{i}" for i in range(5)])
+        holdout_target_df.index = pd.Index([f"ht{i}" for i in range(5)])
+
+        train_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(train_sample_df),
+            target=SampleFrame.from_frame(train_target_df),
+        )
+        holdout_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(holdout_sample_df),
+            target=SampleFrame.from_frame(holdout_target_df),
+        )
+        fitted_train = train_bf.fit(method="ipw")
+        scored_holdout = holdout_bf.with_fitted_ipw_model(fitted_train)
+
+        weights = scored_holdout.predict_weights()
+        link = scored_holdout.predict(on="sample", output="link")
+
+        from balance.weighting_methods.ipw import weights_from_link
+
+        expected = weights_from_link(
+            link=link.to_numpy(),
+            balance_classes=bool(
+                _assert_type(scored_holdout.model).get("balance_classes")
+            ),
+            sample_weights=holdout_bf._sf_sample.df_weights.iloc[:, 0],
+            target_weights=_assert_type(holdout_bf._sf_target).df_weights.iloc[:, 0],
+            weight_trimming_mean_ratio=_assert_type(scored_holdout.model).get(
+                "weight_trimming_mean_ratio"
+            ),
+            weight_trimming_percentile=_assert_type(scored_holdout.model).get(
+                "weight_trimming_percentile"
+            ),
+        )
+        np.testing.assert_allclose(weights.to_numpy(), expected.to_numpy())
