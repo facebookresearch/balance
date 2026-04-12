@@ -2622,9 +2622,25 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
 
         transformed = scored_holdout.transform(on="sample")
         propensity = scored_holdout.predict(on="sample", output="probability")
+        target_propensity = scored_holdout.predict(on="target", output="probability")
+
+        model = _assert_type(scored_holdout.model)
+        fit_model = _assert_type(model.get("fit"))
+        class_index = scored_holdout._ipw_class_index(fit_model)
+        sample_matrix, target_matrix = scored_holdout._compute_ipw_matrices_from_fit(
+            model
+        )
+        expected_sample = np.asarray(
+            fit_model.predict_proba(sample_matrix)[:, class_index]
+        )
+        expected_target = np.asarray(
+            fit_model.predict_proba(target_matrix)[:, class_index]
+        )
 
         self.assertEqual(list(transformed.index), list(holdout_bf._sf_sample.df.index))
         self.assertEqual(list(propensity.index), list(holdout_bf._sf_sample.df.index))
+        np.testing.assert_allclose(propensity.to_numpy(), expected_sample)
+        np.testing.assert_allclose(target_propensity.to_numpy(), expected_target)
         self.assertFalse(transformed.isna().all(axis=None))
 
     def test_predict_weights_uses_current_design_weights_for_different_index(
