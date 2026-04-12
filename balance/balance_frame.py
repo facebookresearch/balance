@@ -34,7 +34,7 @@ from balance.util import (
     HighCardinalityFeature,
 )
 from balance.utils.file_utils import _to_download
-from scipy.sparse import csc_matrix, hstack, spmatrix
+from scipy.sparse import csc_matrix, diags, hstack, spmatrix
 from scipy.special import expit
 
 if TYPE_CHECKING:
