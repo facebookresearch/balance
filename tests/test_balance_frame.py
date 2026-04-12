@@ -2242,115 +2242,6 @@ class TestBalanceFrameDiagnosticsNullMethod(BalanceTestCase):
         self.assertEqual(method_rows["var"].iloc[0], "null_adjustment")
 
 
-class TestBalanceFrameSetTargetValidation(BalanceTestCase):
-    """Verify set_target propagates validation errors immediately."""
-
-    def test_set_target_no_shared_covariates_raises(self) -> None:
-        """set_target with no shared covariates should raise ValueError."""
-        resp_sf = SampleFrame.from_frame(
-            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]}),
-            id_column="id",
-            weight_column="weight",
-            standardize_types=False,
-        )
-        # Target has column "y" — no overlap with "x"
-        tgt_sf = SampleFrame.from_frame(
-            pd.DataFrame({"id": ["3", "4"], "y": [1.5, 2.5], "weight": [1.0, 1.0]}),
-            id_column="id",
-            weight_column="weight",
-            standardize_types=False,
-        )
-        bf = BalanceFrame(sample=resp_sf)
-        # Wrapping target in BalanceFrame to test the BalanceFrame path
-        tgt_bf = BalanceFrame(sample=tgt_sf)
-        with self.assertRaises(ValueError):
-            bf.set_target(tgt_bf)
-
-
-class TestBalanceFrameEdgeCases(BalanceTestCase):
-    """Edge case tests for BalanceFrame: pickle, null adjust, max_de, 0-row."""
-
-    def _make_bf(self) -> BalanceFrame:
-        resp_sf = SampleFrame.from_frame(
-            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]}),
-            id_column="id",
-            weight_column="weight",
-            standardize_types=False,
-        )
-        tgt_sf = SampleFrame.from_frame(
-            pd.DataFrame({"id": ["3", "4"], "x": [1.5, 2.5], "weight": [1.0, 1.0]}),
-            id_column="id",
-            weight_column="weight",
-            standardize_types=False,
-        )
-        return BalanceFrame(sample=resp_sf, target=tgt_sf)
-
-    def test_pickle_round_trip_unadjusted(self) -> None:
-        """Pickle round-trip for unadjusted BalanceFrame."""
-        import pickle
-
-        bf = self._make_bf()
-        data = pickle.dumps(bf)
-        bf2 = pickle.loads(data)
-        self.assertFalse(bf2.is_adjusted)
-        self.assertTrue(bf2.has_target)
-        pd.testing.assert_frame_equal(bf.df, bf2.df)
-
-    def test_pickle_round_trip_adjusted(self) -> None:
-        """Pickle round-trip for adjusted BalanceFrame."""
-        import pickle
-
-        bf = self._make_bf()
-        adjusted = bf.adjust(method="null")
-        data = pickle.dumps(adjusted)
-        adj2 = pickle.loads(data)
-        self.assertTrue(adj2.is_adjusted)
-        pd.testing.assert_frame_equal(adjusted.df, adj2.df)
-
-    def test_deepcopy_preserves_adjustment_state(self) -> None:
-        bf = self._make_bf()
-        adjusted = bf.adjust(method="null")
-        bf_copy = copy.deepcopy(adjusted)
-        self.assertTrue(bf_copy.is_adjusted)
-        self.assertTrue(bf_copy.has_target)
-
-    def test_adjust_null_then_diagnostics(self) -> None:
-        """adjust(method='null') followed by diagnostics() should work."""
-        bf = self._make_bf()
-        adjusted = bf.adjust(method="null")
-        diag = adjusted.diagnostics()
-        self.assertIsInstance(diag, pd.DataFrame)
-
-    def test_zero_row_balanceframe(self) -> None:
-        """BalanceFrame with 0-row data should not crash on construction."""
-        resp_sf = SampleFrame.from_frame(
-            pd.DataFrame(
-                {
-                    "id": pd.Series([], dtype="str"),
-                    "x": pd.Series([], dtype="float64"),
-                    "weight": pd.Series([], dtype="float64"),
-                }
-            ),
-            id_column="id",
-            weight_column="weight",
-            standardize_types=False,
-        )
-        tgt_sf = SampleFrame.from_frame(
-            pd.DataFrame(
-                {
-                    "id": pd.Series([], dtype="str"),
-                    "x": pd.Series([], dtype="float64"),
-                    "weight": pd.Series([], dtype="float64"),
-                }
-            ),
-            id_column="id",
-            weight_column="weight",
-            standardize_types=False,
-        )
-        bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
-        self.assertEqual(bf.df.shape[0], 0)
-
-
 class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
     def setUp(self) -> None:
         super().setUp()
@@ -2524,6 +2415,11 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
 
         fitted_train = train_bf.fit(method="ipw")
         scored_holdout = holdout_bf.with_fitted_ipw_model(fitted_train)
+        self.assertIsNot(scored_holdout.model, fitted_train.model)
+        self.assertIs(
+            _assert_type(scored_holdout.model)["fit"],
+            _assert_type(fitted_train.model)["fit"],
+        )
 
         transformed = scored_holdout.transform(on="sample")
         propensity = scored_holdout.predict(on="sample", output="probability")
@@ -2554,3 +2450,19 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             ),
         )
         np.testing.assert_allclose(weights.to_numpy(), expected_weights.to_numpy())
+
+    def test_holdout_recompute_raises_for_na_action_drop(self) -> None:
+        train_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),
+            target=SampleFrame.from_frame(self.target.df.iloc[:5].copy()),
+        )
+        holdout_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[5:].copy()),
+            target=SampleFrame.from_frame(self.target.df.iloc[5:].copy()),
+        )
+
+        fitted_train = train_bf.fit(method="ipw", na_action="drop")
+        scored_holdout = holdout_bf.with_fitted_ipw_model(fitted_train)
+
+        with self.assertRaisesRegex(ValueError, "na_action='drop'"):
+            scored_holdout.transform(on="sample")

@@ -1052,7 +1052,7 @@ class BalanceFrame:
 
         out = type(self)._create(sample=self._sf_sample, target=self._sf_target)
         out._links = copy.deepcopy(self._links)
-        out._adjustment_model = copy.deepcopy(model)
+        out._adjustment_model = dict(model)
         return out
 
     def _require_ipw_model(self) -> dict[str, Any]:
@@ -1138,6 +1138,13 @@ class BalanceFrame:
 
         if bool(model.get("use_model_matrix", True)):
             na_action = cast(str, model.get("na_action", "add_indicator"))
+            if na_action == "drop":
+                raise ValueError(
+                    "Recomputing stored IPW artifacts for transform/predict is "
+                    "unsupported when na_action='drop' because row dropping can "
+                    "change sample/target boundaries. Re-fit with "
+                    "na_action='add_indicator' or score using matching fit-time rows."
+                )
             formula = model.get("formula")
             one_hot_encoding = bool(model.get("one_hot_encoding", False))
             combined = pd.concat((sample_covars, target_covars), axis=0)
