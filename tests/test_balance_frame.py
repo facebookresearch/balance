@@ -2579,21 +2579,29 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         )
         np.testing.assert_allclose(weights.to_numpy(), expected_weights.to_numpy())
 
-    def test_holdout_recompute_raises_for_na_action_drop(self) -> None:
+    def test_fit_rejects_na_action_drop_with_fit_artifact_storage(self) -> None:
         train_bf = BalanceFrame(
             sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),
             target=SampleFrame.from_frame(self.target.df.iloc[:5].copy()),
         )
-        holdout_bf = BalanceFrame(
-            sample=SampleFrame.from_frame(self.sample.df.iloc[5:].copy()),
-            target=SampleFrame.from_frame(self.target.df.iloc[5:].copy()),
+        with self.assertRaisesRegex(
+            ValueError,
+            "fit\\(method='ipw', na_action='drop'\\) is incompatible with stored fit artifacts",
+        ):
+            train_bf.fit(method="ipw", na_action="drop")
+
+    def test_fit_allows_na_action_drop_when_fit_artifact_storage_disabled(self) -> None:
+        train_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),
+            target=SampleFrame.from_frame(self.target.df.iloc[:5].copy()),
         )
-
-        fitted_train = train_bf.fit(method="ipw", na_action="drop")
-        scored_holdout = holdout_bf.with_fitted_ipw_model(fitted_train)
-
-        with self.assertRaisesRegex(ValueError, "na_action='drop'"):
-            scored_holdout.transform(on="sample")
+        adjusted = train_bf.fit(
+            method="ipw",
+            na_action="drop",
+            store_fit_matrices=False,
+            store_fit_metadata=False,
+        )
+        self.assertTrue(adjusted.is_adjusted)
 
     def test_same_length_holdout_recomputes_instead_of_silent_reindex(self) -> None:
         train_bf = BalanceFrame(

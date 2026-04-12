@@ -988,6 +988,16 @@ class BalanceFrame:
         if resolved_method is built_in_ipw:
             kwargs.setdefault("store_fit_matrices", True)
             kwargs.setdefault("store_fit_metadata", True)
+            na_action = kwargs.get("na_action", "add_indicator")
+            store_fit_matrices = bool(kwargs.get("store_fit_matrices"))
+            store_fit_metadata = bool(kwargs.get("store_fit_metadata"))
+            if na_action == "drop" and (store_fit_matrices or store_fit_metadata):
+                raise ValueError(
+                    "BalanceFrame.fit(method='ipw', na_action='drop') is incompatible "
+                    "with stored fit artifacts because dropped rows break index/shape "
+                    "alignment for transform/predict. Use na_action='add_indicator', "
+                    "or disable store_fit_matrices/store_fit_metadata."
+                )
 
         if isinstance(target, SampleFrame):
             # Keep fit immutable when inline target is a SampleFrame.
