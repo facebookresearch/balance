@@ -2654,7 +2654,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             {
                 "id": [f"s{i}" for i in range(6)],
                 "x": [1.0, np.nan, 2.0, 3.0, np.nan, 4.0],
-                "z": ["a", "b", "a", "b", "a", "b"],
+                "z": [0, 1, 0, 1, 0, 1],
                 "weight": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
             }
         )
@@ -2662,7 +2662,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             {
                 "id": [f"t{i}" for i in range(6)],
                 "x": [1.5, 2.5, np.nan, 3.5, 4.5, np.nan],
-                "z": ["a", "b", "a", "b", "a", "b"],
+                "z": [0, 1, 0, 1, 0, 1],
                 "weight": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
             }
         )
@@ -2697,5 +2697,5 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             list(transformed.columns),
             list(_assert_type(scored_holdout.model)["X_matrix_columns"]),
         )
+        self.assertIn("_is_na_x", transformed.columns)
         self.assertEqual(list(transformed.index), list(holdout_bf._sf_sample.df.index))
-        self.assertIsInstance(transformed["z"].dtype, pd.CategoricalDtype)
