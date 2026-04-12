@@ -152,6 +152,8 @@ class BalanceFrame:
     _sf_target: SampleFrame | None
     # pyre-fixme[13]: Attributes are initialized in _create() / from_frame()
     _adjustment_model: dict[str, Any] | None
+    # pyre-fixme[13]: Attributes are initialized in _create() / from_frame()
+    _attached_ipw_model: dict[str, Any] | None
     # pyre-fixme[4]: Attributes are initialized in from_frame() / _create()
     # _links is a defaultdict(list) but by convention stores single objects
     # (not lists) for the "target" and "unadjusted" keys.  The defaultdict
@@ -341,6 +343,7 @@ class BalanceFrame:
         instance._sf_sample = sample  # same object initially
         instance._sf_target = target
         instance._adjustment_model = None
+        instance._attached_ipw_model = None
         instance._links = collections.defaultdict(list)
         if target is not None:
             instance._links["target"] = target
@@ -525,6 +528,7 @@ class BalanceFrame:
                 # Reset adjustment state — old adjustment is no longer valid.
                 self._sf_sample = self._sf_sample_pre_adjust
                 self._adjustment_model = None
+                self._attached_ipw_model = None
                 self._links.pop("unadjusted", None)
                 self._sync_sampleframe_state_from_responder(self._sf_sample)
                 return self
@@ -586,6 +590,7 @@ class BalanceFrame:
         bf._sf_sample_pre_adjust = frozen
         bf._sf_sample = frozen
         bf._adjustment_model = None
+        bf._attached_ipw_model = None
         bf._links.pop("unadjusted", None)
         bf._sync_sampleframe_state_from_responder(frozen)
         return bf
@@ -1086,13 +1091,13 @@ class BalanceFrame:
             target=copy.deepcopy(self._sf_target),
         )
         out._links = copy.deepcopy(self._links)
-        out._sf_sample_pre_adjust = copy.deepcopy(out._sf_sample)
-        out._links["unadjusted"] = out._sf_sample_pre_adjust
-        out._adjustment_model = dict(model)
+        out._attached_ipw_model = dict(model)
         return out
 
     def _require_ipw_model(self) -> dict[str, Any]:
         model = self._adjustment_model
+        if model is None:
+            model = self._attached_ipw_model
         if model is None:
             raise ValueError(
                 "predict/transform/predict_weights currently support only "

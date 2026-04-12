@@ -2543,9 +2543,11 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
 
         fitted_train = train_bf.fit(method="ipw")
         scored_holdout = holdout_bf.with_fitted_ipw_model(fitted_train)
-        self.assertIsNot(scored_holdout.model, fitted_train.model)
+        self.assertIsNone(scored_holdout.model)
+        holdout_model = scored_holdout._require_ipw_model()
+        self.assertIsNot(holdout_model, fitted_train.model)
         self.assertIs(
-            _assert_type(scored_holdout.model)["fit"],
+            holdout_model["fit"],
             _assert_type(fitted_train.model)["fit"],
         )
 
@@ -2565,21 +2567,15 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
 
         expected_weights = weights_from_link(
             link=link.to_numpy(),
-            balance_classes=bool(
-                _assert_type(scored_holdout.model).get("balance_classes")
-            ),
+            balance_classes=bool(holdout_model.get("balance_classes")),
             sample_weights=holdout_bf._sf_sample.df_weights.iloc[:, 0],
             target_weights=_assert_type(holdout_bf._sf_target).df_weights.iloc[:, 0],
-            weight_trimming_mean_ratio=_assert_type(scored_holdout.model).get(
-                "weight_trimming_mean_ratio"
-            ),
-            weight_trimming_percentile=_assert_type(scored_holdout.model).get(
-                "weight_trimming_percentile"
-            ),
+            weight_trimming_mean_ratio=holdout_model.get("weight_trimming_mean_ratio"),
+            weight_trimming_percentile=holdout_model.get("weight_trimming_percentile"),
         )
         np.testing.assert_allclose(weights.to_numpy(), expected_weights.to_numpy())
 
-    def test_with_fitted_ipw_model_preserves_adjusted_model_roundtrip(self) -> None:
+    def test_with_fitted_ipw_model_keeps_object_unadjusted(self) -> None:
         train_bf = BalanceFrame(
             sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),
             target=SampleFrame.from_frame(self.target.df.iloc[:5].copy()),
@@ -2591,13 +2587,14 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         fitted_train = train_bf.fit(method="ipw")
         scored_holdout = holdout_bf.with_fitted_ipw_model(fitted_train)
 
-        self.assertTrue(scored_holdout.is_adjusted)
-        self.assertIsNotNone(scored_holdout.model)
-        self.assertIn("unadjusted", scored_holdout._links)
+        self.assertFalse(scored_holdout.is_adjusted)
+        self.assertIsNone(scored_holdout.model)
+        self.assertNotIn("unadjusted", scored_holdout._links)
+        self.assertIsNotNone(scored_holdout._require_ipw_model())
 
         sample_obj = scored_holdout.to_sample()
-        self.assertTrue(sample_obj.is_adjusted())
-        self.assertIsNotNone(sample_obj.model)
+        self.assertFalse(sample_obj.is_adjusted())
+        self.assertIsNone(sample_obj.model)
 
     def test_fit_rejects_na_action_drop_with_fit_artifact_storage(self) -> None:
         train_bf = BalanceFrame(
@@ -2644,7 +2641,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         propensity = scored_holdout.predict(on="sample", output="probability")
         target_propensity = scored_holdout.predict(on="target", output="probability")
 
-        model = _assert_type(scored_holdout.model)
+        model = scored_holdout._require_ipw_model()
         fit_model = _assert_type(model.get("fit"))
         class_index = scored_holdout._ipw_class_index(fit_model)
         sample_matrix, target_matrix = scored_holdout._compute_ipw_matrices_from_fit(
@@ -2714,7 +2711,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         )
         fitted_train = train_bf.fit(method="ipw")
         scored_holdout = holdout_bf.with_fitted_ipw_model(fitted_train)
-        model = _assert_type(scored_holdout.model)
+        model = scored_holdout._require_ipw_model()
         model.pop("model_matrix_sample", None)
 
         transformed_target = scored_holdout.transform(on="target")
@@ -2737,7 +2734,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         )
         fitted_train = train_bf.fit(method="ipw")
         scored_holdout = holdout_bf.with_fitted_ipw_model(fitted_train)
-        model = _assert_type(scored_holdout.model)
+        model = scored_holdout._require_ipw_model()
         model.pop("sample_probability", None)
         model.pop("sample_link", None)
 
@@ -2780,14 +2777,14 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         expected = weights_from_link(
             link=link.to_numpy(),
             balance_classes=bool(
-                _assert_type(scored_holdout.model).get("balance_classes")
+                scored_holdout._require_ipw_model().get("balance_classes")
             ),
             sample_weights=holdout_bf._sf_sample.df_weights.iloc[:, 0],
             target_weights=_assert_type(holdout_bf._sf_target).df_weights.iloc[:, 0],
-            weight_trimming_mean_ratio=_assert_type(scored_holdout.model).get(
+            weight_trimming_mean_ratio=scored_holdout._require_ipw_model().get(
                 "weight_trimming_mean_ratio"
             ),
-            weight_trimming_percentile=_assert_type(scored_holdout.model).get(
+            weight_trimming_percentile=scored_holdout._require_ipw_model().get(
                 "weight_trimming_percentile"
             ),
         )
@@ -2842,7 +2839,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         transformed = scored_holdout.transform(on="sample")
         self.assertListEqual(
             list(transformed.columns),
-            list(_assert_type(scored_holdout.model)["X_matrix_columns"]),
+            list(scored_holdout._require_ipw_model()["X_matrix_columns"]),
         )
         self.assertIn("_is_na_x", transformed.columns)
         self.assertEqual(list(transformed.index), list(holdout_bf._sf_sample.df.index))
