@@ -738,6 +738,34 @@ class TestIPW(
         expected = fit.predict_proba(model["model_matrix_target"])[:, class_index]
         np.testing.assert_allclose(model["target_probability"], expected)
 
+    def test_ipw_stored_probabilities_match_raw_predict_proba(self) -> None:
+        """Stored sample/target probabilities are raw estimator outputs."""
+        sample_df = pd.DataFrame({"x": [0.0, 0.1, 0.2, 0.3, 1.0, 1.1, 1.2, 1.3]})
+        target_df = pd.DataFrame({"x": [0.05, 0.25, 0.95, 1.15]})
+        result = balance_ipw.ipw(
+            sample_df=sample_df,
+            sample_weights=pd.Series(np.ones(len(sample_df))),
+            target_df=target_df,
+            target_weights=pd.Series(np.ones(len(target_df))),
+            model=DecisionTreeClassifier(max_depth=2, random_state=0),
+            transformations=None,
+            num_lambdas=1,
+            store_fit_matrices=True,
+            store_fit_metadata=True,
+        )
+        model = result["model"]
+        fit = model["fit"]
+        class_index = list(fit.classes_).index(1)
+        expected_sample = fit.predict_proba(model["model_matrix_sample"])[
+            :, class_index
+        ]
+        expected_target = fit.predict_proba(model["model_matrix_target"])[
+            :, class_index
+        ]
+
+        np.testing.assert_allclose(model["sample_probability"], expected_sample)
+        np.testing.assert_allclose(model["target_probability"], expected_target)
+
     def test_ipw_stores_fit_time_model_matrices(self) -> None:
         """IPW model output persists fit-time sample/target matrices."""
         rng = np.random.RandomState(27)

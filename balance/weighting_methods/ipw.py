@@ -21,7 +21,6 @@ from balance.stats_and_plots.weighted_comparisons_stats import (
 from balance.stats_and_plots.weights_stats import design_effect
 from balance.util import _assert_type
 from scipy.sparse import csc_matrix, csr_matrix, issparse
-from scipy.special import expit
 from sklearn.base import ClassifierMixin, clone
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import log_loss
@@ -1055,7 +1054,11 @@ def ipw(
     best_model = _assert_type(best_model)
     sample_link = _assert_type(link)
     if store_fit_metadata:
-        sample_probability = expit(sample_link)
+        sample_matrix = X_matrix[:sample_n]
+        sample_probability = np.asarray(
+            best_model.predict_proba(sample_matrix)[:, chosen_class_index]
+        )
+        sample_link = link_transform(sample_probability)
 
         # Fit-time target predictions using the exact matrix consumed by
         # the chosen estimator. These are used by BalanceFrame.predict() so we do
@@ -1064,9 +1067,8 @@ def ipw(
         best_pred_target = best_model.predict_proba(target_matrix)[
             :, chosen_class_index
         ]
-        target_probability_raw = np.asarray(best_pred_target)
-        target_link = link_transform(target_probability_raw)
-        target_probability = expit(target_link)
+        target_probability = np.asarray(best_pred_target)
+        target_link = link_transform(target_probability)
 
     logger.debug("Predicting")
     weights = weights_from_link(
