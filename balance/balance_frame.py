@@ -1123,7 +1123,7 @@ class BalanceFrame:
         columns: list[str],
     ) -> pd.DataFrame:
         if isinstance(matrix, pd.DataFrame):
-            return matrix.reindex(index=index, columns=columns)
+            return matrix.reindex(columns=columns)
         if isinstance(matrix, np.ndarray):
             return pd.DataFrame(matrix, index=index, columns=columns)
         if isinstance(matrix, spmatrix):

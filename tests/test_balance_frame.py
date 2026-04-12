@@ -2531,6 +2531,31 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             list(predicted_weights.index), list(adjusted._sf_sample.df.index)
         )
 
+    def test_transform_handles_dataframe_fit_matrix_with_duplicate_indices(
+        self,
+    ) -> None:
+        from sklearn.naive_bayes import GaussianNB
+
+        sample_df = self.sample.df.iloc[:6].copy()
+        target_df = self.target.df.iloc[:6].copy()
+        sample_df.index = pd.Index(["a", "a", "b", "b", "c", "c"])
+        target_df.index = pd.Index(["ta", "ta", "tb", "tb", "tc", "tc"])
+
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(
+            method="ipw",
+            model=GaussianNB(),
+            variables=["x"],
+            use_model_matrix=False,
+            transformations=None,
+        )
+
+        transformed = adjusted.transform(on="sample")
+        self.assertEqual(list(transformed.index), list(adjusted._sf_sample.df.index))
+
     def test_fit_on_subset_and_apply_to_holdout(self) -> None:
         train_bf = BalanceFrame(
             sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),
