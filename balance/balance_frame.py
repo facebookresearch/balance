@@ -1243,7 +1243,9 @@ class BalanceFrame:
                 "BalanceFrame.fit(method='ipw') or run ipw(..., "
                 "store_fit_matrices=True) before using transform(on='target'/'both')."
             )
-        if getattr(target_matrix, "shape", [0])[0] != len(_assert_type(self._sf_target).df.index):
+        if getattr(target_matrix, "shape", [0])[0] != len(
+            _assert_type(self._sf_target).df.index
+        ):
             _, target_matrix = self._compute_ipw_matrices_from_fit(model)
             target_idx_fallback = _assert_type(self._sf_target).df.index
         else:
@@ -1421,7 +1423,9 @@ class BalanceFrame:
             link = _assert_type(self.predict(on="sample", output="link")).to_numpy()
         sample_weights = model.get("training_sample_weights")
         target_weights = model.get("training_target_weights")
-        if not isinstance(sample_weights, pd.Series) or len(sample_weights) != len(link):
+        if not isinstance(sample_weights, pd.Series) or len(sample_weights) != len(
+            link
+        ):
             sample_weights = self._sf_sample.df_weights.iloc[:, 0]
         if not isinstance(target_weights, pd.Series) or len(target_weights) != len(
             _assert_type(self._sf_target).df_weights.iloc[:, 0]

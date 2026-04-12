@@ -2535,7 +2535,9 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
 
         expected_weights = weights_from_link(
             link=link.to_numpy(),
-            balance_classes=bool(_assert_type(scored_holdout.model).get("balance_classes")),
+            balance_classes=bool(
+                _assert_type(scored_holdout.model).get("balance_classes")
+            ),
             sample_weights=holdout_bf._sf_sample.df_weights.iloc[:, 0],
             target_weights=_assert_type(holdout_bf._sf_target).df_weights.iloc[:, 0],
             weight_trimming_mean_ratio=_assert_type(scored_holdout.model).get(
