@@ -1053,6 +1053,24 @@ class BalanceFrame:
         This enables train/serve-style workflows: fit on one BalanceFrame (for
         example, a subset) and apply `transform`/`predict`/`predict_weights` on
         another BalanceFrame with the same covariate schema.
+
+        Args:
+            fitted: A BalanceFrame already adjusted with method ``"ipw"``.
+                Its fitted estimator and metadata are attached to this object.
+
+        Returns:
+            A new BalanceFrame with this object's sample/target data and the
+            fitted IPW model attached.
+
+        Raises:
+            ValueError: If ``fitted`` is not IPW-adjusted or lacks estimator
+                information in its stored model.
+
+        Examples:
+            >>> fitted = self.fit(method="ipw")
+            >>> holdout_scored = holdout_bf.with_fitted_ipw_model(fitted)
+            >>> holdout_scored.predict(on="sample").shape[0]
+            len(holdout_bf._sf_sample.df)
         """
         if fitted.model is None:
             raise ValueError(
@@ -1159,6 +1177,18 @@ class BalanceFrame:
                 "BalanceFrame.fit(method='ipw') to refresh stored artifacts."
             )
         return series.set_axis(index, axis=0)
+
+    @staticmethod
+    def _ipw_class_index(fit_model: Any) -> int:
+        classes_attr = getattr(fit_model, "classes_", None)
+        if classes_attr is None:
+            raise ValueError(
+                "Stored IPW estimator is missing classes_ needed for predict()."
+            )
+        classes = list(classes_attr)
+        if 1 not in classes:
+            raise ValueError("Stored IPW estimator is missing class label 1.")
+        return classes.index(1)
 
     def _compute_ipw_matrices_from_fit(
         self,
@@ -1311,9 +1341,11 @@ class BalanceFrame:
                 "BalanceFrame.fit(method='ipw') or run ipw(..., "
                 "store_fit_matrices=True) before using transform()."
             )
+        sample_same_set = sample_idx.isin(current_sample_idx).all() and current_sample_idx.isin(
+            sample_idx
+        ).all()
         if getattr(sample_matrix, "shape", [0])[0] != len(current_sample_idx) or (
-            len(sample_idx) == len(current_sample_idx)
-            and not sample_idx.equals(current_sample_idx)
+            len(sample_idx) == len(current_sample_idx) and not sample_same_set
         ):
             sample_matrix, _ = self._compute_ipw_matrices_from_fit(model)
             sample_idx = current_sample_idx
@@ -1338,9 +1370,11 @@ class BalanceFrame:
             )
         current_target_idx = _assert_type(self._sf_target).df.index
         target_idx_fallback = pd.Index(model.get("target_index", current_target_idx))
+        target_same_set = target_idx_fallback.isin(current_target_idx).all() and current_target_idx.isin(
+            target_idx_fallback
+        ).all()
         if getattr(target_matrix, "shape", [0])[0] != len(current_target_idx) or (
-            len(target_idx_fallback) == len(current_target_idx)
-            and not target_idx_fallback.equals(current_target_idx)
+            len(target_idx_fallback) == len(current_target_idx) and not target_same_set
         ):
             _, target_matrix = self._compute_ipw_matrices_from_fit(model)
             target_idx_fallback = current_target_idx
@@ -1420,10 +1454,7 @@ class BalanceFrame:
 
             sample_matrix, _ = self._compute_ipw_matrices_from_fit(model)
             fit_model = _assert_type(model.get("fit"))
-            classes = list(_assert_type(getattr(fit_model, "classes_", None)))
-            if 1 not in classes:
-                raise ValueError("Stored IPW estimator is missing class label 1.")
-            class_index = classes.index(1)
+            class_index = self._ipw_class_index(fit_model)
             sample_prob = np.asarray(
                 fit_model.predict_proba(sample_matrix)[:, class_index]
             )
@@ -1457,10 +1488,7 @@ class BalanceFrame:
 
             _, target_matrix = self._compute_ipw_matrices_from_fit(model)
             fit_model = _assert_type(model.get("fit"))
-            classes = list(_assert_type(getattr(fit_model, "classes_", None)))
-            if 1 not in classes:
-                raise ValueError("Stored IPW estimator is missing class label 1.")
-            class_index = classes.index(1)
+            class_index = self._ipw_class_index(fit_model)
             target_prob = np.asarray(
                 fit_model.predict_proba(target_matrix)[:, class_index]
             )
