@@ -1054,7 +1054,10 @@ class BalanceFrame:
         if model.get("fit") is None:
             raise ValueError("fitted IPW model is missing estimator information.")
 
-        out = type(self)._create(sample=self._sf_sample, target=self._sf_target)
+        out = type(self)._create(
+            sample=copy.deepcopy(self._sf_sample),
+            target=copy.deepcopy(self._sf_target),
+        )
         out._links = copy.deepcopy(self._links)
         out._adjustment_model = dict(model)
         return out

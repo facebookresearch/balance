@@ -15,6 +15,7 @@ from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
+import pytest
 from balance.balance_frame import BalanceFrame
 from balance.datasets import load_data
 from balance.sample_class import Sample
@@ -2665,13 +2666,9 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         )
         np.testing.assert_allclose(weights.to_numpy(), expected.to_numpy())
 
+    @pytest.mark.requires_sklearn_1_4  # pyre-ignore[56]
     def test_use_model_matrix_false_recompute_matches_fit_preprocessing(self) -> None:
-        import sklearn as _sklearn_mod
-        from packaging.version import Version
         from sklearn.ensemble import HistGradientBoostingClassifier
-
-        if Version(_sklearn_mod.__version__) < Version("1.4"):
-            self.skipTest("requires scikit-learn >= 1.4 for categorical support")
 
         sample_df = pd.DataFrame(
             {
