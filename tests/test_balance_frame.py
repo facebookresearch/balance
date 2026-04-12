@@ -2643,6 +2643,42 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         np.testing.assert_allclose(target_propensity.to_numpy(), expected_target)
         self.assertFalse(transformed.isna().all(axis=None))
 
+    def test_holdout_scoring_caches_recomputed_fit_artifacts(self) -> None:
+        train_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),
+            target=SampleFrame.from_frame(self.target.df.iloc[:5].copy()),
+        )
+        holdout_sample_df = self.sample.df.iloc[:5].copy()
+        holdout_target_df = self.target.df.iloc[:5].copy()
+        holdout_sample_df.index = pd.Index([f"h{i}" for i in range(5)])
+        holdout_target_df.index = pd.Index([f"ht{i}" for i in range(5)])
+        holdout_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(holdout_sample_df),
+            target=SampleFrame.from_frame(holdout_target_df),
+        )
+
+        fitted_train = train_bf.fit(method="ipw")
+        scored_holdout = holdout_bf.with_fitted_ipw_model(fitted_train)
+
+        with patch.object(
+            scored_holdout,
+            "_compute_ipw_matrices_from_fit",
+            wraps=scored_holdout._compute_ipw_matrices_from_fit,
+        ) as compute_mock:
+            scored_holdout.transform(on="sample")
+            scored_holdout.transform(on="sample")
+            self.assertEqual(compute_mock.call_count, 1)
+
+        scored_holdout_for_predict = holdout_bf.with_fitted_ipw_model(fitted_train)
+        with patch.object(
+            scored_holdout_for_predict,
+            "_compute_ipw_matrices_from_fit",
+            wraps=scored_holdout_for_predict._compute_ipw_matrices_from_fit,
+        ) as compute_mock:
+            scored_holdout_for_predict.predict(on="sample", output="probability")
+            scored_holdout_for_predict.predict(on="sample", output="probability")
+            self.assertEqual(compute_mock.call_count, 1)
+
     def test_predict_weights_uses_current_design_weights_for_different_index(
         self,
     ) -> None:

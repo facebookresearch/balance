@@ -1349,6 +1349,8 @@ class BalanceFrame:
         ):
             sample_matrix, _ = self._compute_ipw_matrices_from_fit(model)
             sample_idx = current_sample_idx
+            model["model_matrix_sample"] = sample_matrix
+            model["sample_index"] = sample_idx
         sample_df = self._align_frame_to_index(
             self._matrix_to_dataframe(
                 sample_matrix,
@@ -1379,6 +1381,8 @@ class BalanceFrame:
         ):
             _, target_matrix = self._compute_ipw_matrices_from_fit(model)
             target_idx_fallback = current_target_idx
+            model["model_matrix_target"] = target_matrix
+            model["target_index"] = target_idx_fallback
         target_df = self._align_frame_to_index(
             self._matrix_to_dataframe(
                 target_matrix,
@@ -1462,6 +1466,9 @@ class BalanceFrame:
             sample_link_dyn = link_transform(sample_prob)
             sample_values = sample_prob if output == "probability" else sample_link_dyn
             sample_idx = current_sample_idx
+            model["sample_probability"] = sample_prob
+            model["sample_link"] = sample_link_dyn
+            model["sample_index"] = sample_idx
 
         sample_series = self._align_series_to_index(
             pd.Series(_assert_type(sample_values), index=sample_idx),
@@ -1494,6 +1501,9 @@ class BalanceFrame:
             target_link_dyn = link_transform(target_prob)
             target_values = target_prob if output == "probability" else target_link_dyn
             target_idx = current_target_idx
+            model["target_probability"] = target_prob
+            model["target_link"] = target_link_dyn
+            model["target_index"] = target_idx
         if on == "target":
             return self._align_series_to_index(
                 pd.Series(_assert_type(target_values), index=target_idx),
