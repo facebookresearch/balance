@@ -22,6 +22,7 @@ from balance.sample_frame import SampleFrame
 from balance.testutil import BalanceTestCase
 from balance.util import _assert_type
 from balance.weighting_methods.ipw import ipw as ipw_func
+from scipy.special import expit
 
 
 class TestBalanceFrameConstruction(BalanceTestCase):
@@ -2388,6 +2389,10 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
 
     def test_fit_and_fit_transform_reject_positional_forwarding(self) -> None:
         with self.assertRaises(TypeError):
+            self.bf.fit("ipw")  # pyre-ignore[6]
+        with self.assertRaises(TypeError):
+            self.bf.fit_transform("ipw")  # pyre-ignore[6]
+        with self.assertRaises(TypeError):
             self.bf.fit(None, "ipw", "unexpected positional")  # pyre-ignore[6]
         with self.assertRaises(TypeError):
             self.bf.fit_transform(
@@ -2528,6 +2533,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         self.assertEqual(transformed.shape[0], len(holdout_bf._sf_sample.df))
         self.assertEqual(propensity.shape[0], len(holdout_bf._sf_sample.df))
         self.assertEqual(weights.shape[0], len(holdout_bf._sf_sample.df))
+        np.testing.assert_allclose(propensity.to_numpy(), expit(link.to_numpy()))
         self.assertTrue(np.all(np.isfinite(weights.to_numpy())))
         self.assertTrue(np.all(weights.to_numpy() > 0))
 

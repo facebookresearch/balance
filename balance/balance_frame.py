@@ -35,6 +35,7 @@ from balance.util import (
 )
 from balance.utils.file_utils import _to_download
 from scipy.sparse import csc_matrix, hstack, spmatrix
+from scipy.special import expit
 
 if TYPE_CHECKING:
     from typing import Self
@@ -935,6 +936,7 @@ class BalanceFrame:
 
     def fit(
         self,
+        *,
         target: BalanceFrame | SampleFrame | None = None,
         method: str | Callable[..., Any] = "ipw",
         **kwargs: Any,
@@ -997,6 +999,7 @@ class BalanceFrame:
 
     def fit_transform(
         self,
+        *,
         target: BalanceFrame | SampleFrame | None = None,
         method: str | Callable[..., Any] = "ipw",
         **kwargs: Any,
@@ -1332,7 +1335,9 @@ class BalanceFrame:
                 fit_model.predict_proba(sample_matrix)[:, class_index]
             )
             sample_link_dyn = link_transform(sample_prob)
-            sample_values = sample_prob if output == "probability" else sample_link_dyn
+            sample_values = (
+                expit(sample_link_dyn) if output == "probability" else sample_link_dyn
+            )
             sample_idx = self._sf_sample.df.index
 
         sample_series = self._align_series_to_index(
@@ -1365,7 +1370,9 @@ class BalanceFrame:
                 fit_model.predict_proba(target_matrix)[:, class_index]
             )
             target_link_dyn = link_transform(target_prob)
-            target_values = target_prob if output == "probability" else target_link_dyn
+            target_values = (
+                expit(target_link_dyn) if output == "probability" else target_link_dyn
+            )
             target_idx = _assert_type(self._sf_target).df.index
         if on == "target":
             return self._align_series_to_index(
