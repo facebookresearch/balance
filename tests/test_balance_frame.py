@@ -2579,6 +2579,26 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         )
         np.testing.assert_allclose(weights.to_numpy(), expected_weights.to_numpy())
 
+    def test_with_fitted_ipw_model_preserves_adjusted_model_roundtrip(self) -> None:
+        train_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),
+            target=SampleFrame.from_frame(self.target.df.iloc[:5].copy()),
+        )
+        holdout_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),
+            target=SampleFrame.from_frame(self.target.df.iloc[:5].copy()),
+        )
+        fitted_train = train_bf.fit(method="ipw")
+        scored_holdout = holdout_bf.with_fitted_ipw_model(fitted_train)
+
+        self.assertTrue(scored_holdout.is_adjusted)
+        self.assertIsNotNone(scored_holdout.model)
+        self.assertIn("unadjusted", scored_holdout._links)
+
+        sample_obj = scored_holdout.to_sample()
+        self.assertTrue(sample_obj.is_adjusted())
+        self.assertIsNotNone(sample_obj.model)
+
     def test_fit_rejects_na_action_drop_with_fit_artifact_storage(self) -> None:
         train_bf = BalanceFrame(
             sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),

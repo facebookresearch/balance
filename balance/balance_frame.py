@@ -1086,6 +1086,8 @@ class BalanceFrame:
             target=copy.deepcopy(self._sf_target),
         )
         out._links = copy.deepcopy(self._links)
+        out._sf_sample_pre_adjust = copy.deepcopy(out._sf_sample)
+        out._links["unadjusted"] = out._sf_sample_pre_adjust
         out._adjustment_model = dict(model)
         return out
 
@@ -1314,7 +1316,9 @@ class BalanceFrame:
 
         Raises:
             ValueError: If the object is not IPW-adjusted, if target is missing
-                for ``on in {"target", "both"}``, or if ``on`` is invalid.
+                for ``on in {"target", "both"}``, if recomputation of sample-side
+                artifacts is required but no target is available, or if ``on`` is
+                invalid.
 
         Examples:
             >>> import pandas as pd
@@ -1426,7 +1430,9 @@ class BalanceFrame:
 
         Raises:
             ValueError: If the object is not IPW-adjusted, if target is missing
-                for ``on in {"target", "both"}``, or if ``on`` is invalid.
+                for ``on in {"target", "both"}``, if recomputation of sample-side
+                predictions is required but no target is available, or if ``on`` is
+                invalid.
 
         Examples:
             >>> import pandas as pd
