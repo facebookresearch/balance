@@ -1092,14 +1092,14 @@ class BalanceFrame:
             raise ValueError("fitted must contain an IPW adjustment model.")
         if model.get("fit") is None:
             raise ValueError("fitted IPW model is missing estimator information.")
-        if list(self._sf_sample.covars().df.columns) != list(
+        if set(self._sf_sample.covars().df.columns) != set(
             fitted._sf_sample.covars().df.columns
         ):
             raise ValueError(
                 "self and fitted must have matching sample covariate column names."
             )
         if self._sf_target is not None and fitted._sf_target is not None:
-            if list(self._sf_target.covars().df.columns) != list(
+            if set(self._sf_target.covars().df.columns) != set(
                 fitted._sf_target.covars().df.columns
             ):
                 raise ValueError(

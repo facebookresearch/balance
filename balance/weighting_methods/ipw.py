@@ -746,6 +746,7 @@ def ipw(
     variables = list(sample_df.columns)
     logger.debug(f"Final variables in the model: {variables}")
 
+    resolved_formula = formula
     if use_model_matrix:
         logger.info("Building model matrix")
         # Convert formula to List[str] if it's a single string
@@ -776,6 +777,7 @@ def ipw(
         logger.info(
             f"The formula used to build the model matrix: {model_matrix_output['formula']}"
         )
+        resolved_formula = cast(str | list[str] | None, model_matrix_output["formula"])
         logger.info(f"The number of columns in the model matrix: {X_matrix.shape[1]}")
         logger.info(f"The number of rows in the model matrix: {X_matrix.shape[0]}")
     else:
@@ -1123,7 +1125,7 @@ def ipw(
         "na_action": na_action,
         "one_hot_encoding": one_hot_encoding,
         "transformations": transformations,
-        "formula": formula,
+        "formula": resolved_formula,
         "regularisation_perf": regularisation_perf,
         "fit_scaler": fit_scaler,
         "fit_penalties_skl": fit_penalties_skl,

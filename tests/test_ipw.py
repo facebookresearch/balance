@@ -17,6 +17,7 @@ import balance.testutil
 import numpy as np
 import pandas as pd
 import pytest
+from balance import util as balance_util
 from balance.sample_class import Sample
 from balance.weighting_methods import ipw as balance_ipw
 from scipy.sparse import csr_matrix, issparse
@@ -788,6 +789,31 @@ class TestIPW(
         self.assertEqual(model["model_matrix_sample"].shape[0], sample_df.shape[0])
         self.assertEqual(model["model_matrix_target"].shape[0], target_df.shape[0])
         self.assertTrue(issparse(model["model_matrix_sample"]))
+
+    def test_ipw_stores_resolved_formula_used_for_model_matrix(self) -> None:
+        """Stored model formula reflects the effective resolved model_matrix formula."""
+        rng = np.random.RandomState(44)
+        sample_df = pd.DataFrame({"a": rng.normal(size=20), "b": rng.normal(size=20)})
+        target_df = pd.DataFrame({"a": rng.normal(size=25), "b": rng.normal(size=25)})
+        result = balance_ipw.ipw(
+            sample_df=sample_df,
+            sample_weights=pd.Series(np.ones(len(sample_df))),
+            target_df=target_df,
+            target_weights=pd.Series(np.ones(len(target_df))),
+            num_lambdas=2,
+            store_fit_matrices=True,
+        )
+        expected_formula = balance_util.model_matrix(
+            sample_df,
+            target_df,
+            variables=["a", "b"],
+            add_na=True,
+            return_type="one",
+            return_var_type="sparse",
+            formula=None,
+            one_hot_encoding=False,
+        )["formula"]
+        self.assertEqual(result["model"]["formula"], expected_formula)
 
     def test_ipw_stores_indices_with_fit_matrices_only(self) -> None:
         """Stored matrices include matching row indices even without fit metadata."""
