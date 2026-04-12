@@ -881,6 +881,8 @@ def ipw(
     )
 
     chosen_class_index = 1
+    fit_scaler: StandardScaler | None = None
+    fit_penalties_skl: list[float] | None = None
     if custom_model is None:  # using_default_logistic
         # Standardize columns of the X matrix and penalize the columns of the X matrix according to the penalty_factor.
         # Workaround for sklearn, which doesn't allow for covariate specific penalty terms.
@@ -891,6 +893,7 @@ def ipw(
 
         # TODO: add test to verify expected behavior from model_weights
         X_matrix = scaler.fit_transform(X_matrix, sample_weight=model_weights)
+        fit_scaler = scaler
 
         if penalty_factor is not None:
             penalties_skl = [
@@ -900,6 +903,7 @@ def ipw(
             ]
             for i in range(len(penalties_skl)):
                 X_matrix[:, i] *= penalties_skl[i]
+            fit_penalties_skl = penalties_skl
 
         X_matrix = csr_matrix(X_matrix)
 
@@ -1119,6 +1123,8 @@ def ipw(
         "transformations": transformations,
         "formula": formula,
         "regularisation_perf": regularisation_perf,
+        "fit_scaler": fit_scaler,
+        "fit_penalties_skl": fit_penalties_skl,
     }
 
     if store_fit_metadata:
