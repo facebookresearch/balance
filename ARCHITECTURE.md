@@ -66,8 +66,23 @@ Key: BalanceFrame does NOT inherit from SampleFrame.
   - `BalanceDFCovars` — covariate access and statistics
   - `BalanceDFWeights` — weight diagnostics (design effect, density plots)
   - `BalanceDFOutcomes` — outcome analysis
-  - `BalanceDFSource` (protocol) — 7 required members: `weight_series`, `id_column`,
+  - `BalanceDFSource` (protocol) — 7 required members: `weight_series`, `id_series`,
     `_links`, `_covar_columns()`, `_outcome_columns`, `set_weights()`, `trim()`
+
+### Accessor naming convention
+
+All data-access properties follow a consistent naming pattern:
+
+| Suffix | Returns | Examples |
+|--------|---------|----------|
+| `*_column` | Column name (`str`) | `id_column`, `weight_column` |
+| `*_series` | Column data (`pd.Series`) | `id_series`, `weight_series` |
+| `*_columns` | List of names (`list[str]`) | `covar_columns`, `outcome_columns`, `weight_columns_all` |
+| `df_*` | DataFrame | `df_covars`, `df_weights`, `df_outcomes`, `df_ignored` |
+
+**Migration warnings** (`FutureWarning`, will be removed after 2026-06-01):
+- `id_column` — changed in 0.20.0 from returning data to returning the name. Use `id_series` for data.
+- `weight_column` — changed in 0.19.0 from returning data to returning the name. Use `weight_series` for data.
 
 ### Where each responsibility lives
 
