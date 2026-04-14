@@ -565,7 +565,7 @@ class TestBalanceFrameSetTarget(BalanceTestCase):
 
     def test_set_target_copy(self) -> None:
         bf = BalanceFrame(sample=self.resp_sf)
-        new_bf = bf.set_target(self.tgt_sf, in_place=False)
+        new_bf = bf.set_target(self.tgt_sf, inplace=False)
         self.assertIsNot(new_bf, bf)
         self.assertTrue(new_bf.has_target())
         self.assertFalse(bf.has_target())
@@ -2065,7 +2065,7 @@ class TestBalanceFrameSetAsPreAdjust(BalanceTestCase):
 
     def test_set_as_pre_adjust_in_place(self) -> None:
         adjusted = self._make_adjusted()
-        result = adjusted.set_as_pre_adjust(in_place=True)
+        result = adjusted.set_as_pre_adjust(inplace=True)
         self.assertIs(result, adjusted)
         self.assertFalse(adjusted.is_adjusted)
         self.assertNotIn("unadjusted", adjusted._links)
@@ -2144,7 +2144,7 @@ class TestBalanceFrameTrim(BalanceTestCase):
 
     def test_trim_in_place(self) -> None:
         bf = self._make_bf()
-        result = bf.trim(ratio=2, in_place=True)
+        result = bf.trim(ratio=2, inplace=True)
         self.assertIs(result, bf)
         self.assertTrue(_assert_type(bf.weight_series).max() < 100.0)
 

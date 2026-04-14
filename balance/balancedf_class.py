@@ -93,7 +93,7 @@ class BalanceDFSource(Protocol):
         keep_sum_of_weights: bool = True,
         target_sum_weights: float | int | np.floating | None = None,
         *,
-        in_place: bool = False,
+        inplace: bool = False,
     ) -> "BalanceDFSource": ...
 
 
@@ -3153,7 +3153,7 @@ class BalanceDFWeights(BalanceDF):
         """Trim weights in the backing sample object in-place.
 
         Delegates to :meth:`SampleFrame.trim` (or :meth:`BalanceFrame.trim`)
-        with ``in_place=True``, which adds a weight history column and
+        with ``inplace=True``, which adds a weight history column and
         overwrites the active weight column.
 
         Args:
@@ -3188,7 +3188,7 @@ class BalanceDFWeights(BalanceDF):
             ratio=ratio,
             percentile=percentile,
             keep_sum_of_weights=keep_sum_of_weights,
-            in_place=True,
+            inplace=True,
         )
 
     def summary(
