@@ -30,12 +30,14 @@
     maps to `adjust(...)` with stored fit artifacts enabled by default.
     Supports `inplace=True` (default, sklearn-style) and `inplace=False`
     (functional style, returns new object).
-  - Added `BalanceFrame.design_matrix(on=...)` to return IPW-aligned
-    feature matrices for sample, target, or both.
-  - Added `BalanceFrame.predict_proba(on=..., output=...)` for fitted
+  - Added `BalanceFrame.design_matrix(on=..., data=...)` to return IPW-aligned
+    feature matrices for sample, target, or both. The `data=` argument
+    enables applying stored preprocessing to new data.
+  - Added `BalanceFrame.predict_proba(on=..., output=..., data=...)` for fitted
     IPW propensity predictions.
-  - Added `BalanceFrame.predict_weights()` for reproducing responder
-    weights from the fitted IPW model.
+  - Added `BalanceFrame.predict_weights(data=...)` for reproducing responder
+    weights from the fitted IPW model. The `data=` argument enables one-liner
+    holdout scoring: `fitted.predict_weights(data=holdout_bf)`.
   - Added `BalanceFrame.set_fitted_model(fitted)` to apply a fitted model
     from one BalanceFrame to another for holdout scoring workflows.
   - Stored IPW fit metadata needed to reproduce weights (`balance_classes`,

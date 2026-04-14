@@ -972,6 +972,11 @@ class BalanceFrame:
             scored = holdout_bf.set_fitted_model(fitted, inplace=False)
             holdout_weights = scored.predict_weights()
 
+        Alternatively, ``design_matrix()``, ``predict_proba()``, and
+        ``predict_weights()`` accept a ``data=`` argument so the holdout
+        workflow becomes a single line:
+        ``fitted.predict_weights(data=holdout_bf)``.
+
         Args:
             target: Optional target population to set before fitting.  If
                 provided, this method calls ``set_target(target, inplace=False)``
@@ -1321,8 +1326,8 @@ class BalanceFrame:
             model: The fitted model dict containing preprocessing config.
             source: BalanceFrame to extract covariates from.  When ``None``
                 (default), uses ``self``.  When provided, uses ``source``'s
-                covariates.  Results are only cached when ``source is None``
-                (via the caller).
+                covariates — for the ``data=`` holdout path.  Results are
+                only cached when ``source is None`` (via the caller).
         """
         bf = source if source is not None else self
         if source is None:
@@ -1447,27 +1452,51 @@ class BalanceFrame:
             model[f"{side}_link"] = link
             model[f"{side}_index"] = current_idx
 
+    def _validate_data_covariates(self, data: BalanceFrame) -> None:
+        """Validate that ``data`` has matching covariate columns to self."""
+        if set(data._sf_sample.covars().df.columns) != set(
+            self._sf_sample.covars().df.columns
+        ):
+            raise ValueError(
+                "data and self must have matching sample covariate column names."
+            )
+        if data._sf_target is not None and self._sf_target is not None:
+            if set(_assert_type(data._sf_target).covars().df.columns) != set(
+                _assert_type(self._sf_target).covars().df.columns
+            ):
+                raise ValueError(
+                    "data and self must have matching target covariate column names."
+                )
+
     @overload
     def design_matrix(  # noqa: E704
         self,
         on: Literal["sample"],
+        *,
+        data: BalanceFrame | None = ...,
     ) -> pd.DataFrame: ...
 
     @overload
     def design_matrix(  # noqa: E704
         self,
         on: Literal["target"],
+        *,
+        data: BalanceFrame | None = ...,
     ) -> pd.DataFrame: ...
 
     @overload
     def design_matrix(  # noqa: E704
         self,
         on: Literal["both"] = ...,
+        *,
+        data: BalanceFrame | None = ...,
     ) -> tuple[pd.DataFrame, pd.DataFrame]: ...
 
     def design_matrix(
         self,
         on: Literal["sample", "target", "both"] = "both",
+        *,
+        data: BalanceFrame | None = None,
     ) -> pd.DataFrame | tuple[pd.DataFrame, pd.DataFrame]:
         """Return the IPW model's design matrices.
 
@@ -1475,10 +1504,19 @@ class BalanceFrame:
         preprocessing pipeline — after formula expansion, one-hot encoding,
         NA indicator addition, scaling, and penalty weighting.
 
+        When ``data`` is provided, the stored preprocessing is applied to
+        ``data``'s covariates and the result is returned without caching.
+        When ``data`` is None (default), stored/cached matrices for this
+        object's own data are returned (original behavior).
+
         Args:
             on: Which population's matrix to return.  ``"sample"`` returns the
                 respondent matrix, ``"target"`` returns the target matrix, and
                 ``"both"`` returns ``(sample_matrix, target_matrix)``.
+            data: An optional BalanceFrame whose covariates are transformed
+                using this object's stored preprocessing pipeline.  The
+                ``data`` BalanceFrame does not need to be adjusted — it just
+                provides covariates.  Must have matching covariate column names.
 
         Returns:
             A model-matrix DataFrame, or a tuple of two DataFrames when
@@ -1487,14 +1525,15 @@ class BalanceFrame:
         Raises:
             ValueError: If the object is not IPW-adjusted, if target is missing
                 for ``on in {"target", "both"}``, if recomputation of sample-side
-                artifacts is required but no target is available, or if ``on`` is
-                invalid.
+                artifacts is required but no target is available, if ``on`` is
+                invalid, or if ``data`` has mismatched covariate columns.
 
         Notes:
-            When stored fit artifacts are stale for the
+            When ``data`` is None and stored fit artifacts are stale for the
             current rows (e.g., after ``set_fitted_model()``), this method
             recomputes and caches refreshed matrices.  That cache update is an
-            intentional in-memory mutation.
+            intentional in-memory mutation.  When ``data`` is provided, no
+            caching occurs.
 
         Examples:
             >>> import pandas as pd
@@ -1514,7 +1553,35 @@ class BalanceFrame:
         model = self._require_ipw_model()
         columns: list[str] = _assert_type(model.get("X_matrix_columns"), list)
 
-        # --- Use stored/cached artifacts ---
+        # --- data= path: compute from external data, no caching ---
+        if data is not None:
+            self._validate_data_covariates(data)
+            if on in ("target", "both") and data._sf_target is None:
+                raise ValueError(
+                    "data must have a target set for on='target' or on='both'."
+                )
+            sample_matrix, target_matrix = self._compute_ipw_matrices(
+                model, source=data
+            )
+            sample_df_result = self._matrix_to_dataframe(
+                sample_matrix, data._sf_sample.df.index, columns
+            )
+            target_df_result = (
+                self._matrix_to_dataframe(
+                    target_matrix,
+                    _assert_type(data._sf_target).df.index,
+                    columns,
+                )
+                if data._sf_target is not None
+                else None
+            )
+            if on == "sample":
+                return sample_df_result
+            if on == "target":
+                return _assert_type(target_df_result)
+            return (sample_df_result, _assert_type(target_df_result))
+
+        # --- default path: use stored/cached artifacts ---
         sample_df: pd.DataFrame | None = None
         target_df: pd.DataFrame | None = None
 
@@ -1571,6 +1638,8 @@ class BalanceFrame:
         self,
         on: Literal["sample"],
         output: Literal["probability", "link"] = ...,
+        *,
+        data: BalanceFrame | None = ...,
     ) -> pd.Series: ...
 
     @overload
@@ -1578,6 +1647,8 @@ class BalanceFrame:
         self,
         on: Literal["target"],
         output: Literal["probability", "link"] = ...,
+        *,
+        data: BalanceFrame | None = ...,
     ) -> pd.Series: ...
 
     @overload
@@ -1585,12 +1656,16 @@ class BalanceFrame:
         self,
         on: Literal["both"] = ...,
         output: Literal["probability", "link"] = ...,
+        *,
+        data: BalanceFrame | None = ...,
     ) -> tuple[pd.Series, pd.Series]: ...
 
     def predict_proba(
         self,
         on: Literal["sample", "target", "both"] = "both",
         output: Literal["probability", "link"] = "probability",
+        *,
+        data: BalanceFrame | None = None,
     ) -> pd.Series | tuple[pd.Series, pd.Series]:
         """Return IPW propensity scores.
 
@@ -1599,11 +1674,20 @@ class BalanceFrame:
         high propensity is well-represented in the sample; a low score
         indicates underrepresentation.
 
+        When ``data`` is provided, the stored model is applied to ``data``'s
+        covariates and fresh predictions are returned without caching.  When
+        ``data`` is None (default), stored/cached predictions for this
+        object's own data are returned (original behavior).
+
         Args:
             on: Which population to predict on (``"sample"``, ``"target"``,
                 or ``"both"``).
             output: Output scale. ``"probability"`` returns class-1 propensity
                 probabilities. ``"link"`` returns logit-transformed values.
+            data: An optional BalanceFrame whose covariates are scored using
+                this object's stored model.  Must have matching covariate
+                column names.  The ``data`` BalanceFrame needs a target for
+                ``on="target"`` or ``on="both"``.
 
         Returns:
             A prediction Series, or a tuple of two Series when ``on="both"``.
@@ -1611,12 +1695,13 @@ class BalanceFrame:
         Raises:
             ValueError: If the object is not IPW-adjusted, if target is missing
                 for ``on in {"target", "both"}``, if recomputation of sample-side
-                predictions is required but no target is available, or if ``on`` is
-                invalid.
+                predictions is required but no target is available, if ``on`` is
+                invalid, or if ``data`` has mismatched covariate columns.
 
         Notes:
-            When stored fit-time predictions are stale for the current rows,
-            this method may recompute and cache refreshed probabilities/links.
+            When ``data`` is None and stored fit-time predictions are stale
+            for the current rows, this method may recompute and cache refreshed
+            probabilities/links.  When ``data`` is provided, no caching occurs.
 
         Examples:
             >>> import pandas as pd
@@ -1637,7 +1722,58 @@ class BalanceFrame:
             raise ValueError("on must be one of: 'sample', 'target', 'both'")
         model = self._require_ipw_model()
 
-        # --- Use stored/cached artifacts ---
+        # --- data= path: compute from external data, no caching ---
+        if data is not None:
+            from balance.weighting_methods.ipw import link_transform
+
+            self._validate_data_covariates(data)
+            if on in ("target", "both") and data._sf_target is None:
+                raise ValueError(
+                    "data must have a target set for on='target' or on='both'."
+                )
+            sample_matrix, target_matrix = self._compute_ipw_matrices(
+                model, source=data
+            )
+            fit_model = _assert_type(model.get("fit"))
+            class_index = self._ipw_class_index(fit_model)
+
+            sample_series_result: pd.Series | None = None
+            target_series_result: pd.Series | None = None
+
+            if on in ("sample", "both"):
+                prob = np.asarray(
+                    fit_model.predict_proba(sample_matrix)[:, class_index]
+                )
+                if output == "link":
+                    values_arr = link_transform(prob)
+                else:
+                    values_arr = prob
+                sample_series_result = pd.Series(
+                    values_arr, index=data._sf_sample.df.index
+                )
+
+            if on in ("target", "both"):
+                prob = np.asarray(
+                    fit_model.predict_proba(target_matrix)[:, class_index]
+                )
+                if output == "link":
+                    values_arr = link_transform(prob)
+                else:
+                    values_arr = prob
+                target_series_result = pd.Series(
+                    values_arr, index=_assert_type(data._sf_target).df.index
+                )
+
+            if on == "sample":
+                return _assert_type(sample_series_result)
+            if on == "target":
+                return _assert_type(target_series_result)
+            return (
+                _assert_type(sample_series_result),
+                _assert_type(target_series_result),
+            )
+
+        # --- default path: use stored/cached artifacts ---
         sample_series: pd.Series | None = None
         target_series: pd.Series | None = None
 
@@ -1689,7 +1825,11 @@ class BalanceFrame:
             return _assert_type(target_series)
         return (_assert_type(sample_series), _assert_type(target_series))
 
-    def predict_weights(self) -> pd.Series:
+    def predict_weights(
+        self,
+        *,
+        data: BalanceFrame | None = None,
+    ) -> pd.Series:
         """Predict responder weights from the fitted model's artifacts.
 
         Reconstructs adjusted survey weights from stored fit-time artifacts
@@ -1699,18 +1839,33 @@ class BalanceFrame:
         and serves as a validation that the stored artifacts are sufficient
         to reproduce the adjustment.
 
+        When ``data`` is provided, computes weights for ``data``'s sample
+        using the stored model, without caching.  This is the one-liner
+        alternative to the ``set_fitted_model`` workflow::
+
+            fitted.predict_weights(data=holdout_bf)
+
+        When ``data`` is None (default), uses this object's own data
+        (original behavior).
+
         Dispatches by the adjustment method stored in the model dict:
 
         - **IPW**: uses stored fit-time metadata (links, class balancing,
           trimming, and design weights) to reproduce fitted responder weights.
         - **Other methods**: not yet supported — will raise with guidance.
 
+        Args:
+            data: An optional BalanceFrame whose sample covariates are scored
+                using this object's stored model.  Must have matching covariate
+                column names and a target set.
+
         Returns:
             A Series of predicted responder weights.
 
         Raises:
             ValueError: If no fitted model is available, if the method is
-                unsupported, or if required target data is missing.
+                unsupported, if required target data is missing, or if
+                ``data`` has mismatched covariate columns.
 
         Examples:
             >>> import pandas as pd
@@ -1725,6 +1880,75 @@ class BalanceFrame:
             >>> int(w.shape[0])
             2
         """
+        # NOTE: The data= path intentionally duplicates the weight computation
+        # from set_fitted_model() rather than calling it. set_fitted_model()
+        # could be reused (scored = data.set_fitted_model(self, inplace=False);
+        # return scored.weight_series), but:
+        # 1. It does unnecessary work (deepcopy, _links, _adjustment_model)
+        #    that would be immediately discarded.
+        # 2. design_matrix(data=...) and predict_proba(data=...) cannot use
+        #    the same pattern — they need intermediate results (matrices,
+        #    probabilities), not final weights. Keeping all three data= paths
+        #    parallel is clearer.
+        if data is not None:
+            from balance.weighting_methods.ipw import link_transform, weights_from_link
+
+            self._validate_data_covariates(data)
+            model = self._require_fitted_model()
+            method = model.get("method")
+            if method != "ipw":
+                raise ValueError(
+                    f"predict_weights(data=...) is not yet supported for method '{method}'. "
+                    "Currently only 'ipw' is supported."
+                )
+
+            fit_obj = model.get("fit")
+            columns = model.get("X_matrix_columns")
+            if fit_obj is None or not isinstance(columns, list):
+                raise ValueError(
+                    "IPW model metadata is missing fitted model information."
+                )
+
+            sample_matrix, _target_matrix = self._compute_ipw_matrices(
+                model, source=data
+            )
+            class_index = self._ipw_class_index(fit_obj)
+            prob = np.asarray(fit_obj.predict_proba(sample_matrix)[:, class_index])
+            link = link_transform(prob)
+
+            if data._sf_target is None:
+                raise ValueError("data must have a target set for predict_weights().")
+            sample_weights = data._sf_sample.df_weights.iloc[:, 0]
+            target_weights = _assert_type(data._sf_target).df_weights.iloc[:, 0]
+
+            training_target_weights = model.get("training_target_weights")
+            if isinstance(training_target_weights, pd.Series):
+                train_sum = training_target_weights.sum()
+                data_sum = target_weights.sum()
+                if train_sum > 0 and abs(train_sum - data_sum) / train_sum > 0.01:
+                    logger.warning(
+                        "predict_weights(data=...): data's target weights sum (%.2f) "
+                        "differs from training target weights sum (%.2f). The "
+                        "balance_classes correction and weight normalization will "
+                        "use data's weights, which may produce different results "
+                        "than the training fit.",
+                        target_weights.sum(),
+                        training_target_weights.sum(),
+                    )
+
+            predicted = weights_from_link(
+                link=link,
+                balance_classes=bool(model.get("balance_classes", True)),
+                sample_weights=sample_weights,
+                target_weights=target_weights,
+                weight_trimming_mean_ratio=model.get("weight_trimming_mean_ratio"),
+                weight_trimming_percentile=model.get("weight_trimming_percentile"),
+            )
+            weight_name = getattr(data._sf_sample.weight_series, "name", None)
+            return pd.Series(predicted.values, index=data._sf_sample.df.index).rename(
+                weight_name
+            )
+
         self._require_target()
         model = self._require_fitted_model()
         method = model.get("method")
