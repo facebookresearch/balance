@@ -2853,7 +2853,7 @@ class TestBalanceDFWeights_edge_cases(BalanceTestCase):
         # Assert
         self.assertAlmostEqual(deff, 1.0, places=5)
 
-    def test_BalanceDFWeights_trim_modifies_weights_in_place(
+    def test_BalanceDFWeights_trim_modifies_weights_inplace(
         self,
     ) -> None:
         """Test trim method modifies weights in place.
@@ -3450,7 +3450,7 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
                 keep_sum_of_weights: bool = True,
                 target_sum_weights: float | int | np.floating | None = None,
                 *,
-                in_place: bool = False,
+                inplace: bool = False,
             ) -> "_MockSource":
                 return self
 
@@ -3506,7 +3506,7 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
                 keep_sum_of_weights: bool = True,
                 target_sum_weights: float | int | np.floating | None = None,
                 *,
-                in_place: bool = False,
+                inplace: bool = False,
             ) -> "_MockCovarsSource":
                 return self
 
@@ -3562,7 +3562,7 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
                 keep_sum_of_weights: bool = True,
                 target_sum_weights: float | int | np.floating | None = None,
                 *,
-                in_place: bool = False,
+                inplace: bool = False,
             ) -> "_MockWeightsSource":
                 return self
 
@@ -3609,7 +3609,7 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
                 keep_sum_of_weights: bool = True,
                 target_sum_weights: float | int | np.floating | None = None,
                 *,
-                in_place: bool = False,
+                inplace: bool = False,
             ) -> "_MockOutcomesSource":
                 return self
 

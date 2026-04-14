@@ -16,8 +16,8 @@
 - **Added `BalanceFrame.set_as_pre_adjust()`**
   - New helper to lock in the current responder state as the new
     pre-adjust baseline.
-  - Supports both immutable usage (`in_place=False`, default) and in-place
-    mutation (`in_place=True`).
+  - Supports both immutable usage (`inplace=False`, default) and in-place
+    mutation (`inplace=True`).
   - Clears the current adjustment model and unadjusted link since the object
     is no longer considered adjusted after baseline reset.
 
