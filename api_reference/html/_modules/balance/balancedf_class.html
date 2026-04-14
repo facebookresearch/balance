@@ -91,7 +91,7 @@
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        weight_series: Active weight column as a ``pd.Series``.</span>
-<span class="sd">        id_column: Row identifier column as a ``pd.Series``.</span>
+<span class="sd">        id_series: Row identifier column as a ``pd.Series``.</span>
 <span class="sd">        _links: Dict mapping relationship names (e.g. ``&quot;target&quot;``,</span>
 <span class="sd">            ``&quot;unadjusted&quot;``) to other ``BalanceDFSource`` instances.</span>
 <span class="sd">        _outcome_columns: Outcome DataFrame, or ``None`` if no outcomes.</span>
@@ -107,7 +107,7 @@
         <span class="o">...</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">id_column</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>  <span class="c1"># noqa: E704</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">id_series</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>  <span class="c1"># noqa: E704</span>
         <span class="o">...</span>
 
     <span class="nd">@property</span>
@@ -141,7 +141,7 @@
         <span class="n">keep_sum_of_weights</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">target_sum_weights</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
-        <span class="n">in_place</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;BalanceDFSource&quot;</span><span class="p">:</span> <span class="o">...</span></div>
 
 
@@ -2277,7 +2277,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            pd.DataFrame: DataFrame with id_column and then the df.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="o">.</span><span class="n">id_column</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="o">.</span><span class="n">id_series</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
 <div class="viewcode-block" id="BalanceDF.to_csv">
 <a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDF.to_csv">[docs]</a>
@@ -3302,7 +3302,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Trim weights in the backing sample object in-place.</span>
 
 <span class="sd">        Delegates to :meth:`SampleFrame.trim` (or :meth:`BalanceFrame.trim`)</span>
-<span class="sd">        with ``in_place=True``, which adds a weight history column and</span>
+<span class="sd">        with ``inplace=True``, which adds a weight history column and</span>
 <span class="sd">        overwrites the active weight column.</span>
 
 <span class="sd">        Args:</span>
@@ -3337,7 +3337,7 @@
             <span class="n">ratio</span><span class="o">=</span><span class="n">ratio</span><span class="p">,</span>
             <span class="n">percentile</span><span class="o">=</span><span class="n">percentile</span><span class="p">,</span>
             <span class="n">keep_sum_of_weights</span><span class="o">=</span><span class="n">keep_sum_of_weights</span><span class="p">,</span>
-            <span class="n">in_place</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 

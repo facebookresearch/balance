@@ -477,6 +477,13 @@
     <span class="k">return</span> <span class="n">beta_new</span>
 
 
+<span class="c1"># TODO: Store fit artifacts for predict_weights() support.</span>
+<span class="c1"># Save `beta_optimal`, standardization mean/std (`model_matrix_mean`,</span>
+<span class="c1"># `model_matrix_std`) in the returned model dict. Add a</span>
+<span class="c1"># `store_fit_metadata: bool = False` parameter mirroring ipw.py.</span>
+<span class="c1"># Then implement `_predict_weights_cbps()` in balance_frame.py:</span>
+<span class="c1"># rebuild model matrix, standardize with stored mean/std, compute</span>
+<span class="c1"># logit_truncated(X @ beta_optimal), convert to weights. ~55 lines total.</span>
 <div class="viewcode-block" id="cbps">
 <a class="viewcode-back" href="../../../balance.weighting_methods.cbps.html#balance.weighting_methods.cbps.cbps">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">cbps</span><span class="p">(</span>  <span class="c1"># noqa</span>

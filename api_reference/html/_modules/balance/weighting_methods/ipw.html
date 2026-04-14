@@ -57,6 +57,7 @@
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots.weights_stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">design_effect</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">_assert_type</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.model_matrix</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_design_matrix</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.sparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">csc_matrix</span><span class="p">,</span> <span class="n">csr_matrix</span><span class="p">,</span> <span class="n">issparse</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClassifierMixin</span><span class="p">,</span> <span class="n">clone</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.linear_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LogisticRegression</span>
@@ -539,6 +540,8 @@
     <span class="n">use_model_matrix</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">random_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2020</span><span class="p">,</span>
     <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">store_fit_matrices</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">store_fit_metadata</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Fit an ipw (inverse propensity score weighting) for the sample using the target.</span>
@@ -608,6 +611,16 @@
 <span class="sd">            ``use_model_matrix=True`` and will raise if ``use_model_matrix=False``.</span>
 <span class="sd">            Defaults to True.</span>
 <span class="sd">        random_seed (int, optional): Random seed to use. Defaults to 2020.</span>
+<span class="sd">        store_fit_matrices (bool, optional): Whether to persist fit-time sample/target</span>
+<span class="sd">            model matrices in the returned ``model`` dictionary. This can be</span>
+<span class="sd">            memory-intensive for large datasets, so it defaults to ``False``.</span>
+<span class="sd">            Set to ``True`` when downstream consumers need exact fit-time</span>
+<span class="sd">            matrices (e.g., :meth:`balance.balance_frame.BalanceFrame.transform`).</span>
+<span class="sd">        store_fit_metadata (bool, optional): Whether to persist per-row fit-time</span>
+<span class="sd">            metadata (links, probabilities, indices, and fit-time weights) in</span>
+<span class="sd">            the returned ``model`` dictionary. This is disabled by default to</span>
+<span class="sd">            preserve historical memory footprint; enable it for downstream</span>
+<span class="sd">            sklearn-style prediction/weight reproduction workflows.</span>
 
 <span class="sd">    Examples:</span>
 <span class="sd">        Example 1: Using HistGradientBoostingClassifier with native categorical support</span>
@@ -715,22 +728,29 @@
 <span class="sd">            classifier exposing ``predict_proba``.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Dict[str, Any]: A dictionary includes:</span>
-<span class="sd">            &quot;weight&quot; --- The weights for the sample.</span>
-<span class="sd">            &quot;model&quot; --- parameters of the model:fit, performance, X_matrix_columns, lambda,</span>
-<span class="sd">                        weight_trimming_mean_ratio</span>
-<span class="sd">            Shape of the Dict:</span>
-<span class="sd">            {</span>
-<span class="sd">                &quot;weight&quot;: weights,</span>
-<span class="sd">                &quot;model&quot;: {</span>
-<span class="sd">                    &quot;method&quot;: &quot;ipw&quot;,</span>
-<span class="sd">                    &quot;X_matrix_columns&quot;: X_matrix_columns_names,</span>
-<span class="sd">                    &quot;fit&quot;: fit,</span>
-<span class="sd">                    &quot;perf&quot;: performance,</span>
-<span class="sd">                    &quot;lambda&quot;: best_s,</span>
-<span class="sd">                    &quot;weight_trimming_mean_ratio&quot;: weight_trimming_mean_ratio,</span>
-<span class="sd">                },</span>
-<span class="sd">            }</span>
+<span class="sd">        Dict[str, Any]: A dictionary with keys:</span>
+
+<span class="sd">            ``&quot;weight&quot;``</span>
+<span class="sd">                The adjusted weights for the sample (pd.Series).</span>
+
+<span class="sd">            ``&quot;model&quot;``</span>
+<span class="sd">                A dict with model parameters. Always-present keys:</span>
+<span class="sd">                ``method``, ``X_matrix_columns``, ``fit`` (estimator),</span>
+<span class="sd">                ``perf`` (performance), ``lambda`` (best regularisation),</span>
+<span class="sd">                ``weight_trimming_mean_ratio``, ``balance_classes``,</span>
+<span class="sd">                ``weight_trimming_percentile``, ``use_model_matrix``,</span>
+<span class="sd">                ``na_action``, ``one_hot_encoding``, ``transformations``,</span>
+<span class="sd">                ``formula``, ``fit_scaler``, ``fit_penalties_skl``,</span>
+<span class="sd">                ``fit_matrix_type``.</span>
+
+<span class="sd">                When ``store_fit_matrices=True``: adds</span>
+<span class="sd">                ``model_matrix_sample``, ``model_matrix_target``,</span>
+<span class="sd">                ``sample_index``, ``target_index``.</span>
+
+<span class="sd">                When ``store_fit_metadata=True``: adds</span>
+<span class="sd">                ``sample_probability``, ``target_probability``,</span>
+<span class="sd">                ``sample_link``, ``target_link``,</span>
+<span class="sd">                ``fit_sample_weights``, ``fit_target_weights``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">custom_model</span><span class="p">:</span> <span class="n">ClassifierMixin</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
@@ -788,39 +808,7 @@
     <span class="n">variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Final variables in the model: </span><span class="si">{</span><span class="n">variables</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">use_model_matrix</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Building model matrix&quot;</span><span class="p">)</span>
-        <span class="c1"># Convert formula to List[str] if it&#39;s a single string</span>
-        <span class="n">formula_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="p">[</span><span class="n">formula</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">formula</span>
-        <span class="p">)</span>
-        <span class="n">model_matrix_output</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">model_matrix</span><span class="p">(</span>
-            <span class="n">sample_df</span><span class="p">,</span>
-            <span class="n">target_df</span><span class="p">,</span>
-            <span class="n">variables</span><span class="p">,</span>
-            <span class="n">add_na</span><span class="o">=</span><span class="p">(</span><span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">),</span>
-            <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;one&quot;</span><span class="p">,</span>
-            <span class="n">return_var_type</span><span class="o">=</span><span class="s2">&quot;sparse&quot;</span><span class="p">,</span>
-            <span class="n">formula</span><span class="o">=</span><span class="n">formula_list</span><span class="p">,</span>
-            <span class="n">penalty_factor</span><span class="o">=</span><span class="n">penalty_factor</span><span class="p">,</span>
-            <span class="n">one_hot_encoding</span><span class="o">=</span><span class="n">one_hot_encoding</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
-            <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">csc_matrix</span><span class="p">],</span>
-            <span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">&quot;model_matrix&quot;</span><span class="p">],</span>
-        <span class="p">)</span>
-        <span class="n">X_matrix_columns_names</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
-            <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">&quot;model_matrix_columns_names&quot;</span><span class="p">]</span>
-        <span class="p">)</span>
-        <span class="n">penalty_factor_expanded</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
-            <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">&quot;penalty_factor&quot;</span><span class="p">]</span>
-        <span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;The formula used to build the model matrix: </span><span class="si">{</span><span class="n">model_matrix_output</span><span class="p">[</span><span class="s1">&#39;formula&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The number of columns in the model matrix: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The number of rows in the model matrix: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">use_model_matrix</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">custom_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;use_model_matrix=False is only supported when providing a custom &quot;</span>
@@ -843,17 +831,32 @@
                 <span class="s2">&quot;use_model_matrix=True with the built-in logistic regression model.&quot;</span>
             <span class="p">)</span>
 
-        <span class="n">combined</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">:</span>
-            <span class="n">combined</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">add_na_indicator_to_combined</span><span class="p">(</span><span class="n">combined</span><span class="p">)</span>
+    <span class="n">dm_result</span> <span class="o">=</span> <span class="n">build_design_matrix</span><span class="p">(</span>
+        <span class="n">sample_df</span><span class="p">,</span>
+        <span class="n">target_df</span><span class="p">,</span>
+        <span class="n">use_model_matrix</span><span class="o">=</span><span class="n">use_model_matrix</span><span class="p">,</span>
+        <span class="n">formula</span><span class="o">=</span><span class="n">formula</span><span class="p">,</span>
+        <span class="n">one_hot_encoding</span><span class="o">=</span><span class="n">one_hot_encoding</span><span class="p">,</span>
+        <span class="n">na_action</span><span class="o">=</span><span class="n">na_action</span><span class="p">,</span>
+        <span class="n">penalty_factor</span><span class="o">=</span><span class="n">penalty_factor</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">X_matrix</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">csc_matrix</span><span class="p">,</span> <span class="n">csr_matrix</span><span class="p">]</span> <span class="o">=</span> <span class="n">dm_result</span><span class="p">[</span>
+        <span class="s2">&quot;combined_matrix&quot;</span>
+    <span class="p">]</span>
+    <span class="n">X_matrix_columns_names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">dm_result</span><span class="p">[</span><span class="s2">&quot;columns&quot;</span><span class="p">]</span>
+    <span class="n">penalty_factor_expanded</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">dm_result</span><span class="p">[</span><span class="s2">&quot;penalty_factor_expanded&quot;</span><span class="p">]</span>
+    <span class="n">resolved_formula</span> <span class="o">=</span> <span class="n">dm_result</span><span class="p">[</span><span class="s2">&quot;resolved_formula&quot;</span><span class="p">]</span>
 
-        <span class="n">categorical_cols</span> <span class="o">=</span> <span class="n">combined</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span>
-            <span class="p">[</span><span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="s2">&quot;boolean&quot;</span><span class="p">,</span> <span class="s2">&quot;object&quot;</span><span class="p">]</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">columns</span>
-        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">categorical_cols</span><span class="p">:</span>
-            <span class="n">combined</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">combined</span><span class="p">[</span><span class="n">col</span><span class="p">])</span>
-
-        <span class="n">has_categorical</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">combined</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">([</span><span class="s2">&quot;category&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">use_model_matrix</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Building model matrix&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The formula used to build the model matrix: </span><span class="si">{</span><span class="n">resolved_formula</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The number of columns in the model matrix: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The number of rows in the model matrix: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">has_categorical</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">([</span><span class="s2">&quot;category&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="p">)</span>
         <span class="k">if</span> <span class="n">has_categorical</span><span class="p">:</span>
             <span class="kn">import</span><span class="w"> </span><span class="nn">sklearn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_sklearn_mod</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">packaging.version</span><span class="w"> </span><span class="kn">import</span> <span class="n">Version</span>
@@ -866,9 +869,6 @@
                     <span class="s2">&quot;manually, or use use_model_matrix=True.&quot;</span>
                 <span class="p">)</span>
 
-        <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">combined</span>
-        <span class="n">X_matrix_columns_names</span> <span class="o">=</span> <span class="n">combined</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-        <span class="n">penalty_factor_expanded</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">]</span> <span class="o">*</span> <span class="n">combined</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="s2">&quot;Fitting model on raw covariates without model matrix encoding. &quot;</span>
             <span class="s2">&quot;Categorical columns are preserved as pandas Categorical dtype.&quot;</span>
@@ -921,6 +921,9 @@
         <span class="n">model_weights</span><span class="p">,</span>
     <span class="p">)</span>
 
+    <span class="n">chosen_class_index</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">fit_scaler</span><span class="p">:</span> <span class="n">StandardScaler</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">fit_penalties_skl</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">custom_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># using_default_logistic</span>
         <span class="c1"># Standardize columns of the X matrix and penalize the columns of the X matrix according to the penalty_factor.</span>
         <span class="c1"># Workaround for sklearn, which doesn&#39;t allow for covariate specific penalty terms.</span>
@@ -931,6 +934,7 @@
 
         <span class="c1"># TODO: add test to verify expected behavior from model_weights</span>
         <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="n">model_weights</span><span class="p">)</span>
+        <span class="n">fit_scaler</span> <span class="o">=</span> <span class="n">scaler</span>
 
         <span class="k">if</span> <span class="n">penalty_factor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">penalties_skl</span> <span class="o">=</span> <span class="p">[</span>
@@ -940,6 +944,7 @@
             <span class="p">]</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">penalties_skl</span><span class="p">)):</span>
                 <span class="n">X_matrix</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">*=</span> <span class="n">penalties_skl</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">fit_penalties_skl</span> <span class="o">=</span> <span class="n">penalties_skl</span>
 
         <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">csr_matrix</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">)</span>
 
@@ -1035,6 +1040,7 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;The provided custom model must be trained on the binary labels {0, 1}.&quot;</span>
             <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
+        <span class="n">chosen_class_index</span> <span class="o">=</span> <span class="n">class_index</span>
         <span class="n">pred</span> <span class="o">=</span> <span class="n">probas</span><span class="p">[:,</span> <span class="n">class_index</span><span class="p">]</span>
         <span class="n">dev</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">_compute_deviance</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">model_weights</span><span class="p">)</span>
         <span class="n">prop_dev</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">_compute_proportion_deviance</span><span class="p">(</span><span class="n">dev</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">null_dev</span><span class="p">)</span>
@@ -1087,10 +1093,33 @@
     <span class="n">best_model</span> <span class="o">=</span> <span class="n">fits</span><span class="p">[</span><span class="n">best_s_index</span><span class="p">]</span>
     <span class="n">link</span> <span class="o">=</span> <span class="n">links</span><span class="p">[</span><span class="n">best_s_index</span><span class="p">]</span>
     <span class="n">best_s</span> <span class="o">=</span> <span class="n">lambdas</span><span class="p">[</span><span class="n">best_s_index</span><span class="p">]</span>
+    <span class="n">best_model</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">best_model</span><span class="p">)</span>
+    <span class="n">sample_link</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">link</span><span class="p">)</span>
+    <span class="n">target_link</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+    <span class="n">sample_probability</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+    <span class="n">target_probability</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+    <span class="k">if</span> <span class="n">store_fit_metadata</span><span class="p">:</span>
+        <span class="n">sample_matrix</span> <span class="o">=</span> <span class="n">X_matrix</span><span class="p">[:</span><span class="n">sample_n</span><span class="p">]</span>
+        <span class="n">sample_probability</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+            <span class="c1"># pyre-ignore[16]: ClassifierMixin has predict_proba at runtime</span>
+            <span class="n">best_model</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">sample_matrix</span><span class="p">)[:,</span> <span class="n">chosen_class_index</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">sample_link</span> <span class="o">=</span> <span class="n">link_transform</span><span class="p">(</span><span class="n">sample_probability</span><span class="p">)</span>
+
+        <span class="c1"># Fit-time target predictions using the exact matrix consumed by</span>
+        <span class="c1"># the chosen estimator. These are used by BalanceFrame.predict() so we do</span>
+        <span class="c1"># not need to reconstruct preprocessing after fitting.</span>
+        <span class="n">target_matrix</span> <span class="o">=</span> <span class="n">X_matrix</span><span class="p">[</span><span class="n">sample_n</span><span class="p">:]</span>
+        <span class="c1"># pyre-ignore[16]: ClassifierMixin has predict_proba at runtime</span>
+        <span class="n">best_pred_target</span> <span class="o">=</span> <span class="n">best_model</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">target_matrix</span><span class="p">)[</span>
+            <span class="p">:,</span> <span class="n">chosen_class_index</span>
+        <span class="p">]</span>
+        <span class="n">target_probability</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">best_pred_target</span><span class="p">)</span>
+        <span class="n">target_link</span> <span class="o">=</span> <span class="n">link_transform</span><span class="p">(</span><span class="n">target_probability</span><span class="p">)</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Predicting&quot;</span><span class="p">)</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">weights_from_link</span><span class="p">(</span>
-        <span class="n">link</span><span class="p">,</span>
+        <span class="n">sample_link</span><span class="p">,</span>
         <span class="n">balance_classes</span><span class="p">,</span>
         <span class="n">sample_weights</span><span class="p">,</span>
         <span class="n">target_weights</span><span class="p">,</span>
@@ -1099,7 +1128,6 @@
     <span class="p">)</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Chosen lambda: </span><span class="si">{</span><span class="n">best_s</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">best_model</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">best_model</span><span class="p">)</span>
     <span class="n">performance</span> <span class="o">=</span> <span class="n">model_coefs</span><span class="p">(</span>
         <span class="n">best_model</span><span class="p">,</span>
         <span class="n">feature_names</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">X_matrix_columns_names</span><span class="p">),</span>
@@ -1129,17 +1157,66 @@
             <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">dev</span><span class="si">}</span><span class="s2">). Results may not be accurate&quot;</span>
         <span class="p">)</span>
 
+    <span class="n">model_out</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;ipw&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;X_matrix_columns&quot;</span><span class="p">:</span> <span class="n">X_matrix_columns_names</span><span class="p">,</span>
+        <span class="s2">&quot;fit&quot;</span><span class="p">:</span> <span class="n">fits</span><span class="p">[</span><span class="n">best_s_index</span><span class="p">],</span>
+        <span class="s2">&quot;perf&quot;</span><span class="p">:</span> <span class="n">performance</span><span class="p">,</span>
+        <span class="s2">&quot;lambda&quot;</span><span class="p">:</span> <span class="n">best_s</span><span class="p">,</span>
+        <span class="s2">&quot;balance_classes&quot;</span><span class="p">:</span> <span class="n">balance_classes</span><span class="p">,</span>
+        <span class="s2">&quot;weight_trimming_mean_ratio&quot;</span><span class="p">:</span> <span class="n">weight_trimming_mean_ratio</span><span class="p">,</span>
+        <span class="s2">&quot;weight_trimming_percentile&quot;</span><span class="p">:</span> <span class="n">weight_trimming_percentile</span><span class="p">,</span>
+        <span class="s2">&quot;use_model_matrix&quot;</span><span class="p">:</span> <span class="n">use_model_matrix</span><span class="p">,</span>
+        <span class="s2">&quot;na_action&quot;</span><span class="p">:</span> <span class="n">na_action</span><span class="p">,</span>
+        <span class="s2">&quot;one_hot_encoding&quot;</span><span class="p">:</span> <span class="n">one_hot_encoding</span><span class="p">,</span>
+        <span class="s2">&quot;transformations&quot;</span><span class="p">:</span> <span class="n">transformations</span><span class="p">,</span>
+        <span class="s2">&quot;formula&quot;</span><span class="p">:</span> <span class="n">resolved_formula</span><span class="p">,</span>
+        <span class="s2">&quot;regularisation_perf&quot;</span><span class="p">:</span> <span class="n">regularisation_perf</span><span class="p">,</span>
+        <span class="s2">&quot;fit_scaler&quot;</span><span class="p">:</span> <span class="n">fit_scaler</span><span class="p">,</span>
+        <span class="s2">&quot;fit_penalties_skl&quot;</span><span class="p">:</span> <span class="n">fit_penalties_skl</span><span class="p">,</span>
+        <span class="s2">&quot;fit_matrix_type&quot;</span><span class="p">:</span> <span class="p">(</span>
+            <span class="s2">&quot;sparse&quot;</span>
+            <span class="k">if</span> <span class="n">issparse</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">)</span>
+            <span class="k">else</span> <span class="s2">&quot;dataframe&quot;</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;dense&quot;</span>
+        <span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">store_fit_metadata</span><span class="p">:</span>
+        <span class="n">model_out</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;sample_link&quot;</span><span class="p">:</span> <span class="n">sample_link</span><span class="p">,</span>
+                <span class="s2">&quot;target_link&quot;</span><span class="p">:</span> <span class="n">target_link</span><span class="p">,</span>
+                <span class="s2">&quot;sample_probability&quot;</span><span class="p">:</span> <span class="n">sample_probability</span><span class="p">,</span>
+                <span class="s2">&quot;target_probability&quot;</span><span class="p">:</span> <span class="n">target_probability</span><span class="p">,</span>
+                <span class="s2">&quot;sample_index&quot;</span><span class="p">:</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">&quot;target_index&quot;</span><span class="p">:</span> <span class="n">target_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="c1"># TODO: Rename to &quot;training_sample_weights&quot; /</span>
+                <span class="c1"># &quot;training_target_weights&quot; to match what _predict_weights_ipw</span>
+                <span class="c1"># expects, eliminating the indirection through</span>
+                <span class="c1"># _build_adjusted_frame&#39;s setdefault() bridge.</span>
+                <span class="s2">&quot;fit_sample_weights&quot;</span><span class="p">:</span> <span class="n">sample_weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">&quot;fit_target_weights&quot;</span><span class="p">:</span> <span class="n">target_weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">store_fit_matrices</span><span class="p">:</span>
+        <span class="c1"># TODO: Add .copy() to stored matrices for consistency</span>
+        <span class="c1"># with the .copy() pattern used for weights and indices above.</span>
+        <span class="c1"># numpy slicing returns views (shared memory); currently safe</span>
+        <span class="c1"># because downstream cache updates replace dict keys rather than</span>
+        <span class="c1"># mutating arrays in-place, but inconsistent.</span>
+        <span class="n">model_out</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;model_matrix_sample&quot;</span><span class="p">:</span> <span class="n">X_matrix</span><span class="p">[:</span><span class="n">sample_n</span><span class="p">],</span>
+                <span class="s2">&quot;model_matrix_target&quot;</span><span class="p">:</span> <span class="n">X_matrix</span><span class="p">[</span><span class="n">sample_n</span><span class="p">:],</span>
+                <span class="s2">&quot;sample_index&quot;</span><span class="p">:</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">&quot;target_index&quot;</span><span class="p">:</span> <span class="n">target_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+
     <span class="n">out</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="n">weights</span><span class="p">,</span>
-        <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;ipw&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;X_matrix_columns&quot;</span><span class="p">:</span> <span class="n">X_matrix_columns_names</span><span class="p">,</span>
-            <span class="s2">&quot;fit&quot;</span><span class="p">:</span> <span class="n">fits</span><span class="p">[</span><span class="n">best_s_index</span><span class="p">],</span>
-            <span class="s2">&quot;perf&quot;</span><span class="p">:</span> <span class="n">performance</span><span class="p">,</span>
-            <span class="s2">&quot;lambda&quot;</span><span class="p">:</span> <span class="n">best_s</span><span class="p">,</span>
-            <span class="s2">&quot;weight_trimming_mean_ratio&quot;</span><span class="p">:</span> <span class="n">weight_trimming_mean_ratio</span><span class="p">,</span>
-            <span class="s2">&quot;regularisation_perf&quot;</span><span class="p">:</span> <span class="n">regularisation_perf</span><span class="p">,</span>
-        <span class="p">},</span>
+        <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="n">model_out</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Done ipw function&quot;</span><span class="p">)</span>

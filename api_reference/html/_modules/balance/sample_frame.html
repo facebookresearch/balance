@@ -53,6 +53,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
 
@@ -612,6 +613,11 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">weight_column</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Name of the currently active weight column, or None.</span>
 
+<span class="sd">        .. note::</span>
+<span class="sd">            In balance 0.19.0, ``weight_column`` was changed from returning</span>
+<span class="sd">            weight *data* (``pd.Series``) to returning the column *name*</span>
+<span class="sd">            (``str``).  If you need weight data, use :attr:`weight_series`.</span>
+
 <span class="sd">        Returns:</span>
 <span class="sd">            str | None: The active weight column name.</span>
 
@@ -624,25 +630,16 @@
 <span class="sd">            &gt;&gt;&gt; sf.weight_column</span>
 <span class="sd">            &#39;weight&#39;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO: remove this warning after 2026-06-01 — by then users will</span>
+        <span class="c1"># have migrated to weight_series for data access.</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;Note: weight_column now returns the column name (str) since &quot;</span>
+            <span class="s2">&quot;balance 0.19.0. It previously returned weight data (pd.Series). &quot;</span>
+            <span class="s2">&quot;Use weight_series for weight data.&quot;</span><span class="p">,</span>
+            <span class="ne">FutureWarning</span><span class="p">,</span>
+            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight_column_name</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">id_column_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Name of the ID column.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            str: The ID column name.</span>
-
-<span class="sd">        Examples:</span>
-<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
-<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
-<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;], &quot;x&quot;: [10, 20],</span>
-<span class="sd">            ...                    &quot;weight&quot;: [1.0, 2.0]})</span>
-<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df)</span>
-<span class="sd">            &gt;&gt;&gt; sf.id_column_name</span>
-<span class="sd">            &#39;id&#39;</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id_column_name</span>
 
     <span class="c1"># --- DataFrame properties ---</span>
 
@@ -747,7 +744,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">cols</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">if</span> <span class="n">cols</span> <span class="k">else</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">id_column</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">id_series</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The ID column as a Series.</span>
 
 <span class="sd">        Returns a copy so that callers cannot accidentally mutate the</span>
@@ -762,12 +759,36 @@
 <span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;], &quot;x&quot;: [10, 20],</span>
 <span class="sd">            ...                    &quot;weight&quot;: [1.0, 1.0]})</span>
 <span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df)</span>
-<span class="sd">            &gt;&gt;&gt; ids = sf.id_column</span>
+<span class="sd">            &gt;&gt;&gt; ids = sf.id_series</span>
 <span class="sd">            &gt;&gt;&gt; ids.iloc[0] = &quot;MUTATED&quot;</span>
-<span class="sd">            &gt;&gt;&gt; sf.id_column.iloc[0]  # internal data unchanged</span>
+<span class="sd">            &gt;&gt;&gt; sf.id_series.iloc[0]  # internal data unchanged</span>
 <span class="sd">            &#39;1&#39;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_id_column_name</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">id_column</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Name of the ID column.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">            In balance 0.20.0, ``id_column`` was changed from returning</span>
+<span class="sd">            ID *data* (``pd.Series``) to returning the column *name*</span>
+<span class="sd">            (``str``), for consistency with :attr:`weight_column`.</span>
+<span class="sd">            If you need ID data, use :attr:`id_series`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The ID column name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO: remove this warning after 2026-06-01 — by then users will</span>
+        <span class="c1"># have migrated to id_series for data access.</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;Note: id_column now returns the column name (str) since &quot;</span>
+            <span class="s2">&quot;balance 0.20.0. It previously returned ID data (pd.Series). &quot;</span>
+            <span class="s2">&quot;Use id_series for ID data.&quot;</span><span class="p">,</span>
+            <span class="ne">FutureWarning</span><span class="p">,</span>
+            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id_column_name</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">weight_series</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
@@ -963,7 +984,7 @@
         <span class="n">keep_sum_of_weights</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">target_sum_weights</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
-        <span class="n">in_place</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Trim extreme weights using mean-ratio clipping or percentile winsorization.</span>
 
@@ -983,12 +1004,12 @@
 <span class="sd">                their sum equals this numeric target value.  (This is a</span>
 <span class="sd">                general-purpose rescaling parameter — not related to</span>
 <span class="sd">                the &quot;target population&quot; concept in BalanceFrame.)</span>
-<span class="sd">            in_place: If True, mutate this SampleFrame and return it.</span>
+<span class="sd">            inplace: If True, mutate this SampleFrame and return it.</span>
 <span class="sd">                If False (default), return a new SampleFrame with trimmed</span>
 <span class="sd">                weights and the original left untouched.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            The SampleFrame with trimmed weights (self if *in_place*,</span>
+<span class="sd">            The SampleFrame with trimmed weights (self if *inplace*,</span>
 <span class="sd">            else a new copy).</span>
 
 <span class="sd">        Examples:</span>
@@ -1004,7 +1025,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">balance.adjustment</span><span class="w"> </span><span class="kn">import</span> <span class="n">trim_weights</span>
 
-        <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span> <span class="k">if</span> <span class="n">in_place</span> <span class="k">else</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span> <span class="k">if</span> <span class="n">inplace</span> <span class="k">else</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
         <span class="n">original_weight_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span>
             <span class="n">target</span><span class="o">.</span><span class="n">_weight_column_name</span> <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">_weight_column_name</span> <span class="k">else</span> <span class="s2">&quot;weight&quot;</span>
@@ -1403,7 +1424,7 @@
                 <span class="sa">f</span><span class="s2">&quot;&#39;sample&#39; must be a Sample instance, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
-        <span class="n">_id_col</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">id_column</span>
+        <span class="n">_id_col</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">id_series</span>
         <span class="n">_weight_col</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">weight_series</span>
         <span class="k">if</span> <span class="n">_id_col</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>

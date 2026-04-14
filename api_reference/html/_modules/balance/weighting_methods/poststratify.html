@@ -56,6 +56,22 @@
 
 
 <span class="c1"># TODO: Add tests for all arguments of function</span>
+<span class="c1"># TODO: consider adding a `formula` parameter to poststratify (like IPW/CBPS have).</span>
+<span class="c1">#   Currently, passing formula=... via **kwargs is silently ignored.</span>
+<span class="c1">#   Users wanting to control which variables define PS cells must use `variables=`</span>
+<span class="c1">#   or `transformations={&quot;col&quot;: lambda x: x}`. A `formula` parameter would provide</span>
+<span class="c1">#   a consistent interface across all adjustment methods.</span>
+<span class="c1">#   Example from balance notebook v03 that currently does NOT work as intended:</span>
+<span class="c1">#       formula = [&quot;gender&quot;]</span>
+<span class="c1">#       adjusted = ipw_adjusted.adjust(method=&quot;poststratify&quot;, formula=formula)</span>
+<span class="c1">#   The formula is silently swallowed by **kwargs. Users must use instead:</span>
+<span class="c1">#       adjusted = ipw_adjusted.adjust(method=&quot;poststratify&quot;, variables=[&quot;gender&quot;])</span>
+<span class="c1"># TODO: Store fit artifacts for predict_weights() support.</span>
+<span class="c1"># Save the cell-ratio table, the variable list, and na_action in the</span>
+<span class="c1"># returned model dict. Currently only {&quot;method&quot;: &quot;poststratify&quot;} is</span>
+<span class="c1"># returned. Then implement `_predict_weights_poststratify()` in</span>
+<span class="c1"># balance_frame.py: join sample rows on stored cell-ratio table,</span>
+<span class="c1"># multiply ratio by design weight, normalize to target total. ~45 lines total.</span>
 <div class="viewcode-block" id="poststratify">
 <a class="viewcode-back" href="../../../balance.weighting_methods.poststratify.html#balance.weighting_methods.poststratify.poststratify">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">poststratify</span><span class="p">(</span>

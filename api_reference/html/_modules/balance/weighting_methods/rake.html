@@ -148,6 +148,13 @@
     <span class="k">return</span> <span class="n">table</span><span class="p">,</span> <span class="n">converged</span><span class="p">,</span> <span class="n">iterations_df</span>
 
 
+<span class="c1"># TODO: Store fit artifacts for predict_weights() support.</span>
+<span class="c1"># Save the fitted contingency table (`m_fit`), variable lists, and</span>
+<span class="c1"># category-to-index mappings in the returned model dict. Currently</span>
+<span class="c1"># `m_fit` is discarded after per-row weight assignment. Then implement</span>
+<span class="c1"># `_predict_weights_rake()` in balance_frame.py: look up each row&#39;s cell</span>
+<span class="c1"># in the stored N-dimensional table, compute weight ratio, multiply by</span>
+<span class="c1"># design weight. ~80 lines total.</span>
 <div class="viewcode-block" id="rake">
 <a class="viewcode-back" href="../../../balance.weighting_methods.rake.html#balance.weighting_methods.rake.rake">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">rake</span><span class="p">(</span>

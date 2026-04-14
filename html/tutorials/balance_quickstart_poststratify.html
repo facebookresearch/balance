@@ -7843,14 +7843,14 @@ a.anchor-link {
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-04-09 17:12:08,058) [__init__/&lt;module&gt; (line 75)]: Using balance version 0.19.0
+<pre>INFO (2026-04-14 18:58:57,279) [__init__/&lt;module&gt; (line 75)]: Using balance version 0.19.0
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-04-09 17:12:08,059) [__init__/&lt;module&gt; (line 80)]: 
+<pre>INFO (2026-04-14 18:58:57,279) [__init__/&lt;module&gt; (line 80)]: 
 balance (Version 0.19.0) loaded:
     📖 Documentation: https://import-balance.org/
     🛠️ Help / Issues: https://github.com/facebookresearch/balance/issues/
@@ -7990,21 +7990,21 @@ balance (Version 0.19.0) loaded:
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-04-09 17:12:08,095) [adjustment/apply_transformations (line 433)]: Adding the variables: []
+<pre>INFO (2026-04-14 18:58:57,316) [adjustment/apply_transformations (line 433)]: Adding the variables: []
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-04-09 17:12:08,096) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['gender']
+<pre>INFO (2026-04-14 18:58:57,317) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['gender']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-04-09 17:12:08,100) [adjustment/apply_transformations (line 469)]: Final variables in output: ['gender']
+<pre>INFO (2026-04-14 18:58:57,321) [adjustment/apply_transformations (line 469)]: Final variables in output: ['gender']
 </pre>
 </div>
 </div>
@@ -8118,21 +8118,21 @@ balance (Version 0.19.0) loaded:
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-04-09 17:12:08,127) [adjustment/apply_transformations (line 433)]: Adding the variables: []
+<pre>INFO (2026-04-14 18:58:57,349) [adjustment/apply_transformations (line 433)]: Adding the variables: []
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-04-09 17:12:08,128) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['gender', 'age_group']
+<pre>INFO (2026-04-14 18:58:57,350) [adjustment/apply_transformations (line 434)]: Transforming the variables: ['gender', 'age_group']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-04-09 17:12:08,133) [adjustment/apply_transformations (line 469)]: Final variables in output: ['gender', 'age_group']
+<pre>INFO (2026-04-14 18:58:57,356) [adjustment/apply_transformations (line 469)]: Final variables in output: ['gender', 'age_group']
 </pre>
 </div>
 </div>
@@ -8226,6 +8226,42 @@ balance (Version 0.19.0) loaded:
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <p>Each row corresponds to a unique combination of gender and age group. The equality between the two columns confirms that <code>poststratify</code> matched the full joint distribution without reverting to raking.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=todo-extensions">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Future-extensions-(TODO)">Future extensions (TODO)<a class="anchor-link" href="#Future-extensions-(TODO)">¶</a></h2><ul>
+<li><strong>PS via <code>Sample.adjust()</code></strong>: Show the high-level API (<code>sample.adjust(target, method="poststratify")</code>) instead of calling <code>poststratify()</code> directly.</li>
+<li><strong>Chained adjustments</strong>: Demonstrate IPW → poststratify (two-stage adjustment) with ASMD comparison at each stage. Example from balance notebook v03:<div class="highlight"><pre><span></span><span class="n">sample_with_target</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">set_target</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+<span class="n">adjust_stage_1</span> <span class="o">=</span> <span class="n">sample_with_target</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">"ipw"</span><span class="p">)</span>
+<span class="n">adjust_stage_2</span> <span class="o">=</span> <span class="n">adjust_stage_1</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">"poststratify"</span><span class="p">)</span>
+<span class="n">adjust_stage_2</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">asmd</span><span class="p">()</span><span class="o">.</span><span class="n">T</span>
+<span class="n">adjust_stage_2</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</li>
+<li><strong>Controlling PS variables via transformations</strong>: Show how <code>transformations={"age_group": lambda x: x}</code> limits PS cells to only the named column. Example from balance notebook v03:<div class="highlight"><pre><span></span><span class="n">transformations</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"age_group"</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">}</span>
+<span class="n">adjusted</span> <span class="o">=</span> <span class="n">ipw_adjusted</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">"poststratify"</span><span class="p">,</span> <span class="n">transformations</span><span class="o">=</span><span class="n">transformations</span><span class="p">)</span>
+<span class="n">adjusted</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">asmd</span><span class="p">()</span><span class="o">.</span><span class="n">T</span>
+</pre></div>
+</li>
+<li><strong><code>formula=</code> does NOT work with poststratify yet</strong>: The following is silently ignored (formula goes into <code>**kwargs</code> but is never read). Show the working alternative:<div class="highlight"><pre><span></span><span class="c1"># Does NOT work as intended:</span>
+<span class="n">adjusted</span> <span class="o">=</span> <span class="n">ipw_adjusted</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">"poststratify"</span><span class="p">,</span> <span class="n">formula</span><span class="o">=</span><span class="p">[</span><span class="s2">"gender"</span><span class="p">])</span>
+<span class="c1"># Use instead:</span>
+<span class="n">adjusted</span> <span class="o">=</span> <span class="n">ipw_adjusted</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">"poststratify"</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="s2">"gender"</span><span class="p">])</span>
+</pre></div>
+</li>
+<li><strong>ASMD diagnostics</strong>: Show <code>adjusted.covars().asmd().T</code> and <code>asmd_improvement()</code> for poststratified samples.</li>
+<li><strong>Plotting</strong>: Add <code>adjusted.covars().plot()</code> and <code>adjusted.outcomes().plot()</code> examples.</li>
+<li><strong>PS on binned numeric variables</strong>: Demonstrate using transformations (e.g., <code>pd.cut</code>) to bin continuous variables before PS.</li>
+<li><strong>Strict vs non-strict matching</strong>: Show what happens when sample has cells not in target (<code>strict_matching=False</code>).</li>
+<li><strong>Weight trimming</strong>: Demonstrate <code>weight_trimming_mean_ratio</code> with poststratify.</li>
+</ul>
 </div>
 </div>
 </div>

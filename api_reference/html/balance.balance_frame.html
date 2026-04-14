@@ -252,6 +252,66 @@ construction. Passed through to BalanceDFCovars.</p>
 </div>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.design_matrix">
+<span class="sig-name descname"><span class="pre">design_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">on</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'sample'</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.balance_frame.BalanceFrame" title="balance.balance_frame.BalanceFrame"><span class="pre">BalanceFrame</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/balance/balance_frame.html#BalanceFrame.design_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balance_frame.BalanceFrame.design_matrix" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">design_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">on</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'target'</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.balance_frame.BalanceFrame" title="balance.balance_frame.BalanceFrame"><span class="pre">BalanceFrame</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span></dt>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">design_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">on</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'both'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'both'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.balance_frame.BalanceFrame" title="balance.balance_frame.BalanceFrame"><span class="pre">BalanceFrame</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="p"><span class="pre">]</span></span></span></span></dt>
+<dd><p>Return the IPW model’s design matrices.</p>
+<p>Returns the model matrices (feature matrices) built by the stored
+preprocessing pipeline — after formula expansion, one-hot encoding,
+NA indicator addition, scaling, and penalty weighting.</p>
+<p>When <code class="docutils literal notranslate"><span class="pre">data</span></code> is provided, the stored preprocessing is applied to
+<code class="docutils literal notranslate"><span class="pre">data</span></code>’s covariates and the result is returned without caching.
+When <code class="docutils literal notranslate"><span class="pre">data</span></code> is None (default), stored/cached matrices for this
+object’s own data are returned (original behavior).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>on</strong> – Which population’s matrix to return.  <code class="docutils literal notranslate"><span class="pre">&quot;sample&quot;</span></code> returns the
+respondent matrix, <code class="docutils literal notranslate"><span class="pre">&quot;target&quot;</span></code> returns the target matrix, and
+<code class="docutils literal notranslate"><span class="pre">&quot;both&quot;</span></code> returns <code class="docutils literal notranslate"><span class="pre">(sample_matrix,</span> <span class="pre">target_matrix)</span></code>.</p></li>
+<li><p><strong>data</strong> – An optional BalanceFrame whose covariates are transformed
+using this object’s stored preprocessing pipeline.  The
+<code class="docutils literal notranslate"><span class="pre">data</span></code> BalanceFrame does not need to be adjusted — it just
+provides covariates.  Must have matching covariate column names.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A model-matrix DataFrame, or a tuple of two DataFrames when
+<code class="docutils literal notranslate"><span class="pre">on=&quot;both&quot;</span></code>.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If the object is not IPW-adjusted, if target is missing
+    for <code class="docutils literal notranslate"><span class="pre">on</span> <span class="pre">in</span> <span class="pre">{&quot;target&quot;,</span> <span class="pre">&quot;both&quot;}</span></code>, if recomputation of sample-side
+    artifacts is required but no target is available, if <code class="docutils literal notranslate"><span class="pre">on</span></code> is
+    invalid, or if <code class="docutils literal notranslate"><span class="pre">data</span></code> has mismatched covariate columns.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>When <code class="docutils literal notranslate"><span class="pre">data</span></code> is None and stored fit artifacts are stale for the
+current rows (e.g., after <code class="docutils literal notranslate"><span class="pre">set_fitted_model()</span></code>), this method
+recomputes and caches refreshed matrices.  That cache update is an
+intentional in-memory mutation.  When <code class="docutils literal notranslate"><span class="pre">data</span></code> is provided, no
+caching occurs.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampleFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.balance_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">resp</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tgt</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">],</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">adjusted</span> <span class="o">=</span> <span class="n">BalanceFrame</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">resp</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">tgt</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;ipw&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x_s</span><span class="p">,</span> <span class="n">x_t</span> <span class="o">=</span> <span class="n">adjusted</span><span class="o">.</span><span class="n">design_matrix</span><span class="p">(</span><span class="n">on</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x_s</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">x_t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">(2, 2)</span>
+</pre></div>
+</div>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.df">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">df</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span></span><a class="headerlink" href="#balance.balance_frame.BalanceFrame.df" title="Link to this definition">¶</a></dt>
@@ -378,6 +438,85 @@ for outcome impact intervals.  Defaults to <code class="docutils literal notrans
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.balance_frame.BalanceFrame" title="balance.balance_frame.BalanceFrame"><span class="pre">BalanceFrame</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="balance.sample_frame.html#balance.sample_frame.SampleFrame" title="balance.sample_frame.SampleFrame"><span class="pre">SampleFrame</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'ipw'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="_modules/balance/balance_frame.html#BalanceFrame.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balance_frame.BalanceFrame.fit" title="Link to this definition">¶</a></dt>
+<dd><p>Fit a weighting model and return the fitted BalanceFrame.</p>
+<p>This is the sklearn-style entry point for survey weight adjustment.
+Like sklearn’s <code class="docutils literal notranslate"><span class="pre">fit()</span></code>, it learns model parameters, mutates
+<code class="docutils literal notranslate"><span class="pre">self</span></code> (by default), and returns <code class="docutils literal notranslate"><span class="pre">self</span></code>.  In survey weighting,
+fitting the propensity model inherently produces adjusted weights
+(the two are inseparable), so the returned object contains both the
+fitted model and the adjusted weights — analogous to how
+<code class="docutils literal notranslate"><span class="pre">KMeans.fit()</span></code> stores <code class="docutils literal notranslate"><span class="pre">labels_</span></code> on the fitted object.</p>
+<p><strong>Workflow — basic fitting (sklearn-style, inplace=True):</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">bf</span> <span class="o">=</span> <span class="n">BalanceFrame</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">respondents</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">population</span><span class="p">)</span>
+<span class="n">bf</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;ipw&quot;</span><span class="p">)</span>       <span class="c1"># mutates bf, returns bf</span>
+<span class="n">bf</span><span class="o">.</span><span class="n">weights</span><span class="p">()</span><span class="o">.</span><span class="n">df</span>            <span class="c1"># the adjusted weights</span>
+</pre></div>
+</div>
+<p><strong>Workflow — functional style (inplace=False):</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">adjusted</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;ipw&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Workflow — fit on subset, apply to holdout:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fitted</span> <span class="o">=</span> <span class="n">train_bf</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;ipw&quot;</span><span class="p">)</span>
+<span class="n">scored</span> <span class="o">=</span> <span class="n">holdout_bf</span><span class="o">.</span><span class="n">set_fitted_model</span><span class="p">(</span><span class="n">fitted</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">holdout_weights</span> <span class="o">=</span> <span class="n">scored</span><span class="o">.</span><span class="n">predict_weights</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Alternatively, <code class="docutils literal notranslate"><span class="pre">design_matrix()</span></code>, <code class="docutils literal notranslate"><span class="pre">predict_proba()</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">predict_weights()</span></code> accept a <code class="docutils literal notranslate"><span class="pre">data=</span></code> argument so the holdout
+workflow becomes a single line:
+<code class="docutils literal notranslate"><span class="pre">fitted.predict_weights(data=holdout_bf)</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>target</strong> – Optional target population to set before fitting.  If
+provided, this method calls <code class="docutils literal notranslate"><span class="pre">set_target(target,</span> <span class="pre">inplace=False)</span></code>
+first, preserving immutability.</p></li>
+<li><p><strong>method</strong> – Adjustment method name (<code class="docutils literal notranslate"><span class="pre">&quot;ipw&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;cbps&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;rake&quot;</span></code>,
+<code class="docutils literal notranslate"><span class="pre">&quot;poststratify&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;null&quot;</span></code>) or a custom callable with the
+weighting-method signature.</p></li>
+<li><p><strong>inplace</strong> – If True (default), mutate this object with the fitted
+state and return <code class="docutils literal notranslate"><span class="pre">self</span></code> — matching sklearn’s <code class="docutils literal notranslate"><span class="pre">fit()</span></code>
+convention.  If False, return a new adjusted BalanceFrame
+without modifying <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p></li>
+<li><p><strong>**kwargs</strong> – Keyword arguments forwarded to <a class="reference internal" href="#balance.balance_frame.BalanceFrame.adjust" title="balance.balance_frame.BalanceFrame.adjust"><code class="xref py py-meth docutils literal notranslate"><span class="pre">adjust()</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The fitted BalanceFrame — <code class="docutils literal notranslate"><span class="pre">self</span></code> when <code class="docutils literal notranslate"><span class="pre">inplace=True</span></code>,
+a new object when <code class="docutils literal notranslate"><span class="pre">inplace=False</span></code>.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If no target is available and none is provided, if
+    <code class="docutils literal notranslate"><span class="pre">method</span></code> is invalid, or if <code class="docutils literal notranslate"><span class="pre">na_action='drop'</span></code> is combined
+    with stored fit artifacts.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampleFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.balance_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">resp</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tgt</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">],</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">adjusted</span> <span class="o">=</span> <span class="n">BalanceFrame</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">resp</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">tgt</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;null&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">bool</span><span class="p">(</span><span class="n">adjusted</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<p>For the built-in IPW method, <code class="docutils literal notranslate"><span class="pre">fit()</span></code> enables
+<code class="docutils literal notranslate"><span class="pre">store_fit_metadata=True</span></code> and <code class="docutils literal notranslate"><span class="pre">store_fit_matrices=True</span></code> by
+default so <code class="docutils literal notranslate"><span class="pre">design_matrix()</span></code>/<code class="docutils literal notranslate"><span class="pre">predict_proba()</span></code>/<code class="docutils literal notranslate"><span class="pre">predict_weights()</span></code>
+can consume fit-time artifacts.  This may increase memory usage
+for large inputs; pass these kwargs explicitly as <code class="docutils literal notranslate"><span class="pre">False</span></code> to
+opt out.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.from_sample">
 <span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#balance.balance_frame.BalanceFrame" title="balance.balance_frame.BalanceFrame"><span class="pre">BalanceFrame</span></a></span></span><a class="reference internal" href="_modules/balance/balance_frame.html#BalanceFrame.from_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balance_frame.BalanceFrame.from_sample" title="Link to this definition">¶</a></dt>
 <dd><p>Convert a <a class="reference internal" href="balance.sample_class.html#balance.sample_class.Sample" title="balance.sample_class.Sample"><code class="xref py py-class docutils literal notranslate"><span class="pre">Sample</span></code></a> to a BalanceFrame.</p>
@@ -447,7 +586,15 @@ a target.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.id_column">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">id_column</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#balance.balance_frame.BalanceFrame.id_column" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">id_column</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#balance.balance_frame.BalanceFrame.id_column" title="Link to this definition">¶</a></dt>
+<dd><p>The id column name, delegated to <code class="docutils literal notranslate"><span class="pre">_sf_sample</span></code>.</p>
+<p>Changed in 0.20.0 to return the name (str) instead of data (pd.Series).
+Use <a class="reference internal" href="#balance.balance_frame.BalanceFrame.id_series" title="balance.balance_frame.BalanceFrame.id_series"><code class="xref py py-attr docutils literal notranslate"><span class="pre">id_series</span></code></a> for data.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.id_series">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">id_series</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#balance.balance_frame.BalanceFrame.id_series" title="Link to this definition">¶</a></dt>
 <dd><p>The id column as a Series, delegated to <code class="docutils literal notranslate"><span class="pre">_sf_sample</span></code>.</p>
 </dd></dl>
 
@@ -577,6 +724,120 @@ adding NA indicators for null values.</p>
 </div>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.predict_proba">
+<span class="sig-name descname"><span class="pre">predict_proba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">on</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'sample'</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'probability'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'link'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'probability'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.balance_frame.BalanceFrame" title="balance.balance_frame.BalanceFrame"><span class="pre">BalanceFrame</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/balance/balance_frame.html#BalanceFrame.predict_proba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balance_frame.BalanceFrame.predict_proba" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">predict_proba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">on</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'target'</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'probability'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'link'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'probability'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.balance_frame.BalanceFrame" title="balance.balance_frame.BalanceFrame"><span class="pre">BalanceFrame</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span></dt>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">predict_proba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">on</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'both'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'both'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'probability'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'link'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'probability'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.balance_frame.BalanceFrame" title="balance.balance_frame.BalanceFrame"><span class="pre">BalanceFrame</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="p"><span class="pre">]</span></span></span></span></dt>
+<dd><p>Return IPW propensity scores.</p>
+<p>Returns the propensity scores (predicted probabilities of being in
+the sample vs target) from the fitted IPW model.  A target row with
+high propensity is well-represented in the sample; a low score
+indicates underrepresentation.</p>
+<p>When <code class="docutils literal notranslate"><span class="pre">data</span></code> is provided, the stored model is applied to <code class="docutils literal notranslate"><span class="pre">data</span></code>’s
+covariates and fresh predictions are returned without caching.  When
+<code class="docutils literal notranslate"><span class="pre">data</span></code> is None (default), stored/cached predictions for this
+object’s own data are returned (original behavior).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>on</strong> – Which population to predict on (<code class="docutils literal notranslate"><span class="pre">&quot;sample&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;target&quot;</span></code>,
+or <code class="docutils literal notranslate"><span class="pre">&quot;both&quot;</span></code>).</p></li>
+<li><p><strong>output</strong> – Output scale. <code class="docutils literal notranslate"><span class="pre">&quot;probability&quot;</span></code> returns class-1 propensity
+probabilities. <code class="docutils literal notranslate"><span class="pre">&quot;link&quot;</span></code> returns logit-transformed values.</p></li>
+<li><p><strong>data</strong> – An optional BalanceFrame whose covariates are scored using
+this object’s stored model.  Must have matching covariate
+column names.  The <code class="docutils literal notranslate"><span class="pre">data</span></code> BalanceFrame needs a target for
+<code class="docutils literal notranslate"><span class="pre">on=&quot;target&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">on=&quot;both&quot;</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A prediction Series, or a tuple of two Series when <code class="docutils literal notranslate"><span class="pre">on=&quot;both&quot;</span></code>.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If the object is not IPW-adjusted, if target is missing
+    for <code class="docutils literal notranslate"><span class="pre">on</span> <span class="pre">in</span> <span class="pre">{&quot;target&quot;,</span> <span class="pre">&quot;both&quot;}</span></code>, if recomputation of sample-side
+    predictions is required but no target is available, if <code class="docutils literal notranslate"><span class="pre">on</span></code> is
+    invalid, or if <code class="docutils literal notranslate"><span class="pre">data</span></code> has mismatched covariate columns.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>When <code class="docutils literal notranslate"><span class="pre">data</span></code> is None and stored fit-time predictions are stale
+for the current rows, this method may recompute and cache refreshed
+probabilities/links.  When <code class="docutils literal notranslate"><span class="pre">data</span></code> is provided, no caching occurs.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampleFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.balance_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">resp</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tgt</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">],</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">adjusted</span> <span class="o">=</span> <span class="n">BalanceFrame</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">resp</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">tgt</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;ipw&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">adjusted</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">on</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s2">&quot;probability&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">int</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.predict_weights">
+<span class="sig-name descname"><span class="pre">predict_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.balance_frame.BalanceFrame" title="balance.balance_frame.BalanceFrame"><span class="pre">BalanceFrame</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/balance/balance_frame.html#BalanceFrame.predict_weights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balance_frame.BalanceFrame.predict_weights" title="Link to this definition">¶</a></dt>
+<dd><p>Predict responder weights from the fitted model’s artifacts.</p>
+<p>Reconstructs adjusted survey weights from stored fit-time artifacts
+(propensity links, design weights, class balancing, trimming
+parameters).  On the fitted object itself, the result is numerically
+equivalent to <code class="docutils literal notranslate"><span class="pre">self.weights().df</span></code> (within floating-point tolerance)
+and serves as a validation that the stored artifacts are sufficient
+to reproduce the adjustment.</p>
+<p>When <code class="docutils literal notranslate"><span class="pre">data</span></code> is provided, computes weights for <code class="docutils literal notranslate"><span class="pre">data</span></code>’s sample
+using the stored model, without caching.  This is the one-liner
+alternative to the <code class="docutils literal notranslate"><span class="pre">set_fitted_model</span></code> workflow:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">fitted</span><span class="o">.</span><span class="n">predict_weights</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">holdout_bf</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>When <code class="docutils literal notranslate"><span class="pre">data</span></code> is None (default), uses this object’s own data
+(original behavior).</p>
+<p>Dispatches by the adjustment method stored in the model dict:</p>
+<ul class="simple">
+<li><p><strong>IPW</strong>: uses stored fit-time metadata (links, class balancing,
+trimming, and design weights) to reproduce fitted responder weights.</p></li>
+<li><p><strong>Other methods</strong>: not yet supported — will raise with guidance.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> – An optional BalanceFrame whose sample covariates are scored
+using this object’s stored model.  Must have matching covariate
+column names and a target set.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A Series of predicted responder weights.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If no fitted model is available, if the method is
+    unsupported, if required target data is missing, or if
+    <code class="docutils literal notranslate"><span class="pre">data</span></code> has mismatched covariate columns.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampleFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.balance_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">resp</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tgt</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">],</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">adjusted</span> <span class="o">=</span> <span class="n">BalanceFrame</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">resp</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">tgt</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;ipw&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w</span> <span class="o">=</span> <span class="n">adjusted</span><span class="o">.</span><span class="n">predict_weights</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">int</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="id1">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">responders</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="balance.sample_frame.html#balance.sample_frame.SampleFrame" title="balance.sample_frame.SampleFrame"><span class="pre">SampleFrame</span></a></span><a class="headerlink" href="#id1" title="Link to this definition">¶</a></dt>
@@ -585,22 +846,22 @@ adding NA indicators for null values.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.set_as_pre_adjust">
-<span class="sig-name descname"><span class="pre">set_as_pre_adjust</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_place</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="_modules/balance/balance_frame.html#BalanceFrame.set_as_pre_adjust"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balance_frame.BalanceFrame.set_as_pre_adjust" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">set_as_pre_adjust</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="_modules/balance/balance_frame.html#BalanceFrame.set_as_pre_adjust"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balance_frame.BalanceFrame.set_as_pre_adjust" title="Link to this definition">¶</a></dt>
 <dd><p>Set the current responder state as the new pre-adjust baseline.</p>
 <p>This “locks in” the current responder weights (which may already be
 adjusted and/or trimmed) as the baseline for future diagnostics and
 subsequent adjustments.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>in_place</strong> – If True, mutate this object and return it. If False
+<dd class="field-odd"><p><strong>inplace</strong> – If True, mutate this object and return it. If False
 (default), return a new object with a deep-copied responder
 frame and reset baseline.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>BalanceFrame with <code class="docutils literal notranslate"><span class="pre">_sf_sample_pre_adjust</span></code> reset to the current
-responder SampleFrame state. In copy mode (<code class="docutils literal notranslate"><span class="pre">in_place=False</span></code>),
+responder SampleFrame state. In copy mode (<code class="docutils literal notranslate"><span class="pre">inplace=False</span></code>),
 only the responder frame is deep-copied and used to construct a new
-object (the full <code class="docutils literal notranslate"><span class="pre">_links</span></code> graph is not deep-copied). In in-place
+object (the full <code class="docutils literal notranslate"><span class="pre">_links</span></code> graph is not deep-copied). In inplace
 mode, the baseline is set to the existing responder
 frame object so baseline/current share identity, matching
 unadjusted-object semantics elsewhere in the API.
@@ -620,27 +881,92 @@ longer considered adjusted after this operation.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">baseline_locked</span> <span class="o">=</span> <span class="n">adjusted</span><span class="o">.</span><span class="n">set_as_pre_adjust</span><span class="p">()</span>  <span class="c1"># copy mode</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">baseline_locked</span><span class="o">.</span><span class="n">is_adjusted</span>
 <span class="go">False</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">_</span> <span class="o">=</span> <span class="n">adjusted</span><span class="o">.</span><span class="n">set_as_pre_adjust</span><span class="p">(</span><span class="n">in_place</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># in-place mode</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">_</span> <span class="o">=</span> <span class="n">adjusted</span><span class="o">.</span><span class="n">set_as_pre_adjust</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># inplace mode</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.set_fitted_model">
+<span class="sig-name descname"><span class="pre">set_fitted_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fitted</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.balance_frame.BalanceFrame" title="balance.balance_frame.BalanceFrame"><span class="pre">BalanceFrame</span></a></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="_modules/balance/balance_frame.html#BalanceFrame.set_fitted_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balance_frame.BalanceFrame.set_fitted_model" title="Link to this definition">¶</a></dt>
+<dd><p>Apply a fitted model from another BalanceFrame, producing a fully adjusted result.</p>
+<p>This enables fit-then-apply workflows: fit on one BalanceFrame (e.g.,
+a 20k subset) and apply the fitted model to another BalanceFrame
+(e.g., the remaining 980k) with the same covariate schema.  The
+returned object is fully adjusted (<code class="docutils literal notranslate"><span class="pre">is_adjusted</span></code> is True,
+<code class="docutils literal notranslate"><span class="pre">model</span></code> is set, <code class="docutils literal notranslate"><span class="pre">summary()</span></code> works with 3-way comparison).</p>
+<p><strong>Workflow (inplace=False — returns new adjusted object):</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fitted</span> <span class="o">=</span> <span class="n">train_bf</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;ipw&quot;</span><span class="p">)</span>
+<span class="n">scored</span> <span class="o">=</span> <span class="n">holdout_bf</span><span class="o">.</span><span class="n">set_fitted_model</span><span class="p">(</span><span class="n">fitted</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">scored</span><span class="o">.</span><span class="n">summary</span><span class="p">()</span>  <span class="c1"># full diagnostics on holdout</span>
+</pre></div>
+</div>
+<p><strong>Workflow (inplace=True, default — mutates self):</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">holdout_bf</span><span class="o">.</span><span class="n">set_fitted_model</span><span class="p">(</span><span class="n">fitted</span><span class="p">)</span>
+<span class="n">holdout_bf</span><span class="o">.</span><span class="n">summary</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Currently supports IPW models.  Other methods (CBPS, rake,
+poststratify) will be supported once they store fit-time artifacts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fitted</strong> – A BalanceFrame already adjusted with a supported method.
+Its fitted model is used to compute holdout weights.</p></li>
+<li><p><strong>inplace</strong> – If True (default), mutate this object and return <code class="docutils literal notranslate"><span class="pre">self</span></code>.
+If False, return a new BalanceFrame with computed weights,
+leaving <code class="docutils literal notranslate"><span class="pre">self</span></code> unchanged.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A fully adjusted BalanceFrame with holdout weights applied.
+<code class="docutils literal notranslate"><span class="pre">self</span></code> when <code class="docutils literal notranslate"><span class="pre">inplace=True</span></code>, a new object when <code class="docutils literal notranslate"><span class="pre">inplace=False</span></code>.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">fitted</span></code> has no stored model, if the model method
+    is not yet supported, or if covariate column names differ
+    between <code class="docutils literal notranslate"><span class="pre">self</span></code> and <code class="docutils literal notranslate"><span class="pre">fitted</span></code>.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampleFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">train_resp</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">train_tgt</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">],</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">holdout_resp</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">],</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">holdout_tgt</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">],</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">train_bf</span> <span class="o">=</span> <span class="n">BalanceFrame</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">train_resp</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">train_tgt</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">holdout_bf</span> <span class="o">=</span> <span class="n">BalanceFrame</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">holdout_resp</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">holdout_tgt</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fitted</span> <span class="o">=</span> <span class="n">train_bf</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;ipw&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">scored</span> <span class="o">=</span> <span class="n">holdout_bf</span><span class="o">.</span><span class="n">set_fitted_model</span><span class="p">(</span><span class="n">fitted</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">scored</span><span class="o">.</span><span class="n">is_adjusted</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">scored</span><span class="o">.</span><span class="n">model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+<span class="go">True</span>
 </pre></div>
 </div>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.set_target">
-<span class="sig-name descname"><span class="pre">set_target</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.balance_frame.BalanceFrame" title="balance.balance_frame.BalanceFrame"><span class="pre">BalanceFrame</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="balance.sample_frame.html#balance.sample_frame.SampleFrame" title="balance.sample_frame.SampleFrame"><span class="pre">SampleFrame</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_place</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="_modules/balance/balance_frame.html#BalanceFrame.set_target"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balance_frame.BalanceFrame.set_target" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">set_target</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.balance_frame.BalanceFrame" title="balance.balance_frame.BalanceFrame"><span class="pre">BalanceFrame</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="balance.sample_frame.html#balance.sample_frame.SampleFrame" title="balance.sample_frame.SampleFrame"><span class="pre">SampleFrame</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="_modules/balance/balance_frame.html#BalanceFrame.set_target"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balance_frame.BalanceFrame.set_target" title="Link to this definition">¶</a></dt>
 <dd><p>Set or replace the target population.</p>
 <p>When <em>target</em> is a BalanceFrame (or subclass such as Sample), a deep
 copy of <code class="docutils literal notranslate"><span class="pre">self</span></code> is returned with the target set (immutable pattern).
 When <em>target</em> is a raw SampleFrame, the behaviour depends on
-<em>in_place</em>: True mutates self, False returns a new BalanceFrame.</p>
+<em>inplace</em>: True mutates self, False returns a new BalanceFrame.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>target</strong> – The target population — a BalanceFrame/Sample or a
 SampleFrame.</p></li>
-<li><p><strong>in_place</strong> – If True, mutates self (only valid for SampleFrame
+<li><p><strong>inplace</strong> – If True, mutates self (only valid for SampleFrame
 targets). If False, returns a new copy. Defaults to None
-which auto-selects: copy for BalanceFrame targets, in-place
+which auto-selects: copy for BalanceFrame targets, inplace
 for SampleFrame targets.</p></li>
 </ul>
 </dd>
@@ -698,6 +1024,18 @@ becomes the unadjusted baseline.</p>
 <code class="docutils literal notranslate"><span class="pre">_sf_sample</span></code> and <code class="docutils literal notranslate"><span class="pre">_sf_sample_pre_adjust</span></code> share the same DataFrame,
 so the change is visible to both automatically — changing base weights
 is not an adjustment.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If this BalanceFrame has already been fitted (i.e., <code class="docutils literal notranslate"><span class="pre">adjust()</span></code>
+has been called), calling <code class="docutils literal notranslate"><span class="pre">set_weights()</span></code> changes the design
+weights but does <strong>not</strong> invalidate the stored fit artifacts
+(<code class="docutils literal notranslate"><span class="pre">_adjustment_model</span></code>).  The link values
+in those artifacts were computed using the old weights, so
+<code class="docutils literal notranslate"><span class="pre">predict_weights()</span></code> will use new <code class="docutils literal notranslate"><span class="pre">current_sample_weights</span></code>
+with stale links, producing a mathematical inconsistency.
+Users should re-fit (call <code class="docutils literal notranslate"><span class="pre">adjust()</span></code> again) after changing
+weights on an already-fitted BalanceFrame.</p>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -863,7 +1201,7 @@ True, and the original (unadjusted) weights are preserved via the
 
 <dl class="py method">
 <dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.trim">
-<span class="sig-name descname"><span class="pre">trim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">percentile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_sum_of_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_sum_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">np.floating</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_place</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="_modules/balance/balance_frame.html#BalanceFrame.trim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balance_frame.BalanceFrame.trim" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">trim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">percentile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_sum_of_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_sum_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">np.floating</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="_modules/balance/balance_frame.html#BalanceFrame.trim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balance_frame.BalanceFrame.trim" title="Link to this definition">¶</a></dt>
 <dd><p>Trim extreme weights using mean-ratio clipping or percentile winsorization.</p>
 <p>Delegates to <code class="xref py py-meth docutils literal notranslate"><span class="pre">SampleFrame.trim()</span></code> for computation and weight
 history tracking, then wraps the result in a new BalanceFrame
@@ -879,12 +1217,12 @@ with <em>ratio</em>.</p></li>
 preserve the original sum of weights.</p></li>
 <li><p><strong>target_sum_weights</strong> – If provided, rescale trimmed weights so
 their sum equals this target.</p></li>
-<li><p><strong>in_place</strong> – If True, mutate this BalanceFrame’s weights and
+<li><p><strong>inplace</strong> – If True, mutate this BalanceFrame’s weights and
 return it.  If False (default), return a new BalanceFrame.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The BalanceFrame with trimmed weights (self if <em>in_place</em>,
+<dd class="field-even"><p>The BalanceFrame with trimmed weights (self if <em>inplace</em>,
 else a new instance).</p>
 </dd>
 </dl>
@@ -952,6 +1290,7 @@ adjusted) views for comparative weight analysis.</p>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.is_adjusted"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.is_adjusted</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.adjust"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.adjust()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.covars"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.covars()</span></code></a></li>
+<li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.design_matrix"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.design_matrix()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.df"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.df</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.df_all"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.df_all</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.df_ignored"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.df_ignored</span></code></a></li>
@@ -959,16 +1298,21 @@ adjusted) views for comparative weight analysis.</p>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.df_responders_unadjusted"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.df_responders_unadjusted</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.df_target"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.df_target</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.diagnostics"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.diagnostics()</span></code></a></li>
+<li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.fit"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.fit()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.from_sample"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.from_sample()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.has_target"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.has_target</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.id_column"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.id_column</span></code></a></li>
+<li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.id_series"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.id_series</span></code></a></li>
 <li><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.is_adjusted</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.keep_only_some_rows_columns"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.keep_only_some_rows_columns()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.model"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.model</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.model_matrix"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.model_matrix()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.outcomes"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.outcomes()</span></code></a></li>
+<li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.predict_proba"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.predict_proba()</span></code></a></li>
+<li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.predict_weights"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.predict_weights()</span></code></a></li>
 <li><a class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.responders</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_as_pre_adjust"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.set_as_pre_adjust()</span></code></a></li>
+<li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_fitted_model"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.set_fitted_model()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_target"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.set_target()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_unadjusted"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.set_unadjusted()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_weights"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.set_weights()</span></code></a></li>

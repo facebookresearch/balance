@@ -26,10 +26,57 @@ hide_title: true
 - **Added `BalanceFrame.set_as_pre_adjust()`**
   - New helper to lock in the current responder state as the new
     pre-adjust baseline.
-  - Supports both immutable usage (`in_place=False`, default) and in-place
-    mutation (`in_place=True`).
+  - Supports both immutable usage (`inplace=False`, default) and in-place
+    mutation (`inplace=True`).
   - Clears the current adjustment model and unadjusted link since the object
     is no longer considered adjusted after baseline reset.
+
+- **Added sklearn-style `fit` / `design_matrix` / `predict_proba` workflow on `BalanceFrame`**
+  This change achieves three goals:
+  1. **Honest sklearn-style API** — Method names that sklearn users recognize AND that mean the same thing as in sklearn.
+  2. **Fit-then-apply workflow** — Fit a weighting model on a subset (e.g., 20k rows) and apply it to new/full data (e.g., 1M rows).
+  3. **Code quality** — Reduce duplication, increase modularity, keep the codebase simple.
+  - Added `BalanceFrame.fit(...)` as an sklearn-style entry point that
+    maps to `adjust(...)` with stored fit artifacts enabled by default.
+    Supports `inplace=True` (default, sklearn-style) and `inplace=False`
+    (functional style, returns new object).
+  - Added `BalanceFrame.design_matrix(on=..., data=...)` to return IPW-aligned
+    feature matrices for sample, target, or both. The `data=` argument
+    enables applying stored preprocessing to new data.
+  - Added `BalanceFrame.predict_proba(on=..., output=..., data=...)` for fitted
+    IPW propensity predictions.
+  - Added `BalanceFrame.predict_weights(data=...)` for reproducing responder
+    weights from the fitted IPW model. The `data=` argument enables one-liner
+    holdout scoring: `fitted.predict_weights(data=holdout_bf)`.
+  - Added `BalanceFrame.set_fitted_model(fitted)` to apply a fitted model
+    from one BalanceFrame to another for holdout scoring workflows.
+  - Stored IPW fit metadata needed to reproduce weights (`balance_classes`,
+    trimming options, and training design weights used at fit-time).
+  - Extracted shared preprocessing into `build_design_matrix()` in
+    `balance.utils.model_matrix` to eliminate duplication between `ipw()`
+    and `_compute_ipw_matrices()`.
+  - This makes the weighting API easier to use in sklearn-style workflows while
+    preserving existing `adjust(...)` behavior.
+
+## Breaking Changes
+
+- **Changed `id_column` to return the column name (`str`)** on `SampleFrame`,
+  `BalanceFrame`, and `Sample`. Previously `id_column` returned ID *data*
+  (`pd.Series`), which was inconsistent with `weight_column` (which returned a
+  column *name* after 0.19.0). Now both `id_column` and `weight_column` return
+  column names. Use `id_series` for ID data, `weight_series` for weight data.
+
+  The accessor naming convention is now consistent:
+  - `*_column` → column name (`str`): `id_column`, `weight_column`
+  - `*_series` → column data (`pd.Series`): `id_series`, `weight_series`
+  - `df_*` → DataFrame: `df_covars`, `df_weights`, `df_outcomes`
+
+  Both `id_column` and `weight_column` emit a `FutureWarning` to help users
+  discover the new data-returning accessors (`id_series`, `weight_series`).
+  The warnings will be removed after 2026-06-01.
+
+- **Updated `BalanceDFSource` protocol**: `id_column` → `id_series`. Custom
+  implementations of the protocol must rename this property.
 
 ## Tests
 
@@ -82,7 +129,7 @@ expansion, data flow, and the `Sample.__new__` guard — see
   - Factory methods: `from_frame()` (with explicit `covar_columns` parameter
     and auto-detection of id/weight columns) and `from_csv()`.
   - DataFrame view properties: `df_covars`, `df_outcomes`, `df_weights`,
-    `df_ignored`, `id_column`, `weight_series`.
+    `df_ignored`, `id_series`, `weight_series`.
   - Column-role list properties: `covar_columns`, `weight_columns_all`,
     `outcome_columns`, `predicted_outcome_columns`, `ignored_columns`.
   - Weight management: `add_weight_column()`, `set_active_weight()`,

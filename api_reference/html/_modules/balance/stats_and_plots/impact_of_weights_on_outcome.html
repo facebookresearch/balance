@@ -277,8 +277,8 @@
 <span class="sd">        ValueError: If IDs have duplicates, no common IDs exist, outcome values</span>
 <span class="sd">            differ, or no valid weights exist.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">id_col0</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">adjusted0</span><span class="o">.</span><span class="n">id_column</span><span class="p">)</span>
-    <span class="n">id_col1</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">adjusted1</span><span class="o">.</span><span class="n">id_column</span><span class="p">)</span>
+    <span class="n">id_col0</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">adjusted0</span><span class="o">.</span><span class="n">id_series</span><span class="p">)</span>
+    <span class="n">id_col1</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">adjusted1</span><span class="o">.</span><span class="n">id_series</span><span class="p">)</span>
     <span class="n">ids0</span> <span class="o">=</span> <span class="n">id_col0</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
     <span class="n">ids1</span> <span class="o">=</span> <span class="n">id_col1</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">ids0</span><span class="p">)</span><span class="o">.</span><span class="n">has_duplicates</span> <span class="ow">or</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">ids1</span><span class="p">)</span><span class="o">.</span><span class="n">has_duplicates</span><span class="p">:</span>
