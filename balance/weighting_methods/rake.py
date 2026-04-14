@@ -111,6 +111,13 @@ def _run_ipf_numpy(
     return table, converged, iterations_df
 
 
+# TODO: Store fit artifacts for predict_weights() support.
+# Save the fitted contingency table (`m_fit`), variable lists, and
+# category-to-index mappings in the returned model dict. Currently
+# `m_fit` is discarded after per-row weight assignment. Then implement
+# `_predict_weights_rake()` in balance_frame.py: look up each row's cell
+# in the stored N-dimensional table, compute weight ratio, multiply by
+# design weight. ~80 lines total.
 def rake(
     sample_df: pd.DataFrame,
     sample_weights: pd.Series,

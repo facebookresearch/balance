@@ -29,6 +29,12 @@ logger: logging.Logger = logging.getLogger(__package__)
 #       adjusted = ipw_adjusted.adjust(method="poststratify", formula=formula)
 #   The formula is silently swallowed by **kwargs. Users must use instead:
 #       adjusted = ipw_adjusted.adjust(method="poststratify", variables=["gender"])
+# TODO: Store fit artifacts for predict_weights() support.
+# Save the cell-ratio table, the variable list, and na_action in the
+# returned model dict. Currently only {"method": "poststratify"} is
+# returned. Then implement `_predict_weights_poststratify()` in
+# balance_frame.py: join sample rows on stored cell-ratio table,
+# multiply ratio by design weight, normalize to target total. ~45 lines total.
 def poststratify(
     sample_df: pd.DataFrame,
     sample_weights: pd.Series,
