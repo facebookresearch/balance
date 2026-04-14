@@ -745,8 +745,25 @@ class BalanceFrame:
         )
         # Preserve the raw model's method name (e.g. "null_adjustment") when
         # present; only set a fallback when the model doesn't include one.
-        if isinstance(new_bf._adjustment_model, dict):
-            new_bf._adjustment_model.setdefault("method", method_name)
+        adj_model = new_bf._adjustment_model
+        if isinstance(adj_model, dict):
+            adj_model.setdefault("method", method_name)
+            if adj_model.get("method") == "ipw":
+                # Preserve training-time design weights only when the weighting
+                # method already opted into fit metadata.
+                fit_sample_weights = adj_model.get("fit_sample_weights")
+                if isinstance(fit_sample_weights, pd.Series):
+                    adj_model.setdefault(
+                        "training_sample_weights",
+                        fit_sample_weights,
+                    )
+                if new_bf._sf_target is not None:
+                    fit_target_weights = adj_model.get("fit_target_weights")
+                    if isinstance(fit_target_weights, pd.Series):
+                        adj_model.setdefault(
+                            "training_target_weights",
+                            fit_target_weights,
+                        )
         return new_bf
 
     def adjust(
