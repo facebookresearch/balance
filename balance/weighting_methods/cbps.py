@@ -419,6 +419,13 @@ def _reverse_svd_and_centralization(
     return beta_new
 
 
+# TODO: Store fit artifacts for predict_weights() support.
+# Save `beta_optimal`, standardization mean/std (`model_matrix_mean`,
+# `model_matrix_std`) in the returned model dict. Add a
+# `store_fit_metadata: bool = False` parameter mirroring ipw.py.
+# Then implement `_predict_weights_cbps()` in balance_frame.py:
+# rebuild model matrix, standardize with stored mean/std, compute
+# logit_truncated(X @ beta_optimal), convert to weights. ~55 lines total.
 def cbps(  # noqa
     sample_df: pd.DataFrame,
     sample_weights: pd.Series,

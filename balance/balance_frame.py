@@ -1956,6 +1956,40 @@ class BalanceFrame:
         if method == "ipw":
             return self._predict_weights_ipw(model)
 
+        # TODO: Add predict_weights dispatch for other methods.
+        #
+        # Step 3 — Store fit artifacts in each weighting method:
+        #   - cbps.py: Save standardization params (model_matrix_mean,
+        #     model_matrix_std) and beta_optimal in the returned model dict.
+        #     These are currently local variables discarded after fitting.
+        #     Add a `store_fit_metadata: bool = False` parameter mirroring
+        #     ipw.py. ~15 lines in cbps.py.
+        #   - poststratify.py: Save the cell-ratio table
+        #     (`combined["weight"]` at line 194), the variable list, and
+        #     na_action in the returned model dict. Currently only
+        #     `{"method": "poststratify"}` is returned. ~15 lines.
+        #   - rake.py: Save the fitted contingency table (`m_fit`), the
+        #     variable lists, and category-to-index mappings. Currently
+        #     `m_fit` is discarded after per-row weight assignment.
+        #     More complex due to N-dimensional array indexing. ~25 lines.
+        #
+        # Step 4 — Implement _predict_weights_* for each method:
+        #   - _predict_weights_cbps(model): Rebuild the model matrix from
+        #     current covariates, standardize with stored mean/std, compute
+        #     logit_truncated(X @ beta_optimal), convert propensity to
+        #     weights via compute_pseudo_weights_from_logit_probs. ~40 lines.
+        #   - _predict_weights_poststratify(model): Join current sample rows
+        #     on the stored cell-ratio table by cell variables, multiply
+        #     ratio by design weight, normalize to target total. ~20 lines.
+        #   - _predict_weights_rake(model): Look up each row's cell in the
+        #     stored fitted N-dimensional contingency table, compute weight
+        #     ratio (fitted_cell / original_cell), multiply by design
+        #     weight. Same logic as rake.py lines 229-239. ~30 lines.
+        #
+        # Note: shared preprocessing is already extracted into
+        # build_design_matrix() in utils/model_matrix.py, used by both
+        # _compute_ipw_matrices() and ipw().
+
         raise ValueError(
             f"predict_weights() is not yet supported for method '{method}'. "
             "Currently only 'ipw' is supported. Use adjust() to obtain "

@@ -3108,6 +3108,24 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         self.assertEqual(w.shape[0], len(self.sample.df))
         self.assertTrue(np.all(w.to_numpy() > 0))
 
+    # TODO: Add the following tests in a follow-up diff:
+    # - test_pickle_deepcopy_roundtrip: verify pickle.dumps/loads preserves
+    #   all fit artifacts on an adjusted BalanceFrame
+    # - test_design_matrix_on_both_holdout_correctness: verify both returned
+    #   values from design_matrix(on="both") on holdout data are correct
+    # - test_non_uniform_design_weights_on_fitted: setUp uses weight=1.0;
+    #   add a test with varying weights to verify predict_weights matches
+    # - test_ipw_class_index_error_non_standard_labels: verify _ipw_class_index
+    #   raises with a model trained on labels other than 0/1
+    # - test_store_fit_metadata_default_logistic_regression: verify
+    #   store_fit_metadata=True works with the default model (not just custom)
+    # - test_store_fit_matrices_use_model_matrix_false: verify
+    #   store_fit_matrices=True with use_model_matrix=False stores DataFrames
+    # (test_predict_weights_after_trim_inplace_false: already covered by
+    #   TestTrimInPlaceFalsePreservesFitArtifacts — trim now preserves artifacts)
+    # - test_edge_cases: empty DataFrames, single-row, zero-variance covariates,
+    #   extreme propensity scores (near-0 or near-1)
+
     def test_predict_weights_with_data_argument(self) -> None:
         """predict_weights(data=holdout) matches set_fitted_model workflow."""
         train_bf = BalanceFrame(
