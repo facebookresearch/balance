@@ -21,6 +21,31 @@
   - Clears the current adjustment model and unadjusted link since the object
     is no longer considered adjusted after baseline reset.
 
+- **Added sklearn-style `fit` / `design_matrix` / `predict_proba` workflow on `BalanceFrame`**
+  This change achieves three goals:
+  1. **Honest sklearn-style API** — Method names that sklearn users recognize AND that mean the same thing as in sklearn.
+  2. **Fit-then-apply workflow** — Fit a weighting model on a subset (e.g., 20k rows) and apply it to new/full data (e.g., 1M rows).
+  3. **Code quality** — Reduce duplication, increase modularity, keep the codebase simple.
+  - Added `BalanceFrame.fit(...)` as an sklearn-style entry point that
+    maps to `adjust(...)` with stored fit artifacts enabled by default.
+    Supports `inplace=True` (default, sklearn-style) and `inplace=False`
+    (functional style, returns new object).
+  - Added `BalanceFrame.design_matrix(on=...)` to return IPW-aligned
+    feature matrices for sample, target, or both.
+  - Added `BalanceFrame.predict_proba(on=..., output=...)` for fitted
+    IPW propensity predictions.
+  - Added `BalanceFrame.predict_weights()` for reproducing responder
+    weights from the fitted IPW model.
+  - Added `BalanceFrame.set_fitted_model(fitted)` to apply a fitted model
+    from one BalanceFrame to another for holdout scoring workflows.
+  - Stored IPW fit metadata needed to reproduce weights (`balance_classes`,
+    trimming options, and training design weights used at fit-time).
+  - Extracted shared preprocessing into `build_design_matrix()` in
+    `balance.utils.model_matrix` to eliminate duplication between `ipw()`
+    and `_compute_ipw_matrices()`.
+  - This makes the weighting API easier to use in sklearn-style workflows while
+    preserving existing `adjust(...)` behavior.
+
 ## Tests
 
 - Added coverage for:
