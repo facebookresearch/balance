@@ -651,8 +651,12 @@
         <span class="n">target_std</span> <span class="o">=</span> <span class="n">descriptive_stats</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">)</span>
         <span class="n">sample_std</span> <span class="o">=</span> <span class="n">descriptive_stats</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">)</span>
         <span class="n">std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(((</span><span class="n">sample_std</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">target_std</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Unknown std_type: </span><span class="si">{</span><span class="n">std_type</span><span class="si">!r}</span><span class="s2">. Use &#39;sample&#39;, &#39;target&#39;, or &#39;pooled&#39;.&quot;</span>
+        <span class="p">)</span>
 
-    <span class="n">out</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">sample_mean</span> <span class="o">-</span> <span class="n">target_mean</span><span class="p">)</span> <span class="o">/</span> <span class="n">std</span>  <span class="c1"># pyre-ignore[61]: std is always defined</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">sample_mean</span> <span class="o">-</span> <span class="n">target_mean</span><span class="p">)</span> <span class="o">/</span> <span class="n">std</span>
 
     <span class="c1">#  Remove na indicator columns; it&#39;s OK to assume that these columns are</span>
     <span class="c1">#  indicators because add_na_indicator enforces it</span>

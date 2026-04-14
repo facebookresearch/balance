@@ -778,6 +778,15 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            str: The ID column name.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;], &quot;x&quot;: [10, 20],</span>
+<span class="sd">            ...                    &quot;weight&quot;: [1.0, 1.0]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df)</span>
+<span class="sd">            &gt;&gt;&gt; sf.id_column</span>
+<span class="sd">            &#39;id&#39;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># TODO: remove this warning after 2026-06-01 — by then users will</span>
         <span class="c1"># have migrated to id_series for data access.</span>
@@ -1097,8 +1106,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">balance.balancedf_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceDFCovars</span>
 
-        <span class="c1"># pyre-ignore[6]: SampleFrame satisfies BalanceDFSource at runtime</span>
-        <span class="k">return</span> <span class="n">BalanceDFCovars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">formula</span><span class="o">=</span><span class="n">formula</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">BalanceDFCovars</span><span class="p">(</span><span class="n">cast</span><span class="p">(</span><span class="s2">&quot;BalanceDFSource&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">),</span> <span class="n">formula</span><span class="o">=</span><span class="n">formula</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SampleFrame.weights">
@@ -1123,8 +1131,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">balance.balancedf_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceDFWeights</span>
 
-        <span class="c1"># pyre-ignore[6]: SampleFrame satisfies BalanceDFSource at runtime</span>
-        <span class="k">return</span> <span class="n">BalanceDFWeights</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">BalanceDFWeights</span><span class="p">(</span><span class="n">cast</span><span class="p">(</span><span class="s2">&quot;BalanceDFSource&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="SampleFrame.outcomes">
@@ -1153,8 +1160,7 @@
         <span class="c1"># Deferred import to avoid circular dependency with balancedf_class</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">balance.balancedf_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceDFOutcomes</span>
 
-        <span class="c1"># pyre-ignore[6]: SampleFrame satisfies BalanceDFSource at runtime</span>
-        <span class="k">return</span> <span class="n">BalanceDFOutcomes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">BalanceDFOutcomes</span><span class="p">(</span><span class="n">cast</span><span class="p">(</span><span class="s2">&quot;BalanceDFSource&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span></div>
 
 
     <span class="nd">@property</span>
