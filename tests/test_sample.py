@@ -2788,7 +2788,7 @@ class TestSampleSetAsPreAdjust(balance.testutil.BalanceTestCase):
 
 
 class TestSampleSetTargetRegression(balance.testutil.BalanceTestCase):
-    def test_set_target_in_place_after_adjust_keeps_sampleframe_state_synced(
+    def test_set_target_inplace_after_adjust_keeps_sampleframe_state_synced(
         self,
     ) -> None:
         sample = Sample.from_frame(

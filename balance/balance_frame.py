@@ -457,19 +457,19 @@ class BalanceFrame:
         )
 
     def set_target(
-        self, target: BalanceFrame | SampleFrame, in_place: bool | None = None
+        self, target: BalanceFrame | SampleFrame, inplace: bool | None = None
     ) -> Self:
         """Set or replace the target population.
 
         When *target* is a BalanceFrame (or subclass such as Sample), a deep
         copy of ``self`` is returned with the target set (immutable pattern).
         When *target* is a raw SampleFrame, the behaviour depends on
-        *in_place*: True mutates self, False returns a new BalanceFrame.
+        *inplace*: True mutates self, False returns a new BalanceFrame.
 
         Args:
             target: The target population — a BalanceFrame/Sample or a
                 SampleFrame.
-            in_place: If True, mutates self (only valid for SampleFrame
+            inplace: If True, mutates self (only valid for SampleFrame
                 targets). If False, returns a new copy. Defaults to None
                 which auto-selects: copy for BalanceFrame targets, in-place
                 for SampleFrame targets.
@@ -505,17 +505,17 @@ class BalanceFrame:
             return new_copy
 
         if isinstance(target, SampleFrame):
-            # SampleFrame path: default in_place=True for backward compat
-            if in_place is None:
-                in_place = True
+            # SampleFrame path: default inplace=True for backward compat
+            if inplace is None:
+                inplace = True
             BalanceFrame._validate_covariate_overlap(self._sf_sample, target)
 
-            if in_place:
+            if inplace:
                 if self.is_adjusted:
                     logger.warning(
                         "Replacing target on an adjusted object resets responder "
                         "weights to pre-adjust values and discards current "
-                        "adjustment results. Pass in_place=False to return a new "
+                        "adjustment results. Pass inplace=False to return a new "
                         "object and keep the current adjusted state on this "
                         "instance."
                     )
@@ -535,7 +535,7 @@ class BalanceFrame:
 
         raise TypeError("A target, a Sample object, must be specified")
 
-    def set_as_pre_adjust(self, *, in_place: bool = False) -> Self:
+    def set_as_pre_adjust(self, *, inplace: bool = False) -> Self:
         """Set the current responder state as the new pre-adjust baseline.
 
         This "locks in" the current responder weights (which may already be
@@ -543,13 +543,13 @@ class BalanceFrame:
         subsequent adjustments.
 
         Args:
-            in_place: If True, mutate this object and return it. If False
+            inplace: If True, mutate this object and return it. If False
                 (default), return a new object with a deep-copied responder
                 frame and reset baseline.
 
         Returns:
             BalanceFrame with ``_sf_sample_pre_adjust`` reset to the current
-            responder SampleFrame state. In copy mode (``in_place=False``),
+            responder SampleFrame state. In copy mode (``inplace=False``),
             only the responder frame is deep-copied and used to construct a new
             object (the full ``_links`` graph is not deep-copied). In in-place
             mode, the baseline is set to the existing responder
@@ -570,9 +570,9 @@ class BalanceFrame:
             >>> baseline_locked = adjusted.set_as_pre_adjust()  # copy mode
             >>> baseline_locked.is_adjusted
             False
-            >>> _ = adjusted.set_as_pre_adjust(in_place=True)  # in-place mode
+            >>> _ = adjusted.set_as_pre_adjust(inplace=True)  # in-place mode
         """
-        if in_place:
+        if inplace:
             bf = self
             frozen = bf._sf_sample
         else:
@@ -1787,7 +1787,7 @@ class BalanceFrame:
         keep_sum_of_weights: bool = True,
         target_sum_weights: float | int | np.floating | None = None,
         *,
-        in_place: bool = False,
+        inplace: bool = False,
     ) -> Self:
         """Trim extreme weights using mean-ratio clipping or percentile winsorization.
 
@@ -1804,20 +1804,20 @@ class BalanceFrame:
                 preserve the original sum of weights.
             target_sum_weights: If provided, rescale trimmed weights so
                 their sum equals this target.
-            in_place: If True, mutate this BalanceFrame's weights and
+            inplace: If True, mutate this BalanceFrame's weights and
                 return it.  If False (default), return a new BalanceFrame.
 
         Returns:
-            The BalanceFrame with trimmed weights (self if *in_place*,
+            The BalanceFrame with trimmed weights (self if *inplace*,
             else a new instance).
         """
-        if in_place:
+        if inplace:
             self._sf_sample.trim(
                 ratio=ratio,
                 percentile=percentile,
                 keep_sum_of_weights=keep_sum_of_weights,
                 target_sum_weights=target_sum_weights,
-                in_place=True,
+                inplace=True,
             )
             return self
 
@@ -1826,7 +1826,7 @@ class BalanceFrame:
             percentile=percentile,
             keep_sum_of_weights=keep_sum_of_weights,
             target_sum_weights=target_sum_weights,
-            in_place=False,
+            inplace=False,
         )
         new_bf = type(self)._create(
             sample=new_sf,

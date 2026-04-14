@@ -916,7 +916,7 @@ class SampleFrame:
         keep_sum_of_weights: bool = True,
         target_sum_weights: float | int | np.floating | None = None,
         *,
-        in_place: bool = False,
+        inplace: bool = False,
     ) -> Self:
         """Trim extreme weights using mean-ratio clipping or percentile winsorization.
 
@@ -936,12 +936,12 @@ class SampleFrame:
                 their sum equals this numeric target value.  (This is a
                 general-purpose rescaling parameter — not related to
                 the "target population" concept in BalanceFrame.)
-            in_place: If True, mutate this SampleFrame and return it.
+            inplace: If True, mutate this SampleFrame and return it.
                 If False (default), return a new SampleFrame with trimmed
                 weights and the original left untouched.
 
         Returns:
-            The SampleFrame with trimmed weights (self if *in_place*,
+            The SampleFrame with trimmed weights (self if *inplace*,
             else a new copy).
 
         Examples:
@@ -957,7 +957,7 @@ class SampleFrame:
         """
         from balance.adjustment import trim_weights
 
-        target = self if in_place else deepcopy(self)
+        target = self if inplace else deepcopy(self)
 
         original_weight_name = str(
             target._weight_column_name if target._weight_column_name else "weight"

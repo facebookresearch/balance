@@ -421,7 +421,7 @@ SampleFrame properties that expose filtered views of _df:
 │  ┌────────────────────────────────────────────────────────────────┐  │
 │  │ .set_target(target)     → two paths:                          │  │
 │  │   BF/Sample target: deepcopy(self), set _links["target"]     │  │
-│  │   SF target: in_place (default), mutates self                 │  │
+│  │   SF target: inplace (default), mutates self                 │  │
 │  │ .set_unadjusted(other)  → new BF with _links["unadjusted"]   │  │
 │  └────────────────────────────────────────────────────────────────┘  │
 │                                                                      │
@@ -494,7 +494,7 @@ SampleFrame properties that expose filtered views of _df:
 │           │ sample.set_target(target_sample)                                │
 │           │   TWO PATHS:                                                    │
 │           │   • BalanceFrame/Sample target → deepcopy(self), immutable      │
-│           │   • SampleFrame target → in_place=True (default), mutates self  │
+│           │   • SampleFrame target → inplace=True (default), mutates self  │
 │           │     Also RESETS adjustment state if previously adjusted:        │
 │           │       _sf_sample = _sf_sample_pre_adjust (reverts weights)     │
 │           │       _adjustment_model = None                                 │
@@ -536,7 +536,7 @@ SampleFrame properties that expose filtered views of _df:
 │  Note: adjust() always returns a NEW object (via _create(), not deepcopy).  │
 │  set_target() has TWO paths:                                                │
 │    • BalanceFrame/Sample target → returns deepcopy (immutable)              │
-│    • SampleFrame target → default in_place=True (mutates self)              │
+│    • SampleFrame target → default inplace=True (mutates self)              │
 │  __new__ uses stack inspection to block direct Sample() construction.       │
 │  __deepcopy__ is overridden to ensure complete independent copies.          │
 └─────────────────────────────────────────────────────────────────────────────┘
