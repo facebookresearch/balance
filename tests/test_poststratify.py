@@ -394,3 +394,47 @@ class Testpoststratify(
                 target_weights=t_weights,
                 na_action="invalid",
             )
+
+    # TODO: test chained adjustment (IPW → poststratify) — the two-stage pattern
+    #   from balance notebook v03:
+    #       sample_with_target = sample.set_target(target)
+    #       adjust_stage_1 = sample_with_target.adjust(method="ipw")
+    #       adjust_stage_2 = adjust_stage_1.adjust(method="poststratify")
+    #   Verify ASMD improves at each stage.
+
+    # TODO: test transformations as a dict with identity lambdas — verify only
+    #   the named column is used for cell definition (others are dropped when
+    #   transformations_drop=True, the default).
+    #   Example from balance notebook v03:
+    #       transformations = {"age_group": lambda x: x}
+    #       adjusted = ipw_adjusted.adjust(method="poststratify",
+    #                                      transformations=transformations)
+
+    # TODO: test transformations_drop=False — verify that columns NOT in the
+    #   transformations dict are kept (not dropped) when this flag is set.
+
+    # TODO: test interaction between variables= and transformations= — what
+    #   happens when both are provided? Which takes precedence?
+
+    # TODO: test that passing formula=... to poststratify is silently ignored
+    #   (it goes into **kwargs but is never read). Either add a test confirming
+    #   the no-op behavior, or implement formula support for poststratify.
+    #   Example from balance notebook v03 (does NOT work as intended):
+    #       formula = ["gender"]
+    #       adjusted = ipw_adjusted.adjust(method="poststratify", formula=formula)
+    #       # TODO: we need to make formula work with poststratify
+
+    # TODO: test ASMD after poststratify — verify that ASMD on the PS variables
+    #   reaches 0 (or near 0) after adjustment.
+    #   Example pattern from balance notebook v03:
+    #       adjusted.covars().asmd().T
+
+    # TODO: test outcomes after poststratify — verify outcome distributions
+    #   shift appropriately when accessed via .outcomes().
+    #   Example pattern from balance notebook v03:
+    #       adjusted.outcomes().plot()
+
+    # TODO: test poststratify with continuous (non-categorical) variables —
+    #   what happens when you PS on a numeric column without binning? The
+    #   default transformations handle this via quantize/fct_lump, but explicit
+    #   tests for this edge case are missing.
