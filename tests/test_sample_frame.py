@@ -1013,11 +1013,11 @@ class TestSampleFrameBalanceDFSourceProtocol(BalanceTestCase):
         self.assertIn("weight_trimmed_1", sf2._df.columns)
         self.assertIn("weight_pre_adjust", sf2._df.columns)
 
-    def test_trim_in_place(self) -> None:
-        """trim(in_place=True) mutates self and returns self."""
+    def test_trim_inplace(self) -> None:
+        """trim(inplace=True) mutates self and returns self."""
         sf = self._make_sf()
         sf.set_weights(pd.Series([1.0, 1.0, 100.0]))
-        result = sf.trim(ratio=2, in_place=True)
+        result = sf.trim(ratio=2, inplace=True)
         self.assertIs(result, sf)
         self.assertTrue(sf.weight_series.max() < 100.0)
         self.assertIn("weight_trimmed_1", sf._df.columns)
