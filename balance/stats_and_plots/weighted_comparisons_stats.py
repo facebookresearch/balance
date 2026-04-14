@@ -609,8 +609,12 @@ def asmd(
         target_std = descriptive_stats(target_df, target_weights, "std")
         sample_std = descriptive_stats(sample_df, sample_weights, "std")
         std = np.sqrt(((sample_std**2) + (target_std**2)) / 2)
+    else:
+        raise ValueError(
+            f"Unknown std_type: {std_type!r}. Use 'sample', 'target', or 'pooled'."
+        )
 
-    out = abs(sample_mean - target_mean) / std  # pyre-ignore[61]: std is always defined
+    out = abs(sample_mean - target_mean) / std
 
     #  Remove na indicator columns; it's OK to assume that these columns are
     #  indicators because add_na_indicator enforces it

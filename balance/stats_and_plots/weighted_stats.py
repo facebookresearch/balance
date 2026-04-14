@@ -299,8 +299,7 @@ def ci_of_weighted_mean(
         # Apply a lambda function to round a pd.Series of tuples to x decimal places
         ci = ci.apply(lambda t: tuple(round(x, round_ndigits) for x in t))
 
-    # pyre-ignore
-    return ci
+    return _assert_type(ci, pd.Series)
 
 
 def weighted_var(

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, cast, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -17,7 +17,11 @@ from balance.utils.data_transformation import (
     add_na_indicator,
     add_na_indicator_to_combined,
 )
-from balance.utils.input_validation import _isinstance_sample, choose_variables
+from balance.utils.input_validation import (
+    _assert_type,
+    _isinstance_sample,
+    choose_variables,
+)
 from balance.utils.pandas_utils import _make_df_column_names_unique
 from pandas.api.types import (
     is_bool_dtype,
@@ -550,7 +554,7 @@ def _build_projected_model_matrix(
     # that were present at fit time.
     combined = pd.concat((sample_covars, target_covars), axis=0)
     combined = add_na_indicator_to_combined(combined)
-    formula_items = (
+    formula_items: List[str] = (
         [formula]
         if isinstance(formula, str)
         else formula if isinstance(formula, list) else []
@@ -558,12 +562,12 @@ def _build_projected_model_matrix(
     # TODO: Replace this hard-coded regex with a shared
     # constant from the NA indicator naming convention in
     # data_transformation.py / add_na_indicator().
-    expected_na_indicators = {
+    expected_na_indicators: set[str] = {
         token
-        for formula_item in formula_items  # pyre-ignore[6]
+        for formula_item in formula_items
         for token in re.findall(r"\b_is_na_[A-Za-z0-9_]+\b", formula_item)
     }
-    for indicator in expected_na_indicators:  # pyre-ignore[6]
+    for indicator in expected_na_indicators:
         if indicator not in combined.columns:
             combined[indicator] = False
 
@@ -575,10 +579,12 @@ def _build_projected_model_matrix(
         one_hot_encoding=one_hot_encoding,
         add_na=False,
     )
-    sparse_matrix: csc_matrix = model_matrix_out["model_matrix"]  # pyre-ignore[9]
-    sparse_columns: list[str] = model_matrix_out[
-        "model_matrix_columns_names"
-    ]  # pyre-ignore[9]
+    sparse_matrix: csc_matrix = _assert_type(
+        model_matrix_out["model_matrix"], csc_matrix
+    )
+    sparse_columns: list[str] = _assert_type(
+        model_matrix_out["model_matrix_columns_names"], list
+    )
 
     # Project to the stored column set.
     sparse_col_to_idx = {col: i for i, col in enumerate(sparse_columns)}
@@ -604,9 +610,9 @@ def _build_projected_model_matrix(
     # (fit_penalties_skl is applied separately), but we return a correctly-
     # sized vector for consistency.
     penalty_factor_expanded: Optional[List[float]] = [1.0] * len(project_to_columns)
-    resolved_formula: str | list[str] | None = model_matrix_out.get(
-        "formula"
-    )  # pyre-ignore[9]
+    resolved_formula: str | list[str] | None = cast(
+        Optional[Union[str, List[str]]], model_matrix_out.get("formula")
+    )
     return (
         combined_matrix,
         project_to_columns,
@@ -636,20 +642,19 @@ def _build_training_model_matrix(
         penalty_factor=penalty_factor,
         one_hot_encoding=one_hot_encoding,
     )
-    combined_matrix: Union[pd.DataFrame, np.ndarray, csc_matrix] = model_matrix_output[
-        "model_matrix"
-    ]  # pyre-ignore[9]
-    columns: list[str] = model_matrix_output[
-        "model_matrix_columns_names"
-    ]  # pyre-ignore[9]
-    penalty_factor_expanded = list(
-        model_matrix_output.get(
-            "penalty_factor", [1.0] * len(columns)
-        )  # pyre-ignore[6]
+    combined_matrix: Union[pd.DataFrame, np.ndarray, csc_matrix] = cast(
+        Union[pd.DataFrame, np.ndarray, csc_matrix],
+        model_matrix_output["model_matrix"],
     )
-    resolved_formula: str | list[str] | None = model_matrix_output.get(
-        "formula"
-    )  # pyre-ignore[9]
+    columns: list[str] = _assert_type(
+        model_matrix_output["model_matrix_columns_names"], list
+    )
+    penalty_factor_expanded = list(
+        model_matrix_output.get("penalty_factor", [1.0] * len(columns))
+    )
+    resolved_formula: str | list[str] | None = cast(
+        Optional[Union[str, List[str]]], model_matrix_output.get("formula")
+    )
     return combined_matrix, columns, penalty_factor_expanded, resolved_formula
 
 
@@ -835,9 +840,8 @@ def build_design_matrix(
                 f"the number of matrix columns ({n_cols})."
             )
         if isinstance(combined_matrix, spmatrix):
-            combined_matrix = combined_matrix @ diags(
-                penalties_arr, format="csc"
-            )  # pyre-ignore[58]
+            penalty_diag = diags(penalties_arr, format="csc")
+            combined_matrix = combined_matrix @ penalty_diag  # pyre-ignore[58]
         else:
             combined_matrix = np.asarray(combined_matrix) * penalties_arr
 

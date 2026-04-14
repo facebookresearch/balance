@@ -736,6 +736,15 @@ class SampleFrame:
 
         Returns:
             str: The ID column name.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20],
+            ...                    "weight": [1.0, 1.0]})
+            >>> sf = SampleFrame.from_frame(df)
+            >>> sf.id_column
+            'id'
         """
         # TODO: remove this warning after 2026-06-01 — by then users will
         # have migrated to id_series for data access.
@@ -1047,8 +1056,7 @@ class SampleFrame:
         """
         from balance.balancedf_class import BalanceDFCovars
 
-        # pyre-ignore[6]: SampleFrame satisfies BalanceDFSource at runtime
-        return BalanceDFCovars(self, formula=formula)
+        return BalanceDFCovars(cast("BalanceDFSource", self), formula=formula)
 
     def weights(self) -> Any:
         """Return a :class:`~balance.balancedf_class.BalanceDFWeights` for this SampleFrame.
@@ -1070,8 +1078,7 @@ class SampleFrame:
         """
         from balance.balancedf_class import BalanceDFWeights
 
-        # pyre-ignore[6]: SampleFrame satisfies BalanceDFSource at runtime
-        return BalanceDFWeights(self)
+        return BalanceDFWeights(cast("BalanceDFSource", self))
 
     def outcomes(self) -> Any | None:
         """Return a :class:`~balance.balancedf_class.BalanceDFOutcomes`, or None.
@@ -1097,8 +1104,7 @@ class SampleFrame:
         # Deferred import to avoid circular dependency with balancedf_class
         from balance.balancedf_class import BalanceDFOutcomes
 
-        # pyre-ignore[6]: SampleFrame satisfies BalanceDFSource at runtime
-        return BalanceDFOutcomes(self)
+        return BalanceDFOutcomes(cast("BalanceDFSource", self))
 
     @property
     def df(self) -> pd.DataFrame:
