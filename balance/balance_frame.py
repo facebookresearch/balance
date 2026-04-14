@@ -17,11 +17,11 @@ import collections
 import copy
 import logging
 from copy import deepcopy
-from typing import Any, Callable, cast, Literal, TYPE_CHECKING
+from typing import Any, Callable, cast, Literal, overload, TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
-from balance import util as balance_util
+from balance import adjustment as balance_adjustment, util as balance_util
 from balance.adjustment import _find_adjustment_method
 from balance.csv_utils import to_csv_with_defaults
 from balance.sample_frame import SampleFrame
@@ -34,6 +34,7 @@ from balance.util import (
     HighCardinalityFeature,
 )
 from balance.utils.file_utils import _to_download
+from balance.utils.model_matrix import build_design_matrix
 
 if TYPE_CHECKING:
     from typing import Self
@@ -471,7 +472,7 @@ class BalanceFrame:
                 SampleFrame.
             inplace: If True, mutates self (only valid for SampleFrame
                 targets). If False, returns a new copy. Defaults to None
-                which auto-selects: copy for BalanceFrame targets, in-place
+                which auto-selects: copy for BalanceFrame targets, inplace
                 for SampleFrame targets.
 
         Returns:
@@ -551,7 +552,7 @@ class BalanceFrame:
             BalanceFrame with ``_sf_sample_pre_adjust`` reset to the current
             responder SampleFrame state. In copy mode (``inplace=False``),
             only the responder frame is deep-copied and used to construct a new
-            object (the full ``_links`` graph is not deep-copied). In in-place
+            object (the full ``_links`` graph is not deep-copied). In inplace
             mode, the baseline is set to the existing responder
             frame object so baseline/current share identity, matching
             unadjusted-object semantics elsewhere in the API.
@@ -570,7 +571,7 @@ class BalanceFrame:
             >>> baseline_locked = adjusted.set_as_pre_adjust()  # copy mode
             >>> baseline_locked.is_adjusted
             False
-            >>> _ = adjusted.set_as_pre_adjust(inplace=True)  # in-place mode
+            >>> _ = adjusted.set_as_pre_adjust(inplace=True)  # inplace mode
         """
         if inplace:
             bf = self
@@ -930,6 +931,902 @@ class BalanceFrame:
         )
 
         return self._build_adjusted_frame(result, method)
+
+    def fit(
+        self,
+        *,
+        target: BalanceFrame | SampleFrame | None = None,
+        method: str | Callable[..., Any] = "ipw",
+        inplace: bool = True,
+        **kwargs: Any,
+    ) -> Self:
+        """Fit a weighting model and return the fitted BalanceFrame.
+
+        This is the sklearn-style entry point for survey weight adjustment.
+        Like sklearn's ``fit()``, it learns model parameters, mutates
+        ``self`` (by default), and returns ``self``.  In survey weighting,
+        fitting the propensity model inherently produces adjusted weights
+        (the two are inseparable), so the returned object contains both the
+        fitted model and the adjusted weights — analogous to how
+        ``KMeans.fit()`` stores ``labels_`` on the fitted object.
+
+        **Workflow — basic fitting (sklearn-style, inplace=True):**
+
+        .. code-block:: python
+
+            bf = BalanceFrame(sample=respondents, target=population)
+            bf.fit(method="ipw")       # mutates bf, returns bf
+            bf.weights().df            # the adjusted weights
+
+        **Workflow — functional style (inplace=False):**
+
+        .. code-block:: python
+
+            adjusted = bf.fit(method="ipw", inplace=False)
+
+        **Workflow — fit on subset, apply to holdout:**
+
+        .. code-block:: python
+
+            fitted = train_bf.fit(method="ipw")
+            scored = holdout_bf.set_fitted_model(fitted, inplace=False)
+            holdout_weights = scored.predict_weights()
+
+        Args:
+            target: Optional target population to set before fitting.  If
+                provided, this method calls ``set_target(target, inplace=False)``
+                first, preserving immutability.
+            method: Adjustment method name (``"ipw"``, ``"cbps"``, ``"rake"``,
+                ``"poststratify"``, ``"null"``) or a custom callable with the
+                weighting-method signature.
+            inplace: If True (default), mutate this object with the fitted
+                state and return ``self`` — matching sklearn's ``fit()``
+                convention.  If False, return a new adjusted BalanceFrame
+                without modifying ``self``.
+            **kwargs: Keyword arguments forwarded to :meth:`adjust`.
+
+        Returns:
+            The fitted BalanceFrame — ``self`` when ``inplace=True``,
+            a new object when ``inplace=False``.
+
+        Raises:
+            ValueError: If no target is available and none is provided, if
+                ``method`` is invalid, or if ``na_action='drop'`` is combined
+                with stored fit artifacts.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [0.0, 1.0], "weight": [1.0, 1.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [0.2, 0.8], "weight": [1.0, 1.0]}))
+            >>> adjusted = BalanceFrame(sample=resp, target=tgt).fit(method="null")
+            >>> bool(adjusted.is_adjusted)
+            True
+
+        Notes:
+            For the built-in IPW method, ``fit()`` enables
+            ``store_fit_metadata=True`` and ``store_fit_matrices=True`` by
+            default so ``design_matrix()``/``predict_proba()``/``predict_weights()``
+            can consume fit-time artifacts.  This may increase memory usage
+            for large inputs; pass these kwargs explicitly as ``False`` to
+            opt out.
+        """
+        from balance.weighting_methods.ipw import ipw as built_in_ipw
+
+        resolved_method = self._resolve_adjustment_function(method)
+        if resolved_method is built_in_ipw:
+            kwargs.setdefault("store_fit_matrices", True)
+            kwargs.setdefault("store_fit_metadata", True)
+            na_action = kwargs.get("na_action", "add_indicator")
+            store_fit_matrices = bool(kwargs.get("store_fit_matrices"))
+            store_fit_metadata = bool(kwargs.get("store_fit_metadata"))
+            if na_action == "drop" and (store_fit_matrices or store_fit_metadata):
+                raise ValueError(
+                    "BalanceFrame.fit(method='ipw', na_action='drop') is incompatible "
+                    "with stored fit artifacts because dropped rows break index/shape "
+                    "alignment for design_matrix/predict_proba. Use na_action='add_indicator', "
+                    "or disable store_fit_matrices/store_fit_metadata."
+                )
+
+        if isinstance(target, (SampleFrame, BalanceFrame)):
+            result = self.set_target(target, inplace=False).adjust(
+                method=method, **kwargs
+            )
+        else:
+            result = self.adjust(target=target, method=method, **kwargs)
+
+        if not inplace:
+            return result
+
+        # Copy fitted state from result into self.
+        self._sf_sample = result._sf_sample
+        self._sf_sample_pre_adjust = result._sf_sample_pre_adjust
+        self._sf_target = result._sf_target
+        self._adjustment_model = result._adjustment_model
+        self._links = result._links
+        self._sync_sampleframe_state_from_responder(self._sf_sample)
+        return self
+
+    def set_fitted_model(self, fitted: BalanceFrame, *, inplace: bool = True) -> Self:
+        """Apply a fitted model from another BalanceFrame, producing a fully adjusted result.
+
+        This enables fit-then-apply workflows: fit on one BalanceFrame (e.g.,
+        a 20k subset) and apply the fitted model to another BalanceFrame
+        (e.g., the remaining 980k) with the same covariate schema.  The
+        returned object is fully adjusted (``is_adjusted`` is True,
+        ``model`` is set, ``summary()`` works with 3-way comparison).
+
+        **Workflow (inplace=False — returns new adjusted object):**
+
+        .. code-block:: python
+
+            fitted = train_bf.fit(method="ipw")
+            scored = holdout_bf.set_fitted_model(fitted, inplace=False)
+            scored.summary()  # full diagnostics on holdout
+
+        **Workflow (inplace=True, default — mutates self):**
+
+        .. code-block:: python
+
+            holdout_bf.set_fitted_model(fitted)
+            holdout_bf.summary()
+
+        Currently supports IPW models.  Other methods (CBPS, rake,
+        poststratify) will be supported once they store fit-time artifacts.
+
+        Args:
+            fitted: A BalanceFrame already adjusted with a supported method.
+                Its fitted model is used to compute holdout weights.
+            inplace: If True (default), mutate this object and return ``self``.
+                If False, return a new BalanceFrame with computed weights,
+                leaving ``self`` unchanged.
+
+        Returns:
+            A fully adjusted BalanceFrame with holdout weights applied.
+            ``self`` when ``inplace=True``, a new object when ``inplace=False``.
+
+        Raises:
+            ValueError: If ``fitted`` has no stored model, if the model method
+                is not yet supported, or if covariate column names differ
+                between ``self`` and ``fitted``.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> train_resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [0.0, 1.0], "weight": [1.0, 1.0]}))
+            >>> train_tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [0.2, 0.8], "weight": [1.0, 1.0]}))
+            >>> holdout_resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [5, 6], "x": [0.1, 0.9], "weight": [1.0, 1.0]}))
+            >>> holdout_tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [7, 8], "x": [0.3, 0.7], "weight": [1.0, 1.0]}))
+            >>> train_bf = BalanceFrame(sample=train_resp, target=train_tgt)
+            >>> holdout_bf = BalanceFrame(sample=holdout_resp, target=holdout_tgt)
+            >>> fitted = train_bf.fit(method="ipw")
+            >>> scored = holdout_bf.set_fitted_model(fitted, inplace=False)
+            >>> scored.is_adjusted
+            True
+            >>> scored.model is not None
+            True
+        """
+        from balance.weighting_methods.ipw import link_transform, weights_from_link
+
+        # --- Validation ---
+        if fitted.model is None:
+            raise ValueError(
+                "fitted must be an adjusted BalanceFrame with a stored model."
+            )
+        model = fitted.model
+        if not isinstance(model, dict):
+            raise ValueError("fitted must contain a valid adjustment model dict.")
+        method = model.get("method")
+        if method != "ipw":
+            raise ValueError(
+                "set_fitted_model() currently supports only IPW models. "
+                f"The fitted model uses method '{method}'. "
+                "Other methods (CBPS, rake, poststratify) will be supported "
+                "once they store fit-time artifacts."
+            )
+        if model.get("fit") is None:
+            raise ValueError("fitted IPW model is missing estimator information.")
+        if set(self._sf_sample.covars().df.columns) != set(
+            fitted._sf_sample.covars().df.columns
+        ):
+            raise ValueError(
+                "self and fitted must have matching sample covariate column names."
+            )
+        if self._sf_target is not None and fitted._sf_target is not None:
+            if set(_assert_type(self._sf_target).covars().df.columns) != set(
+                _assert_type(fitted._sf_target).covars().df.columns
+            ):
+                raise ValueError(
+                    "self and fitted must have matching target covariate column names."
+                )
+
+        # --- Compute holdout weights ---
+        sample_matrix, _target_matrix = self._compute_ipw_matrices(model, source=self)
+        fit_model = _assert_type(model.get("fit"))
+        class_index = self._ipw_class_index(fit_model)
+        prob = np.asarray(fit_model.predict_proba(sample_matrix)[:, class_index])
+        link = link_transform(prob)
+
+        # Use holdout's own design weights
+        sample_weights = self._sf_sample.df_weights.iloc[:, 0]
+        target_weights = _assert_type(self._sf_target).df_weights.iloc[:, 0]
+
+        # Warn if holdout target weight sum differs >1% from training
+        training_target_weights = model.get("training_target_weights")
+        if isinstance(training_target_weights, pd.Series):
+            train_sum = training_target_weights.sum()
+            data_sum = target_weights.sum()
+            if train_sum > 0 and abs(train_sum - data_sum) / train_sum > 0.01:
+                logger.warning(
+                    "set_fitted_model(): holdout target weights sum (%.2f) "
+                    "differs from training target weights sum (%.2f). The "
+                    "balance_classes correction and weight normalization will "
+                    "use holdout's weights, which may produce different results "
+                    "than the training fit.",
+                    data_sum,
+                    train_sum,
+                )
+
+        predicted = weights_from_link(
+            link=link,
+            balance_classes=bool(model.get("balance_classes", True)),
+            sample_weights=sample_weights,
+            target_weights=target_weights,
+            weight_trimming_mean_ratio=model.get("weight_trimming_mean_ratio"),
+            weight_trimming_percentile=model.get("weight_trimming_percentile"),
+        )
+
+        # --- Build the result ---
+        if inplace:
+            bf = self
+        else:
+            bf = type(self)._create(
+                sample=deepcopy(self._sf_sample),
+                target=deepcopy(self._sf_target),
+            )
+            if "target" in self._links:
+                bf._links["target"] = deepcopy(self._links["target"])
+
+        # Separate _sf_sample from _sf_sample_pre_adjust BEFORE mutating weights,
+        # so the unadjusted baseline preserves original design weights.
+        if not bf.is_adjusted and bf._sf_sample is bf._sf_sample_pre_adjust:
+            bf._sf_sample_pre_adjust = deepcopy(bf._sf_sample_pre_adjust)
+
+        # Apply computed weights
+        bf._sf_sample.set_weights(
+            pd.Series(predicted.values, index=bf._sf_sample.df.index),
+            use_index=True,
+        )
+
+        # Store the model and set adjustment state
+        bf._adjustment_model = dict(model)
+        bf._links["unadjusted"] = type(self)._create(
+            sample=bf._sf_sample_pre_adjust,
+            target=bf._sf_target,
+        )
+
+        bf._sync_sampleframe_state_from_responder(bf._sf_sample)
+        return bf
+
+    def _require_fitted_model(self) -> dict[str, Any]:
+        """Return the adjustment model dict, or raise.
+
+        The model dict serves triple duty: configuration (formula, na_action,
+        one_hot_encoding), fitted artifacts (fit estimator, scaler, column
+        names), and cache (model_matrix_sample, sample_probability, etc.).
+        Treat nested values as read-only; cache updates must replace dict
+        keys, not mutate shared objects.
+        """
+        model = self._adjustment_model
+        if model is None or not isinstance(model, dict):
+            raise ValueError(
+                "This operation requires an adjusted model. "
+                "Call fit()/adjust() first, or apply a model via "
+                "set_fitted_model()."
+            )
+        return model
+
+    def _require_ipw_model(self) -> dict[str, Any]:
+        """Return the model dict, raising if it is not an IPW model with fit info."""
+        model = self._require_fitted_model()
+        if model.get("method") != "ipw":
+            raise ValueError(
+                "design_matrix() and predict_proba() currently support only IPW models. "
+                f"The current model uses method '{model.get('method')}'."
+            )
+        fit = model.get("fit")
+        columns = model.get("X_matrix_columns")
+        if fit is None or not isinstance(columns, list):
+            raise ValueError("IPW model metadata is missing fitted model information.")
+        return model
+
+    def _matrix_to_dataframe(
+        self,
+        matrix: Any,
+        index: pd.Index,
+        columns: list[str],
+    ) -> pd.DataFrame:
+        if isinstance(matrix, pd.DataFrame):
+            return matrix.reindex(columns=columns)
+        if isinstance(matrix, np.ndarray):
+            return pd.DataFrame(matrix, index=index, columns=columns)
+        from scipy.sparse import spmatrix
+
+        if isinstance(matrix, spmatrix):
+            return pd.DataFrame.sparse.from_spmatrix(
+                matrix,
+                index=index,
+                columns=columns,
+            )
+        raise ValueError(
+            "Stored IPW fit-time model matrix is unavailable for this configuration."
+        )
+
+    def _align_to_index(
+        self,
+        data: pd.DataFrame | pd.Series,
+        index: pd.Index,
+        caller: str,
+    ) -> pd.DataFrame | pd.Series:
+        """Align a DataFrame or Series to the given index.
+
+        Handles unique indices (via reindex), reordered indices (via reindex),
+        and non-unique indices of equal length (via set_axis).  Raises if
+        indices are incompatible.
+        """
+        if data.index.is_unique and index.is_unique:
+            if len(data.index) == len(index) and not data.index.equals(index):
+                if not (data.index.isin(index).all() and index.isin(data.index).all()):
+                    raise ValueError(
+                        f"Stored IPW {caller} output index does not match the current "
+                        "data index. Re-fit with BalanceFrame.fit(method='ipw') or "
+                        "attach a model trained on matching rows."
+                    )
+            return data.reindex(index)
+        if len(data.index) != len(index):
+            raise ValueError(
+                f"Stored IPW {caller} output cannot be aligned to the current "
+                "index because lengths differ. Re-fit with "
+                "BalanceFrame.fit(method='ipw') to refresh stored artifacts."
+            )
+        return data.set_axis(index, axis=0)
+
+    @staticmethod
+    def _ipw_class_index(fit_model: Any) -> int:
+        classes_attr = getattr(fit_model, "classes_", None)
+        if classes_attr is None:
+            raise ValueError(
+                "Stored IPW estimator is missing classes_ needed for predict_proba()."
+            )
+        classes = list(classes_attr)
+        if 1 not in classes:
+            raise ValueError("Stored IPW estimator is missing class label 1.")
+        return classes.index(1)
+
+    def _compute_ipw_matrices(
+        self,
+        model: dict[str, Any],
+        source: BalanceFrame | None = None,
+    ) -> tuple[Any, Any]:
+        """Compute IPW design matrices using stored model config.
+
+        Args:
+            model: The fitted model dict containing preprocessing config.
+            source: BalanceFrame to extract covariates from.  When ``None``
+                (default), uses ``self``.  When provided, uses ``source``'s
+                covariates.  Results are only cached when ``source is None``
+                (via the caller).
+        """
+        bf = source if source is not None else self
+        if source is None:
+            self._require_target()
+        elif bf._sf_target is None:
+            raise ValueError(
+                "data must have a target set when computing design matrices."
+            )
+
+        sample_covars = bf._sf_sample.covars().df.copy()
+        target_covars = _assert_type(bf._sf_target).covars().df.copy()
+
+        transformations = model.get("transformations", "default")
+        sample_covars, target_covars = balance_adjustment.apply_transformations(
+            (sample_covars, target_covars),
+            transformations=transformations,
+        )
+        columns: list[str] = _assert_type(model.get("X_matrix_columns"), list)
+
+        na_action = cast(str, model.get("na_action", "add_indicator"))
+
+        # Infer matrix_type from stored artifacts when not explicitly stored.
+        from scipy.sparse import spmatrix
+
+        matrix_type = model.get("fit_matrix_type")
+        if matrix_type is None:
+            fit_sample_matrix = model.get("model_matrix_sample")
+            if isinstance(fit_sample_matrix, spmatrix):
+                matrix_type = "sparse"
+            elif isinstance(fit_sample_matrix, np.ndarray):
+                matrix_type = "dense"
+            elif isinstance(fit_sample_matrix, pd.DataFrame):
+                matrix_type = "dataframe"
+
+        result = build_design_matrix(
+            sample_covars,
+            target_covars,
+            use_model_matrix=bool(model.get("use_model_matrix", True)),
+            formula=model.get("formula"),
+            one_hot_encoding=bool(model.get("one_hot_encoding", False)),
+            na_action=na_action,
+            project_to_columns=columns,
+            fit_scaler=model.get("fit_scaler"),
+            fit_penalties_skl=model.get("fit_penalties_skl"),
+            matrix_type=matrix_type,
+        )
+        combined_matrix = result["combined_matrix"]
+        sample_n = result["sample_n"]
+        return combined_matrix[:sample_n], combined_matrix[sample_n:]
+
+    @staticmethod
+    def _is_artifact_stale(
+        artifact: Any,
+        stored_idx: pd.Index,
+        current_idx: pd.Index,
+    ) -> bool:
+        """Check whether a stored artifact's index is stale vs current data."""
+        if artifact is None:
+            return True
+        artifact_len = getattr(artifact, "shape", [0])[0]
+        if artifact_len != len(current_idx):
+            return True
+        if len(stored_idx) == len(current_idx):
+            same_set = (
+                stored_idx.isin(current_idx).all()
+                and current_idx.isin(stored_idx).all()
+            )
+            if not same_set:
+                return True
+        return False
+
+    def _ensure_fresh_ipw_artifacts(
+        self,
+        model: dict[str, Any],
+        side: Literal["sample", "target"],
+    ) -> None:
+        """Recompute and cache IPW matrices + predictions for one side if stale.
+
+        Checks whether the stored matrix and predictions for the given side
+        match the current data index. If stale, recomputes both matrices
+        (sample + target — required for correct one-hot encoding) and
+        predictions, then caches the results in the model dict.
+        """
+        if side == "sample":
+            current_idx = self._sf_sample.df.index
+        else:
+            self._require_target()
+            current_idx = _assert_type(self._sf_target).df.index
+
+        stored_idx = pd.Index(model.get(f"{side}_index", current_idx))
+        matrix = model.get(f"model_matrix_{side}")
+        probability = model.get(f"{side}_probability")
+
+        matrix_stale = self._is_artifact_stale(matrix, stored_idx, current_idx)
+        prob_stale = self._is_artifact_stale(probability, stored_idx, current_idx)
+
+        if not matrix_stale and not prob_stale:
+            return
+
+        # Recompute matrices (always produces both sides).
+        sample_matrix, target_matrix = self._compute_ipw_matrices(model)
+        # Cache both matrices — we already paid the cost of computing them.
+        model["model_matrix_sample"] = sample_matrix
+        model["model_matrix_target"] = target_matrix
+        # Only update the index for the side being refreshed. Writing the
+        # other side's index here would cause the staleness check to skip
+        # recomputation on the next call, returning stale predictions.
+        model[f"{side}_index"] = current_idx
+        recomputed_matrix = sample_matrix if side == "sample" else target_matrix
+
+        # Recompute predictions if stale.
+        if prob_stale:
+            from balance.weighting_methods.ipw import link_transform
+
+            fit_model = _assert_type(model.get("fit"))
+            class_index = self._ipw_class_index(fit_model)
+            prob = np.asarray(
+                fit_model.predict_proba(recomputed_matrix)[:, class_index]
+            )
+            link = link_transform(prob)
+            model[f"{side}_probability"] = prob
+            model[f"{side}_link"] = link
+            model[f"{side}_index"] = current_idx
+
+    @overload
+    def design_matrix(  # noqa: E704
+        self,
+        on: Literal["sample"],
+    ) -> pd.DataFrame: ...
+
+    @overload
+    def design_matrix(  # noqa: E704
+        self,
+        on: Literal["target"],
+    ) -> pd.DataFrame: ...
+
+    @overload
+    def design_matrix(  # noqa: E704
+        self,
+        on: Literal["both"] = ...,
+    ) -> tuple[pd.DataFrame, pd.DataFrame]: ...
+
+    def design_matrix(
+        self,
+        on: Literal["sample", "target", "both"] = "both",
+    ) -> pd.DataFrame | tuple[pd.DataFrame, pd.DataFrame]:
+        """Return the IPW model's design matrices.
+
+        Returns the model matrices (feature matrices) built by the stored
+        preprocessing pipeline — after formula expansion, one-hot encoding,
+        NA indicator addition, scaling, and penalty weighting.
+
+        Args:
+            on: Which population's matrix to return.  ``"sample"`` returns the
+                respondent matrix, ``"target"`` returns the target matrix, and
+                ``"both"`` returns ``(sample_matrix, target_matrix)``.
+
+        Returns:
+            A model-matrix DataFrame, or a tuple of two DataFrames when
+            ``on="both"``.
+
+        Raises:
+            ValueError: If the object is not IPW-adjusted, if target is missing
+                for ``on in {"target", "both"}``, if recomputation of sample-side
+                artifacts is required but no target is available, or if ``on`` is
+                invalid.
+
+        Notes:
+            When stored fit artifacts are stale for the
+            current rows (e.g., after ``set_fitted_model()``), this method
+            recomputes and caches refreshed matrices.  That cache update is an
+            intentional in-memory mutation.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [0.0, 1.0], "weight": [1.0, 1.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [0.2, 0.8], "weight": [1.0, 1.0]}))
+            >>> adjusted = BalanceFrame(sample=resp, target=tgt).fit(method="ipw")
+            >>> x_s, x_t = adjusted.design_matrix(on="both")
+            >>> x_s.shape[0], x_t.shape[0]
+            (2, 2)
+        """
+        if on not in ("sample", "target", "both"):
+            raise ValueError("on must be one of: 'sample', 'target', 'both'")
+        model = self._require_ipw_model()
+        columns: list[str] = _assert_type(model.get("X_matrix_columns"), list)
+
+        # --- Use stored/cached artifacts ---
+        sample_df: pd.DataFrame | None = None
+        target_df: pd.DataFrame | None = None
+
+        if on in ("sample", "both"):
+            if model.get("model_matrix_sample") is None:
+                raise ValueError(
+                    "IPW model is missing fit-time sample matrix. Call "
+                    "BalanceFrame.fit(method='ipw') or run ipw(..., "
+                    "store_fit_matrices=True) before using design_matrix(on='sample'/'both')."
+                )
+            self._ensure_fresh_ipw_artifacts(model, "sample")
+            sample_idx = pd.Index(model.get("sample_index", self._sf_sample.df.index))
+            sample_df = cast(
+                pd.DataFrame,
+                self._align_to_index(
+                    self._matrix_to_dataframe(
+                        model["model_matrix_sample"], sample_idx, columns
+                    ),
+                    self._sf_sample.df.index,
+                    caller="design_matrix()",
+                ),
+            )
+
+        if on in ("target", "both"):
+            self._require_target()
+            if model.get("model_matrix_target") is None:
+                raise ValueError(
+                    "IPW model is missing fit-time target matrix. Call "
+                    "BalanceFrame.fit(method='ipw') or run ipw(..., "
+                    "store_fit_matrices=True) before using design_matrix(on='target'/'both')."
+                )
+            self._ensure_fresh_ipw_artifacts(model, "target")
+            current_target_idx = _assert_type(self._sf_target).df.index
+            target_idx = pd.Index(model.get("target_index", current_target_idx))
+            target_df = cast(
+                pd.DataFrame,
+                self._align_to_index(
+                    self._matrix_to_dataframe(
+                        model["model_matrix_target"], target_idx, columns
+                    ),
+                    current_target_idx,
+                    caller="design_matrix()",
+                ),
+            )
+
+        if on == "sample":
+            return _assert_type(sample_df)
+        if on == "target":
+            return _assert_type(target_df)
+        return (_assert_type(sample_df), _assert_type(target_df))
+
+    @overload
+    def predict_proba(  # noqa: E704
+        self,
+        on: Literal["sample"],
+        output: Literal["probability", "link"] = ...,
+    ) -> pd.Series: ...
+
+    @overload
+    def predict_proba(  # noqa: E704
+        self,
+        on: Literal["target"],
+        output: Literal["probability", "link"] = ...,
+    ) -> pd.Series: ...
+
+    @overload
+    def predict_proba(  # noqa: E704
+        self,
+        on: Literal["both"] = ...,
+        output: Literal["probability", "link"] = ...,
+    ) -> tuple[pd.Series, pd.Series]: ...
+
+    def predict_proba(
+        self,
+        on: Literal["sample", "target", "both"] = "both",
+        output: Literal["probability", "link"] = "probability",
+    ) -> pd.Series | tuple[pd.Series, pd.Series]:
+        """Return IPW propensity scores.
+
+        Returns the propensity scores (predicted probabilities of being in
+        the sample vs target) from the fitted IPW model.  A target row with
+        high propensity is well-represented in the sample; a low score
+        indicates underrepresentation.
+
+        Args:
+            on: Which population to predict on (``"sample"``, ``"target"``,
+                or ``"both"``).
+            output: Output scale. ``"probability"`` returns class-1 propensity
+                probabilities. ``"link"`` returns logit-transformed values.
+
+        Returns:
+            A prediction Series, or a tuple of two Series when ``on="both"``.
+
+        Raises:
+            ValueError: If the object is not IPW-adjusted, if target is missing
+                for ``on in {"target", "both"}``, if recomputation of sample-side
+                predictions is required but no target is available, or if ``on`` is
+                invalid.
+
+        Notes:
+            When stored fit-time predictions are stale for the current rows,
+            this method may recompute and cache refreshed probabilities/links.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [0.0, 1.0], "weight": [1.0, 1.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [0.2, 0.8], "weight": [1.0, 1.0]}))
+            >>> adjusted = BalanceFrame(sample=resp, target=tgt).fit(method="ipw")
+            >>> p = adjusted.predict_proba(on="target", output="probability")
+            >>> int(p.shape[0])
+            2
+        """
+        if output not in ("probability", "link"):
+            raise ValueError("output must be one of: 'probability', 'link'")
+        if on not in ("sample", "target", "both"):
+            raise ValueError("on must be one of: 'sample', 'target', 'both'")
+        model = self._require_ipw_model()
+
+        # --- Use stored/cached artifacts ---
+        sample_series: pd.Series | None = None
+        target_series: pd.Series | None = None
+
+        for side in ("sample", "target"):
+            if side == "sample" and on not in ("sample", "both"):
+                continue
+            if side == "target" and on not in ("target", "both"):
+                continue
+            if side == "target":
+                self._require_target()
+
+            stored_key = (
+                f"{side}_probability" if output == "probability" else f"{side}_link"
+            )
+            values = model.get(stored_key)
+            if not isinstance(values, np.ndarray):
+                raise ValueError(
+                    f"IPW model is missing fit-time {side} predictions for predict_proba(). "
+                    "Call BalanceFrame.fit(method='ipw') or run ipw(..., "
+                    f"store_fit_metadata=True) before using predict_proba(on='{side}'/'both')."
+                )
+
+            self._ensure_fresh_ipw_artifacts(model, side)  # type: ignore[arg-type]
+            # Re-read after potential refresh.
+            values = model.get(stored_key)
+
+            if side == "sample":
+                current_idx = self._sf_sample.df.index
+            else:
+                current_idx = _assert_type(self._sf_target).df.index
+            stored_idx = pd.Index(model.get(f"{side}_index", current_idx))
+
+            series = cast(
+                pd.Series,
+                self._align_to_index(
+                    pd.Series(_assert_type(values), index=stored_idx),
+                    current_idx,
+                    caller="predict_proba()",
+                ),
+            )
+            if side == "sample":
+                sample_series = series
+            else:
+                target_series = series
+
+        if on == "sample":
+            return _assert_type(sample_series)
+        if on == "target":
+            return _assert_type(target_series)
+        return (_assert_type(sample_series), _assert_type(target_series))
+
+    def predict_weights(self) -> pd.Series:
+        """Predict responder weights from the fitted model's artifacts.
+
+        Reconstructs adjusted survey weights from stored fit-time artifacts
+        (propensity links, design weights, class balancing, trimming
+        parameters).  On the fitted object itself, the result is numerically
+        equivalent to ``self.weights().df`` (within floating-point tolerance)
+        and serves as a validation that the stored artifacts are sufficient
+        to reproduce the adjustment.
+
+        Dispatches by the adjustment method stored in the model dict:
+
+        - **IPW**: uses stored fit-time metadata (links, class balancing,
+          trimming, and design weights) to reproduce fitted responder weights.
+        - **Other methods**: not yet supported — will raise with guidance.
+
+        Returns:
+            A Series of predicted responder weights.
+
+        Raises:
+            ValueError: If no fitted model is available, if the method is
+                unsupported, or if required target data is missing.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [0.0, 1.0], "weight": [1.0, 1.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [0.2, 0.8], "weight": [1.0, 1.0]}))
+            >>> adjusted = BalanceFrame(sample=resp, target=tgt).fit(method="ipw")
+            >>> w = adjusted.predict_weights()
+            >>> int(w.shape[0])
+            2
+        """
+        self._require_target()
+        model = self._require_fitted_model()
+        method = model.get("method")
+
+        if method == "ipw":
+            return self._predict_weights_ipw(model)
+
+        raise ValueError(
+            f"predict_weights() is not yet supported for method '{method}'. "
+            "Currently only 'ipw' is supported. Use adjust() to obtain "
+            "weights directly for other methods."
+        )
+
+    def _resolve_ipw_link(self, model: dict[str, Any]) -> np.ndarray:
+        """Resolve sample link values from stored artifacts or recomputation."""
+        model_link = model.get("sample_link")
+        current_sample_idx = self._sf_sample.df.index
+        model_sample_idx = pd.Index(model.get("sample_index", current_sample_idx))
+        if (
+            isinstance(model_link, np.ndarray)
+            and model_link.shape[0] == len(current_sample_idx)
+            and model_sample_idx.equals(current_sample_idx)
+        ):
+            return model_link
+        # pyre-ignore[16]: predict_proba(on="sample") always returns a Series
+        return _assert_type(self.predict_proba(on="sample", output="link")).to_numpy()
+
+    def _resolve_design_weights(
+        self,
+        model: dict[str, Any],
+        link: np.ndarray,
+    ) -> tuple[pd.Series, pd.Series]:
+        """Resolve sample and target design weights for predict_weights().
+
+        Uses stored training weights when available and compatible; falls
+        back to current design weights with a warning otherwise.
+        """
+        current_sample_weights = self._sf_sample.df_weights.iloc[:, 0]
+        current_target_weights = _assert_type(self._sf_target).df_weights.iloc[:, 0]
+
+        sample_weights = model.get("training_sample_weights")
+        if (
+            not isinstance(sample_weights, pd.Series)
+            or len(sample_weights) != len(link)
+            or not sample_weights.index.equals(current_sample_weights.index)
+        ):
+            logger.warning(
+                "Falling back to current sample design weights in predict_weights(); "
+                "stored training_sample_weights are unavailable or incompatible."
+            )
+            sample_weights = current_sample_weights
+
+        target_weights = model.get("training_target_weights")
+        if (
+            not isinstance(target_weights, pd.Series)
+            or len(target_weights) != len(current_target_weights)
+            or not target_weights.index.equals(current_target_weights.index)
+        ):
+            logger.warning(
+                "Falling back to current target design weights in predict_weights(); "
+                "stored training_target_weights are unavailable or incompatible."
+            )
+            target_weights = current_target_weights
+
+        return sample_weights, target_weights
+
+    def _predict_weights_ipw(self, model: dict[str, Any]) -> pd.Series:
+        """IPW-specific weight prediction from stored fit artifacts."""
+        from balance.weighting_methods.ipw import weights_from_link
+
+        fit = model.get("fit")
+        columns = model.get("X_matrix_columns")
+        if fit is None or not isinstance(columns, list):
+            raise ValueError("IPW model metadata is missing fitted model information.")
+
+        link = self._resolve_ipw_link(model)
+        sample_weights, target_weights = self._resolve_design_weights(model, link)
+
+        predicted = weights_from_link(
+            link=link,
+            balance_classes=bool(model.get("balance_classes", True)),
+            sample_weights=sample_weights,
+            target_weights=target_weights,
+            weight_trimming_mean_ratio=model.get("weight_trimming_mean_ratio"),
+            weight_trimming_percentile=model.get("weight_trimming_percentile"),
+        )
+        current_sample_idx = self._sf_sample.df.index
+        model_sample_idx = pd.Index(model.get("sample_index", current_sample_idx))
+        sample_idx = model_sample_idx
+        if len(sample_idx) != len(predicted) or not sample_idx.equals(
+            current_sample_idx
+        ):
+            sample_idx = current_sample_idx
+        weight_name = getattr(_assert_type(self.weight_series), "name", None)
+        return cast(
+            pd.Series,
+            self._align_to_index(
+                pd.Series(predicted.values, index=sample_idx),
+                self._sf_sample.df.index,
+                caller="predict_weights()",
+            ),
+        ).rename(weight_name)
 
     @property
     def model(self) -> dict[str, Any] | None:
@@ -1769,11 +2666,6 @@ class BalanceFrame:
         )
         return res
 
-    # TODO: Add a trim() method directly on BalanceFrame that delegates
-    # to trim_weights() and calls set_weights(), providing a convenient
-    # path for permanent weight trimming without going through
-    # weights().trim().
-
     def set_weights(
         self,
         weights: pd.Series | float | None,
@@ -1788,6 +2680,18 @@ class BalanceFrame:
         ``_sf_sample`` and ``_sf_sample_pre_adjust`` share the same DataFrame,
         so the change is visible to both automatically — changing base weights
         is not an adjustment.
+
+        .. warning::
+
+            If this BalanceFrame has already been fitted (i.e., ``adjust()``
+            has been called), calling ``set_weights()`` changes the design
+            weights but does **not** invalidate the stored fit artifacts
+            (``_adjustment_model``).  The link values
+            in those artifacts were computed using the old weights, so
+            ``predict_weights()`` will use new ``current_sample_weights``
+            with stale links, producing a mathematical inconsistency.
+            Users should re-fit (call ``adjust()`` again) after changing
+            weights on an already-fitted BalanceFrame.
 
         Args:
             weights: New weights. A Series, a scalar (broadcast to all rows),
@@ -1850,6 +2754,7 @@ class BalanceFrame:
             target=self._sf_target,
         )
         new_bf._sf_sample_pre_adjust = self._sf_sample_pre_adjust
+        new_bf._adjustment_model = self._adjustment_model
         # Preserve existing links (target, unadjusted).
         for key, val in self._links.items():
             new_bf._links[key] = val

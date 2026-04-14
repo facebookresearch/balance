@@ -59,6 +59,8 @@ Key: BalanceFrame does NOT inherit from SampleFrame.
   `SampleFrame` with a target `SampleFrame`. Handles `adjust()`, `summary()`, `diagnostics()`,
   `covars()`, `weights()`, `outcomes()`, `set_weights()` (delegates to `_sf_sample`),
   `trim()` (delegates to `_sf_sample`), and all linked-source comparisons.
+  Also exposes sklearn-style convenience methods for IPW workflows:
+  `fit()`, `design_matrix()`, `predict_proba()`, and `predict_weights()`.
   Supports compound/sequential adjustments with unified weight history tracking.
 - **`BalanceDF`** hierarchy (`balancedf_class.py`) — role-specific views:
   - `BalanceDFCovars` — covariate access and statistics
@@ -151,6 +153,29 @@ adjusted.weights().design_effect()          # Variance inflation factor
 - `_next_weight_action_number()` — shared counter across `weight_adjusted_N` and `weight_trimmed_N`
 
 For compound adjustments, `_sf_sample_pre_adjust` always points to the very first baseline, and `_links["unadjusted"]` chains back through the full adjustment history.
+
+## Fit-artifact workflow
+
+`BalanceFrame.fit(method="ipw")` is an alias for `adjust(...)` that enables
+`store_fit_matrices=True` and `store_fit_metadata=True` by default for the built-in
+IPW method. By default `fit()` mutates `self` and returns `self` (sklearn-style
+`inplace=True`); pass `inplace=False` for functional-style usage that returns
+a new object. This stores fit-time artifacts in `model` so downstream calls can
+reuse the exact training transformation/predictions without recomputing preprocessing:
+
+- `design_matrix(on=...)` → stored model matrices (IPW only)
+- `predict_proba(on=..., output=...)` → stored probabilities or link values (IPW only)
+- `predict_weights()` → dispatches by method; IPW uses stored links + design weights
+
+`set_fitted_model(fitted)` applies a fitted model from one BalanceFrame to another,
+producing a fully adjusted holdout BalanceFrame for train/holdout-split workflows.
+`predict_weights()` dispatches by the
+model's `method` key, currently supporting `"ipw"` with extensibility for future
+methods (CBPS, rake, poststratify).
+
+When these artifacts are not stored (e.g. plain `adjust(method="ipw")`), the API
+raises actionable errors that direct users to `fit(method="ipw")` or the explicit
+`ipw(..., store_fit_matrices=True/store_fit_metadata=True)` flags.
 
 ## Weighting methods (`weighting_methods/`)
 
