@@ -3107,3 +3107,241 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         w = adjusted.predict_weights()
         self.assertEqual(w.shape[0], len(self.sample.df))
         self.assertTrue(np.all(w.to_numpy() > 0))
+
+    def test_predict_weights_with_data_argument(self) -> None:
+        """predict_weights(data=holdout) matches set_fitted_model workflow."""
+        train_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),
+            target=SampleFrame.from_frame(self.target.df.iloc[:5].copy()),
+        )
+        holdout_sample_df = self.sample.df.iloc[5:].copy()
+        holdout_target_df = self.target.df.iloc[5:].copy()
+        holdout_sample_df.index = pd.Index(
+            [f"h{i}" for i in range(len(holdout_sample_df))]
+        )
+        holdout_target_df.index = pd.Index(
+            [f"ht{i}" for i in range(len(holdout_target_df))]
+        )
+        holdout_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(holdout_sample_df),
+            target=SampleFrame.from_frame(holdout_target_df),
+        )
+
+        fitted = train_bf.fit(method="ipw")
+
+        # data= path
+        weights_via_data = fitted.predict_weights(data=holdout_bf)
+
+        # set_fitted_model path — the adjusted weights are on the object directly
+        scored = holdout_bf.set_fitted_model(fitted, inplace=False)
+        weights_via_sfm = _assert_type(scored.weight_series).to_numpy()
+
+        self.assertEqual(weights_via_data.shape[0], len(holdout_sample_df))
+        np.testing.assert_allclose(
+            weights_via_data.to_numpy(),
+            weights_via_sfm,
+            rtol=1e-6,
+            atol=1e-8,
+        )
+        self.assertTrue(np.all(weights_via_data.to_numpy() > 0))
+
+    def test_predict_proba_with_data_argument(self) -> None:
+        """predict_proba(data=holdout) matches set_fitted_model workflow."""
+        train_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),
+            target=SampleFrame.from_frame(self.target.df.iloc[:5].copy()),
+        )
+        holdout_sample_df = self.sample.df.iloc[5:].copy()
+        holdout_target_df = self.target.df.iloc[5:].copy()
+        holdout_sample_df.index = pd.Index(
+            [f"h{i}" for i in range(len(holdout_sample_df))]
+        )
+        holdout_target_df.index = pd.Index(
+            [f"ht{i}" for i in range(len(holdout_target_df))]
+        )
+        holdout_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(holdout_sample_df),
+            target=SampleFrame.from_frame(holdout_target_df),
+        )
+
+        fitted = train_bf.fit(method="ipw")
+
+        # data= path: probability
+        prob_via_data = fitted.predict_proba(
+            on="sample", output="probability", data=holdout_bf
+        )
+        # set_fitted_model path
+        scored = holdout_bf.set_fitted_model(fitted, inplace=False)
+        prob_via_wfm = scored.predict_proba(on="sample", output="probability")
+
+        self.assertEqual(prob_via_data.shape[0], len(holdout_sample_df))
+        np.testing.assert_allclose(
+            prob_via_data.to_numpy(),
+            prob_via_wfm.to_numpy(),
+            rtol=1e-6,
+            atol=1e-8,
+        )
+
+        # data= path: link
+        link_via_data = fitted.predict_proba(
+            on="sample", output="link", data=holdout_bf
+        )
+        link_via_wfm = scored.predict_proba(on="sample", output="link")
+        np.testing.assert_allclose(
+            link_via_data.to_numpy(),
+            link_via_wfm.to_numpy(),
+            rtol=1e-6,
+            atol=1e-8,
+        )
+
+        # data= path: target side
+        prob_target_via_data = fitted.predict_proba(
+            on="target", output="probability", data=holdout_bf
+        )
+        prob_target_via_wfm = scored.predict_proba(on="target", output="probability")
+        np.testing.assert_allclose(
+            prob_target_via_data.to_numpy(),
+            prob_target_via_wfm.to_numpy(),
+            rtol=1e-6,
+            atol=1e-8,
+        )
+
+    def test_design_matrix_with_data_argument(self) -> None:
+        """design_matrix(data=holdout) matches set_fitted_model workflow."""
+        train_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),
+            target=SampleFrame.from_frame(self.target.df.iloc[:5].copy()),
+        )
+        holdout_sample_df = self.sample.df.iloc[5:].copy()
+        holdout_target_df = self.target.df.iloc[5:].copy()
+        holdout_sample_df.index = pd.Index(
+            [f"h{i}" for i in range(len(holdout_sample_df))]
+        )
+        holdout_target_df.index = pd.Index(
+            [f"ht{i}" for i in range(len(holdout_target_df))]
+        )
+        holdout_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(holdout_sample_df),
+            target=SampleFrame.from_frame(holdout_target_df),
+        )
+
+        fitted = train_bf.fit(method="ipw")
+
+        # data= path
+        dm_sample_via_data = fitted.design_matrix(on="sample", data=holdout_bf)
+        dm_target_via_data = fitted.design_matrix(on="target", data=holdout_bf)
+        dm_both_via_data = fitted.design_matrix(on="both", data=holdout_bf)
+
+        # set_fitted_model path
+        scored = holdout_bf.set_fitted_model(fitted, inplace=False)
+        dm_sample_via_wfm = scored.design_matrix(on="sample")
+        dm_target_via_wfm = scored.design_matrix(on="target")
+
+        self.assertEqual(dm_sample_via_data.shape[0], len(holdout_sample_df))
+        self.assertEqual(dm_target_via_data.shape[0], len(holdout_target_df))
+
+        pd.testing.assert_frame_equal(dm_sample_via_data, dm_sample_via_wfm)
+        pd.testing.assert_frame_equal(dm_target_via_data, dm_target_via_wfm)
+
+        # on="both" returns a tuple
+        self.assertIsInstance(dm_both_via_data, tuple)
+        pd.testing.assert_frame_equal(dm_both_via_data[0], dm_sample_via_wfm)
+        pd.testing.assert_frame_equal(dm_both_via_data[1], dm_target_via_wfm)
+
+    def test_data_argument_validates_covariate_columns(self) -> None:
+        """data= raises ValueError when covariate columns don't match."""
+        fitted = self.bf.fit(method="ipw")
+        bad_sample_df = self.sample.df.copy().rename(columns={"x": "x2"})
+        bad_target_df = self.target.df.copy().rename(columns={"x": "x2"})
+        bad_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(bad_sample_df),
+            target=SampleFrame.from_frame(bad_target_df),
+        )
+        with self.assertRaisesRegex(
+            ValueError, "matching sample covariate column names"
+        ):
+            fitted.predict_weights(data=bad_bf)
+        with self.assertRaisesRegex(
+            ValueError, "matching sample covariate column names"
+        ):
+            fitted.predict_proba(on="sample", data=bad_bf)
+        with self.assertRaisesRegex(
+            ValueError, "matching sample covariate column names"
+        ):
+            fitted.design_matrix(on="sample", data=bad_bf)
+
+    def test_data_argument_does_not_cache_results(self) -> None:
+        """data= path should not mutate the fitted object's model dict."""
+        train_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),
+            target=SampleFrame.from_frame(self.target.df.iloc[:5].copy()),
+        )
+        holdout_sample_df = self.sample.df.iloc[5:].copy()
+        holdout_target_df = self.target.df.iloc[5:].copy()
+        holdout_sample_df.index = pd.Index(
+            [f"h{i}" for i in range(len(holdout_sample_df))]
+        )
+        holdout_target_df.index = pd.Index(
+            [f"ht{i}" for i in range(len(holdout_target_df))]
+        )
+        holdout_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(holdout_sample_df),
+            target=SampleFrame.from_frame(holdout_target_df),
+        )
+
+        fitted = train_bf.fit(method="ipw")
+        model_before = dict(_assert_type(fitted.model))
+
+        # Call with data= — should not alter the fitted model's cached artifacts
+        fitted.predict_weights(data=holdout_bf)
+        fitted.predict_proba(on="sample", data=holdout_bf)
+        fitted.design_matrix(on="sample", data=holdout_bf)
+
+        model_after = _assert_type(fitted.model)
+        # The stored sample/target indices should remain unchanged
+        self.assertTrue(
+            model_before.get("sample_index", pd.Index([])).equals(
+                model_after.get("sample_index", pd.Index([]))
+            )
+        )
+
+    def test_data_argument_without_target_raises(self) -> None:
+        """data= with no target on holdout should raise ValueError."""
+        fitted = self.bf.fit(method="ipw")
+        no_target_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),
+        )
+        with self.assertRaisesRegex(ValueError, "target"):
+            fitted.predict_weights(data=no_target_bf)
+        with self.assertRaisesRegex(ValueError, "target"):
+            fitted.predict_proba(on="sample", data=no_target_bf)
+
+    def test_predict_proba_on_both_with_data_argument(self) -> None:
+        """predict_proba(on='both', data=...) should return both sides."""
+        train_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),
+            target=SampleFrame.from_frame(self.target.df.iloc[:5].copy()),
+        )
+        holdout_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[5:].copy()),
+            target=SampleFrame.from_frame(self.target.df.iloc[5:].copy()),
+        )
+        fitted = train_bf.fit(method="ipw")
+        sample_p, target_p = fitted.predict_proba(on="both", data=holdout_bf)
+        self.assertEqual(sample_p.shape[0], len(holdout_bf._sf_sample.df))
+        self.assertEqual(
+            target_p.shape[0],
+            len(_assert_type(holdout_bf._sf_target).df),
+        )
+        self.assertTrue(np.all(np.isfinite(sample_p.to_numpy())))
+        self.assertTrue(np.all(np.isfinite(target_p.to_numpy())))
+
+    def test_data_argument_rejects_non_ipw_method(self) -> None:
+        """predict_weights(data=...) with non-IPW method should raise."""
+        adjusted = self.bf.fit(method="null")
+        holdout_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),
+            target=SampleFrame.from_frame(self.target.df.iloc[:5].copy()),
+        )
+        with self.assertRaisesRegex(ValueError, "not yet supported"):
+            adjusted.predict_weights(data=holdout_bf)
