@@ -189,7 +189,7 @@ def qcut(
     Returns:
         Series of type object with intervals.
     """
-    if s.shape[0] < q:  # pyre-ignore[58]: Comparison is valid in practice
+    if s.shape[0] < float(q):
         logger.warning("Not quantizing, too few values")
         return s
     else:

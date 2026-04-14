@@ -3297,13 +3297,11 @@ class BalanceDFWeights(BalanceDF):
         # TODO: decide if we want more quantiles of the weights.
 
         # adding prop_above_and_below
-        tmp_props = weights_stats.prop_above_and_below(the_weights)
-        weights_diag_var.extend(
-            tmp_props.index.to_list()  # pyre-ignore[16]: existing defaults make sure this output is pd.Series with relevant methods.
+        tmp_props = _assert_type(
+            weights_stats.prop_above_and_below(the_weights), pd.Series
         )
-        weights_diag_value.extend(
-            tmp_props.to_list()  # pyre-ignore[16]: existing defaults make sure this output is pd.Series with relevant methods.
-        )
+        weights_diag_var.extend(tmp_props.index.to_list())
+        weights_diag_value.extend(tmp_props.to_list())
         # TODO: decide if we want more numbers (e.g.: 2/3 and 3/2)
 
         # adding nonparametric_skew and weighted_median_breakdown_point

@@ -2025,8 +2025,7 @@ class BalanceFrame:
             and model_sample_idx.equals(current_sample_idx)
         ):
             return model_link
-        # pyre-ignore[16]: predict_proba(on="sample") always returns a Series
-        return _assert_type(self.predict_proba(on="sample", output="link")).to_numpy()
+        return self.predict_proba(on="sample", output="link").to_numpy()
 
     def _resolve_design_weights(
         self,
