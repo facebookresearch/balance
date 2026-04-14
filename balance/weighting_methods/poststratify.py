@@ -19,6 +19,16 @@ logger: logging.Logger = logging.getLogger(__package__)
 
 
 # TODO: Add tests for all arguments of function
+# TODO: consider adding a `formula` parameter to poststratify (like IPW/CBPS have).
+#   Currently, passing formula=... via **kwargs is silently ignored.
+#   Users wanting to control which variables define PS cells must use `variables=`
+#   or `transformations={"col": lambda x: x}`. A `formula` parameter would provide
+#   a consistent interface across all adjustment methods.
+#   Example from balance notebook v03 that currently does NOT work as intended:
+#       formula = ["gender"]
+#       adjusted = ipw_adjusted.adjust(method="poststratify", formula=formula)
+#   The formula is silently swallowed by **kwargs. Users must use instead:
+#       adjusted = ipw_adjusted.adjust(method="poststratify", variables=["gender"])
 def poststratify(
     sample_df: pd.DataFrame,
     sample_weights: pd.Series,
