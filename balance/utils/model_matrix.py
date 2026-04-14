@@ -8,11 +8,15 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List
+import re
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from balance.utils.data_transformation import add_na_indicator
+from balance.utils.data_transformation import (
+    add_na_indicator,
+    add_na_indicator_to_combined,
+)
 from balance.utils.input_validation import _isinstance_sample, choose_variables
 from balance.utils.pandas_utils import _make_df_column_names_unique
 from pandas.api.types import (
@@ -23,7 +27,8 @@ from pandas.api.types import (
 )
 from patsy.contrasts import ContrastMatrix
 from patsy.highlevel import dmatrix, ModelDesc
-from scipy.sparse import csc_matrix, hstack
+from scipy.sparse import csc_matrix, diags, hstack, spmatrix
+from sklearn.preprocessing import StandardScaler
 
 logger: logging.Logger = logging.getLogger(__package__)
 
@@ -504,3 +509,356 @@ def model_matrix(
 
     logger.debug("Finished building the model matrix")
     return result
+
+
+# ---------------------------------------------------------------------------
+# Shared design-matrix builder for IPW (training & holdout paths)
+# ---------------------------------------------------------------------------
+
+
+# NOTE: Use typing.Tuple/Optional here (not builtin tuple/|) because this is
+# a module-level type alias evaluated at runtime. `from __future__ import
+# annotations` only defers evaluation inside function signatures, not here.
+# Python 3.9 raises TypeError for `list[float] | None` at module level.
+_MatrixBuildResult = Tuple[
+    Union[pd.DataFrame, np.ndarray, csc_matrix],  # combined_matrix
+    List[str],  # columns
+    Optional[List[float]],  # penalty_factor_expanded
+    Optional[Union[str, List[str]]],  # resolved_formula
+]
+
+
+def _build_projected_model_matrix(
+    sample_covars: pd.DataFrame,
+    target_covars: pd.DataFrame,
+    *,
+    formula: str | list[str] | None,
+    one_hot_encoding: bool,
+    na_action: str,
+    project_to_columns: list[str],
+) -> _MatrixBuildResult:
+    """Holdout path: build model matrix and project to stored fit-time columns."""
+    if na_action == "drop":
+        raise ValueError(
+            "Recomputing stored IPW artifacts for design_matrix/predict_proba is "
+            "unsupported when na_action='drop' because row dropping can "
+            "change sample/target boundaries. Re-fit with "
+            "na_action='add_indicator' or score using matching fit-time rows."
+        )
+
+    # Pre-add NA indicators so the model matrix sees the same columns
+    # that were present at fit time.
+    combined = pd.concat((sample_covars, target_covars), axis=0)
+    combined = add_na_indicator_to_combined(combined)
+    formula_items = (
+        [formula]
+        if isinstance(formula, str)
+        else formula if isinstance(formula, list) else []
+    )
+    # TODO: Replace this hard-coded regex with a shared
+    # constant from the NA indicator naming convention in
+    # data_transformation.py / add_na_indicator().
+    expected_na_indicators = {
+        token
+        for formula_item in formula_items  # pyre-ignore[6]
+        for token in re.findall(r"\b_is_na_[A-Za-z0-9_]+\b", formula_item)
+    }
+    for indicator in expected_na_indicators:  # pyre-ignore[6]
+        if indicator not in combined.columns:
+            combined[indicator] = False
+
+    model_matrix_out = model_matrix(
+        combined,
+        return_type="one",
+        return_var_type="sparse",
+        formula=formula,
+        one_hot_encoding=one_hot_encoding,
+        add_na=False,
+    )
+    sparse_matrix: csc_matrix = model_matrix_out["model_matrix"]  # pyre-ignore[9]
+    sparse_columns: list[str] = model_matrix_out[
+        "model_matrix_columns_names"
+    ]  # pyre-ignore[9]
+
+    # Project to the stored column set.
+    sparse_col_to_idx = {col: i for i, col in enumerate(sparse_columns)}
+    target_idx = np.array(
+        [sparse_col_to_idx.get(col, -1) for col in project_to_columns]
+    )
+    present_mask = target_idx >= 0
+    if present_mask.any():
+        projection = csc_matrix(
+            (
+                np.ones(int(present_mask.sum()), dtype=float),
+                (target_idx[present_mask], np.flatnonzero(present_mask)),
+            ),
+            shape=(sparse_matrix.shape[1], len(project_to_columns)),
+        )
+        combined_matrix: Union[pd.DataFrame, np.ndarray, csc_matrix] = (
+            sparse_matrix @ projection
+        )
+    else:
+        combined_matrix = csc_matrix((sparse_matrix.shape[0], len(project_to_columns)))
+
+    # In the projection path, penalty_factor_expanded is not used downstream
+    # (fit_penalties_skl is applied separately), but we return a correctly-
+    # sized vector for consistency.
+    penalty_factor_expanded: Optional[List[float]] = [1.0] * len(project_to_columns)
+    resolved_formula: str | list[str] | None = model_matrix_out.get(
+        "formula"
+    )  # pyre-ignore[9]
+    return (
+        combined_matrix,
+        project_to_columns,
+        penalty_factor_expanded,
+        resolved_formula,
+    )
+
+
+def _build_training_model_matrix(
+    sample_covars: pd.DataFrame,
+    target_covars: pd.DataFrame,
+    *,
+    formula: str | list[str] | None,
+    one_hot_encoding: bool,
+    na_action: str,
+    penalty_factor: list[float] | None,
+) -> _MatrixBuildResult:
+    """Training path: build model matrix via formula expansion."""
+    formula_list: list[str] | None = [formula] if isinstance(formula, str) else formula
+    model_matrix_output = model_matrix(
+        sample_covars,
+        target_covars,
+        add_na=(na_action == "add_indicator"),
+        return_type="one",
+        return_var_type="sparse",
+        formula=formula_list,
+        penalty_factor=penalty_factor,
+        one_hot_encoding=one_hot_encoding,
+    )
+    combined_matrix: Union[pd.DataFrame, np.ndarray, csc_matrix] = model_matrix_output[
+        "model_matrix"
+    ]  # pyre-ignore[9]
+    columns: list[str] = model_matrix_output[
+        "model_matrix_columns_names"
+    ]  # pyre-ignore[9]
+    penalty_factor_expanded = list(
+        model_matrix_output.get(
+            "penalty_factor", [1.0] * len(columns)
+        )  # pyre-ignore[6]
+    )
+    resolved_formula: str | list[str] | None = model_matrix_output.get(
+        "formula"
+    )  # pyre-ignore[9]
+    return combined_matrix, columns, penalty_factor_expanded, resolved_formula
+
+
+def _build_raw_covariates(
+    sample_covars: pd.DataFrame,
+    target_covars: pd.DataFrame,
+    *,
+    na_action: str,
+) -> _MatrixBuildResult:
+    """Raw covariates path: concat DataFrames without model matrix encoding."""
+    combined_matrix = pd.concat((sample_covars, target_covars), axis=0)
+    if na_action == "add_indicator":
+        combined_matrix = add_na_indicator_to_combined(combined_matrix)
+
+    categorical_cols = combined_matrix.select_dtypes(
+        ["string", "boolean", "object"]
+    ).columns
+    for col in categorical_cols:
+        combined_matrix[col] = pd.Categorical(combined_matrix[col])
+
+    columns = combined_matrix.columns.tolist()
+    return combined_matrix, columns, [1.0] * len(columns), None
+
+
+def build_design_matrix(
+    sample_covars: pd.DataFrame,
+    target_covars: pd.DataFrame,
+    *,
+    use_model_matrix: bool = True,
+    formula: str | list[str] | None = None,
+    one_hot_encoding: bool = False,
+    na_action: str = "add_indicator",
+    penalty_factor: list[float] | None = None,
+    project_to_columns: list[str] | None = None,
+    fit_scaler: StandardScaler | None = None,
+    scaler_weights: np.ndarray | None = None,
+    fit_penalties_skl: list[float] | None = None,
+    matrix_type: str | None = None,
+) -> dict[str, Any]:
+    """Build the combined design matrix used by IPW weighting.
+
+    This function consolidates the preprocessing pipeline shared by the
+    ``ipw()`` training path and the ``_compute_ipw_matrices()``
+    holdout path.  It performs (in order):
+
+    1. Model-matrix construction (formula expansion, one-hot encoding, NA
+       indicators) **or** raw-covariate passthrough when
+       ``use_model_matrix=False``.
+    2. Optional column projection to align holdout matrices with columns
+       stored at fit time (``project_to_columns``).
+    3. Optional standardisation via :class:`~sklearn.preprocessing.StandardScaler`.
+    4. Optional per-column penalty rescaling.
+    5. Conversion to the requested matrix type (sparse / dense / dataframe).
+
+    Parameters
+    ----------
+    sample_covars:
+        Sample covariate DataFrame (rows = sample units).
+    target_covars:
+        Target covariate DataFrame (rows = target units).
+    use_model_matrix:
+        If ``True`` (default), construct a model matrix via
+        :func:`model_matrix`.  If ``False``, concatenate the raw DataFrames
+        and treat categorical columns as ``pd.Categorical``.
+    formula:
+        Formula string(s) forwarded to :func:`model_matrix`.  Ignored when
+        ``use_model_matrix=False``.
+    one_hot_encoding:
+        Whether to apply one-hot encoding for categorical variables.
+        Ignored when ``use_model_matrix=False``.
+    na_action:
+        How to handle missing values.  ``"add_indicator"`` (default) adds
+        boolean NA-indicator columns; ``"drop"`` is **not** supported in the
+        holdout path and will raise ``ValueError`` when
+        ``project_to_columns`` is set.
+    penalty_factor:
+        Per-formula penalty factors forwarded to :func:`model_matrix`.
+        Ignored when ``use_model_matrix=False``.
+    project_to_columns:
+        When provided (holdout path), the model-matrix columns are projected
+        / reindexed to match this list.  Missing columns are filled with
+        zeros.
+    fit_scaler:
+        An already-fitted ``StandardScaler``.  When provided, the function
+        calls ``.transform()`` (holdout path).  When ``None`` **and**
+        ``scaler_weights`` is provided, a *new* scaler is created and
+        ``fit_transform()`` is called (training path).
+    scaler_weights:
+        Sample weights passed to ``StandardScaler.fit_transform()`` during
+        training.  Ignored when ``fit_scaler`` is provided.
+    fit_penalties_skl:
+        Pre-computed per-column penalty multipliers.  Each column *i* of the
+        matrix is multiplied by ``fit_penalties_skl[i]``.
+    matrix_type:
+        Desired output type: ``"sparse"`` (:class:`csc_matrix`) or
+        ``"dense"`` (:class:`numpy.ndarray`).  ``None`` leaves the
+        matrix as-is (may be sparse, dense, or DataFrame depending on
+        the path).
+
+    Returns
+    -------
+    dict[str, Any]
+        ``"combined_matrix"`` -- the preprocessed combined (sample + target)
+        matrix.
+
+        ``"sample_n"`` -- number of sample rows (for splitting).
+
+        ``"columns"`` -- column names of the model matrix.
+
+        ``"penalty_factor_expanded"`` -- expanded penalty factor (one entry
+        per column), or ``None``.
+
+        ``"resolved_formula"`` -- the formula(s) actually used, or ``None``.
+
+        ``"fit_scaler"`` -- the ``StandardScaler`` that was used (either the
+        one passed in or the newly created one), or ``None``.
+
+        ``"fit_penalties_skl"`` -- the per-column penalty multipliers that
+        were applied, or ``None``.
+    """
+    sample_n = sample_covars.shape[0]
+
+    # -- Step 1: Build the combined matrix via one of three paths ----------
+    if use_model_matrix and project_to_columns is not None:
+        combined_matrix, columns, penalty_factor_expanded, resolved_formula = (
+            _build_projected_model_matrix(
+                sample_covars,
+                target_covars,
+                formula=formula,
+                one_hot_encoding=one_hot_encoding,
+                na_action=na_action,
+                project_to_columns=project_to_columns,
+            )
+        )
+    elif use_model_matrix:
+        combined_matrix, columns, penalty_factor_expanded, resolved_formula = (
+            _build_training_model_matrix(
+                sample_covars,
+                target_covars,
+                formula=formula,
+                one_hot_encoding=one_hot_encoding,
+                na_action=na_action,
+                penalty_factor=penalty_factor,
+            )
+        )
+    else:
+        combined_matrix, columns, penalty_factor_expanded, resolved_formula = (
+            _build_raw_covariates(
+                sample_covars,
+                target_covars,
+                na_action=na_action,
+            )
+        )
+
+    # -- Step 2: Reindex DataFrame to stored columns (raw holdout path) ----
+    # TODO: Log a warning when columns are missing — unseen
+    # categorical levels in holdout data are silently zero-filled here.
+    if isinstance(combined_matrix, pd.DataFrame) and project_to_columns is not None:
+        combined_matrix = combined_matrix.reindex(
+            columns=project_to_columns, fill_value=0
+        )
+        columns = project_to_columns
+
+    # -- Step 3: Scaler ----------------------------------------------------
+    out_scaler: StandardScaler | None = fit_scaler
+    if fit_scaler is not None:
+        combined_matrix = fit_scaler.transform(combined_matrix)
+    elif scaler_weights is not None:
+        scaler = StandardScaler(with_mean=False, copy=False)
+        combined_matrix = scaler.fit_transform(
+            combined_matrix, sample_weight=scaler_weights
+        )
+        out_scaler = scaler
+
+    # -- Step 4: Penalty rescaling -----------------------------------------
+    out_penalties: list[float] | None = fit_penalties_skl
+    if fit_penalties_skl is not None:
+        penalties_arr = np.asarray(fit_penalties_skl, dtype=float)
+        n_cols = combined_matrix.shape[1] if hasattr(combined_matrix, "shape") else len(combined_matrix.columns)  # type: ignore[union-attr]
+        if len(penalties_arr) != n_cols:
+            raise ValueError(
+                f"fit_penalties_skl length ({len(penalties_arr)}) does not match "
+                f"the number of matrix columns ({n_cols})."
+            )
+        if isinstance(combined_matrix, spmatrix):
+            combined_matrix = combined_matrix @ diags(
+                penalties_arr, format="csc"
+            )  # pyre-ignore[58]
+        else:
+            combined_matrix = np.asarray(combined_matrix) * penalties_arr
+
+    # -- Step 5: Matrix type conversion ------------------------------------
+    if matrix_type == "dense":
+        if isinstance(combined_matrix, spmatrix):
+            combined_matrix = combined_matrix.toarray()  # pyre-ignore[16]
+        elif isinstance(combined_matrix, pd.DataFrame):
+            combined_matrix = np.asarray(combined_matrix)
+    elif matrix_type == "sparse":
+        if isinstance(combined_matrix, np.ndarray):
+            combined_matrix = csc_matrix(combined_matrix)
+        elif isinstance(combined_matrix, pd.DataFrame):
+            combined_matrix = csc_matrix(np.asarray(combined_matrix))
+
+    return {
+        "combined_matrix": combined_matrix,
+        "sample_n": sample_n,
+        "columns": columns,
+        "penalty_factor_expanded": penalty_factor_expanded,
+        "resolved_formula": resolved_formula,
+        "fit_scaler": out_scaler,
+        "fit_penalties_skl": out_penalties,
+    }
