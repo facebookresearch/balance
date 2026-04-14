@@ -16,6 +16,7 @@ from __future__ import annotations
 import collections
 import copy
 import logging
+import warnings
 from copy import deepcopy
 from typing import Any, Callable, cast, Literal, overload, TYPE_CHECKING
 
@@ -185,9 +186,26 @@ class BalanceFrame:
         self._sf_sample._df_dtypes = value
 
     @property
-    def id_column(self) -> pd.Series | None:  # pyre-ignore[3]
+    def id_series(self) -> pd.Series | None:  # pyre-ignore[3]
         """The id column as a Series, delegated to ``_sf_sample``."""
-        return self._sf_sample.id_column
+        return self._sf_sample.id_series
+
+    @property
+    def id_column(self) -> str | None:  # pyre-ignore[3]
+        """The id column name, delegated to ``_sf_sample``.
+
+        Changed in 0.20.0 to return the name (str) instead of data (pd.Series).
+        Use :attr:`id_series` for data.
+        """
+        # TODO: remove this warning after 2026-06-01
+        warnings.warn(
+            "Note: id_column now returns the column name (str) since "
+            "balance 0.20.0. It previously returned ID data (pd.Series). "
+            "Use id_series for ID data.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        return self._sf_sample._id_column_name
 
     @property
     def weight_series(self) -> pd.Series | None:  # pyre-ignore[3]
@@ -2204,16 +2222,16 @@ class BalanceFrame:
 
         resp_sample = Sample.from_frame(
             self._sf_sample._df,
-            id_column=self._sf_sample.id_column_name,
-            weight_column=self._sf_sample.weight_column,
+            id_column=self._sf_sample._id_column_name,
+            weight_column=self._sf_sample._weight_column_name,
             outcome_columns=self._sf_sample.outcome_columns or None,
             ignored_columns=self._sf_sample.ignored_columns or None,
             standardize_types=False,
         )
         target_sample = Sample.from_frame(
             target._df,
-            id_column=target.id_column_name,
-            weight_column=target.weight_column,
+            id_column=target._id_column_name,
+            weight_column=target._weight_column_name,
             outcome_columns=target.outcome_columns or None,
             ignored_columns=target.ignored_columns or None,
             standardize_types=False,
@@ -2223,8 +2241,8 @@ class BalanceFrame:
         if self.is_adjusted and self._sf_sample_pre_adjust is not None:
             unadj_sf = SampleFrame.from_frame(
                 self._sf_sample_pre_adjust._df,
-                id_column=self._sf_sample_pre_adjust.id_column_name,
-                weight_column=self._sf_sample_pre_adjust.weight_column,
+                id_column=self._sf_sample_pre_adjust._id_column_name,
+                weight_column=self._sf_sample_pre_adjust._weight_column_name,
                 outcome_columns=self._sf_sample_pre_adjust.outcome_columns or None,
                 ignored_columns=self._sf_sample_pre_adjust.ignored_columns or None,
                 standardize_types=False,
@@ -2672,7 +2690,7 @@ class BalanceFrame:
         ignored = self._sf_sample.df_ignored
         return pd.concat(
             (
-                self.id_column,
+                self.id_series,
                 covars.df if covars is not None else None,
                 outcomes.df if outcomes is not None else None,
                 (
@@ -3049,7 +3067,7 @@ class BalanceFrame:
     def _special_columns_names(self) -> list[str]:
         """Return names of all special columns (id, weight, outcome, ignored)."""
         return (
-            [str(i.name) for i in [self.id_column, self.weight_series] if i is not None]
+            [str(i.name) for i in [self.id_series, self.weight_series] if i is not None]
             + (
                 self._outcome_columns.columns.tolist()
                 if self._outcome_columns is not None
@@ -3127,7 +3145,7 @@ class BalanceFrame:
             else ""
         )
         variables = ",".join(self._covar_columns_names())
-        id_column_name = self.id_column.name if self.id_column is not None else "None"
+        id_column_name = self.id_series.name if self.id_series is not None else "None"
         weight_column_name = (
             self.weight_series.name if self.weight_series is not None else "None"
         )

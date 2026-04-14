@@ -125,13 +125,13 @@ class TestSampleFrame(BalanceTestCase):
         self.assertListEqual(list(result.columns), ["region"])
         self.assertListEqual(list(result["region"]), ["US", "UK"])
 
-    def test_id_column(self) -> None:
+    def test_id_series(self) -> None:
         df = pd.DataFrame({"id": [1, 2, 3], "x": [10, 20, 30], "w": [1.0, 1.0, 1.0]})
         sf = SampleFrame._create(
             df=df, id_column="id", covar_columns=["x"], weight_columns=["w"]
         )
-        self.assertIsInstance(sf.id_column, pd.Series)
-        self.assertListEqual(list(sf.id_column), [1, 2, 3])
+        self.assertIsInstance(sf.id_series, pd.Series)
+        self.assertListEqual(list(sf.id_series), [1, 2, 3])
 
     def test_df_returns_copy(self) -> None:
         df = pd.DataFrame({"id": [1, 2], "x": [10, 20], "w": [1.0, 1.0]})
@@ -220,9 +220,9 @@ class TestSampleFrameMutableViewSafety(BalanceTestCase):
         ignored["region"] = ["XX", "XX", "XX"]
         self.assertEqual(list(sf._df["region"]), ["US", "UK", "CA"])
 
-    def test_id_column_returns_copy(self) -> None:
+    def test_id_series_returns_copy(self) -> None:
         sf = self._make_sf()
-        ids = sf.id_column
+        ids = sf.id_series
         ids.iloc[0] = "MUTATED"
         self.assertEqual(sf._df[sf._id_column_name].iloc[0], "1")
 
@@ -358,26 +358,26 @@ class TestSampleFrameColumnRoleProperties(BalanceTestCase):
         sf = SampleFrame._create(
             df=df, id_column="id", covar_columns=["x"], weight_columns=["w"]
         )
-        self.assertEqual(sf.weight_column, "w")
+        self.assertEqual(sf._weight_column_name, "w")
 
     def test_weight_column_none(self) -> None:
         df = pd.DataFrame({"id": [1], "x": [10]})
         sf = SampleFrame._create(
             df=df, id_column="id", covar_columns=["x"], weight_columns=[]
         )
-        self.assertIsNone(sf.weight_column)
+        self.assertIsNone(sf._weight_column_name)
 
     def test_id_column_name(self) -> None:
         df = pd.DataFrame({"my_id": ["a", "b"], "x": [10, 20], "w": [1.0, 1.0]})
         sf = SampleFrame._create(
             df=df, id_column="my_id", covar_columns=["x"], weight_columns=["w"]
         )
-        self.assertEqual(sf.id_column_name, "my_id")
+        self.assertEqual(sf._id_column_name, "my_id")
 
     def test_id_column_name_from_frame(self) -> None:
         df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20], "weight": [1.0, 1.0]})
         sf = SampleFrame.from_frame(df)
-        self.assertEqual(sf.id_column_name, "id")
+        self.assertEqual(sf._id_column_name, "id")
 
 
 class TestSampleFrameFromFrame(BalanceTestCase):
@@ -386,12 +386,12 @@ class TestSampleFrameFromFrame(BalanceTestCase):
             {"id": [1, 2, 3], "x": [10, 20, 30], "weight": [1.0, 1.0, 1.0]}
         )
         sf = SampleFrame.from_frame(df)
-        self.assertEqual(list(sf.id_column), ["1", "2", "3"])
+        self.assertEqual(list(sf.id_series), ["1", "2", "3"])
 
     def test_from_frame_explicit_id(self) -> None:
         df = pd.DataFrame({"my_id": ["a", "b"], "x": [10, 20], "weight": [1.0, 1.0]})
         sf = SampleFrame.from_frame(df, id_column="my_id")
-        self.assertEqual(list(sf.id_column), ["a", "b"])
+        self.assertEqual(list(sf.id_series), ["a", "b"])
 
     def test_from_frame_auto_detect_weight(self) -> None:
         df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20], "weight": [1.5, 2.5]})
@@ -538,7 +538,7 @@ class TestSampleFrameFromFrame(BalanceTestCase):
             {"respondent_id": ["a", "b"], "x": [10, 20], "weight": [1.0, 1.0]}
         )
         sf = SampleFrame.from_frame(df, id_column_candidates=["respondent_id"])
-        self.assertEqual(list(sf.id_column), ["a", "b"])
+        self.assertEqual(list(sf.id_series), ["a", "b"])
 
     def test_from_frame_use_deepcopy_false(self) -> None:
         df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20], "weight": [1.0, 1.0]})
@@ -581,7 +581,7 @@ class TestSampleFrameFromFrame(BalanceTestCase):
 
         # IDs should match (both should be strings)
         pd.testing.assert_series_equal(
-            sample.id_column, sf.id_column, check_names=False
+            sample.id_series, sf.id_series, check_names=False
         )
 
         # Outcomes should match
@@ -896,9 +896,9 @@ class TestSampleFrameBalanceDFSourceProtocol(BalanceTestCase):
         with self.assertRaises(ValueError):
             _ = sf.weight_series
 
-    def test_id_column_returns_series(self) -> None:
+    def test_id_series_returns_series(self) -> None:
         sf = self._make_sf()
-        ic = sf.id_column
+        ic = sf.id_series
         self.assertIsInstance(ic, pd.Series)
         # from_frame casts id column to str
         self.assertEqual(ic.tolist(), ["1", "2", "3"])

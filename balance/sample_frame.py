@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import logging
 import re
+import warnings
 from copy import deepcopy
 from typing import Any, cast, TYPE_CHECKING
 
@@ -570,6 +571,11 @@ class SampleFrame:
     def weight_column(self) -> str | None:
         """Name of the currently active weight column, or None.
 
+        .. note::
+            In balance 0.19.0, ``weight_column`` was changed from returning
+            weight *data* (``pd.Series``) to returning the column *name*
+            (``str``).  If you need weight data, use :attr:`weight_series`.
+
         Returns:
             str | None: The active weight column name.
 
@@ -582,25 +588,16 @@ class SampleFrame:
             >>> sf.weight_column
             'weight'
         """
+        # TODO: remove this warning after 2026-06-01 — by then users will
+        # have migrated to weight_series for data access.
+        warnings.warn(
+            "Note: weight_column now returns the column name (str) since "
+            "balance 0.19.0. It previously returned weight data (pd.Series). "
+            "Use weight_series for weight data.",
+            FutureWarning,
+            stacklevel=2,
+        )
         return self._weight_column_name
-
-    @property
-    def id_column_name(self) -> str:
-        """Name of the ID column.
-
-        Returns:
-            str: The ID column name.
-
-        Examples:
-            >>> import pandas as pd
-            >>> from balance.sample_frame import SampleFrame
-            >>> df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20],
-            ...                    "weight": [1.0, 2.0]})
-            >>> sf = SampleFrame.from_frame(df)
-            >>> sf.id_column_name
-            'id'
-        """
-        return self._id_column_name
 
     # --- DataFrame properties ---
 
@@ -705,7 +702,7 @@ class SampleFrame:
         return self._df[cols].copy() if cols else None
 
     @property
-    def id_column(self) -> pd.Series:
+    def id_series(self) -> pd.Series:
         """The ID column as a Series.
 
         Returns a copy so that callers cannot accidentally mutate the
@@ -720,12 +717,36 @@ class SampleFrame:
             >>> df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20],
             ...                    "weight": [1.0, 1.0]})
             >>> sf = SampleFrame.from_frame(df)
-            >>> ids = sf.id_column
+            >>> ids = sf.id_series
             >>> ids.iloc[0] = "MUTATED"
-            >>> sf.id_column.iloc[0]  # internal data unchanged
+            >>> sf.id_series.iloc[0]  # internal data unchanged
             '1'
         """
         return self._df[self._id_column_name].copy()
+
+    @property
+    def id_column(self) -> str:
+        """Name of the ID column.
+
+        .. note::
+            In balance 0.20.0, ``id_column`` was changed from returning
+            ID *data* (``pd.Series``) to returning the column *name*
+            (``str``), for consistency with :attr:`weight_column`.
+            If you need ID data, use :attr:`id_series`.
+
+        Returns:
+            str: The ID column name.
+        """
+        # TODO: remove this warning after 2026-06-01 — by then users will
+        # have migrated to id_series for data access.
+        warnings.warn(
+            "Note: id_column now returns the column name (str) since "
+            "balance 0.20.0. It previously returned ID data (pd.Series). "
+            "Use id_series for ID data.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        return self._id_column_name
 
     @property
     def weight_series(self) -> pd.Series:
@@ -1329,7 +1350,7 @@ class SampleFrame:
                 f"'sample' must be a Sample instance, got {type(sample).__name__}"
             )
 
-        _id_col = sample.id_column
+        _id_col = sample.id_series
         _weight_col = sample.weight_series
         if _id_col is None:
             raise ValueError(

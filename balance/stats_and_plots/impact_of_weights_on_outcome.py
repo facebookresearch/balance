@@ -237,8 +237,8 @@ def _align_samples_by_id(
         ValueError: If IDs have duplicates, no common IDs exist, outcome values
             differ, or no valid weights exist.
     """
-    id_col0 = _assert_type(adjusted0.id_column)
-    id_col1 = _assert_type(adjusted1.id_column)
+    id_col0 = _assert_type(adjusted0.id_series)
+    id_col1 = _assert_type(adjusted1.id_series)
     ids0 = id_col0.to_numpy()
     ids1 = id_col1.to_numpy()
     if pd.Index(ids0).has_duplicates or pd.Index(ids1).has_duplicates:

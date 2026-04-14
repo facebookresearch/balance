@@ -3424,7 +3424,7 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
                 return pd.Series([1.0, 1.0, 1.0], name="w")
 
             @property
-            def id_column(self) -> pd.Series:
+            def id_series(self) -> pd.Series:
                 return pd.Series([1, 2, 3], name="id")
 
             @property
@@ -3480,7 +3480,7 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
                 return pd.Series([1.0, 1.0, 1.0], name="w")
 
             @property
-            def id_column(self) -> pd.Series:
+            def id_series(self) -> pd.Series:
                 return pd.Series([10, 20, 30], name="id")
 
             @property
@@ -3515,7 +3515,7 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
         self.assertEqual(list(covars.df.columns), ["a", "b"])
         self.assertEqual(len(covars.df), 3)
 
-        # Verify _df_with_ids works (accesses _sample.id_column)
+        # Verify _df_with_ids works (accesses _sample.id_series)
         df_with_ids = covars._df_with_ids()
         self.assertIn("id", df_with_ids.columns)
         self.assertEqual(list(df_with_ids["id"]), [10, 20, 30])
@@ -3536,7 +3536,7 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
                 return pd.Series([1.0, 2.0, 3.0], name="w")
 
             @property
-            def id_column(self) -> pd.Series:
+            def id_series(self) -> pd.Series:
                 return pd.Series([1, 2, 3], name="id")
 
             @property
@@ -3583,7 +3583,7 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
                 return pd.Series([1.0, 1.0, 1.0], name="w")
 
             @property
-            def id_column(self) -> pd.Series:
+            def id_series(self) -> pd.Series:
                 return pd.Series([1, 2, 3], name="id")
 
             @property

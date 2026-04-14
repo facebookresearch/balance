@@ -48,6 +48,26 @@
   - This makes the weighting API easier to use in sklearn-style workflows while
     preserving existing `adjust(...)` behavior.
 
+## Breaking Changes
+
+- **Changed `id_column` to return the column name (`str`)** on `SampleFrame`,
+  `BalanceFrame`, and `Sample`. Previously `id_column` returned ID *data*
+  (`pd.Series`), which was inconsistent with `weight_column` (which returned a
+  column *name* after 0.19.0). Now both `id_column` and `weight_column` return
+  column names. Use `id_series` for ID data, `weight_series` for weight data.
+
+  The accessor naming convention is now consistent:
+  - `*_column` → column name (`str`): `id_column`, `weight_column`
+  - `*_series` → column data (`pd.Series`): `id_series`, `weight_series`
+  - `df_*` → DataFrame: `df_covars`, `df_weights`, `df_outcomes`
+
+  Both `id_column` and `weight_column` emit a `FutureWarning` to help users
+  discover the new data-returning accessors (`id_series`, `weight_series`).
+  The warnings will be removed after 2026-06-01.
+
+- **Updated `BalanceDFSource` protocol**: `id_column` → `id_series`. Custom
+  implementations of the protocol must rename this property.
+
 ## Tests
 
 - Added coverage for:
@@ -99,7 +119,7 @@ expansion, data flow, and the `Sample.__new__` guard — see
   - Factory methods: `from_frame()` (with explicit `covar_columns` parameter
     and auto-detection of id/weight columns) and `from_csv()`.
   - DataFrame view properties: `df_covars`, `df_outcomes`, `df_weights`,
-    `df_ignored`, `id_column`, `weight_series`.
+    `df_ignored`, `id_series`, `weight_series`.
   - Column-role list properties: `covar_columns`, `weight_columns_all`,
     `outcome_columns`, `predicted_outcome_columns`, `ignored_columns`.
   - Weight management: `add_weight_column()`, `set_active_weight()`,

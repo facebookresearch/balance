@@ -1204,14 +1204,14 @@ class TestBalanceFrameParityHelpers(BalanceTestCase):
         bf = BalanceFrame(sample=resp, target=tgt)
         self.assertIsNone(bf.responders.df_ignored)
 
-    def test_id_column_returns_series(self) -> None:
-        result = self.bf.id_column
+    def test_id_series_returns_series(self) -> None:
+        result = self.bf.id_series
         self.assertIsInstance(result, pd.Series)
         assert result is not None
         self.assertEqual(result.tolist(), ["1", "2", "3"])
 
-    def test_id_column_delegates_to_responders(self) -> None:
-        pd.testing.assert_series_equal(self.bf.id_column, self.bf.responders.id_column)
+    def test_id_series_delegates_to_responders(self) -> None:
+        pd.testing.assert_series_equal(self.bf.id_series, self.bf.responders.id_series)
 
 
 class TestBalanceFrameDfExportFilter(BalanceTestCase):
@@ -1867,12 +1867,12 @@ class TestBalanceFrameToSample(BalanceTestCase):
 
     def test_to_sample_id_values(self) -> None:
         s = self.bf.to_sample()
-        self.assertEqual(s.id_column.tolist(), ["1", "2", "3"])
+        self.assertEqual(s.id_series.tolist(), ["1", "2", "3"])
 
     def test_to_sample_target_data(self) -> None:
         s = self.bf.to_sample()
         target = s._links["target"]
-        self.assertEqual(target.id_column.tolist(), ["4", "5", "6"])
+        self.assertEqual(target.id_series.tolist(), ["4", "5", "6"])
         self.assertEqual(sorted(target._covar_columns_names()), ["x1", "x2"])
 
     def test_to_sample_adjusted(self) -> None:

@@ -52,7 +52,7 @@ class BalanceDFSource(Protocol):
 
     Attributes:
         weight_series: Active weight column as a ``pd.Series``.
-        id_column: Row identifier column as a ``pd.Series``.
+        id_series: Row identifier column as a ``pd.Series``.
         _links: Dict mapping relationship names (e.g. ``"target"``,
             ``"unadjusted"``) to other ``BalanceDFSource`` instances.
         _outcome_columns: Outcome DataFrame, or ``None`` if no outcomes.
@@ -68,7 +68,7 @@ class BalanceDFSource(Protocol):
         ...
 
     @property
-    def id_column(self) -> pd.Series:  # noqa: E704
+    def id_series(self) -> pd.Series:  # noqa: E704
         ...
 
     @property
@@ -2178,7 +2178,7 @@ class BalanceDF:
         Returns:
             pd.DataFrame: DataFrame with id_column and then the df.
         """
-        return pd.concat((self._sample.id_column, self.df), axis=1)
+        return pd.concat((self._sample.id_series, self.df), axis=1)
 
     def to_csv(
         self: "BalanceDF",

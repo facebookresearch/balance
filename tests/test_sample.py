@@ -185,12 +185,12 @@ class TestSample(
             "No weights passed. Adding a 'weight' column and setting all values to 1",
             warning_messages,
         )
-        self.assertEqual(sample.id_column, pd.Series((1, 2), name="id").astype(str))
+        self.assertEqual(sample.id_series, pd.Series((1, 2), name="id").astype(str))
 
         # Test explicit id column specification
         df = pd.DataFrame({"b": (1, 2), "a": (1, 2)})
         self.assertEqual(
-            Sample.from_frame(df, id_column="b").id_column,
+            Sample.from_frame(df, id_column="b").id_series,
             pd.Series((1, 2), name="b").astype(str),
         )
 
@@ -2266,7 +2266,7 @@ class TestSampleFromFrameGuessIdColumnCandidates(balance.testutil.BalanceTestCas
             pd.DataFrame({"user_id": [1, 2, 3], "a": [1, 2, 3]}),
             id_column_candidates=["user_id", "id"],
         )
-        self.assertEqual(_assert_type(sample.id_column).name, "user_id")
+        self.assertEqual(_assert_type(sample.id_series).name, "user_id")
 
     def test_from_frame_id_column_candidates_ambiguous(self) -> None:
         """Test from_frame raises when multiple candidate ids are present."""
@@ -2704,8 +2704,8 @@ class TestSampleConversion(balance.testutil.BalanceTestCase):
         """to_sample_frame returns a SampleFrame with correct column roles."""
         sf = s1.to_sample_frame()
         self.assertIsInstance(sf, SampleFrame)
-        self.assertEqual(sf.id_column_name, "id")
-        self.assertEqual(sf.weight_column, "w")
+        self.assertEqual(sf._id_column_name, "id")
+        self.assertEqual(sf._weight_column_name, "w")
         self.assertIn("a", sf.covar_columns)
         self.assertIn("b", sf.covar_columns)
         self.assertIn("c", sf.covar_columns)
