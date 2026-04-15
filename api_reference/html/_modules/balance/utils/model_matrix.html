@@ -878,7 +878,7 @@
     <span class="k">if</span> <span class="n">fit_scaler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">combined_matrix</span> <span class="o">=</span> <span class="n">fit_scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">combined_matrix</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">scaler_weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">scaler</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">(</span><span class="n">with_mean</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">scaler</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">(</span><span class="n">with_mean</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">combined_matrix</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span>
             <span class="n">combined_matrix</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="n">scaler_weights</span>
         <span class="p">)</span>
