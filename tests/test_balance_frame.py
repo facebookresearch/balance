@@ -3363,3 +3363,848 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         )
         with self.assertRaisesRegex(ValueError, "not yet supported"):
             adjusted.predict_weights(data=holdout_bf)
+
+
+# =====================================================================
+# Coverage tests for uncovered lines in balance_frame.py
+# =====================================================================
+
+
+class TestBalanceFrameIdColumnWarning(BalanceTestCase):
+    """Cover lines 201-208: id_column property FutureWarning."""
+
+    def test_id_column_raises_future_warning(self) -> None:
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]})
+        )
+        bf = BalanceFrame(sample=resp_sf)
+        with self.assertWarns(FutureWarning):
+            result = bf.id_column
+        self.assertEqual(result, "id")
+
+
+class TestBalanceFrameWeightSeriesNone(BalanceTestCase):
+    """Cover lines 215-216: weight_series returns None on ValueError."""
+
+    def test_weight_series_returns_none_on_value_error(self) -> None:
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]})
+        )
+        bf = BalanceFrame(sample=resp_sf)
+        with patch.object(
+            type(bf._sf_sample),
+            "weight_series",
+            new_callable=lambda: property(
+                lambda self: (_ for _ in ()).throw(ValueError("no weight"))
+            ),
+        ):
+            result = bf.weight_series
+        self.assertIsNone(result)
+
+
+class TestBalanceFrameOutcomeColumnsSetter(BalanceTestCase):
+    """Cover line 247: _outcome_columns setter when set to None."""
+
+    def test_set_outcome_columns_to_none_clears_roles(self) -> None:
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["1", "2"],
+                    "x": [1.0, 2.0],
+                    "y": [0.5, 0.6],
+                    "weight": [1.0, 1.0],
+                }
+            ),
+            outcome_columns=["y"],
+        )
+        bf = BalanceFrame(sample=resp_sf)
+        self.assertIsNotNone(bf._outcome_columns)
+        bf._outcome_columns = None
+        self.assertIsNone(bf._outcome_columns)
+        self.assertEqual(bf._sf_sample._column_roles["outcomes"], [])
+
+    def test_set_outcome_columns_to_dataframe(self) -> None:
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["1", "2"],
+                    "x": [1.0, 2.0],
+                    "y": [0.5, 0.6],
+                    "weight": [1.0, 1.0],
+                }
+            ),
+        )
+        bf = BalanceFrame(sample=resp_sf)
+        bf._outcome_columns = pd.DataFrame({"y": [0.5, 0.6]})
+        self.assertEqual(bf._sf_sample._column_roles["outcomes"], ["y"])
+
+
+class TestBalanceFrameDfAccessors(BalanceTestCase):
+    """Cover lines 418, 423-425, 430: df_responders, df_target, df_responders_unadjusted."""
+
+    def test_df_responders(self) -> None:
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]})
+        )
+        tgt_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["3", "4"], "x": [1.5, 2.5], "weight": [1.0, 1.0]})
+        )
+        bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
+        pd.testing.assert_frame_equal(bf.df_responders, resp_sf.df)
+
+    def test_df_target_with_target(self) -> None:
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]})
+        )
+        tgt_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["3", "4"], "x": [1.5, 2.5], "weight": [1.0, 1.0]})
+        )
+        bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
+        pd.testing.assert_frame_equal(_assert_type(bf.df_target), tgt_sf.df)
+
+    def test_df_target_without_target(self) -> None:
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]})
+        )
+        bf = BalanceFrame(sample=resp_sf)
+        self.assertIsNone(bf.df_target)
+
+    def test_df_responders_unadjusted(self) -> None:
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]})
+        )
+        tgt_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["3", "4"], "x": [1.5, 2.5], "weight": [1.0, 1.0]})
+        )
+        bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
+        pd.testing.assert_frame_equal(bf.df_responders_unadjusted, resp_sf.df)
+
+
+class TestBalanceFrameGetCovarsNoTarget(BalanceTestCase):
+    """Cover line 661: _get_covars raises when no target."""
+
+    def test_get_covars_raises_without_target(self) -> None:
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]})
+        )
+        bf = BalanceFrame(sample=resp_sf)
+        with self.assertRaises(ValueError):
+            bf._get_covars()
+
+
+class TestBalanceFrameSetFittedModelValidation(BalanceTestCase):
+    """Cover lines 1148, 1151, 1158, 1169, 1211: set_fitted_model validation."""
+
+    def _make_fitted(self) -> tuple[BalanceFrame, SampleFrame, SampleFrame]:
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [f"s{i}" for i in range(8)],
+                    "x": [0.1, 0.3, 0.7, 1.1, 1.4, 1.7, 2.0, 2.2],
+                    "weight": [1.0] * 8,
+                }
+            )
+        )
+        tgt_sf = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [f"t{i}" for i in range(8)],
+                    "x": [0.2, 0.5, 0.8, 1.0, 1.6, 1.9, 2.1, 2.4],
+                    "weight": [1.0] * 8,
+                }
+            )
+        )
+        bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
+        fitted = bf.fit(method="ipw")
+        return fitted, resp_sf, tgt_sf
+
+    def test_model_not_dict_raises(self) -> None:
+        """Line 1148: fitted model is not a dict."""
+        fitted, resp_sf, tgt_sf = self._make_fitted()
+        # pyre-ignore[8]
+        fitted._adjustment_model = "not_a_dict"
+        holdout = BalanceFrame(
+            sample=SampleFrame.from_frame(resp_sf._df.copy()),
+            target=SampleFrame.from_frame(tgt_sf._df.copy()),
+        )
+        with self.assertRaisesRegex(ValueError, "valid adjustment model dict"):
+            holdout.set_fitted_model(fitted)
+
+    def test_method_not_ipw_raises(self) -> None:
+        """Line 1151: method is not ipw."""
+        fitted, resp_sf, tgt_sf = self._make_fitted()
+        _assert_type(fitted._adjustment_model)["method"] = "cbps"
+        holdout = BalanceFrame(
+            sample=SampleFrame.from_frame(resp_sf._df.copy()),
+            target=SampleFrame.from_frame(tgt_sf._df.copy()),
+        )
+        with self.assertRaisesRegex(ValueError, "only IPW models"):
+            holdout.set_fitted_model(fitted)
+
+    def test_missing_fit_raises(self) -> None:
+        """Line 1158: model missing fit key."""
+        fitted, resp_sf, tgt_sf = self._make_fitted()
+        _assert_type(fitted._adjustment_model)["fit"] = None
+        holdout = BalanceFrame(
+            sample=SampleFrame.from_frame(resp_sf._df.copy()),
+            target=SampleFrame.from_frame(tgt_sf._df.copy()),
+        )
+        with self.assertRaisesRegex(ValueError, "missing estimator"):
+            holdout.set_fitted_model(fitted)
+
+    def test_mismatched_target_covariates_raises(self) -> None:
+        """Line 1169: target covariates mismatch."""
+        fitted, resp_sf, _tgt_sf = self._make_fitted()
+        # Create holdout with matching sample covars but different target covars.
+        # Use _create to set explicit covar_columns on the target.
+        holdout_tgt = SampleFrame._create(
+            df=pd.DataFrame(
+                {
+                    "id": [f"ht{i}" for i in range(8)],
+                    "x": [1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5],
+                    "z": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8],
+                    "weight": [1.0] * 8,
+                }
+            ),
+            id_column="id",
+            covar_columns=["x", "z"],
+            weight_columns=["weight"],
+        )
+        holdout = BalanceFrame(
+            sample=SampleFrame.from_frame(resp_sf._df.copy()),
+            target=holdout_tgt,
+        )
+        with self.assertRaisesRegex(ValueError, "matching target covariate"):
+            holdout.set_fitted_model(fitted)
+
+    def test_set_fitted_model_inplace_false(self) -> None:
+        """Line 1211: inplace=False branch."""
+        fitted, resp_sf, tgt_sf = self._make_fitted()
+        holdout = BalanceFrame(
+            sample=SampleFrame.from_frame(resp_sf._df.copy()),
+            target=SampleFrame.from_frame(tgt_sf._df.copy()),
+        )
+        result = holdout.set_fitted_model(fitted, inplace=False)
+        self.assertIsNot(result, holdout)
+        self.assertTrue(result.is_adjusted)
+        self.assertFalse(holdout.is_adjusted)
+
+    def test_set_fitted_model_inplace_true(self) -> None:
+        """Line 1211: inplace=True (default) branch."""
+        fitted, resp_sf, tgt_sf = self._make_fitted()
+        holdout = BalanceFrame(
+            sample=SampleFrame.from_frame(resp_sf._df.copy()),
+            target=SampleFrame.from_frame(tgt_sf._df.copy()),
+        )
+        result = holdout.set_fitted_model(fitted, inplace=True)
+        self.assertIs(result, holdout)
+        self.assertTrue(holdout.is_adjusted)
+
+
+class TestBalanceFrameRequireIpwModelAndHelpers(BalanceTestCase):
+    """Cover lines 1270, 1282, 1291, 1310, 1317, 1328, 1333."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.resp_sf = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [f"s{i}" for i in range(8)],
+                    "x": [0.1, 0.3, 0.7, 1.1, 1.4, 1.7, 2.0, 2.2],
+                    "weight": [1.0] * 8,
+                }
+            )
+        )
+        self.tgt_sf = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [f"t{i}" for i in range(8)],
+                    "x": [0.2, 0.5, 0.8, 1.0, 1.6, 1.9, 2.1, 2.4],
+                    "weight": [1.0] * 8,
+                }
+            )
+        )
+        self.bf = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf)
+
+    def test_require_ipw_model_non_ipw_raises(self) -> None:
+        """Line 1270: non-IPW model."""
+        adjusted = self.bf.fit(method="null")
+        with self.assertRaisesRegex(ValueError, "only IPW models"):
+            adjusted._require_ipw_model()
+
+    def test_require_ipw_model_missing_fit_info(self) -> None:
+        """Line 1270: IPW method but missing fit info."""
+        adjusted = self.bf.fit(method="ipw")
+        model = _assert_type(adjusted.model)
+        model["fit"] = None
+        model["X_matrix_columns"] = None
+        with self.assertRaisesRegex(ValueError, "missing fitted model"):
+            adjusted._require_ipw_model()
+
+    def test_matrix_to_dataframe_numpy_array(self) -> None:
+        """Line 1282: numpy array path."""
+        arr = np.array([[1.0, 2.0], [3.0, 4.0]])
+        idx = pd.Index([0, 1])
+        cols = ["a", "b"]
+        result = self.bf._matrix_to_dataframe(arr, idx, cols)
+        self.assertEqual(result.shape, (2, 2))
+        self.assertEqual(list(result.columns), ["a", "b"])
+
+    def test_matrix_to_dataframe_spmatrix(self) -> None:
+        """Line 1291: sparse matrix conversion."""
+        from scipy.sparse import csr_matrix
+
+        arr = csr_matrix(np.array([[1.0, 2.0], [3.0, 4.0]]))
+        idx = pd.Index([0, 1])
+        cols = ["a", "b"]
+        result = self.bf._matrix_to_dataframe(arr, idx, cols)
+        self.assertEqual(result.shape, (2, 2))
+
+    def test_matrix_to_dataframe_unknown_type_raises(self) -> None:
+        """Line 1291: unknown matrix type raises ValueError."""
+        with self.assertRaisesRegex(ValueError, "unavailable"):
+            self.bf._matrix_to_dataframe("not_a_matrix", pd.Index([0]), ["a"])
+
+    def test_align_to_index_mismatched_unique(self) -> None:
+        """Line 1310: indices are unique, same length, but different values."""
+        data = pd.Series([1, 2], index=pd.Index([10, 20]))
+        target_idx = pd.Index([30, 40])
+        with self.assertRaisesRegex(ValueError, "does not match"):
+            self.bf._align_to_index(data, target_idx, "test")
+
+    def test_align_to_index_mismatched_length(self) -> None:
+        """Line 1317: non-unique indices with different lengths."""
+        # Non-unique indices to bypass the first if-branch
+        data = pd.Series([1, 2, 3], index=pd.Index(["a", "a", "b"]))
+        target_idx = pd.Index(["a", "a"])
+        with self.assertRaisesRegex(ValueError, "lengths differ"):
+            self.bf._align_to_index(data, target_idx, "test")
+
+    def test_ipw_class_index_missing_classes(self) -> None:
+        """Line 1328: missing classes_ attribute."""
+
+        class FakeModel:
+            pass
+
+        with self.assertRaisesRegex(ValueError, "missing classes_"):
+            BalanceFrame._ipw_class_index(FakeModel())
+
+    def test_ipw_class_index_missing_class_1(self) -> None:
+        """Line 1333: classes_ present but class 1 is missing."""
+
+        class FakeModel:
+            classes_ = [0, 2]
+
+        with self.assertRaisesRegex(ValueError, "missing class label 1"):
+            BalanceFrame._ipw_class_index(FakeModel())
+
+
+class TestBalanceFrameComputeIpwMatricesInferType(BalanceTestCase):
+    """Cover lines 1375-1381: infer matrix_type from stored artifacts."""
+
+    def test_infer_matrix_type_from_sparse_artifact(self) -> None:
+        from scipy.sparse import csr_matrix
+
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(
+                pd.DataFrame(
+                    {
+                        "id": [f"s{i}" for i in range(8)],
+                        "x": [0.1, 0.3, 0.7, 1.1, 1.4, 1.7, 2.0, 2.2],
+                        "weight": [1.0] * 8,
+                    }
+                )
+            ),
+            target=SampleFrame.from_frame(
+                pd.DataFrame(
+                    {
+                        "id": [f"t{i}" for i in range(8)],
+                        "x": [0.2, 0.5, 0.8, 1.0, 1.6, 1.9, 2.1, 2.4],
+                        "weight": [1.0] * 8,
+                    }
+                )
+            ),
+        )
+        fitted = bf.fit(method="ipw")
+        model = _assert_type(fitted.model)
+        # Remove explicit fit_matrix_type to force inference
+        model.pop("fit_matrix_type", None)
+        # Store a sparse matrix in model_matrix_sample to trigger inference
+        model["model_matrix_sample"] = csr_matrix(np.eye(8))
+        # The method should infer matrix_type as "sparse" and not crash
+        sample_matrix, target_matrix = fitted._compute_ipw_matrices(model)
+        self.assertIsNotNone(sample_matrix)
+        self.assertIsNotNone(target_matrix)
+
+    def _make_bf_and_fitted(self) -> tuple[BalanceFrame, BalanceFrame]:
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(
+                pd.DataFrame(
+                    {
+                        "id": [f"s{i}" for i in range(8)],
+                        "x": [0.1, 0.3, 0.7, 1.1, 1.4, 1.7, 2.0, 2.2],
+                        "weight": [1.0] * 8,
+                    }
+                )
+            ),
+            target=SampleFrame.from_frame(
+                pd.DataFrame(
+                    {
+                        "id": [f"t{i}" for i in range(8)],
+                        "x": [0.2, 0.5, 0.8, 1.0, 1.6, 1.9, 2.1, 2.4],
+                        "weight": [1.0] * 8,
+                    }
+                )
+            ),
+        )
+        fitted = bf.fit(method="ipw")
+        return bf, fitted
+
+    def test_infer_matrix_type_from_ndarray_artifact(self) -> None:
+        _bf, fitted = self._make_bf_and_fitted()
+        model = _assert_type(fitted.model)
+        model.pop("fit_matrix_type", None)
+        model["model_matrix_sample"] = np.eye(8)
+        sample_matrix, target_matrix = fitted._compute_ipw_matrices(model)
+        self.assertIsNotNone(sample_matrix)
+
+    def test_infer_matrix_type_from_dataframe_artifact(self) -> None:
+        _bf, fitted = self._make_bf_and_fitted()
+        model = _assert_type(fitted.model)
+        model.pop("fit_matrix_type", None)
+        model["model_matrix_sample"] = pd.DataFrame(np.eye(8))
+        sample_matrix, target_matrix = fitted._compute_ipw_matrices(model)
+        self.assertIsNotNone(sample_matrix)
+
+
+class TestBalanceFrameIsArtifactStale(BalanceTestCase):
+    """Cover line 1407: _is_artifact_stale returns True when artifact is None."""
+
+    def test_stale_when_artifact_is_none(self) -> None:
+        result = BalanceFrame._is_artifact_stale(None, pd.Index([0]), pd.Index([0]))
+        self.assertTrue(result)
+
+    def test_stale_when_length_mismatch(self) -> None:
+        arr = np.array([1.0, 2.0])
+        result = BalanceFrame._is_artifact_stale(arr, pd.Index([0, 1]), pd.Index([0]))
+        self.assertTrue(result)
+
+    def test_not_stale_when_matching(self) -> None:
+        arr = np.array([1.0, 2.0])
+        idx = pd.Index([0, 1])
+        result = BalanceFrame._is_artifact_stale(arr, idx, idx)
+        self.assertFalse(result)
+
+
+class TestBalanceFrameValidateDataCovariates(BalanceTestCase):
+    """Cover line 1485: mismatched target covariates in _validate_data_covariates."""
+
+    def test_mismatched_target_covariates(self) -> None:
+        bf1 = BalanceFrame(
+            sample=SampleFrame._create(
+                df=pd.DataFrame({"id": ["1"], "x": [1.0], "weight": [1.0]}),
+                id_column="id",
+                covar_columns=["x"],
+                weight_columns=["weight"],
+            ),
+            target=SampleFrame._create(
+                df=pd.DataFrame({"id": ["2"], "x": [2.0], "weight": [1.0]}),
+                id_column="id",
+                covar_columns=["x"],
+                weight_columns=["weight"],
+            ),
+        )
+        # Build data with sample covar "x" matching bf1, but target covar
+        # "x" AND "z" so it differs from bf1's target (just "x").
+        # Use _create to set explicit covar_columns.
+        data_sample = SampleFrame._create(
+            df=pd.DataFrame({"id": ["3"], "x": [3.0], "weight": [1.0]}),
+            id_column="id",
+            covar_columns=["x"],
+            weight_columns=["weight"],
+        )
+        data_target = SampleFrame._create(
+            df=pd.DataFrame({"id": ["4"], "x": [4.0], "z": [5.0], "weight": [1.0]}),
+            id_column="id",
+            covar_columns=["x", "z"],
+            weight_columns=["weight"],
+        )
+        data = BalanceFrame(sample=data_sample, target=data_target)
+        with self.assertRaisesRegex(ValueError, "matching target covariate"):
+            bf1._validate_data_covariates(data)
+
+
+class TestBalanceFrameDesignMatrixTargetErrors(BalanceTestCase):
+    """Cover lines 1578, 1629: design_matrix errors for target path."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [f"s{i}" for i in range(8)],
+                    "x": [0.1, 0.3, 0.7, 1.1, 1.4, 1.7, 2.0, 2.2],
+                    "weight": [1.0] * 8,
+                }
+            )
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [f"t{i}" for i in range(8)],
+                    "x": [0.2, 0.5, 0.8, 1.0, 1.6, 1.9, 2.1, 2.4],
+                    "weight": [1.0] * 8,
+                }
+            )
+        )
+        self.bf = BalanceFrame.from_sample(sample.set_target(target))
+        self.fitted = self.bf.fit(method="ipw")
+
+    def test_design_matrix_data_on_target_no_target(self) -> None:
+        """Line 1578: data must have a target set for on='target'."""
+        data_no_target = BalanceFrame(
+            sample=SampleFrame.from_frame(
+                pd.DataFrame(
+                    {
+                        "id": ["h1", "h2"],
+                        "x": [1.0, 2.0],
+                        "weight": [1.0, 1.0],
+                    }
+                )
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "target"):
+            self.fitted.design_matrix(on="target", data=data_no_target)
+
+    def test_design_matrix_on_target_missing_matrix(self) -> None:
+        """Line 1629: IPW model missing fit-time target matrix."""
+        model = _assert_type(self.fitted.model)
+        model.pop("model_matrix_target", None)
+        with self.assertRaisesRegex(ValueError, "missing fit-time target matrix"):
+            self.fitted.design_matrix(on="target")
+
+
+class TestBalanceFramePredictProbaTargetErrors(BalanceTestCase):
+    """Cover lines 1749, 1778: predict_proba errors for data= target path."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [f"s{i}" for i in range(8)],
+                    "x": [0.1, 0.3, 0.7, 1.1, 1.4, 1.7, 2.0, 2.2],
+                    "weight": [1.0] * 8,
+                }
+            )
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [f"t{i}" for i in range(8)],
+                    "x": [0.2, 0.5, 0.8, 1.0, 1.6, 1.9, 2.1, 2.4],
+                    "weight": [1.0] * 8,
+                }
+            )
+        )
+        self.bf = BalanceFrame.from_sample(sample.set_target(target))
+        self.fitted = self.bf.fit(method="ipw")
+
+    def test_predict_proba_data_on_target_no_target(self) -> None:
+        """Line 1749: data must have a target set for on='target'."""
+        data_no_target = BalanceFrame(
+            sample=SampleFrame.from_frame(
+                pd.DataFrame(
+                    {"id": ["h1", "h2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]}
+                )
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "target"):
+            self.fitted.predict_proba(on="target", data=data_no_target)
+
+    def test_predict_proba_link_output_for_target_data(self) -> None:
+        """Line 1778: target link transform path in data= mode."""
+        holdout_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(
+                pd.DataFrame(
+                    {"id": ["h1", "h2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]}
+                )
+            ),
+            target=SampleFrame.from_frame(
+                pd.DataFrame(
+                    {"id": ["ht1", "ht2"], "x": [1.5, 2.5], "weight": [1.0, 1.0]}
+                )
+            ),
+        )
+        result = self.fitted.predict_proba(on="target", output="link", data=holdout_bf)
+        self.assertEqual(result.shape[0], 2)
+        self.assertTrue(np.all(np.isfinite(result.to_numpy())))
+
+
+class TestBalanceFramePredictWeightsDataErrors(BalanceTestCase):
+    """Cover lines 1926, 1938: predict_weights data= error branches."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [f"s{i}" for i in range(8)],
+                    "x": [0.1, 0.3, 0.7, 1.1, 1.4, 1.7, 2.0, 2.2],
+                    "weight": [1.0] * 8,
+                }
+            )
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [f"t{i}" for i in range(8)],
+                    "x": [0.2, 0.5, 0.8, 1.0, 1.6, 1.9, 2.1, 2.4],
+                    "weight": [1.0] * 8,
+                }
+            )
+        )
+        self.bf = BalanceFrame.from_sample(sample.set_target(target))
+        self.fitted = self.bf.fit(method="ipw")
+
+    def test_predict_weights_data_missing_metadata(self) -> None:
+        """Line 1926: IPW model metadata missing fitted model info."""
+        model = _assert_type(self.fitted.model)
+        model["fit"] = None
+        model["X_matrix_columns"] = None
+        holdout_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(
+                pd.DataFrame(
+                    {"id": ["h1", "h2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]}
+                )
+            ),
+            target=SampleFrame.from_frame(
+                pd.DataFrame(
+                    {"id": ["ht1", "ht2"], "x": [1.5, 2.5], "weight": [1.0, 1.0]}
+                )
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "missing fitted model"):
+            self.fitted.predict_weights(data=holdout_bf)
+
+
+class TestBalanceFrameResolveTrainingWeights(BalanceTestCase):
+    """Cover lines 2049-2053, 2061-2065: _resolve_training_weights fallbacks."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [f"s{i}" for i in range(8)],
+                    "x": [0.1, 0.3, 0.7, 1.1, 1.4, 1.7, 2.0, 2.2],
+                    "weight": [1.0] * 8,
+                }
+            )
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [f"t{i}" for i in range(8)],
+                    "x": [0.2, 0.5, 0.8, 1.0, 1.6, 1.9, 2.1, 2.4],
+                    "weight": [1.0] * 8,
+                }
+            )
+        )
+        self.bf = BalanceFrame.from_sample(sample.set_target(target))
+        self.fitted = self.bf.fit(method="ipw")
+
+    def test_sample_weights_fallback(self) -> None:
+        """Lines 2049-2053: sample weights fallback when training weights unavailable."""
+        model = _assert_type(self.fitted.model)
+        model.pop("training_sample_weights", None)
+        link = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
+        with self.assertLogs("balance", level="WARNING") as cm:
+            sample_w, target_w = self.fitted._resolve_design_weights(model, link)
+        self.assertTrue(any("training_sample_weights" in msg for msg in cm.output))
+        self.assertEqual(len(sample_w), 8)
+
+    def test_target_weights_fallback(self) -> None:
+        """Lines 2061-2065: target weights fallback when training weights unavailable."""
+        model = _assert_type(self.fitted.model)
+        model.pop("training_target_weights", None)
+        link = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
+        with self.assertLogs("balance", level="WARNING") as cm:
+            sample_w, target_w = self.fitted._resolve_design_weights(model, link)
+        self.assertTrue(any("training_target_weights" in msg for msg in cm.output))
+        self.assertEqual(len(target_w), 8)
+
+
+class TestBalanceFramePredictWeightsIpwIndexMismatch(BalanceTestCase):
+    """Cover lines 2076, 2095: _predict_weights_ipw sample index mismatch."""
+
+    def test_predict_weights_ipw_missing_fit_info(self) -> None:
+        """Line 2076: IPW model metadata missing fitted model info."""
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(
+                pd.DataFrame(
+                    {
+                        "id": [f"s{i}" for i in range(8)],
+                        "x": [0.1, 0.3, 0.7, 1.1, 1.4, 1.7, 2.0, 2.2],
+                        "weight": [1.0] * 8,
+                    }
+                )
+            ),
+            target=SampleFrame.from_frame(
+                pd.DataFrame(
+                    {
+                        "id": [f"t{i}" for i in range(8)],
+                        "x": [0.2, 0.5, 0.8, 1.0, 1.6, 1.9, 2.1, 2.4],
+                        "weight": [1.0] * 8,
+                    }
+                )
+            ),
+        )
+        adjusted = bf.fit(method="ipw")
+        model = _assert_type(adjusted.model)
+        model["fit"] = None
+        model["X_matrix_columns"] = None
+        with self.assertRaisesRegex(ValueError, "missing fitted model"):
+            adjusted._predict_weights_ipw(model)
+
+    def test_predict_weights_ipw_index_fallback(self) -> None:
+        """Line 2095: sample_idx fallback when it doesn't match current."""
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(
+                pd.DataFrame(
+                    {
+                        "id": [f"s{i}" for i in range(8)],
+                        "x": [0.1, 0.3, 0.7, 1.1, 1.4, 1.7, 2.0, 2.2],
+                        "weight": [1.0] * 8,
+                    }
+                )
+            ),
+            target=SampleFrame.from_frame(
+                pd.DataFrame(
+                    {
+                        "id": [f"t{i}" for i in range(8)],
+                        "x": [0.2, 0.5, 0.8, 1.0, 1.6, 1.9, 2.1, 2.4],
+                        "weight": [1.0] * 8,
+                    }
+                )
+            ),
+        )
+        adjusted = bf.fit(method="ipw")
+        model = _assert_type(adjusted.model)
+        # Set sample_index to something that doesn't match current
+        model["sample_index"] = pd.Index([f"a{i}" for i in range(8)])
+        # This should still work by falling back
+        w = adjusted._predict_weights_ipw(model)
+        self.assertEqual(len(w), 8)
+
+
+class TestBalanceFrameToSampleNoTarget(BalanceTestCase):
+    """Cover line 2218: to_sample without target raises ValueError."""
+
+    def test_to_sample_without_target_raises(self) -> None:
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]})
+        )
+        bf = BalanceFrame(sample=resp_sf)
+        with self.assertRaisesRegex(ValueError, "no target"):
+            bf.to_sample()
+
+
+class TestBalanceFrameEffectiveSampleSizeNone(BalanceTestCase):
+    """Cover line 2410: _design_effect_diagnostics returns None,None,None for non-finite de."""
+
+    def test_design_effect_nonfinite_returns_three_nones(self) -> None:
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]})
+        )
+        tgt_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["3", "4"], "x": [1.5, 2.5], "weight": [1.0, 1.0]})
+        )
+        bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
+        from balance.stats_and_plots import weights_stats
+
+        with patch.object(weights_stats, "design_effect", return_value=float("inf")):
+            de, ess, essp = bf._design_effect_diagnostics()
+        self.assertIsNone(de)
+        self.assertIsNone(ess)
+        self.assertIsNone(essp)
+
+
+class TestBalanceFrameKeepOnlyPreAdjustAndLinks(BalanceTestCase):
+    """Cover lines 2777, 2790-2791: keep_only_some_rows_columns with pre_adjust and _links."""
+
+    def test_filter_pre_adjust_when_differs_from_sample(self) -> None:
+        """Line 2777: filter pre_adjust when it differs from sample."""
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["1", "2", "3"],
+                    "x": [10.0, 20.0, 30.0],
+                    "weight": [1.0, 1.0, 1.0],
+                }
+            )
+        )
+        tgt_sf = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["4", "5", "6"],
+                    "x": [15.0, 25.0, 35.0],
+                    "weight": [1.0, 1.0, 1.0],
+                }
+            )
+        )
+        bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
+        adjusted = bf.adjust(method="null")
+        # adjusted has pre_adjust != sample
+        filtered = adjusted.keep_only_some_rows_columns(rows_to_keep="x > 15")
+        self.assertEqual(len(filtered.responders._df), 2)
+        self.assertIsNotNone(filtered.unadjusted)
+        assert filtered.unadjusted is not None
+        self.assertEqual(len(filtered.unadjusted._df), 2)
+
+    def test_links_filter_error_is_caught(self) -> None:
+        """Lines 2790-2791: catch errors filtering _links."""
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["1", "2"],
+                    "x": [1.0, 2.0],
+                    "weight": [1.0, 1.0],
+                }
+            )
+        )
+        bf = BalanceFrame(sample=resp_sf)
+        # Put a BalanceFrame in _links whose keep_only_some_rows_columns will fail
+        linked_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(
+                pd.DataFrame({"id": ["3"], "z": [99.0], "weight": [1.0]})
+            )
+        )
+        bf._links["test_link"] = linked_bf
+        # Filter using column "x" which doesn't exist in linked_bf -> raises
+        with self.assertLogs("balance", level="WARNING"):
+            result = bf.keep_only_some_rows_columns(rows_to_keep="x > 0")
+        self.assertIsNotNone(result)
+
+
+class TestBalanceFrameFilterSfPredicted(BalanceTestCase):
+    """Cover line 2859: _filter_sf for predicted column roles."""
+
+    def test_filter_sf_predicted_columns(self) -> None:
+        sf = SampleFrame._create(
+            df=pd.DataFrame(
+                {
+                    "id": ["1", "2"],
+                    "x": [1.0, 2.0],
+                    "pred": [0.5, 0.6],
+                    "weight": [1.0, 1.0],
+                }
+            ),
+            id_column="id",
+            covar_columns=["x"],
+            weight_columns=["weight"],
+        )
+        sf._column_roles["predicted"] = ["pred"]
+        filtered = BalanceFrame._filter_sf(sf, None, ["x"])
+        # predicted column should be filtered (pred not in keep set)
+        self.assertEqual(filtered._column_roles.get("predicted", []), [])

@@ -823,7 +823,7 @@ def build_design_matrix(
     if fit_scaler is not None:
         combined_matrix = fit_scaler.transform(combined_matrix)
     elif scaler_weights is not None:
-        scaler = StandardScaler(with_mean=False, copy=False)
+        scaler = StandardScaler(with_mean=False)
         combined_matrix = scaler.fit_transform(
             combined_matrix, sample_weight=scaler_weights
         )

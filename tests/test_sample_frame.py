@@ -7,6 +7,8 @@
 
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 import pandas as pd
 from balance.balancedf_class import (
@@ -1204,3 +1206,135 @@ class TestSampleFrameFromFrameEdgeCases(BalanceTestCase):
                 weight_column="weight",
                 outcome_columns=["weight"],
             )
+
+
+class TestSampleFrameUncoveredLines(BalanceTestCase):
+    """Tests targeting specific uncovered lines in sample_frame.py."""
+
+    def test_from_frame_predicted_outcome_columns_string(self) -> None:
+        """Line 244: predicted_outcome_columns as a string is normalised to list."""
+        df = pd.DataFrame(
+            {"id": ["1", "2"], "x": [10, 20], "weight": [1.0, 1.0], "p_y": [0.3, 0.7]}
+        )
+        sf = SampleFrame.from_frame(df, predicted_outcome_columns="p_y")
+        self.assertEqual(sf.predicted_outcome_columns, ["p_y"])
+
+    def test_from_frame_missing_covar_columns_raises(self) -> None:
+        """Line 402: ValueError when explicit covar_columns are not in df."""
+        df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20], "weight": [1.0, 1.0]})
+        with self.assertRaises(ValueError) as ctx:
+            SampleFrame.from_frame(df, covar_columns=["nonexistent"])
+        self.assertIn("nonexistent", str(ctx.exception))
+
+    def test_from_frame_covar_includes_id_warns(self) -> None:
+        """Line 444: warns when explicit covariates include the id column."""
+        df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20], "weight": [1.0, 1.0]})
+        with self.assertLogs("balance", level="WARNING") as cm:
+            SampleFrame.from_frame(df, covar_columns=["x", "id"])
+        self.assertTrue(
+            any("id or weight columns" in msg for msg in cm.output),
+            f"Expected warning about id/weight in covars, got: {cm.output}",
+        )
+
+    def test_weight_column_property_future_warning(self) -> None:
+        """Lines 593-600: weight_column property issues FutureWarning."""
+        df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20], "weight": [1.0, 1.0]})
+        sf = SampleFrame.from_frame(df)
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = sf.weight_column
+            self.assertEqual(len(w), 1)
+            self.assertTrue(issubclass(w[0].category, FutureWarning))
+            self.assertIn(
+                "weight_column now returns the column name", str(w[0].message)
+            )
+        self.assertEqual(result, "weight")
+
+    def test_id_column_property_future_warning(self) -> None:
+        """Lines 751-758: id_column property issues FutureWarning."""
+        df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20], "weight": [1.0, 1.0]})
+        sf = SampleFrame.from_frame(df)
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = sf.id_column
+            self.assertEqual(len(w), 1)
+            self.assertTrue(issubclass(w[0].category, FutureWarning))
+            self.assertIn("id_column now returns the column name", str(w[0].message))
+        self.assertEqual(result, "id")
+
+    def test_set_weights_use_index_non_series_raises(self) -> None:
+        """Line 899: TypeError when use_index=True but weights is not a Series."""
+        df = pd.DataFrame(
+            {"id": ["1", "2", "3"], "x": [10, 20, 30], "weight": [1.0, 1.0, 1.0]}
+        )
+        sf = SampleFrame.from_frame(df)
+        with self.assertRaises(TypeError) as ctx:
+            sf.set_weights(np.array([1.0, 2.0, 3.0]), use_index=True)  # pyre-ignore[6]
+        self.assertIn("use_index=True requires a pandas Series", str(ctx.exception))
+
+    def test_rename_weight_column_bad_old_name(self) -> None:
+        """Lines 1214-1218: rename_weight_column raises when old_name is not a weight column."""
+        df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20], "weight": [1.0, 2.0]})
+        sf = SampleFrame.from_frame(df)
+        with self.assertRaisesRegex(ValueError, "is not a weight column"):
+            sf.rename_weight_column("nonexistent", "new_weight")
+
+    def test_rename_weight_column_new_name_exists(self) -> None:
+        """Lines 1219-1223: rename_weight_column raises when new_name already exists in df."""
+        df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20], "weight": [1.0, 2.0]})
+        sf = SampleFrame.from_frame(df)
+        with self.assertRaisesRegex(ValueError, "already exists"):
+            sf.rename_weight_column("weight", "x")
+
+    def test_rename_weight_column(self) -> None:
+        """Lines 1214-1234: rename_weight_column updates df, roles, pointer, metadata."""
+        df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20], "weight": [1.0, 2.0]})
+        sf = SampleFrame.from_frame(df)
+        sf.set_weight_metadata("weight", {"method": "ipw"})
+        sf.rename_weight_column("weight", "w_new")
+        # Old column gone, new column present
+        self.assertNotIn("weight", sf._df.columns)
+        self.assertIn("w_new", sf._df.columns)
+        # Column roles updated
+        self.assertIn("w_new", sf._column_roles["weights"])
+        self.assertNotIn("weight", sf._column_roles["weights"])
+        # Active weight pointer updated
+        self.assertEqual(sf._weight_column_name, "w_new")
+        # Metadata migrated
+        self.assertEqual(sf.weight_metadata("w_new"), {"method": "ipw"})
+
+    def test_from_sample_no_id_raises(self) -> None:
+        """Line 1362: ValueError when Sample has no id_column."""
+        from unittest.mock import MagicMock
+
+        sample = MagicMock(spec=Sample)
+        sample.id_series = None
+        with self.assertRaises(ValueError) as ctx:
+            SampleFrame.from_sample(sample)
+        self.assertIn("id_column", str(ctx.exception))
+
+    def test_from_sample_no_weight_raises(self) -> None:
+        """Line 1366: ValueError when Sample has no weight_column."""
+        from unittest.mock import MagicMock
+
+        sample = MagicMock(spec=Sample)
+        sample.id_series = pd.Series(["1"], name="id")
+        sample.weight_series = None
+        with self.assertRaises(ValueError) as ctx:
+            SampleFrame.from_sample(sample)
+        self.assertIn("weight_column", str(ctx.exception))
+
+    def test_from_sample_no_dataframe_raises(self) -> None:
+        """Line 1380: ValueError when Sample has no DataFrame."""
+        from unittest.mock import MagicMock
+
+        sample = MagicMock(spec=Sample)
+        sample.id_series = pd.Series(["1"], name="id")
+        sample.weight_series = pd.Series([1.0], name="weight")
+        sample._outcome_columns = None
+        sample._ignored_column_names = []
+        sample._covar_columns_names.return_value = ["x"]
+        sample._df = None
+        with self.assertRaises(ValueError) as ctx:
+            SampleFrame.from_sample(sample)
+        self.assertIn("no DataFrame", str(ctx.exception))

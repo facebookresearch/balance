@@ -3674,3 +3674,77 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
         # outcomes
         outcomes = s3_null.outcomes()
         self.assertIsNotNone(outcomes.df)
+
+
+class TestBalanceDF_kld_formula_base(BalanceTestCase):
+    """Cover BalanceDF._kld_formula returning None (line 1454)."""
+
+    def test_kld_formula_returns_none(self) -> None:
+        """Base BalanceDF._kld_formula() should return None."""
+        bdf = s1.covars()
+        # BalanceDFCovars inherits _kld_formula from BalanceDF
+        result = BalanceDF._kld_formula(bdf)
+        self.assertIsNone(result)
+
+
+class TestBalanceDFOutcomes_no_outcome_columns(BalanceTestCase):
+    """Cover BalanceDFOutcomes.__init__ raising ValueError (lines 2241-2242)."""
+
+    def test_raises_when_no_outcome_columns(self) -> None:
+        """Creating BalanceDFOutcomes from a Sample without outcomes raises ValueError."""
+        sample_no_outcomes = Sample.from_frame(
+            pd.DataFrame({"a": [1, 2, 3], "id": [1, 2, 3], "w": [1.0, 1.0, 1.0]}),
+            id_column="id",
+            weight_column="w",
+        )
+        with self.assertRaisesRegex(ValueError, "no outcome columns are defined"):
+            BalanceDFOutcomes(sample=sample_no_outcomes)  # pyre-ignore[6]
+
+
+class TestBalanceDFWeights_design_effect_prop_type_error(BalanceTestCase):
+    """Cover BalanceDFWeights.design_effect_prop raising TypeError (line 3017)."""
+
+    def test_raises_when_unadjusted_is_not_weights(self) -> None:
+        """design_effect_prop raises TypeError when unadjusted is not BalanceDFWeights."""
+        s3_adj = s3.adjust(method="null")
+        weights = s3_adj.weights()
+
+        original_method: object = weights._balancedf_child_from_linked_samples
+
+        def mock_linked() -> dict[str, object]:
+            result = original_method()  # pyre-ignore[29]
+            result["unadjusted"] = "not_a_weights_object"
+            return result
+
+        weights._balancedf_child_from_linked_samples = mock_linked  # type: ignore[assignment]
+        try:
+            with self.assertRaisesRegex(TypeError, "Expected BalanceDFWeights"):
+                weights.design_effect_prop()
+        finally:
+            weights._balancedf_child_from_linked_samples = original_method  # type: ignore[assignment]
+
+
+class TestBalanceDFWeights_r_indicator_scalar_ndarray(BalanceTestCase):
+    """Cover BalanceDFWeights.r_indicator 0-d ndarray reshape (line 3122)."""
+
+    def test_r_indicator_with_scalar_ndarray_target_propensity(self) -> None:
+        """Passing a 0-d numpy array as target_propensity triggers reshape to 1D."""
+        # Create a sample and target each with 1 row so that the
+        # 0-d array reshaped to shape (1,) matches the target row count.
+        one_sample = Sample.from_frame(
+            pd.DataFrame({"a": [1], "id": [1], "w": [1.0]}),
+            id_column="id",
+            weight_column="w",
+        )
+        one_target = Sample.from_frame(
+            pd.DataFrame({"a": [2], "id": [2], "w": [1.0]}),
+            id_column="id",
+            weight_column="w",
+        )
+        adj = one_sample.set_target(one_target).adjust(method="null")
+        weights = adj.weights()
+        # Pass a 0-d numpy array as target_propensity
+        scalar_array = np.array(0.5)
+        self.assertEqual(scalar_array.ndim, 0)
+        result = weights.r_indicator(target_propensity=scalar_array)
+        self.assertIsInstance(result, (float, np.floating))

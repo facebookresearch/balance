@@ -2097,3 +2097,14 @@ class TestCliExceptionHandling(balance.testutil.BalanceTestCase):
             diagnostics_df = pd.read_csv(diagnostics_out_file)
             self.assertIn("adjustment_failure", diagnostics_df["metric"].values)
             self.assertIn("adjustment_failure_reason", diagnostics_df["metric"].values)
+
+
+class TestCliParseColumnsNone(balance.testutil.BalanceTestCase):
+    """Cover _parse_csv_columns_arg raising ValueError when value is None (line 42)."""
+
+    def test_parse_csv_columns_arg_raises_on_none(self) -> None:
+        """_parse_csv_columns_arg(None, ...) raises ValueError."""
+        from balance.cli import _parse_csv_columns_arg
+
+        with self.assertRaisesRegex(ValueError, "cannot be None"):
+            _parse_csv_columns_arg(None, "test_arg")

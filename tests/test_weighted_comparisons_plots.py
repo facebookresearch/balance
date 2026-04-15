@@ -2055,3 +2055,34 @@ class TestPlotDistSeabornDistType(balance.testutil.BalanceTestCase):
             )
         self.assertIn("seaborn library does not support", str(context.exception))
         self.assertIn("hist_ascii", str(context.exception))
+
+    def test_seaborn_plot_dist_empty_variables_returns_early(self) -> None:
+        """Test seaborn_plot_dist returns early when variables list is empty after filtering (lines 685-686)."""
+        # Use DataFrames with no common columns so choose_variables returns []
+        df1 = pd.DataFrame({"v1": [1.0, 2.0, 3.0]})
+        df2 = pd.DataFrame({"v2": [4.0, 5.0, 6.0]})
+        dfs: List[DataFrameWithWeight] = [
+            {"df": df1, "weight": pd.Series(np.ones(3))},
+            {"df": df2, "weight": pd.Series(np.ones(3))},
+        ]
+        result = weighted_comparisons_plots.seaborn_plot_dist(
+            dfs,
+            names=["self", "target"],
+            return_axes=False,
+        )
+        self.assertIsNone(result)
+
+    def test_seaborn_plot_dist_empty_variables_returns_empty_list(self) -> None:
+        """Test seaborn_plot_dist returns [] when return_axes=True and variables empty (lines 685-686)."""
+        df1 = pd.DataFrame({"v1": [1.0, 2.0, 3.0]})
+        df2 = pd.DataFrame({"v2": [4.0, 5.0, 6.0]})
+        dfs: List[DataFrameWithWeight] = [
+            {"df": df1, "weight": pd.Series(np.ones(3))},
+            {"df": df2, "weight": pd.Series(np.ones(3))},
+        ]
+        result = weighted_comparisons_plots.seaborn_plot_dist(
+            dfs,
+            names=["self", "target"],
+            return_axes=True,
+        )
+        self.assertEqual(result, [])

@@ -3628,3 +3628,23 @@ class TestEmptyCategoriesError(balance.testutil.BalanceTestCase):
                 ValueError, "Discrete columns must contain at least one category"
             ):
                 weighted_comparisons_stats.ks(sample_df, target_df)
+
+    def test_coerce_r_indicator_propensities_scalar(self) -> None:
+        """Test _coerce_r_indicator_propensities reshapes scalar (ndim==0) to 1D array (line 54)."""
+        from balance.stats_and_plots.weighted_comparisons_stats import (
+            _coerce_r_indicator_propensities,
+        )
+
+        result = _coerce_r_indicator_propensities(0.5, "test")
+        self.assertEqual(result.ndim, 1)
+        self.assertEqual(len(result), 1)
+        self.assertAlmostEqual(result[0], 0.5)
+
+    def test_asmd_unknown_std_type(self) -> None:
+        """Test asmd raises ValueError for unknown std_type (line 613)."""
+        sample_df = pd.DataFrame({"a": [1.0, 2.0, 3.0]})
+        target_df = pd.DataFrame({"a": [4.0, 5.0, 6.0]})
+        with self.assertRaisesRegex(ValueError, "std_type must be in"):
+            weighted_comparisons_stats.asmd(
+                sample_df, target_df, std_type="invalid"  # pyre-ignore[6]
+            )

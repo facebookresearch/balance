@@ -406,3 +406,37 @@ def test_build_diagnostics_with_ipw_matches_sample_diagnostics() -> None:
     )
 
     pd.testing.assert_frame_equal(result, expected)
+
+
+def test_build_diagnostics_model_dict_none_shows_unknown_method() -> None:
+    """When model_dict is None, _build_diagnostics should include 'unknown' adjustment method."""
+    sample = Sample.from_frame(
+        pd.DataFrame({"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}),
+        id_column="id",
+        weight_column="weight",
+        standardize_types=False,
+    )
+    target = Sample.from_frame(
+        pd.DataFrame({"id": ["3", "4"], "x": [0, 1], "weight": [1.0, 1.0]}),
+        id_column="id",
+        weight_column="weight",
+        standardize_types=False,
+    )
+    adjusted = sample.set_target(target).adjust(method="null")
+
+    result = _build_diagnostics(
+        covars_df=adjusted.covars().df,
+        target_covars_df=adjusted._links["target"].covars().df,
+        weights_summary=adjusted.weights().summary(),
+        model_dict=None,
+        covars_asmd=adjusted.covars().asmd(),
+        covars_asmd_main=adjusted.covars().asmd(aggregate_by_main_covar=True),
+        outcome_columns=adjusted._outcome_columns,
+        weights_impact_on_outcome_method="t_test",
+        weights_impact_on_outcome_conf_level=0.95,
+        outcome_impact=None,
+    )
+
+    method_rows = result[result["metric"] == "adjustment_method"]
+    assert len(method_rows) == 1
+    assert method_rows["var"].iloc[0] == "unknown"
