@@ -1495,3 +1495,117 @@ class TestRunIpfNumpyNanConv(balance.testutil.BalanceTestCase):
         self.assertIsInstance(iterations_df, pd.DataFrame)
         # Check that convergence history is recorded
         self.assertGreater(len(iterations_df), 0)
+
+
+class TestRakeValidation(
+    balance.testutil.BalanceTestCase,
+):
+    """Tests for uncovered validation paths in rake module."""
+
+    def test_hare_niemeyer_all_zero_proportions(self) -> None:
+        """Test _hare_niemeyer_allocation raises ValueError when all proportions are zero (line 515)."""
+        with self.assertRaisesRegex(ValueError, "All proportions are zero or empty"):
+            _hare_niemeyer_allocation({"a": 0, "b": 0}, 5)
+
+    def test_realize_dicts_nan_proportion(self) -> None:
+        """Test _realize_dicts_of_proportions raises ValueError for NaN proportion (line 660)."""
+        with self.assertRaisesRegex(ValueError, "finite"):
+            _realize_dicts_of_proportions({"v1": {"a": float("nan"), "b": 0.5}})
+
+    def test_realize_dicts_inf_proportion(self) -> None:
+        """Test _realize_dicts_of_proportions raises ValueError for inf proportion (line 660)."""
+        with self.assertRaisesRegex(ValueError, "finite"):
+            _realize_dicts_of_proportions({"v1": {"a": float("inf"), "b": 0.5}})
+
+    def test_realize_dicts_negative_proportion(self) -> None:
+        """Test _realize_dicts_of_proportions raises ValueError for negative proportion (line 665)."""
+        with self.assertRaisesRegex(ValueError, "non-negative"):
+            _realize_dicts_of_proportions({"v1": {"a": -0.5, "b": 0.5}})
+
+    def test_realize_dicts_bool_proportion(self) -> None:
+        """Test _realize_dicts_of_proportions raises ValueError for bool proportion (line 654-655)."""
+        with self.assertRaisesRegex(ValueError, "real number.*not bool"):
+            _realize_dicts_of_proportions({"v1": {"a": True, "b": 0.5}})
+
+    def test_validate_props_float_conversion_error(self) -> None:
+        """Lines 654-655: ValueError when proportion is not convertible to float."""
+        import numbers
+
+        class BadReal(numbers.Real):
+            """A numbers.Real subclass whose float() raises TypeError."""
+
+            def __float__(self) -> float:
+                raise TypeError("cannot convert")
+
+            # Abstract method stubs required by numbers.Real ABC:
+            def __abs__(self) -> "BadReal":
+                return self
+
+            def __add__(self, other: object) -> "BadReal":
+                return self
+
+            def __ceil__(self) -> int:
+                return 0
+
+            def __eq__(self, other: object) -> bool:
+                return False
+
+            def __floor__(self) -> int:
+                return 0
+
+            def __floordiv__(self, other: object) -> "BadReal":
+                return self
+
+            def __le__(self, other: object) -> bool:
+                return False
+
+            def __lt__(self, other: object) -> bool:
+                return False
+
+            def __mod__(self, other: object) -> "BadReal":
+                return self
+
+            def __mul__(self, other: object) -> "BadReal":
+                return self
+
+            def __neg__(self) -> "BadReal":
+                return self
+
+            def __pos__(self) -> "BadReal":
+                return self
+
+            def __pow__(self, other: object) -> "BadReal":
+                return self
+
+            def __radd__(self, other: object) -> "BadReal":
+                return self
+
+            def __rfloordiv__(self, other: object) -> "BadReal":
+                return self
+
+            def __rmod__(self, other: object) -> "BadReal":
+                return self
+
+            def __rmul__(self, other: object) -> "BadReal":
+                return self
+
+            def __round__(self, ndigits: int = 0) -> "BadReal":
+                return self
+
+            def __rpow__(self, other: object) -> "BadReal":
+                return self
+
+            def __rtruediv__(self, other: object) -> "BadReal":
+                return self
+
+            def __truediv__(self, other: object) -> "BadReal":
+                return self
+
+            def __trunc__(self) -> int:
+                return 0
+
+            def __hash__(self) -> int:
+                return 0
+
+        with self.assertRaisesRegex(ValueError, "convertible to float"):
+            _realize_dicts_of_proportions({"var": {"cat": BadReal()}})  # pyre-ignore[6]

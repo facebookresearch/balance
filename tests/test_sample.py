@@ -2911,3 +2911,32 @@ class TestCallableBool(balance.testutil.BalanceTestCase):
 
         self.assertEqual(5 * _CallableBool(True), 5)
         self.assertEqual(5 * _CallableBool(False), 0)
+
+
+class TestSampleFrameSetterCoverage(balance.testutil.BalanceTestCase):
+    """Cover the _sample_frame setter (lines 170-172) and _balance_frame setter (line 181)."""
+
+    def test_sample_frame_setter_updates_internal_state(self) -> None:
+        """Setting _sample_frame to a non-None value updates both _sf_sample and _sf_sample_pre_adjust."""
+        sample = Sample.from_frame(
+            pd.DataFrame({"a": [1, 2, 3], "id": [1, 2, 3], "w": [1.0, 1.0, 1.0]}),
+            id_column="id",
+            weight_column="w",
+        )
+        new_sf = SampleFrame.from_frame(
+            pd.DataFrame({"a": [10, 20], "id": [10, 20], "w": [2.0, 2.0]}),
+            id_column="id",
+            weight_column="w",
+        )
+        sample._sample_frame = new_sf
+        self.assertIs(sample._sf_sample, new_sf)
+        self.assertIs(sample._sf_sample_pre_adjust, new_sf)
+
+    def test_balance_frame_setter_is_noop(self) -> None:
+        """Setting _balance_frame should not raise (it is a no-op)."""
+        sample = Sample.from_frame(
+            pd.DataFrame({"a": [1, 2], "id": [1, 2]}),
+        )
+        # Should not raise
+        sample._balance_frame = None
+        sample._balance_frame = "anything"  # type: ignore[assignment]

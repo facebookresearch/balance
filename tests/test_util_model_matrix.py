@@ -13,13 +13,15 @@ import pandas as pd
 from balance.sample_class import Sample
 from balance.util import _assert_type
 from balance.utils.model_matrix import (
+    _build_projected_model_matrix,
+    build_design_matrix,
     build_model_matrix,
     dot_expansion,
     formula_generator,
     model_matrix,
     process_formula,
 )
-from scipy.sparse import csc_matrix
+from scipy.sparse import csc_matrix, issparse
 
 
 class TestUtil(
@@ -710,3 +712,153 @@ class TestModelMatrixEdgeCases(balance.testutil.BalanceTestCase):
 
         with self.assertRaisesRegex(ValueError, "Dropping rows led to empty target"):
             model_matrix(sample_df, target_df, add_na=False)
+
+
+class TestBuildProjectedModelMatrix(
+    balance.testutil.BalanceTestCase,
+):
+    """Tests for _build_projected_model_matrix and build_design_matrix uncovered lines."""
+
+    def test_build_projected_model_matrix_na_action_drop_raises(self) -> None:
+        """Test that _build_projected_model_matrix raises ValueError when na_action='drop' (line 546)."""
+        sample_df = pd.DataFrame({"a": [1, 2, 3]})
+        target_df = pd.DataFrame({"a": [4, 5, 6]})
+        with self.assertRaisesRegex(ValueError, "unsupported when na_action='drop'"):
+            _build_projected_model_matrix(
+                sample_df,
+                target_df,
+                formula=None,
+                one_hot_encoding=False,
+                na_action="drop",
+                project_to_columns=["a"],
+            )
+
+    def test_build_projected_model_matrix_no_overlapping_columns(self) -> None:
+        """Test that an empty sparse matrix is created when no columns overlap (line 607)."""
+        sample_df = pd.DataFrame({"a": [1, 2, 3]})
+        target_df = pd.DataFrame({"a": [4, 5, 6]})
+        result = _build_projected_model_matrix(
+            sample_df,
+            target_df,
+            formula=None,
+            one_hot_encoding=False,
+            na_action="add_indicator",
+            project_to_columns=["nonexistent_col1", "nonexistent_col2"],
+        )
+        combined_matrix = result[0]
+        self.assertIsInstance(combined_matrix, csc_matrix)
+        self.assertEqual(combined_matrix.shape, (6, 2))
+        # All entries should be zero
+        self.assertEqual(combined_matrix.nnz, 0)
+
+    def test_build_design_matrix_scaler_weights_without_fit_scaler(self) -> None:
+        """Test that a new StandardScaler is created when scaler_weights is provided but fit_scaler is None (lines 826-830)."""
+        sample_df = pd.DataFrame({"a": [1.0, 2.0, 3.0], "b": [4.0, 5.0, 6.0]})
+        target_df = pd.DataFrame({"a": [7.0, 8.0, 9.0], "b": [10.0, 11.0, 12.0]})
+        weights = np.ones(6)
+        result = build_design_matrix(
+            sample_df,
+            target_df,
+            use_model_matrix=False,
+            na_action="add_indicator",
+            scaler_weights=weights,
+        )
+        self.assertIsNotNone(result["fit_scaler"])
+
+    def test_build_design_matrix_penalty_rescaling_sparse(self) -> None:
+        """Test penalty rescaling on sparse matrix (lines 842-844)."""
+        sample_df = pd.DataFrame({"a": [1.0, 2.0], "b": [3.0, 4.0]})
+        target_df = pd.DataFrame({"a": [5.0, 6.0], "b": [7.0, 8.0]})
+        result = build_design_matrix(
+            sample_df,
+            target_df,
+            use_model_matrix=True,
+            na_action="add_indicator",
+            fit_penalties_skl=[2.0, 2.0],
+            matrix_type="sparse",
+        )
+        self.assertIsInstance(result["combined_matrix"], csc_matrix)
+        self.assertIsNotNone(result["fit_penalties_skl"])
+
+    def test_build_design_matrix_penalty_rescaling_dense(self) -> None:
+        """Test penalty rescaling on dense (DataFrame/ndarray) matrix (line 846)."""
+        sample_df = pd.DataFrame({"a": [1.0, 2.0], "b": [3.0, 4.0]})
+        target_df = pd.DataFrame({"a": [5.0, 6.0], "b": [7.0, 8.0]})
+        result = build_design_matrix(
+            sample_df,
+            target_df,
+            use_model_matrix=False,
+            na_action="add_indicator",
+            fit_penalties_skl=[2.0, 2.0],
+            matrix_type="dense",
+        )
+        self.assertIsInstance(result["combined_matrix"], np.ndarray)
+
+    def test_build_design_matrix_dense_from_sparse(self) -> None:
+        """Test converting sparse matrix to dense ndarray (line 851)."""
+        sample_df = pd.DataFrame({"a": [1.0, 2.0], "b": [3.0, 4.0]})
+        target_df = pd.DataFrame({"a": [5.0, 6.0], "b": [7.0, 8.0]})
+        result = build_design_matrix(
+            sample_df,
+            target_df,
+            use_model_matrix=True,
+            na_action="add_indicator",
+            matrix_type="dense",
+        )
+        self.assertIsInstance(result["combined_matrix"], np.ndarray)
+
+    def test_build_design_matrix_dense_from_dataframe(self) -> None:
+        """Test converting DataFrame to ndarray (line 852-853)."""
+        sample_df = pd.DataFrame({"a": [1.0, 2.0], "b": [3.0, 4.0]})
+        target_df = pd.DataFrame({"a": [5.0, 6.0], "b": [7.0, 8.0]})
+        result = build_design_matrix(
+            sample_df,
+            target_df,
+            use_model_matrix=False,
+            na_action="add_indicator",
+            matrix_type="dense",
+        )
+        self.assertIsInstance(result["combined_matrix"], np.ndarray)
+
+    def test_build_design_matrix_sparse_from_ndarray(self) -> None:
+        """Test converting ndarray to csc_matrix (line 856)."""
+        sample_df = pd.DataFrame({"a": [1.0, 2.0], "b": [3.0, 4.0]})
+        target_df = pd.DataFrame({"a": [5.0, 6.0], "b": [7.0, 8.0]})
+        # First build dense, then request sparse to trigger ndarray -> csc conversion
+        # Use use_model_matrix=True which produces sparse, then we need dense first.
+        # Actually, use_model_matrix=False produces DataFrame. Let's use penalty to get ndarray first.
+        result = build_design_matrix(
+            sample_df,
+            target_df,
+            use_model_matrix=False,
+            na_action="add_indicator",
+            fit_penalties_skl=[2.0, 2.0],
+            matrix_type="sparse",
+        )
+        self.assertTrue(issparse(result["combined_matrix"]))
+
+    def test_build_design_matrix_sparse_from_dataframe(self) -> None:
+        """Test converting DataFrame to csc_matrix (line 858)."""
+        sample_df = pd.DataFrame({"a": [1.0, 2.0], "b": [3.0, 4.0]})
+        target_df = pd.DataFrame({"a": [5.0, 6.0], "b": [7.0, 8.0]})
+        result = build_design_matrix(
+            sample_df,
+            target_df,
+            use_model_matrix=False,
+            na_action="add_indicator",
+            matrix_type="sparse",
+        )
+        self.assertTrue(issparse(result["combined_matrix"]))
+
+    def test_build_design_matrix_penalty_length_mismatch(self) -> None:
+        """Line 838: ValueError when fit_penalties_skl length doesn't match columns."""
+        sample_df = pd.DataFrame({"a": [1.0, 2.0], "b": [3.0, 4.0]})
+        target_df = pd.DataFrame({"a": [5.0, 6.0], "b": [7.0, 8.0]})
+        with self.assertRaisesRegex(ValueError, "does not match"):
+            build_design_matrix(
+                sample_df,
+                target_df,
+                use_model_matrix=False,
+                na_action="add_indicator",
+                fit_penalties_skl=[1.0, 2.0, 3.0],  # 3 penalties for 2 columns
+            )
