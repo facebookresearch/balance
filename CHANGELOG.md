@@ -48,6 +48,16 @@
   - This makes the weighting API easier to use in sklearn-style workflows while
     preserving existing `adjust(...)` behavior.
 
+- **Improved holdout design-matrix robustness diagnostics**
+  - `build_design_matrix()` now uses a shared NA-indicator token pattern from
+    `data_transformation.py` when parsing formula terms, avoiding duplicated
+    hard-coded regex logic.
+  - In raw-covariate holdout projection mode (`use_model_matrix=False` with
+    `project_to_columns=...`), missing fit-time columns now emit a warning
+    before zero-fill reindexing so unseen holdout features are explicit.
+  - Missing-column warnings are now de-duplicated and preserve request order,
+    preventing redundant repeated column names in diagnostics.
+
 ## Breaking Changes
 
 - **Changed `id_column` to return the column name (`str`)** on `SampleFrame`,

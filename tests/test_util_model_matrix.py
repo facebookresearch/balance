@@ -765,6 +765,61 @@ class TestBuildProjectedModelMatrix(
         )
         self.assertIsNotNone(result["fit_scaler"])
 
+    def test_build_design_matrix_warns_on_missing_projection_columns(self) -> None:
+        """Raw holdout projection should warn and zero-fill fit-time columns that are missing."""
+        sample_df = pd.DataFrame({"a": [1.0, 2.0], "b": [3.0, 4.0]})
+        target_df = pd.DataFrame({"a": [5.0, 6.0], "b": [7.0, 8.0]})
+        with self.assertLogs("balance", level="WARNING") as cm:
+            result = build_design_matrix(
+                sample_df,
+                target_df,
+                use_model_matrix=False,
+                na_action="add_indicator",
+                project_to_columns=["a", "b", "c"],
+            )
+
+        self.assertTrue(
+            any("zero-filling unseen columns" in msg for msg in cm.output),
+            f"Expected missing-column warning, got: {cm.output}",
+        )
+        combined_matrix = result["combined_matrix"]
+        self.assertIsInstance(combined_matrix, pd.DataFrame)
+        self.assertListEqual(result["columns"], ["a", "b", "c"])
+        self.assertTrue((combined_matrix["c"] == 0).all())
+
+    def test_build_design_matrix_missing_projection_warns_once_per_column(self) -> None:
+        """Missing-column warning should de-duplicate repeated requested columns."""
+        sample_df = pd.DataFrame({"a": [1.0], "b": [3.0]})
+        target_df = pd.DataFrame({"a": [5.0], "b": [7.0]})
+        with self.assertLogs("balance", level="WARNING") as cm:
+            build_design_matrix(
+                sample_df,
+                target_df,
+                use_model_matrix=False,
+                na_action="add_indicator",
+                project_to_columns=["a", "missing_x", "missing_x", "missing_y"],
+            )
+
+        self.assertEqual(len(cm.output), 1)
+        self.assertIn("missing 2 fit-time column(s)", cm.output[0])
+        self.assertIn("['missing_x', 'missing_y']", cm.output[0])
+
+    def test_build_design_matrix_no_warning_when_projection_columns_present(
+        self,
+    ) -> None:
+        """No warning should be emitted when all requested projection columns exist."""
+        sample_df = pd.DataFrame({"a": [1.0], "b": [3.0]})
+        target_df = pd.DataFrame({"a": [5.0], "b": [7.0]})
+        with self.assertNoLogs("balance", level="WARNING"):
+            result = build_design_matrix(
+                sample_df,
+                target_df,
+                use_model_matrix=False,
+                na_action="add_indicator",
+                project_to_columns=["a", "b"],
+            )
+        self.assertListEqual(result["columns"], ["a", "b"])
+
     def test_build_design_matrix_penalty_rescaling_sparse(self) -> None:
         """Test penalty rescaling on sparse matrix (lines 842-844)."""
         sample_df = pd.DataFrame({"a": [1.0, 2.0], "b": [3.0, 4.0]})
