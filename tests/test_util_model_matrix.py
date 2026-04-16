@@ -810,14 +810,21 @@ class TestBuildProjectedModelMatrix(
         """No warning should be emitted when all requested projection columns exist."""
         sample_df = pd.DataFrame({"a": [1.0], "b": [3.0]})
         target_df = pd.DataFrame({"a": [5.0], "b": [7.0]})
-        with self.assertNoLogs("balance", level="WARNING"):
-            result = build_design_matrix(
-                sample_df,
-                target_df,
-                use_model_matrix=False,
-                na_action="add_indicator",
-                project_to_columns=["a", "b"],
-            )
+        result = build_design_matrix(
+            sample_df,
+            target_df,
+            use_model_matrix=False,
+            na_action="add_indicator",
+            project_to_columns=["a", "b"],
+        )
+        self.assertNotWarns(
+            build_design_matrix,
+            sample_df,
+            target_df,
+            use_model_matrix=False,
+            na_action="add_indicator",
+            project_to_columns=["a", "b"],
+        )
         self.assertListEqual(result["columns"], ["a", "b"])
 
     def test_build_design_matrix_penalty_rescaling_sparse(self) -> None:
