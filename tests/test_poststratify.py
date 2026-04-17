@@ -564,6 +564,19 @@ class Testpoststratify(
                 formula=["a"],
             )
 
+        result_with_empty_variables_and_formula = poststratify(
+            sample_df=s,
+            sample_weights=s_weights,
+            target_df=t,
+            target_weights=t_weights,
+            variables=[],
+            formula=["a"],
+        )["weight"]
+        self.assertEqual(
+            result_with_empty_variables_and_formula,
+            pd.Series([4.0, 2.0]),
+        )
+
         with self.assertRaisesRegex(
             ValueError, "`formula` must contain at least one formula string"
         ):

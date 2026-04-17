@@ -73,11 +73,14 @@ def poststratify(
             the final normalisation to the target total. Defaults to True.
         formula (Optional[Union[str, List[str]]], optional): Formula-like
             specification to select post-stratification variables, as an
-            alternative to ``variables``. Supports one or more patsy RHS
-            snippets (e.g., ``"age + gender"`` or ``["gender"]``). Interaction
-            operators are interpreted for variable extraction only (post-
-            stratification is still cell-based on the resulting variable set).
-            Mutually exclusive with ``variables``.
+            alternative to ``variables``. Supports one or more RHS snippets
+            made of raw column names and operators like ``+``, ``-``, ``*``,
+            ``:``, ``.``, and optional ``~`` (e.g., ``"age + gender"`` or
+            ``["gender"]``). Parsing uses patsy operators for variable
+            extraction only (general patsy transforms/functions are not
+            supported), and post-stratification remains cell-based on the
+            resolved variable set. Mutually exclusive with non-empty
+            ``variables``.
         *args: Additional positional arguments (currently unused).
         **kwargs: Additional keyword arguments (currently unused).
 
@@ -152,6 +155,9 @@ def poststratify(
         raise ValueError(
             "weight can't be a name of a column in sample or target when applying poststratify"
         )
+
+    if variables is not None and len(variables) == 0:
+        variables = None
 
     if formula is not None and variables is not None:
         raise ValueError("Specify only one of `variables` or `formula`.")
