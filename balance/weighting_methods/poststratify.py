@@ -40,8 +40,8 @@ def poststratify(
     weight_trimming_mean_ratio: Union[float, int, None] = None,
     weight_trimming_percentile: Union[float, None] = None,
     keep_sum_of_weights: bool = True,
-    formula: Optional[Union[str, List[str]]] = None,
     *args: Any,
+    formula: Optional[Union[str, List[str]]] = None,
     **kwargs: Any,
 ) -> Dict[str, Union[pd.Series, Dict[str, str]]]:
     """
