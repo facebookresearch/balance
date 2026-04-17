@@ -33,7 +33,7 @@ def poststratify(
     target_df: pd.DataFrame,
     target_weights: pd.Series,
     variables: Optional[List[str]] = None,
-    formula: str | List[str] | None = None,
+    formula: Optional[Union[str, List[str]]] = None,
     transformations: Optional[str] = "default",
     transformations_drop: bool = True,
     strict_matching: bool = True,
@@ -234,7 +234,7 @@ def poststratify(
 def _variables_from_formula(
     sample_df: pd.DataFrame,
     target_df: pd.DataFrame,
-    formula: str | List[str],
+    formula: Union[str, List[str]],
 ) -> List[str]:
     """Resolve a post-stratification variable list from formula snippets."""
     formulas: List[str] = [formula] if isinstance(formula, str) else formula

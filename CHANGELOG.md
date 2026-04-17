@@ -92,7 +92,6 @@
   - robust poststratify formula parsing edge cases (interaction syntax,
     dot expansion, explicit `~` formulas, and validation failures).
 
-
 # 0.19.0 (2026-04-06)
 
 ## Highlights
