@@ -587,6 +587,28 @@ class Testpoststratify(
             )
 
         with self.assertRaisesRegex(
+            ValueError, "`formula` must be a string or list of strings"
+        ):
+            poststratify(
+                sample_df=s,
+                sample_weights=s_weights,
+                target_df=t,
+                target_weights=t_weights,
+                formula=123,  # type: ignore[arg-type]
+            )
+
+        with self.assertRaisesRegex(
+            ValueError, "`formula` must be a string or list of strings"
+        ):
+            poststratify(
+                sample_df=s,
+                sample_weights=s_weights,
+                target_df=t,
+                target_weights=t_weights,
+                formula=("a",),  # type: ignore[arg-type]
+            )
+
+        with self.assertRaisesRegex(
             ValueError, "Formula items must be non-empty strings"
         ):
             poststratify(

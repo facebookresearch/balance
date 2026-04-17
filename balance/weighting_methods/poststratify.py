@@ -237,6 +237,9 @@ def _variables_from_formula(
     formula: Union[str, List[str]],
 ) -> List[str]:
     """Resolve a post-stratification variable list from formula snippets."""
+    if not isinstance(formula, (str, list)):
+        raise ValueError("`formula` must be a string or list of strings.")
+
     formulas: List[str] = [formula] if isinstance(formula, str) else formula
     if len(formulas) == 0:
         raise ValueError("`formula` must contain at least one formula string.")
