@@ -9,26 +9,18 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import logging
+import re
 from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 from balance import adjustment as balance_adjustment, util as balance_util
 from balance.util import _safe_fillna_and_infer
+from patsy import ModelDesc
 
 logger: logging.Logger = logging.getLogger(__package__)
 
 
 # TODO: Add tests for all arguments of function
-# TODO: consider adding a `formula` parameter to poststratify (like IPW/CBPS have).
-#   Currently, passing formula=... via **kwargs is silently ignored.
-#   Users wanting to control which variables define PS cells must use `variables=`
-#   or `transformations={"col": lambda x: x}`. A `formula` parameter would provide
-#   a consistent interface across all adjustment methods.
-#   Example from balance notebook v03 that currently does NOT work as intended:
-#       formula = ["gender"]
-#       adjusted = ipw_adjusted.adjust(method="poststratify", formula=formula)
-#   The formula is silently swallowed by **kwargs. Users must use instead:
-#       adjusted = ipw_adjusted.adjust(method="poststratify", variables=["gender"])
 # TODO: Store fit artifacts for predict_weights() support.
 # Save the cell-ratio table, the variable list, and na_action in the
 # returned model dict. Currently only {"method": "poststratify"} is
@@ -41,6 +33,7 @@ def poststratify(
     target_df: pd.DataFrame,
     target_weights: pd.Series,
     variables: Optional[List[str]] = None,
+    formula: str | List[str] | None = None,
     transformations: Optional[str] = "default",
     transformations_drop: bool = True,
     strict_matching: bool = True,
@@ -65,6 +58,13 @@ def poststratify(
         target_df (pd.DataFrame): DataFrame representing the target population.
         target_weights (pd.Series): Design weights for the target.
         variables (Optional[List[str]], optional): List of variables to define post-stratification cells. If None, uses the intersection of columns in sample_df and target_df.
+        formula (Optional[Union[str, List[str]]], optional): Formula-like
+            specification to select post-stratification variables, as an
+            alternative to ``variables``. Supports one or more patsy RHS
+            snippets (e.g., ``"age + gender"`` or ``["gender"]``). Interaction
+            operators are interpreted for variable extraction only (post-
+            stratification is still cell-based on the resulting variable set).
+            Mutually exclusive with ``variables``.
         transformations (str, optional): Transformations to apply to data before fitting the model. Default is "default". See `balance.adjustment.apply_transformations`.
         transformations_drop (bool, optional): If True, drops variables not affected by transformations. Default is True.
         strict_matching (bool, optional): If True, requires all sample cells to be present in the target. If False, cells missing in the target are assigned weight 0 (and a warning is raised). Default is True.
@@ -153,6 +153,12 @@ def poststratify(
             "weight can't be a name of a column in sample or target when applying poststratify"
         )
 
+    if formula is not None and variables is not None:
+        raise ValueError("Specify only one of `variables` or `formula`.")
+
+    if formula is not None:
+        variables = _variables_from_formula(sample_df, target_df, formula)
+
     variables = balance_util.choose_variables(sample_df, target_df, variables=variables)
     logger.debug(f"Join variables for sample and target: {variables}")
 
@@ -223,3 +229,69 @@ def poststratify(
         "weight": w,
         "model": {"method": "poststratify"},
     }
+
+
+def _variables_from_formula(
+    sample_df: pd.DataFrame,
+    target_df: pd.DataFrame,
+    formula: str | List[str],
+) -> List[str]:
+    """Resolve a post-stratification variable list from formula snippets."""
+    formulas: List[str] = [formula] if isinstance(formula, str) else formula
+    if len(formulas) == 0:
+        raise ValueError("`formula` must contain at least one formula string.")
+
+    common_columns = set(sample_df.columns).intersection(set(target_df.columns))
+    common_columns_ordered = [c for c in sample_df.columns if c in common_columns]
+    variables: List[str] = []
+    dot_pattern = re.compile(r"(?<![A-Za-z0-9_])\.(?![A-Za-z0-9_])")
+
+    for formula_item in formulas:
+        if not isinstance(formula_item, str):
+            raise ValueError("Each element of `formula` must be a string.")
+
+        item = formula_item.strip()
+        if len(item) == 0:
+            raise ValueError("Formula items must be non-empty strings.")
+
+        if item == ".":
+            for col in common_columns_ordered:
+                if col not in variables:
+                    variables.append(col)
+            continue
+
+        if dot_pattern.search(item):
+            if len(common_columns_ordered) == 0:
+                raise ValueError(
+                    "Cannot expand '.' in `formula` because sample and target share no columns."
+                )
+            expanded = " + ".join(common_columns_ordered)
+            item = dot_pattern.sub(f"({expanded})", item)
+
+        formula_for_parse = item if "~" in item else f"~ {item}"
+        model_desc = ModelDesc.from_formula(formula_for_parse)
+        for term in model_desc.rhs_termlist:
+            for factor in term.factors:
+                code = getattr(factor, "code", str(factor)).strip()
+                if code in common_columns:
+                    if code not in variables:
+                        variables.append(code)
+                    continue
+
+                if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", code):
+                    raise ValueError(
+                        f"Variable '{code}' from `formula` is not present in both sample and target."
+                    )
+
+                raise ValueError(
+                    "Unsupported poststratify formula term "
+                    f"'{code}'. Use raw column names (e.g., 'a + b') "
+                    "or pass `variables=[...]`."
+                )
+
+    if len(variables) == 0:
+        raise ValueError(
+            "Could not resolve poststratification variables from `formula`."
+        )
+
+    return variables

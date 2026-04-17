@@ -48,6 +48,16 @@
   - This makes the weighting API easier to use in sklearn-style workflows while
     preserving existing `adjust(...)` behavior.
 
+- **Added formula support in `poststratify`**
+  - `poststratify(...)` now accepts `formula=` (string or list) as an
+    alternative to `variables=`.
+  - Formula-selected variables are now honored when calling
+    `adjust(method="poststratify", formula=...)` instead of being ignored.
+  - Passing both `variables` and `formula` now raises a clear `ValueError`.
+  - Added strict formula validation to prevent silent misconfiguration
+    (empty/non-string formula entries, unknown variables, and unsupported
+    transformed terms now raise explicit errors).
+
 ## Breaking Changes
 
 - **Changed `id_column` to return the column name (`str`)** on `SampleFrame`,
@@ -77,6 +87,11 @@
   - synchronization of inherited `SampleFrame` views after
     `Sample.set_as_pre_adjust()`,
   - and weight-column casting when active weight dtype is non-float/float32.
+  - `poststratify(formula=...)` variable selection and adjust-path forwarding,
+    plus argument validation for mutually exclusive `variables` and `formula`.
+  - robust poststratify formula parsing edge cases (interaction syntax,
+    dot expansion, explicit `~` formulas, and validation failures).
+
 
 # 0.19.0 (2026-04-06)
 
