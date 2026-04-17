@@ -33,7 +33,6 @@ def poststratify(
     target_df: pd.DataFrame,
     target_weights: pd.Series,
     variables: Optional[List[str]] = None,
-    formula: Optional[Union[str, List[str]]] = None,
     transformations: Optional[str] = "default",
     transformations_drop: bool = True,
     strict_matching: bool = True,
@@ -41,6 +40,7 @@ def poststratify(
     weight_trimming_mean_ratio: Union[float, int, None] = None,
     weight_trimming_percentile: Union[float, None] = None,
     keep_sum_of_weights: bool = True,
+    formula: Optional[Union[str, List[str]]] = None,
     *args: Any,
     **kwargs: Any,
 ) -> Dict[str, Union[pd.Series, Dict[str, str]]]:
@@ -58,13 +58,6 @@ def poststratify(
         target_df (pd.DataFrame): DataFrame representing the target population.
         target_weights (pd.Series): Design weights for the target.
         variables (Optional[List[str]], optional): List of variables to define post-stratification cells. If None, uses the intersection of columns in sample_df and target_df.
-        formula (Optional[Union[str, List[str]]], optional): Formula-like
-            specification to select post-stratification variables, as an
-            alternative to ``variables``. Supports one or more patsy RHS
-            snippets (e.g., ``"age + gender"`` or ``["gender"]``). Interaction
-            operators are interpreted for variable extraction only (post-
-            stratification is still cell-based on the resulting variable set).
-            Mutually exclusive with ``variables``.
         transformations (str, optional): Transformations to apply to data before fitting the model. Default is "default". See `balance.adjustment.apply_transformations`.
         transformations_drop (bool, optional): If True, drops variables not affected by transformations. Default is True.
         strict_matching (bool, optional): If True, requires all sample cells to be present in the target. If False, cells missing in the target are assigned weight 0 (and a warning is raised). Default is True.
@@ -78,6 +71,13 @@ def poststratify(
             winsorisation, passed to :func:`balance.adjustment.trim_weights`.
         keep_sum_of_weights (bool, optional): Preserve the sum of weights during trimming before
             the final normalisation to the target total. Defaults to True.
+        formula (Optional[Union[str, List[str]]], optional): Formula-like
+            specification to select post-stratification variables, as an
+            alternative to ``variables``. Supports one or more patsy RHS
+            snippets (e.g., ``"age + gender"`` or ``["gender"]``). Interaction
+            operators are interpreted for variable extraction only (post-
+            stratification is still cell-based on the resulting variable set).
+            Mutually exclusive with ``variables``.
         *args: Additional positional arguments (currently unused).
         **kwargs: Additional keyword arguments (currently unused).
 

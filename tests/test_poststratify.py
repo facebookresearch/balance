@@ -358,6 +358,57 @@ class Testpoststratify(
         )["weight"]
         pd.testing.assert_series_equal(result_with_tilde, result_with_variables)
 
+    def test_poststratify_formula_keeps_positional_argument_compatibility(self) -> None:
+        s = pd.DataFrame(
+            {
+                "a": (0, 1, 0, 1),
+                "c": ("a", "a", "b", "b"),
+            },
+        )
+        s_weights = pd.Series([4, 2, 2, 3])
+        t = s
+        t_weights = pd.Series([4, 2, 2, 8])
+
+        result_positional = poststratify(
+            s,
+            s_weights,
+            t,
+            t_weights,
+            None,  # variables
+            None,  # transformations
+            True,  # transformations_drop
+            True,  # strict_matching
+            "add_indicator",  # na_action
+            None,  # weight_trimming_mean_ratio
+            None,  # weight_trimming_percentile
+            True,  # keep_sum_of_weights
+        )["weight"]
+        result_keywords = poststratify(
+            sample_df=s,
+            sample_weights=s_weights,
+            target_df=t,
+            target_weights=t_weights,
+            transformations=None,
+        )["weight"]
+        pd.testing.assert_series_equal(result_positional, result_keywords)
+
+        result_with_formula = poststratify(
+            s,
+            s_weights,
+            t,
+            t_weights,
+            None,
+            None,
+            True,
+            True,
+            "add_indicator",
+            None,
+            None,
+            True,
+            formula=["a"],
+        )["weight"]
+        self.assertEqual(result_with_formula, pd.Series([4.0, 4.0, 2.0, 6.0]))
+
     def test_poststratify_na_action(self) -> None:
         s = pd.DataFrame(
             {
