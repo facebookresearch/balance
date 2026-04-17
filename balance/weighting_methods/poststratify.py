@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional, Union
 import pandas as pd
 from balance import adjustment as balance_adjustment, util as balance_util
 from balance.util import _safe_fillna_and_infer
-from patsy import ModelDesc
+from patsy.highlevel import ModelDesc
 
 logger: logging.Logger = logging.getLogger(__package__)
 
