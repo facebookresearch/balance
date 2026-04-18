@@ -252,6 +252,211 @@ class Testpoststratify(
         self.assertAlmostEqual(result[s.x == "b"].sum() / size, 0.035, delta=eps)
         self.assertAlmostEqual(result[s.x == "c"].sum() / size, 0.015, delta=eps)
 
+    def test_poststratify_formula(self) -> None:
+        s = pd.DataFrame(
+            {
+                "a": (0, 1, 0, 1),
+                "c": ("a", "a", "b", "b"),
+            },
+        )
+        s_weights = pd.Series([4, 2, 2, 3])
+        t = s
+        t_weights = pd.Series([4, 2, 2, 8])
+
+        result_formula = poststratify(
+            sample_df=s,
+            sample_weights=s_weights,
+            target_df=t,
+            target_weights=t_weights,
+            formula=["a"],
+            transformations=None,
+        )["weight"]
+        self.assertEqual(result_formula, pd.Series([4.0, 4.0, 2.0, 6.0]))
+
+        sample = Sample.from_frame(
+            df=pd.DataFrame(
+                {
+                    "a": (0, 1, 0, 1),
+                    "c": ("a", "a", "b", "b"),
+                    "id": (1, 2, 3, 4),
+                    "w": s_weights,
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "a": (0, 1, 0, 1),
+                    "c": ("a", "a", "b", "b"),
+                    "id": (5, 6, 7, 8),
+                    "w": t_weights,
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+        adjusted = sample.adjust(
+            target,
+            method="poststratify",
+            formula=["a"],
+            transformations=None,
+        )
+        self.assertEqual(
+            adjusted.weights().df.iloc[:, 0].reset_index(drop=True),
+            pd.Series([4.0, 4.0, 2.0, 6.0], name="w"),
+        )
+
+    def test_poststratify_formula_edge_cases(self) -> None:
+        s = pd.DataFrame(
+            {
+                "a": (0, 1, 0, 1),
+                "b": ("x", "x", "y", "y"),
+                "c": ("u", "v", "u", "v"),
+            },
+        )
+        s_weights = pd.Series([1.0, 1.0, 1.0, 1.0])
+        t = s.copy()
+        t_weights = pd.Series([1.0, 3.0, 1.0, 3.0])
+
+        # Reference result: joint cells on (a, b) via `variables=`.
+        result_with_variables = poststratify(
+            sample_df=s,
+            sample_weights=s_weights,
+            target_df=t,
+            target_weights=t_weights,
+            variables=["a", "b"],
+            transformations=None,
+        )["weight"]
+
+        # Interaction operator `:` is the canonical poststratify syntax.
+        result_with_interaction = poststratify(
+            sample_df=s,
+            sample_weights=s_weights,
+            target_df=t,
+            target_weights=t_weights,
+            formula="a:b",
+            transformations=None,
+        )["weight"]
+        pd.testing.assert_series_equal(result_with_interaction, result_with_variables)
+
+        # Dot expansion with exclusion: all common columns minus `c`.
+        result_with_dot = poststratify(
+            sample_df=s,
+            sample_weights=s_weights,
+            target_df=t,
+            target_weights=t_weights,
+            formula=". - c",
+            transformations=None,
+        )["weight"]
+        pd.testing.assert_series_equal(result_with_dot, result_with_variables)
+
+        # Plain `.` picks up every common column jointly.
+        result_with_bare_dot = poststratify(
+            sample_df=s,
+            sample_weights=s_weights,
+            target_df=t,
+            target_weights=t_weights,
+            formula=".",
+            transformations=None,
+        )["weight"]
+        result_with_all_vars = poststratify(
+            sample_df=s,
+            sample_weights=s_weights,
+            target_df=t,
+            target_weights=t_weights,
+            variables=["a", "b", "c"],
+            transformations=None,
+        )["weight"]
+        pd.testing.assert_series_equal(result_with_bare_dot, result_with_all_vars)
+
+        # A leading `~` LHS is ignored.
+        result_with_tilde = poststratify(
+            sample_df=s,
+            sample_weights=s_weights,
+            target_df=t,
+            target_weights=t_weights,
+            formula="outcome ~ a:b",
+            transformations=None,
+        )["weight"]
+        pd.testing.assert_series_equal(result_with_tilde, result_with_variables)
+
+        # List form joint-cells all items, equivalent to ":"-joining them.
+        result_with_list = poststratify(
+            sample_df=s,
+            sample_weights=s_weights,
+            target_df=t,
+            target_weights=t_weights,
+            formula=["a", "b"],
+            transformations=None,
+        )["weight"]
+        pd.testing.assert_series_equal(result_with_list, result_with_variables)
+
+        # Three-way interaction still works.
+        result_with_triple_interaction = poststratify(
+            sample_df=s,
+            sample_weights=s_weights,
+            target_df=t,
+            target_weights=t_weights,
+            formula="a:b:c",
+            transformations=None,
+        )["weight"]
+        pd.testing.assert_series_equal(
+            result_with_triple_interaction, result_with_all_vars
+        )
+
+    def test_poststratify_formula_keeps_positional_argument_compatibility(self) -> None:
+        s = pd.DataFrame(
+            {
+                "a": (0, 1, 0, 1),
+                "c": ("a", "a", "b", "b"),
+            },
+        )
+        s_weights = pd.Series([4, 2, 2, 3])
+        t = s
+        t_weights = pd.Series([4, 2, 2, 8])
+
+        result_positional = poststratify(
+            s,
+            s_weights,
+            t,
+            t_weights,
+            None,  # variables
+            None,  # transformations
+            True,  # transformations_drop
+            True,  # strict_matching
+            "add_indicator",  # na_action
+            None,  # weight_trimming_mean_ratio
+            None,  # weight_trimming_percentile
+            True,  # keep_sum_of_weights
+        )["weight"]
+        result_keywords = poststratify(
+            sample_df=s,
+            sample_weights=s_weights,
+            target_df=t,
+            target_weights=t_weights,
+            transformations=None,
+        )["weight"]
+        pd.testing.assert_series_equal(result_positional, result_keywords)
+
+        result_with_formula = poststratify(
+            s,
+            s_weights,
+            t,
+            t_weights,
+            None,
+            None,
+            True,
+            True,
+            "add_indicator",
+            None,
+            None,
+            True,
+            formula=["a"],
+        )["weight"]
+        self.assertEqual(result_with_formula, pd.Series([4.0, 4.0, 2.0, 6.0]))
+
     def test_poststratify_na_action(self) -> None:
         s = pd.DataFrame(
             {
@@ -395,6 +600,174 @@ class Testpoststratify(
                 na_action="invalid",
             )
 
+        with self.assertRaisesRegex(
+            ValueError, "Specify only one of `variables` or `formula`"
+        ):
+            poststratify(
+                sample_df=s,
+                sample_weights=s_weights,
+                target_df=t,
+                target_weights=t_weights,
+                variables=["a"],
+                formula=["a"],
+            )
+
+        result_with_empty_variables_and_formula = poststratify(
+            sample_df=s,
+            sample_weights=s_weights,
+            target_df=t,
+            target_weights=t_weights,
+            variables=[],
+            formula=["a"],
+        )["weight"]
+        self.assertEqual(
+            result_with_empty_variables_and_formula,
+            pd.Series([4.0, 2.0]),
+        )
+
+        with self.assertRaisesRegex(
+            ValueError, "`formula` must contain at least one formula string"
+        ):
+            poststratify(
+                sample_df=s,
+                sample_weights=s_weights,
+                target_df=t,
+                target_weights=t_weights,
+                formula=[],
+            )
+
+        with self.assertRaisesRegex(
+            ValueError, "Each element of `formula` must be a string"
+        ):
+            poststratify(
+                sample_df=s,
+                sample_weights=s_weights,
+                target_df=t,
+                target_weights=t_weights,
+                formula=["a", 123],  # type: ignore[list-item]
+            )
+
+        with self.assertRaisesRegex(
+            ValueError, "`formula` must be a string or list of strings"
+        ):
+            poststratify(
+                sample_df=s,
+                sample_weights=s_weights,
+                target_df=t,
+                target_weights=t_weights,
+                formula=123,  # type: ignore[arg-type]
+            )
+
+        with self.assertRaisesRegex(
+            ValueError, "`formula` must be a string or list of strings"
+        ):
+            poststratify(
+                sample_df=s,
+                sample_weights=s_weights,
+                target_df=t,
+                target_weights=t_weights,
+                formula=("a",),  # type: ignore[arg-type]
+            )
+
+        with self.assertRaisesRegex(
+            ValueError, "Formula items must be non-empty strings"
+        ):
+            poststratify(
+                sample_df=s,
+                sample_weights=s_weights,
+                target_df=t,
+                target_weights=t_weights,
+                formula=["   "],
+            )
+
+        with self.assertRaisesRegex(
+            ValueError, "Variable 'missing_var' from `formula` is not present"
+        ):
+            poststratify(
+                sample_df=s,
+                sample_weights=s_weights,
+                target_df=t,
+                target_weights=t_weights,
+                formula="missing_var:a",
+            )
+
+        with self.assertRaisesRegex(
+            ValueError, "Unsupported poststratify formula term"
+        ):
+            poststratify(
+                sample_df=s,
+                sample_weights=s_weights,
+                target_df=t,
+                target_weights=t_weights,
+                formula="np.log(a)",
+            )
+
+        # `+` (additive) is rejected because poststratify always joint-cells.
+        with self.assertRaisesRegex(
+            ValueError,
+            r"Poststratify formula operator '\+' is not supported",
+        ):
+            poststratify(
+                sample_df=s,
+                sample_weights=s_weights,
+                target_df=t,
+                target_weights=t_weights,
+                formula="a + b",
+            )
+
+        # `+` inside a list item is also rejected.
+        with self.assertRaisesRegex(
+            ValueError,
+            r"Poststratify formula operator '\+' is not supported",
+        ):
+            poststratify(
+                sample_df=s,
+                sample_weights=s_weights,
+                target_df=t,
+                target_weights=t_weights,
+                formula=["a + b"],
+            )
+
+        # `*` (main + interaction) is rejected for the same reason.
+        with self.assertRaisesRegex(
+            ValueError,
+            r"Poststratify formula operator '\*' is not supported",
+        ):
+            poststratify(
+                sample_df=s,
+                sample_weights=s_weights,
+                target_df=t,
+                target_weights=t_weights,
+                formula="a * b",
+            )
+
+        # `+` on the RHS of a `~` is also caught (LHS is ignored).
+        with self.assertRaisesRegex(
+            ValueError,
+            r"Poststratify formula operator '\+' is not supported",
+        ):
+            poststratify(
+                sample_df=s,
+                sample_weights=s_weights,
+                target_df=t,
+                target_weights=t_weights,
+                formula="outcome ~ a + b",
+            )
+
+        # Mixed `+` inside a dot-expansion expression is rejected BEFORE
+        # our internal dot substitution (which also uses `+`).
+        with self.assertRaisesRegex(
+            ValueError,
+            r"Poststratify formula operator '\+' is not supported",
+        ):
+            poststratify(
+                sample_df=s,
+                sample_weights=s_weights,
+                target_df=t,
+                target_weights=t_weights,
+                formula="a + . - c",
+            )
+
     # TODO: test chained adjustment (IPW → poststratify) — the two-stage pattern
     #   from balance notebook v03:
     #       sample_with_target = sample.set_target(target)
@@ -415,14 +788,6 @@ class Testpoststratify(
 
     # TODO: test interaction between variables= and transformations= — what
     #   happens when both are provided? Which takes precedence?
-
-    # TODO: test that passing formula=... to poststratify is silently ignored
-    #   (it goes into **kwargs but is never read). Either add a test confirming
-    #   the no-op behavior, or implement formula support for poststratify.
-    #   Example from balance notebook v03 (does NOT work as intended):
-    #       formula = ["gender"]
-    #       adjusted = ipw_adjusted.adjust(method="poststratify", formula=formula)
-    #       # TODO: we need to make formula work with poststratify
 
     # TODO: test ASMD after poststratify — verify that ASMD on the PS variables
     #   reaches 0 (or near 0) after adjustment.

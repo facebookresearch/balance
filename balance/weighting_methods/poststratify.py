@@ -9,26 +9,18 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import logging
+import re
 from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 from balance import adjustment as balance_adjustment, util as balance_util
 from balance.util import _safe_fillna_and_infer
+from patsy.highlevel import ModelDesc
 
 logger: logging.Logger = logging.getLogger(__package__)
 
 
 # TODO: Add tests for all arguments of function
-# TODO: consider adding a `formula` parameter to poststratify (like IPW/CBPS have).
-#   Currently, passing formula=... via **kwargs is silently ignored.
-#   Users wanting to control which variables define PS cells must use `variables=`
-#   or `transformations={"col": lambda x: x}`. A `formula` parameter would provide
-#   a consistent interface across all adjustment methods.
-#   Example from balance notebook v03 that currently does NOT work as intended:
-#       formula = ["gender"]
-#       adjusted = ipw_adjusted.adjust(method="poststratify", formula=formula)
-#   The formula is silently swallowed by **kwargs. Users must use instead:
-#       adjusted = ipw_adjusted.adjust(method="poststratify", variables=["gender"])
 # TODO: Store fit artifacts for predict_weights() support.
 # Save the cell-ratio table, the variable list, and na_action in the
 # returned model dict. Currently only {"method": "poststratify"} is
@@ -49,6 +41,7 @@ def poststratify(
     weight_trimming_percentile: Union[float, None] = None,
     keep_sum_of_weights: bool = True,
     *args: Any,
+    formula: Optional[Union[str, List[str]]] = None,
     **kwargs: Any,
 ) -> Dict[str, Union[pd.Series, Dict[str, str]]]:
     """
@@ -78,6 +71,30 @@ def poststratify(
             winsorisation, passed to :func:`balance.adjustment.trim_weights`.
         keep_sum_of_weights (bool, optional): Preserve the sum of weights during trimming before
             the final normalisation to the target total. Defaults to True.
+        formula (Optional[Union[str, List[str]]], optional): Formula-like
+            specification to select post-stratification variables, as an
+            alternative to ``variables``. Supported operators are ``:``
+            (interaction), ``.`` (all common columns of sample and target),
+            ``-`` (exclude a variable), and an optional leading ``~``
+            (the LHS is ignored). Examples: ``"a:b:c"``, ``"."``,
+            ``". - c"``, ``"y ~ a:b"``, ``["a", "b"]`` (list form
+            joint-cells all items).
+
+            Additive operators ``+`` and ``*`` are **not** supported and
+            will raise ``ValueError``. Post-stratification defines cells
+            by the *joint* distribution of the selected variables — every
+            variable added only refines the cell grid — so ``a + b``,
+            ``a * b`` and ``a:b`` would all produce identical cells.
+            Rejecting ``+``/``*`` prevents users from silently writing a
+            formula that looks like a main-effects model but is treated
+            as a joint interaction. (Note: raking, unlike
+            post-stratification, operates on marginals and will support
+            additive formulas when it gains a ``formula=`` argument.)
+
+            Parsing uses patsy operators for variable extraction only;
+            general patsy transforms/functions (e.g., ``np.log(a)``) are
+            not supported. Mutually exclusive with non-empty
+            ``variables``.
         *args: Additional positional arguments (currently unused).
         **kwargs: Additional keyword arguments (currently unused).
 
@@ -153,6 +170,15 @@ def poststratify(
             "weight can't be a name of a column in sample or target when applying poststratify"
         )
 
+    if variables is not None and len(variables) == 0:
+        variables = None
+
+    if formula is not None and variables is not None:
+        raise ValueError("Specify only one of `variables` or `formula`.")
+
+    if formula is not None:
+        variables = _variables_from_formula(sample_df, target_df, formula)
+
     variables = balance_util.choose_variables(sample_df, target_df, variables=variables)
     logger.debug(f"Join variables for sample and target: {variables}")
 
@@ -223,3 +249,94 @@ def poststratify(
         "weight": w,
         "model": {"method": "poststratify"},
     }
+
+
+def _variables_from_formula(
+    sample_df: pd.DataFrame,
+    target_df: pd.DataFrame,
+    formula: Union[str, List[str]],
+) -> List[str]:
+    """Resolve a post-stratification variable list from formula snippets."""
+    if not isinstance(formula, (str, list)):
+        raise ValueError("`formula` must be a string or list of strings.")
+
+    formulas: List[str] = [formula] if isinstance(formula, str) else formula
+    if len(formulas) == 0:
+        raise ValueError("`formula` must contain at least one formula string.")
+
+    common_columns = set(sample_df.columns).intersection(set(target_df.columns))
+    common_columns_ordered = [c for c in sample_df.columns if c in common_columns]
+    variables: List[str] = []
+    dot_pattern = re.compile(r"(?<![A-Za-z0-9_])\.(?![A-Za-z0-9_])")
+
+    for formula_item in formulas:
+        if not isinstance(formula_item, str):
+            raise ValueError("Each element of `formula` must be a string.")
+
+        item = formula_item.strip()
+        if len(item) == 0:
+            raise ValueError("Formula items must be non-empty strings.")
+
+        # Poststratify defines cells by the joint distribution of all selected
+        # variables. Additive ('+') and mixed ('*') operators would therefore
+        # behave identically to ':' and are rejected to prevent silent
+        # semantic confusion. Raking, unlike poststratify, operates on
+        # marginals and should accept '+' and '*' when it gains `formula=`.
+        # We check the user-provided RHS (post `~`, pre `.` expansion) so that
+        # our own '+' injection during dot expansion is not flagged.
+        rhs_for_check = item.split("~", 1)[1] if "~" in item else item
+        for forbidden_op in ("+", "*"):
+            if forbidden_op in rhs_for_check:
+                raise ValueError(
+                    f"Poststratify formula operator '{forbidden_op}' is not "
+                    "supported. Poststratify defines cells by the joint "
+                    "distribution of the specified variables, so '+' "
+                    "(additive) and '*' (main + interaction) would be "
+                    "semantically identical to ':' here. Use ':' (e.g., "
+                    "'a:b:c'), '.' (all common columns), '-' (exclude), or "
+                    "pass `variables=[...]`. Note: raking, which operates "
+                    "on marginals, will support '+' and '*' when it gains "
+                    "a `formula=` argument."
+                )
+
+        if item == ".":
+            for col in common_columns_ordered:
+                if col not in variables:
+                    variables.append(col)
+            continue
+
+        if dot_pattern.search(item):
+            if len(common_columns_ordered) == 0:
+                raise ValueError(
+                    "Cannot expand '.' in `formula` because sample and target share no columns."
+                )
+            expanded = " + ".join(common_columns_ordered)
+            item = dot_pattern.sub(f"({expanded})", item)
+
+        formula_for_parse = item if "~" in item else f"~ {item}"
+        model_desc = ModelDesc.from_formula(formula_for_parse)
+        for term in model_desc.rhs_termlist:
+            for factor in term.factors:
+                code = getattr(factor, "code", str(factor)).strip()
+                if code in common_columns:
+                    if code not in variables:
+                        variables.append(code)
+                    continue
+
+                if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", code):
+                    raise ValueError(
+                        f"Variable '{code}' from `formula` is not present in both sample and target."
+                    )
+
+                raise ValueError(
+                    "Unsupported poststratify formula term "
+                    f"'{code}'. Use raw column names joined by ':' "
+                    "(e.g., 'a:b') or pass `variables=[...]`."
+                )
+
+    if len(variables) == 0:
+        raise ValueError(
+            "Could not resolve poststratification variables from `formula`."
+        )
+
+    return variables

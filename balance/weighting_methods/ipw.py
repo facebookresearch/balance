@@ -1056,7 +1056,6 @@ def ipw(
         # the chosen estimator. These are used by BalanceFrame.predict() so we do
         # not need to reconstruct preprocessing after fitting.
         target_matrix = X_matrix[sample_n:]
-        # pyre-ignore[16]: ClassifierMixin has predict_proba at runtime
         best_pred_target = best_model.predict_proba(target_matrix)[
             :, chosen_class_index
         ]
