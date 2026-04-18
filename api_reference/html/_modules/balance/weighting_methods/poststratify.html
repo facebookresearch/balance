@@ -46,26 +46,18 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">adjustment</span> <span class="k">as</span> <span class="n">balance_adjustment</span><span class="p">,</span> <span class="n">util</span> <span class="k">as</span> <span class="n">balance_util</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">_safe_fillna_and_infer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">patsy.highlevel</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelDesc</span>
 
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
 
 
 <span class="c1"># TODO: Add tests for all arguments of function</span>
-<span class="c1"># TODO: consider adding a `formula` parameter to poststratify (like IPW/CBPS have).</span>
-<span class="c1">#   Currently, passing formula=... via **kwargs is silently ignored.</span>
-<span class="c1">#   Users wanting to control which variables define PS cells must use `variables=`</span>
-<span class="c1">#   or `transformations={&quot;col&quot;: lambda x: x}`. A `formula` parameter would provide</span>
-<span class="c1">#   a consistent interface across all adjustment methods.</span>
-<span class="c1">#   Example from balance notebook v03 that currently does NOT work as intended:</span>
-<span class="c1">#       formula = [&quot;gender&quot;]</span>
-<span class="c1">#       adjusted = ipw_adjusted.adjust(method=&quot;poststratify&quot;, formula=formula)</span>
-<span class="c1">#   The formula is silently swallowed by **kwargs. Users must use instead:</span>
-<span class="c1">#       adjusted = ipw_adjusted.adjust(method=&quot;poststratify&quot;, variables=[&quot;gender&quot;])</span>
 <span class="c1"># TODO: Store fit artifacts for predict_weights() support.</span>
 <span class="c1"># Save the cell-ratio table, the variable list, and na_action in the</span>
 <span class="c1"># returned model dict. Currently only {&quot;method&quot;: &quot;poststratify&quot;} is</span>
@@ -88,6 +80,7 @@
     <span class="n">weight_trimming_percentile</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">keep_sum_of_weights</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">formula</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -117,6 +110,30 @@
 <span class="sd">            winsorisation, passed to :func:`balance.adjustment.trim_weights`.</span>
 <span class="sd">        keep_sum_of_weights (bool, optional): Preserve the sum of weights during trimming before</span>
 <span class="sd">            the final normalisation to the target total. Defaults to True.</span>
+<span class="sd">        formula (Optional[Union[str, List[str]]], optional): Formula-like</span>
+<span class="sd">            specification to select post-stratification variables, as an</span>
+<span class="sd">            alternative to ``variables``. Supported operators are ``:``</span>
+<span class="sd">            (interaction), ``.`` (all common columns of sample and target),</span>
+<span class="sd">            ``-`` (exclude a variable), and an optional leading ``~``</span>
+<span class="sd">            (the LHS is ignored). Examples: ``&quot;a:b:c&quot;``, ``&quot;.&quot;``,</span>
+<span class="sd">            ``&quot;. - c&quot;``, ``&quot;y ~ a:b&quot;``, ``[&quot;a&quot;, &quot;b&quot;]`` (list form</span>
+<span class="sd">            joint-cells all items).</span>
+
+<span class="sd">            Additive operators ``+`` and ``*`` are **not** supported and</span>
+<span class="sd">            will raise ``ValueError``. Post-stratification defines cells</span>
+<span class="sd">            by the *joint* distribution of the selected variables — every</span>
+<span class="sd">            variable added only refines the cell grid — so ``a + b``,</span>
+<span class="sd">            ``a * b`` and ``a:b`` would all produce identical cells.</span>
+<span class="sd">            Rejecting ``+``/``*`` prevents users from silently writing a</span>
+<span class="sd">            formula that looks like a main-effects model but is treated</span>
+<span class="sd">            as a joint interaction. (Note: raking, unlike</span>
+<span class="sd">            post-stratification, operates on marginals and will support</span>
+<span class="sd">            additive formulas when it gains a ``formula=`` argument.)</span>
+
+<span class="sd">            Parsing uses patsy operators for variable extraction only;</span>
+<span class="sd">            general patsy transforms/functions (e.g., ``np.log(a)``) are</span>
+<span class="sd">            not supported. Mutually exclusive with non-empty</span>
+<span class="sd">            ``variables``.</span>
 <span class="sd">        *args: Additional positional arguments (currently unused).</span>
 <span class="sd">        **kwargs: Additional keyword arguments (currently unused).</span>
 
@@ -192,6 +209,15 @@
             <span class="s2">&quot;weight can&#39;t be a name of a column in sample or target when applying poststratify&quot;</span>
         <span class="p">)</span>
 
+    <span class="k">if</span> <span class="n">variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">formula</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Specify only one of `variables` or `formula`.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">formula</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="n">_variables_from_formula</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">,</span> <span class="n">formula</span><span class="p">)</span>
+
     <span class="n">variables</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">choose_variables</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Join variables for sample and target: </span><span class="si">{</span><span class="n">variables</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
@@ -263,6 +289,97 @@
         <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;poststratify&quot;</span><span class="p">},</span>
     <span class="p">}</span></div>
 
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_variables_from_formula</span><span class="p">(</span>
+    <span class="n">sample_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">target_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">formula</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolve a post-stratification variable list from formula snippets.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`formula` must be a string or list of strings.&quot;</span><span class="p">)</span>
+
+    <span class="n">formulas</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">formula</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">formula</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">formulas</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`formula` must contain at least one formula string.&quot;</span><span class="p">)</span>
+
+    <span class="n">common_columns</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">target_df</span><span class="o">.</span><span class="n">columns</span><span class="p">))</span>
+    <span class="n">common_columns_ordered</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">common_columns</span><span class="p">]</span>
+    <span class="n">variables</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">dot_pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(?&lt;![A-Za-z0-9_])\.(?![A-Za-z0-9_])&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">formula_item</span> <span class="ow">in</span> <span class="n">formulas</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">formula_item</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Each element of `formula` must be a string.&quot;</span><span class="p">)</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="n">formula_item</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Formula items must be non-empty strings.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Poststratify defines cells by the joint distribution of all selected</span>
+        <span class="c1"># variables. Additive (&#39;+&#39;) and mixed (&#39;*&#39;) operators would therefore</span>
+        <span class="c1"># behave identically to &#39;:&#39; and are rejected to prevent silent</span>
+        <span class="c1"># semantic confusion. Raking, unlike poststratify, operates on</span>
+        <span class="c1"># marginals and should accept &#39;+&#39; and &#39;*&#39; when it gains `formula=`.</span>
+        <span class="c1"># We check the user-provided RHS (post `~`, pre `.` expansion) so that</span>
+        <span class="c1"># our own &#39;+&#39; injection during dot expansion is not flagged.</span>
+        <span class="n">rhs_for_check</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;~&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;~&quot;</span> <span class="ow">in</span> <span class="n">item</span> <span class="k">else</span> <span class="n">item</span>
+        <span class="k">for</span> <span class="n">forbidden_op</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;+&quot;</span><span class="p">,</span> <span class="s2">&quot;*&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">forbidden_op</span> <span class="ow">in</span> <span class="n">rhs_for_check</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Poststratify formula operator &#39;</span><span class="si">{</span><span class="n">forbidden_op</span><span class="si">}</span><span class="s2">&#39; is not &quot;</span>
+                    <span class="s2">&quot;supported. Poststratify defines cells by the joint &quot;</span>
+                    <span class="s2">&quot;distribution of the specified variables, so &#39;+&#39; &quot;</span>
+                    <span class="s2">&quot;(additive) and &#39;*&#39; (main + interaction) would be &quot;</span>
+                    <span class="s2">&quot;semantically identical to &#39;:&#39; here. Use &#39;:&#39; (e.g., &quot;</span>
+                    <span class="s2">&quot;&#39;a:b:c&#39;), &#39;.&#39; (all common columns), &#39;-&#39; (exclude), or &quot;</span>
+                    <span class="s2">&quot;pass `variables=[...]`. Note: raking, which operates &quot;</span>
+                    <span class="s2">&quot;on marginals, will support &#39;+&#39; and &#39;*&#39; when it gains &quot;</span>
+                    <span class="s2">&quot;a `formula=` argument.&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">item</span> <span class="o">==</span> <span class="s2">&quot;.&quot;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">common_columns_ordered</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
+                    <span class="n">variables</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="k">if</span> <span class="n">dot_pattern</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">common_columns_ordered</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Cannot expand &#39;.&#39; in `formula` because sample and target share no columns.&quot;</span>
+                <span class="p">)</span>
+            <span class="n">expanded</span> <span class="o">=</span> <span class="s2">&quot; + &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">common_columns_ordered</span><span class="p">)</span>
+            <span class="n">item</span> <span class="o">=</span> <span class="n">dot_pattern</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">expanded</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+
+        <span class="n">formula_for_parse</span> <span class="o">=</span> <span class="n">item</span> <span class="k">if</span> <span class="s2">&quot;~&quot;</span> <span class="ow">in</span> <span class="n">item</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;~ </span><span class="si">{</span><span class="n">item</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">model_desc</span> <span class="o">=</span> <span class="n">ModelDesc</span><span class="o">.</span><span class="n">from_formula</span><span class="p">(</span><span class="n">formula_for_parse</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">model_desc</span><span class="o">.</span><span class="n">rhs_termlist</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="n">term</span><span class="o">.</span><span class="n">factors</span><span class="p">:</span>
+                <span class="n">code</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">factor</span><span class="p">,</span> <span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">factor</span><span class="p">))</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">code</span> <span class="ow">in</span> <span class="n">common_columns</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">code</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
+                        <span class="n">variables</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+                    <span class="k">continue</span>
+
+                <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;[A-Za-z_][A-Za-z0-9_]*&quot;</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Variable &#39;</span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="s2">&#39; from `formula` is not present in both sample and target.&quot;</span>
+                    <span class="p">)</span>
+
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Unsupported poststratify formula term &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="s2">&#39;. Use raw column names joined by &#39;:&#39; &quot;</span>
+                    <span class="s2">&quot;(e.g., &#39;a:b&#39;) or pass `variables=[...]`.&quot;</span>
+                <span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Could not resolve poststratification variables from `formula`.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">variables</span>
 </pre></div>
 
             <div class="clearer"></div>
