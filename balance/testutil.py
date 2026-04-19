@@ -22,6 +22,29 @@ import pandas as pd
 from balance.util import _assert_type  # noqa: F401
 
 
+def _has_sklearn_1_4() -> bool:
+    """Return True if scikit-learn >= 1.4 is available.
+
+    Some tests exercise sklearn features (e.g. native categorical support in
+    ``HistGradientBoostingClassifier``) that require scikit-learn >= 1.4.
+    Tests that need this should be decorated with BOTH
+    ``@pytest.mark.requires_sklearn_1_4`` (deselects at collection time under
+    pytest, via conftest.py) and
+    ``@unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, ...)`` (fallback for
+    environments that run the unittest runner directly, where pytest markers
+    are a no-op). See ``CLAUDE.md`` for the full rationale.
+    """
+    try:
+        import sklearn
+
+        return tuple(int(x) for x in sklearn.__version__.split(".")[:2]) >= (1, 4)
+    except Exception:
+        return False
+
+
+_SKLEARN_1_4_AVAILABLE: bool = _has_sklearn_1_4()
+
+
 @contextmanager
 def tempfile_path() -> Generator[str, None, None]:
     """Yield a cross-platform temporary file path and remove it afterwards."""

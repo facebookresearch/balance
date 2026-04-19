@@ -16,6 +16,7 @@ matplotlib.use("Agg", force=True)
 
 import plotly.io as pio  # noqa: E402
 import pytest  # noqa: E402
+from balance.testutil import _SKLEARN_1_4_AVAILABLE  # noqa: E402
 
 # Force plotly to use a non-interactive renderer so tests don't open a browser.
 pio.renderers.default = "json"
@@ -28,19 +29,6 @@ pio.renderers.default = "json"
 # warnings in CI output.  By deselecting at collection time the tests simply
 # disappear from the run — no warnings, no noise.
 # ---------------------------------------------------------------------------
-
-
-def _has_sklearn_1_4() -> bool:
-    """Return True if scikit-learn >= 1.4 is available."""
-    try:
-        import sklearn
-
-        return tuple(int(x) for x in sklearn.__version__.split(".")[:2]) >= (1, 4)
-    except Exception:
-        return False
-
-
-_SKLEARN_1_4_AVAILABLE: bool = _has_sklearn_1_4()
 
 
 def pytest_collection_modifyitems(

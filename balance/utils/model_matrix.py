@@ -16,6 +16,7 @@ import pandas as pd
 from balance.utils.data_transformation import (
     add_na_indicator,
     add_na_indicator_to_combined,
+    NA_INDICATOR_TOKEN_PATTERN,
 )
 from balance.utils.input_validation import (
     _assert_type,
@@ -35,6 +36,14 @@ from scipy.sparse import csc_matrix, diags, hstack, spmatrix
 from sklearn.preprocessing import StandardScaler
 
 logger: logging.Logger = logging.getLogger(__package__)
+
+
+def _ordered_unique_missing_columns(
+    requested_columns: list[str], existing_columns: pd.Index
+) -> list[str]:
+    """Return missing requested columns (deduplicated, original order preserved)."""
+    existing_set = set(existing_columns)
+    return [col for col in dict.fromkeys(requested_columns) if col not in existing_set]
 
 
 def formula_generator(variables: List[str], formula_type: str = "additive") -> str:
@@ -559,13 +568,10 @@ def _build_projected_model_matrix(
         if isinstance(formula, str)
         else formula if isinstance(formula, list) else []
     )
-    # TODO: Replace this hard-coded regex with a shared
-    # constant from the NA indicator naming convention in
-    # data_transformation.py / add_na_indicator().
     expected_na_indicators: set[str] = {
         token
         for formula_item in formula_items
-        for token in re.findall(r"\b_is_na_[A-Za-z0-9_]+\b", formula_item)
+        for token in re.findall(NA_INDICATOR_TOKEN_PATTERN, formula_item)
     }
     for indicator in expected_na_indicators:
         if indicator not in combined.columns:
@@ -820,9 +826,17 @@ def build_design_matrix(
         )
 
     # -- Step 2: Reindex DataFrame to stored columns (raw holdout path) ----
-    # TODO: Log a warning when columns are missing — unseen
-    # categorical levels in holdout data are silently zero-filled here.
     if isinstance(combined_matrix, pd.DataFrame) and project_to_columns is not None:
+        missing_projection_columns = _ordered_unique_missing_columns(
+            project_to_columns, combined_matrix.columns
+        )
+        if missing_projection_columns:
+            logger.warning(
+                "build_design_matrix: holdout data is missing %d fit-time "
+                "column(s); zero-filling unseen columns: %s",
+                len(missing_projection_columns),
+                missing_projection_columns,
+            )
         combined_matrix = combined_matrix.reindex(
             columns=project_to_columns, fill_value=0
         )

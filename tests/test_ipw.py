@@ -13,12 +13,15 @@ from __future__ import (
     unicode_literals,
 )
 
+import unittest
+
 import balance.testutil
 import numpy as np
 import pandas as pd
 import pytest
 from balance import util as balance_util
 from balance.sample_class import Sample
+from balance.testutil import _SKLEARN_1_4_AVAILABLE
 from balance.weighting_methods import ipw as balance_ipw
 from scipy.sparse import csr_matrix, issparse
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
@@ -336,6 +339,7 @@ class TestIPW(
             )
 
     @pytest.mark.requires_sklearn_1_4  # pyre-ignore[56]
+    @unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires sklearn >= 1.4")
     def test_ipw_use_model_matrix_false_preserves_categoricals(self) -> None:
         """Raw-covariate IPW preserves categorical dtype for native sklearn categorical support."""
 
@@ -397,8 +401,6 @@ class TestIPW(
         )
         self.assertEqual(len(result_no_indicator["weight"]), len(sample))
 
-    # pyre-ignore[56]: Pyre cannot infer type of custom pytest mark
-    @pytest.mark.requires_sklearn_1_4
     def test_ipw_use_model_matrix_false_raises_on_old_sklearn(self) -> None:
         """ValueError is raised when sklearn < 1.4 and categorical columns are present."""
         from unittest.mock import patch
@@ -436,8 +438,8 @@ class TestIPW(
             self.assertIn("scikit-learn >= 1.4", str(ctx.exception))
             self.assertIn("1.3.2", str(ctx.exception))
 
-    # pyre-ignore[56]: Pyre cannot infer type of custom pytest mark
-    @pytest.mark.requires_sklearn_1_4
+    @pytest.mark.requires_sklearn_1_4  # pyre-ignore[56]
+    @unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires sklearn >= 1.4")
     def test_ipw_use_model_matrix_false_no_error_on_new_sklearn(self) -> None:
         """No version error when sklearn >= 1.4 and categorical columns are present."""
         from unittest.mock import patch

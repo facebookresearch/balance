@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import re
 from unittest.mock import patch
 
 import balance.testutil
@@ -21,6 +22,7 @@ from balance.utils.data_transformation import (
     drop_na_rows,
     fct_lump,
     fct_lump_by,
+    NA_INDICATOR_TOKEN_PATTERN,
     qcut,
     quantize,
     row_pairwise_diffs,
@@ -30,6 +32,12 @@ from balance.utils.data_transformation import (
 class TestUtil(
     balance.testutil.BalanceTestCase,
 ):
+    def test_na_indicator_token_pattern_boundaries(self) -> None:
+        """Pattern should capture complete _is_na_ tokens and avoid partial matches."""
+        text = "x + _is_na_age + foo_is_na_city + _is_na_income_2020 + _is_na_z9x"
+        matches = re.findall(NA_INDICATOR_TOKEN_PATTERN, text)
+        self.assertEqual(matches, ["_is_na_age", "_is_na_income_2020", "_is_na_z9x"])
+
     def test_add_na_indicator(self) -> None:
         """Test addition of NA indicator columns to DataFrames.
 
