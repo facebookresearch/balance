@@ -646,11 +646,21 @@ def _build_training_model_matrix(
         Union[pd.DataFrame, np.ndarray, csc_matrix],
         model_matrix_output["model_matrix"],
     )
-    columns: list[str] = _assert_type(
-        model_matrix_output["model_matrix_columns_names"], list
+    # `_assert_type(..., list)` narrows to `list` without element typing, so
+    # cast to `List[str]` to preserve the expected element type for downstream
+    # callers and for strict Pyre `len()`/iteration checks.
+    columns: list[str] = cast(
+        List[str],
+        _assert_type(model_matrix_output["model_matrix_columns_names"], list),
     )
-    penalty_factor_expanded = list(
-        model_matrix_output.get("penalty_factor", [1.0] * len(columns))
+    # model_matrix() stores `penalty_factor` as a 1D np.ndarray of floats; fall
+    # back to a uniform vector when the key is absent. Narrowing via cast is
+    # required because `model_matrix_output` has a broad union value type.
+    penalty_factor_raw = model_matrix_output.get("penalty_factor")
+    penalty_factor_expanded: Optional[List[float]] = (
+        [1.0] * len(columns)
+        if penalty_factor_raw is None
+        else list(cast(np.ndarray, penalty_factor_raw))
     )
     resolved_formula: str | list[str] | None = cast(
         Optional[Union[str, List[str]]], model_matrix_output.get("formula")
