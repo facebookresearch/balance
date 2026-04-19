@@ -46,6 +46,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">combinations</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
@@ -56,6 +57,11 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.pandas_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_safe_fillna_and_infer</span>
 
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
+
+<span class="n">NA_INDICATOR_PREFIX</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;_is_na_&quot;</span>
+<span class="n">NA_INDICATOR_TOKEN_PATTERN</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="sa">rf</span><span class="s2">&quot;(?&lt;![A-Za-z0-9_])</span><span class="si">{</span><span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">NA_INDICATOR_PREFIX</span><span class="p">)</span><span class="si">}</span><span class="s2">[A-Za-z0-9_]+(?![A-Za-z0-9_])&quot;</span>
+<span class="p">)</span>
 
 
 <div class="viewcode-block" id="add_na_indicator">
@@ -79,17 +85,17 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        pd.DataFrame: New dataframe with additional columns</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">already_na_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_is_na_&quot;</span><span class="p">)]</span>
+    <span class="n">already_na_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">NA_INDICATOR_PREFIX</span><span class="p">)]</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">already_na_cols</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="s2">&quot;Can&#39;t add NA indicator to DataFrame which contains&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;columns which start with &#39;_is_na_&#39;: </span><span class="si">{</span><span class="n">already_na_cols</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;columns which start with &#39;</span><span class="si">{</span><span class="n">NA_INDICATOR_PREFIX</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">already_na_cols</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
 
     <span class="n">na</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span>
     <span class="n">na_cols</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">na</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;index&quot;</span><span class="p">)])</span>
     <span class="n">na_indicators</span> <span class="o">=</span> <span class="n">na</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">na_cols</span><span class="p">]</span>
-    <span class="n">na_indicators</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;_is_na_&quot;</span> <span class="o">+</span> <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">na_indicators</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+    <span class="n">na_indicators</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">(</span><span class="n">NA_INDICATOR_PREFIX</span> <span class="o">+</span> <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">na_indicators</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
 
     <span class="n">categorical_cols</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">dtypes</span> <span class="o">==</span> <span class="s2">&quot;category&quot;</span><span class="p">])</span>
     <span class="n">non_numeric_cols</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
@@ -158,7 +164,9 @@
 <span class="sd">        [&#39;x&#39;, &#39;_is_na_x&#39;, &#39;_is_na_y&#39;]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">existing_indicator_cols</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">col</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_is_na_&quot;</span><span class="p">)</span>
+        <span class="n">col</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">col</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">NA_INDICATOR_PREFIX</span><span class="p">)</span>
     <span class="p">]</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">existing_indicator_cols</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">add_na_indicator</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>

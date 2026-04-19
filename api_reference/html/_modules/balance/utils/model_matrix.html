@@ -53,6 +53,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.data_transformation</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">add_na_indicator</span><span class="p">,</span>
     <span class="n">add_na_indicator_to_combined</span><span class="p">,</span>
+    <span class="n">NA_INDICATOR_TOKEN_PATTERN</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.input_validation</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">_assert_type</span><span class="p">,</span>
@@ -72,6 +73,14 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">StandardScaler</span>
 
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_ordered_unique_missing_columns</span><span class="p">(</span>
+    <span class="n">requested_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">existing_columns</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return missing requested columns (deduplicated, original order preserved).&quot;&quot;&quot;</span>
+    <span class="n">existing_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">existing_columns</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">requested_columns</span><span class="p">)</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">existing_set</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="formula_generator">
@@ -614,13 +623,10 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
         <span class="k">else</span> <span class="n">formula</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">[]</span>
     <span class="p">)</span>
-    <span class="c1"># TODO: Replace this hard-coded regex with a shared</span>
-    <span class="c1"># constant from the NA indicator naming convention in</span>
-    <span class="c1"># data_transformation.py / add_na_indicator().</span>
     <span class="n">expected_na_indicators</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
         <span class="n">token</span>
         <span class="k">for</span> <span class="n">formula_item</span> <span class="ow">in</span> <span class="n">formula_items</span>
-        <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\b_is_na_[A-Za-z0-9_]+\b&quot;</span><span class="p">,</span> <span class="n">formula_item</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">NA_INDICATOR_TOKEN_PATTERN</span><span class="p">,</span> <span class="n">formula_item</span><span class="p">)</span>
     <span class="p">}</span>
     <span class="k">for</span> <span class="n">indicator</span> <span class="ow">in</span> <span class="n">expected_na_indicators</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">indicator</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">combined</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
@@ -875,9 +881,17 @@
         <span class="p">)</span>
 
     <span class="c1"># -- Step 2: Reindex DataFrame to stored columns (raw holdout path) ----</span>
-    <span class="c1"># TODO: Log a warning when columns are missing — unseen</span>
-    <span class="c1"># categorical levels in holdout data are silently zero-filled here.</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">combined_matrix</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="ow">and</span> <span class="n">project_to_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">missing_projection_columns</span> <span class="o">=</span> <span class="n">_ordered_unique_missing_columns</span><span class="p">(</span>
+            <span class="n">project_to_columns</span><span class="p">,</span> <span class="n">combined_matrix</span><span class="o">.</span><span class="n">columns</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">missing_projection_columns</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;build_design_matrix: holdout data is missing </span><span class="si">%d</span><span class="s2"> fit-time &quot;</span>
+                <span class="s2">&quot;column(s); zero-filling unseen columns: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">missing_projection_columns</span><span class="p">),</span>
+                <span class="n">missing_projection_columns</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="n">combined_matrix</span> <span class="o">=</span> <span class="n">combined_matrix</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span>
             <span class="n">columns</span><span class="o">=</span><span class="n">project_to_columns</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span>
         <span class="p">)</span>

@@ -59,6 +59,29 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">_assert_type</span>  <span class="c1"># noqa: F401</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_has_sklearn_1_4</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return True if scikit-learn &gt;= 1.4 is available.</span>
+
+<span class="sd">    Some tests exercise sklearn features (e.g. native categorical support in</span>
+<span class="sd">    ``HistGradientBoostingClassifier``) that require scikit-learn &gt;= 1.4.</span>
+<span class="sd">    Tests that need this should be decorated with BOTH</span>
+<span class="sd">    ``@pytest.mark.requires_sklearn_1_4`` (deselects at collection time under</span>
+<span class="sd">    pytest, via conftest.py) and</span>
+<span class="sd">    ``@unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, ...)`` (fallback for</span>
+<span class="sd">    environments that run the unittest runner directly, where pytest markers</span>
+<span class="sd">    are a no-op). See ``CLAUDE.md`` for the full rationale.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">sklearn</span>
+
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[:</span><span class="mi">2</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="n">_SKLEARN_1_4_AVAILABLE</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">_has_sklearn_1_4</span><span class="p">()</span>
+
+
 <div class="viewcode-block" id="tempfile_path">
 <a class="viewcode-back" href="../../balance.testutil.html#balance.testutil.tempfile_path">[docs]</a>
 <span class="nd">@contextmanager</span>
