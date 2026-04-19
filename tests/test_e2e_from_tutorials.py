@@ -28,19 +28,7 @@ import pytest
 from balance import load_data, Sample
 from balance.balance_frame import BalanceFrame
 from balance.sample_frame import SampleFrame
-
-
-def _has_sklearn_1_4() -> bool:
-    """Return True if scikit-learn >= 1.4 is available."""
-    try:
-        import sklearn
-
-        return tuple(int(x) for x in sklearn.__version__.split(".")[:2]) >= (1, 4)
-    except Exception:
-        return False
-
-
-_SKLEARN_1_4_AVAILABLE: bool = _has_sklearn_1_4()
+from balance.testutil import _SKLEARN_1_4_AVAILABLE
 
 
 # ---------------------------------------------------------------------------

@@ -16,24 +16,15 @@ from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
+import pytest
 from balance.balance_frame import BalanceFrame
 from balance.datasets import load_data
 from balance.sample_class import Sample
 from balance.sample_frame import SampleFrame
-from balance.testutil import BalanceTestCase
+from balance.testutil import _SKLEARN_1_4_AVAILABLE, BalanceTestCase
 from balance.util import _assert_type
 from balance.weighting_methods.ipw import ipw as ipw_func
 from scipy.special import expit
-
-
-def _has_sklearn_1_4() -> bool:
-    """Return True if scikit-learn >= 1.4 is available."""
-    try:
-        import sklearn
-
-        return tuple(int(x) for x in sklearn.__version__.split(".")[:2]) >= (1, 4)
-    except Exception:
-        return False
 
 
 class TestBalanceFrameConstruction(BalanceTestCase):
@@ -2960,10 +2951,8 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         )
         np.testing.assert_allclose(adjusted_weights, expected.to_numpy())
 
-    @unittest.skipUnless(
-        bool(_has_sklearn_1_4()),
-        "requires scikit-learn >= 1.4",
-    )
+    @pytest.mark.requires_sklearn_1_4  # pyre-ignore[56]
+    @unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires scikit-learn >= 1.4")
     def test_use_model_matrix_false_recompute_matches_fit_preprocessing(self) -> None:
         from sklearn.ensemble import HistGradientBoostingClassifier
 

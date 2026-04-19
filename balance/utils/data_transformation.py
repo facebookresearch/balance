@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import copy
 import logging
+import re
 import warnings
 from itertools import combinations
 from typing import Any, List, Tuple
@@ -19,6 +20,11 @@ from balance.utils.input_validation import choose_variables
 from balance.utils.pandas_utils import _safe_fillna_and_infer
 
 logger: logging.Logger = logging.getLogger(__package__)
+
+NA_INDICATOR_PREFIX: str = "_is_na_"
+NA_INDICATOR_TOKEN_PATTERN: str = (
+    rf"(?<![A-Za-z0-9_]){re.escape(NA_INDICATOR_PREFIX)}[A-Za-z0-9_]+(?![A-Za-z0-9_])"
+)
 
 
 def add_na_indicator(
@@ -40,17 +46,17 @@ def add_na_indicator(
     Returns:
         pd.DataFrame: New dataframe with additional columns
     """
-    already_na_cols = [c for c in df.columns if c.startswith("_is_na_")]
+    already_na_cols = [c for c in df.columns if c.startswith(NA_INDICATOR_PREFIX)]
     if len(already_na_cols) > 0:
         raise ValueError(
             "Can't add NA indicator to DataFrame which contains"
-            f"columns which start with '_is_na_': {already_na_cols}"
+            f"columns which start with '{NA_INDICATOR_PREFIX}': {already_na_cols}"
         )
 
     na = df.isnull()
     na_cols = list(df.columns[na.any(axis="index")])
     na_indicators = na.loc[:, na_cols]
-    na_indicators.columns = ("_is_na_" + c for c in na_indicators.columns)
+    na_indicators.columns = (NA_INDICATOR_PREFIX + c for c in na_indicators.columns)
 
     categorical_cols = list(df.columns[df.dtypes == "category"])
     non_numeric_cols = list(
@@ -116,7 +122,9 @@ def add_na_indicator_to_combined(df: pd.DataFrame) -> pd.DataFrame:
         ['x', '_is_na_x', '_is_na_y']
     """
     existing_indicator_cols = [
-        col for col in df.columns if isinstance(col, str) and col.startswith("_is_na_")
+        col
+        for col in df.columns
+        if isinstance(col, str) and col.startswith(NA_INDICATOR_PREFIX)
     ]
     if not existing_indicator_cols:
         return add_na_indicator(df)
