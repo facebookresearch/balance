@@ -3353,6 +3353,52 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         with self.assertRaisesRegex(ValueError, "not yet supported"):
             adjusted.predict_weights(data=holdout_bf)
 
+    def test_predict_weights_cbps_fit_matches_weight_series(self) -> None:
+        """CBPS fitted model supports predict_weights() reconstruction."""
+        adjusted = self.bf.fit(method="cbps", transformations=None)
+        predicted_weights = adjusted.predict_weights()
+        np.testing.assert_allclose(
+            predicted_weights.to_numpy(),
+            _assert_type(adjusted.weight_series).to_numpy(),
+            rtol=1e-6,
+            atol=1e-8,
+        )
+
+    def test_predict_weights_cbps_data_argument(self) -> None:
+        """CBPS predict_weights(data=...) scores holdout sample rows."""
+        train_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),
+            target=SampleFrame.from_frame(self.target.df.iloc[:5].copy()),
+        )
+        holdout_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[5:].copy()),
+            target=SampleFrame.from_frame(self.target.df.iloc[5:].copy()),
+        )
+        fitted = train_bf.fit(method="cbps", transformations=None)
+        weights_via_data = fitted.predict_weights(data=holdout_bf)
+        self.assertEqual(weights_via_data.shape[0], len(holdout_bf._sf_sample.df))
+        self.assertTrue(np.all(np.isfinite(weights_via_data.to_numpy())))
+        self.assertTrue(np.all(weights_via_data.to_numpy() >= 0))
+
+    def test_predict_weights_cbps_requires_fit_metadata(self) -> None:
+        adjusted = self.bf.adjust(method="cbps", transformations=None)
+        with self.assertRaisesRegex(ValueError, "store_fit_metadata=True"):
+            adjusted.predict_weights()
+
+    def test_predict_weights_cbps_raises_on_missing_svd_metadata(self) -> None:
+        adjusted = self.bf.fit(method="cbps", transformations=None)
+        model = _assert_type(adjusted.model)
+        model.pop("svd_s", None)
+        with self.assertRaisesRegex(ValueError, "missing fit-time metadata"):
+            adjusted.predict_weights()
+
+    def test_predict_weights_cbps_raises_on_bad_standardization_shape(self) -> None:
+        adjusted = self.bf.fit(method="cbps", transformations=None)
+        model = _assert_type(adjusted.model)
+        model["model_matrix_mean"] = np.asarray([0.0])
+        with self.assertRaisesRegex(ValueError, "incompatible standardization vectors"):
+            adjusted.predict_weights(data=self.bf)
+
 
 # =====================================================================
 # Coverage tests for uncovered lines in balance_frame.py

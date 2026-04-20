@@ -84,6 +84,15 @@
     before zero-fill reindexing so unseen holdout features are explicit.
   - Missing-column warnings are now de-duplicated and preserve request order,
     preventing redundant repeated column names in diagnostics.
+
+- **Added CBPS support to `BalanceFrame.predict_weights()`**
+  - `BalanceFrame.fit(method="cbps")` now stores CBPS fit metadata needed to
+    reconstruct weights from fitted coefficients.
+  - `BalanceFrame.predict_weights()` now supports fitted CBPS models for both
+    in-place scoring and holdout scoring via `data=...`.
+  - Calling `predict_weights()` on CBPS models without fit metadata now raises
+    actionable guidance to fit with metadata enabled.
+
 ## Breaking Changes
 
 - **Changed `id_column` to return the column name (`str`)** on `SampleFrame`,
