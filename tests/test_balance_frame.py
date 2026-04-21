@@ -3399,6 +3399,21 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         with self.assertRaisesRegex(ValueError, "incompatible standardization vectors"):
             adjusted.predict_weights(data=self.bf)
 
+    def test_fit_cbps_na_drop_with_fit_metadata_raises(self) -> None:
+        with self.assertRaisesRegex(
+            ValueError, "incompatible with stored fit metadata"
+        ):
+            self.bf.fit(method="cbps", na_action="drop")
+
+    def test_fit_cbps_na_drop_without_fit_metadata_allowed(self) -> None:
+        adjusted = self.bf.fit(
+            method="cbps",
+            na_action="drop",
+            store_fit_metadata=False,
+            transformations=None,
+        )
+        self.assertTrue(bool(adjusted.is_adjusted))
+
 
 # =====================================================================
 # Coverage tests for uncovered lines in balance_frame.py

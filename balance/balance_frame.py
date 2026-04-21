@@ -1056,6 +1056,15 @@ class BalanceFrame:
                 )
         if resolved_method is built_in_cbps:
             kwargs.setdefault("store_fit_metadata", True)
+            na_action = kwargs.get("na_action", "add_indicator")
+            store_fit_metadata = bool(kwargs.get("store_fit_metadata"))
+            if na_action == "drop" and store_fit_metadata:
+                raise ValueError(
+                    "BalanceFrame.fit(method='cbps', na_action='drop') is incompatible "
+                    "with stored fit metadata because dropped rows break index/shape "
+                    "alignment for predict_weights(). Use na_action='add_indicator', "
+                    "or disable store_fit_metadata."
+                )
 
         if isinstance(target, (SampleFrame, BalanceFrame)):
             result = self.set_target(target, inplace=False).adjust(
@@ -2140,7 +2149,6 @@ class BalanceFrame:
         fit_columns = model.get("X_matrix_columns")
         svd_s = model.get("svd_s")
         svd_Vh = model.get("svd_Vh")
-        fit_u_matrix = model.get("fit_U_matrix")
         if (
             not isinstance(beta_opt_model_space, np.ndarray)
             or not isinstance(fit_columns, list)
@@ -2151,119 +2159,102 @@ class BalanceFrame:
                 "CBPS model metadata is malformed for predict_weights() scoring."
             )
 
-        sample_n: int
-        if (
-            source is None
-            and isinstance(fit_u_matrix, np.ndarray)
-            and fit_u_matrix.shape[1] == beta_opt_model_space.shape[0]
-        ):
-            model_sample_idx = pd.Index(
-                model.get("sample_index", bf._sf_sample.df.index)
+        sample_covars = bf._sf_sample.covars().df.copy()
+        target_covars = _assert_type(bf._sf_target).covars().df.copy()
+        sample_covars, target_covars = balance_adjustment.apply_transformations(
+            (sample_covars, target_covars),
+            transformations=model.get("transformations", "default"),
+        )
+        na_action = cast(str, model.get("na_action", "add_indicator"))
+        if na_action == "drop":
+            raise ValueError(
+                "predict_weights() is unsupported for CBPS models fitted with "
+                "na_action='drop' because dropped rows cannot be reconstructed "
+                "reliably. Re-fit with na_action='add_indicator'."
             )
-            model_target_idx = pd.Index(
-                model.get("target_index", _assert_type(bf._sf_target).df.index)
+        projected_columns = [c for c in fit_columns if c != "Intercept"]
+        variables = model.get("variables")
+        if not isinstance(variables, list):
+            raise ValueError(
+                "CBPS model is missing fit-time variables for predict_weights(). "
+                "Call BalanceFrame.fit(method='cbps') or run cbps(..., "
+                "store_fit_metadata=True)."
             )
-            if model_sample_idx.equals(
-                bf._sf_sample.df.index
-            ) and model_target_idx.equals(_assert_type(bf._sf_target).df.index):
-                U_matrix = fit_u_matrix
-                sample_n = len(model_sample_idx)
-            else:
-                source = bf
+        sample_covars = sample_covars.loc[:, cast(list[str], variables)]
+        target_covars = target_covars.loc[:, cast(list[str], variables)]
 
-        if source is not None or "U_matrix" not in locals():
-            sample_covars = bf._sf_sample.covars().df.copy()
-            target_covars = _assert_type(bf._sf_target).covars().df.copy()
-            sample_covars, target_covars = balance_adjustment.apply_transformations(
-                (sample_covars, target_covars),
-                transformations=model.get("transformations", "default"),
-            )
-            na_action = cast(str, model.get("na_action", "add_indicator"))
-            projected_columns = [c for c in fit_columns if c != "Intercept"]
-            variables = model.get("variables")
-            if not isinstance(variables, list):
-                raise ValueError(
-                    "CBPS model is missing fit-time variables for predict_weights(). "
-                    "Call BalanceFrame.fit(method='cbps') or run cbps(..., "
-                    "store_fit_metadata=True)."
-                )
-            sample_covars = sample_covars.loc[:, cast(list[str], variables)]
-            target_covars = target_covars.loc[:, cast(list[str], variables)]
-
-            matrix_out = balance_util.model_matrix(
-                sample_covars,
-                target_covars,
-                cast(list[str], variables),
-                add_na=(na_action == "add_indicator"),
-                return_type="one",
-                return_var_type="sparse",
-                formula=model.get("formula"),
-                one_hot_encoding=False,
-            )
-            sparse_matrix = cast(Any, matrix_out["model_matrix"]).toarray()
-            matrix_columns = cast(list[str], matrix_out["model_matrix_columns_names"])
-            column_to_idx = {col: i for i, col in enumerate(matrix_columns)}
-            keep_idx = [
-                column_to_idx[col] for col in projected_columns if col in column_to_idx
+        matrix_out = balance_util.model_matrix(
+            sample_covars,
+            target_covars,
+            cast(list[str], variables),
+            add_na=(na_action == "add_indicator"),
+            return_type="one",
+            return_var_type="sparse",
+            formula=model.get("formula"),
+            one_hot_encoding=False,
+        )
+        sparse_matrix = cast(Any, matrix_out["model_matrix"]).toarray()
+        matrix_columns = cast(list[str], matrix_out["model_matrix_columns_names"])
+        column_to_idx = {col: i for i, col in enumerate(matrix_columns)}
+        keep_idx = [
+            column_to_idx[col] for col in projected_columns if col in column_to_idx
+        ]
+        if len(keep_idx) != len(projected_columns):
+            missing_columns = [
+                col for col in projected_columns if col not in column_to_idx
             ]
-            if len(keep_idx) != len(projected_columns):
-                missing_columns = [
-                    col for col in projected_columns if col not in column_to_idx
-                ]
-                logger.warning(
-                    "CBPS predict_weights(): missing fit-time columns in scoring data: %s. "
-                    "Filling them with zeros.",
-                    missing_columns,
-                )
-                projected_matrix = np.zeros(
-                    (sparse_matrix.shape[0], len(projected_columns))
-                )
-                for out_idx, col in enumerate(projected_columns):
-                    source_idx = column_to_idx.get(col)
-                    if source_idx is not None:
-                        projected_matrix[:, out_idx] = sparse_matrix[:, source_idx]
-                combined_matrix = projected_matrix
-            else:
-                combined_matrix = sparse_matrix[:, keep_idx]
-            sample_n = sample_covars.shape[0]
-            model_matrix_mean = np.asarray(model.get("model_matrix_mean"), dtype=float)
-            model_matrix_std = np.asarray(model.get("model_matrix_std"), dtype=float)
-            if (
-                model_matrix_mean.shape[0] != combined_matrix.shape[1]
-                or model_matrix_std.shape[0] != combined_matrix.shape[1]
-            ):
-                raise ValueError(
-                    "CBPS model metadata has incompatible standardization vectors for "
-                    "predict_weights()."
-                )
-            with np.errstate(divide="ignore", invalid="ignore"):
-                combined_matrix = (
-                    combined_matrix - model_matrix_mean
-                ) / model_matrix_std
-            X_matrix = np.c_[np.ones(combined_matrix.shape[0]), combined_matrix]
-            if np.any(~np.isfinite(X_matrix)):
-                raise ValueError(
-                    "CBPS predict_weights() produced non-finite standardized design "
-                    "matrix values."
-                )
-            if svd_Vh.shape[1] != X_matrix.shape[1]:
-                raise ValueError(
-                    "CBPS model metadata has incompatible SVD components for "
-                    "predict_weights()."
-                )
-            if svd_s.shape[0] != svd_Vh.shape[0]:
-                raise ValueError(
-                    "CBPS model metadata has inconsistent SVD dimensions for "
-                    "predict_weights()."
-                )
-            with np.errstate(divide="ignore", invalid="ignore"):
-                s_inv = np.where(svd_s > 1e-5, 1.0 / svd_s, 0.0)
-            U_matrix = np.matmul(X_matrix, svd_Vh.T * s_inv)
-            if U_matrix.shape[1] != beta_opt_model_space.shape[0]:
-                raise ValueError(
-                    "CBPS model metadata has incompatible coefficient dimensions for "
-                    "predict_weights()."
-                )
+            logger.warning(
+                "CBPS predict_weights(): missing fit-time columns in scoring data: %s. "
+                "Filling them with zeros.",
+                missing_columns,
+            )
+            projected_matrix = np.zeros(
+                (sparse_matrix.shape[0], len(projected_columns))
+            )
+            for out_idx, col in enumerate(projected_columns):
+                source_idx = column_to_idx.get(col)
+                if source_idx is not None:
+                    projected_matrix[:, out_idx] = sparse_matrix[:, source_idx]
+            combined_matrix = projected_matrix
+        else:
+            combined_matrix = sparse_matrix[:, keep_idx]
+        sample_n = sample_covars.shape[0]
+        model_matrix_mean = np.asarray(model.get("model_matrix_mean"), dtype=float)
+        model_matrix_std = np.asarray(model.get("model_matrix_std"), dtype=float)
+        if (
+            model_matrix_mean.shape[0] != combined_matrix.shape[1]
+            or model_matrix_std.shape[0] != combined_matrix.shape[1]
+        ):
+            raise ValueError(
+                "CBPS model metadata has incompatible standardization vectors for "
+                "predict_weights()."
+            )
+        with np.errstate(divide="ignore", invalid="ignore"):
+            combined_matrix = (combined_matrix - model_matrix_mean) / model_matrix_std
+        X_matrix = np.c_[np.ones(combined_matrix.shape[0]), combined_matrix]
+        if np.any(~np.isfinite(X_matrix)):
+            raise ValueError(
+                "CBPS predict_weights() produced non-finite standardized design "
+                "matrix values."
+            )
+        if svd_Vh.shape[1] != X_matrix.shape[1]:
+            raise ValueError(
+                "CBPS model metadata has incompatible SVD components for "
+                "predict_weights()."
+            )
+        if svd_s.shape[0] != svd_Vh.shape[0]:
+            raise ValueError(
+                "CBPS model metadata has inconsistent SVD dimensions for "
+                "predict_weights()."
+            )
+        with np.errstate(divide="ignore", invalid="ignore"):
+            s_inv = np.where(svd_s > 1e-5, 1.0 / svd_s, 0.0)
+        U_matrix = np.matmul(X_matrix, svd_Vh.T * s_inv)
+        if U_matrix.shape[1] != beta_opt_model_space.shape[0]:
+            raise ValueError(
+                "CBPS model metadata has incompatible coefficient dimensions for "
+                "predict_weights()."
+            )
 
         if source is None:
             training_sample_weights = model.get("training_sample_weights")

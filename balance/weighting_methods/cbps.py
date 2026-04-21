@@ -436,8 +436,8 @@ def cbps(  # noqa
     weight_trimming_mean_ratio: None | float | int = 20,
     weight_trimming_percentile: float | None = None,
     random_seed: int = 2020,
-    store_fit_metadata: bool = False,
     *args: Any,
+    store_fit_metadata: bool = False,
     **kwargs: Any,
 ) -> dict[str, pd.Series | dict[str, Any]]:
     """Fit cbps (covariate balancing propensity score model) for the sample using the target.
@@ -882,7 +882,6 @@ def cbps(  # noqa
                 "beta_optimal_model_space": beta_opt_model_space,
                 "svd_s": s.copy(),
                 "svd_Vh": Vh.copy(),
-                "fit_U_matrix": U.copy(),
                 "store_fit_metadata": True,
             }
         )

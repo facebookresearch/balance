@@ -90,6 +90,9 @@
     reconstruct weights from fitted coefficients.
   - `BalanceFrame.predict_weights()` now supports fitted CBPS models for both
     in-place scoring and holdout scoring via `data=...`.
+  - Added explicit validation that `na_action='drop'` is incompatible with
+    CBPS fit-metadata scoring paths; users are guided to re-fit with
+    `na_action='add_indicator'` when using `predict_weights()`.
   - Calling `predict_weights()` on CBPS models without fit metadata now raises
     actionable guidance to fit with metadata enabled.
 
