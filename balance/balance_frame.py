@@ -1036,6 +1036,10 @@ class BalanceFrame:
             can consume fit-time artifacts.  This may increase memory usage
             for large inputs; pass these kwargs explicitly as ``False`` to
             opt out.
+            For the built-in CBPS method, ``fit()`` enables
+            ``store_fit_metadata=True`` by default so ``predict_weights()``
+            can reconstruct CBPS scoring artifacts.  Pass
+            ``store_fit_metadata=False`` to opt out.
         """
         from balance.weighting_methods.cbps import cbps as built_in_cbps
         from balance.weighting_methods.ipw import ipw as built_in_ipw
@@ -2248,7 +2252,7 @@ class BalanceFrame:
                 "predict_weights()."
             )
         with np.errstate(divide="ignore", invalid="ignore"):
-            s_inv = np.where(svd_s > 1e-5, 1.0 / svd_s, 0.0)
+            s_inv = np.where(svd_s > 1e-10, 1.0 / svd_s, 0.0)
         U_matrix = np.matmul(X_matrix, svd_Vh.T * s_inv)
         if U_matrix.shape[1] != beta_opt_model_space.shape[0]:
             raise ValueError(

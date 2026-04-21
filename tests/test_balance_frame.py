@@ -3414,6 +3414,44 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         )
         self.assertTrue(bool(adjusted.is_adjusted))
 
+    def test_predict_weights_cbps_near_collinear_design_reconstructs(self) -> None:
+        """CBPS reconstruction remains stable with near-collinear covariates."""
+        n = 24
+        rng = np.random.default_rng(2026)
+        x_sample = np.linspace(0.0, 1.0, n)
+        x_target = np.clip(x_sample + rng.normal(0.0, 0.03, size=n), 0.0, 1.0)
+        near_col_sample = x_sample + 1e-7 * np.arange(n)
+        near_col_target = x_target + 1e-7 * np.arange(n)
+
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(n)],
+                "x": x_sample,
+                "x_near_collinear": near_col_sample,
+                "weight": np.ones(n),
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(n)],
+                "x": x_target,
+                "x_near_collinear": near_col_target,
+                "weight": np.ones(n),
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        fitted = bf.fit(method="cbps", transformations=None)
+        predicted_weights = fitted.predict_weights()
+        np.testing.assert_allclose(
+            predicted_weights.to_numpy(),
+            _assert_type(fitted.weight_series).to_numpy(),
+            rtol=1e-5,
+            atol=1e-7,
+        )
+
 
 # =====================================================================
 # Coverage tests for uncovered lines in balance_frame.py
