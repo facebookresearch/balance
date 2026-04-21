@@ -1886,6 +1886,8 @@ class BalanceFrame:
 
         - **IPW**: uses stored fit-time metadata (links, class balancing,
           trimming, and design weights) to reproduce fitted responder weights.
+        - **CBPS**: rebuilds the CBPS scoring artifacts from stored metadata
+          and supports both in-place and ``data=...`` holdout scoring.
         - **Other methods**: not yet supported — will raise with guidance.
 
         Args:
@@ -1925,8 +1927,6 @@ class BalanceFrame:
         #    probabilities), not final weights. Keeping all three data= paths
         #    parallel is clearer.
         if data is not None:
-            from balance.weighting_methods.ipw import link_transform, weights_from_link
-
             self._validate_data_covariates(data)
             model = self._require_fitted_model()
             method = model.get("method")
@@ -1937,6 +1937,7 @@ class BalanceFrame:
                     f"predict_weights(data=...) is not yet supported for method '{method}'. "
                     "Currently only 'ipw' and 'cbps' are supported."
                 )
+            from balance.weighting_methods.ipw import link_transform, weights_from_link
 
             fit_obj = model.get("fit")
             columns = model.get("X_matrix_columns")
@@ -2289,6 +2290,16 @@ class BalanceFrame:
             raise ValueError(
                 "CBPS predict_weights() failed due to sample row misalignment while "
                 "rebuilding the model matrix."
+            )
+        if target_covars.shape[0] != target_n_actual:
+            raise ValueError(
+                "CBPS predict_weights() failed due to target row misalignment while "
+                "rebuilding the model matrix."
+            )
+        if (sample_n_actual + target_n_actual) != U_matrix.shape[0]:
+            raise ValueError(
+                "CBPS predict_weights() failed because rebuilt CBPS matrix rows do "
+                "not match sample+target weights."
             )
 
         in_pop = np.concatenate(

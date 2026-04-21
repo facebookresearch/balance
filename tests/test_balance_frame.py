@@ -3452,6 +3452,28 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             atol=1e-7,
         )
 
+    def test_predict_weights_cbps_raises_on_combined_row_misalignment(self) -> None:
+        adjusted = self.bf.fit(method="cbps", transformations=None)
+        model = _assert_type(adjusted.model)
+        projected_columns = [
+            c for c in _assert_type(model.get("X_matrix_columns")) if c != "Intercept"
+        ]
+        total_rows = len(adjusted._sf_sample.df) + len(
+            _assert_type(adjusted._sf_target).df
+        )
+        from scipy.sparse import csc_matrix
+
+        bad_matrix = csc_matrix((total_rows - 1, len(projected_columns)))
+        with patch(
+            "balance.balance_frame.balance_util.model_matrix",
+            return_value={
+                "model_matrix": bad_matrix,
+                "model_matrix_columns_names": projected_columns,
+            },
+        ):
+            with self.assertRaisesRegex(ValueError, "matrix rows do not match"):
+                adjusted.predict_weights(data=adjusted)
+
 
 # =====================================================================
 # Coverage tests for uncovered lines in balance_frame.py
