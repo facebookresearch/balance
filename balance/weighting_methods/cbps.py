@@ -405,7 +405,7 @@ def _reverse_svd_and_centralization(
     """
     # TODO: update SVD and reverse SVD to the functions in scikit-learn
     # Invert s
-    s_inv = s
+    s_inv = s.copy()
     s_inv[s_inv > 1e-5] = 1 / s_inv[s_inv > 1e-5]
     s_inv[s_inv <= 1e-5] = 0
     # Compute beta
@@ -419,13 +419,6 @@ def _reverse_svd_and_centralization(
     return beta_new
 
 
-# TODO: Store fit artifacts for predict_weights() support.
-# Save `beta_optimal`, standardization mean/std (`model_matrix_mean`,
-# `model_matrix_std`) in the returned model dict. Add a
-# `store_fit_metadata: bool = False` parameter mirroring ipw.py.
-# Then implement `_predict_weights_cbps()` in balance_frame.py:
-# rebuild model matrix, standardize with stored mean/std, compute
-# logit_truncated(X @ beta_optimal), convert to weights. ~55 lines total.
 def cbps(  # noqa
     sample_df: pd.DataFrame,
     sample_weights: pd.Series,
@@ -444,6 +437,7 @@ def cbps(  # noqa
     weight_trimming_percentile: float | None = None,
     random_seed: int = 2020,
     *args: Any,
+    store_fit_metadata: bool = False,
     **kwargs: Any,
 ) -> dict[str, pd.Series | dict[str, Any]]:
     """Fit cbps (covariate balancing propensity score model) for the sample using the target.
@@ -487,6 +481,9 @@ def cbps(  # noqa
         weight_trimming_percentile (Optional[float], optional): if weight_trimming_percentile is not none, winsorization is applied.
             Default is None, i.e. trimming is applied.
         random_seed (int, optional): a random seed. Defaults to 2020.
+        store_fit_metadata (bool, optional): Whether to persist fit-time
+            metadata required for downstream ``BalanceFrame.predict_weights()``
+            reconstruction (for CBPS models). Defaults to False.
 
     Raises:
         Exception: _description_
@@ -833,9 +830,11 @@ def cbps(  # noqa
             "All weights are identical (or almost identical). The estimates will not be adjusted"
         )
 
-    # Revrse SVD and centralization
+    beta_opt_model_space = beta_opt.copy()
+
+    # Reverse SVD and centralization
     beta_opt = _reverse_svd_and_centralization(
-        beta_opt,
+        beta_opt_model_space,
         U,
         s,
         Vh,
@@ -864,6 +863,28 @@ def cbps(  # noqa
             ),
         },
     }
+    if store_fit_metadata:
+        cast(dict[str, Any], out["model"]).update(
+            {
+                "variables": variables,
+                "transformations": transformations,
+                "na_action": na_action,
+                "formula": model_matrix_output["formula"],
+                "balance_classes": balance_classes,
+                "weight_trimming_mean_ratio": weight_trimming_mean_ratio,
+                "weight_trimming_percentile": weight_trimming_percentile,
+                "sample_index": sample_index,
+                "target_index": target_df.index,
+                "training_sample_weights": sample_weights.copy(),
+                "training_target_weights": target_weights.copy(),
+                "model_matrix_mean": model_matrix_standardized["model_matrix_mean"],
+                "model_matrix_std": model_matrix_standardized["model_matrix_std"],
+                "beta_optimal_model_space": beta_opt_model_space,
+                "svd_s": s.copy(),
+                "svd_Vh": Vh.copy(),
+                "store_fit_metadata": True,
+            }
+        )
     logger.info("Done cbps function")
 
     return out

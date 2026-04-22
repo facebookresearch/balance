@@ -1767,7 +1767,7 @@ class TestBalanceFrameFromSample(BalanceTestCase):
 
     def test_from_sample_type_error(self) -> None:
         with self.assertRaises(TypeError):
-            BalanceFrame.from_sample("not a sample")  # pyre-ignore[6]
+            BalanceFrame.from_sample("not a sample")
 
     def test_from_sample_with_outcomes(self) -> None:
         resp_df = pd.DataFrame(
@@ -2235,7 +2235,7 @@ class TestBalanceFrameDfSetterRejectsNone(BalanceTestCase):
         )
         bf = BalanceFrame(sample=resp_sf)
         with self.assertRaises(ValueError):
-            bf._df = None  # pyre-ignore[8]
+            bf._df = None
 
 
 class TestBalanceFrameRIndicator(BalanceTestCase):
@@ -2447,9 +2447,9 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
 
     def test_fit_rejects_positional_forwarding(self) -> None:
         with self.assertRaises(TypeError):
-            self.bf.fit("ipw")  # pyre-ignore[6]
+            self.bf.fit("ipw")
         with self.assertRaises(TypeError):
-            self.bf.fit(None, "ipw", "unexpected positional")  # pyre-ignore[6]
+            self.bf.fit(None, "ipw", "unexpected positional")
 
     def test_fit_callable_ipw_enables_store_fit_matrices(self) -> None:
         adjusted = self.bf.fit(method=ipw_func)
@@ -2525,11 +2525,11 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
     def test_design_matrix_predict_proba_invalid_on_raises(self) -> None:
         adjusted = self.bf.fit(method="ipw")
         with self.assertRaises(ValueError):
-            adjusted.design_matrix(on="bad")  # pyre-ignore[6]
+            adjusted.design_matrix(on="bad")
         with self.assertRaises(ValueError):
-            adjusted.predict_proba(on="bad")  # pyre-ignore[6]
+            adjusted.predict_proba(on="bad")
         with self.assertRaises(ValueError):
-            adjusted.predict_proba(output="bad")  # pyre-ignore[6]
+            adjusted.predict_proba(output="bad")
 
     def test_predict_proba_design_matrix_raise_for_non_ipw(self) -> None:
         adjusted = self.bf.fit(method="null")
@@ -3353,6 +3353,135 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         with self.assertRaisesRegex(ValueError, "not yet supported"):
             adjusted.predict_weights(data=holdout_bf)
 
+    def test_predict_weights_cbps_fit_matches_weight_series(self) -> None:
+        """CBPS fitted model supports predict_weights() reconstruction."""
+        adjusted = self.bf.fit(method="cbps", transformations=None)
+        predicted_weights = adjusted.predict_weights()
+        np.testing.assert_allclose(
+            predicted_weights.to_numpy(),
+            _assert_type(adjusted.weight_series).to_numpy(),
+            rtol=1e-6,
+            atol=1e-8,
+        )
+
+    def test_predict_weights_cbps_data_argument(self) -> None:
+        """CBPS predict_weights(data=...) scores holdout sample rows."""
+        train_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),
+            target=SampleFrame.from_frame(self.target.df.iloc[:5].copy()),
+        )
+        holdout_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[5:].copy()),
+            target=SampleFrame.from_frame(self.target.df.iloc[5:].copy()),
+        )
+        fitted = train_bf.fit(method="cbps", transformations=None)
+        weights_via_data = fitted.predict_weights(data=holdout_bf)
+        self.assertEqual(weights_via_data.shape[0], len(holdout_bf._sf_sample.df))
+        self.assertTrue(np.all(np.isfinite(weights_via_data.to_numpy())))
+        self.assertTrue(np.all(weights_via_data.to_numpy() >= 0))
+
+    def test_predict_weights_cbps_requires_fit_metadata(self) -> None:
+        adjusted = self.bf.adjust(method="cbps", transformations=None)
+        with self.assertRaisesRegex(ValueError, "store_fit_metadata=True"):
+            adjusted.predict_weights()
+
+    def test_predict_weights_cbps_raises_on_missing_svd_metadata(self) -> None:
+        adjusted = self.bf.fit(method="cbps", transformations=None)
+        model = _assert_type(adjusted.model)
+        model.pop("svd_s", None)
+        with self.assertRaisesRegex(ValueError, "missing fit-time metadata"):
+            adjusted.predict_weights()
+
+    def test_predict_weights_cbps_raises_on_bad_standardization_shape(self) -> None:
+        adjusted = self.bf.fit(method="cbps", transformations=None)
+        model = _assert_type(adjusted.model)
+        model["model_matrix_mean"] = np.asarray([0.0])
+        with self.assertRaisesRegex(ValueError, "incompatible standardization vectors"):
+            adjusted.predict_weights(data=self.bf)
+
+    def test_fit_cbps_na_drop_with_explicit_fit_metadata_raises(self) -> None:
+        with self.assertRaisesRegex(
+            ValueError, "incompatible with stored fit metadata"
+        ):
+            self.bf.fit(method="cbps", na_action="drop", store_fit_metadata=True)
+
+    def test_fit_cbps_na_drop_defaults_to_warning_and_disables_metadata(self) -> None:
+        with self.assertWarnsRegex(UserWarning, "disables store_fit_metadata"):
+            adjusted = self.bf.fit(
+                method="cbps", na_action="drop", transformations=None
+            )
+        self.assertTrue(bool(adjusted.is_adjusted))
+        model = _assert_type(adjusted.model)
+        self.assertNotIn("store_fit_metadata", model)
+
+    def test_fit_cbps_na_drop_without_fit_metadata_allowed(self) -> None:
+        adjusted = self.bf.fit(
+            method="cbps",
+            na_action="drop",
+            store_fit_metadata=False,
+            transformations=None,
+        )
+        self.assertTrue(bool(adjusted.is_adjusted))
+
+    def test_predict_weights_cbps_near_collinear_design_reconstructs(self) -> None:
+        """CBPS reconstruction remains stable with near-collinear covariates."""
+        n = 24
+        rng = np.random.default_rng(2026)
+        x_sample = np.linspace(0.0, 1.0, n)
+        x_target = np.clip(x_sample + rng.normal(0.0, 0.03, size=n), 0.0, 1.0)
+        near_col_sample = x_sample + 1e-7 * np.arange(n)
+        near_col_target = x_target + 1e-7 * np.arange(n)
+
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(n)],
+                "x": x_sample,
+                "x_near_collinear": near_col_sample,
+                "weight": np.ones(n),
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(n)],
+                "x": x_target,
+                "x_near_collinear": near_col_target,
+                "weight": np.ones(n),
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        fitted = bf.fit(method="cbps", transformations=None)
+        predicted_weights = fitted.predict_weights()
+        np.testing.assert_allclose(
+            predicted_weights.to_numpy(),
+            _assert_type(fitted.weight_series).to_numpy(),
+            rtol=1e-5,
+            atol=1e-7,
+        )
+
+    def test_predict_weights_cbps_raises_on_missing_training_weights(self) -> None:
+        """In-place scoring must not silently fall back to adjusted weights."""
+        adjusted = self.bf.fit(method="cbps", transformations=None)
+        model = _assert_type(adjusted.model)
+        model.pop("training_sample_weights", None)
+        with self.assertRaisesRegex(ValueError, "stored training weights"):
+            adjusted.predict_weights()
+
+    def test_predict_weights_cbps_zero_sum_weights_raises(self) -> None:
+        """Zero-sum holdout weights surface a clear error via public predict_weights()."""
+        fitted = self.bf.fit(method="cbps", transformations=None)
+        holdout_sample_df = self.sample.df.copy()
+        holdout_sample_df["weight"] = 0.0
+        holdout_target_df = self.target.df.copy()
+        holdout_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(holdout_sample_df),
+            target=SampleFrame.from_frame(holdout_target_df),
+        )
+        with self.assertRaisesRegex(ValueError, "positive sample and target weight"):
+            fitted.predict_weights(data=holdout_bf)
+
 
 # =====================================================================
 # Coverage tests for uncovered lines in balance_frame.py
@@ -3510,8 +3639,8 @@ class TestBalanceFrameSetFittedModelValidation(BalanceTestCase):
     def test_model_not_dict_raises(self) -> None:
         """Line 1148: fitted model is not a dict."""
         fitted, resp_sf, tgt_sf = self._make_fitted()
-        # pyre-ignore[8]
-        fitted._adjustment_model = "not_a_dict"
+
+        fitted._adjustment_model = "not_a_dict"  # pyre-ignore[8]
         holdout = BalanceFrame(
             sample=SampleFrame.from_frame(resp_sf._df.copy()),
             target=SampleFrame.from_frame(tgt_sf._df.copy()),
