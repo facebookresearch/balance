@@ -513,7 +513,11 @@ a new object when <code class="docutils literal notranslate"><span class="pre">i
 default so <code class="docutils literal notranslate"><span class="pre">design_matrix()</span></code>/<code class="docutils literal notranslate"><span class="pre">predict_proba()</span></code>/<code class="docutils literal notranslate"><span class="pre">predict_weights()</span></code>
 can consume fit-time artifacts.  This may increase memory usage
 for large inputs; pass these kwargs explicitly as <code class="docutils literal notranslate"><span class="pre">False</span></code> to
-opt out.</p>
+opt out.
+For the built-in CBPS method, <code class="docutils literal notranslate"><span class="pre">fit()</span></code> enables
+<code class="docutils literal notranslate"><span class="pre">store_fit_metadata=True</span></code> by default so <code class="docutils literal notranslate"><span class="pre">predict_weights()</span></code>
+can reconstruct CBPS scoring artifacts.  Pass
+<code class="docutils literal notranslate"><span class="pre">store_fit_metadata=False</span></code> to opt out.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -805,6 +809,8 @@ alternative to the <code class="docutils literal notranslate"><span class="pre">
 <ul class="simple">
 <li><p><strong>IPW</strong>: uses stored fit-time metadata (links, class balancing,
 trimming, and design weights) to reproduce fitted responder weights.</p></li>
+<li><p><strong>CBPS</strong>: rebuilds the CBPS scoring artifacts from stored metadata
+and supports both in-place and <code class="docutils literal notranslate"><span class="pre">data=...</span></code> holdout scoring.</p></li>
 <li><p><strong>Other methods</strong>: not yet supported — will raise with guidance.</p></li>
 </ul>
 <dl class="field-list simple">

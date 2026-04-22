@@ -94,6 +94,18 @@ hide_title: true
     before zero-fill reindexing so unseen holdout features are explicit.
   - Missing-column warnings are now de-duplicated and preserve request order,
     preventing redundant repeated column names in diagnostics.
+
+- **Added CBPS support to `BalanceFrame.predict_weights()`**
+  - `BalanceFrame.fit(method="cbps")` now stores CBPS fit metadata needed to
+    reconstruct weights from fitted coefficients.
+  - `BalanceFrame.predict_weights()` now supports fitted CBPS models for both
+    in-place scoring and holdout scoring via `data=...`.
+  - Added explicit validation that `na_action='drop'` is incompatible with
+    CBPS fit-metadata scoring paths; users are guided to re-fit with
+    `na_action='add_indicator'` when using `predict_weights()`.
+  - Calling `predict_weights()` on CBPS models without fit metadata now raises
+    actionable guidance to fit with metadata enabled.
+
 ## Breaking Changes
 
 - **Changed `id_column` to return the column name (`str`)** on `SampleFrame`,
@@ -113,6 +125,15 @@ hide_title: true
 
 - **Updated `BalanceDFSource` protocol**: `id_column` → `id_series`. Custom
   implementations of the protocol must rename this property.
+
+- **CBPS + `na_action='drop'` fit behavior changed in `BalanceFrame.fit()`**
+  - `fit(method="cbps")` now defaults to storing fit metadata for
+    `predict_weights()` support.
+  - When `na_action='drop'` is used without explicitly setting
+    `store_fit_metadata`, fit now auto-disables metadata storage and emits a
+    warning.
+  - Explicitly setting `store_fit_metadata=True` with `na_action='drop'` now
+    raises `ValueError` with guidance to use `na_action='add_indicator'`.
 
 ## Tests
 

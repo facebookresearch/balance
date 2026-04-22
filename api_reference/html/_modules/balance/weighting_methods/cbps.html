@@ -463,7 +463,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># TODO: update SVD and reverse SVD to the functions in scikit-learn</span>
     <span class="c1"># Invert s</span>
-    <span class="n">s_inv</span> <span class="o">=</span> <span class="n">s</span>
+    <span class="n">s_inv</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
     <span class="n">s_inv</span><span class="p">[</span><span class="n">s_inv</span> <span class="o">&gt;</span> <span class="mf">1e-5</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">s_inv</span><span class="p">[</span><span class="n">s_inv</span> <span class="o">&gt;</span> <span class="mf">1e-5</span><span class="p">]</span>
     <span class="n">s_inv</span><span class="p">[</span><span class="n">s_inv</span> <span class="o">&lt;=</span> <span class="mf">1e-5</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="c1"># Compute beta</span>
@@ -477,13 +477,6 @@
     <span class="k">return</span> <span class="n">beta_new</span>
 
 
-<span class="c1"># TODO: Store fit artifacts for predict_weights() support.</span>
-<span class="c1"># Save `beta_optimal`, standardization mean/std (`model_matrix_mean`,</span>
-<span class="c1"># `model_matrix_std`) in the returned model dict. Add a</span>
-<span class="c1"># `store_fit_metadata: bool = False` parameter mirroring ipw.py.</span>
-<span class="c1"># Then implement `_predict_weights_cbps()` in balance_frame.py:</span>
-<span class="c1"># rebuild model matrix, standardize with stored mean/std, compute</span>
-<span class="c1"># logit_truncated(X @ beta_optimal), convert to weights. ~55 lines total.</span>
 <div class="viewcode-block" id="cbps">
 <a class="viewcode-back" href="../../../balance.weighting_methods.cbps.html#balance.weighting_methods.cbps.cbps">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">cbps</span><span class="p">(</span>  <span class="c1"># noqa</span>
@@ -504,6 +497,7 @@
     <span class="n">weight_trimming_percentile</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">random_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2020</span><span class="p">,</span>
     <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">store_fit_metadata</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Fit cbps (covariate balancing propensity score model) for the sample using the target.</span>
@@ -547,6 +541,9 @@
 <span class="sd">        weight_trimming_percentile (Optional[float], optional): if weight_trimming_percentile is not none, winsorization is applied.</span>
 <span class="sd">            Default is None, i.e. trimming is applied.</span>
 <span class="sd">        random_seed (int, optional): a random seed. Defaults to 2020.</span>
+<span class="sd">        store_fit_metadata (bool, optional): Whether to persist fit-time</span>
+<span class="sd">            metadata required for downstream ``BalanceFrame.predict_weights()``</span>
+<span class="sd">            reconstruction (for CBPS models). Defaults to False.</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        Exception: _description_</span>
@@ -893,9 +890,11 @@
             <span class="s2">&quot;All weights are identical (or almost identical). The estimates will not be adjusted&quot;</span>
         <span class="p">)</span>
 
-    <span class="c1"># Revrse SVD and centralization</span>
+    <span class="n">beta_opt_model_space</span> <span class="o">=</span> <span class="n">beta_opt</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># Reverse SVD and centralization</span>
     <span class="n">beta_opt</span> <span class="o">=</span> <span class="n">_reverse_svd_and_centralization</span><span class="p">(</span>
-        <span class="n">beta_opt</span><span class="p">,</span>
+        <span class="n">beta_opt_model_space</span><span class="p">,</span>
         <span class="n">U</span><span class="p">,</span>
         <span class="n">s</span><span class="p">,</span>
         <span class="n">Vh</span><span class="p">,</span>
@@ -924,6 +923,28 @@
             <span class="p">),</span>
         <span class="p">},</span>
     <span class="p">}</span>
+    <span class="k">if</span> <span class="n">store_fit_metadata</span><span class="p">:</span>
+        <span class="n">cast</span><span class="p">(</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">out</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;variables&quot;</span><span class="p">:</span> <span class="n">variables</span><span class="p">,</span>
+                <span class="s2">&quot;transformations&quot;</span><span class="p">:</span> <span class="n">transformations</span><span class="p">,</span>
+                <span class="s2">&quot;na_action&quot;</span><span class="p">:</span> <span class="n">na_action</span><span class="p">,</span>
+                <span class="s2">&quot;formula&quot;</span><span class="p">:</span> <span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">&quot;formula&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;balance_classes&quot;</span><span class="p">:</span> <span class="n">balance_classes</span><span class="p">,</span>
+                <span class="s2">&quot;weight_trimming_mean_ratio&quot;</span><span class="p">:</span> <span class="n">weight_trimming_mean_ratio</span><span class="p">,</span>
+                <span class="s2">&quot;weight_trimming_percentile&quot;</span><span class="p">:</span> <span class="n">weight_trimming_percentile</span><span class="p">,</span>
+                <span class="s2">&quot;sample_index&quot;</span><span class="p">:</span> <span class="n">sample_index</span><span class="p">,</span>
+                <span class="s2">&quot;target_index&quot;</span><span class="p">:</span> <span class="n">target_df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                <span class="s2">&quot;training_sample_weights&quot;</span><span class="p">:</span> <span class="n">sample_weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">&quot;training_target_weights&quot;</span><span class="p">:</span> <span class="n">target_weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">&quot;model_matrix_mean&quot;</span><span class="p">:</span> <span class="n">model_matrix_standardized</span><span class="p">[</span><span class="s2">&quot;model_matrix_mean&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;model_matrix_std&quot;</span><span class="p">:</span> <span class="n">model_matrix_standardized</span><span class="p">[</span><span class="s2">&quot;model_matrix_std&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;beta_optimal_model_space&quot;</span><span class="p">:</span> <span class="n">beta_opt_model_space</span><span class="p">,</span>
+                <span class="s2">&quot;svd_s&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">&quot;svd_Vh&quot;</span><span class="p">:</span> <span class="n">Vh</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">&quot;store_fit_metadata&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done cbps function&quot;</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">out</span></div>

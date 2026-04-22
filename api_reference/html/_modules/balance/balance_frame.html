@@ -225,12 +225,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_df_dtypes</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">id_series</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># pyre-ignore[3]</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">id_series</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The id column as a Series, delegated to ``_sf_sample``.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">id_series</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">id_column</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># pyre-ignore[3]</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">id_column</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The id column name, delegated to ``_sf_sample``.</span>
 
 <span class="sd">        Changed in 0.20.0 to return the name (str) instead of data (pd.Series).</span>
@@ -247,7 +247,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_id_column_name</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">weight_series</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># pyre-ignore[3]</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">weight_series</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The active weight as a Series, delegated to ``_sf_sample``.&quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">weight_series</span>
@@ -257,12 +257,12 @@
     <span class="c1"># --- Property descriptors backed by _sf_sample ---</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_df</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>  <span class="c1"># pyre-ignore[3]</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_df</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The internal DataFrame, delegated to ``_sf_sample._df``.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_df</span>
 
     <span class="nd">@_df</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_df</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># pyre-ignore[2,3]</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_df</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;Cannot set _df to None. A BalanceFrame must always have a &quot;</span>
@@ -286,14 +286,12 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_ignored_column_names</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>  <span class="c1"># pyre-ignore[3]</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ignored_column_names</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Ignored column names, delegated to ``_sf_sample.ignored_columns``.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_column_roles</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ignored&quot;</span><span class="p">,</span> <span class="p">[])</span>
 
     <span class="nd">@_ignored_column_names</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_ignored_column_names</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># pyre-ignore[2,3]</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ignored_column_names</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;ignored&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">if</span> <span class="n">value</span> <span class="k">else</span> <span class="p">[]</span>
 
     <span class="nd">@property</span>
@@ -1086,7 +1084,12 @@
 <span class="sd">            can consume fit-time artifacts.  This may increase memory usage</span>
 <span class="sd">            for large inputs; pass these kwargs explicitly as ``False`` to</span>
 <span class="sd">            opt out.</span>
+<span class="sd">            For the built-in CBPS method, ``fit()`` enables</span>
+<span class="sd">            ``store_fit_metadata=True`` by default so ``predict_weights()``</span>
+<span class="sd">            can reconstruct CBPS scoring artifacts.  Pass</span>
+<span class="sd">            ``store_fit_metadata=False`` to opt out.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.weighting_methods.cbps</span><span class="w"> </span><span class="kn">import</span> <span class="n">cbps</span> <span class="k">as</span> <span class="n">built_in_cbps</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">balance.weighting_methods.ipw</span><span class="w"> </span><span class="kn">import</span> <span class="n">ipw</span> <span class="k">as</span> <span class="n">built_in_ipw</span>
 
         <span class="n">resolved_method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_adjustment_function</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
@@ -1103,6 +1106,28 @@
                     <span class="s2">&quot;alignment for design_matrix/predict_proba. Use na_action=&#39;add_indicator&#39;, &quot;</span>
                     <span class="s2">&quot;or disable store_fit_matrices/store_fit_metadata.&quot;</span>
                 <span class="p">)</span>
+        <span class="k">if</span> <span class="n">resolved_method</span> <span class="ow">is</span> <span class="n">built_in_cbps</span><span class="p">:</span>
+            <span class="n">user_set_store_fit_metadata</span> <span class="o">=</span> <span class="s2">&quot;store_fit_metadata&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span>
+            <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;store_fit_metadata&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="n">na_action</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;na_action&quot;</span><span class="p">,</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">)</span>
+            <span class="n">store_fit_metadata</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;store_fit_metadata&quot;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;drop&quot;</span> <span class="ow">and</span> <span class="n">store_fit_metadata</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">user_set_store_fit_metadata</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">&quot;BalanceFrame.fit(method=&#39;cbps&#39;, na_action=&#39;drop&#39;) is incompatible &quot;</span>
+                        <span class="s2">&quot;with stored fit metadata because dropped rows break index/shape &quot;</span>
+                        <span class="s2">&quot;alignment for predict_weights(). Use na_action=&#39;add_indicator&#39;, &quot;</span>
+                        <span class="s2">&quot;or disable store_fit_metadata.&quot;</span>
+                    <span class="p">)</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="s2">&quot;BalanceFrame.fit(method=&#39;cbps&#39;, na_action=&#39;drop&#39;) disables &quot;</span>
+                    <span class="s2">&quot;store_fit_metadata by default because dropped rows are incompatible &quot;</span>
+                    <span class="s2">&quot;with predict_weights() reconstruction. Pass &quot;</span>
+                    <span class="s2">&quot;store_fit_metadata=True to receive an explicit error.&quot;</span><span class="p">,</span>
+                    <span class="ne">UserWarning</span><span class="p">,</span>
+                    <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;store_fit_metadata&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="p">(</span><span class="n">SampleFrame</span><span class="p">,</span> <span class="n">BalanceFrame</span><span class="p">)):</span>
             <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_target</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span>
@@ -1932,6 +1957,8 @@
 
 <span class="sd">        - **IPW**: uses stored fit-time metadata (links, class balancing,</span>
 <span class="sd">          trimming, and design weights) to reproduce fitted responder weights.</span>
+<span class="sd">        - **CBPS**: rebuilds the CBPS scoring artifacts from stored metadata</span>
+<span class="sd">          and supports both in-place and ``data=...`` holdout scoring.</span>
 <span class="sd">        - **Other methods**: not yet supported — will raise with guidance.</span>
 
 <span class="sd">        Args:</span>
@@ -1971,16 +1998,17 @@
         <span class="c1">#    probabilities), not final weights. Keeping all three data= paths</span>
         <span class="c1">#    parallel is clearer.</span>
         <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="kn">from</span><span class="w"> </span><span class="nn">balance.weighting_methods.ipw</span><span class="w"> </span><span class="kn">import</span> <span class="n">link_transform</span><span class="p">,</span> <span class="n">weights_from_link</span>
-
             <span class="bp">self</span><span class="o">.</span><span class="n">_validate_data_covariates</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
             <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_require_fitted_model</span><span class="p">()</span>
             <span class="n">method</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;method&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;cbps&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_weights_cbps</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">method</span> <span class="o">!=</span> <span class="s2">&quot;ipw&quot;</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">&quot;predict_weights(data=...) is not yet supported for method &#39;</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">&#39;. &quot;</span>
-                    <span class="s2">&quot;Currently only &#39;ipw&#39; is supported.&quot;</span>
+                    <span class="s2">&quot;Currently only &#39;ipw&#39; and &#39;cbps&#39; are supported.&quot;</span>
                 <span class="p">)</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">balance.weighting_methods.ipw</span><span class="w"> </span><span class="kn">import</span> <span class="n">link_transform</span><span class="p">,</span> <span class="n">weights_from_link</span>
 
             <span class="n">fit_obj</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fit&quot;</span><span class="p">)</span>
             <span class="n">columns</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;X_matrix_columns&quot;</span><span class="p">)</span>
@@ -2035,15 +2063,12 @@
 
         <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;ipw&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_weights_ipw</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;cbps&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_weights_cbps</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 
         <span class="c1"># TODO: Add predict_weights dispatch for other methods.</span>
         <span class="c1">#</span>
         <span class="c1"># Step 3 — Store fit artifacts in each weighting method:</span>
-        <span class="c1">#   - cbps.py: Save standardization params (model_matrix_mean,</span>
-        <span class="c1">#     model_matrix_std) and beta_optimal in the returned model dict.</span>
-        <span class="c1">#     These are currently local variables discarded after fitting.</span>
-        <span class="c1">#     Add a `store_fit_metadata: bool = False` parameter mirroring</span>
-        <span class="c1">#     ipw.py. ~15 lines in cbps.py.</span>
         <span class="c1">#   - poststratify.py: Save the cell-ratio table</span>
         <span class="c1">#     (`combined[&quot;weight&quot;]` at line 194), the variable list, and</span>
         <span class="c1">#     na_action in the returned model dict. Currently only</span>
@@ -2054,10 +2079,6 @@
         <span class="c1">#     More complex due to N-dimensional array indexing. ~25 lines.</span>
         <span class="c1">#</span>
         <span class="c1"># Step 4 — Implement _predict_weights_* for each method:</span>
-        <span class="c1">#   - _predict_weights_cbps(model): Rebuild the model matrix from</span>
-        <span class="c1">#     current covariates, standardize with stored mean/std, compute</span>
-        <span class="c1">#     logit_truncated(X @ beta_optimal), convert propensity to</span>
-        <span class="c1">#     weights via compute_pseudo_weights_from_logit_probs. ~40 lines.</span>
         <span class="c1">#   - _predict_weights_poststratify(model): Join current sample rows</span>
         <span class="c1">#     on the stored cell-ratio table by cell variables, multiply</span>
         <span class="c1">#     ratio by design weight, normalize to target total. ~20 lines.</span>
@@ -2072,7 +2093,7 @@
 
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;predict_weights() is not yet supported for method &#39;</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">&#39;. &quot;</span>
-            <span class="s2">&quot;Currently only &#39;ipw&#39; is supported. Use adjust() to obtain &quot;</span>
+            <span class="s2">&quot;Currently only &#39;ipw&#39; and &#39;cbps&#39; are supported. Use adjust() to obtain &quot;</span>
             <span class="s2">&quot;weights directly for other methods.&quot;</span>
         <span class="p">)</span></div>
 
@@ -2165,6 +2186,302 @@
                 <span class="n">caller</span><span class="o">=</span><span class="s2">&quot;predict_weights()&quot;</span><span class="p">,</span>
             <span class="p">),</span>
         <span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">weight_name</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_cbps_metadata</span><span class="p">(</span>
+        <span class="n">model</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate CBPS fit metadata and return the artifacts needed for scoring.&quot;&quot;&quot;</span>
+        <span class="n">required_metadata</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;variables&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;na_action&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;model_matrix_mean&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;model_matrix_std&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;formula&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;transformations&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;beta_optimal_model_space&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;svd_s&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;svd_Vh&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;X_matrix_columns&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">missing</span> <span class="o">=</span> <span class="p">[</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">required_metadata</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">model</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;CBPS model is missing fit-time metadata &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2">) for predict_weights(). &quot;</span>
+                <span class="s2">&quot;Call BalanceFrame.fit(method=&#39;cbps&#39;) or run cbps(..., &quot;</span>
+                <span class="s2">&quot;store_fit_metadata=True).&quot;</span>
+            <span class="p">)</span>
+        <span class="n">beta_opt_model_space</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;beta_optimal_model_space&quot;</span><span class="p">)</span>
+        <span class="n">fit_columns</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;X_matrix_columns&quot;</span><span class="p">)</span>
+        <span class="n">svd_s</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;svd_s&quot;</span><span class="p">)</span>
+        <span class="n">svd_Vh</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;svd_Vh&quot;</span><span class="p">)</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;variables&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">beta_opt_model_space</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fit_columns</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">svd_s</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">svd_Vh</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;CBPS model metadata is malformed for predict_weights() scoring.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;CBPS model is missing fit-time variables for predict_weights(). &quot;</span>
+                <span class="s2">&quot;Call BalanceFrame.fit(method=&#39;cbps&#39;) or run cbps(..., &quot;</span>
+                <span class="s2">&quot;store_fit_metadata=True).&quot;</span>
+            <span class="p">)</span>
+        <span class="n">na_action</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;na_action&quot;</span><span class="p">,</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;drop&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;predict_weights() is unsupported for CBPS models fitted with &quot;</span>
+                <span class="s2">&quot;na_action=&#39;drop&#39; because dropped rows cannot be reconstructed &quot;</span>
+                <span class="s2">&quot;reliably. Re-fit with na_action=&#39;add_indicator&#39;.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">beta_opt_model_space</span><span class="p">,</span>
+            <span class="n">fit_columns</span><span class="p">,</span>
+            <span class="n">svd_s</span><span class="p">,</span>
+            <span class="n">svd_Vh</span><span class="p">,</span>
+            <span class="n">cast</span><span class="p">(</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">variables</span><span class="p">),</span>
+            <span class="n">na_action</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_cbps_scoring_matrix</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">bf</span><span class="p">:</span> <span class="n">BalanceFrame</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">fit_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">variables</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">na_action</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">svd_s</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">svd_Vh</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">beta_opt_model_space</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Rebuild the CBPS scoring matrix ``U`` from stored fit artifacts.&quot;&quot;&quot;</span>
+        <span class="n">sample_covars</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">target_covars</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">sample_covars</span><span class="p">,</span> <span class="n">target_covars</span> <span class="o">=</span> <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">apply_transformations</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">sample_covars</span><span class="p">,</span> <span class="n">target_covars</span><span class="p">),</span>
+            <span class="n">transformations</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;transformations&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">sample_covars</span> <span class="o">=</span> <span class="n">sample_covars</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
+        <span class="n">target_covars</span> <span class="o">=</span> <span class="n">target_covars</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
+
+        <span class="n">projected_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">fit_columns</span> <span class="k">if</span> <span class="n">c</span> <span class="o">!=</span> <span class="s2">&quot;Intercept&quot;</span><span class="p">]</span>
+        <span class="n">matrix_out</span> <span class="o">=</span> <span class="n">build_design_matrix</span><span class="p">(</span>
+            <span class="n">sample_covars</span><span class="p">,</span>
+            <span class="n">target_covars</span><span class="p">,</span>
+            <span class="n">use_model_matrix</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">formula</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;formula&quot;</span><span class="p">),</span>
+            <span class="n">one_hot_encoding</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">na_action</span><span class="o">=</span><span class="n">na_action</span><span class="p">,</span>
+            <span class="n">project_to_columns</span><span class="o">=</span><span class="n">projected_columns</span><span class="p">,</span>
+            <span class="n">matrix_type</span><span class="o">=</span><span class="s2">&quot;dense&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">combined_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">matrix_out</span><span class="p">[</span><span class="s2">&quot;combined_matrix&quot;</span><span class="p">])</span>
+        <span class="n">sample_n</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">matrix_out</span><span class="p">[</span><span class="s2">&quot;sample_n&quot;</span><span class="p">])</span>
+        <span class="n">target_n</span> <span class="o">=</span> <span class="n">combined_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">sample_n</span>
+
+        <span class="n">model_matrix_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;model_matrix_mean&quot;</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">model_matrix_std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;model_matrix_std&quot;</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">model_matrix_mean</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">combined_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="ow">or</span> <span class="n">model_matrix_std</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">combined_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;CBPS model metadata has incompatible standardization vectors for &quot;</span>
+                <span class="s2">&quot;predict_weights().&quot;</span>
+            <span class="p">)</span>
+        <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">):</span>
+            <span class="n">combined_matrix</span> <span class="o">=</span> <span class="p">(</span><span class="n">combined_matrix</span> <span class="o">-</span> <span class="n">model_matrix_mean</span><span class="p">)</span> <span class="o">/</span> <span class="n">model_matrix_std</span>
+        <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">c_</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">combined_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">combined_matrix</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;CBPS predict_weights() produced non-finite standardized design &quot;</span>
+                <span class="s2">&quot;matrix values.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">svd_Vh</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;CBPS model metadata has incompatible SVD components for &quot;</span>
+                <span class="s2">&quot;predict_weights().&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">svd_s</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">svd_Vh</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;CBPS model metadata has inconsistent SVD dimensions for &quot;</span>
+                <span class="s2">&quot;predict_weights().&quot;</span>
+            <span class="p">)</span>
+        <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">):</span>
+            <span class="n">s_inv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">svd_s</span> <span class="o">&gt;</span> <span class="mf">1e-10</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">svd_s</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">U_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">,</span> <span class="n">svd_Vh</span><span class="o">.</span><span class="n">T</span> <span class="o">*</span> <span class="n">s_inv</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">U_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">beta_opt_model_space</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;CBPS model metadata has incompatible coefficient dimensions for &quot;</span>
+                <span class="s2">&quot;predict_weights().&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">U_matrix</span><span class="p">,</span> <span class="n">sample_n</span><span class="p">,</span> <span class="n">target_n</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_cbps_training_weights</span><span class="p">(</span>
+        <span class="n">bf</span><span class="p">:</span> <span class="n">BalanceFrame</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">use_training_weights</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return (sample_weights, target_weights) for CBPS scoring.</span>
+
+<span class="sd">        For in-place scoring (``use_training_weights=True``) the stored</span>
+<span class="sd">        training weights are required: falling back to the active</span>
+<span class="sd">        ``df_weights`` would silently use the *adjusted* weights after</span>
+<span class="sd">        ``fit()`` and produce incorrect predictions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">use_training_weights</span><span class="p">:</span>
+            <span class="n">training_sample_weights</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;training_sample_weights&quot;</span><span class="p">)</span>
+            <span class="n">training_target_weights</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;training_target_weights&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">training_sample_weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">training_target_weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="n">training_sample_weights</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="n">training_target_weights</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span>
+                    <span class="n">_assert_type</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span>
+                <span class="p">)</span>
+            <span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;CBPS predict_weights() requires stored training weights that &quot;</span>
+                    <span class="s2">&quot;align with the current sample/target indices. Re-fit with &quot;</span>
+                    <span class="s2">&quot;BalanceFrame.fit(method=&#39;cbps&#39;) so the training weights are &quot;</span>
+                    <span class="s2">&quot;persisted, or pass data=... to score a holdout frame.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="n">training_sample_weights</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                <span class="n">training_target_weights</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+            <span class="p">)</span>
+        <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df_weights</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+        <span class="n">target_weights</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">df_weights</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="n">target_weights</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_cbps_design_weights</span><span class="p">(</span>
+        <span class="n">sample_weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">target_weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">balance_classes</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute CBPS design weights with explicit zero-sum guards.&quot;&quot;&quot;</span>
+        <span class="n">sample_sum</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">sample_weights</span><span class="p">))</span>
+        <span class="n">target_sum</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">target_weights</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">sample_sum</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">target_sum</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;CBPS predict_weights() requires positive sample and target weight &quot;</span>
+                <span class="s2">&quot;sums; got sample_sum=</span><span class="si">{sample_sum}</span><span class="s2">, target_sum=</span><span class="si">{target_sum}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">sample_sum</span><span class="o">=</span><span class="n">sample_sum</span><span class="p">,</span> <span class="n">target_sum</span><span class="o">=</span><span class="n">target_sum</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="n">sample_n</span> <span class="o">=</span> <span class="n">sample_weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">target_n</span> <span class="o">=</span> <span class="n">target_weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">balance_classes</span><span class="p">:</span>
+            <span class="n">total_n</span> <span class="o">=</span> <span class="n">sample_n</span> <span class="o">+</span> <span class="n">target_n</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+                <span class="n">total_n</span>
+                <span class="o">/</span> <span class="mi">2</span>
+                <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                    <span class="p">(</span><span class="n">sample_weights</span> <span class="o">/</span> <span class="n">sample_sum</span><span class="p">,</span> <span class="n">target_weights</span> <span class="o">/</span> <span class="n">target_sum</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="n">design_weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sample_weights</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">))</span>
+        <span class="n">design_mean</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">design_weights</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">design_mean</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;CBPS predict_weights() requires a positive mean of combined &quot;</span>
+                <span class="s2">&quot;sample+target weights when balance_classes=False.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">design_weights</span> <span class="o">/</span> <span class="n">design_mean</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_predict_weights_cbps</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">source</span><span class="p">:</span> <span class="n">BalanceFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;CBPS-specific weight prediction from stored fit artifacts.&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.weighting_methods.cbps</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">compute_pseudo_weights_from_logit_probs</span><span class="p">,</span>
+            <span class="n">logit_truncated</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">bf</span> <span class="o">=</span> <span class="n">source</span> <span class="k">if</span> <span class="n">source</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="n">bf</span><span class="o">.</span><span class="n">_sf_target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;data must have a target set for predict_weights().&quot;</span><span class="p">)</span>
+
+        <span class="p">(</span>
+            <span class="n">beta_opt_model_space</span><span class="p">,</span>
+            <span class="n">fit_columns</span><span class="p">,</span>
+            <span class="n">svd_s</span><span class="p">,</span>
+            <span class="n">svd_Vh</span><span class="p">,</span>
+            <span class="n">variables</span><span class="p">,</span>
+            <span class="n">na_action</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_cbps_metadata</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+        <span class="n">U_matrix</span><span class="p">,</span> <span class="n">sample_n</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_cbps_scoring_matrix</span><span class="p">(</span>
+            <span class="n">bf</span><span class="p">,</span>
+            <span class="n">model</span><span class="p">,</span>
+            <span class="n">fit_columns</span><span class="p">,</span>
+            <span class="n">variables</span><span class="p">,</span>
+            <span class="n">na_action</span><span class="p">,</span>
+            <span class="n">svd_s</span><span class="p">,</span>
+            <span class="n">svd_Vh</span><span class="p">,</span>
+            <span class="n">beta_opt_model_space</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">sample_weights</span><span class="p">,</span> <span class="n">target_weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_cbps_training_weights</span><span class="p">(</span>
+            <span class="n">bf</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">use_training_weights</span><span class="o">=</span><span class="n">source</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="p">)</span>
+        <span class="n">sample_n_actual</span> <span class="o">=</span> <span class="n">sample_weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">target_n_actual</span> <span class="o">=</span> <span class="n">target_weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">sample_n</span> <span class="o">!=</span> <span class="n">sample_n_actual</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;CBPS predict_weights() failed due to sample row misalignment while &quot;</span>
+                <span class="s2">&quot;rebuilding the model matrix.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">sample_n_actual</span> <span class="o">+</span> <span class="n">target_n_actual</span><span class="p">)</span> <span class="o">!=</span> <span class="n">U_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;CBPS predict_weights() failed because rebuilt CBPS matrix rows do &quot;</span>
+                <span class="s2">&quot;not match sample+target weights.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">design_weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_cbps_design_weights</span><span class="p">(</span>
+            <span class="n">sample_weights</span><span class="p">,</span>
+            <span class="n">target_weights</span><span class="p">,</span>
+            <span class="n">balance_classes</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;balance_classes&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)),</span>
+        <span class="p">)</span>
+        <span class="n">in_pop</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">sample_n_actual</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">target_n_actual</span><span class="p">))</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+
+        <span class="n">probs</span> <span class="o">=</span> <span class="n">logit_truncated</span><span class="p">(</span><span class="n">U_matrix</span><span class="p">,</span> <span class="n">beta_opt_model_space</span><span class="p">)</span>
+        <span class="n">pseudo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span>
+            <span class="n">compute_pseudo_weights_from_logit_probs</span><span class="p">(</span><span class="n">probs</span><span class="p">,</span> <span class="n">design_weights</span><span class="p">,</span> <span class="n">in_pop</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">design_weights</span><span class="p">[:</span><span class="n">sample_n_actual</span><span class="p">]</span> <span class="o">*</span> <span class="n">pseudo</span><span class="p">[:</span><span class="n">sample_n_actual</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">weights</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;CBPS predict_weights() produced non-finite intermediate weights.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">trim_weights</span><span class="p">(</span>
+            <span class="n">weights</span><span class="p">,</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;weight_trimming_mean_ratio&quot;</span><span class="p">),</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;weight_trimming_percentile&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">weights</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;CBPS predict_weights() produced non-finite trimmed weights.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">original_sum</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">original_sum</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;CBPS predict_weights() produced non-positive weight sum.&quot;</span><span class="p">)</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span> <span class="o">/</span> <span class="n">original_sum</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">target_weights</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">weight_series</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">model</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
@@ -2314,11 +2631,8 @@
                 <span class="n">ignored_columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span><span class="o">.</span><span class="n">ignored_columns</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
                 <span class="n">standardize_types</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="c1"># pyre-ignore[16]: Sample gains this attr via BalanceFrame inheritance (diff 14.3)</span>
             <span class="n">result</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span> <span class="o">=</span> <span class="n">unadj_sf</span>
-            <span class="c1"># pyre-ignore[16]: Sample gains _links via BalanceFrame inheritance (diff 14.3)</span>
             <span class="n">result</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">unadj_sf</span>
-            <span class="c1"># pyre-ignore[16]: Sample gains this attr via BalanceFrame inheritance (diff 14.3)</span>
             <span class="n">result</span><span class="o">.</span><span class="n">_adjustment_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adjustment_model</span>
 
         <span class="k">return</span> <span class="n">result</span></div>
