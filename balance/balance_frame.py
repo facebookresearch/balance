@@ -1059,16 +1059,27 @@ class BalanceFrame:
                     "or disable store_fit_matrices/store_fit_metadata."
                 )
         if resolved_method is built_in_cbps:
+            user_set_store_fit_metadata = "store_fit_metadata" in kwargs
             kwargs.setdefault("store_fit_metadata", True)
             na_action = kwargs.get("na_action", "add_indicator")
             store_fit_metadata = bool(kwargs.get("store_fit_metadata"))
             if na_action == "drop" and store_fit_metadata:
-                raise ValueError(
-                    "BalanceFrame.fit(method='cbps', na_action='drop') is incompatible "
-                    "with stored fit metadata because dropped rows break index/shape "
-                    "alignment for predict_weights(). Use na_action='add_indicator', "
-                    "or disable store_fit_metadata."
+                if user_set_store_fit_metadata:
+                    raise ValueError(
+                        "BalanceFrame.fit(method='cbps', na_action='drop') is incompatible "
+                        "with stored fit metadata because dropped rows break index/shape "
+                        "alignment for predict_weights(). Use na_action='add_indicator', "
+                        "or disable store_fit_metadata."
+                    )
+                warnings.warn(
+                    "BalanceFrame.fit(method='cbps', na_action='drop') disables "
+                    "store_fit_metadata by default because dropped rows are incompatible "
+                    "with predict_weights() reconstruction. Pass "
+                    "store_fit_metadata=True to receive an explicit error.",
+                    UserWarning,
+                    stacklevel=2,
                 )
+                kwargs["store_fit_metadata"] = False
 
         if isinstance(target, (SampleFrame, BalanceFrame)):
             result = self.set_target(target, inplace=False).adjust(
@@ -2188,42 +2199,18 @@ class BalanceFrame:
         sample_covars = sample_covars.loc[:, cast(list[str], variables)]
         target_covars = target_covars.loc[:, cast(list[str], variables)]
 
-        matrix_out = balance_util.model_matrix(
+        matrix_out = build_design_matrix(
             sample_covars,
             target_covars,
-            cast(list[str], variables),
-            add_na=(na_action == "add_indicator"),
-            return_type="one",
-            return_var_type="sparse",
+            use_model_matrix=True,
             formula=model.get("formula"),
             one_hot_encoding=False,
+            na_action=na_action,
+            project_to_columns=projected_columns,
+            matrix_type="dense",
         )
-        sparse_matrix = cast(Any, matrix_out["model_matrix"]).toarray()
-        matrix_columns = cast(list[str], matrix_out["model_matrix_columns_names"])
-        column_to_idx = {col: i for i, col in enumerate(matrix_columns)}
-        keep_idx = [
-            column_to_idx[col] for col in projected_columns if col in column_to_idx
-        ]
-        if len(keep_idx) != len(projected_columns):
-            missing_columns = [
-                col for col in projected_columns if col not in column_to_idx
-            ]
-            logger.warning(
-                "CBPS predict_weights(): missing fit-time columns in scoring data: %s. "
-                "Filling them with zeros.",
-                missing_columns,
-            )
-            projected_matrix = np.zeros(
-                (sparse_matrix.shape[0], len(projected_columns))
-            )
-            for out_idx, col in enumerate(projected_columns):
-                source_idx = column_to_idx.get(col)
-                if source_idx is not None:
-                    projected_matrix[:, out_idx] = sparse_matrix[:, source_idx]
-            combined_matrix = projected_matrix
-        else:
-            combined_matrix = sparse_matrix[:, keep_idx]
-        sample_n = sample_covars.shape[0]
+        combined_matrix = np.asarray(matrix_out["combined_matrix"])
+        sample_n = cast(int, matrix_out["sample_n"])
         model_matrix_mean = np.asarray(model.get("model_matrix_mean"), dtype=float)
         model_matrix_std = np.asarray(model.get("model_matrix_std"), dtype=float)
         if (

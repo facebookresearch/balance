@@ -3399,11 +3399,20 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         with self.assertRaisesRegex(ValueError, "incompatible standardization vectors"):
             adjusted.predict_weights(data=self.bf)
 
-    def test_fit_cbps_na_drop_with_fit_metadata_raises(self) -> None:
+    def test_fit_cbps_na_drop_with_explicit_fit_metadata_raises(self) -> None:
         with self.assertRaisesRegex(
             ValueError, "incompatible with stored fit metadata"
         ):
-            self.bf.fit(method="cbps", na_action="drop")
+            self.bf.fit(method="cbps", na_action="drop", store_fit_metadata=True)
+
+    def test_fit_cbps_na_drop_defaults_to_warning_and_disables_metadata(self) -> None:
+        with self.assertWarnsRegex(UserWarning, "disables store_fit_metadata"):
+            adjusted = self.bf.fit(
+                method="cbps", na_action="drop", transformations=None
+            )
+        self.assertTrue(bool(adjusted.is_adjusted))
+        model = _assert_type(adjusted.model)
+        self.assertNotIn("store_fit_metadata", model)
 
     def test_fit_cbps_na_drop_without_fit_metadata_allowed(self) -> None:
         adjusted = self.bf.fit(
@@ -3461,14 +3470,12 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         total_rows = len(adjusted._sf_sample.df) + len(
             _assert_type(adjusted._sf_target).df
         )
-        from scipy.sparse import csc_matrix
-
-        bad_matrix = csc_matrix((total_rows - 1, len(projected_columns)))
+        bad_matrix = np.zeros((total_rows - 1, len(projected_columns)))
         with patch(
-            "balance.balance_frame.balance_util.model_matrix",
+            "balance.balance_frame.build_design_matrix",
             return_value={
-                "model_matrix": bad_matrix,
-                "model_matrix_columns_names": projected_columns,
+                "combined_matrix": bad_matrix,
+                "sample_n": len(adjusted._sf_sample.df),
             },
         ):
             with self.assertRaisesRegex(ValueError, "matrix rows do not match"):

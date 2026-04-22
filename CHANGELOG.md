@@ -116,6 +116,15 @@
 - **Updated `BalanceDFSource` protocol**: `id_column` → `id_series`. Custom
   implementations of the protocol must rename this property.
 
+- **CBPS + `na_action='drop'` fit behavior changed in `BalanceFrame.fit()`**
+  - `fit(method="cbps")` now defaults to storing fit metadata for
+    `predict_weights()` support.
+  - When `na_action='drop'` is used without explicitly setting
+    `store_fit_metadata`, fit now auto-disables metadata storage and emits a
+    warning.
+  - Explicitly setting `store_fit_metadata=True` with `na_action='drop'` now
+    raises `ValueError` with guidance to use `na_action='add_indicator'`.
+
 ## Tests
 
 - Added coverage for:
