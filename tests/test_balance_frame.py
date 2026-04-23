@@ -10,6 +10,7 @@ from __future__ import annotations
 import copy
 import io
 import logging
+import pickle
 import unittest
 from typing import Any, Literal
 from unittest.mock import patch
@@ -3097,23 +3098,173 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         self.assertEqual(w.shape[0], len(self.sample.df))
         self.assertTrue(np.all(w.to_numpy() > 0))
 
-    # TODO: Add the following tests in a follow-up diff:
-    # - test_pickle_deepcopy_roundtrip: verify pickle.dumps/loads preserves
-    #   all fit artifacts on an adjusted BalanceFrame
-    # - test_design_matrix_on_both_holdout_correctness: verify both returned
-    #   values from design_matrix(on="both") on holdout data are correct
-    # - test_non_uniform_design_weights_on_fitted: setUp uses weight=1.0;
-    #   add a test with varying weights to verify predict_weights matches
-    # - test_ipw_class_index_error_non_standard_labels: verify _ipw_class_index
-    #   raises with a model trained on labels other than 0/1
-    # - test_store_fit_metadata_default_logistic_regression: verify
-    #   store_fit_metadata=True works with the default model (not just custom)
-    # - test_store_fit_matrices_use_model_matrix_false: verify
-    #   store_fit_matrices=True with use_model_matrix=False stores DataFrames
-    # (test_predict_weights_after_trim_inplace_false: already covered by
-    #   TestTrimInPlaceFalsePreservesFitArtifacts — trim now preserves artifacts)
-    # - test_edge_cases: empty DataFrames, single-row, zero-variance covariates,
-    #   extreme propensity scores (near-0 or near-1)
+    def test_pickle_deepcopy_roundtrip_preserves_fit_artifacts(self) -> None:
+        from scipy import sparse as sp
+
+        fitted = self.bf.fit(method="ipw")
+        fitted_model = _assert_type(fitted.model)
+
+        roundtrip = pickle.loads(pickle.dumps(fitted))
+        copied = copy.deepcopy(fitted)
+
+        for candidate in (roundtrip, copied):
+            candidate_model = _assert_type(candidate.model)
+            self.assertIsNotNone(candidate_model.get("fit"))
+            self.assertIn("sample_index", candidate_model)
+            self.assertIn("target_index", candidate_model)
+            self.assertIn("model_matrix_sample", candidate_model)
+            self.assertIn("model_matrix_target", candidate_model)
+            self.assertIn("training_sample_weights", candidate_model)
+            self.assertIn("training_target_weights", candidate_model)
+
+            sample_index = _assert_type(candidate_model.get("sample_index"))
+            target_index = _assert_type(candidate_model.get("target_index"))
+            self.assertTrue(isinstance(sample_index, pd.Index))
+            self.assertTrue(isinstance(target_index, pd.Index))
+            self.assertEqual(len(sample_index), len(candidate._sf_sample.df))
+            self.assertEqual(
+                len(target_index), len(_assert_type(candidate._sf_target).df)
+            )
+            self.assertTrue(
+                sample_index.equals(_assert_type(fitted_model.get("sample_index")))
+            )
+            self.assertTrue(
+                target_index.equals(_assert_type(fitted_model.get("target_index")))
+            )
+
+            sample_matrix = _assert_type(candidate_model.get("model_matrix_sample"))
+            target_matrix = _assert_type(candidate_model.get("model_matrix_target"))
+            fitted_sample_matrix = _assert_type(fitted_model.get("model_matrix_sample"))
+            fitted_target_matrix = _assert_type(fitted_model.get("model_matrix_target"))
+            self.assertIsNotNone(sample_matrix)
+            self.assertIsNotNone(target_matrix)
+            self.assertEqual(type(sample_matrix), type(fitted_sample_matrix))
+            self.assertEqual(type(target_matrix), type(fitted_target_matrix))
+            self.assertEqual(sample_matrix.shape, fitted_sample_matrix.shape)
+            self.assertEqual(target_matrix.shape, fitted_target_matrix.shape)
+            if sp.issparse(sample_matrix):
+                self.assertEqual(sample_matrix.nnz, fitted_sample_matrix.nnz)
+            if sp.issparse(target_matrix):
+                self.assertEqual(target_matrix.nnz, fitted_target_matrix.nnz)
+
+            training_sample_weights = _assert_type(
+                candidate_model.get("training_sample_weights")
+            )
+            training_target_weights = _assert_type(
+                candidate_model.get("training_target_weights")
+            )
+            self.assertTrue(isinstance(training_sample_weights, pd.Series))
+            self.assertTrue(isinstance(training_target_weights, pd.Series))
+            self.assertEqual(
+                training_sample_weights.shape,
+                _assert_type(fitted_model.get("training_sample_weights")).shape,
+            )
+            self.assertEqual(
+                training_target_weights.shape,
+                _assert_type(fitted_model.get("training_target_weights")).shape,
+            )
+            pd.testing.assert_index_equal(
+                training_sample_weights.index,
+                _assert_type(fitted_model.get("training_sample_weights")).index,
+            )
+            pd.testing.assert_index_equal(
+                training_target_weights.index,
+                _assert_type(fitted_model.get("training_target_weights")).index,
+            )
+            self.assertEqual(
+                list(candidate_model.get("X_matrix_columns", [])),
+                list(fitted_model.get("X_matrix_columns", [])),
+            )
+
+            w = candidate.predict_weights()
+            self.assertEqual(w.shape[0], len(candidate._sf_sample.df))
+            self.assertTrue(np.all(w.to_numpy() > 0))
+
+    def test_store_fit_metadata_default_logistic_regression(self) -> None:
+        fitted = self.bf.fit(method="ipw")
+        model = _assert_type(fitted.model)
+        self.assertIn("training_sample_weights", model)
+        self.assertIn("training_target_weights", model)
+        self.assertTrue(isinstance(model.get("training_sample_weights"), pd.Series))
+        self.assertTrue(isinstance(model.get("training_target_weights"), pd.Series))
+
+    @pytest.mark.requires_sklearn_1_4  # pyre-ignore[56]
+    def test_store_fit_matrices_use_model_matrix_false(self) -> None:
+        from sklearn.ensemble import HistGradientBoostingClassifier
+
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(8)],
+                "x": [0.1, 0.3, 0.7, 1.1, 1.4, 1.7, 2.0, 2.2],
+                "weight": [1.0] * 8,
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(8)],
+                "x": [0.2, 0.5, 0.8, 1.0, 1.6, 1.9, 2.1, 2.4],
+                "weight": [1.0] * 8,
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+
+        fitted = bf.fit(
+            method="ipw",
+            model=HistGradientBoostingClassifier(
+                random_state=0, categorical_features="from_dtype"
+            ),
+            use_model_matrix=False,
+            transformations=None,
+            store_fit_matrices=True,
+        )
+        model = _assert_type(fitted.model)
+        self.assertTrue(isinstance(model.get("model_matrix_sample"), pd.DataFrame))
+        self.assertTrue(isinstance(model.get("model_matrix_target"), pd.DataFrame))
+        self.assertListEqual(
+            list(_assert_type(model.get("model_matrix_sample")).columns),
+            list(_assert_type(model.get("X_matrix_columns"))),
+        )
+
+    def test_fit_edge_cases_empty_input_raises_and_near_separation_is_stable(
+        self,
+    ) -> None:
+        empty_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(
+                pd.DataFrame({"id": [], "x": [], "weight": []})
+            ),
+            target=SampleFrame.from_frame(
+                pd.DataFrame({"id": [], "x": [], "weight": []})
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "more than zero rows"):
+            empty_bf.fit(method="ipw")
+
+        # Near-separation should still yield finite, strictly-positive weights.
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(20)],
+                "x": np.linspace(0.0, 0.2, 20),
+                "weight": 1.0,
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(20)],
+                "x": np.linspace(0.8, 1.0, 20),
+                "weight": 1.0,
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(method="ipw")
+        weights = adjusted.predict_weights()
+        self.assertTrue(np.all(np.isfinite(weights.to_numpy())))
+        self.assertTrue(np.all(weights.to_numpy() > 0))
 
     def test_predict_weights_with_data_argument(self) -> None:
         """predict_weights(data=holdout) matches set_fitted_model workflow."""
