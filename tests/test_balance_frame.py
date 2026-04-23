@@ -3192,7 +3192,26 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
     def test_store_fit_matrices_use_model_matrix_false(self) -> None:
         from sklearn.ensemble import HistGradientBoostingClassifier
 
-        fitted = self.bf.fit(
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(8)],
+                "x": [0.1, 0.3, 0.7, 1.1, 1.4, 1.7, 2.0, 2.2],
+                "weight": [1.0] * 8,
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(8)],
+                "x": [0.2, 0.5, 0.8, 1.0, 1.6, 1.9, 2.1, 2.4],
+                "weight": [1.0] * 8,
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+
+        fitted = bf.fit(
             method="ipw",
             model=HistGradientBoostingClassifier(
                 random_state=0, categorical_features="from_dtype"
