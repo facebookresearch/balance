@@ -3132,7 +3132,6 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         self.assertTrue(isinstance(model.get("training_target_weights"), pd.Series))
 
     @pytest.mark.requires_sklearn_1_4  # pyre-ignore[56]
-    @unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires scikit-learn >= 1.4")
     def test_store_fit_matrices_use_model_matrix_false(self) -> None:
         from sklearn.ensemble import HistGradientBoostingClassifier
 
