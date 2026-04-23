@@ -3099,6 +3099,8 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         self.assertTrue(np.all(w.to_numpy() > 0))
 
     def test_pickle_deepcopy_roundtrip_preserves_fit_artifacts(self) -> None:
+        from scipy import sparse as sp
+
         fitted = self.bf.fit(method="ipw")
         fitted_model = _assert_type(fitted.model)
 
@@ -3114,6 +3116,61 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             self.assertIn("model_matrix_target", candidate_model)
             self.assertIn("training_sample_weights", candidate_model)
             self.assertIn("training_target_weights", candidate_model)
+
+            sample_index = _assert_type(candidate_model.get("sample_index"))
+            target_index = _assert_type(candidate_model.get("target_index"))
+            self.assertTrue(isinstance(sample_index, pd.Index))
+            self.assertTrue(isinstance(target_index, pd.Index))
+            self.assertEqual(len(sample_index), len(candidate._sf_sample.df))
+            self.assertEqual(
+                len(target_index), len(_assert_type(candidate._sf_target).df)
+            )
+            self.assertTrue(
+                sample_index.equals(_assert_type(fitted_model.get("sample_index")))
+            )
+            self.assertTrue(
+                target_index.equals(_assert_type(fitted_model.get("target_index")))
+            )
+
+            sample_matrix = _assert_type(candidate_model.get("model_matrix_sample"))
+            target_matrix = _assert_type(candidate_model.get("model_matrix_target"))
+            fitted_sample_matrix = _assert_type(fitted_model.get("model_matrix_sample"))
+            fitted_target_matrix = _assert_type(fitted_model.get("model_matrix_target"))
+            self.assertIsNotNone(sample_matrix)
+            self.assertIsNotNone(target_matrix)
+            self.assertEqual(type(sample_matrix), type(fitted_sample_matrix))
+            self.assertEqual(type(target_matrix), type(fitted_target_matrix))
+            self.assertEqual(sample_matrix.shape, fitted_sample_matrix.shape)
+            self.assertEqual(target_matrix.shape, fitted_target_matrix.shape)
+            if sp.issparse(sample_matrix):
+                self.assertEqual(sample_matrix.nnz, fitted_sample_matrix.nnz)
+            if sp.issparse(target_matrix):
+                self.assertEqual(target_matrix.nnz, fitted_target_matrix.nnz)
+
+            training_sample_weights = _assert_type(
+                candidate_model.get("training_sample_weights")
+            )
+            training_target_weights = _assert_type(
+                candidate_model.get("training_target_weights")
+            )
+            self.assertTrue(isinstance(training_sample_weights, pd.Series))
+            self.assertTrue(isinstance(training_target_weights, pd.Series))
+            self.assertEqual(
+                training_sample_weights.shape,
+                _assert_type(fitted_model.get("training_sample_weights")).shape,
+            )
+            self.assertEqual(
+                training_target_weights.shape,
+                _assert_type(fitted_model.get("training_target_weights")).shape,
+            )
+            pd.testing.assert_index_equal(
+                training_sample_weights.index,
+                _assert_type(fitted_model.get("training_sample_weights")).index,
+            )
+            pd.testing.assert_index_equal(
+                training_target_weights.index,
+                _assert_type(fitted_model.get("training_target_weights")).index,
+            )
             self.assertEqual(
                 list(candidate_model.get("X_matrix_columns", [])),
                 list(fitted_model.get("X_matrix_columns", [])),
